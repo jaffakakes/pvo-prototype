@@ -310,6 +310,8 @@ function renderComponentTimeline(duration) {
     const row = document.createElement("div");
     row.className = "layer-row empty-layer-row";
     row.innerHTML = '<div class="layer-label"><strong>UI</strong><span>No layers yet</span></div><div class="component-lane"><span class="empty-layer-message">Add a component to create a layer</span></div>';
+    const emptyLane = row.querySelector(".component-lane");
+    emptyLane.addEventListener("click", (event) => seekFromTimeline(event, emptyLane));
     componentLayers.append(row);
     return;
   }
@@ -330,6 +332,7 @@ function renderComponentTimeline(duration) {
 
     const lane = document.createElement("div");
     lane.className = "component-lane";
+    lane.addEventListener("click", (event) => seekFromTimeline(event, lane));
     const bar = document.createElement("div");
     bar.className = `component-bar${component.id === selectedComponentId ? " active" : ""}`;
     bar.dataset.kind = component.kind;
@@ -578,12 +581,15 @@ refs.videoInput.addEventListener("change", (event) => {
   if (file) loadVideo(file, file.name);
 });
 
-trackWrap.addEventListener("click", (event) => {
-  const bounds = trackWrap.getBoundingClientRect();
+function seekFromTimeline(event, lane) {
+  const bounds = lane.getBoundingClientRect();
   const ratio = clamp((event.clientX - bounds.left) / bounds.width, 0, 1);
   video.currentTime = ratio * (video.duration || 0);
   updateTime();
-});
+}
+
+trackWrap.addEventListener("click", (event) => seekFromTimeline(event, trackWrap));
+ruler.addEventListener("click", (event) => seekFromTimeline(event, ruler));
 
 function registerWebMcpTools() {
   const context = document.modelContext;
