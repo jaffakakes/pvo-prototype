@@ -1,0 +1,624 @@
+const $ = (selector) => document.querySelector(selector);
+const video = $("#video");
+const videoArea = $("#videoArea");
+const overlayLayer = $("#overlayLayer");
+const clipTrack = $("#clipTrack");
+const componentTrack = $("#componentTrack");
+const ruler = $("#ruler");
+const trackWrap = document.querySelector(".track-wrap");
+
+const refs = {
+  projectName: $("#projectName"), projectDuration: $("#projectDuration"),
+  sceneName: $("#sceneName"), currentTime: $("#currentTime"), totalTime: $("#totalTime"),
+  componentList: $("#componentList"), componentCount: $("#componentCount"),
+  inspectorEmpty: $("#inspectorEmpty"), inspectorFields: $("#inspectorFields"),
+  name: $("#componentName"), x: $("#componentX"), y: $("#componentY"),
+  width: $("#componentW"), height: $("#componentH"), html: $("#componentHtml"), css: $("#componentCss"),
+  playhead: $("#playhead"), status: $("#status"), videoInput: $("#videoInput"),
+};
+
+const presets = {
+  tooltip: {
+    name: "Tooltip",
+    html: '<div class="tooltip">Tap for more</div>',
+    css: `.tooltip {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #111827;
+  color: white;
+  font: 600 14px Arial, sans-serif;
+  box-shadow: 0 6px 20px rgba(0,0,0,.25);
+}`,
+    x: 58, y: 24, width: 24, height: 12,
+  },
+  card: {
+    name: "Card",
+    html: '<div class="card"><h3>Card title</h3><p>Add a short explanation here.</p></div>',
+    css: `.card {
+  padding: 16px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.94);
+  color: #171717;
+  font-family: Arial, sans-serif;
+  box-shadow: 0 12px 32px rgba(0,0,0,.28);
+}
+.card h3 { margin: 0 0 6px; font-size: 18px; }
+.card p { margin: 0; font-size: 14px; line-height: 1.4; }`,
+    x: 6, y: 58, width: 36, height: 27,
+  },
+  choice: {
+    name: "Choice",
+    html: '<div class="choice"><h3>Choose a path</h3><div><button>Option one</button><button>Option two</button></div></div>',
+    css: `.choice {
+  padding: 16px;
+  border-radius: 10px;
+  background: rgba(17,24,39,.94);
+  color: white;
+  font-family: Arial, sans-serif;
+}
+.choice h3 { margin: 0 0 12px; font-size: 18px; }
+.choice div { display: flex; gap: 8px; }
+.choice button { flex: 1; padding: 9px; border: 0; border-radius: 6px; background: #72a7ff; color: #081226; font-weight: 700; }`,
+    x: 25, y: 60, width: 50, height: 28,
+  },
+  form: {
+    name: "Form",
+    html: '<form class="form"><label>Name<input placeholder="Your name"></label><button type="button">Submit</button></form>',
+    css: `.form {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.96);
+  color: #171717;
+  font: 600 13px Arial, sans-serif;
+}
+.form label { display: grid; gap: 5px; }
+.form input { padding: 8px; border: 1px solid #bbb; border-radius: 5px; }
+.form button { padding: 9px; border: 0; border-radius: 5px; background: #171717; color: white; }`,
+    x: 60, y: 50, width: 32, height: 35,
+  },
+};
+
+let clips = [];
+let components = [];
+let selectedClipId = null;
+let selectedComponentId = null;
+let componentCounter = 0;
+let clipCounter = 0;
+let objectUrl = null;
+let ignoreSceneSyncUntil = 0;
+
+class EditorOverlay extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+  }
+
+  update(component) {
+    const safeHtml = sanitizeHtml(component.html);
+    const safeCss = sanitizeCss(component.css);
+    this.shadowRoot.innerHTML = `<style>
+      :host { display:block; width:100%; height:100%; }
+      * { box-sizing:border-box; }
+      .component-root { width:100%; height:100%; }
+      ${safeCss}
+    </style><div class="component-root">${safeHtml}</div>`;
+  }
+}
+customElements.define("editor-overlay", EditorOverlay);
+
+function sanitizeHtml(html) {
+  const template = document.createElement("template");
+  template.innerHTML = String(html || "");
+  template.content.querySelectorAll("script, iframe, object, embed, link, meta").forEach((node) => node.remove());
+  template.content.querySelectorAll("*").forEach((node) => {
+    [...node.attributes].forEach((attribute) => {
+      if (attribute.name.toLowerCase().startsWith("on")) node.removeAttribute(attribute.name);
+      if (["href", "src"].includes(attribute.name.toLowerCase()) && /^javascript:/i.test(attribute.value)) node.removeAttribute(attribute.name);
+    });
+  });
+  return template.innerHTML;
+}
+
+function sanitizeCss(css) {
+  return String(css || "").replace(/@import[^;]+;/gi, "").replace(/url\([^)]*\)/gi, "none");
+}
+
+function formatTime(seconds) {
+  const value = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
+  const minutes = Math.floor(value / 60);
+  return `${String(minutes).padStart(2, "0")}:${(value % 60).toFixed(1).padStart(4, "0")}`;
+}
+
+function setStatus(message) {
+  refs.status.textContent = message;
+}
+
+function selectedClip() {
+  return clips.find((clip) => clip.id === selectedClipId) || clips[0];
+}
+
+function selectedComponent() {
+  return components.find((component) => component.id === selectedComponentId) || null;
+}
+
+function sceneAt(time) {
+  return clips.find((clip, index) => time >= clip.start && (time < clip.end || index === clips.length - 1 && time <= clip.end));
+}
+
+function normalizeSceneNames() {
+  clips.forEach((clip, index) => { clip.name = `Scene ${index + 1}`; });
+}
+
+function selectClip(id, seek = true) {
+  selectedClipId = id;
+  const clip = selectedClip();
+  if (!clip) return;
+  const firstComponent = components.find((component) => component.clipId === id);
+  selectedComponentId = firstComponent?.id || null;
+  if (seek) video.currentTime = clip.start + 0.01;
+  renderAll();
+  if (seek) updateTime();
+}
+
+function selectComponent(id, seek = true) {
+  const component = components.find((item) => item.id === id);
+  if (!component) return;
+  selectedClipId = component.clipId;
+  selectedComponentId = id;
+  if (seek) {
+    ignoreSceneSyncUntil = performance.now() + 500;
+    video.currentTime = Math.min(component.end - 0.01, component.start + 0.01);
+  }
+  renderAll();
+  if (seek) updateTime();
+}
+
+function splitAtPlayhead() {
+  splitSceneAt(Number(video.currentTime));
+}
+
+function splitSceneAt(at) {
+  const index = clips.findIndex((clip) => at > clip.start + 0.08 && at < clip.end - 0.08);
+  if (index < 0) {
+    const message = "Split time must be inside a scene and away from its edges";
+    setStatus(message);
+    throw new Error(message);
+  }
+  const current = clips[index];
+  const right = { id: `scene_${++clipCounter}`, name: "", start: at, end: current.end };
+  current.end = at;
+  clips.splice(index + 1, 0, right);
+  components.filter((component) => component.clipId === current.id).forEach((component) => {
+    if (component.start >= at) {
+      component.clipId = right.id;
+      component.start = Math.max(component.start, at);
+    } else if (component.end > at) {
+      component.end = at;
+    }
+  });
+  normalizeSceneNames();
+  selectedClipId = right.id;
+  selectedComponentId = null;
+  ignoreSceneSyncUntil = performance.now() + 750;
+  video.currentTime = Math.min(right.end, at + 0.1);
+  renderAll();
+  updateTime();
+  setStatus(`Split at ${formatTime(at)} · ${clips.length} scenes`);
+  return right;
+}
+
+function addComponent(kind) {
+  const clip = selectedClip();
+  if (!clip) return;
+  const preset = presets[kind];
+  const minimumDuration = Math.min(0.2, clip.end - clip.start);
+  const requestedStart = video.currentTime >= clip.start && video.currentTime < clip.end ? video.currentTime : clip.start;
+  const start = clamp(requestedStart, clip.start, Math.max(clip.start, clip.end - minimumDuration));
+  const end = Math.min(clip.end, start + 3);
+  componentCounter += 1;
+  const component = {
+    id: `component_${componentCounter}`,
+    clipId: clip.id,
+    kind,
+    name: `${preset.name} ${components.filter((item) => item.kind === kind).length + 1}`,
+    html: preset.html,
+    css: preset.css,
+    start,
+    end,
+    x: preset.x, y: preset.y, width: preset.width, height: preset.height,
+  };
+  components.push(component);
+  selectedComponentId = component.id;
+  ignoreSceneSyncUntil = performance.now() + 500;
+  video.currentTime = Math.min(component.end - 0.01, component.start + 0.01);
+  renderAll();
+  updateTime();
+  setStatus(`${preset.name} added for ${formatTime(component.end - component.start)} in ${clip.name}`);
+  return component;
+}
+
+function deleteComponent() {
+  const component = selectedComponent();
+  if (!component) return;
+  components = components.filter((item) => item.id !== component.id);
+  selectedComponentId = components.find((item) => item.clipId === selectedClipId)?.id || null;
+  renderAll();
+  setStatus(`${component.name} deleted`);
+}
+
+function updateComponentFromInspector() {
+  const component = selectedComponent();
+  if (!component) return;
+  component.name = refs.name.value;
+  component.x = clamp(Number(refs.x.value), 0, 95);
+  component.y = clamp(Number(refs.y.value), 0, 95);
+  component.width = clamp(Number(refs.width.value), 5, 100 - component.x);
+  component.height = clamp(Number(refs.height.value), 5, 100 - component.y);
+  component.html = refs.html.value;
+  component.css = refs.css.value;
+  renderTimeline();
+  renderComponentList();
+  renderOverlays();
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, Number.isFinite(value) ? value : min));
+}
+
+function renderAll() {
+  normalizeSceneNames();
+  renderTimeline();
+  renderComponentList();
+  renderInspector();
+  renderOverlays();
+  const clip = selectedClip();
+  refs.sceneName.textContent = clip?.name || "No scene";
+}
+
+function renderTimeline() {
+  const duration = video.duration || clips.at(-1)?.end || 1;
+  clipTrack.innerHTML = "";
+  clips.forEach((clip) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `clip${clip.id === selectedClipId ? " active" : ""}`;
+    button.style.flex = String(Math.max(0.1, clip.end - clip.start));
+    button.innerHTML = `<strong>${clip.name}</strong><span>${formatTime(clip.start)} – ${formatTime(clip.end)}</span>`;
+    button.addEventListener("click", () => selectClip(clip.id));
+    clipTrack.append(button);
+  });
+
+  ruler.innerHTML = "";
+  const tickCount = 5;
+  for (let index = 0; index <= tickCount; index += 1) {
+    const tick = document.createElement("span");
+    tick.style.left = `${index / tickCount * 100}%`;
+    tick.textContent = formatTime(duration * index / tickCount);
+    ruler.append(tick);
+  }
+
+  renderComponentTimeline(duration);
+}
+
+function renderComponentTimeline(duration) {
+  componentTrack.innerHTML = "";
+  componentTrack.style.height = `${Math.max(38, components.length * 32 + 4)}px`;
+
+  components.forEach((component, index) => {
+    const bar = document.createElement("div");
+    bar.className = `component-bar${component.id === selectedComponentId ? " active" : ""}`;
+    bar.dataset.kind = component.kind;
+    bar.dataset.componentId = component.id;
+    bar.style.left = `${component.start / duration * 100}%`;
+    bar.style.width = `${Math.max(0.35, (component.end - component.start) / duration * 100)}%`;
+    bar.style.top = `${index * 32 + 4}px`;
+    bar.innerHTML = '<span class="resize-handle start" data-resize="start"></span><span class="component-bar-label"></span><span class="resize-handle end" data-resize="end"></span>';
+    updateTimingBarLabel(bar, component);
+    bar.addEventListener("click", (event) => {
+      event.stopPropagation();
+      selectComponent(component.id);
+    });
+    bar.addEventListener("pointerdown", (event) => {
+      const mode = event.target.dataset.resize || "move";
+      startTimingDrag(event, component, bar, mode, duration);
+    });
+    componentTrack.append(bar);
+  });
+}
+
+function updateTimingBarLabel(bar, component) {
+  const label = bar.querySelector(".component-bar-label");
+  if (label) label.textContent = `${component.name} · ${(component.end - component.start).toFixed(1)}s`;
+}
+
+function startTimingDrag(event, component, bar, mode, duration) {
+  event.preventDefault();
+  event.stopPropagation();
+  const clip = clips.find((item) => item.id === component.clipId);
+  if (!clip) return;
+
+  selectedClipId = component.clipId;
+  selectedComponentId = component.id;
+  renderComponentList();
+  renderInspector();
+  renderOverlays();
+  componentTrack.querySelectorAll(".component-bar.active").forEach((item) => item.classList.remove("active"));
+  bar.classList.add("active");
+
+  const startPointer = event.clientX;
+  const original = { start: component.start, end: component.end };
+  const trackWidth = componentTrack.getBoundingClientRect().width || 1;
+  const minimumDuration = Math.min(0.2, clip.end - clip.start);
+  bar.setPointerCapture(event.pointerId);
+
+  const move = (moveEvent) => {
+    const delta = (moveEvent.clientX - startPointer) / trackWidth * duration;
+    if (mode === "start") {
+      component.start = clamp(original.start + delta, clip.start, component.end - minimumDuration);
+    } else if (mode === "end") {
+      component.end = clamp(original.end + delta, component.start + minimumDuration, clip.end);
+    } else {
+      const componentDuration = original.end - original.start;
+      component.start = clamp(original.start + delta, clip.start, clip.end - componentDuration);
+      component.end = component.start + componentDuration;
+    }
+    bar.style.left = `${component.start / duration * 100}%`;
+    bar.style.width = `${Math.max(0.35, (component.end - component.start) / duration * 100)}%`;
+    updateTimingBarLabel(bar, component);
+  };
+
+  const stop = () => {
+    bar.removeEventListener("pointermove", move);
+    bar.removeEventListener("pointerup", stop);
+    bar.removeEventListener("pointercancel", stop);
+    ignoreSceneSyncUntil = performance.now() + 500;
+    video.currentTime = Math.min(component.end - 0.01, component.start + 0.01);
+    renderAll();
+    updateTime();
+    setStatus(`${component.name} visible from ${formatTime(component.start)} to ${formatTime(component.end)}`);
+  };
+  bar.addEventListener("pointermove", move);
+  bar.addEventListener("pointerup", stop);
+  bar.addEventListener("pointercancel", stop);
+}
+
+function renderComponentList() {
+  const sceneComponents = components.filter((component) => component.clipId === selectedClipId);
+  refs.componentCount.textContent = sceneComponents.length;
+  refs.componentList.innerHTML = "";
+  sceneComponents.forEach((component) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `component-list-item${component.id === selectedComponentId ? " active" : ""}`;
+    const name = document.createElement("strong");
+    name.textContent = component.name;
+    const kind = document.createElement("span");
+    kind.textContent = `${component.kind} · ${(component.end - component.start).toFixed(1)}s`;
+    button.append(name, kind);
+    button.addEventListener("click", () => selectComponent(component.id));
+    refs.componentList.append(button);
+  });
+}
+
+function renderInspector() {
+  const component = selectedComponent();
+  refs.inspectorEmpty.hidden = Boolean(component);
+  refs.inspectorFields.hidden = !component;
+  if (!component) return;
+  refs.name.value = component.name;
+  refs.x.value = Math.round(component.x);
+  refs.y.value = Math.round(component.y);
+  refs.width.value = Math.round(component.width);
+  refs.height.value = Math.round(component.height);
+  refs.html.value = component.html;
+  refs.css.value = component.css;
+}
+
+function positionOverlayLayer() {
+  const areaWidth = videoArea.clientWidth;
+  const areaHeight = videoArea.clientHeight;
+  const videoWidth = video.videoWidth || 16;
+  const videoHeight = video.videoHeight || 9;
+  const scale = Math.min(areaWidth / videoWidth, areaHeight / videoHeight);
+  const width = videoWidth * scale;
+  const height = videoHeight * scale;
+  Object.assign(overlayLayer.style, {
+    left: `${(areaWidth - width) / 2}px`, top: `${(areaHeight - height) / 2}px`,
+    width: `${width}px`, height: `${height}px`,
+  });
+}
+
+function renderOverlays() {
+  positionOverlayLayer();
+  overlayLayer.innerHTML = "";
+  const time = video.currentTime;
+  components.filter((component) => component.clipId === selectedClipId && time >= component.start - 0.03 && time < component.end).forEach((component) => {
+    const wrapper = document.createElement("div");
+    wrapper.className = `overlay-component${component.id === selectedComponentId ? " selected" : ""}`;
+    wrapper.dataset.label = component.name;
+    Object.assign(wrapper.style, {
+      left: `${component.x}%`, top: `${component.y}%`,
+      width: `${component.width}%`, height: `${component.height}%`,
+    });
+    const preview = document.createElement("editor-overlay");
+    preview.update(component);
+    wrapper.append(preview);
+    wrapper.addEventListener("pointerdown", (event) => startDrag(event, component, wrapper));
+    wrapper.addEventListener("click", (event) => { event.stopPropagation(); selectComponent(component.id, false); });
+    overlayLayer.append(wrapper);
+  });
+}
+
+function startDrag(event, component, element) {
+  event.preventDefault();
+  selectedClipId = component.clipId;
+  selectedComponentId = component.id;
+  renderComponentList();
+  renderInspector();
+  overlayLayer.querySelectorAll(".overlay-component.selected").forEach((item) => item.classList.remove("selected"));
+  element.classList.add("selected");
+  componentTrack.querySelectorAll(".component-bar").forEach((item) => item.classList.toggle("active", item.dataset.componentId === component.id));
+  const start = { clientX: event.clientX, clientY: event.clientY, x: component.x, y: component.y };
+  element.setPointerCapture(event.pointerId);
+  const move = (moveEvent) => {
+    component.x = clamp(start.x + (moveEvent.clientX - start.clientX) / overlayLayer.clientWidth * 100, 0, 100 - component.width);
+    component.y = clamp(start.y + (moveEvent.clientY - start.clientY) / overlayLayer.clientHeight * 100, 0, 100 - component.height);
+    element.style.left = `${component.x}%`;
+    element.style.top = `${component.y}%`;
+    refs.x.value = Math.round(component.x);
+    refs.y.value = Math.round(component.y);
+  };
+  const stop = () => {
+    element.removeEventListener("pointermove", move);
+    element.removeEventListener("pointerup", stop);
+    element.removeEventListener("pointercancel", stop);
+  };
+  element.addEventListener("pointermove", move);
+  element.addEventListener("pointerup", stop);
+  element.addEventListener("pointercancel", stop);
+}
+
+function updateTime() {
+  const duration = video.duration || 0;
+  refs.currentTime.textContent = formatTime(video.currentTime);
+  const percentage = duration ? video.currentTime / duration * 100 : 0;
+  refs.playhead.style.left = `${clamp(percentage, 0, 100)}%`;
+  const current = sceneAt(video.currentTime);
+  if (current && current.id !== selectedClipId && performance.now() >= ignoreSceneSyncUntil) {
+    selectedClipId = current.id;
+    selectedComponentId = components.find((component) => component.clipId === current.id)?.id || null;
+    renderAll();
+  } else {
+    renderOverlays();
+  }
+}
+
+function setComponentTiming(componentId, start, end) {
+  const component = components.find((item) => item.id === componentId);
+  if (!component) throw new Error("component does not exist");
+  const clip = clips.find((item) => item.id === component.clipId);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end - start < 0.2) {
+    throw new Error("component timing must have a duration of at least 0.2 seconds");
+  }
+  if (start < clip.start || end > clip.end) {
+    throw new Error(`component timing must stay inside ${clip.name}`);
+  }
+  component.start = start;
+  component.end = end;
+  selectedClipId = component.clipId;
+  selectedComponentId = component.id;
+  ignoreSceneSyncUntil = performance.now() + 500;
+  video.currentTime = Math.min(end - 0.01, start + 0.01);
+  renderAll();
+  updateTime();
+  setStatus(`${component.name} visible from ${formatTime(start)} to ${formatTime(end)}`);
+  return component;
+}
+
+function loadVideo(source, name) {
+  if (objectUrl) URL.revokeObjectURL(objectUrl);
+  objectUrl = source instanceof Blob ? URL.createObjectURL(source) : null;
+  video.src = objectUrl || source;
+  refs.projectName.textContent = name;
+  video.load();
+}
+
+video.addEventListener("loadedmetadata", () => {
+  const duration = video.duration || 24;
+  refs.totalTime.textContent = formatTime(duration);
+  refs.projectDuration.textContent = formatTime(duration);
+  clips = [{ id: `scene_${++clipCounter}`, name: "Scene 1", start: 0, end: duration }];
+  components = [];
+  selectedClipId = clips[0].id;
+  selectedComponentId = null;
+  renderAll();
+  setStatus("Video ready · split the clip or add a component");
+});
+video.addEventListener("timeupdate", updateTime);
+video.addEventListener("seeked", updateTime);
+window.addEventListener("resize", positionOverlayLayer);
+new ResizeObserver(positionOverlayLayer).observe(videoArea);
+
+document.querySelectorAll("[data-add-component]").forEach((button) => button.addEventListener("click", () => addComponent(button.dataset.addComponent)));
+$("#splitButton").addEventListener("click", () => { try { splitAtPlayhead(); } catch { /* status explains the invalid split */ } });
+$("#deleteComponentButton").addEventListener("click", deleteComponent);
+[refs.name, refs.x, refs.y, refs.width, refs.height, refs.html, refs.css].forEach((input) => input.addEventListener("input", updateComponentFromInspector));
+refs.videoInput.addEventListener("change", (event) => {
+  const file = event.target.files[0];
+  if (file) loadVideo(file, file.name);
+});
+
+trackWrap.addEventListener("click", (event) => {
+  const bounds = trackWrap.getBoundingClientRect();
+  const ratio = clamp((event.clientX - bounds.left) / bounds.width, 0, 1);
+  video.currentTime = ratio * (video.duration || 0);
+  updateTime();
+});
+
+function registerWebMcpTools() {
+  const context = document.modelContext;
+  if (!context?.registerTool) return;
+  const report = (error) => console.warn("WebMCP registration failed", error);
+  const register = (tool) => {
+    try { void Promise.resolve(context.registerTool(tool)).catch(report); } catch (error) { report(error); }
+  };
+  register({
+    name: "read_editor_state",
+    title: "Read editor state",
+    description: "Read the current scene ranges and components in the PVO editor.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+    annotations: { readOnlyHint: true, untrustedContentHint: true },
+    execute() {
+      return { selectedScene: selectedClipId, selectedComponent: selectedComponentId, scenes: structuredClone(clips), components: structuredClone(components) };
+    },
+  });
+  register({
+    name: "split_scene_at_time",
+    title: "Split scene at time",
+    description: "Split the visible video scene at an absolute time in seconds and select the new right-hand scene.",
+    inputSchema: { type: "object", properties: { time: { type: "number", minimum: 0 } }, required: ["time"], additionalProperties: false },
+    annotations: { readOnlyHint: false, untrustedContentHint: false },
+    execute(input) {
+      if (!Number.isFinite(input?.time)) throw new Error("time must be a number");
+      const scene = splitSceneAt(input.time);
+      return { scene: scene.id, start: scene.start, end: scene.end, sceneCount: clips.length };
+    },
+  });
+  register({
+    name: "add_editor_component",
+    title: "Add editor component",
+    description: "Add a tooltip, card, choice, or form to the currently selected scene.",
+    inputSchema: { type: "object", properties: { kind: { enum: ["tooltip", "card", "choice", "form"] } }, required: ["kind"], additionalProperties: false },
+    annotations: { readOnlyHint: false, untrustedContentHint: false },
+    execute(input) {
+      if (!Object.hasOwn(presets, input?.kind)) throw new Error("kind must be tooltip, card, choice, or form");
+      const component = addComponent(input.kind);
+      return { component: component.id, kind: component.kind, scene: component.clipId, start: component.start, end: component.end };
+    },
+  });
+  register({
+    name: "set_component_timing",
+    title: "Set component timing",
+    description: "Set when a component appears and disappears, using absolute seconds within its scene.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        componentId: { type: "string" },
+        start: { type: "number", minimum: 0 },
+        end: { type: "number", minimum: 0 },
+      },
+      required: ["componentId", "start", "end"],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: false, untrustedContentHint: false },
+    execute(input) {
+      const component = setComponentTiming(input?.componentId, input?.start, input?.end);
+      return { component: component.id, scene: component.clipId, start: component.start, end: component.end };
+    },
+  });
+}
+
+loadVideo("../assets/pvo-demo.mp4", "pvo-demo.mp4");
+registerWebMcpTools();

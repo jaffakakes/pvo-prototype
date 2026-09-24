@@ -24,8 +24,36 @@ createServer((request, response) => {
     response.end("Not found");
     return;
   }
+  const fileSize = statSync(file).size;
+  const range = request.headers.range;
+  if (range && extname(file) === ".mp4") {
+    const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+    if (!match) {
+      response.writeHead(416, { "Content-Range": `bytes */${fileSize}` });
+      response.end();
+      return;
+    }
+    const start = match[1] ? Number(match[1]) : 0;
+    const end = match[2] ? Math.min(Number(match[2]), fileSize - 1) : fileSize - 1;
+    if (start > end || start >= fileSize) {
+      response.writeHead(416, { "Content-Range": `bytes */${fileSize}` });
+      response.end();
+      return;
+    }
+    response.writeHead(206, {
+      "Content-Type": "video/mp4",
+      "Content-Length": end - start + 1,
+      "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+      "Accept-Ranges": "bytes",
+      "Cache-Control": "no-store",
+    });
+    createReadStream(file, { start, end }).pipe(response);
+    return;
+  }
   response.writeHead(200, {
     "Content-Type": mime[extname(file)] || "application/octet-stream",
+    "Content-Length": fileSize,
+    ...(extname(file) === ".mp4" ? { "Accept-Ranges": "bytes" } : {}),
     "Cache-Control": "no-store",
   });
   createReadStream(file).pipe(response);

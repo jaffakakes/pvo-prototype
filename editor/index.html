@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Basic PVO scene and component editor prototype." />
+    <title>PVO Editor · Basic Prototype</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23171a1f'/%3E%3Cpath d='M7 16h18M16 7v18' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="title-block"><strong>PVO Editor</strong><span>basic prototype</span></div>
+      <div class="project-name"><span id="projectName">pvo-demo.mp4</span><small id="projectDuration">00:24.0</small></div>
+      <label class="button file-button"><input id="videoInput" type="file" accept="video/mp4,.mp4" />Open video</label>
+    </header>
+
+    <div class="editor-shell">
+      <aside class="panel component-panel" aria-label="Components">
+        <header class="panel-header"><h2>Components</h2><span>Add to scene</span></header>
+        <div class="component-buttons">
+          <button type="button" data-add-component="tooltip"><strong>Tooltip</strong><span>Small label</span></button>
+          <button type="button" data-add-component="card"><strong>Card</strong><span>Title and copy</span></button>
+          <button type="button" data-add-component="choice"><strong>Choice</strong><span>Two actions</span></button>
+          <button type="button" data-add-component="form"><strong>Form</strong><span>Fields and submit</span></button>
+        </div>
+        <div class="scene-components-head"><h3>In selected scene</h3><span id="componentCount">0</span></div>
+        <div class="scene-components" id="componentList"></div>
+        <p class="panel-note">Components belong to a scene. Use their bars in the timeline to control when they appear and how long they stay.</p>
+      </aside>
+
+      <main class="workspace">
+        <div class="preview-toolbar">
+          <div><span>Preview</span><strong id="sceneName">Scene 1</strong></div>
+          <div class="timecode"><span id="currentTime">00:00.0</span><span>/</span><span id="totalTime">00:24.0</span></div>
+        </div>
+        <div class="video-area" id="videoArea">
+          <video id="video" controls playsinline preload="metadata"></video>
+          <div class="overlay-layer" id="overlayLayer" aria-label="Component canvas"></div>
+        </div>
+
+        <section class="timeline-panel" aria-label="Video timeline">
+          <div class="timeline-toolbar">
+            <div><h2>Timeline</h2><span>Splits create scene ranges</span></div>
+            <button class="button split-button" id="splitButton" type="button">Split at playhead</button>
+          </div>
+          <div class="ruler" id="ruler"></div>
+          <div class="track-wrap">
+            <div class="clip-track" id="clipTrack"></div>
+            <div class="playhead" id="playhead"><span></span></div>
+          </div>
+          <div class="component-timeline-head"><span>UI components</span><small>Drag a bar to move it · drag either end to change duration</small></div>
+          <div class="component-track-wrap">
+            <div class="component-track" id="componentTrack"></div>
+          </div>
+        </section>
+      </main>
+
+      <aside class="panel inspector" aria-label="Component appearance inspector">
+        <header class="panel-header"><h2>Appearance</h2><span>HTML + CSS</span></header>
+        <div class="inspector-empty" id="inspectorEmpty">
+          <p>Select or add a component to edit how it looks.</p>
+        </div>
+        <div id="inspectorFields" hidden>
+          <label class="field">Name<input id="componentName" type="text" /></label>
+          <div class="position-grid">
+            <label>X<input id="componentX" type="number" min="0" max="100" step="1" /></label>
+            <label>Y<input id="componentY" type="number" min="0" max="100" step="1" /></label>
+            <label>W<input id="componentW" type="number" min="5" max="100" step="1" /></label>
+            <label>H<input id="componentH" type="number" min="5" max="100" step="1" /></label>
+          </div>
+          <label class="field code-field">HTML<textarea id="componentHtml" rows="9" spellcheck="false"></textarea></label>
+          <label class="field code-field">CSS<textarea id="componentCss" rows="12" spellcheck="false"></textarea></label>
+          <p class="field-help">Changes are scoped to this component preview.</p>
+          <button class="delete-button" id="deleteComponentButton" type="button">Delete component</button>
+        </div>
+      </aside>
+    </div>
+
+    <div class="status-bar"><span id="status">Ready</span><span>Scene clips + timed UI components</span></div>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

@@ -2,7 +2,7 @@
 
 PVO is an open prototype format for interactive video. A PVO file is still an ordinary MP4: the video and audio remain untouched, while one appended metadata box describes scenes, hotspots, interface components, state, conditions, requests, and branching.
 
-This checkpoint contains only `@pvo/sdk`: the format reader/writer, validator, data-action runtime, JSON Schema, tests, and a packed sample. It has no editor, player UI, or Restyle dependency.
+This repository contains the independent `@pvo/sdk` plus a small editor prototype used to exercise the format. Neither depends on Restyle.
 
 ## Run the prototype
 
@@ -12,7 +12,7 @@ Requires Node.js 22 or newer. There are no third-party runtime dependencies.
 npm run dev
 ```
 
-Open [http://127.0.0.1:4173](http://127.0.0.1:4173) for the SDK documentation.
+Open [http://127.0.0.1:4173](http://127.0.0.1:4173) for the SDK documentation or [http://127.0.0.1:4173/editor/](http://127.0.0.1:4173/editor/) for the basic editor.
 
 Run the checks with:
 
@@ -49,9 +49,9 @@ PVO does not define payments or business objects. A creator can make a generic `
 
 ## Prototype scope
 
-Included now: one MP4 container, scene ranges, normalized hotspot data, tooltip/card/choice/form definitions, state, conditions, response mapping, generic HTTP actions, pack/read/validate, and a host-adapted runtime.
+Included now: one MP4 container, scene ranges, normalized hotspot data, tooltip/card/choice/form definitions, state, conditions, response mapping, generic HTTP actions, pack/read/validate, a host-adapted runtime, and a basic scene/component editor.
 
-Deferred: the visual player, editor, signatures, embedded asset packs, builder layers, indexes, offline request queues, native bindings, accounts, collaboration, payments, and AI authoring.
+Deferred: a complete visual player, editor export, animation keyframes, signatures, embedded asset packs, builder layers, indexes, offline request queues, native bindings, accounts, collaboration, payments, and AI authoring.
 
 See [SPEC.md](./SPEC.md) for the format note and [packages/pvo-sdk/pvo-manifest.schema.json](./packages/pvo-sdk/pvo-manifest.schema.json) for the manifest schema.
 
