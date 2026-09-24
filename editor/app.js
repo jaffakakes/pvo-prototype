@@ -134,6 +134,8 @@ let projectDatabasePromise = null;
 let saveTimer = null;
 let savePromise = Promise.resolve();
 let storageWarning = "";
+let existingCardPolishVersion = 1;
+let restoredCardPolishCount = 0;
 
 const projectDatabaseName = "pvo-editor";
 const projectDatabaseVersion = 1;
@@ -261,6 +263,74 @@ function persistentComponents() {
   });
 }
 
+function polishExistingCard(component) {
+  const template = document.createElement("template");
+  template.innerHTML = sanitizeHtml(component.html);
+  const sourceCard = template.content.querySelector(".card");
+  const article = document.createElement("article");
+  article.className = "card";
+  article.setAttribute("role", "group");
+  article.setAttribute("aria-label", component.name || "Card");
+  const content = document.createElement("div");
+  content.className = "card-content";
+  const source = sourceCard?.querySelector(":scope > .card-content") || sourceCard || template.content;
+  while (source.firstChild) content.append(source.firstChild);
+  article.append(content);
+  component.html = article.outerHTML;
+  component.css = `.card {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 24px;
+  overflow: auto;
+  border: 1px solid rgba(17, 24, 39, .14);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .98);
+  color: #171717;
+  font-family: Arial, Helvetica, sans-serif;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, .24);
+}
+.card-content {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 12px;
+}
+.card h3 {
+  margin: 0;
+  color: #111827;
+  font-size: clamp(20px, 2.4vw, 26px);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -.02em;
+  overflow-wrap: anywhere;
+}
+.card p {
+  margin: 0;
+  color: #4b5563;
+  font-size: clamp(14px, 1.5vw, 16px);
+  font-weight: 400;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.card p + p { margin-top: 2px; }
+.card a { color: #173d73; text-underline-offset: 3px; }`;
+  const desiredWidth = Math.max(Number(component.width) || 0, 48);
+  const desiredHeight = Math.max(Number(component.height) || 0, 38);
+  component.x = clamp(Number(component.x), 0, Math.max(0, 100 - desiredWidth));
+  component.y = clamp(Number(component.y), 0, Math.max(0, 100 - desiredHeight));
+  component.width = Math.min(desiredWidth, 100 - component.x);
+  component.height = Math.min(desiredHeight, 100 - component.y);
+}
+
+function polishExistingSavedCards() {
+  const savedCards = components.filter((component) => component.kind === "card");
+  savedCards.forEach(polishExistingCard);
+  return savedCards.length;
+}
+
 function projectStateSnapshot() {
   return {
     storageVersion: 1,
@@ -277,6 +347,7 @@ function projectStateSnapshot() {
     timelineViewKey,
     selectedClipId,
     selectedComponentId,
+    existingCardPolishVersion,
     counters: { mediaCounter, clipCounter, sceneCounter, componentCounter },
   };
 }
@@ -360,6 +431,11 @@ async function restoreSavedProject() {
     .map((clip) => ({ ...clip, placement: clip.placement || "main" }));
   const availableClipIds = new Set(clips.map((clip) => clip.id));
   components = (project.components || []).filter((component) => availableClipIds.has(component.clipId));
+  existingCardPolishVersion = Number(project.existingCardPolishVersion || 0);
+  if (existingCardPolishVersion < 1) {
+    restoredCardPolishCount = polishExistingSavedCards();
+    existingCardPolishVersion = 1;
+  }
   canvasRatio = Object.hasOwn(canvasRatios, project.canvasRatio) ? project.canvasRatio : "16:9";
   timelineViewKey = typeof project.timelineViewKey === "string" ? project.timelineViewKey : "main";
   selectedClipId = availableClipIds.has(project.selectedClipId) ? project.selectedClipId : mainClips()[0]?.id || clips[0]?.id || null;
@@ -1642,7 +1718,9 @@ async function initializeEditor() {
     const clip = selectedClip();
     if (clip) loadClipPreview(clip);
     else setMediaReady(false);
-    setStatus("Saved project restored");
+    setStatus(restoredCardPolishCount
+      ? `Saved project restored · ${restoredCardPolishCount} ${restoredCardPolishCount === 1 ? "card" : "cards"} improved`
+      : "Saved project restored");
     refs.saveStatus.textContent = storageWarning || "Saved in browser";
   } catch {
     persistenceReady = false;
