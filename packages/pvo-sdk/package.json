@@ -1,0 +1,25 @@
+{
+  "name": "@pvo/sdk",
+  "version": "0.1.0",
+  "description": "Read, validate, and pack Playable Video Object files.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js"
+    },
+    "./schema": "./pvo-manifest.schema.json"
+  },
+  "types": "./index.d.ts",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "Apache-2.0",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "pvo-manifest.schema.json",
+    "README.md"
+  ]
+}

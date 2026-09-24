@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pvo.dev/schema/0.1-prototype/manifest.json",
+  "title": "PVO manifest",
+  "type": "object",
+  "required": ["spec_version", "scenes", "components"],
+  "properties": {
+    "spec_version": { "type": "string" },
+    "id": { "type": "string" },
+    "title": { "type": "string" },
+    "initial_scene": { "type": "string" },
+    "allowed_domains": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "state": { "type": "object", "properties": { "initial": { "type": "object" } }, "additionalProperties": true },
+    "scenes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "start", "end"],
+        "properties": {
+          "id": { "type": "string" }, "label": { "type": "string" },
+          "start": { "type": "number", "minimum": 0 }, "end": { "type": "number", "exclusiveMinimum": 0 },
+          "next": { "type": "string" },
+          "on_enter": { "$ref": "#/$defs/actionList" }, "on_exit": { "$ref": "#/$defs/actionList" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind"],
+        "properties": {
+          "id": { "type": "string" }, "kind": { "enum": ["tooltip", "card", "choice", "form"] },
+          "title": { "type": "string" }, "text": { "type": "string" },
+          "options": { "type": "array", "minItems": 2, "maxItems": 4, "items": { "$ref": "#/$defs/choiceOption" } },
+          "fields": { "type": "array", "items": { "$ref": "#/$defs/formField" } },
+          "on_submit": { "$ref": "#/$defs/actionList" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "hotspots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "x", "y", "width", "height", "actions"],
+        "properties": {
+          "id": { "type": "string" }, "scene": { "type": "string" },
+          "start": { "type": "number", "minimum": 0 }, "end": { "type": "number", "minimum": 0 },
+          "x": { "$ref": "#/$defs/unit" }, "y": { "$ref": "#/$defs/unit" },
+          "width": { "$ref": "#/$defs/unit" }, "height": { "$ref": "#/$defs/unit" },
+          "actions": { "$ref": "#/$defs/actionList" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "triggers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["at", "actions"],
+        "properties": {
+          "id": { "type": "string" }, "scene": { "type": "string" },
+          "at": { "type": "number", "minimum": 0 }, "actions": { "$ref": "#/$defs/actionList" }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "$defs": {
+    "unit": { "type": "number", "minimum": 0, "maximum": 1 },
+    "condition": {
+      "type": "object",
+      "properties": {
+        "key": { "type": "string" }, "response": { "type": "string" },
+        "is": {}, "not": {}, "gt": {}, "gte": {}, "lt": {}, "lte": {},
+        "in": { "type": "array" }, "exists": { "type": "boolean" },
+        "all": { "type": "array", "items": { "$ref": "#/$defs/condition" } },
+        "any": { "type": "array", "items": { "$ref": "#/$defs/condition" } }
+      },
+      "additionalProperties": true
+    },
+    "action": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "enum": ["show", "hide", "set", "goto_scene", "seek", "request", "open_url", "chain", "branch", "custom"] },
+        "when": { "$ref": "#/$defs/condition" }, "component": { "type": ["string", "object"] },
+        "scene": { "type": "string" }, "time": { "type": "number" }, "key": { "type": "string" },
+        "actions": { "$ref": "#/$defs/actionList" }, "on_success": { "$ref": "#/$defs/actionList" }, "on_error": { "$ref": "#/$defs/actionList" }
+      },
+      "additionalProperties": true
+    },
+    "actionList": { "oneOf": [{ "$ref": "#/$defs/action" }, { "type": "array", "items": { "$ref": "#/$defs/action" } }] },
+    "choiceOption": {
+      "type": "object",
+      "required": ["label"],
+      "properties": { "label": { "type": "string" }, "value": {}, "action": { "$ref": "#/$defs/action" }, "actions": { "$ref": "#/$defs/actionList" } },
+      "anyOf": [{ "required": ["action"] }, { "required": ["actions"] }],
+      "additionalProperties": true
+    },
+    "formField": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" }, "label": { "type": "string" },
+        "type": { "enum": ["text", "number", "email", "choice"] }, "required": { "type": "boolean" },
+        "options": { "type": "array", "items": { "type": "object", "required": ["label"], "properties": { "label": { "type": "string" }, "value": {} } } }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

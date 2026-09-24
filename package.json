@@ -1,0 +1,16 @@
+{
+  "name": "pvo-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "node scripts/dev-server.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "build:sample": "node scripts/build-sample.mjs",
+    "check": "node --check packages/pvo-sdk/index.js && node --check scripts/build-sample.mjs && node --test tests/*.test.mjs"
+  }
+}

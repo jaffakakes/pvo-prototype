@@ -1,0 +1,257 @@
+{
+  "spec_version": "0.1-prototype",
+  "id": "pvo_branching_demo",
+  "title": "Signal / Path",
+  "initial_scene": "intro",
+  "allowed_domains": [
+    "jsonplaceholder.typicode.com"
+  ],
+  "state": {
+    "initial": {
+      "path": "unselected",
+      "object_tapped": false
+    }
+  },
+  "theme": {
+    "accent": "#ffcc33",
+    "surface": "#0e1219",
+    "text": "#f7f9fc",
+    "radius": 14
+  },
+  "scenes": [
+    {
+      "id": "intro",
+      "label": "01 · Signal",
+      "start": 0,
+      "end": 6,
+      "on_exit": [
+        {
+          "type": "show",
+          "component": "path_choice"
+        }
+      ]
+    },
+    {
+      "id": "workshop",
+      "label": "02A · Workshop",
+      "start": 6,
+      "end": 12,
+      "on_enter": [
+        {
+          "type": "show",
+          "component": "path_card"
+        }
+      ],
+      "next": "ending"
+    },
+    {
+      "id": "rooftop",
+      "label": "02B · Rooftop",
+      "start": 12,
+      "end": 18,
+      "on_enter": [
+        {
+          "type": "show",
+          "component": "path_card"
+        }
+      ],
+      "next": "ending"
+    },
+    {
+      "id": "ending",
+      "label": "03 · Rejoin",
+      "start": 18,
+      "end": 24
+    }
+  ],
+  "components": [
+    {
+      "id": "signal_tip",
+      "kind": "tooltip",
+      "text": "You found the signal. The video can react without changing its pixels.",
+      "pause": false
+    },
+    {
+      "id": "intro_card",
+      "kind": "card",
+      "title": "One MP4. More than one path.",
+      "text": "Tap the outlined signal, then choose where the story should go.",
+      "pause": false
+    },
+    {
+      "id": "path_choice",
+      "kind": "choice",
+      "title": "Where should the signal lead?",
+      "text": "Both choices are time ranges inside this same MP4.",
+      "options": [
+        {
+          "label": "Enter workshop",
+          "value": "workshop",
+          "actions": [
+            {
+              "type": "set",
+              "key": "path",
+              "value": "workshop"
+            },
+            {
+              "type": "goto_scene",
+              "scene": "workshop"
+            }
+          ]
+        },
+        {
+          "label": "Climb to rooftop",
+          "value": "rooftop",
+          "actions": [
+            {
+              "type": "set",
+              "key": "path",
+              "value": "rooftop"
+            },
+            {
+              "type": "goto_scene",
+              "scene": "rooftop"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "path_card",
+      "kind": "card",
+      "title": "Path: {state.path}",
+      "text": "The player sought to this scene because a data action said goto_scene.",
+      "pause": false
+    },
+    {
+      "id": "contact_form",
+      "kind": "form",
+      "title": "Send a note from the video",
+      "text": "PVO sends ordinary HTTP. Your server decides what the request means.",
+      "submit_label": "Send request",
+      "fields": [
+        {
+          "name": "viewer_name",
+          "label": "Your name",
+          "type": "text",
+          "placeholder": "Ada",
+          "required": true
+        },
+        {
+          "name": "viewer_role",
+          "label": "I build",
+          "type": "choice",
+          "options": [
+            {
+              "label": "Stories",
+              "value": "stories"
+            },
+            {
+              "label": "Products",
+              "value": "products"
+            },
+            {
+              "label": "Learning",
+              "value": "learning"
+            }
+          ]
+        }
+      ],
+      "on_submit": [
+        {
+          "type": "request",
+          "method": "POST",
+          "url": "https://jsonplaceholder.typicode.com/posts",
+          "body": {
+            "title": "PVO hello from {state.viewer_name}",
+            "body": "I build {state.viewer_role}",
+            "userId": 1
+          },
+          "into": "demo_response",
+          "on_success": [
+            {
+              "type": "show",
+              "component": "request_success",
+              "when": {
+                "response": "/id",
+                "exists": true
+              }
+            },
+            {
+              "type": "hide",
+              "component": "contact_form"
+            }
+          ],
+          "on_error": [
+            {
+              "type": "show",
+              "component": "request_error"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "request_success",
+      "kind": "card",
+      "title": "Server replied · #{state.demo_response.id}",
+      "text": "The response changed this card. PVO never needed to know what your server does.",
+      "pause": false
+    },
+    {
+      "id": "request_error",
+      "kind": "card",
+      "title": "Request could not connect",
+      "text": "The error path is also declared in the file. Try again when you are online.",
+      "pause": false
+    }
+  ],
+  "hotspots": [
+    {
+      "id": "signal_hotspot",
+      "label": "Signal object",
+      "scene": "intro",
+      "start": 1,
+      "end": 5.8,
+      "x": 0.655,
+      "y": 0.245,
+      "width": 0.17,
+      "height": 0.25,
+      "actions": [
+        {
+          "type": "set",
+          "key": "object_tapped",
+          "value": true
+        },
+        {
+          "type": "show",
+          "component": "signal_tip"
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "intro_card_at_start",
+      "scene": "intro",
+      "at": 0.25,
+      "actions": [
+        {
+          "type": "show",
+          "component": "intro_card"
+        }
+      ]
+    },
+    {
+      "id": "form_at_end",
+      "scene": "ending",
+      "at": 20.5,
+      "actions": [
+        {
+          "type": "show",
+          "component": "contact_form"
+        }
+      ]
+    }
+  ]
+}
