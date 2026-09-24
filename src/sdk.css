@@ -47,8 +47,6 @@ main {
 }
 .side-nav strong { margin-bottom: 7px; color: #333; font-size: 14px; }
 .side-nav a { padding: 2px 0; font-size: 14px; text-decoration: none; }
-.side-nav hr { width: 100%; margin: 12px 0; border: 0; border-top: 1px solid #ddd; }
-.side-nav small { margin-top: 10px; color: #777; font-size: 12px; }
 
 .content { min-width: 0; }
 .lead { padding-bottom: 42px; }
@@ -113,7 +111,7 @@ code { padding: 1px 3px; border: 1px solid #e2e2e2; background: #f7f7f7; font-si
   .site-header nav { flex-wrap: wrap; gap: 8px 16px; }
   main { grid-template-columns: 1fr; gap: 28px; padding: 28px 18px 60px; }
   .side-nav { position: static; display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 0 0 18px; border-right: 0; border-bottom: 1px solid #ddd; }
-  .side-nav strong, .side-nav small, .side-nav hr { width: 100%; }
+  .side-nav strong { width: 100%; }
   .split, .binary-facts { grid-template-columns: 1fr; }
   .binary-facts div { border-right: 0; border-bottom: 1px solid #ddd; }
   .action-table > div { grid-template-columns: 1fr; gap: 2px; }
