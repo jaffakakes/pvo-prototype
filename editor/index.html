@@ -60,27 +60,51 @@
           <p class="timeline-help">Each component has its own layer. Drag a bar to move it; drag either edge to change its duration.</p>
         </section>
       </main>
-
-      <aside class="panel inspector" aria-label="Component appearance inspector">
-        <header class="panel-header"><h2>Appearance</h2><span>HTML + CSS</span></header>
-        <div class="inspector-empty" id="inspectorEmpty">
-          <p>Select or add a component to edit how it looks.</p>
-        </div>
-        <div id="inspectorFields" hidden>
-          <label class="field">Name<input id="componentName" type="text" /></label>
-          <div class="position-grid">
-            <label>X<input id="componentX" type="number" min="0" max="100" step="1" /></label>
-            <label>Y<input id="componentY" type="number" min="0" max="100" step="1" /></label>
-            <label>W<input id="componentW" type="number" min="5" max="100" step="1" /></label>
-            <label>H<input id="componentH" type="number" min="5" max="100" step="1" /></label>
-          </div>
-          <label class="field code-field">HTML<textarea id="componentHtml" rows="9" spellcheck="false"></textarea></label>
-          <label class="field code-field">CSS<textarea id="componentCss" rows="12" spellcheck="false"></textarea></label>
-          <p class="field-help">Changes are scoped to this component preview.</p>
-          <button class="delete-button" id="deleteComponentButton" type="button">Delete component</button>
-        </div>
-      </aside>
     </div>
+
+    <dialog class="component-dialog" id="componentDialog" aria-labelledby="componentDialogTitle">
+      <div class="dialog-shell">
+        <header class="dialog-header">
+          <div><span>Component</span><h2 id="componentDialogTitle">Edit component</h2></div>
+          <button class="dialog-close" id="closeComponentDialog" type="button" aria-label="Close component settings">Close</button>
+        </header>
+
+        <div class="dialog-body" id="inspectorFields" hidden>
+          <section class="appearance-section" aria-labelledby="appearanceTitle">
+            <header class="dialog-section-title"><h3 id="appearanceTitle">Appearance</h3><span>HTML + CSS</span></header>
+            <label class="field">Name<input id="componentName" type="text" /></label>
+            <div class="position-grid">
+              <label>X<input id="componentX" type="number" min="0" max="100" step="1" /></label>
+              <label>Y<input id="componentY" type="number" min="0" max="100" step="1" /></label>
+              <label>W<input id="componentW" type="number" min="5" max="100" step="1" /></label>
+              <label>H<input id="componentH" type="number" min="5" max="100" step="1" /></label>
+            </div>
+            <label class="field code-field">HTML<textarea id="componentHtml" rows="7" spellcheck="false"></textarea></label>
+            <label class="field code-field">CSS<textarea id="componentCss" rows="9" spellcheck="false"></textarea></label>
+            <p class="field-help">Changes are scoped to this component preview.</p>
+          </section>
+
+          <section class="scene-routing-section" id="sceneRoutingSection" aria-labelledby="sceneRoutingTitle" hidden>
+            <header class="dialog-section-title"><h3 id="sceneRoutingTitle">Scene change</h3><span>Choice and form only</span></header>
+            <label class="scene-change-toggle">
+              <span><strong>Pause and change scene</strong><small>Pause playback when this component appears.</small></span>
+              <input id="changeSceneToggle" type="checkbox" role="switch" />
+            </label>
+            <div class="scene-route-fields" id="sceneRouteFields" hidden>
+              <p class="route-source">From <strong id="routeSourceScene">Scene 1</strong></p>
+              <div class="scene-route-list" id="sceneRouteList"></div>
+              <button class="button add-route-button" id="addSceneRoute" type="button">Add condition</button>
+              <p class="route-help">Each condition or result selects the scene that should play next.</p>
+            </div>
+          </section>
+        </div>
+
+        <footer class="dialog-footer">
+          <button class="delete-button" id="deleteComponentButton" type="button">Delete component</button>
+          <button class="button" id="doneComponentDialog" type="button">Done</button>
+        </footer>
+      </div>
+    </dialog>
 
     <div class="status-bar"><span id="status">Ready</span><span>Video + UI layers</span></div>
     <script type="module" src="./app.js"></script>

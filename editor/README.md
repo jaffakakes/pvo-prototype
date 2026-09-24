@@ -5,6 +5,7 @@ This folder is deliberately separate from the SDK package. It contains a small b
 - split one MP4 into named scene ranges;
 - add tooltip, card, choice, and form components, then edit their HTML and CSS appearance;
 - edit on a layered timeline with one video track and a separate draggable, resizable track for every UI component.
+- configure components in a modal dialog; choices and forms can pause playback and map conditions or results to destination scenes.
 
 Each component has an absolute start and end time constrained to its scene. Full animation keyframes and easing are intentionally deferred.
 

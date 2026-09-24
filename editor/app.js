@@ -12,7 +12,10 @@ const refs = {
   projectName: $("#projectName"), projectDuration: $("#projectDuration"),
   sceneName: $("#sceneName"), currentTime: $("#currentTime"), totalTime: $("#totalTime"),
   componentList: $("#componentList"), componentCount: $("#componentCount"),
-  inspectorEmpty: $("#inspectorEmpty"), inspectorFields: $("#inspectorFields"),
+  inspectorFields: $("#inspectorFields"), componentDialog: $("#componentDialog"),
+  dialogTitle: $("#componentDialogTitle"), routingSection: $("#sceneRoutingSection"),
+  routeFields: $("#sceneRouteFields"), routeSource: $("#routeSourceScene"), routeList: $("#sceneRouteList"),
+  changeSceneToggle: $("#changeSceneToggle"),
   name: $("#componentName"), x: $("#componentX"), y: $("#componentY"),
   width: $("#componentW"), height: $("#componentH"), html: $("#componentHtml"), css: $("#componentCss"),
   playhead: $("#playhead"), status: $("#status"), videoInput: $("#videoInput"),
@@ -89,6 +92,7 @@ let componentCounter = 0;
 let clipCounter = 0;
 let objectUrl = null;
 let ignoreSceneSyncUntil = 0;
+let pausedAtComponentId = null;
 
 class EditorOverlay extends HTMLElement {
   constructor() {
@@ -163,7 +167,7 @@ function selectClip(id, seek = true) {
   if (seek) updateTime();
 }
 
-function selectComponent(id, seek = true) {
+function selectComponent(id, seek = true, openDialog = true) {
   const component = components.find((item) => item.id === id);
   if (!component) return;
   selectedClipId = component.clipId;
@@ -174,6 +178,7 @@ function selectComponent(id, seek = true) {
   }
   renderAll();
   if (seek) updateTime();
+  if (openDialog) openComponentDialog();
 }
 
 function splitAtPlayhead() {
@@ -210,7 +215,7 @@ function splitSceneAt(at) {
   return right;
 }
 
-function addComponent(kind) {
+function addComponent(kind, openDialog = true) {
   const clip = selectedClip();
   if (!clip) return;
   const preset = presets[kind];
@@ -228,6 +233,7 @@ function addComponent(kind) {
     css: preset.css,
     start,
     end,
+    sceneChange: ["choice", "form"].includes(kind) ? { enabled: false, pauseAtStart: true, routes: [] } : null,
     x: preset.x, y: preset.y, width: preset.width, height: preset.height,
   };
   components.push(component);
@@ -237,6 +243,7 @@ function addComponent(kind) {
   renderAll();
   updateTime();
   setStatus(`${preset.name} added for ${formatTime(component.end - component.start)} in ${clip.name}`);
+  if (openDialog) openComponentDialog();
   return component;
 }
 
@@ -245,6 +252,7 @@ function deleteComponent() {
   if (!component) return;
   components = components.filter((item) => item.id !== component.id);
   selectedComponentId = components.find((item) => item.clipId === selectedClipId)?.id || null;
+  closeComponentDialog();
   renderAll();
   setStatus(`${component.name} deleted`);
 }
@@ -259,9 +267,129 @@ function updateComponentFromInspector() {
   component.height = clamp(Number(refs.height.value), 5, 100 - component.y);
   component.html = refs.html.value;
   component.css = refs.css.value;
+  refs.dialogTitle.textContent = `Edit ${component.name}`;
   renderTimeline();
   renderComponentList();
   renderOverlays();
+}
+
+function openComponentDialog() {
+  if (!selectedComponent()) return;
+  renderInspector();
+  if (!refs.componentDialog.open) refs.componentDialog.showModal();
+}
+
+function closeComponentDialog() {
+  if (refs.componentDialog.open) refs.componentDialog.close();
+}
+
+function isSceneChangingComponent(component) {
+  return Boolean(component && ["choice", "form"].includes(component.kind));
+}
+
+function ensureSceneChange(component) {
+  if (!component.sceneChange) component.sceneChange = { enabled: false, pauseAtStart: true, routes: [] };
+  return component.sceneChange;
+}
+
+function renderSceneRouting(component) {
+  const supported = isSceneChangingComponent(component);
+  refs.routingSection.hidden = !supported;
+  if (!supported) return;
+
+  const sceneChange = ensureSceneChange(component);
+  const source = clips.find((clip) => clip.id === component.clipId);
+  refs.changeSceneToggle.checked = sceneChange.enabled;
+  refs.routeFields.hidden = !sceneChange.enabled;
+  refs.routeSource.textContent = source?.name || "Unknown scene";
+  refs.routeList.innerHTML = "";
+  if (!sceneChange.enabled) return;
+
+  const destinations = clips.filter((clip) => clip.id !== component.clipId);
+  if (sceneChange.routes.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "route-empty";
+    empty.textContent = destinations.length ? "Add a condition and choose its destination scene." : "Split the video to create another scene, then add a condition.";
+    refs.routeList.append(empty);
+  }
+
+  sceneChange.routes.forEach((route, index) => {
+    const row = document.createElement("div");
+    row.className = "scene-route-row";
+
+    const conditionLabel = document.createElement("label");
+    conditionLabel.textContent = "Condition / result";
+    const condition = document.createElement("input");
+    condition.type = "text";
+    condition.placeholder = component.kind === "choice" ? "option_one" : "success";
+    condition.value = route.condition;
+    condition.addEventListener("input", () => { route.condition = condition.value; });
+    conditionLabel.append(condition);
+
+    const destinationLabel = document.createElement("label");
+    destinationLabel.textContent = "Go to scene";
+    const destination = document.createElement("select");
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = destinations.length ? "Select scene" : "Create another scene first";
+    destination.append(placeholder);
+    destinations.forEach((clip) => {
+      const option = document.createElement("option");
+      option.value = clip.id;
+      option.textContent = `${clip.name} · ${formatTime(clip.start)}`;
+      destination.append(option);
+    });
+    destination.value = route.sceneId;
+    destination.addEventListener("change", () => { route.sceneId = destination.value; });
+    destinationLabel.append(destination);
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "remove-route-button";
+    remove.textContent = "Remove";
+    remove.setAttribute("aria-label", `Remove condition ${index + 1}`);
+    remove.addEventListener("click", () => {
+      sceneChange.routes.splice(index, 1);
+      renderSceneRouting(component);
+    });
+
+    row.append(conditionLabel, destinationLabel, remove);
+    refs.routeList.append(row);
+  });
+}
+
+function addSceneRoute() {
+  const component = selectedComponent();
+  if (!isSceneChangingComponent(component)) return;
+  const sceneChange = ensureSceneChange(component);
+  const firstDestination = clips.find((clip) => clip.id !== component.clipId);
+  sceneChange.routes.push({ condition: "", sceneId: firstDestination?.id || "" });
+  renderSceneRouting(component);
+  setStatus(`Condition added to ${component.name}`);
+}
+
+function setComponentSceneRouting(componentId, enabled, routes) {
+  const component = components.find((item) => item.id === componentId);
+  if (!component) throw new Error("component does not exist");
+  if (!isSceneChangingComponent(component)) throw new Error("scene routing is only available for choice and form components");
+  if (!Array.isArray(routes)) throw new Error("routes must be an array");
+
+  const normalized = routes.map((route) => {
+    const condition = String(route?.condition || "").trim();
+    const sceneId = String(route?.sceneId || "");
+    const destination = clips.find((clip) => clip.id === sceneId);
+    if (!condition) throw new Error("every route needs a condition or result");
+    if (!destination || destination.id === component.clipId) throw new Error("every route must target a different existing scene");
+    return { condition, sceneId };
+  });
+  if (enabled && normalized.length === 0) throw new Error("enabled scene routing needs at least one condition");
+
+  component.sceneChange = { enabled: Boolean(enabled), pauseAtStart: true, routes: normalized };
+  selectedClipId = component.clipId;
+  selectedComponentId = component.id;
+  renderAll();
+  setStatus(`${component.name} scene routing ${enabled ? "enabled" : "disabled"}`);
+  return component;
 }
 
 function clamp(value, min, max) {
@@ -326,7 +454,7 @@ function renderComponentTimeline(duration) {
     const layerName = document.createElement("strong");
     layerName.textContent = component.name;
     const layerType = document.createElement("span");
-    layerType.textContent = `${component.kind} · layer ${index + 1}`;
+    layerType.textContent = `${component.kind} · layer ${index + 1}${component.sceneChange?.enabled ? " · scene change" : ""}`;
     layerLabel.append(layerName, layerType);
     layerLabel.addEventListener("click", () => selectComponent(component.id));
 
@@ -357,7 +485,7 @@ function renderComponentTimeline(duration) {
 
 function updateTimingBarLabel(bar, component) {
   const label = bar.querySelector(".component-bar-label");
-  if (label) label.textContent = `${component.name} · ${(component.end - component.start).toFixed(1)}s`;
+  if (label) label.textContent = `${component.name} · ${(component.end - component.start).toFixed(1)}s${component.sceneChange?.enabled ? " · pause" : ""}`;
 }
 
 function startTimingDrag(event, component, bar, lane, mode, duration) {
@@ -424,7 +552,7 @@ function renderComponentList() {
     const name = document.createElement("strong");
     name.textContent = component.name;
     const kind = document.createElement("span");
-    kind.textContent = `${component.kind} · ${(component.end - component.start).toFixed(1)}s`;
+    kind.textContent = `${component.kind} · ${(component.end - component.start).toFixed(1)}s${component.sceneChange?.enabled ? " · scene" : ""}`;
     button.append(name, kind);
     button.addEventListener("click", () => selectComponent(component.id));
     refs.componentList.append(button);
@@ -433,9 +561,9 @@ function renderComponentList() {
 
 function renderInspector() {
   const component = selectedComponent();
-  refs.inspectorEmpty.hidden = Boolean(component);
   refs.inspectorFields.hidden = !component;
   if (!component) return;
+  refs.dialogTitle.textContent = `Edit ${component.name}`;
   refs.name.value = component.name;
   refs.x.value = Math.round(component.x);
   refs.y.value = Math.round(component.y);
@@ -443,6 +571,7 @@ function renderInspector() {
   refs.height.value = Math.round(component.height);
   refs.html.value = component.html;
   refs.css.value = component.css;
+  renderSceneRouting(component);
 }
 
 function positionOverlayLayer() {
@@ -510,13 +639,48 @@ function startDrag(event, component, element) {
   element.addEventListener("pointercancel", stop);
 }
 
+function pauseForSceneChange(time) {
+  const pausedComponent = components.find((component) => component.id === pausedAtComponentId);
+  if (pausedComponent && (time < pausedComponent.start - 0.05 || time >= pausedComponent.end)) {
+    pausedAtComponentId = null;
+  }
+
+  if (video.paused) {
+    return time;
+  }
+
+  const blockingComponent = components.find((component) => (
+    isSceneChangingComponent(component)
+    && component.sceneChange?.enabled
+    && component.sceneChange.pauseAtStart
+    && component.id !== pausedAtComponentId
+    && time >= component.start
+    && time < component.end
+  ));
+
+  if (!blockingComponent) {
+    return time;
+  }
+
+  pausedAtComponentId = blockingComponent.id;
+  video.pause();
+  video.currentTime = blockingComponent.start;
+  selectedClipId = blockingComponent.clipId;
+  selectedComponentId = blockingComponent.id;
+  renderTimeline();
+  renderComponentList();
+  setStatus(`${blockingComponent.name} paused playback · waiting for a scene condition`);
+  return blockingComponent.start;
+}
+
 function updateTime() {
   const duration = video.duration || 0;
-  refs.currentTime.textContent = formatTime(video.currentTime);
-  const percentage = duration ? video.currentTime / duration * 100 : 0;
+  const time = pauseForSceneChange(video.currentTime);
+  refs.currentTime.textContent = formatTime(time);
+  const percentage = duration ? time / duration * 100 : 0;
   refs.playhead.style.left = `${clamp(percentage, 0, 100)}%`;
   timelineEditor.style.setProperty("--playhead-position", `${clamp(percentage, 0, 100)}%`);
-  const current = sceneAt(video.currentTime);
+  const current = sceneAt(time);
   if (current && current.id !== selectedClipId && performance.now() >= ignoreSceneSyncUntil) {
     selectedClipId = current.id;
     selectedComponentId = components.find((component) => component.clipId === current.id)?.id || null;
@@ -562,6 +726,7 @@ video.addEventListener("loadedmetadata", () => {
   refs.projectDuration.textContent = formatTime(duration);
   clips = [{ id: `scene_${++clipCounter}`, name: "Scene 1", start: 0, end: duration }];
   components = [];
+  pausedAtComponentId = null;
   selectedClipId = clips[0].id;
   selectedComponentId = null;
   renderAll();
@@ -575,6 +740,23 @@ new ResizeObserver(positionOverlayLayer).observe(videoArea);
 document.querySelectorAll("[data-add-component]").forEach((button) => button.addEventListener("click", () => addComponent(button.dataset.addComponent)));
 $("#splitButton").addEventListener("click", () => { try { splitAtPlayhead(); } catch { /* status explains the invalid split */ } });
 $("#deleteComponentButton").addEventListener("click", deleteComponent);
+$("#closeComponentDialog").addEventListener("click", closeComponentDialog);
+$("#doneComponentDialog").addEventListener("click", closeComponentDialog);
+$("#addSceneRoute").addEventListener("click", addSceneRoute);
+refs.changeSceneToggle.addEventListener("change", () => {
+  const component = selectedComponent();
+  if (!isSceneChangingComponent(component)) return;
+  const sceneChange = ensureSceneChange(component);
+  sceneChange.enabled = refs.changeSceneToggle.checked;
+  pausedAtComponentId = null;
+  renderSceneRouting(component);
+  renderTimeline();
+  renderComponentList();
+  setStatus(`${component.name} scene change ${sceneChange.enabled ? "enabled" : "disabled"}`);
+});
+refs.componentDialog.addEventListener("click", (event) => {
+  if (event.target === refs.componentDialog) closeComponentDialog();
+});
 [refs.name, refs.x, refs.y, refs.width, refs.height, refs.html, refs.css].forEach((input) => input.addEventListener("input", updateComponentFromInspector));
 refs.videoInput.addEventListener("change", (event) => {
   const file = event.target.files[0];
@@ -628,7 +810,7 @@ function registerWebMcpTools() {
     annotations: { readOnlyHint: false, untrustedContentHint: false },
     execute(input) {
       if (!Object.hasOwn(presets, input?.kind)) throw new Error("kind must be tooltip, card, choice, or form");
-      const component = addComponent(input.kind);
+      const component = addComponent(input.kind, false);
       return { component: component.id, kind: component.kind, scene: component.clipId, start: component.start, end: component.end };
     },
   });
@@ -650,6 +832,34 @@ function registerWebMcpTools() {
     execute(input) {
       const component = setComponentTiming(input?.componentId, input?.start, input?.end);
       return { component: component.id, scene: component.clipId, start: component.start, end: component.end };
+    },
+  });
+  register({
+    name: "set_component_scene_routing",
+    title: "Set component scene routing",
+    description: "Configure a choice or form to pause playback and map declared conditions or results to destination scenes.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        componentId: { type: "string" },
+        enabled: { type: "boolean" },
+        routes: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: { condition: { type: "string" }, sceneId: { type: "string" } },
+            required: ["condition", "sceneId"],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: ["componentId", "enabled", "routes"],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: false, untrustedContentHint: false },
+    execute(input) {
+      const component = setComponentSceneRouting(input?.componentId, input?.enabled, input?.routes);
+      return { component: component.id, scene: component.clipId, sceneChange: structuredClone(component.sceneChange) };
     },
   });
 }
