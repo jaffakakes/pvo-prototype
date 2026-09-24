@@ -11,7 +11,6 @@ const trackWrap = document.querySelector(".track-wrap");
 const refs = {
   projectName: $("#projectName"), projectDuration: $("#projectDuration"),
   sceneName: $("#sceneName"), currentTime: $("#currentTime"), totalTime: $("#totalTime"),
-  componentList: $("#componentList"), componentCount: $("#componentCount"),
   inspectorFields: $("#inspectorFields"), componentDialog: $("#componentDialog"),
   dialogTitle: $("#componentDialogTitle"), routingSection: $("#sceneRoutingSection"),
   routeFields: $("#sceneRouteFields"), routeSource: $("#routeSourceScene"), routeList: $("#sceneRouteList"),
@@ -269,7 +268,6 @@ function updateComponentFromInspector() {
   component.css = refs.css.value;
   refs.dialogTitle.textContent = `Edit ${component.name}`;
   renderTimeline();
-  renderComponentList();
   renderOverlays();
 }
 
@@ -399,7 +397,6 @@ function clamp(value, min, max) {
 function renderAll() {
   normalizeSceneNames();
   renderTimeline();
-  renderComponentList();
   renderInspector();
   renderOverlays();
   const clip = selectedClip();
@@ -496,7 +493,6 @@ function startTimingDrag(event, component, bar, lane, mode, duration) {
 
   selectedClipId = component.clipId;
   selectedComponentId = component.id;
-  renderComponentList();
   renderInspector();
   renderOverlays();
   componentLayers.querySelectorAll(".component-bar.active").forEach((item) => item.classList.remove("active"));
@@ -539,24 +535,6 @@ function startTimingDrag(event, component, bar, lane, mode, duration) {
   bar.addEventListener("pointermove", move);
   bar.addEventListener("pointerup", stop);
   bar.addEventListener("pointercancel", stop);
-}
-
-function renderComponentList() {
-  const sceneComponents = components.filter((component) => component.clipId === selectedClipId);
-  refs.componentCount.textContent = sceneComponents.length;
-  refs.componentList.innerHTML = "";
-  sceneComponents.forEach((component) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = `component-list-item${component.id === selectedComponentId ? " active" : ""}`;
-    const name = document.createElement("strong");
-    name.textContent = component.name;
-    const kind = document.createElement("span");
-    kind.textContent = `${component.kind} · ${(component.end - component.start).toFixed(1)}s${component.sceneChange?.enabled ? " · scene" : ""}`;
-    button.append(name, kind);
-    button.addEventListener("click", () => selectComponent(component.id));
-    refs.componentList.append(button);
-  });
 }
 
 function renderInspector() {
@@ -613,7 +591,6 @@ function startDrag(event, component, element) {
   event.preventDefault();
   selectedClipId = component.clipId;
   selectedComponentId = component.id;
-  renderComponentList();
   renderInspector();
   overlayLayer.querySelectorAll(".overlay-component.selected").forEach((item) => item.classList.remove("selected"));
   element.classList.add("selected");
@@ -668,7 +645,6 @@ function pauseForSceneChange(time) {
   selectedClipId = blockingComponent.clipId;
   selectedComponentId = blockingComponent.id;
   renderTimeline();
-  renderComponentList();
   setStatus(`${blockingComponent.name} paused playback · waiting for a scene condition`);
   return blockingComponent.start;
 }
@@ -751,7 +727,6 @@ refs.changeSceneToggle.addEventListener("change", () => {
   pausedAtComponentId = null;
   renderSceneRouting(component);
   renderTimeline();
-  renderComponentList();
   setStatus(`${component.name} scene change ${sceneChange.enabled ? "enabled" : "disabled"}`);
 });
 refs.componentDialog.addEventListener("click", (event) => {
