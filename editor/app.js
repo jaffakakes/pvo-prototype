@@ -8,6 +8,7 @@ const componentLayers = $("#componentLayers");
 const timelineEditor = $("#timelineEditor");
 const ruler = $("#ruler");
 const trackWrap = document.querySelector(".track-wrap");
+const addComponentButtons = [...document.querySelectorAll("[data-add-component]")];
 
 const refs = {
   projectName: $("#projectName"), projectDuration: $("#projectDuration"),
@@ -17,6 +18,9 @@ const refs = {
   routeFields: $("#sceneRouteFields"), routeSource: $("#routeSourceScene"), routeList: $("#sceneRouteList"),
   changeSceneToggle: $("#changeSceneToggle"),
   canvasRatio: $("#canvasRatio"),
+  mediaStart: $("#mediaStart"), mediaStartTitle: $("#mediaStartTitle"),
+  mediaStartMessage: $("#mediaStartMessage"), chooseVideoButton: $("#chooseVideoButton"),
+  splitButton: $("#splitButton"),
   name: $("#componentName"), x: $("#componentX"), y: $("#componentY"),
   width: $("#componentW"), height: $("#componentH"), html: $("#componentHtml"), css: $("#componentCss"),
   playhead: $("#playhead"), status: $("#status"), videoInput: $("#videoInput"),
@@ -149,6 +153,20 @@ function setStatus(message) {
   refs.status.textContent = message;
 }
 
+function setMediaReady(ready, copy = {}) {
+  refs.mediaStart.hidden = ready;
+  canvasFrame.hidden = !ready;
+  refs.canvasRatio.disabled = !ready;
+  refs.splitButton.disabled = !ready;
+  refs.playhead.hidden = !ready;
+  timelineEditor.classList.toggle("is-empty", !ready);
+  addComponentButtons.forEach((button) => { button.disabled = !ready; });
+  if (!ready) {
+    refs.mediaStartTitle.textContent = copy.title || "Open a video to start";
+    refs.mediaStartMessage.textContent = copy.message || "Choose an MP4 from your computer.";
+  }
+}
+
 function selectedClip() {
   return clips.find((clip) => clip.id === selectedClipId) || clips[0];
 }
@@ -226,7 +244,11 @@ function splitSceneAt(at) {
 
 function addComponent(kind, openDialog = true) {
   const clip = selectedClip();
-  if (!clip) return;
+  if (!clip) {
+    const message = "Open a video before adding components";
+    setStatus(message);
+    throw new Error(message);
+  }
   const preset = presets[kind];
   const minimumDuration = Math.min(0.2, clip.end - clip.start);
   const requestedStart = video.currentTime >= clip.start && video.currentTime < clip.end ? video.currentTime : clip.start;
@@ -414,8 +436,18 @@ function renderAll() {
 }
 
 function renderTimeline() {
-  const duration = video.duration || clips.at(-1)?.end || 1;
   clipTrack.innerHTML = "";
+  ruler.innerHTML = "";
+  if (clips.length === 0) {
+    const empty = document.createElement("span");
+    empty.className = "empty-clip-message";
+    empty.textContent = "Open a video to create scenes";
+    clipTrack.append(empty);
+    renderComponentTimeline(1);
+    return;
+  }
+
+  const duration = video.duration || clips.at(-1)?.end || 1;
   clips.forEach((clip) => {
     const button = document.createElement("button");
     button.type = "button";
@@ -426,7 +458,6 @@ function renderTimeline() {
     clipTrack.append(button);
   });
 
-  ruler.innerHTML = "";
   const tickCount = 5;
   for (let index = 0; index <= tickCount; index += 1) {
     const tick = document.createElement("span");
@@ -444,7 +475,7 @@ function renderComponentTimeline(duration) {
   if (components.length === 0) {
     const row = document.createElement("div");
     row.className = "layer-row empty-layer-row";
-    row.innerHTML = '<div class="layer-label"><strong>UI</strong><span>No layers yet</span></div><div class="component-lane"><span class="empty-layer-message">Add a component to create a layer</span></div>';
+    row.innerHTML = `<div class="layer-label"><strong>UI</strong><span>No layers yet</span></div><div class="component-lane"><span class="empty-layer-message">${clips.length ? "Add a component to create a layer" : "Open a video to add UI layers"}</span></div>`;
     const emptyLane = row.querySelector(".component-lane");
     emptyLane.addEventListener("click", (event) => seekFromTimeline(event, emptyLane));
     componentLayers.append(row);
@@ -704,15 +735,32 @@ function setComponentTiming(componentId, start, end) {
 }
 
 function loadVideo(source, name) {
-  if (objectUrl) URL.revokeObjectURL(objectUrl);
+  const previousObjectUrl = objectUrl;
   objectUrl = source instanceof Blob ? URL.createObjectURL(source) : null;
+  clips = [];
+  components = [];
+  selectedClipId = null;
+  selectedComponentId = null;
+  refs.currentTime.textContent = "00:00.0";
+  refs.totalTime.textContent = "00:00.0";
+  refs.projectDuration.textContent = "00:00.0";
   video.src = objectUrl || source;
+  if (previousObjectUrl) URL.revokeObjectURL(previousObjectUrl);
   refs.projectName.textContent = name;
+  setMediaReady(false, { title: "Loading video…", message: `Preparing ${name}` });
+  renderAll();
+  setStatus(`Loading ${name}`);
   video.load();
 }
 
 video.addEventListener("loadedmetadata", () => {
-  const duration = video.duration || 24;
+  const duration = Number.isFinite(video.duration) ? video.duration : 0;
+  if (duration <= 0) {
+    refs.projectName.textContent = "No video selected";
+    setMediaReady(false, { title: "Could not open this video", message: "Choose an MP4 file and try again." });
+    setStatus("Video could not be opened");
+    return;
+  }
   refs.totalTime.textContent = formatTime(duration);
   refs.projectDuration.textContent = formatTime(duration);
   clips = [{ id: `scene_${++clipCounter}`, name: "Scene 1", start: 0, end: duration }];
@@ -720,16 +768,30 @@ video.addEventListener("loadedmetadata", () => {
   pausedAtComponentId = null;
   selectedClipId = clips[0].id;
   selectedComponentId = null;
+  setMediaReady(true);
   renderAll();
   setStatus("Video ready · split the clip or add a component");
+});
+video.addEventListener("error", () => {
+  clips = [];
+  components = [];
+  selectedClipId = null;
+  selectedComponentId = null;
+  refs.projectName.textContent = "No video selected";
+  refs.projectDuration.textContent = "00:00.0";
+  refs.currentTime.textContent = "00:00.0";
+  refs.totalTime.textContent = "00:00.0";
+  setMediaReady(false, { title: "Could not open this video", message: "Choose an MP4 file and try again." });
+  renderAll();
+  setStatus("Video could not be opened");
 });
 video.addEventListener("timeupdate", updateTime);
 video.addEventListener("seeked", updateTime);
 window.addEventListener("resize", positionCanvasFrame);
 new ResizeObserver(positionCanvasFrame).observe(videoArea);
 
-document.querySelectorAll("[data-add-component]").forEach((button) => button.addEventListener("click", () => addComponent(button.dataset.addComponent)));
-$("#splitButton").addEventListener("click", () => { try { splitAtPlayhead(); } catch { /* status explains the invalid split */ } });
+addComponentButtons.forEach((button) => button.addEventListener("click", () => addComponent(button.dataset.addComponent)));
+refs.splitButton.addEventListener("click", () => { try { splitAtPlayhead(); } catch { /* status explains the invalid split */ } });
 $("#deleteComponentButton").addEventListener("click", deleteComponent);
 $("#closeComponentDialog").addEventListener("click", closeComponentDialog);
 $("#doneComponentDialog").addEventListener("click", closeComponentDialog);
@@ -751,7 +813,9 @@ refs.componentDialog.addEventListener("click", (event) => {
 refs.videoInput.addEventListener("change", (event) => {
   const file = event.target.files[0];
   if (file) loadVideo(file, file.name);
+  event.target.value = "";
 });
+refs.chooseVideoButton.addEventListener("click", () => refs.videoInput.click());
 refs.canvasRatio.addEventListener("change", () => setCanvasRatio(refs.canvasRatio.value));
 
 function seekFromTimeline(event, lane) {
@@ -778,7 +842,7 @@ function registerWebMcpTools() {
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
     annotations: { readOnlyHint: true, untrustedContentHint: true },
     execute() {
-      return { canvasRatio, selectedScene: selectedClipId, selectedComponent: selectedComponentId, scenes: structuredClone(clips), components: structuredClone(components) };
+      return { mediaLoaded: clips.length > 0, canvasRatio, selectedScene: selectedClipId, selectedComponent: selectedComponentId, scenes: structuredClone(clips), components: structuredClone(components) };
     },
   });
   register({
@@ -866,5 +930,6 @@ function registerWebMcpTools() {
   });
 }
 
-loadVideo("../assets/pvo-demo.mp4", "pvo-demo.mp4");
+setMediaReady(false);
+renderAll();
 registerWebMcpTools();

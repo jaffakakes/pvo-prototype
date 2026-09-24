@@ -10,7 +10,7 @@
   <body>
     <header class="app-header">
       <div class="title-block"><strong>PVO Editor</strong><span>basic prototype</span></div>
-      <div class="project-name"><span id="projectName">pvo-demo.mp4</span><small id="projectDuration">00:24.0</small></div>
+      <div class="project-name"><span id="projectName">No video selected</span><small id="projectDuration">00:00.0</small></div>
       <label class="button file-button"><input id="videoInput" type="file" accept="video/mp4,.mp4" />Open video</label>
     </header>
 
@@ -18,29 +18,34 @@
       <aside class="panel component-panel" aria-label="Components">
         <header class="panel-header"><h2>Components</h2><span>Add to scene</span></header>
         <div class="component-buttons">
-          <button type="button" data-add-component="tooltip"><strong>Tooltip</strong><span>Small label</span></button>
-          <button type="button" data-add-component="card"><strong>Card</strong><span>Title and copy</span></button>
-          <button type="button" data-add-component="choice"><strong>Choice</strong><span>Two actions</span></button>
-          <button type="button" data-add-component="form"><strong>Form</strong><span>Fields and submit</span></button>
+          <button type="button" data-add-component="tooltip" disabled><strong>Tooltip</strong><span>Small label</span></button>
+          <button type="button" data-add-component="card" disabled><strong>Card</strong><span>Title and copy</span></button>
+          <button type="button" data-add-component="choice" disabled><strong>Choice</strong><span>Two actions</span></button>
+          <button type="button" data-add-component="form" disabled><strong>Form</strong><span>Fields and submit</span></button>
         </div>
       </aside>
 
       <main class="workspace">
         <div class="preview-toolbar">
-          <div class="preview-scene"><span>Preview</span><strong id="sceneName">Scene 1</strong></div>
+          <div class="preview-scene"><span>Preview</span><strong id="sceneName">No scene</strong></div>
           <label class="ratio-control" for="canvasRatio">
             <span>Ratio</span>
-            <select id="canvasRatio">
+            <select id="canvasRatio" disabled>
               <option value="16:9">16:9</option>
               <option value="9:16">9:16</option>
               <option value="1:1">1:1</option>
               <option value="4:5">4:5</option>
             </select>
           </label>
-          <div class="timecode"><span id="currentTime">00:00.0</span><span>/</span><span id="totalTime">00:24.0</span></div>
+          <div class="timecode"><span id="currentTime">00:00.0</span><span>/</span><span id="totalTime">00:00.0</span></div>
         </div>
         <div class="video-area" id="videoArea">
-          <div class="canvas-frame" id="canvasFrame" data-ratio="16:9">
+          <section class="media-start" id="mediaStart" aria-labelledby="mediaStartTitle">
+            <h2 id="mediaStartTitle">Open a video to start</h2>
+            <p id="mediaStartMessage">Choose an MP4 from your computer.</p>
+            <button class="button" id="chooseVideoButton" type="button">Choose MP4</button>
+          </section>
+          <div class="canvas-frame" id="canvasFrame" data-ratio="16:9" hidden>
             <video id="video" controls playsinline preload="metadata"></video>
             <div class="overlay-layer" id="overlayLayer" aria-label="Component canvas"></div>
           </div>
@@ -49,7 +54,7 @@
         <section class="timeline-panel" aria-label="Video timeline">
           <div class="timeline-toolbar">
             <div><h2>Timeline</h2><span>Video and UI layers</span></div>
-            <button class="button split-button" id="splitButton" type="button">Split at playhead</button>
+            <button class="button split-button" id="splitButton" type="button" disabled>Split at playhead</button>
           </div>
           <div class="timeline-editor" id="timelineEditor">
             <div class="timeline-ruler-row">
@@ -114,7 +119,7 @@
       </div>
     </dialog>
 
-    <div class="status-bar"><span id="status">Ready</span><span>Video + UI layers</span></div>
+    <div class="status-bar"><span id="status">Open a video to start</span><span>Video + UI layers</span></div>
     <script type="module" src="./app.js"></script>
   </body>
 </html>
