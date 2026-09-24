@@ -25,8 +25,8 @@ const refs = {
   splitButton: $("#splitButton"),
   mediaTab: $("#mediaTab"), componentsTab: $("#componentsTab"),
   mediaPanel: $("#mediaPanel"), componentsPanel: $("#componentsPanel"),
-  mediaFileName: $("#mediaFileName"), mediaFileMeta: $("#mediaFileMeta"),
-  replaceMediaButton: $("#replaceMediaButton"), exportPvoButton: $("#exportPvoButton"),
+  mediaLibrary: $("#mediaLibrary"), mediaCount: $("#mediaCount"),
+  addMediaButton: $("#addMediaButton"), exportPvoButton: $("#exportPvoButton"),
   name: $("#componentName"), x: $("#componentX"), y: $("#componentY"),
   width: $("#componentW"), height: $("#componentH"), html: $("#componentHtml"), css: $("#componentCss"),
   playhead: $("#playhead"), status: $("#status"), videoInput: $("#videoInput"),
@@ -116,6 +116,9 @@ let sourceMedia = null;
 let sourceMediaName = "";
 let mediaReady = false;
 let exporting = false;
+let mediaItems = [];
+let activeMediaId = null;
+let mediaCounter = 0;
 
 class EditorOverlay extends HTMLElement {
   constructor() {
@@ -169,21 +172,62 @@ function formatFileSize(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+function activeMediaItem() {
+  return mediaItems.find((item) => item.id === activeMediaId) || null;
+}
+
+function mediaItemIsMov(item) {
+  return /(?:\.pvo)?\.mov$/i.test(item?.name || "") || item?.file?.type === "video/quicktime";
+}
+
 function sourceIsMov() {
-  return /(?:\.pvo)?\.mov$/i.test(sourceMediaName) || sourceMedia?.type === "video/quicktime";
+  return mediaItemIsMov(activeMediaItem())
+    || /(?:\.pvo)?\.mov$/i.test(sourceMediaName)
+    || sourceMedia?.type === "video/quicktime";
 }
 
 function renderMediaDetails() {
-  if (!sourceMedia) {
-    refs.mediaFileName.textContent = "No video";
-    refs.mediaFileMeta.textContent = "Choose an MP4 or MOV to begin.";
+  const count = mediaItems.length;
+  refs.mediaCount.textContent = `${count} ${count === 1 ? "item" : "items"}`;
+  refs.mediaLibrary.innerHTML = "";
+
+  if (count === 0) {
+    const empty = document.createElement("p");
+    empty.className = "media-empty";
+    empty.textContent = "Choose MP4 or MOV files to begin.";
+    refs.mediaLibrary.append(empty);
     return;
   }
-  refs.mediaFileName.textContent = sourceMediaName;
-  const details = [sourceIsMov() ? "MOV" : "MP4", formatFileSize(sourceMedia.size)];
-  details.push(mediaReady ? formatTime(video.duration) : "Loading…");
-  if (mediaReady) details.push(canvasRatio);
-  refs.mediaFileMeta.textContent = details.join(" · ");
+
+  mediaItems.forEach((item) => {
+    const active = item.id === activeMediaId;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `media-item${active ? " active" : ""}${item.error ? " error" : ""}`;
+    button.setAttribute("aria-pressed", String(active));
+
+    const main = document.createElement("span");
+    main.className = "media-item-main";
+    const name = document.createElement("strong");
+    name.textContent = item.name;
+    const metadata = document.createElement("span");
+    const details = [mediaItemIsMov(item) ? "MOV" : "MP4", formatFileSize(item.file.size)];
+    if (item.duration) details.push(formatTime(item.duration));
+    else if (active && !item.error) details.push("Loading…");
+    metadata.textContent = details.join(" · ");
+    main.append(name, metadata);
+
+    const state = document.createElement("span");
+    state.className = "media-item-state";
+    if (item.error) state.textContent = "Could not open";
+    else if (active && mediaReady) state.textContent = "Editing";
+    else if (active) state.textContent = "Loading";
+    else state.textContent = "Open";
+
+    button.append(main, state);
+    button.addEventListener("click", () => activateMedia(item.id));
+    refs.mediaLibrary.append(button);
+  });
 }
 
 function setPanelTab(name) {
@@ -948,67 +992,140 @@ async function exportPvoVideo() {
   }
 }
 
-function loadVideo(source, name) {
+function saveActiveMediaState() {
+  const item = activeMediaItem();
+  if (!item || !mediaReady || clips.length === 0) return;
+  item.duration = Number.isFinite(video.duration) ? video.duration : item.duration;
+  item.project = {
+    clips: structuredClone(clips),
+    components: structuredClone(components),
+    selectedClipId,
+    selectedComponentId,
+    canvasRatio,
+    currentTime: Number.isFinite(video.currentTime) ? video.currentTime : 0,
+  };
+}
+
+function importMediaFiles(files) {
+  const supported = files.filter((file) => (
+    /\.(mp4|mov)$/i.test(file.name)
+    || ["video/mp4", "video/quicktime"].includes(file.type)
+  ));
+
+  if (supported.length === 0) {
+    setStatus("Choose MP4 or MOV files");
+    return;
+  }
+
+  const imported = supported.map((file) => ({
+    id: `media_${++mediaCounter}`,
+    file,
+    name: file.name,
+    duration: null,
+    project: null,
+    error: false,
+  }));
+  mediaItems.push(...imported);
+  setPanelTab("media");
+  renderMediaDetails();
+
+  if (!activeMediaId) {
+    activateMedia(imported[0].id);
+    return;
+  }
+
+  setStatus(`${imported.length} media ${imported.length === 1 ? "item" : "items"} added`);
+}
+
+function activateMedia(id) {
+  const item = mediaItems.find((candidate) => candidate.id === id);
+  if (!item || item.id === activeMediaId && mediaReady) return;
+
+  saveActiveMediaState();
+  closeComponentDialog();
+  video.pause();
+
   const previousObjectUrl = objectUrl;
-  objectUrl = source instanceof Blob ? URL.createObjectURL(source) : null;
-  sourceMedia = source instanceof Blob ? source : null;
-  sourceMediaName = name;
+  objectUrl = URL.createObjectURL(item.file);
+  activeMediaId = item.id;
+  item.error = false;
+  sourceMedia = item.file;
+  sourceMediaName = item.name;
   clips = [];
   components = [];
   selectedClipId = null;
   selectedComponentId = null;
+  pausedAtComponentId = null;
   refs.currentTime.textContent = "00:00.0";
   refs.totalTime.textContent = "00:00.0";
   refs.projectDuration.textContent = "00:00.0";
-  video.src = objectUrl || source;
+  video.src = objectUrl;
   if (previousObjectUrl) URL.revokeObjectURL(previousObjectUrl);
-  refs.projectName.textContent = name;
-  setMediaReady(false, { title: "Loading video…", message: `Preparing ${name}` });
+  refs.projectName.textContent = item.name;
+  setMediaReady(false, { title: "Loading video…", message: `Preparing ${item.name}` });
   renderAll();
-  setStatus(`Loading ${name}`);
+  setStatus(`Loading ${item.name}`);
   video.load();
 }
 
-video.addEventListener("loadedmetadata", () => {
-  const duration = Number.isFinite(video.duration) ? video.duration : 0;
-  if (duration <= 0) {
-    if (objectUrl) URL.revokeObjectURL(objectUrl);
-    objectUrl = null;
-    sourceMedia = null;
-    sourceMediaName = "";
-    refs.projectName.textContent = "No video selected";
-    setMediaReady(false, { title: "Could not open this video", message: "Choose an MP4 or MOV with a codec this browser supports." });
-    setStatus("Video could not be opened");
-    return;
-  }
-  refs.totalTime.textContent = formatTime(duration);
-  refs.projectDuration.textContent = formatTime(duration);
-  clips = [{ id: `scene_${++clipCounter}`, name: "Scene 1", start: 0, end: duration }];
-  components = [];
-  pausedAtComponentId = null;
-  selectedClipId = clips[0].id;
-  selectedComponentId = null;
-  setMediaReady(true);
-  renderAll();
-  setStatus("Video ready · split the clip or add a component");
-});
-video.addEventListener("error", () => {
+function showActiveMediaError() {
+  const item = activeMediaItem();
+  if (item) item.error = true;
   if (objectUrl) URL.revokeObjectURL(objectUrl);
   objectUrl = null;
-  sourceMedia = null;
-  sourceMediaName = "";
   clips = [];
   components = [];
   selectedClipId = null;
   selectedComponentId = null;
-  refs.projectName.textContent = "No video selected";
+  pausedAtComponentId = null;
+  refs.projectName.textContent = item?.name || "No video selected";
   refs.projectDuration.textContent = "00:00.0";
   refs.currentTime.textContent = "00:00.0";
   refs.totalTime.textContent = "00:00.0";
   setMediaReady(false, { title: "Could not open this video", message: "Choose an MP4 or MOV with a codec this browser supports." });
   renderAll();
-  setStatus("Video could not be opened");
+  setStatus(`${item?.name || "Video"} could not be opened`);
+}
+
+video.addEventListener("loadedmetadata", () => {
+  const item = activeMediaItem();
+  if (!item) return;
+  const duration = Number.isFinite(video.duration) ? video.duration : 0;
+  if (duration <= 0) {
+    showActiveMediaError();
+    return;
+  }
+  item.duration = duration;
+  refs.totalTime.textContent = formatTime(duration);
+  refs.projectDuration.textContent = formatTime(duration);
+  if (item.project) {
+    clips = structuredClone(item.project.clips);
+    components = structuredClone(item.project.components);
+    selectedClipId = clips.some((clip) => clip.id === item.project.selectedClipId)
+      ? item.project.selectedClipId
+      : clips[0]?.id || null;
+    selectedComponentId = components.some((component) => component.id === item.project.selectedComponentId)
+      ? item.project.selectedComponentId
+      : null;
+    canvasRatio = Object.hasOwn(canvasRatios, item.project.canvasRatio) ? item.project.canvasRatio : "16:9";
+  } else {
+    clips = [{ id: `scene_${++clipCounter}`, name: "Scene 1", start: 0, end: duration }];
+    components = [];
+    selectedClipId = clips[0].id;
+    selectedComponentId = null;
+    canvasRatio = "16:9";
+  }
+  refs.canvasRatio.value = canvasRatio;
+  canvasFrame.dataset.ratio = canvasRatio;
+  pausedAtComponentId = null;
+  setMediaReady(true);
+  renderAll();
+  const savedTime = item.project?.currentTime || 0;
+  video.currentTime = clamp(savedTime, 0, duration);
+  updateTime();
+  setStatus(`${item.name} ready · split the clip or add a component`);
 });
+video.addEventListener("error", showActiveMediaError);
 video.addEventListener("timeupdate", updateTime);
 video.addEventListener("seeked", updateTime);
 window.addEventListener("resize", positionCanvasFrame);
@@ -1035,12 +1152,11 @@ refs.componentDialog.addEventListener("click", (event) => {
 });
 [refs.name, refs.x, refs.y, refs.width, refs.height, refs.html, refs.css].forEach((input) => input.addEventListener("input", updateComponentFromInspector));
 refs.videoInput.addEventListener("change", (event) => {
-  const file = event.target.files[0];
-  if (file) loadVideo(file, file.name);
+  importMediaFiles([...event.target.files]);
   event.target.value = "";
 });
 refs.chooseVideoButton.addEventListener("click", () => refs.videoInput.click());
-refs.replaceMediaButton.addEventListener("click", () => refs.videoInput.click());
+refs.addMediaButton.addEventListener("click", () => refs.videoInput.click());
 refs.exportPvoButton.addEventListener("click", exportPvoVideo);
 refs.canvasRatio.addEventListener("change", () => setCanvasRatio(refs.canvasRatio.value));
 refs.mediaTab.addEventListener("click", () => setPanelTab("media"));
@@ -1077,7 +1193,25 @@ function registerWebMcpTools() {
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
     annotations: { readOnlyHint: true, untrustedContentHint: true },
     execute() {
-      return { mediaLoaded: mediaReady, mediaName: sourceMediaName || null, canvasRatio, selectedScene: selectedClipId, selectedComponent: selectedComponentId, scenes: structuredClone(clips), components: structuredClone(components) };
+      return {
+        mediaLoaded: mediaReady,
+        activeMedia: activeMediaId,
+        mediaName: sourceMediaName || null,
+        media: mediaItems.map((item) => ({
+          id: item.id,
+          name: item.name,
+          type: mediaItemIsMov(item) ? "mov" : "mp4",
+          size: item.file.size,
+          duration: item.duration,
+          active: item.id === activeMediaId,
+          error: item.error,
+        })),
+        canvasRatio,
+        selectedScene: selectedClipId,
+        selectedComponent: selectedComponentId,
+        scenes: structuredClone(clips),
+        components: structuredClone(components),
+      };
     },
   });
   register({

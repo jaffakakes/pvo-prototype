@@ -59,10 +59,17 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .component-buttons strong { font-size: 13px; }
 .component-buttons span { color: var(--dim); font-size: 12px; }
 .media-controls { display: grid; gap: 10px; padding: 14px; }
-.media-file { min-width: 0; display: grid; gap: 3px; padding: 11px; border: 1px solid var(--line); background: var(--panel-2); }
-.media-file strong, .media-file span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.media-file strong { color: #222; font-size: 13px; }
-.media-file span { color: var(--dim); font-size: 12px; }
+.media-library { display: grid; gap: 5px; max-height: 310px; overflow: auto; }
+.media-empty { margin: 0; padding: 12px; border: 1px solid var(--line); color: var(--dim); background: var(--panel-2); font-size: 12px; line-height: 1.5; }
+.media-item { width: 100%; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 7px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 2px; color: var(--text); background: var(--panel-2); text-align: left; cursor: pointer; }
+.media-item:hover { border-color: #8a9eb7; background: var(--accent-soft); }
+.media-item.active { border-color: var(--accent); background: var(--accent-soft); }
+.media-item-main { min-width: 0; display: grid; gap: 2px; }
+.media-item strong, .media-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.media-item strong { color: #222; font-size: 13px; }
+.media-item span { color: var(--dim); font-size: 11px; }
+.media-item-state { color: var(--accent-dark); font-size: 11px; font-weight: 700; }
+.media-item.error .media-item-state { color: #9b2f34; }
 .media-action, .export-button { width: 100%; }
 .export-section { display: grid; gap: 8px; margin-top: 4px; padding-top: 14px; border-top: 1px solid var(--line); }
 .export-section p { margin: 0; color: var(--dim); font-size: 12px; line-height: 1.5; }

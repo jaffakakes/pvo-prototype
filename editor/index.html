@@ -11,7 +11,7 @@
     <header class="app-header">
       <div class="title-block"><strong>PVO Editor</strong><span>basic prototype</span></div>
       <div class="project-name"><span id="projectName">No video selected</span><small id="projectDuration">00:00.0</small></div>
-      <label class="button file-button"><input id="videoInput" type="file" accept="video/mp4,video/quicktime,.mp4,.mov" />Open video</label>
+      <label class="button file-button"><input id="videoInput" type="file" accept="video/mp4,video/quicktime,.mp4,.mov" multiple />Add media</label>
     </header>
 
     <div class="editor-shell">
@@ -22,16 +22,15 @@
         </div>
 
         <section id="mediaPanel" role="tabpanel" aria-labelledby="mediaTab">
-          <header class="panel-header"><h2>Media</h2><span>Source</span></header>
+          <header class="panel-header"><h2>Media</h2><span id="mediaCount">0 items</span></header>
           <div class="media-controls">
-            <div class="media-file">
-              <strong id="mediaFileName">No video</strong>
-              <span id="mediaFileMeta" aria-live="polite">Choose an MP4 or MOV to begin.</span>
+            <div class="media-library" id="mediaLibrary" aria-live="polite">
+              <p class="media-empty">Choose MP4 or MOV files to begin.</p>
             </div>
-            <button class="button media-action" id="replaceMediaButton" type="button">Open video</button>
+            <button class="button media-action" id="addMediaButton" type="button">Add media</button>
             <div class="export-section">
               <button class="button export-button" id="exportPvoButton" type="button" disabled>Export PVO video</button>
-              <p>Creates a normal MP4 or MOV with the PVO scenes and interactive data attached.</p>
+              <p>Exports the selected item with its PVO scenes and interactive data attached.</p>
             </div>
           </div>
         </section>
@@ -65,7 +64,7 @@
           <section class="media-start" id="mediaStart" aria-labelledby="mediaStartTitle">
             <h2 id="mediaStartTitle">Open a video to start</h2>
             <p id="mediaStartMessage">Choose an MP4 or MOV from your computer.</p>
-            <button class="button" id="chooseVideoButton" type="button">Choose video</button>
+            <button class="button" id="chooseVideoButton" type="button">Choose media</button>
           </section>
           <div class="canvas-frame" id="canvasFrame" data-ratio="16:9" hidden>
             <video id="video" controls playsinline preload="metadata"></video>
