@@ -30,6 +30,13 @@ function makeTinyMp4({ zeroSizedMdat = false } = {}) {
   return new Blob([ftyp, moov, mdat], { type: "video/mp4" });
 }
 
+function makeTinyMov() {
+  const ftyp = mp4Box("ftyp", Uint8Array.from([0x71, 0x74, 0x20, 0x20, 0, 0, 0, 1, 0x71, 0x74, 0x20, 0x20]));
+  const moov = mp4Box("moov", Uint8Array.from([1, 2, 3, 4]));
+  const mdat = mp4Box("mdat", Uint8Array.from([10, 20, 30, 40, 50]));
+  return new Blob([ftyp, moov, mdat], { type: "video/quicktime" });
+}
+
 function manifest() {
   return {
     spec_version: "0.1-prototype",
@@ -90,6 +97,18 @@ test("packPvo and readPvo round-trip while preserving a normal MP4 fallback", as
   assert.equal(decoded.validation.valid, true);
   assert.equal(decoded.videoBlob.size, source.size);
   assert.equal(PVO_UUID, "5a125a6e-8c7a-4ba8-9dd9-5e449a275056");
+});
+
+test("packPvo preserves a MOV source and QuickTime fallback", async () => {
+  const source = makeTinyMov();
+  const packed = await packPvo(source, manifest());
+  assert.equal(packed.type, "video/quicktime");
+
+  const decoded = await readPvo(packed);
+  assert.equal(decoded.validation.valid, true);
+  assert.equal(decoded.videoBlob.type, "video/quicktime");
+  assert.equal(decoded.videoBlob.size, source.size);
+  assert.deepEqual(inspectMp4(new Uint8Array(await packed.arrayBuffer())).map((box) => box.type), ["ftyp", "moov", "mdat", "uuid"]);
 });
 
 test("repacking replaces the old PVO box instead of stacking manifests", async () => {

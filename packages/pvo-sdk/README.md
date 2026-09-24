@@ -12,9 +12,9 @@ import {
 } from "@pvo/sdk";
 ```
 
-- `packPvo(mp4, manifest)` returns a normal `video/mp4` Blob with the PVO manifest appended.
+- `packPvo(media, manifest)` returns an MP4 or MOV Blob with the PVO manifest appended and the source media type preserved.
 - `readPvo(file)` returns `{ manifest, validation, videoBlob, fileName }`.
-- `tryReadPvo(file)` returns `null` for a plain MP4.
+- `tryReadPvo(file)` returns `null` for a plain MP4 or MOV.
 - `validatePvo(manifest)` returns `{ valid, errors, warnings }`.
 - `createPvoRuntime(manifest, handlers)` runs actions against host-provided player adapters.
 

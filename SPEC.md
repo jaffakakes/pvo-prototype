@@ -2,13 +2,13 @@
 
 ## 1. Purpose
 
-A Playable Video Object (PVO) is a standard MP4 plus a declarative interaction manifest. A normal player plays the base video. A PVO-aware player also displays timed UI and runs safe, inspectable actions.
+A Playable Video Object (PVO) is a standard ISO Base Media file—currently MP4 or MOV—plus a declarative interaction manifest. A normal player plays the base video. A PVO-aware player also displays timed UI and runs safe, inspectable actions.
 
 This prototype is creator-authored. It intentionally excludes signatures, viewer layers, embedded asset packs, and multiplayer.
 
 ## 2. Container
 
-The PVO manifest is stored in a top-level ISO Base Media File Format `uuid` box appended after the existing MP4 boxes.
+The PVO manifest is stored in a top-level ISO Base Media File Format `uuid` box appended after the existing MP4 or MOV boxes.
 
 | Field | Value |
 | --- | --- |
@@ -18,9 +18,9 @@ The PVO manifest is stored in a top-level ISO Base Media File Format `uuid` box 
 | remaining payload | UTF-8 JSON manifest |
 | maximum manifest | 2 MiB |
 
-A writer must replace existing PVO manifest boxes when re-exporting. A reader uses the last valid PVO manifest when more than one is encountered. Unknown MP4 boxes are preserved byte-for-byte. A size-zero final MP4 box is rewritten with an explicit size before PVO data is appended.
+A writer must replace existing PVO manifest boxes when re-exporting. A reader uses the last valid PVO manifest when more than one is encountered. Unknown media boxes are preserved byte-for-byte. A size-zero final media box is rewritten with an explicit size before PVO data is appended.
 
-The recommended filename is `name.pvo.mp4`. This keeps ordinary operating-system and browser MP4 handling intact.
+The recommended filename preserves the source container: `name.pvo.mp4` or `name.pvo.mov`. This keeps ordinary operating-system and browser video handling intact.
 
 ## 3. Manifest
 
@@ -71,7 +71,7 @@ Strings may contain `{state.path}` or `{response.message}` templates. Templates 
 
 The player identifies the scene containing the current video time. It runs `on_enter` when entering a scene and `on_exit` at its end. If no choice or form is waiting and the scene declares `next`, the player seeks to that scene. Otherwise playback pauses.
 
-All alternate footage lives in the same MP4. Branching is a seek, so no media network or secondary video file is required.
+All alternate footage lives in the same source video. Branching is a seek, so no media network or secondary video file is required.
 
 ## 5. Network boundary
 

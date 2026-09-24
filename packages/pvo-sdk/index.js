@@ -1,6 +1,6 @@
 /**
  * PVO SDK prototype
- * A PVO is an ordinary MP4 with one top-level `uuid` box appended to it.
+ * A PVO is an ordinary MP4 or MOV with one top-level `uuid` box appended to it.
  * The box contains a four-byte `pvom` subtype followed by a UTF-8 manifest.
  */
 
@@ -64,10 +64,10 @@ function readBoxSize(view, offset, available) {
   const smallSize = view.getUint32(offset, false);
   if (smallSize === 0) return { size: available, headerSize: 8, extendsToEnd: true };
   if (smallSize !== 1) return { size: smallSize, headerSize: 8, extendsToEnd: false };
-  if (offset + 16 > view.byteLength) throw new Error("Invalid extended MP4 box header.");
+  if (offset + 16 > view.byteLength) throw new Error("Invalid extended media box header.");
   const largeSize = view.getBigUint64(offset + 8, false);
   if (largeSize > BigInt(Number.MAX_SAFE_INTEGER)) {
-    throw new Error("This MP4 is too large for the browser prototype.");
+    throw new Error("This media file is too large for the browser prototype.");
   }
   return { size: Number(largeSize), headerSize: 16, extendsToEnd: false };
 }
@@ -80,11 +80,11 @@ export function inspectMp4(inputBytes) {
 
   while (offset < bytes.length) {
     if (bytes.length - offset < 8) {
-      throw new Error(`Invalid MP4: ${bytes.length - offset} trailing byte(s) after the last box.`);
+      throw new Error(`Invalid media file: ${bytes.length - offset} trailing byte(s) after the last box.`);
     }
     const { size, headerSize, extendsToEnd } = readBoxSize(view, offset, bytes.length - offset);
     if (size < headerSize || offset + size > bytes.length) {
-      throw new Error(`Invalid MP4 box at byte ${offset}.`);
+      throw new Error(`Invalid media box at byte ${offset}.`);
     }
     const type = textDecoder.decode(bytes.subarray(offset + 4, offset + 8));
     const uuidOffset = offset + headerSize;
@@ -113,10 +113,10 @@ function stripPvoBoxes(bytes, boxes) {
     if (isManifestBox(bytes, box)) continue;
     let chunk = bytes.slice(box.offset, box.offset + box.size);
     // A size=0 box claims the rest of the file. Give it an explicit size before
-    // appending PVO data so normal MP4 parsers can continue to the new box.
+    // appending PVO data so normal media parsers can continue to the new box.
     if (box.extendsToEnd) {
       if (chunk.length > 0xffffffff) {
-        throw new Error("A size=0 MP4 box larger than 4 GB is not supported by this prototype.");
+        throw new Error("A size=0 media box larger than 4 GB is not supported by this prototype.");
       }
       new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength).setUint32(0, chunk.length, false);
     }
@@ -141,22 +141,28 @@ function makeManifestBox(manifest) {
   return box;
 }
 
-/** Append or replace the PVO manifest in an MP4. Returns a normal video/mp4 Blob. */
-export async function packPvo(mp4, manifest) {
+function mediaMimeType(input) {
+  const type = String(input?.type || "").toLowerCase();
+  const name = String(input?.name || "");
+  return type === "video/quicktime" || /(?:\.pvo)?\.mov$/i.test(name) ? "video/quicktime" : "video/mp4";
+}
+
+/** Append or replace the PVO manifest in an MP4 or MOV while preserving its media type. */
+export async function packPvo(media, manifest) {
   const result = validatePvo(manifest);
   if (!result.valid) {
     throw new Error(`Invalid PVO manifest:\n${result.errors.join("\n")}`);
   }
-  const bytes = await toBytes(mp4);
+  const bytes = await toBytes(media);
   const boxes = inspectMp4(bytes);
   if (!boxes.some((box) => box.type === "ftyp")) {
-    throw new Error("This file does not look like an MP4 (missing ftyp box).");
+    throw new Error("This file does not look like an MP4 or MOV (missing ftyp box).");
   }
   const base = stripPvoBoxes(bytes, boxes);
-  return new Blob([base, makeManifestBox(manifest)], { type: "video/mp4" });
+  return new Blob([base, makeManifestBox(manifest)], { type: mediaMimeType(media) });
 }
 
-/** Read a PVO file and return both its manifest and its plain-MP4 fallback bytes. */
+/** Read a PVO file and return both its manifest and its plain-video fallback bytes. */
 export async function readPvo(file) {
   const bytes = await toBytes(file);
   const boxes = inspectMp4(bytes);
@@ -179,12 +185,12 @@ export async function readPvo(file) {
   return {
     manifest,
     validation,
-    videoBlob: new Blob([videoBytes], { type: "video/mp4" }),
-    fileName: file?.name || "video.pvo.mp4",
+    videoBlob: new Blob([videoBytes], { type: mediaMimeType(file) }),
+    fileName: file?.name || (mediaMimeType(file) === "video/quicktime" ? "video.pvo.mov" : "video.pvo.mp4"),
   };
 }
 
-/** Return null for a plain MP4; throw only when a detected PVO is malformed. */
+/** Return null for a plain MP4 or MOV; throw only when a detected PVO is malformed. */
 export async function tryReadPvo(file) {
   try {
     return await readPvo(file);

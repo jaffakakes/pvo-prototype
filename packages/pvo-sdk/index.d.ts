@@ -96,7 +96,7 @@ export interface RuntimeHandlers {
 export interface RuntimeEvent { type: string; state: Record<string, unknown>; visible: string[]; [key: string]: unknown }
 
 export function inspectMp4(input: Uint8Array | ArrayBuffer): Mp4Box[];
-export function packPvo(mp4: BinaryInput, manifest: PvoManifest): Promise<Blob>;
+export function packPvo(media: BinaryInput, manifest: PvoManifest): Promise<Blob>;
 export function readPvo(file: BinaryInput & { name?: string }): Promise<PvoReadResult>;
 export function tryReadPvo(file: BinaryInput & { name?: string }): Promise<PvoReadResult | null>;
 export function validatePvo(manifest: unknown): ValidationResult;

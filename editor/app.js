@@ -169,14 +169,18 @@ function formatFileSize(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+function sourceIsMov() {
+  return /(?:\.pvo)?\.mov$/i.test(sourceMediaName) || sourceMedia?.type === "video/quicktime";
+}
+
 function renderMediaDetails() {
   if (!sourceMedia) {
     refs.mediaFileName.textContent = "No video";
-    refs.mediaFileMeta.textContent = "Choose an MP4 to begin.";
+    refs.mediaFileMeta.textContent = "Choose an MP4 or MOV to begin.";
     return;
   }
   refs.mediaFileName.textContent = sourceMediaName;
-  const details = [formatFileSize(sourceMedia.size)];
+  const details = [sourceIsMov() ? "MOV" : "MP4", formatFileSize(sourceMedia.size)];
   details.push(mediaReady ? formatTime(video.duration) : "Loading…");
   if (mediaReady) details.push(canvasRatio);
   refs.mediaFileMeta.textContent = details.join(" · ");
@@ -204,7 +208,7 @@ function setMediaReady(ready, copy = {}) {
   addComponentButtons.forEach((button) => { button.disabled = !ready; });
   if (!ready) {
     refs.mediaStartTitle.textContent = copy.title || "Open a video to start";
-    refs.mediaStartMessage.textContent = copy.message || "Choose an MP4 from your computer.";
+    refs.mediaStartMessage.textContent = copy.message || "Choose an MP4 or MOV from your computer.";
   }
   renderMediaDetails();
 }
@@ -869,9 +873,15 @@ function exportComponent(component) {
   return exported;
 }
 
+function sourceBaseName() {
+  return sourceMediaName
+    .replace(/\.pvo\.(mp4|mov)$/i, "")
+    .replace(/\.(mp4|mov)$/i, "");
+}
+
 function buildPvoManifest() {
   if (!mediaReady || !sourceMedia || clips.length === 0) throw new Error("Open a video before exporting");
-  const title = sourceMediaName.replace(/\.pvo\.mp4$/i, "").replace(/\.mp4$/i, "") || "PVO video";
+  const title = sourceBaseName() || "PVO video";
   const id = title.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "pvo_video";
   const exportedComponents = components.map(exportComponent);
   const triggers = components.flatMap((component) => ([
@@ -905,8 +915,9 @@ function buildPvoManifest() {
 }
 
 function exportedFileName() {
-  const base = sourceMediaName.replace(/\.pvo\.mp4$/i, "").replace(/\.mp4$/i, "") || "video";
-  return `${base}.pvo.mp4`;
+  const base = sourceBaseName() || "video";
+  const extension = sourceIsMov() ? "mov" : "mp4";
+  return `${base}.pvo.${extension}`;
 }
 
 async function exportPvoVideo() {
@@ -966,7 +977,7 @@ video.addEventListener("loadedmetadata", () => {
     sourceMedia = null;
     sourceMediaName = "";
     refs.projectName.textContent = "No video selected";
-    setMediaReady(false, { title: "Could not open this video", message: "Choose an MP4 file and try again." });
+    setMediaReady(false, { title: "Could not open this video", message: "Choose an MP4 or MOV with a codec this browser supports." });
     setStatus("Video could not be opened");
     return;
   }
@@ -994,7 +1005,7 @@ video.addEventListener("error", () => {
   refs.projectDuration.textContent = "00:00.0";
   refs.currentTime.textContent = "00:00.0";
   refs.totalTime.textContent = "00:00.0";
-  setMediaReady(false, { title: "Could not open this video", message: "Choose an MP4 file and try again." });
+  setMediaReady(false, { title: "Could not open this video", message: "Choose an MP4 or MOV with a codec this browser supports." });
   renderAll();
   setStatus("Video could not be opened");
 });

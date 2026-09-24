@@ -16,14 +16,14 @@
     <main>
       <aside class="side-nav" aria-label="On this page">
         <strong>0.1 prototype</strong>
-        <a href="#quick-start">Quick start</a><a href="#api">Four functions</a><a href="#manifest">Manifest model</a><a href="#actions">Actions</a><a href="#container">MP4 box</a><a href="#boundaries">Scope boundary</a>
+        <a href="#quick-start">Quick start</a><a href="#api">Four functions</a><a href="#manifest">Manifest model</a><a href="#actions">Actions</a><a href="#container">Media box</a><a href="#boundaries">Scope boundary</a>
       </aside>
 
       <article class="content">
         <section class="lead" id="quick-start">
           <h1>PVO SDK</h1>
           <p class="version">Release 0.1 prototype</p>
-          <p>PVO is a normal MP4 with a declarative manifest appended to it. This SDK reads, validates, writes, and runs that data without depending on Restyle—or on any particular editor, player, payment provider, or server.</p>
+          <p>PVO is a normal MP4 or MOV with a declarative manifest appended to it. This SDK reads, validates, writes, and runs that data without depending on Restyle—or on any particular editor, player, payment provider, or server.</p>
           <div class="code-window"><div class="code-bar"><span>quick-start.js</span><button data-copy="quickStart" type="button">Copy</button></div><pre id="quickStart"><code>import {
   packPvo,
   readPvo,
@@ -34,7 +34,7 @@
 const check = validatePvo(manifest);
 if (!check.valid) throw new Error(check.errors.join("\n"));
 
-const pvo = await packPvo(mp4File, manifest);
+const pvo = await packPvo(mediaFile, manifest);
 const decoded = await readPvo(pvo);
 const runtime = createPvoRuntime(decoded.manifest, hostAdapters);</code></pre></div>
         </section>
@@ -42,8 +42,8 @@ const runtime = createPvoRuntime(decoded.manifest, hostAdapters);</code></pre></
         <section id="api">
           <header class="section-title"><div><h2>A four-function surface</h2><p>Small enough to integrate into another creative tool, with the file details kept behind the API.</p></div></header>
           <div class="api-grid">
-            <article><code>packPvo(mp4, manifest)</code><p>Validates the manifest, removes an older PVO box, and appends one canonical replacement. Returns a standard <code>video/mp4</code> Blob.</p><span>write</span></article>
-            <article><code>readPvo(file)</code><p>Finds the PVO box and returns its manifest, validation result, and the plain fallback MP4 bytes.</p><span>read</span></article>
+            <article><code>packPvo(media, manifest)</code><p>Validates the manifest, removes an older PVO box, and appends one canonical replacement while preserving MP4 or MOV.</p><span>write</span></article>
+            <article><code>readPvo(file)</code><p>Finds the PVO box and returns its manifest, validation result, and the plain fallback video bytes.</p><span>read</span></article>
             <article><code>validatePvo(manifest)</code><p>Checks scene ranges, IDs, coordinates, action references, component kinds, and request declarations.</p><span>inspect</span></article>
             <article><code>createPvoRuntime(manifest)</code><p>Runs state, conditions, requests, and navigation through adapters supplied by the host application.</p><span>execute</span></article>
           </div>
@@ -52,7 +52,7 @@ const runtime = createPvoRuntime(decoded.manifest, hostAdapters);</code></pre></
         <section id="manifest">
           <header class="section-title"><div><h2>The manifest is the program</h2><p>No user JavaScript lives in the file. An Adobe integration and an independent open-source player can inspect the same data.</p></div></header>
           <div class="split">
-            <div class="definition-list"><div><strong>scenes</strong><span>Named start/end ranges inside one MP4</span></div><div><strong>components</strong><span>Tooltip, card, choice, and form</span></div><div><strong>hotspots</strong><span>Normalized rectangles and tap actions</span></div><div><strong>triggers</strong><span>Actions fired at declared video times</span></div><div><strong>state</strong><span>Values for templates and conditions</span></div></div>
+            <div class="definition-list"><div><strong>scenes</strong><span>Named start/end ranges inside one source video</span></div><div><strong>components</strong><span>Tooltip, card, choice, and form</span></div><div><strong>hotspots</strong><span>Normalized rectangles and tap actions</span></div><div><strong>triggers</strong><span>Actions fired at declared video times</span></div><div><strong>state</strong><span>Values for templates and conditions</span></div></div>
             <div class="code-window small"><div class="code-bar"><span>scene.json</span></div><pre><code>{
   "id": "intro",
   "start": 0,
@@ -67,7 +67,7 @@ const runtime = createPvoRuntime(decoded.manifest, hostAdapters);</code></pre></
 
         <section id="actions">
           <header class="section-title"><div><h2>Choices and forms route with actions</h2><p>There is no visual scene-connector format. A choice or form outcome simply runs <code>goto_scene</code>, optionally guarded by <code>when</code>.</p></div></header>
-          <div class="action-table" role="table" aria-label="PVO action types"><div role="row"><strong role="cell">show / hide</strong><span role="cell">Change component visibility</span><em role="cell">local</em></div><div role="row"><strong role="cell">set</strong><span role="cell">Write state or increment a counter</span><em role="cell">local</em></div><div role="row"><strong role="cell">goto_scene / seek</strong><span role="cell">Move between time ranges in the MP4</span><em role="cell">local</em></div><div role="row"><strong role="cell">request</strong><span role="cell">Call a creator URL; map success and error</span><em role="cell">network</em></div><div role="row"><strong role="cell">open_url</strong><span role="cell">Hand an external link to the host</span><em role="cell">network</em></div><div role="row"><strong role="cell">chain / branch</strong><span role="cell">Compose declared actions</span><em role="cell">mixed</em></div></div>
+          <div class="action-table" role="table" aria-label="PVO action types"><div role="row"><strong role="cell">show / hide</strong><span role="cell">Change component visibility</span><em role="cell">local</em></div><div role="row"><strong role="cell">set</strong><span role="cell">Write state or increment a counter</span><em role="cell">local</em></div><div role="row"><strong role="cell">goto_scene / seek</strong><span role="cell">Move between time ranges in the source video</span><em role="cell">local</em></div><div role="row"><strong role="cell">request</strong><span role="cell">Call a creator URL; map success and error</span><em role="cell">network</em></div><div role="row"><strong role="cell">open_url</strong><span role="cell">Hand an external link to the host</span><em role="cell">network</em></div><div role="row"><strong role="cell">chain / branch</strong><span role="cell">Compose declared actions</span><em role="cell">mixed</em></div></div>
           <div class="code-window"><div class="code-bar"><span>form-route.json</span><button data-copy="routeCode" type="button">Copy</button></div><pre id="routeCode"><code>{
   "type": "request",
   "method": "POST",
@@ -82,9 +82,9 @@ const runtime = createPvoRuntime(decoded.manifest, hostAdapters);</code></pre></
         </section>
 
         <section id="container">
-          <header class="section-title"><div><h2>One extra box; still an MP4</h2><p>The prototype uses a standards-safe top-level <code>uuid</code> box. Normal players skip it. PVO-aware software reads the fixed UUID and <code>pvom</code> subtype.</p></div></header>
-          <div class="box-map" aria-label="PVO MP4 box layout"><div><code>ftyp</code><span>file type</span></div><i>→</i><div><code>moov</code><span>video index</span></div><i>→</i><div class="wide"><code>mdat</code><span>video + audio</span></div><i>→</i><div class="pvo"><code>uuid · pvom</code><span>JSON manifest</span></div></div>
-          <dl class="binary-facts"><div><dt>User type</dt><dd>5a125a6e-8c7a-4ba8-9dd9-5e449a275056</dd></div><div><dt>Manifest limit</dt><dd>2 MiB</dd></div><div><dt>Filename</dt><dd>name.pvo.mp4</dd></div></dl>
+          <header class="section-title"><div><h2>One extra box; still your video</h2><p>The prototype uses a standards-safe top-level <code>uuid</code> box. Normal MP4 and MOV players skip it. PVO-aware software reads the fixed UUID and <code>pvom</code> subtype.</p></div></header>
+          <div class="box-map" aria-label="PVO media box layout"><div><code>ftyp</code><span>file type</span></div><i>→</i><div><code>moov</code><span>video index</span></div><i>→</i><div class="wide"><code>mdat</code><span>video + audio</span></div><i>→</i><div class="pvo"><code>uuid · pvom</code><span>JSON manifest</span></div></div>
+          <dl class="binary-facts"><div><dt>User type</dt><dd>5a125a6e-8c7a-4ba8-9dd9-5e449a275056</dd></div><div><dt>Manifest limit</dt><dd>2 MiB</dd></div><div><dt>Filename</dt><dd>name.pvo.mp4 / name.pvo.mov</dd></div></dl>
         </section>
 
         <section id="boundaries">

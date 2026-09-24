@@ -1,6 +1,6 @@
 # PVO — Playable Video Object
 
-PVO is an open prototype format for interactive video. A PVO file is still an ordinary MP4: the video and audio remain untouched, while one appended metadata box describes scenes, hotspots, interface components, state, conditions, requests, and branching.
+PVO is an open prototype format for interactive video. A PVO file is still an ordinary MP4 or MOV: the video and audio remain untouched, while one appended metadata box describes scenes, hotspots, interface components, state, conditions, requests, and branching.
 
 This repository contains the independent `@pvo/sdk` plus a small editor prototype used to exercise the format. Neither depends on Restyle.
 
@@ -32,14 +32,14 @@ import {
 } from "@pvo/sdk";
 
 const validation = validatePvo(manifest);
-const output = await packPvo(mp4File, manifest);
+const output = await packPvo(mediaFile, manifest);
 const decoded = await readPvo(output);
 const runtime = createPvoRuntime(decoded.manifest, playerAdapters);
 ```
 
 The prototype writes one top-level ISO BMFF `uuid` box. Its fixed user type is `5a125a6e-8c7a-4ba8-9dd9-5e449a275056`; the first four payload bytes are `pvom`, followed by UTF-8 JSON. Re-exporting replaces an older PVO manifest instead of stacking copies.
 
-Exported files use `.pvo.mp4` so operating systems and normal video players continue to recognize the fallback video.
+Exported files use `.pvo.mp4` or `.pvo.mov` so operating systems and normal video players continue to recognize the fallback video.
 
 ## Actions
 
@@ -49,7 +49,7 @@ PVO does not define payments or business objects. A creator can make a generic `
 
 ## Prototype scope
 
-Included now: one MP4 container, scene ranges, normalized hotspot data, tooltip/card/choice/form definitions, state, conditions, response mapping, generic HTTP actions, pack/read/validate, a host-adapted runtime, and a basic scene/component editor with `.pvo.mp4` export.
+Included now: MP4 and MOV containers, scene ranges, normalized hotspot data, tooltip/card/choice/form definitions, state, conditions, response mapping, generic HTTP actions, pack/read/validate, a host-adapted runtime, and a basic scene/component editor with `.pvo.mp4` and `.pvo.mov` export.
 
 Deferred: a complete visual player, animation keyframes, signatures, embedded asset packs, builder layers, indexes, offline request queues, native bindings, accounts, collaboration, payments, and AI authoring.
 

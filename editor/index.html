@@ -11,7 +11,7 @@
     <header class="app-header">
       <div class="title-block"><strong>PVO Editor</strong><span>basic prototype</span></div>
       <div class="project-name"><span id="projectName">No video selected</span><small id="projectDuration">00:00.0</small></div>
-      <label class="button file-button"><input id="videoInput" type="file" accept="video/mp4,.mp4" />Open video</label>
+      <label class="button file-button"><input id="videoInput" type="file" accept="video/mp4,video/quicktime,.mp4,.mov" />Open video</label>
     </header>
 
     <div class="editor-shell">
@@ -26,12 +26,12 @@
           <div class="media-controls">
             <div class="media-file">
               <strong id="mediaFileName">No video</strong>
-              <span id="mediaFileMeta" aria-live="polite">Choose an MP4 to begin.</span>
+              <span id="mediaFileMeta" aria-live="polite">Choose an MP4 or MOV to begin.</span>
             </div>
             <button class="button media-action" id="replaceMediaButton" type="button">Open video</button>
             <div class="export-section">
               <button class="button export-button" id="exportPvoButton" type="button" disabled>Export PVO video</button>
-              <p>Creates a normal MP4 with the PVO scenes and interactive data attached.</p>
+              <p>Creates a normal MP4 or MOV with the PVO scenes and interactive data attached.</p>
             </div>
           </div>
         </section>
@@ -64,8 +64,8 @@
         <div class="video-area" id="videoArea">
           <section class="media-start" id="mediaStart" aria-labelledby="mediaStartTitle">
             <h2 id="mediaStartTitle">Open a video to start</h2>
-            <p id="mediaStartMessage">Choose an MP4 from your computer.</p>
-            <button class="button" id="chooseVideoButton" type="button">Choose MP4</button>
+            <p id="mediaStartMessage">Choose an MP4 or MOV from your computer.</p>
+            <button class="button" id="chooseVideoButton" type="button">Choose video</button>
           </section>
           <div class="canvas-frame" id="canvasFrame" data-ratio="16:9" hidden>
             <video id="video" controls playsinline preload="metadata"></video>

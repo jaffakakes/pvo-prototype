@@ -11,6 +11,7 @@ const mime = {
   ".css": "text/css; charset=utf-8",
   ".svg": "image/svg+xml",
   ".mp4": "video/mp4",
+  ".mov": "video/quicktime",
   ".md": "text/markdown; charset=utf-8",
 };
 
@@ -24,9 +25,11 @@ createServer((request, response) => {
     response.end("Not found");
     return;
   }
+  const extension = extname(file).toLowerCase();
+  const isVideo = extension === ".mp4" || extension === ".mov";
   const fileSize = statSync(file).size;
   const range = request.headers.range;
-  if (range && extname(file) === ".mp4") {
+  if (range && isVideo) {
     const match = /^bytes=(\d*)-(\d*)$/.exec(range);
     if (!match) {
       response.writeHead(416, { "Content-Range": `bytes */${fileSize}` });
@@ -41,7 +44,7 @@ createServer((request, response) => {
       return;
     }
     response.writeHead(206, {
-      "Content-Type": "video/mp4",
+      "Content-Type": mime[extension],
       "Content-Length": end - start + 1,
       "Content-Range": `bytes ${start}-${end}/${fileSize}`,
       "Accept-Ranges": "bytes",
@@ -51,9 +54,9 @@ createServer((request, response) => {
     return;
   }
   response.writeHead(200, {
-    "Content-Type": mime[extname(file)] || "application/octet-stream",
+    "Content-Type": mime[extension] || "application/octet-stream",
     "Content-Length": fileSize,
-    ...(extname(file) === ".mp4" ? { "Accept-Ranges": "bytes" } : {}),
+    ...(isVideo ? { "Accept-Ranges": "bytes" } : {}),
     "Cache-Control": "no-store",
   });
   createReadStream(file).pipe(response);
