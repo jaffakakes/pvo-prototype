@@ -248,7 +248,7 @@ function branchViewOptions() {
     if (!component.sceneChange?.enabled) return [];
     const routes = binaryMediaRoutes(component);
     const validRoutes = routes.filter((route) => mediaItem(route.mediaId) && clips.some((clip) => clip.mediaId === route.mediaId));
-    if (validRoutes.length !== 2 || validRoutes[0].mediaId === validRoutes[1].mediaId) return [];
+    if (validRoutes.length !== 2) return [];
     return validRoutes.map((route) => ({
       key: `branch:${component.id}:${route.condition}`,
       componentId: component.id,
@@ -580,7 +580,6 @@ function validateMediaRoutes(component) {
   if (targets.some((target) => !target || !clips.some((clip) => clip.mediaId === target.id))) {
     throw new Error(`${component.name} needs timeline media for both Yes and No`);
   }
-  if (targets[0].id === targets[1].id) throw new Error(`${component.name} needs two different media items`);
   return targets;
 }
 
@@ -662,10 +661,10 @@ function renderSceneRouting(component) {
   if (!sceneChange.enabled) return;
   const destinations = destinationMedia(component);
   const routes = binaryMediaRoutes(component);
-  if (destinations.length < 2) {
+  if (!destinations.length) {
     const empty = document.createElement("p");
     empty.className = "route-empty";
-    empty.textContent = "Add two more media files to the timeline for the Yes and No outcomes.";
+    empty.textContent = "Add another media file to the timeline for the Yes and No outcomes.";
     refs.routeList.append(empty);
   }
   routes.forEach((route) => {
@@ -693,12 +692,6 @@ function renderSceneRouting(component) {
     });
     destination.value = route.mediaId;
     destination.addEventListener("change", () => {
-      const otherRoute = routes.find((candidate) => candidate.condition !== route.condition);
-      if (destination.value && destination.value === otherRoute?.mediaId) {
-        destination.value = route.mediaId;
-        setStatus("Yes and No must use two different timeline media items");
-        return;
-      }
       route.mediaId = destination.value;
       executedSceneChanges.delete(component.id);
       renderTimelineNavigation();
@@ -722,7 +715,6 @@ function setComponentMediaRouting(componentId, enabled, routes) {
     }
     return { condition, mediaId };
   });
-  if (enabled && normalized[0].mediaId === normalized[1].mediaId) throw new Error("Yes and No must target different media");
   component.sceneChange = { enabled: Boolean(enabled), executeAt: "end", routes: normalized };
   renderAll();
   return component;
