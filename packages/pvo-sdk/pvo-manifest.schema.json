@@ -9,6 +9,16 @@
     "id": { "type": "string" },
     "title": { "type": "string" },
     "initial_scene": { "type": "string" },
+    "canvas": {
+      "type": "object",
+      "required": ["ratio", "width", "height"],
+      "properties": {
+        "ratio": { "enum": ["16:9", "9:16", "1:1", "4:5"] },
+        "width": { "type": "number", "exclusiveMinimum": 0 },
+        "height": { "type": "number", "exclusiveMinimum": 0 }
+      },
+      "additionalProperties": true
+    },
     "allowed_domains": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
     "state": { "type": "object", "properties": { "initial": { "type": "object" } }, "additionalProperties": true },
     "scenes": {
@@ -34,6 +44,34 @@
         "properties": {
           "id": { "type": "string" }, "kind": { "enum": ["tooltip", "card", "choice", "form"] },
           "title": { "type": "string" }, "text": { "type": "string" },
+          "html": { "type": "string" }, "css": { "type": "string" },
+          "presentation": {
+            "type": "object",
+            "required": ["scene", "start", "end", "x", "y", "width", "height"],
+            "properties": {
+              "scene": { "type": "string" },
+              "start": { "type": "number", "minimum": 0 }, "end": { "type": "number", "minimum": 0 },
+              "x": { "$ref": "#/$defs/unit" }, "y": { "$ref": "#/$defs/unit" },
+              "width": { "$ref": "#/$defs/unit" }, "height": { "$ref": "#/$defs/unit" }
+            },
+            "additionalProperties": true
+          },
+          "scene_change": {
+            "type": "object",
+            "properties": {
+              "enabled": { "type": "boolean" }, "pauseAtStart": { "type": "boolean" },
+              "routes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["condition", "sceneId"],
+                  "properties": { "condition": { "type": "string" }, "sceneId": { "type": "string" } },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": true
+          },
           "options": { "type": "array", "minItems": 2, "maxItems": 4, "items": { "$ref": "#/$defs/choiceOption" } },
           "fields": { "type": "array", "items": { "$ref": "#/$defs/formField" } },
           "on_submit": { "$ref": "#/$defs/actionList" }

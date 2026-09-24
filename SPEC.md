@@ -28,6 +28,7 @@ The top-level object contains:
 
 - `spec_version`: currently `0.1-prototype`.
 - `initial_scene`: scene to enter first.
+- `canvas`: the authored display ratio and its numeric width/height relationship.
 - `scenes`: named `[start, end]` time ranges in seconds.
 - `components`: UI definitions with a stable ID and one of four kinds.
 - `hotspots`: normalized `[0, 1]` rectangles, time bounds, and actions.
@@ -43,6 +44,8 @@ Coordinates are relative to the actual video content, not to any letterbox area 
 - `card`: title, text, and optional action buttons.
 - `choice`: two or more options; every option owns an action or action list.
 - `form`: typed fields and an `on_submit` action list.
+
+Components may also carry an optional sanitized `html`/`css` presentation plus normalized layout and timing in `presentation`. Semantic fields remain present so a host can replace that presentation with native UI. Choice and form components may preserve authoring routes in `scene_change`.
 
 Choices and forms do not need visual scene connectors. They route by declaring `goto_scene` in their actions.
 
@@ -79,7 +82,7 @@ A player should limit requests to `allowed_domains`, expose network activity to 
 ## 6. Security
 
 - Manifests are data, never executable code.
-- UI text is rendered as text, not HTML.
+- Presentation HTML and CSS are untrusted data. Players must sanitize them again, block scripts and network-loading CSS, and isolate rendered UI from the host page.
 - `open_url` requires viewer confirmation.
 - Manifest size is capped at 2 MiB in this prototype.
 - Player implementations should validate all references, scene ranges, and normalized coordinates before playback.

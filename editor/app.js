@@ -1,3 +1,5 @@
+import { packPvo, PVO_SPEC_VERSION } from "../packages/pvo-sdk/index.js";
+
 const $ = (selector) => document.querySelector(selector);
 const video = $("#video");
 const videoArea = $("#videoArea");
@@ -21,6 +23,10 @@ const refs = {
   mediaStart: $("#mediaStart"), mediaStartTitle: $("#mediaStartTitle"),
   mediaStartMessage: $("#mediaStartMessage"), chooseVideoButton: $("#chooseVideoButton"),
   splitButton: $("#splitButton"),
+  mediaTab: $("#mediaTab"), componentsTab: $("#componentsTab"),
+  mediaPanel: $("#mediaPanel"), componentsPanel: $("#componentsPanel"),
+  mediaFileName: $("#mediaFileName"), mediaFileMeta: $("#mediaFileMeta"),
+  replaceMediaButton: $("#replaceMediaButton"), exportPvoButton: $("#exportPvoButton"),
   name: $("#componentName"), x: $("#componentX"), y: $("#componentY"),
   width: $("#componentW"), height: $("#componentH"), html: $("#componentHtml"), css: $("#componentCss"),
   playhead: $("#playhead"), status: $("#status"), videoInput: $("#videoInput"),
@@ -106,6 +112,10 @@ let objectUrl = null;
 let ignoreSceneSyncUntil = 0;
 let pausedAtComponentId = null;
 let canvasRatio = "16:9";
+let sourceMedia = null;
+let sourceMediaName = "";
+let mediaReady = false;
+let exporting = false;
 
 class EditorOverlay extends HTMLElement {
   constructor() {
@@ -153,11 +163,42 @@ function setStatus(message) {
   refs.status.textContent = message;
 }
 
+function formatFileSize(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "Unknown size";
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function renderMediaDetails() {
+  if (!sourceMedia) {
+    refs.mediaFileName.textContent = "No video";
+    refs.mediaFileMeta.textContent = "Choose an MP4 to begin.";
+    return;
+  }
+  refs.mediaFileName.textContent = sourceMediaName;
+  const details = [formatFileSize(sourceMedia.size)];
+  details.push(mediaReady ? formatTime(video.duration) : "Loading…");
+  if (mediaReady) details.push(canvasRatio);
+  refs.mediaFileMeta.textContent = details.join(" · ");
+}
+
+function setPanelTab(name) {
+  const showMedia = name === "media";
+  refs.mediaTab.setAttribute("aria-selected", String(showMedia));
+  refs.componentsTab.setAttribute("aria-selected", String(!showMedia));
+  refs.mediaTab.tabIndex = showMedia ? 0 : -1;
+  refs.componentsTab.tabIndex = showMedia ? -1 : 0;
+  refs.mediaPanel.hidden = !showMedia;
+  refs.componentsPanel.hidden = showMedia;
+}
+
 function setMediaReady(ready, copy = {}) {
+  mediaReady = ready;
   refs.mediaStart.hidden = ready;
   canvasFrame.hidden = !ready;
   refs.canvasRatio.disabled = !ready;
   refs.splitButton.disabled = !ready;
+  refs.exportPvoButton.disabled = !ready || !sourceMedia || exporting;
   refs.playhead.hidden = !ready;
   timelineEditor.classList.toggle("is-empty", !ready);
   addComponentButtons.forEach((button) => { button.disabled = !ready; });
@@ -165,6 +206,7 @@ function setMediaReady(ready, copy = {}) {
     refs.mediaStartTitle.textContent = copy.title || "Open a video to start";
     refs.mediaStartMessage.textContent = copy.message || "Choose an MP4 from your computer.";
   }
+  renderMediaDetails();
 }
 
 function selectedClip() {
@@ -629,6 +671,7 @@ function setCanvasRatio(value) {
   refs.canvasRatio.value = value;
   canvasFrame.dataset.ratio = value;
   renderOverlays();
+  renderMediaDetails();
   setStatus(`Canvas changed to ${value}`);
   return canvasRatios[value];
 }
@@ -734,9 +777,171 @@ function setComponentTiming(componentId, start, end) {
   return component;
 }
 
+function componentMarkup(component) {
+  const template = document.createElement("template");
+  template.innerHTML = sanitizeHtml(component.html);
+  return template.content;
+}
+
+function componentText(component) {
+  const text = componentMarkup(component).textContent.replace(/\s+/g, " ").trim();
+  return text || component.name;
+}
+
+function routeAction(component, route, value) {
+  const destination = clips.find((clip) => clip.id === route?.sceneId && clip.id !== component.clipId);
+  if (destination) return { type: "goto_scene", scene: destination.id };
+  return { type: "custom", name: "component_action", payload: { component: component.id, value } };
+}
+
+function exportChoiceOptions(component) {
+  const markup = componentMarkup(component);
+  let labels = [...markup.querySelectorAll("button")]
+    .map((button) => button.textContent.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .slice(0, 4);
+  if (labels.length < 2) labels = ["Option one", "Option two"];
+  const routes = component.sceneChange?.routes || [];
+  return labels.map((label, index) => {
+    const route = routes[index];
+    const value = route?.condition || `option_${index + 1}`;
+    return { label, value, actions: [routeAction(component, route, value)] };
+  });
+}
+
+function exportFormFields(component) {
+  const fields = [...componentMarkup(component).querySelectorAll("input, select, textarea")];
+  const usedNames = new Set();
+  return fields.map((field, index) => {
+    const proposedName = String(field.getAttribute("name") || `field_${index + 1}`).replace(/[^a-z0-9_-]+/gi, "_");
+    let name = proposedName || `field_${index + 1}`;
+    while (usedNames.has(name)) name = `${name}_${index + 1}`;
+    usedNames.add(name);
+    const rawType = field.tagName === "SELECT" ? "choice" : field.getAttribute("type");
+    const type = ["number", "email", "choice"].includes(rawType) ? rawType : "text";
+    const exported = {
+      name,
+      label: field.getAttribute("aria-label") || field.getAttribute("placeholder") || name.replaceAll("_", " "),
+      type,
+      required: field.required,
+    };
+    if (type === "choice") {
+      const options = [...field.querySelectorAll("option")].map((option) => ({
+        label: option.textContent.trim() || option.value,
+        value: option.value,
+      }));
+      exported.options = options.length ? options : [{ label: "Option", value: "option" }];
+    }
+    return exported;
+  });
+}
+
+function exportComponent(component) {
+  const exported = {
+    id: component.id,
+    kind: component.kind,
+    title: component.name,
+    html: sanitizeHtml(component.html),
+    css: sanitizeCss(component.css),
+    presentation: {
+      scene: component.clipId,
+      start: component.start,
+      end: component.end,
+      x: component.x / 100,
+      y: component.y / 100,
+      width: component.width / 100,
+      height: component.height / 100,
+    },
+  };
+
+  if (component.sceneChange) exported.scene_change = structuredClone(component.sceneChange);
+  if (component.kind === "tooltip") exported.text = componentText(component);
+  if (component.kind === "card") exported.text = componentText(component);
+  if (component.kind === "choice") exported.options = exportChoiceOptions(component);
+  if (component.kind === "form") {
+    exported.fields = exportFormFields(component);
+    exported.on_submit = [{
+      type: "custom",
+      name: "submit_form",
+      payload: { component: component.id, routes: structuredClone(component.sceneChange?.routes || []) },
+    }];
+  }
+  return exported;
+}
+
+function buildPvoManifest() {
+  if (!mediaReady || !sourceMedia || clips.length === 0) throw new Error("Open a video before exporting");
+  const title = sourceMediaName.replace(/\.pvo\.mp4$/i, "").replace(/\.mp4$/i, "") || "PVO video";
+  const id = title.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "pvo_video";
+  const exportedComponents = components.map(exportComponent);
+  const triggers = components.flatMap((component) => ([
+    {
+      id: `${component.id}_show`,
+      scene: component.clipId,
+      at: component.start,
+      actions: [{ type: "show", component: component.id }],
+    },
+    {
+      id: `${component.id}_hide`,
+      scene: component.clipId,
+      at: component.end,
+      actions: [{ type: "hide", component: component.id }],
+    },
+  ]));
+  const ratio = canvasRatios[canvasRatio];
+
+  return {
+    spec_version: PVO_SPEC_VERSION,
+    id,
+    title,
+    initial_scene: clips[0].id,
+    canvas: { ratio: canvasRatio, width: ratio.width, height: ratio.height },
+    state: { initial: {} },
+    scenes: clips.map((clip) => ({ id: clip.id, label: clip.name, start: clip.start, end: clip.end })),
+    components: exportedComponents,
+    hotspots: [],
+    triggers,
+  };
+}
+
+function exportedFileName() {
+  const base = sourceMediaName.replace(/\.pvo\.mp4$/i, "").replace(/\.mp4$/i, "") || "video";
+  return `${base}.pvo.mp4`;
+}
+
+async function exportPvoVideo() {
+  if (!mediaReady || !sourceMedia || exporting) return;
+  exporting = true;
+  refs.exportPvoButton.disabled = true;
+  refs.exportPvoButton.textContent = "Exporting…";
+  setStatus("Packing PVO video…");
+  try {
+    const output = await packPvo(sourceMedia, buildPvoManifest());
+    const name = exportedFileName();
+    const downloadUrl = URL.createObjectURL(output);
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = name;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 30000);
+    setStatus(`${name} exported`);
+  } catch (error) {
+    console.error("PVO export failed", error);
+    setStatus(`Export failed · ${error.message}`);
+  } finally {
+    exporting = false;
+    refs.exportPvoButton.textContent = "Export PVO video";
+    refs.exportPvoButton.disabled = !mediaReady || !sourceMedia;
+  }
+}
+
 function loadVideo(source, name) {
   const previousObjectUrl = objectUrl;
   objectUrl = source instanceof Blob ? URL.createObjectURL(source) : null;
+  sourceMedia = source instanceof Blob ? source : null;
+  sourceMediaName = name;
   clips = [];
   components = [];
   selectedClipId = null;
@@ -756,6 +961,10 @@ function loadVideo(source, name) {
 video.addEventListener("loadedmetadata", () => {
   const duration = Number.isFinite(video.duration) ? video.duration : 0;
   if (duration <= 0) {
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    objectUrl = null;
+    sourceMedia = null;
+    sourceMediaName = "";
     refs.projectName.textContent = "No video selected";
     setMediaReady(false, { title: "Could not open this video", message: "Choose an MP4 file and try again." });
     setStatus("Video could not be opened");
@@ -773,6 +982,10 @@ video.addEventListener("loadedmetadata", () => {
   setStatus("Video ready · split the clip or add a component");
 });
 video.addEventListener("error", () => {
+  if (objectUrl) URL.revokeObjectURL(objectUrl);
+  objectUrl = null;
+  sourceMedia = null;
+  sourceMediaName = "";
   clips = [];
   components = [];
   selectedClipId = null;
@@ -816,7 +1029,18 @@ refs.videoInput.addEventListener("change", (event) => {
   event.target.value = "";
 });
 refs.chooseVideoButton.addEventListener("click", () => refs.videoInput.click());
+refs.replaceMediaButton.addEventListener("click", () => refs.videoInput.click());
+refs.exportPvoButton.addEventListener("click", exportPvoVideo);
 refs.canvasRatio.addEventListener("change", () => setCanvasRatio(refs.canvasRatio.value));
+refs.mediaTab.addEventListener("click", () => setPanelTab("media"));
+refs.componentsTab.addEventListener("click", () => setPanelTab("components"));
+[refs.mediaTab, refs.componentsTab].forEach((tab) => tab.addEventListener("keydown", (event) => {
+  if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+  event.preventDefault();
+  const next = tab === refs.mediaTab ? refs.componentsTab : refs.mediaTab;
+  setPanelTab(next === refs.mediaTab ? "media" : "components");
+  next.focus();
+}));
 
 function seekFromTimeline(event, lane) {
   const bounds = lane.getBoundingClientRect();
@@ -842,7 +1066,7 @@ function registerWebMcpTools() {
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
     annotations: { readOnlyHint: true, untrustedContentHint: true },
     execute() {
-      return { mediaLoaded: clips.length > 0, canvasRatio, selectedScene: selectedClipId, selectedComponent: selectedComponentId, scenes: structuredClone(clips), components: structuredClone(components) };
+      return { mediaLoaded: mediaReady, mediaName: sourceMediaName || null, canvasRatio, selectedScene: selectedClipId, selectedComponent: selectedComponentId, scenes: structuredClone(clips), components: structuredClone(components) };
     },
   });
   register({
@@ -930,6 +1154,7 @@ function registerWebMcpTools() {
   });
 }
 
+setPanelTab("media");
 setMediaReady(false);
 renderAll();
 registerWebMcpTools();

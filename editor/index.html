@@ -15,14 +15,36 @@
     </header>
 
     <div class="editor-shell">
-      <aside class="panel component-panel" aria-label="Components">
-        <header class="panel-header"><h2>Components</h2><span>Add to scene</span></header>
-        <div class="component-buttons">
-          <button type="button" data-add-component="tooltip" disabled><strong>Tooltip</strong><span>Small label</span></button>
-          <button type="button" data-add-component="card" disabled><strong>Card</strong><span>Title and copy</span></button>
-          <button type="button" data-add-component="choice" disabled><strong>Choice</strong><span>Two actions</span></button>
-          <button type="button" data-add-component="form" disabled><strong>Form</strong><span>Fields and submit</span></button>
+      <aside class="panel component-panel" aria-label="Editor tools">
+        <div class="panel-tabs" role="tablist" aria-label="Editor tools">
+          <button id="mediaTab" type="button" role="tab" aria-selected="true" aria-controls="mediaPanel">Media</button>
+          <button id="componentsTab" type="button" role="tab" aria-selected="false" aria-controls="componentsPanel" tabindex="-1">Components</button>
         </div>
+
+        <section id="mediaPanel" role="tabpanel" aria-labelledby="mediaTab">
+          <header class="panel-header"><h2>Media</h2><span>Source</span></header>
+          <div class="media-controls">
+            <div class="media-file">
+              <strong id="mediaFileName">No video</strong>
+              <span id="mediaFileMeta" aria-live="polite">Choose an MP4 to begin.</span>
+            </div>
+            <button class="button media-action" id="replaceMediaButton" type="button">Open video</button>
+            <div class="export-section">
+              <button class="button export-button" id="exportPvoButton" type="button" disabled>Export PVO video</button>
+              <p>Creates a normal MP4 with the PVO scenes and interactive data attached.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="componentsPanel" role="tabpanel" aria-labelledby="componentsTab" hidden>
+          <header class="panel-header"><h2>Components</h2><span>Add to scene</span></header>
+          <div class="component-buttons">
+            <button type="button" data-add-component="tooltip" disabled><strong>Tooltip</strong><span>Small label</span></button>
+            <button type="button" data-add-component="card" disabled><strong>Card</strong><span>Title and copy</span></button>
+            <button type="button" data-add-component="choice" disabled><strong>Choice</strong><span>Two actions</span></button>
+            <button type="button" data-add-component="form" disabled><strong>Form</strong><span>Fields and submit</span></button>
+          </div>
+        </section>
       </aside>
 
       <main class="workspace">
