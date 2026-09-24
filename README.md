@@ -49,9 +49,9 @@ PVO does not define payments or business objects. A creator can make a generic `
 
 ## Prototype scope
 
-Included now: MP4 and MOV containers, scene ranges, normalized hotspot data, tooltip/card/choice/form definitions, end-of-layer True/False branching, state, conditions, response mapping, generic HTTP actions, pack/read/validate, a host-adapted runtime, and a basic scene/component editor with a multi-item media library and `.pvo.mp4` or `.pvo.mov` export for the selected item.
+Included now: MP4 and MOV containers, scene ranges, normalized hotspot data, tooltip/card/choice/form definitions, end-of-layer True/False branching, state, conditions, response mapping, generic HTTP actions, pack/read/validate, a host-adapted runtime, and a basic layered editor with one shared multi-media timeline, branch views, and single-source `.pvo.mp4` or `.pvo.mov` export.
 
-Deferred: a complete visual player, animation keyframes, signatures, embedded asset packs, builder layers, indexes, offline request queues, native bindings, accounts, collaboration, payments, and AI authoring.
+Deferred: combined multi-media rendering, a complete visual player, animation keyframes, signatures, embedded asset packs, builder layers, indexes, offline request queues, native bindings, accounts, collaboration, payments, and AI authoring.
 
 See [SPEC.md](./SPEC.md) for the format note and [packages/pvo-sdk/pvo-manifest.schema.json](./packages/pvo-sdk/pvo-manifest.schema.json) for the manifest schema.
 

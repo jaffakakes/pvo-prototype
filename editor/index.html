@@ -27,16 +27,15 @@
             <div class="media-library" id="mediaLibrary" aria-live="polite">
               <p class="media-empty">Choose MP4 or MOV files to begin.</p>
             </div>
-            <button class="button media-action" id="addMediaButton" type="button">Add media</button>
             <div class="export-section">
               <button class="button export-button" id="exportPvoButton" type="button" disabled>Export PVO video</button>
-              <p>Exports the selected item with its PVO scenes and interactive data attached.</p>
+              <p id="exportHelp">A multi-media timeline can be previewed here. Combined video rendering is a later export step.</p>
             </div>
           </div>
         </section>
 
         <section id="componentsPanel" role="tabpanel" aria-labelledby="componentsTab" hidden>
-          <header class="panel-header"><h2>Components</h2><span>Add to scene</span></header>
+          <header class="panel-header"><h2>Components</h2><span>Add to selected clip</span></header>
           <div class="component-buttons">
             <button type="button" data-add-component="tooltip" disabled><strong>Tooltip</strong><span>Small label</span></button>
             <button type="button" data-add-component="card" disabled><strong>Card</strong><span>Title and copy</span></button>
@@ -48,7 +47,7 @@
 
       <main class="workspace">
         <div class="preview-toolbar">
-          <div class="preview-scene"><span>Preview</span><strong id="sceneName">No scene</strong></div>
+          <label class="preview-scene" for="sceneName"><span>Scene</span><input id="sceneName" type="text" value="No scene" disabled /></label>
           <label class="ratio-control" for="canvasRatio">
             <span>Ratio</span>
             <select id="canvasRatio" disabled>
@@ -62,9 +61,8 @@
         </div>
         <div class="video-area" id="videoArea">
           <section class="media-start" id="mediaStart" aria-labelledby="mediaStartTitle">
-            <h2 id="mediaStartTitle">Open a video to start</h2>
-            <p id="mediaStartMessage">Choose an MP4 or MOV from your computer.</p>
-            <button class="button" id="chooseVideoButton" type="button">Choose media</button>
+            <h2 id="mediaStartTitle">Add media to start</h2>
+            <p id="mediaStartMessage">Use Add media in the top-right corner.</p>
           </section>
           <div class="canvas-frame" id="canvasFrame" data-ratio="16:9" hidden>
             <video id="video" controls playsinline preload="metadata"></video>
@@ -74,8 +72,12 @@
 
         <section class="timeline-panel" aria-label="Video timeline">
           <div class="timeline-toolbar">
-            <div><h2>Timeline</h2><span>Video and UI layers</span></div>
-            <button class="button split-button" id="splitButton" type="button" disabled>Split at playhead</button>
+            <div><h2 id="timelineTitle">Main timeline</h2><span id="timelineSubtitle">All media and UI layers</span></div>
+            <div class="timeline-actions">
+              <button class="button main-timeline-button" id="mainTimelineButton" type="button" hidden>↑ Main timeline</button>
+              <label class="timeline-view-control" for="timelineView"><span>View</span><select id="timelineView"><option value="main">Main timeline</option></select></label>
+              <button class="button split-button" id="splitButton" type="button" disabled>Split at playhead</button>
+            </div>
           </div>
           <div class="timeline-editor" id="timelineEditor">
             <div class="timeline-ruler-row">
@@ -83,7 +85,7 @@
               <div class="ruler" id="ruler"></div>
             </div>
             <div class="layer-row video-layer-row">
-              <div class="layer-label"><strong>Video</strong><span>Scene clips</span></div>
+              <div class="layer-label"><strong>Video</strong><span>Media clips</span></div>
               <div class="track-wrap">
                 <div class="clip-track" id="clipTrack"></div>
                 <div class="playhead" id="playhead"><span></span></div>
@@ -119,15 +121,15 @@
           </section>
 
           <section class="scene-routing-section" id="sceneRoutingSection" aria-labelledby="sceneRoutingTitle" hidden>
-            <header class="dialog-section-title"><h3 id="sceneRoutingTitle">Scene change</h3><span>Choice and form only</span></header>
+            <header class="dialog-section-title"><h3 id="sceneRoutingTitle">Media branch</h3><span>Choice and form only</span></header>
             <label class="scene-change-toggle">
-              <span><strong>Branch at layer end</strong><small>After an answer, change scene when this layer finishes.</small></span>
+              <span><strong>Branch at layer end</strong><small>After an answer, jump to its selected media when this layer finishes.</small></span>
               <input id="changeSceneToggle" type="checkbox" role="switch" />
             </label>
             <div class="scene-route-fields" id="sceneRouteFields" hidden>
-              <p class="route-source">From <strong id="routeSourceScene">Scene 1</strong></p>
+              <p class="route-source">From <strong id="routeSourceScene">Selected media</strong></p>
               <div class="scene-route-list" id="sceneRouteList"></div>
-              <p class="route-help">True and False must lead to two different scenes. With no answer, playback continues normally.</p>
+              <p class="route-help">Yes and No must use two different media items already on the timeline. With no answer, playback continues normally.</p>
             </div>
           </section>
         </div>

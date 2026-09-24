@@ -18,15 +18,14 @@ const refs = {
   inspectorFields: $("#inspectorFields"), componentDialog: $("#componentDialog"),
   dialogTitle: $("#componentDialogTitle"), routingSection: $("#sceneRoutingSection"),
   routeFields: $("#sceneRouteFields"), routeSource: $("#routeSourceScene"), routeList: $("#sceneRouteList"),
-  changeSceneToggle: $("#changeSceneToggle"),
-  canvasRatio: $("#canvasRatio"),
-  mediaStart: $("#mediaStart"), mediaStartTitle: $("#mediaStartTitle"),
-  mediaStartMessage: $("#mediaStartMessage"), chooseVideoButton: $("#chooseVideoButton"),
-  splitButton: $("#splitButton"),
-  mediaTab: $("#mediaTab"), componentsTab: $("#componentsTab"),
+  changeSceneToggle: $("#changeSceneToggle"), canvasRatio: $("#canvasRatio"),
+  mediaStart: $("#mediaStart"), mediaStartTitle: $("#mediaStartTitle"), mediaStartMessage: $("#mediaStartMessage"),
+  splitButton: $("#splitButton"), mediaTab: $("#mediaTab"), componentsTab: $("#componentsTab"),
   mediaPanel: $("#mediaPanel"), componentsPanel: $("#componentsPanel"),
   mediaLibrary: $("#mediaLibrary"), mediaCount: $("#mediaCount"),
-  addMediaButton: $("#addMediaButton"), exportPvoButton: $("#exportPvoButton"),
+  exportPvoButton: $("#exportPvoButton"), exportHelp: $("#exportHelp"),
+  timelineTitle: $("#timelineTitle"), timelineSubtitle: $("#timelineSubtitle"),
+  timelineView: $("#timelineView"), mainTimelineButton: $("#mainTimelineButton"),
   name: $("#componentName"), x: $("#componentX"), y: $("#componentY"),
   width: $("#componentW"), height: $("#componentH"), html: $("#componentHtml"), css: $("#componentCss"),
   playhead: $("#playhead"), status: $("#status"), videoInput: $("#videoInput"),
@@ -98,9 +97,10 @@ const presets = {
   gap: 10px;
   padding: 16px;
   border-radius: 10px;
-  background: rgba(255,255,255,.96);
-  color: #171717;
+  background: #ffffff;
+  color: #111111;
   font: 600 13px Arial, sans-serif;
+  box-shadow: 0 10px 28px rgba(0,0,0,.18);
 }
 .form label { display: grid; gap: 5px; }
 .form input { padding: 8px; border: 1px solid #bbb; border-radius: 5px; }
@@ -109,24 +109,25 @@ const presets = {
   },
 };
 
+let mediaItems = [];
 let clips = [];
 let components = [];
 let selectedClipId = null;
 let selectedComponentId = null;
-let componentCounter = 0;
-let clipCounter = 0;
-let objectUrl = null;
-let ignoreSceneSyncUntil = 0;
-let previousPlaybackTime = 0;
-let executedSceneChanges = new Set();
+let activeMediaId = null;
+let loadedMediaId = null;
+let pendingPreview = null;
+let timelineViewKey = "main";
 let canvasRatio = "16:9";
-let sourceMedia = null;
-let sourceMediaName = "";
 let mediaReady = false;
 let exporting = false;
-let mediaItems = [];
-let activeMediaId = null;
+let switchingClip = false;
+let previousPreviewTime = 0;
+let executedSceneChanges = new Set();
 let mediaCounter = 0;
+let clipCounter = 0;
+let sceneCounter = 0;
+let componentCounter = 0;
 
 class EditorOverlay extends HTMLElement {
   constructor() {
@@ -148,15 +149,13 @@ class EditorOverlay extends HTMLElement {
   }
 
   update(component) {
-    this.interactive = isSceneChangingComponent(component);
-    const safeHtml = sanitizeHtml(component.html);
-    const safeCss = sanitizeCss(component.css);
+    this.interactive = isBranchingComponent(component);
     this.shadowRoot.innerHTML = `<style>
       :host { display:block; width:100%; height:100%; }
       * { box-sizing:border-box; }
       .component-root { width:100%; height:100%; }
-      ${safeCss}
-    </style><div class="component-root">${safeHtml}</div>`;
+      ${sanitizeCss(component.css)}
+    </style><div class="component-root">${sanitizeHtml(component.html)}</div>`;
     if (component.pendingAnswer !== undefined) {
       this.shadowRoot.querySelectorAll('input[type="radio"]').forEach((input) => {
         input.checked = String(input.value).toLowerCase() === String(component.pendingAnswer);
@@ -168,11 +167,7 @@ class EditorOverlay extends HTMLElement {
     if (!checked) return;
     const normalized = String(value).toLowerCase();
     const answer = normalized === "true" ? true : normalized === "false" ? false : value;
-    this.dispatchEvent(new CustomEvent("pvo-answer", {
-      bubbles: true,
-      composed: true,
-      detail: { answer },
-    }));
+    this.dispatchEvent(new CustomEvent("pvo-answer", { bubbles: true, composed: true, detail: { answer } }));
   }
 }
 customElements.define("editor-overlay", EditorOverlay);
@@ -194,14 +189,14 @@ function sanitizeCss(css) {
   return String(css || "").replace(/@import[^;]+;/gi, "").replace(/url\([^)]*\)/gi, "none");
 }
 
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, Number.isFinite(value) ? value : min));
+}
+
 function formatTime(seconds) {
   const value = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
   const minutes = Math.floor(value / 60);
   return `${String(minutes).padStart(2, "0")}:${(value % 60).toFixed(1).padStart(4, "0")}`;
-}
-
-function setStatus(message) {
-  refs.status.textContent = message;
 }
 
 function formatFileSize(bytes) {
@@ -210,62 +205,124 @@ function formatFileSize(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+function setStatus(message) {
+  refs.status.textContent = message;
+}
+
+function mediaItem(id) {
+  return mediaItems.find((item) => item.id === id) || null;
+}
+
 function activeMediaItem() {
-  return mediaItems.find((item) => item.id === activeMediaId) || null;
+  return mediaItem(activeMediaId);
+}
+
+function selectedClip() {
+  return clips.find((clip) => clip.id === selectedClipId) || null;
+}
+
+function selectedComponent() {
+  return components.find((component) => component.id === selectedComponentId) || null;
 }
 
 function mediaItemIsMov(item) {
   return /(?:\.pvo)?\.mov$/i.test(item?.name || "") || item?.file?.type === "video/quicktime";
 }
 
-function sourceIsMov() {
-  return mediaItemIsMov(activeMediaItem())
-    || /(?:\.pvo)?\.mov$/i.test(sourceMediaName)
-    || sourceMedia?.type === "video/quicktime";
+function clipDuration(clip) {
+  return clip ? Math.max(0, clip.sourceEnd - clip.sourceStart) : 0;
 }
 
-function renderMediaDetails() {
-  const count = mediaItems.length;
-  refs.mediaCount.textContent = `${count} ${count === 1 ? "item" : "items"}`;
-  refs.mediaLibrary.innerHTML = "";
+function sceneLabelFromFile(name) {
+  return name.replace(/\.pvo\.(mp4|mov)$/i, "").replace(/\.(mp4|mov)$/i, "") || `Scene ${sceneCounter + 1}`;
+}
 
-  if (count === 0) {
-    const empty = document.createElement("p");
-    empty.className = "media-empty";
-    empty.textContent = "Choose MP4 or MOV files to begin.";
-    refs.mediaLibrary.append(empty);
-    return;
-  }
+function currentLocalTime() {
+  const clip = selectedClip();
+  if (!clip || loadedMediaId !== clip.mediaId) return 0;
+  return clamp(video.currentTime - clip.sourceStart, 0, clipDuration(clip));
+}
 
-  mediaItems.forEach((item) => {
-    const active = item.id === activeMediaId;
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = `media-item${active ? " active" : ""}${item.error ? " error" : ""}`;
-    button.setAttribute("aria-pressed", String(active));
-
-    const main = document.createElement("span");
-    main.className = "media-item-main";
-    const name = document.createElement("strong");
-    name.textContent = item.name;
-    const metadata = document.createElement("span");
-    const details = [mediaItemIsMov(item) ? "MOV" : "MP4", formatFileSize(item.file.size)];
-    if (item.duration) details.push(formatTime(item.duration));
-    else if (active && !item.error) details.push("Loading…");
-    metadata.textContent = details.join(" · ");
-    main.append(name, metadata);
-
-    const state = document.createElement("span");
-    state.className = "media-item-state";
-    if (item.error) state.textContent = "Could not open";
-    else if (active && mediaReady) state.textContent = "Editing";
-    else if (active) state.textContent = "Loading";
-    else state.textContent = "Open";
-
-    button.append(main, state);
-    button.addEventListener("click", () => activateMedia(item.id));
-    refs.mediaLibrary.append(button);
+function branchViewOptions() {
+  return components.flatMap((component) => {
+    if (!component.sceneChange?.enabled) return [];
+    const routes = binaryMediaRoutes(component);
+    const validRoutes = routes.filter((route) => mediaItem(route.mediaId) && clips.some((clip) => clip.mediaId === route.mediaId));
+    if (validRoutes.length !== 2 || validRoutes[0].mediaId === validRoutes[1].mediaId) return [];
+    return validRoutes.map((route) => ({
+      key: `branch:${component.id}:${route.condition}`,
+      componentId: component.id,
+      condition: route.condition,
+      mediaId: route.mediaId,
+      label: `${component.name} — ${route.condition === "true" ? "Yes" : "No"}`,
+    }));
   });
+}
+
+function currentBranchView() {
+  return branchViewOptions().find((view) => view.key === timelineViewKey) || null;
+}
+
+function visibleClips() {
+  const branch = currentBranchView();
+  return branch ? clips.filter((clip) => clip.mediaId === branch.mediaId) : clips;
+}
+
+function clipLayouts(viewClips = visibleClips()) {
+  let cursor = 0;
+  return viewClips.map((clip) => {
+    const start = cursor;
+    cursor += clipDuration(clip);
+    return { clip, start, end: cursor, duration: clipDuration(clip) };
+  });
+}
+
+function viewDuration() {
+  return clipLayouts().at(-1)?.end || 0;
+}
+
+function projectDuration() {
+  return clipLayouts(clips).at(-1)?.end || 0;
+}
+
+function selectedLayout() {
+  return clipLayouts().find((layout) => layout.clip.id === selectedClipId) || null;
+}
+
+function timelineTime() {
+  const layout = selectedLayout();
+  return layout ? layout.start + currentLocalTime() : 0;
+}
+
+function canExportTimeline() {
+  return clips.length > 0 && new Set(clips.map((clip) => clip.mediaId)).size === 1;
+}
+
+function renderExportState() {
+  const canExport = canExportTimeline();
+  refs.exportPvoButton.disabled = !mediaReady || !canExport || exporting;
+  refs.exportHelp.textContent = canExport
+    ? "Exports this single-source timeline with its PVO interaction data attached."
+    : "Multi-media preview is ready. Combining its media into one rendered video is the next export step.";
+}
+
+function setMediaReady(ready, copy = {}) {
+  mediaReady = ready;
+  const hasClips = clips.length > 0;
+  refs.mediaStart.hidden = ready;
+  canvasFrame.hidden = !ready;
+  refs.canvasRatio.disabled = !hasClips;
+  refs.splitButton.disabled = !ready;
+  refs.playhead.hidden = !hasClips;
+  refs.sceneName.disabled = !hasClips;
+  timelineEditor.classList.toggle("is-empty", !hasClips);
+  addComponentButtons.forEach((button) => { button.disabled = !ready; });
+  if (!ready) {
+    refs.mediaStartTitle.textContent = copy.title || (hasClips ? "Loading preview…" : "Add media to start");
+    refs.mediaStartMessage.textContent = copy.message || (hasClips ? "Preparing the selected clip." : "Use Add media in the top-right corner.");
+  }
+  renderExportState();
+  renderMediaLibrary();
 }
 
 function setPanelTab(name) {
@@ -278,130 +335,284 @@ function setPanelTab(name) {
   refs.componentsPanel.hidden = showMedia;
 }
 
-function setMediaReady(ready, copy = {}) {
-  mediaReady = ready;
-  refs.mediaStart.hidden = ready;
-  canvasFrame.hidden = !ready;
-  refs.canvasRatio.disabled = !ready;
-  refs.splitButton.disabled = !ready;
-  refs.exportPvoButton.disabled = !ready || !sourceMedia || exporting;
-  refs.playhead.hidden = !ready;
-  timelineEditor.classList.toggle("is-empty", !ready);
-  addComponentButtons.forEach((button) => { button.disabled = !ready; });
-  if (!ready) {
-    refs.mediaStartTitle.textContent = copy.title || "Open a video to start";
-    refs.mediaStartMessage.textContent = copy.message || "Choose an MP4 or MOV from your computer.";
+function renderMediaLibrary() {
+  const count = mediaItems.length;
+  refs.mediaCount.textContent = `${count} ${count === 1 ? "item" : "items"}`;
+  refs.mediaLibrary.innerHTML = "";
+  if (!count) {
+    const empty = document.createElement("p");
+    empty.className = "media-empty";
+    empty.textContent = "Imported media appears here and is appended to the timeline.";
+    refs.mediaLibrary.append(empty);
+    return;
   }
-  renderMediaDetails();
+  mediaItems.forEach((item) => {
+    const active = item.id === activeMediaId;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `media-item${active ? " active" : ""}${item.error ? " error" : ""}`;
+    button.setAttribute("aria-pressed", String(active));
+    const main = document.createElement("span");
+    main.className = "media-item-main";
+    const name = document.createElement("strong");
+    name.textContent = item.name;
+    const metadata = document.createElement("span");
+    const details = [mediaItemIsMov(item) ? "MOV" : "MP4", formatFileSize(item.file.size)];
+    if (item.duration) details.push(formatTime(item.duration));
+    else if (!item.error) details.push("Loading…");
+    metadata.textContent = details.join(" · ");
+    main.append(name, metadata);
+    const state = document.createElement("span");
+    state.className = "media-item-state";
+    if (item.error) state.textContent = "Could not open";
+    else if (active) state.textContent = "Selected";
+    else state.textContent = "On timeline";
+    button.append(main, state);
+    button.addEventListener("click", () => {
+      const clip = clips.find((candidate) => candidate.mediaId === item.id);
+      if (!clip) return;
+      setTimelineView("main", false);
+      selectClip(clip.id);
+    });
+    refs.mediaLibrary.append(button);
+  });
 }
 
-function selectedClip() {
-  return clips.find((clip) => clip.id === selectedClipId) || clips[0];
+function renderTimelineNavigation() {
+  const views = branchViewOptions();
+  if (timelineViewKey !== "main" && !views.some((view) => view.key === timelineViewKey)) timelineViewKey = "main";
+  refs.timelineView.innerHTML = "";
+  const main = document.createElement("option");
+  main.value = "main";
+  main.textContent = "Main timeline";
+  refs.timelineView.append(main);
+  views.forEach((view) => {
+    const option = document.createElement("option");
+    option.value = view.key;
+    option.textContent = view.label;
+    refs.timelineView.append(option);
+  });
+  refs.timelineView.value = timelineViewKey;
+  const branch = currentBranchView();
+  refs.mainTimelineButton.hidden = !branch;
+  refs.timelineTitle.textContent = branch?.label || "Main timeline";
+  refs.timelineSubtitle.textContent = branch
+    ? `Branch media · ${mediaItem(branch.mediaId)?.name || "Missing media"}`
+    : "All media and UI layers";
 }
 
-function selectedComponent() {
-  return components.find((component) => component.id === selectedComponentId) || null;
+function setTimelineView(key, selectTarget = true) {
+  timelineViewKey = key;
+  renderTimelineNavigation();
+  const viewClips = visibleClips();
+  if (selectTarget && viewClips.length && !viewClips.some((clip) => clip.id === selectedClipId)) {
+    selectClip(viewClips[0].id);
+    return;
+  }
+  renderAll();
+  updateTimeDisplay();
 }
 
-function sceneAt(time) {
-  return clips.find((clip, index) => time >= clip.start && (time < clip.end || index === clips.length - 1 && time <= clip.end));
+function loadClipPreview(clip, localTime = 0, autoplay = false) {
+  const item = mediaItem(clip.mediaId);
+  if (!item || item.error) return;
+  const sourceTime = clip.sourceStart + clamp(localTime, 0, Math.max(0, clipDuration(clip) - 0.01));
+  activeMediaId = item.id;
+  previousPreviewTime = localTime;
+  renderMediaLibrary();
+  if (loadedMediaId === item.id && video.src) {
+    video.currentTime = sourceTime;
+    setMediaReady(true);
+    renderAll();
+    updateTimeDisplay();
+    if (autoplay) void video.play().catch(() => {});
+    return;
+  }
+  pendingPreview = { clipId: clip.id, mediaId: item.id, sourceTime, autoplay };
+  switchingClip = true;
+  setMediaReady(false, { title: "Loading preview…", message: `Preparing ${item.name}` });
+  video.src = item.url;
+  video.load();
 }
 
-function normalizeSceneNames() {
-  clips.forEach((clip, index) => { clip.name = `Scene ${index + 1}`; });
+function selectClip(id, seek = true, autoplay = false) {
+  const clip = clips.find((candidate) => candidate.id === id);
+  if (!clip) return;
+  selectedClipId = clip.id;
+  selectedComponentId = components.find((component) => component.clipId === clip.id)?.id || null;
+  renderAll();
+  if (seek) loadClipPreview(clip, 0, autoplay);
 }
 
-function selectClip(id, seek = true) {
-  selectedClipId = id;
+function renameSelectedScene(value) {
   const clip = selectedClip();
   if (!clip) return;
-  const firstComponent = components.find((component) => component.clipId === id);
-  selectedComponentId = firstComponent?.id || null;
-  if (seek) video.currentTime = clip.start + 0.01;
-  renderAll();
-  if (seek) updateTime();
+  const name = value.trim() || "Untitled scene";
+  clips.filter((candidate) => candidate.sceneId === clip.sceneId).forEach((candidate) => { candidate.sceneName = name; });
+  refs.sceneName.value = name;
+  renderTimeline();
+  setStatus(`Scene renamed to ${name}`);
 }
 
-function selectComponent(id, seek = true, openDialog = true) {
-  const component = components.find((item) => item.id === id);
-  if (!component) return;
-  selectedClipId = component.clipId;
-  selectedComponentId = id;
-  if (seek) {
-    ignoreSceneSyncUntil = performance.now() + 500;
-    video.currentTime = Math.min(component.end - 0.01, component.start + 0.01);
+function probeMedia(item) {
+  return new Promise((resolve, reject) => {
+    const probe = document.createElement("video");
+    const cleanup = () => { probe.removeAttribute("src"); probe.load(); };
+    probe.preload = "metadata";
+    probe.onloadedmetadata = () => {
+      const duration = Number(probe.duration);
+      cleanup();
+      if (Number.isFinite(duration) && duration > 0) resolve(duration);
+      else reject(new Error("Video has no readable duration"));
+    };
+    probe.onerror = () => { cleanup(); reject(new Error("This codec cannot be opened in the browser")); };
+    probe.src = item.url;
+  });
+}
+
+async function importMediaFiles(files) {
+  const supported = files.filter((file) => /\.(mp4|mov)$/i.test(file.name) || ["video/mp4", "video/quicktime"].includes(file.type));
+  if (!supported.length) {
+    setStatus("Choose MP4 or MOV files");
+    return;
   }
+  setPanelTab("media");
+  for (const file of supported) {
+    const item = {
+      id: `media_${++mediaCounter}`,
+      file,
+      name: file.name,
+      url: URL.createObjectURL(file),
+      duration: null,
+      error: false,
+    };
+    mediaItems.push(item);
+    renderMediaLibrary();
+    try {
+      item.duration = await probeMedia(item);
+      const clip = {
+        id: `clip_${++clipCounter}`,
+        mediaId: item.id,
+        sceneId: `scene_${++sceneCounter}`,
+        sceneName: sceneLabelFromFile(item.name),
+        sourceStart: 0,
+        sourceEnd: item.duration,
+      };
+      clips.push(clip);
+      if (!selectedClipId) selectClip(clip.id);
+      else renderAll();
+      setStatus(`${item.name} added after the last clip`);
+    } catch (error) {
+      item.error = true;
+      setStatus(`${item.name} could not be opened · ${error.message}`);
+    }
+    renderMediaLibrary();
+  }
+  refs.projectName.textContent = mediaItems.length === 1 ? mediaItems[0].name : "PVO project";
+  refs.projectDuration.textContent = formatTime(projectDuration());
   renderAll();
-  if (seek) updateTime();
-  if (openDialog) openComponentDialog();
 }
 
-function splitAtPlayhead() {
-  splitSceneAt(Number(video.currentTime));
-}
-
-function splitSceneAt(at) {
-  const index = clips.findIndex((clip) => at > clip.start + 0.08 && at < clip.end - 0.08);
-  if (index < 0) {
-    const message = "Split time must be inside a scene and away from its edges";
+function splitClipAt(localTime) {
+  const clip = selectedClip();
+  if (!clip) throw new Error("Select a clip first");
+  const duration = clipDuration(clip);
+  const at = clamp(localTime, 0, duration);
+  if (at <= 0.08 || at >= duration - 0.08) {
+    const message = "Split time must be inside the selected clip and away from its edges";
     setStatus(message);
     throw new Error(message);
   }
-  const current = clips[index];
-  const right = { id: `scene_${++clipCounter}`, name: "", start: at, end: current.end };
-  current.end = at;
+  const oldSourceEnd = clip.sourceEnd;
+  const splitSourceTime = clip.sourceStart + at;
+  clip.sourceEnd = splitSourceTime;
+  const right = { ...clip, id: `clip_${++clipCounter}`, sourceStart: splitSourceTime, sourceEnd: oldSourceEnd };
+  const index = clips.findIndex((candidate) => candidate.id === clip.id);
   clips.splice(index + 1, 0, right);
-  components.filter((component) => component.clipId === current.id).forEach((component) => {
+  components.filter((component) => component.clipId === clip.id).forEach((component) => {
     if (component.start >= at) {
       component.clipId = right.id;
-      component.start = Math.max(component.start, at);
-    } else if (component.end > at) {
-      component.end = at;
-    }
+      component.start -= at;
+      component.end -= at;
+    } else if (component.end > at) component.end = at;
   });
-  normalizeSceneNames();
   selectedClipId = right.id;
-  selectedComponentId = null;
-  ignoreSceneSyncUntil = performance.now() + 750;
-  video.currentTime = Math.min(right.end, at + 0.1);
+  selectedComponentId = components.find((component) => component.clipId === right.id)?.id || null;
   renderAll();
-  updateTime();
-  setStatus(`Split at ${formatTime(at)} · ${clips.length} scenes`);
+  loadClipPreview(right, Math.min(0.1, clipDuration(right) - 0.01));
+  setStatus(`${clip.sceneName} split for editing · scene name unchanged`);
   return right;
+}
+
+function splitAtPlayhead() {
+  return splitClipAt(currentLocalTime());
+}
+
+function isBranchingComponent(component) {
+  return Boolean(component && ["choice", "form"].includes(component.kind));
+}
+
+function ensureSceneChange(component) {
+  if (!component.sceneChange) component.sceneChange = { enabled: false, executeAt: "end", routes: [] };
+  component.sceneChange.executeAt = "end";
+  return component.sceneChange;
+}
+
+function destinationMedia(component) {
+  const sourceMediaId = clips.find((clip) => clip.id === component.clipId)?.mediaId;
+  return mediaItems.filter((item) => !item.error && item.id !== sourceMediaId && clips.some((clip) => clip.mediaId === item.id));
+}
+
+function binaryMediaRoutes(component) {
+  const sceneChange = ensureSceneChange(component);
+  const destinations = destinationMedia(component);
+  const routes = ["true", "false"].map((condition, index) => {
+    const existing = sceneChange.routes.find((route) => route.condition === condition);
+    return { condition, mediaId: existing?.mediaId || destinations[index]?.id || "" };
+  });
+  sceneChange.routes = routes;
+  return routes;
+}
+
+function validateMediaRoutes(component) {
+  if (!component.sceneChange?.enabled) return [];
+  const targets = binaryMediaRoutes(component).map((route) => mediaItem(route.mediaId));
+  if (targets.some((target) => !target || !clips.some((clip) => clip.mediaId === target.id))) {
+    throw new Error(`${component.name} needs timeline media for both Yes and No`);
+  }
+  if (targets[0].id === targets[1].id) throw new Error(`${component.name} needs two different media items`);
+  return targets;
 }
 
 function addComponent(kind, openDialog = true) {
   const clip = selectedClip();
-  if (!clip) {
-    const message = "Open a video before adding components";
+  if (!clip || !mediaReady) {
+    const message = "Select a media clip before adding components";
     setStatus(message);
     throw new Error(message);
   }
   const preset = presets[kind];
-  const minimumDuration = Math.min(0.2, clip.end - clip.start);
-  const requestedStart = video.currentTime >= clip.start && video.currentTime < clip.end ? video.currentTime : clip.start;
-  const start = clamp(requestedStart, clip.start, Math.max(clip.start, clip.end - minimumDuration));
-  const end = Math.min(clip.end, start + 3);
-  componentCounter += 1;
+  const duration = clipDuration(clip);
+  const minimumDuration = Math.min(0.2, duration);
+  const start = clamp(currentLocalTime(), 0, Math.max(0, duration - minimumDuration));
   const component = {
-    id: `component_${componentCounter}`,
+    id: `component_${++componentCounter}`,
     clipId: clip.id,
     kind,
     name: `${preset.name} ${components.filter((item) => item.kind === kind).length + 1}`,
     html: preset.html,
     css: preset.css,
     start,
-    end,
+    end: Math.min(duration, start + 3),
     sceneChange: ["choice", "form"].includes(kind) ? { enabled: false, executeAt: "end", routes: [] } : null,
     x: preset.x, y: preset.y, width: preset.width, height: preset.height,
   };
   components.push(component);
   selectedComponentId = component.id;
-  ignoreSceneSyncUntil = performance.now() + 500;
-  video.currentTime = Math.min(component.end - 0.01, component.start + 0.01);
+  video.currentTime = clip.sourceStart + Math.min(component.end - 0.01, component.start + 0.01);
   renderAll();
-  updateTime();
-  setStatus(`${preset.name} added for ${formatTime(component.end - component.start)} in ${clip.name}`);
+  updateTimeDisplay();
+  setStatus(`${component.name} added to ${clip.sceneName}`);
   if (openDialog) openComponentDialog();
   return component;
 }
@@ -411,24 +622,21 @@ function deleteComponent() {
   if (!component) return;
   components = components.filter((item) => item.id !== component.id);
   selectedComponentId = components.find((item) => item.clipId === selectedClipId)?.id || null;
+  if (timelineViewKey.startsWith(`branch:${component.id}:`)) timelineViewKey = "main";
   closeComponentDialog();
   renderAll();
   setStatus(`${component.name} deleted`);
 }
 
-function updateComponentFromInspector() {
-  const component = selectedComponent();
+function selectComponent(id, seek = true, openDialog = true) {
+  const component = components.find((item) => item.id === id);
   if (!component) return;
-  component.name = refs.name.value;
-  component.x = clamp(Number(refs.x.value), 0, 95);
-  component.y = clamp(Number(refs.y.value), 0, 95);
-  component.width = clamp(Number(refs.width.value), 5, 100 - component.x);
-  component.height = clamp(Number(refs.height.value), 5, 100 - component.y);
-  component.html = refs.html.value;
-  component.css = refs.css.value;
-  refs.dialogTitle.textContent = `Edit ${component.name}`;
-  renderTimeline();
-  renderOverlays();
+  const clip = clips.find((item) => item.id === component.clipId);
+  selectedClipId = clip.id;
+  selectedComponentId = id;
+  renderAll();
+  if (seek) loadClipPreview(clip, Math.min(component.end - 0.01, component.start + 0.01));
+  if (openDialog) openComponentDialog();
 }
 
 function openComponentDialog() {
@@ -441,283 +649,83 @@ function closeComponentDialog() {
   if (refs.componentDialog.open) refs.componentDialog.close();
 }
 
-function isSceneChangingComponent(component) {
-  return Boolean(component && ["choice", "form"].includes(component.kind));
-}
-
-function ensureSceneChange(component) {
-  if (!component.sceneChange) component.sceneChange = { enabled: false, executeAt: "end", routes: [] };
-  component.sceneChange.executeAt = "end";
-  return component.sceneChange;
-}
-
-function binarySceneRoutes(component) {
-  const sceneChange = ensureSceneChange(component);
-  const destinations = clips.filter((clip) => clip.id !== component.clipId);
-  const routes = ["true", "false"].map((condition, index) => {
-    const existing = sceneChange.routes.find((route) => route.condition === condition);
-    return { condition, sceneId: existing?.sceneId || destinations[index]?.id || "" };
-  });
-  sceneChange.routes = routes;
-  return routes;
-}
-
-function sceneChangeDestinations(component) {
-  return binarySceneRoutes(component).map((route) => (
-    clips.find((clip) => clip.id === route.sceneId && clip.id !== component.clipId)
-  ));
-}
-
-function validateSceneChangeDestinations(component) {
-  if (!component.sceneChange?.enabled) return [];
-  const destinations = sceneChangeDestinations(component);
-  if (destinations.some((destination) => !destination)) {
-    throw new Error(`${component.name} needs a scene for both True and False`);
-  }
-  if (destinations[0].id === destinations[1].id) {
-    throw new Error(`${component.name} needs two different destination scenes`);
-  }
-  return destinations;
-}
-
 function renderSceneRouting(component) {
-  const supported = isSceneChangingComponent(component);
+  const supported = isBranchingComponent(component);
   refs.routingSection.hidden = !supported;
   if (!supported) return;
-
   const sceneChange = ensureSceneChange(component);
-  const source = clips.find((clip) => clip.id === component.clipId);
+  const sourceClip = clips.find((clip) => clip.id === component.clipId);
   refs.changeSceneToggle.checked = sceneChange.enabled;
   refs.routeFields.hidden = !sceneChange.enabled;
-  refs.routeSource.textContent = source?.name || "Unknown scene";
+  refs.routeSource.textContent = mediaItem(sourceClip?.mediaId)?.name || sourceClip?.sceneName || "Selected media";
   refs.routeList.innerHTML = "";
   if (!sceneChange.enabled) return;
-
-  const destinations = clips.filter((clip) => clip.id !== component.clipId);
-  const routes = binarySceneRoutes(component);
+  const destinations = destinationMedia(component);
+  const routes = binaryMediaRoutes(component);
   if (destinations.length < 2) {
     const empty = document.createElement("p");
     empty.className = "route-empty";
-    empty.textContent = "Split the video until there are two destination scenes for the True and False outcomes.";
+    empty.textContent = "Add two more media files to the timeline for the Yes and No outcomes.";
     refs.routeList.append(empty);
   }
-
   routes.forEach((route) => {
     const row = document.createElement("div");
     row.className = "scene-route-row";
-
     const outcome = document.createElement("div");
     outcome.className = "route-outcome";
-    const outcomeLabel = route.condition === "true" ? "True" : "False";
     const outcomeName = document.createElement("strong");
-    outcomeName.textContent = outcomeLabel;
+    outcomeName.textContent = route.condition === "true" ? "Yes" : "No";
     const outcomeMeaning = document.createElement("span");
-    outcomeMeaning.textContent = route.condition === "true" ? "Yes / submitted" : "No / rejected";
+    outcomeMeaning.textContent = route.condition === "true" ? "True branch" : "False branch";
     outcome.append(outcomeName, outcomeMeaning);
-
     const destinationLabel = document.createElement("label");
-    destinationLabel.textContent = `${outcomeLabel} goes to`;
+    destinationLabel.textContent = "Play this media";
     const destination = document.createElement("select");
     const placeholder = document.createElement("option");
     placeholder.value = "";
-    placeholder.textContent = destinations.length ? "Select scene" : "Create another scene first";
+    placeholder.textContent = destinations.length ? "Select timeline media" : "Add more media first";
     destination.append(placeholder);
-    destinations.forEach((clip) => {
+    destinations.forEach((item) => {
       const option = document.createElement("option");
-      option.value = clip.id;
-      option.textContent = `${clip.name} · ${formatTime(clip.start)}`;
+      option.value = item.id;
+      option.textContent = item.name;
       destination.append(option);
     });
-    destination.value = route.sceneId;
-    destination.addEventListener("change", () => { route.sceneId = destination.value; });
+    destination.value = route.mediaId;
+    destination.addEventListener("change", () => {
+      const otherRoute = routes.find((candidate) => candidate.condition !== route.condition);
+      if (destination.value && destination.value === otherRoute?.mediaId) {
+        destination.value = route.mediaId;
+        setStatus("Yes and No must use two different timeline media items");
+        return;
+      }
+      route.mediaId = destination.value;
+      executedSceneChanges.delete(component.id);
+      renderTimelineNavigation();
+      renderTimeline();
+      setStatus(`${component.name} ${route.condition === "true" ? "Yes" : "No"} branch set to ${mediaItem(route.mediaId)?.name || "no media"}`);
+    });
     destinationLabel.append(destination);
-
     row.append(outcome, destinationLabel);
     refs.routeList.append(row);
   });
 }
 
-function setComponentSceneRouting(componentId, enabled, routes) {
+function setComponentMediaRouting(componentId, enabled, routes) {
   const component = components.find((item) => item.id === componentId);
-  if (!component) throw new Error("component does not exist");
-  if (!isSceneChangingComponent(component)) throw new Error("scene routing is only available for choice and form components");
-  if (!Array.isArray(routes)) throw new Error("routes must be an array");
-
+  if (!isBranchingComponent(component)) throw new Error("media branching is only available for choice and form components");
   const normalized = ["true", "false"].map((condition) => {
     const route = routes.find((candidate) => String(candidate?.condition).toLowerCase() === condition);
-    const sceneId = String(route?.sceneId || "");
-    const destination = clips.find((clip) => clip.id === sceneId);
-    if (enabled && (!destination || destination.id === component.clipId)) {
-      throw new Error(`${condition} must target a different existing scene`);
+    const mediaId = String(route?.mediaId || "");
+    if (enabled && !destinationMedia(component).some((item) => item.id === mediaId)) {
+      throw new Error(`${condition} must target media already on the timeline`);
     }
-    return { condition, sceneId };
+    return { condition, mediaId };
   });
-  if (enabled && normalized[0].sceneId === normalized[1].sceneId) {
-    throw new Error("true and false must target different scenes");
-  }
-
+  if (enabled && normalized[0].mediaId === normalized[1].mediaId) throw new Error("Yes and No must target different media");
   component.sceneChange = { enabled: Boolean(enabled), executeAt: "end", routes: normalized };
-  selectedClipId = component.clipId;
-  selectedComponentId = component.id;
   renderAll();
-  setStatus(`${component.name} scene routing ${enabled ? "enabled" : "disabled"}`);
   return component;
-}
-
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, Number.isFinite(value) ? value : min));
-}
-
-function renderAll() {
-  normalizeSceneNames();
-  renderTimeline();
-  renderInspector();
-  renderOverlays();
-  const clip = selectedClip();
-  refs.sceneName.textContent = clip?.name || "No scene";
-}
-
-function renderTimeline() {
-  clipTrack.innerHTML = "";
-  ruler.innerHTML = "";
-  if (clips.length === 0) {
-    const empty = document.createElement("span");
-    empty.className = "empty-clip-message";
-    empty.textContent = "Open a video to create scenes";
-    clipTrack.append(empty);
-    renderComponentTimeline(1);
-    return;
-  }
-
-  const duration = video.duration || clips.at(-1)?.end || 1;
-  clips.forEach((clip) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = `clip${clip.id === selectedClipId ? " active" : ""}`;
-    button.style.flex = String(Math.max(0.1, clip.end - clip.start));
-    button.innerHTML = `<strong>${clip.name}</strong><span>${formatTime(clip.start)} – ${formatTime(clip.end)}</span>`;
-    button.addEventListener("click", () => selectClip(clip.id));
-    clipTrack.append(button);
-  });
-
-  const tickCount = 5;
-  for (let index = 0; index <= tickCount; index += 1) {
-    const tick = document.createElement("span");
-    tick.style.left = `${index / tickCount * 100}%`;
-    tick.textContent = formatTime(duration * index / tickCount);
-    ruler.append(tick);
-  }
-
-  renderComponentTimeline(duration);
-}
-
-function renderComponentTimeline(duration) {
-  componentLayers.innerHTML = "";
-
-  if (components.length === 0) {
-    const row = document.createElement("div");
-    row.className = "layer-row empty-layer-row";
-    row.innerHTML = `<div class="layer-label"><strong>UI</strong><span>No layers yet</span></div><div class="component-lane"><span class="empty-layer-message">${clips.length ? "Add a component to create a layer" : "Open a video to add UI layers"}</span></div>`;
-    const emptyLane = row.querySelector(".component-lane");
-    emptyLane.addEventListener("click", (event) => seekFromTimeline(event, emptyLane));
-    componentLayers.append(row);
-    return;
-  }
-
-  components.forEach((component, index) => {
-    const row = document.createElement("div");
-    row.className = `layer-row component-layer-row${component.id === selectedComponentId ? " active" : ""}`;
-
-    const layerLabel = document.createElement("button");
-    layerLabel.type = "button";
-    layerLabel.className = "layer-label component-layer-label";
-    const layerName = document.createElement("strong");
-    layerName.textContent = component.name;
-    const layerType = document.createElement("span");
-    layerType.textContent = `${component.kind} · layer ${index + 1}${component.sceneChange?.enabled ? " · scene change" : ""}`;
-    layerLabel.append(layerName, layerType);
-    layerLabel.addEventListener("click", () => selectComponent(component.id));
-
-    const lane = document.createElement("div");
-    lane.className = "component-lane";
-    lane.addEventListener("click", (event) => seekFromTimeline(event, lane));
-    const bar = document.createElement("div");
-    bar.className = `component-bar${component.id === selectedComponentId ? " active" : ""}`;
-    bar.dataset.kind = component.kind;
-    bar.dataset.componentId = component.id;
-    bar.style.left = `${component.start / duration * 100}%`;
-    bar.style.width = `${Math.max(0.35, (component.end - component.start) / duration * 100)}%`;
-    bar.innerHTML = '<span class="resize-handle start" data-resize="start"></span><span class="component-bar-label"></span><span class="resize-handle end" data-resize="end"></span>';
-    updateTimingBarLabel(bar, component);
-    bar.addEventListener("click", (event) => {
-      event.stopPropagation();
-      selectComponent(component.id);
-    });
-    bar.addEventListener("pointerdown", (event) => {
-      const mode = event.target.dataset.resize || "move";
-      startTimingDrag(event, component, bar, lane, mode, duration);
-    });
-    lane.append(bar);
-    row.append(layerLabel, lane);
-    componentLayers.append(row);
-  });
-}
-
-function updateTimingBarLabel(bar, component) {
-  const label = bar.querySelector(".component-bar-label");
-  if (label) label.textContent = `${component.name} · ${(component.end - component.start).toFixed(1)}s${component.sceneChange?.enabled ? " · branch at end" : ""}`;
-}
-
-function startTimingDrag(event, component, bar, lane, mode, duration) {
-  event.preventDefault();
-  event.stopPropagation();
-  const clip = clips.find((item) => item.id === component.clipId);
-  if (!clip) return;
-
-  selectedClipId = component.clipId;
-  selectedComponentId = component.id;
-  renderInspector();
-  renderOverlays();
-  componentLayers.querySelectorAll(".component-bar.active").forEach((item) => item.classList.remove("active"));
-  componentLayers.querySelectorAll(".component-layer-row.active").forEach((item) => item.classList.remove("active"));
-  bar.closest(".component-layer-row")?.classList.add("active");
-  bar.classList.add("active");
-
-  const startPointer = event.clientX;
-  const original = { start: component.start, end: component.end };
-  const trackWidth = lane.getBoundingClientRect().width || 1;
-  const minimumDuration = Math.min(0.2, clip.end - clip.start);
-  bar.setPointerCapture(event.pointerId);
-
-  const move = (moveEvent) => {
-    const delta = (moveEvent.clientX - startPointer) / trackWidth * duration;
-    if (mode === "start") {
-      component.start = clamp(original.start + delta, clip.start, component.end - minimumDuration);
-    } else if (mode === "end") {
-      component.end = clamp(original.end + delta, component.start + minimumDuration, clip.end);
-    } else {
-      const componentDuration = original.end - original.start;
-      component.start = clamp(original.start + delta, clip.start, clip.end - componentDuration);
-      component.end = component.start + componentDuration;
-    }
-    bar.style.left = `${component.start / duration * 100}%`;
-    bar.style.width = `${Math.max(0.35, (component.end - component.start) / duration * 100)}%`;
-    updateTimingBarLabel(bar, component);
-  };
-
-  const stop = () => {
-    bar.removeEventListener("pointermove", move);
-    bar.removeEventListener("pointerup", stop);
-    bar.removeEventListener("pointercancel", stop);
-    ignoreSceneSyncUntil = performance.now() + 500;
-    video.currentTime = Math.min(component.end - 0.01, component.start + 0.01);
-    renderAll();
-    updateTime();
-    setStatus(`${component.name} visible from ${formatTime(component.start)} to ${formatTime(component.end)}`);
-  };
-  bar.addEventListener("pointermove", move);
-  bar.addEventListener("pointerup", stop);
-  bar.addEventListener("pointercancel", stop);
 }
 
 function renderInspector() {
@@ -735,6 +743,145 @@ function renderInspector() {
   renderSceneRouting(component);
 }
 
+function updateComponentFromInspector() {
+  const component = selectedComponent();
+  if (!component) return;
+  component.name = refs.name.value;
+  component.x = clamp(Number(refs.x.value), 0, 95);
+  component.y = clamp(Number(refs.y.value), 0, 95);
+  component.width = clamp(Number(refs.width.value), 5, 100 - component.x);
+  component.height = clamp(Number(refs.height.value), 5, 100 - component.y);
+  component.html = refs.html.value;
+  component.css = refs.css.value;
+  refs.dialogTitle.textContent = `Edit ${component.name}`;
+  renderTimelineNavigation();
+  renderTimeline();
+  renderOverlays();
+}
+
+function renderTimeline() {
+  const layouts = clipLayouts();
+  const duration = layouts.at(-1)?.end || 1;
+  clipTrack.innerHTML = "";
+  ruler.innerHTML = "";
+  if (!layouts.length) {
+    const empty = document.createElement("span");
+    empty.className = "empty-clip-message";
+    empty.textContent = timelineViewKey === "main" ? "Add media to build the timeline" : "This branch has no media";
+    clipTrack.append(empty);
+    renderComponentTimeline(layouts, duration);
+    return;
+  }
+  layouts.forEach(({ clip, duration: durationForClip }) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `clip${clip.id === selectedClipId ? " active" : ""}`;
+    button.style.flex = String(Math.max(0.1, durationForClip));
+    const scene = document.createElement("strong");
+    scene.textContent = clip.sceneName;
+    const details = document.createElement("span");
+    details.textContent = `${mediaItem(clip.mediaId)?.name || "Missing media"} · ${formatTime(clip.sourceStart)}–${formatTime(clip.sourceEnd)}`;
+    button.append(scene, details);
+    button.addEventListener("click", (event) => { event.stopPropagation(); selectClip(clip.id); });
+    clipTrack.append(button);
+  });
+  for (let index = 0; index <= 5; index += 1) {
+    const tick = document.createElement("span");
+    tick.style.left = `${index / 5 * 100}%`;
+    tick.textContent = formatTime(duration * index / 5);
+    ruler.append(tick);
+  }
+  renderComponentTimeline(layouts, duration);
+}
+
+function renderComponentTimeline(layouts, duration) {
+  componentLayers.innerHTML = "";
+  const visibleIds = new Set(layouts.map((layout) => layout.clip.id));
+  const visibleComponents = components.filter((component) => visibleIds.has(component.clipId));
+  if (!visibleComponents.length) {
+    const row = document.createElement("div");
+    row.className = "layer-row empty-layer-row";
+    row.innerHTML = `<div class="layer-label"><strong>UI</strong><span>No layers yet</span></div><div class="component-lane"><span class="empty-layer-message">${layouts.length ? "Add a component to create a layer" : "Add media to start"}</span></div>`;
+    const lane = row.querySelector(".component-lane");
+    lane.addEventListener("click", (event) => seekFromTimeline(event, lane));
+    componentLayers.append(row);
+    return;
+  }
+  visibleComponents.forEach((component, index) => {
+    const layout = layouts.find((candidate) => candidate.clip.id === component.clipId);
+    const row = document.createElement("div");
+    row.className = `layer-row component-layer-row${component.id === selectedComponentId ? " active" : ""}`;
+    const layerLabel = document.createElement("button");
+    layerLabel.type = "button";
+    layerLabel.className = "layer-label component-layer-label";
+    const layerName = document.createElement("strong");
+    layerName.textContent = component.name;
+    const layerType = document.createElement("span");
+    layerType.textContent = `${component.kind} · layer ${index + 1}${component.sceneChange?.enabled ? " · branches" : ""}`;
+    layerLabel.append(layerName, layerType);
+    layerLabel.addEventListener("click", () => selectComponent(component.id));
+    const lane = document.createElement("div");
+    lane.className = "component-lane";
+    lane.addEventListener("click", (event) => seekFromTimeline(event, lane));
+    const bar = document.createElement("div");
+    bar.className = `component-bar${component.id === selectedComponentId ? " active" : ""}`;
+    bar.dataset.componentId = component.id;
+    bar.style.left = `${(layout.start + component.start) / duration * 100}%`;
+    bar.style.width = `${Math.max(0.35, (component.end - component.start) / duration * 100)}%`;
+    bar.innerHTML = '<span class="resize-handle start" data-resize="start"></span><span class="component-bar-label"></span><span class="resize-handle end" data-resize="end"></span>';
+    updateTimingBarLabel(bar, component);
+    bar.addEventListener("click", (event) => { event.stopPropagation(); selectComponent(component.id); });
+    bar.addEventListener("pointerdown", (event) => startTimingDrag(event, component, bar, lane, event.target.dataset.resize || "move", duration));
+    lane.append(bar);
+    row.append(layerLabel, lane);
+    componentLayers.append(row);
+  });
+}
+
+function updateTimingBarLabel(bar, component) {
+  const label = bar.querySelector(".component-bar-label");
+  if (label) label.textContent = `${component.name} · ${(component.end - component.start).toFixed(1)}s${component.sceneChange?.enabled ? " · branch at end" : ""}`;
+}
+
+function startTimingDrag(event, component, bar, lane, mode, timelineDuration) {
+  event.preventDefault();
+  event.stopPropagation();
+  const clip = clips.find((item) => item.id === component.clipId);
+  const layout = clipLayouts().find((item) => item.clip.id === clip.id);
+  if (!clip || !layout) return;
+  selectedClipId = clip.id;
+  selectedComponentId = component.id;
+  const pointerStart = event.clientX;
+  const original = { start: component.start, end: component.end };
+  const trackWidth = lane.getBoundingClientRect().width || 1;
+  const minimumDuration = Math.min(0.2, clipDuration(clip));
+  bar.setPointerCapture(event.pointerId);
+  const move = (moveEvent) => {
+    const delta = (moveEvent.clientX - pointerStart) / trackWidth * timelineDuration;
+    if (mode === "start") component.start = clamp(original.start + delta, 0, component.end - minimumDuration);
+    else if (mode === "end") component.end = clamp(original.end + delta, component.start + minimumDuration, clipDuration(clip));
+    else {
+      const componentDuration = original.end - original.start;
+      component.start = clamp(original.start + delta, 0, clipDuration(clip) - componentDuration);
+      component.end = component.start + componentDuration;
+    }
+    bar.style.left = `${(layout.start + component.start) / timelineDuration * 100}%`;
+    bar.style.width = `${Math.max(0.35, (component.end - component.start) / timelineDuration * 100)}%`;
+    updateTimingBarLabel(bar, component);
+  };
+  const stop = () => {
+    bar.removeEventListener("pointermove", move);
+    bar.removeEventListener("pointerup", stop);
+    bar.removeEventListener("pointercancel", stop);
+    loadClipPreview(clip, Math.min(component.end - 0.01, component.start + 0.01));
+    renderAll();
+    setStatus(`${component.name} visible from ${formatTime(component.start)} to ${formatTime(component.end)} in this clip`);
+  };
+  bar.addEventListener("pointermove", move);
+  bar.addEventListener("pointerup", stop);
+  bar.addEventListener("pointercancel", stop);
+}
+
 function positionCanvasFrame() {
   const areaWidth = Math.max(1, videoArea.clientWidth - 32);
   const areaHeight = Math.max(1, videoArea.clientHeight - 32);
@@ -747,60 +894,38 @@ function positionCanvasFrame() {
 function renderOverlays() {
   positionCanvasFrame();
   overlayLayer.innerHTML = "";
-  const time = video.currentTime;
-  components.filter((component) => component.clipId === selectedClipId && time >= component.start - 0.03 && time < component.end).forEach((component) => {
+  const clip = selectedClip();
+  if (!clip) return;
+  const time = currentLocalTime();
+  components.filter((component) => component.clipId === clip.id && time >= component.start - 0.03 && time < component.end).forEach((component) => {
     const wrapper = document.createElement("div");
-    wrapper.className = `overlay-component${isSceneChangingComponent(component) ? " interactive" : ""}${component.id === selectedComponentId ? " selected" : ""}`;
+    wrapper.className = `overlay-component${isBranchingComponent(component) ? " interactive" : ""}${component.id === selectedComponentId ? " selected" : ""}`;
     wrapper.dataset.label = component.name;
-    Object.assign(wrapper.style, {
-      left: `${component.x}%`, top: `${component.y}%`,
-      width: `${component.width}%`, height: `${component.height}%`,
-    });
+    Object.assign(wrapper.style, { left: `${component.x}%`, top: `${component.y}%`, width: `${component.width}%`, height: `${component.height}%` });
     const preview = document.createElement("editor-overlay");
     preview.update(component);
     preview.addEventListener("pvo-answer", (event) => {
       component.pendingAnswer = event.detail.answer;
       executedSceneChanges.delete(component.id);
-      const outcome = component.pendingAnswer === true ? "True" : component.pendingAnswer === false ? "False" : String(component.pendingAnswer);
-      setStatus(`${component.name}: ${outcome} selected · scene changes at ${formatTime(component.end)}`);
+      const outcome = component.pendingAnswer === true ? "Yes" : component.pendingAnswer === false ? "No" : String(component.pendingAnswer);
+      setStatus(`${component.name}: ${outcome} selected · branch runs at ${formatTime(component.end)}`);
     });
     wrapper.append(preview);
-    wrapper.addEventListener("pointerdown", (event) => startDrag(event, component, wrapper));
+    wrapper.addEventListener("pointerdown", (event) => startOverlayDrag(event, component, wrapper));
     wrapper.addEventListener("click", (event) => {
       event.stopPropagation();
-      const usedControl = event.composedPath().some((node) => (
-        node instanceof Element && node.matches("input, button, select, textarea, label")
-      ));
+      const usedControl = event.composedPath().some((node) => node instanceof Element && node.matches("input, button, select, textarea, label"));
       if (!usedControl) selectComponent(component.id, false);
     });
     overlayLayer.append(wrapper);
   });
 }
 
-function setCanvasRatio(value) {
-  if (!Object.hasOwn(canvasRatios, value)) throw new Error("ratio must be 16:9, 9:16, 1:1, or 4:5");
-  canvasRatio = value;
-  refs.canvasRatio.value = value;
-  canvasFrame.dataset.ratio = value;
-  renderOverlays();
-  renderMediaDetails();
-  setStatus(`Canvas changed to ${value}`);
-  return canvasRatios[value];
-}
-
-function startDrag(event, component, element) {
-  const isInteractiveControl = event.composedPath().some((node) => (
-    node instanceof Element && node.matches("input, button, select, textarea, label")
-  ));
-  if (isInteractiveControl) return;
+function startOverlayDrag(event, component, element) {
+  const usedControl = event.composedPath().some((node) => node instanceof Element && node.matches("input, button, select, textarea, label"));
+  if (usedControl) return;
   event.preventDefault();
-  selectedClipId = component.clipId;
   selectedComponentId = component.id;
-  renderInspector();
-  overlayLayer.querySelectorAll(".overlay-component.selected").forEach((item) => item.classList.remove("selected"));
-  element.classList.add("selected");
-  componentLayers.querySelectorAll(".component-bar").forEach((item) => item.classList.toggle("active", item.dataset.componentId === component.id));
-  componentLayers.querySelectorAll(".component-layer-row").forEach((item) => item.classList.toggle("active", item.querySelector(`[data-component-id="${component.id}"]`) !== null));
   const start = { clientX: event.clientX, clientY: event.clientY, x: component.x, y: component.y };
   element.setPointerCapture(event.pointerId);
   const move = (moveEvent) => {
@@ -821,87 +946,111 @@ function startDrag(event, component, element) {
   element.addEventListener("pointercancel", stop);
 }
 
-function executeSceneChangeAtLayerEnd(time) {
-  components.forEach((component) => {
-    const enteredLayer = previousPlaybackTime < component.start && time >= component.start;
-    const rewoundBeforeLayer = previousPlaybackTime >= component.start && time < component.start;
-    if (enteredLayer || rewoundBeforeLayer) {
+function renderAll() {
+  renderTimelineNavigation();
+  renderTimeline();
+  renderInspector();
+  renderOverlays();
+  renderMediaLibrary();
+  const clip = selectedClip();
+  refs.sceneName.value = clip?.sceneName || "No scene";
+  refs.projectDuration.textContent = formatTime(projectDuration());
+  renderExportState();
+}
+
+function setCanvasRatio(value) {
+  if (!Object.hasOwn(canvasRatios, value)) throw new Error("ratio must be 16:9, 9:16, 1:1, or 4:5");
+  canvasRatio = value;
+  refs.canvasRatio.value = value;
+  canvasFrame.dataset.ratio = value;
+  renderOverlays();
+  setStatus(`Canvas changed to ${value}`);
+  return canvasRatios[value];
+}
+
+function executeBranchAtLayerEnd(localTime) {
+  components.filter((component) => component.clipId === selectedClipId).forEach((component) => {
+    const entered = previousPreviewTime < component.start && localTime >= component.start;
+    const rewound = previousPreviewTime >= component.start && localTime < component.start;
+    if (entered || rewound) {
       delete component.pendingAnswer;
       executedSceneChanges.delete(component.id);
-    } else if (time < component.end - 0.05) {
-      executedSceneChanges.delete(component.id);
-    }
+    } else if (localTime < component.end - 0.05) executedSceneChanges.delete(component.id);
   });
-
   const component = components.find((item) => (
-    isSceneChangingComponent(item)
+    item.clipId === selectedClipId
     && item.sceneChange?.enabled
     && item.pendingAnswer !== undefined
     && !executedSceneChanges.has(item.id)
-    && previousPlaybackTime < item.end
-    && time >= item.end
+    && previousPreviewTime < item.end
+    && localTime >= item.end
   ));
-  previousPlaybackTime = time;
-  if (!component) return time;
-
-  let destinations;
-  try {
-    destinations = validateSceneChangeDestinations(component);
-  } catch (error) {
-    setStatus(error.message);
-    return time;
-  }
-  const destination = component.pendingAnswer === true ? destinations[0] : destinations[1];
-  if (!destination) return time;
-
+  previousPreviewTime = localTime;
+  if (!component) return false;
+  let targets;
+  try { targets = validateMediaRoutes(component); }
+  catch (error) { setStatus(error.message); return false; }
+  const condition = component.pendingAnswer === true ? "true" : "false";
+  const target = component.pendingAnswer === true ? targets[0] : targets[1];
+  const targetClip = clips.find((clip) => clip.mediaId === target.id);
+  if (!targetClip) return false;
+  const autoplay = !video.paused;
   executedSceneChanges.add(component.id);
-  selectedClipId = destination.id;
-  selectedComponentId = components.find((item) => item.clipId === destination.id)?.id || null;
-  ignoreSceneSyncUntil = performance.now() + 500;
-  video.currentTime = destination.start + 0.01;
-  previousPlaybackTime = video.currentTime;
+  timelineViewKey = `branch:${component.id}:${condition}`;
+  selectedClipId = targetClip.id;
+  selectedComponentId = components.find((item) => item.clipId === targetClip.id)?.id || null;
   renderAll();
-  setStatus(`${component.name}: ${component.pendingAnswer ? "True" : "False"} · playing ${destination.name}`);
-  return video.currentTime;
+  loadClipPreview(targetClip, 0, autoplay);
+  setStatus(`${component.name}: ${condition === "true" ? "Yes" : "No"} · playing ${target.name}`);
+  return true;
 }
 
-function updateTime() {
-  const duration = video.duration || 0;
-  const time = executeSceneChangeAtLayerEnd(video.currentTime);
+function advanceAtClipEnd(localTime, force = false) {
+  const clip = selectedClip();
+  if (!clip || (!force && video.paused) || switchingClip || localTime < clipDuration(clip) - 0.04) return false;
+  const layouts = clipLayouts();
+  const index = layouts.findIndex((layout) => layout.clip.id === clip.id);
+  const next = layouts[index + 1]?.clip;
+  if (!next) {
+    video.pause();
+    return false;
+  }
+  switchingClip = true;
+  selectClip(next.id, true, true);
+  return true;
+}
+
+function updateTimeDisplay() {
+  const clip = selectedClip();
+  if (!clip || loadedMediaId !== clip.mediaId) return;
+  if (video.currentTime < clip.sourceStart - 0.03) video.currentTime = clip.sourceStart;
+  const localTime = currentLocalTime();
+  if (executeBranchAtLayerEnd(localTime)) return;
+  if (advanceAtClipEnd(localTime)) return;
+  const duration = viewDuration();
+  const time = timelineTime();
   refs.currentTime.textContent = formatTime(time);
+  refs.totalTime.textContent = formatTime(duration);
   const percentage = duration ? time / duration * 100 : 0;
   refs.playhead.style.left = `${clamp(percentage, 0, 100)}%`;
   timelineEditor.style.setProperty("--playhead-position", `${clamp(percentage, 0, 100)}%`);
-  const current = sceneAt(time);
-  if (current && current.id !== selectedClipId && performance.now() >= ignoreSceneSyncUntil) {
-    selectedClipId = current.id;
-    selectedComponentId = components.find((component) => component.clipId === current.id)?.id || null;
-    renderAll();
-  } else {
-    renderOverlays();
-  }
+  renderOverlays();
 }
 
-function setComponentTiming(componentId, start, end) {
-  const component = components.find((item) => item.id === componentId);
-  if (!component) throw new Error("component does not exist");
-  const clip = clips.find((item) => item.id === component.clipId);
-  if (!Number.isFinite(start) || !Number.isFinite(end) || end - start < 0.2) {
-    throw new Error("component timing must have a duration of at least 0.2 seconds");
-  }
-  if (start < clip.start || end > clip.end) {
-    throw new Error(`component timing must stay inside ${clip.name}`);
-  }
-  component.start = start;
-  component.end = end;
-  selectedClipId = component.clipId;
-  selectedComponentId = component.id;
-  ignoreSceneSyncUntil = performance.now() + 500;
-  video.currentTime = Math.min(end - 0.01, start + 0.01);
-  renderAll();
-  updateTime();
-  setStatus(`${component.name} visible from ${formatTime(start)} to ${formatTime(end)}`);
-  return component;
+function seekTimelineTime(time) {
+  const layouts = clipLayouts();
+  const target = layouts.find((layout, index) => time >= layout.start && (time < layout.end || index === layouts.length - 1 && time <= layout.end));
+  if (!target) return;
+  const local = clamp(time - target.start, 0, Math.max(0, target.duration - 0.01));
+  selectedClipId = target.clip.id;
+  selectedComponentId = components.find((component) => component.clipId === target.clip.id)?.id || null;
+  loadClipPreview(target.clip, local);
+}
+
+function seekFromTimeline(event, lane) {
+  const bounds = lane.getBoundingClientRect();
+  const ratio = clamp((event.clientX - bounds.left) / bounds.width, 0, 1);
+  seekTimelineTime(ratio * viewDuration());
 }
 
 function componentMarkup(component) {
@@ -911,8 +1060,7 @@ function componentMarkup(component) {
 }
 
 function componentText(component) {
-  const text = componentMarkup(component).textContent.replace(/\s+/g, " ").trim();
-  return text || component.name;
+  return componentMarkup(component).textContent.replace(/\s+/g, " ").trim() || component.name;
 }
 
 function answerStateKey(component) {
@@ -920,74 +1068,33 @@ function answerStateKey(component) {
 }
 
 function exportChoiceOptions(component) {
-  const markup = componentMarkup(component);
-  const radios = [...markup.querySelectorAll('input[type="radio"]')].slice(0, 4);
-  let options = radios.map((radio, index) => {
-    const label = radio.closest("label")?.textContent.replace(/\s+/g, " ").trim() || `Option ${index + 1}`;
-    const normalized = String(radio.value).toLowerCase();
-    const value = normalized === "true" ? true : normalized === "false" ? false : radio.value;
-    return { label, value };
-  });
-  if (options.length < 2) {
-    options = [...markup.querySelectorAll("button")]
-      .map((button, index) => ({
-        label: button.textContent.replace(/\s+/g, " ").trim(),
-        value: index === 0,
-      }))
-      .filter((option) => option.label)
-      .slice(0, 4);
-  }
-  if (options.length < 2) options = [{ label: "Yes", value: true }, { label: "No", value: false }];
-  return options.map((option, index) => ({
-    ...option,
-    value: component.sceneChange?.enabled && index < 2 ? index === 0 : option.value,
-    actions: [{
-      type: "set",
-      key: answerStateKey(component),
-      value: component.sceneChange?.enabled && index < 2 ? index === 0 : option.value,
-    }],
+  const radios = [...componentMarkup(component).querySelectorAll('input[type="radio"]')].slice(0, 4);
+  let options = radios.map((radio, index) => ({
+    label: radio.closest("label")?.textContent.replace(/\s+/g, " ").trim() || `Option ${index + 1}`,
+    value: index === 0,
   }));
-}
-
-function sceneChangeBranchAction(component) {
-  const destinations = validateSceneChangeDestinations(component);
-  return {
-    type: "branch",
-    cases: [
-      { when: { key: answerStateKey(component), is: true }, then: [{ type: "goto_scene", scene: destinations[0].id }] },
-      { when: { key: answerStateKey(component), is: false }, then: [{ type: "goto_scene", scene: destinations[1].id }] },
-    ],
-  };
+  if (options.length < 2) options = [{ label: "Yes", value: true }, { label: "No", value: false }];
+  return options.map((option) => ({ ...option, actions: [{ type: "set", key: answerStateKey(component), value: option.value }] }));
 }
 
 function exportFormFields(component) {
-  const fields = [...componentMarkup(component).querySelectorAll("input, select, textarea")];
-  const usedNames = new Set();
-  return fields.map((field, index) => {
-    const proposedName = String(field.getAttribute("name") || `field_${index + 1}`).replace(/[^a-z0-9_-]+/gi, "_");
-    let name = proposedName || `field_${index + 1}`;
-    while (usedNames.has(name)) name = `${name}_${index + 1}`;
-    usedNames.add(name);
+  const used = new Set();
+  return [...componentMarkup(component).querySelectorAll("input, select, textarea")].map((field, index) => {
+    let name = String(field.getAttribute("name") || `field_${index + 1}`).replace(/[^a-z0-9_-]+/gi, "_") || `field_${index + 1}`;
+    while (used.has(name)) name = `${name}_${index + 1}`;
+    used.add(name);
     const rawType = field.tagName === "SELECT" ? "choice" : field.getAttribute("type");
-    const type = ["number", "email", "choice"].includes(rawType) ? rawType : "text";
-    const exported = {
+    return {
       name,
       label: field.getAttribute("aria-label") || field.getAttribute("placeholder") || name.replaceAll("_", " "),
-      type,
+      type: ["number", "email", "choice"].includes(rawType) ? rawType : "text",
       required: field.required,
     };
-    if (type === "choice") {
-      const options = [...field.querySelectorAll("option")].map((option) => ({
-        label: option.textContent.trim() || option.value,
-        value: option.value,
-      }));
-      exported.options = options.length ? options : [{ label: "Option", value: "option" }];
-    }
-    return exported;
   });
 }
 
-function exportComponent(component) {
+function exportedComponent(component) {
+  const clip = clips.find((item) => item.id === component.clipId);
   const exported = {
     id: component.id,
     kind: component.kind,
@@ -995,297 +1102,147 @@ function exportComponent(component) {
     html: sanitizeHtml(component.html),
     css: sanitizeCss(component.css),
     presentation: {
-      scene: component.clipId,
-      start: component.start,
-      end: component.end,
-      x: component.x / 100,
-      y: component.y / 100,
-      width: component.width / 100,
-      height: component.height / 100,
+      scene: clip.sceneId,
+      start: clip.sourceStart + component.start,
+      end: clip.sourceStart + component.end,
+      x: component.x / 100, y: component.y / 100,
+      width: component.width / 100, height: component.height / 100,
     },
   };
-
-  if (component.sceneChange?.enabled) {
-    validateSceneChangeDestinations(component);
-    exported.scene_change = structuredClone(component.sceneChange);
-  }
-  if (component.kind === "tooltip") exported.text = componentText(component);
-  if (component.kind === "card") exported.text = componentText(component);
+  if (component.kind === "tooltip" || component.kind === "card") exported.text = componentText(component);
   if (component.kind === "choice") {
     exported.text = componentMarkup(component).querySelector("legend")?.textContent.trim() || component.name;
     exported.options = exportChoiceOptions(component);
   }
   if (component.kind === "form") {
     exported.fields = exportFormFields(component);
-    exported.on_submit = [{
-      type: "custom",
-      name: "submit_form",
-      payload: { component: component.id },
-      into: answerStateKey(component),
-    }];
+    exported.on_submit = [{ type: "custom", name: "submit_form", payload: { component: component.id }, into: answerStateKey(component) }];
   }
   return exported;
 }
 
-function sourceBaseName() {
-  return sourceMediaName
-    .replace(/\.pvo\.(mp4|mov)$/i, "")
-    .replace(/\.(mp4|mov)$/i, "");
-}
-
 function buildPvoManifest() {
-  if (!mediaReady || !sourceMedia || clips.length === 0) throw new Error("Open a video before exporting");
-  const title = sourceBaseName() || "PVO video";
+  if (!canExportTimeline()) throw new Error("Combined multi-media export needs the renderer step");
+  const item = mediaItem(clips[0].mediaId);
+  const title = sceneLabelFromFile(item.name);
   const id = title.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "pvo_video";
-  const exportedComponents = components.map(exportComponent);
+  const scenesById = new Map();
+  clips.forEach((clip) => {
+    const existing = scenesById.get(clip.sceneId);
+    if (existing) {
+      existing.start = Math.min(existing.start, clip.sourceStart);
+      existing.end = Math.max(existing.end, clip.sourceEnd);
+    } else scenesById.set(clip.sceneId, { id: clip.sceneId, label: clip.sceneName, start: clip.sourceStart, end: clip.sourceEnd });
+  });
   const triggers = components.flatMap((component) => {
-    const resetsAnswer = isSceneChangingComponent(component) && component.sceneChange?.enabled;
-    const componentTriggers = [{
-      id: `${component.id}_show`,
-      scene: component.clipId,
-      at: component.start,
-      actions: [
-        ...(resetsAnswer ? [{ type: "set", key: answerStateKey(component), value: null }] : []),
-        { type: "show", component: component.id },
-      ],
+    const clip = clips.find((item) => item.id === component.clipId);
+    return [{
+      id: `${component.id}_show`, scene: clip.sceneId, at: clip.sourceStart + component.start,
+      actions: [{ type: "show", component: component.id }],
     }, {
-      id: `${component.id}_hide`,
-      scene: component.clipId,
-      at: component.end,
+      id: `${component.id}_hide`, scene: clip.sceneId, at: clip.sourceStart + component.end,
       actions: [{ type: "hide", component: component.id }],
     }];
-    if (isSceneChangingComponent(component) && component.sceneChange?.enabled) {
-      componentTriggers.push({
-        id: `${component.id}_branch`,
-        scene: component.clipId,
-        at: component.end,
-        actions: [sceneChangeBranchAction(component)],
-      });
-    }
-    return componentTriggers;
   });
   const ratio = canvasRatios[canvasRatio];
-
   return {
     spec_version: PVO_SPEC_VERSION,
     id,
     title,
-    initial_scene: clips[0].id,
+    initial_scene: clips[0].sceneId,
     canvas: { ratio: canvasRatio, width: ratio.width, height: ratio.height },
     state: { initial: {} },
-    scenes: clips.map((clip) => ({ id: clip.id, label: clip.name, start: clip.start, end: clip.end })),
-    components: exportedComponents,
+    scenes: [...scenesById.values()],
+    components: components.map(exportedComponent),
     hotspots: [],
     triggers,
   };
 }
 
-function exportedFileName() {
-  const base = sourceBaseName() || "video";
-  const extension = sourceIsMov() ? "mov" : "mp4";
-  return `${base}.pvo.${extension}`;
-}
-
 async function exportPvoVideo() {
-  if (!mediaReady || !sourceMedia || exporting) return;
+  if (!canExportTimeline() || exporting) return;
+  const item = mediaItem(clips[0].mediaId);
   exporting = true;
-  refs.exportPvoButton.disabled = true;
+  renderExportState();
   refs.exportPvoButton.textContent = "Exporting…";
   setStatus("Packing PVO video…");
   try {
-    const output = await packPvo(sourceMedia, buildPvoManifest());
-    const name = exportedFileName();
-    const downloadUrl = URL.createObjectURL(output);
+    const output = await packPvo(item.file, buildPvoManifest());
+    const name = `${sceneLabelFromFile(item.name)}.pvo.${mediaItemIsMov(item) ? "mov" : "mp4"}`;
+    const url = URL.createObjectURL(output);
     const link = document.createElement("a");
-    link.href = downloadUrl;
+    link.href = url;
     link.download = name;
     document.body.append(link);
     link.click();
     link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 30000);
+    window.setTimeout(() => URL.revokeObjectURL(url), 30000);
     setStatus(`${name} exported`);
   } catch (error) {
-    console.error("PVO export failed", error);
     setStatus(`Export failed · ${error.message}`);
   } finally {
     exporting = false;
     refs.exportPvoButton.textContent = "Export PVO video";
-    refs.exportPvoButton.disabled = !mediaReady || !sourceMedia;
+    renderExportState();
   }
 }
 
-function saveActiveMediaState() {
-  const item = activeMediaItem();
-  if (!item || !mediaReady || clips.length === 0) return;
-  item.duration = Number.isFinite(video.duration) ? video.duration : item.duration;
-  const savedComponents = structuredClone(components);
-  savedComponents.forEach((component) => { delete component.pendingAnswer; });
-  item.project = {
-    clips: structuredClone(clips),
-    components: savedComponents,
-    selectedClipId,
-    selectedComponentId,
-    canvasRatio,
-    currentTime: Number.isFinite(video.currentTime) ? video.currentTime : 0,
-  };
-}
-
-function importMediaFiles(files) {
-  const supported = files.filter((file) => (
-    /\.(mp4|mov)$/i.test(file.name)
-    || ["video/mp4", "video/quicktime"].includes(file.type)
-  ));
-
-  if (supported.length === 0) {
-    setStatus("Choose MP4 or MOV files");
-    return;
-  }
-
-  const imported = supported.map((file) => ({
-    id: `media_${++mediaCounter}`,
-    file,
-    name: file.name,
-    duration: null,
-    project: null,
-    error: false,
-  }));
-  mediaItems.push(...imported);
-  setPanelTab("media");
-  renderMediaDetails();
-
-  if (!activeMediaId) {
-    activateMedia(imported[0].id);
-    return;
-  }
-
-  setStatus(`${imported.length} media ${imported.length === 1 ? "item" : "items"} added`);
-}
-
-function activateMedia(id) {
-  const item = mediaItems.find((candidate) => candidate.id === id);
-  if (!item || item.id === activeMediaId && mediaReady) return;
-
-  saveActiveMediaState();
-  closeComponentDialog();
-  video.pause();
-
-  const previousObjectUrl = objectUrl;
-  objectUrl = URL.createObjectURL(item.file);
-  activeMediaId = item.id;
-  item.error = false;
-  sourceMedia = item.file;
-  sourceMediaName = item.name;
-  clips = [];
-  components = [];
-  selectedClipId = null;
-  selectedComponentId = null;
-  previousPlaybackTime = 0;
-  executedSceneChanges.clear();
-  refs.currentTime.textContent = "00:00.0";
-  refs.totalTime.textContent = "00:00.0";
-  refs.projectDuration.textContent = "00:00.0";
-  video.src = objectUrl;
-  if (previousObjectUrl) URL.revokeObjectURL(previousObjectUrl);
-  refs.projectName.textContent = item.name;
-  setMediaReady(false, { title: "Loading video…", message: `Preparing ${item.name}` });
-  renderAll();
-  setStatus(`Loading ${item.name}`);
-  video.load();
-}
-
-function showActiveMediaError() {
-  const item = activeMediaItem();
-  if (item) item.error = true;
-  if (objectUrl) URL.revokeObjectURL(objectUrl);
-  objectUrl = null;
-  clips = [];
-  components = [];
-  selectedClipId = null;
-  selectedComponentId = null;
-  previousPlaybackTime = 0;
-  executedSceneChanges.clear();
-  refs.projectName.textContent = item?.name || "No video selected";
-  refs.projectDuration.textContent = "00:00.0";
-  refs.currentTime.textContent = "00:00.0";
-  refs.totalTime.textContent = "00:00.0";
-  setMediaReady(false, { title: "Could not open this video", message: "Choose an MP4 or MOV with a codec this browser supports." });
-  renderAll();
-  setStatus(`${item?.name || "Video"} could not be opened`);
+function setComponentTiming(componentId, start, end) {
+  const component = components.find((item) => item.id === componentId);
+  const clip = clips.find((item) => item.id === component?.clipId);
+  if (!component || !clip) throw new Error("component does not exist");
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end - start < 0.2) throw new Error("component timing needs at least 0.2 seconds");
+  if (start < 0 || end > clipDuration(clip)) throw new Error("component timing must stay inside its media clip");
+  component.start = start;
+  component.end = end;
+  selectComponent(component.id, true, false);
+  return component;
 }
 
 video.addEventListener("loadedmetadata", () => {
-  const item = activeMediaItem();
-  if (!item) return;
-  const duration = Number.isFinite(video.duration) ? video.duration : 0;
-  if (duration <= 0) {
-    showActiveMediaError();
-    return;
-  }
-  item.duration = duration;
-  refs.totalTime.textContent = formatTime(duration);
-  refs.projectDuration.textContent = formatTime(duration);
-  if (item.project) {
-    clips = structuredClone(item.project.clips);
-    components = structuredClone(item.project.components);
-    selectedClipId = clips.some((clip) => clip.id === item.project.selectedClipId)
-      ? item.project.selectedClipId
-      : clips[0]?.id || null;
-    selectedComponentId = components.some((component) => component.id === item.project.selectedComponentId)
-      ? item.project.selectedComponentId
-      : null;
-    canvasRatio = Object.hasOwn(canvasRatios, item.project.canvasRatio) ? item.project.canvasRatio : "16:9";
-  } else {
-    clips = [{ id: `scene_${++clipCounter}`, name: "Scene 1", start: 0, end: duration }];
-    components = [];
-    selectedClipId = clips[0].id;
-    selectedComponentId = null;
-    canvasRatio = "16:9";
-  }
-  refs.canvasRatio.value = canvasRatio;
-  canvasFrame.dataset.ratio = canvasRatio;
-  previousPlaybackTime = 0;
-  executedSceneChanges.clear();
+  if (!pendingPreview || pendingPreview.mediaId !== activeMediaId) return;
+  const pending = pendingPreview;
+  pendingPreview = null;
+  loadedMediaId = pending.mediaId;
+  video.currentTime = pending.sourceTime;
+  switchingClip = false;
   setMediaReady(true);
   renderAll();
-  const savedTime = item.project?.currentTime || 0;
-  video.currentTime = clamp(savedTime, 0, duration);
-  updateTime();
-  setStatus(`${item.name} ready · split the clip or add a component`);
+  updateTimeDisplay();
+  if (pending.autoplay) void video.play().catch(() => {});
 });
-video.addEventListener("error", showActiveMediaError);
-video.addEventListener("timeupdate", updateTime);
-video.addEventListener("seeked", updateTime);
+
+video.addEventListener("error", () => {
+  const item = activeMediaItem();
+  if (item) item.error = true;
+  pendingPreview = null;
+  switchingClip = false;
+  loadedMediaId = null;
+  setMediaReady(false, { title: "Could not open this video", message: "This MP4 or MOV uses a codec the browser cannot preview." });
+  setStatus(`${item?.name || "Video"} could not be opened`);
+});
+
+video.addEventListener("timeupdate", updateTimeDisplay);
+video.addEventListener("seeked", updateTimeDisplay);
+video.addEventListener("ended", () => {
+  const localTime = clipDuration(selectedClip());
+  if (!executeBranchAtLayerEnd(localTime)) advanceAtClipEnd(localTime, true);
+});
 window.addEventListener("resize", positionCanvasFrame);
+window.addEventListener("beforeunload", () => mediaItems.forEach((item) => URL.revokeObjectURL(item.url)));
 new ResizeObserver(positionCanvasFrame).observe(videoArea);
 
 addComponentButtons.forEach((button) => button.addEventListener("click", () => addComponent(button.dataset.addComponent)));
-refs.splitButton.addEventListener("click", () => { try { splitAtPlayhead(); } catch { /* status explains the invalid split */ } });
-$("#deleteComponentButton").addEventListener("click", deleteComponent);
-$("#closeComponentDialog").addEventListener("click", closeComponentDialog);
-$("#doneComponentDialog").addEventListener("click", closeComponentDialog);
-refs.changeSceneToggle.addEventListener("change", () => {
-  const component = selectedComponent();
-  if (!isSceneChangingComponent(component)) return;
-  const sceneChange = ensureSceneChange(component);
-  sceneChange.enabled = refs.changeSceneToggle.checked;
-  if (sceneChange.enabled) binarySceneRoutes(component);
-  executedSceneChanges.delete(component.id);
-  renderSceneRouting(component);
-  renderTimeline();
-  setStatus(`${component.name} branch at layer end ${sceneChange.enabled ? "enabled" : "disabled"}`);
-});
-refs.componentDialog.addEventListener("click", (event) => {
-  if (event.target === refs.componentDialog) closeComponentDialog();
-});
-[refs.name, refs.x, refs.y, refs.width, refs.height, refs.html, refs.css].forEach((input) => input.addEventListener("input", updateComponentFromInspector));
+refs.splitButton.addEventListener("click", () => { try { splitAtPlayhead(); } catch { /* status already explains it */ } });
+refs.sceneName.addEventListener("change", () => renameSelectedScene(refs.sceneName.value));
 refs.videoInput.addEventListener("change", (event) => {
-  importMediaFiles([...event.target.files]);
+  void importMediaFiles([...event.target.files]);
   event.target.value = "";
 });
-refs.chooseVideoButton.addEventListener("click", () => refs.videoInput.click());
-refs.addMediaButton.addEventListener("click", () => refs.videoInput.click());
 refs.exportPvoButton.addEventListener("click", exportPvoVideo);
 refs.canvasRatio.addEventListener("change", () => setCanvasRatio(refs.canvasRatio.value));
+refs.timelineView.addEventListener("change", () => setTimelineView(refs.timelineView.value));
+refs.mainTimelineButton.addEventListener("click", () => setTimelineView("main"));
 refs.mediaTab.addEventListener("click", () => setPanelTab("media"));
 refs.componentsTab.addEventListener("click", () => setPanelTab("components"));
 [refs.mediaTab, refs.componentsTab].forEach((tab) => tab.addEventListener("keydown", (event) => {
@@ -1295,48 +1252,48 @@ refs.componentsTab.addEventListener("click", () => setPanelTab("components"));
   setPanelTab(next === refs.mediaTab ? "media" : "components");
   next.focus();
 }));
-
-function seekFromTimeline(event, lane) {
-  const bounds = lane.getBoundingClientRect();
-  const ratio = clamp((event.clientX - bounds.left) / bounds.width, 0, 1);
-  video.currentTime = ratio * (video.duration || 0);
-  updateTime();
-}
-
+$("#deleteComponentButton").addEventListener("click", deleteComponent);
+$("#closeComponentDialog").addEventListener("click", closeComponentDialog);
+$("#doneComponentDialog").addEventListener("click", closeComponentDialog);
+refs.componentDialog.addEventListener("click", (event) => { if (event.target === refs.componentDialog) closeComponentDialog(); });
+refs.changeSceneToggle.addEventListener("change", () => {
+  const component = selectedComponent();
+  if (!isBranchingComponent(component)) return;
+  const sceneChange = ensureSceneChange(component);
+  sceneChange.enabled = refs.changeSceneToggle.checked;
+  if (sceneChange.enabled) binaryMediaRoutes(component);
+  executedSceneChanges.delete(component.id);
+  renderSceneRouting(component);
+  renderTimelineNavigation();
+  renderTimeline();
+  setStatus(`${component.name} media branch ${sceneChange.enabled ? "enabled" : "disabled"}`);
+});
+[refs.name, refs.x, refs.y, refs.width, refs.height, refs.html, refs.css].forEach((input) => input.addEventListener("input", updateComponentFromInspector));
 trackWrap.addEventListener("click", (event) => seekFromTimeline(event, trackWrap));
 ruler.addEventListener("click", (event) => seekFromTimeline(event, ruler));
 
 function registerWebMcpTools() {
   const context = document.modelContext;
   if (!context?.registerTool) return;
-  const report = (error) => console.warn("WebMCP registration failed", error);
   const register = (tool) => {
-    try { void Promise.resolve(context.registerTool(tool)).catch(report); } catch (error) { report(error); }
+    try { void Promise.resolve(context.registerTool(tool)).catch((error) => console.warn("WebMCP registration failed", error)); }
+    catch (error) { console.warn("WebMCP registration failed", error); }
   };
   register({
     name: "read_editor_state",
     title: "Read editor state",
-    description: "Read the current scene ranges and components in the PVO editor.",
+    description: "Read the imported media, shared timeline clips, branch view, and UI component layers.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
     annotations: { readOnlyHint: true, untrustedContentHint: true },
     execute() {
       return {
-        mediaLoaded: mediaReady,
+        activeView: timelineViewKey,
         activeMedia: activeMediaId,
-        mediaName: sourceMediaName || null,
-        media: mediaItems.map((item) => ({
-          id: item.id,
-          name: item.name,
-          type: mediaItemIsMov(item) ? "mov" : "mp4",
-          size: item.file.size,
-          duration: item.duration,
-          active: item.id === activeMediaId,
-          error: item.error,
-        })),
-        canvasRatio,
-        selectedScene: selectedClipId,
+        selectedClip: selectedClipId,
         selectedComponent: selectedComponentId,
-        scenes: structuredClone(clips),
+        canvasRatio,
+        media: mediaItems.map((item) => ({ id: item.id, name: item.name, duration: item.duration, error: item.error })),
+        clips: structuredClone(clips),
         components: structuredClone(components),
       };
     },
@@ -1344,85 +1301,49 @@ function registerWebMcpTools() {
   register({
     name: "set_canvas_ratio",
     title: "Set canvas ratio",
-    description: "Set the editor canvas to a supported landscape, portrait, square, or social ratio.",
+    description: "Set the editor canvas ratio.",
     inputSchema: { type: "object", properties: { ratio: { enum: ["16:9", "9:16", "1:1", "4:5"] } }, required: ["ratio"], additionalProperties: false },
     annotations: { readOnlyHint: false, untrustedContentHint: false },
-    execute(input) {
-      const ratio = setCanvasRatio(input?.ratio);
-      return { ratio: canvasRatio, width: ratio.width, height: ratio.height };
-    },
+    execute(input) { const ratio = setCanvasRatio(input?.ratio); return { ratio: canvasRatio, ...ratio }; },
   });
   register({
-    name: "split_scene_at_time",
-    title: "Split scene at time",
-    description: "Split the visible video scene at an absolute time in seconds and select the new right-hand scene.",
+    name: "split_timeline_clip",
+    title: "Split timeline clip",
+    description: "Split the selected media clip at a local time without creating a new scene.",
     inputSchema: { type: "object", properties: { time: { type: "number", minimum: 0 } }, required: ["time"], additionalProperties: false },
     annotations: { readOnlyHint: false, untrustedContentHint: false },
-    execute(input) {
-      if (!Number.isFinite(input?.time)) throw new Error("time must be a number");
-      const scene = splitSceneAt(input.time);
-      return { scene: scene.id, start: scene.start, end: scene.end, sceneCount: clips.length };
-    },
+    execute(input) { const clip = splitClipAt(input?.time); return { clip: clip.id, scene: clip.sceneId, sourceStart: clip.sourceStart, sourceEnd: clip.sourceEnd }; },
   });
   register({
     name: "add_editor_component",
     title: "Add editor component",
-    description: "Add a tooltip, card, choice, or form to the currently selected scene.",
+    description: "Add a tooltip, card, choice, or form to the selected media clip.",
     inputSchema: { type: "object", properties: { kind: { enum: ["tooltip", "card", "choice", "form"] } }, required: ["kind"], additionalProperties: false },
     annotations: { readOnlyHint: false, untrustedContentHint: false },
-    execute(input) {
-      if (!Object.hasOwn(presets, input?.kind)) throw new Error("kind must be tooltip, card, choice, or form");
-      const component = addComponent(input.kind, false);
-      return { component: component.id, kind: component.kind, scene: component.clipId, start: component.start, end: component.end };
-    },
+    execute(input) { const component = addComponent(input?.kind, false); return { component: component.id, clip: component.clipId, start: component.start, end: component.end }; },
   });
   register({
     name: "set_component_timing",
     title: "Set component timing",
-    description: "Set when a component appears and disappears, using absolute seconds within its scene.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        componentId: { type: "string" },
-        start: { type: "number", minimum: 0 },
-        end: { type: "number", minimum: 0 },
-      },
-      required: ["componentId", "start", "end"],
-      additionalProperties: false,
-    },
+    description: "Set a component's local start and end time inside its media clip.",
+    inputSchema: { type: "object", properties: { componentId: { type: "string" }, start: { type: "number", minimum: 0 }, end: { type: "number", minimum: 0 } }, required: ["componentId", "start", "end"], additionalProperties: false },
     annotations: { readOnlyHint: false, untrustedContentHint: false },
-    execute(input) {
-      const component = setComponentTiming(input?.componentId, input?.start, input?.end);
-      return { component: component.id, scene: component.clipId, start: component.start, end: component.end };
-    },
+    execute(input) { const component = setComponentTiming(input?.componentId, input?.start, input?.end); return { component: component.id, clip: component.clipId, start: component.start, end: component.end }; },
   });
   register({
-    name: "set_component_scene_routing",
-    title: "Set component scene routing",
-    description: "Configure a choice or form to branch at the end of its layer, with True and False mapped to different destination scenes.",
+    name: "set_component_media_routing",
+    title: "Set component media routing",
+    description: "Map a choice or form's Yes and No outcomes to two different media items already on the timeline.",
     inputSchema: {
       type: "object",
       properties: {
-        componentId: { type: "string" },
-        enabled: { type: "boolean" },
-        routes: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: { condition: { enum: ["true", "false"] }, sceneId: { type: "string" } },
-            required: ["condition", "sceneId"],
-            additionalProperties: false,
-          },
-        },
+        componentId: { type: "string" }, enabled: { type: "boolean" },
+        routes: { type: "array", items: { type: "object", properties: { condition: { enum: ["true", "false"] }, mediaId: { type: "string" } }, required: ["condition", "mediaId"], additionalProperties: false } },
       },
-      required: ["componentId", "enabled", "routes"],
-      additionalProperties: false,
+      required: ["componentId", "enabled", "routes"], additionalProperties: false,
     },
     annotations: { readOnlyHint: false, untrustedContentHint: false },
-    execute(input) {
-      const component = setComponentSceneRouting(input?.componentId, input?.enabled, input?.routes);
-      return { component: component.id, scene: component.clipId, sceneChange: structuredClone(component.sceneChange) };
-    },
+    execute(input) { const component = setComponentMediaRouting(input?.componentId, input?.enabled, input?.routes || []); return { component: component.id, mediaBranch: structuredClone(component.sceneChange) }; },
   });
 }
 

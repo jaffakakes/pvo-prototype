@@ -70,7 +70,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .media-item span { color: var(--dim); font-size: 11px; }
 .media-item-state { color: var(--accent-dark); font-size: 11px; font-weight: 700; }
 .media-item.error .media-item-state { color: #9b2f34; }
-.media-action, .export-button { width: 100%; }
+.export-button { width: 100%; }
 .export-section { display: grid; gap: 8px; margin-top: 4px; padding-top: 14px; border-top: 1px solid var(--line); }
 .export-section p { margin: 0; color: var(--dim); font-size: 12px; line-height: 1.5; }
 .export-button:not(:disabled) { border-color: var(--accent); color: #fff; background: var(--accent); }
@@ -78,7 +78,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 
 .workspace { min-width: 0; display: grid; grid-template-rows: 49px minmax(280px, 1fr) 300px; overflow: hidden; background: #f7f7f7; }
 .preview-toolbar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; padding: 0 14px; border-bottom: 1px solid var(--line); background: #fff; }
-.preview-scene { display: flex; align-items: baseline; gap: 8px; }
+.preview-scene { min-width: 0; display: flex; align-items: center; gap: 8px; }
+.preview-scene input { min-width: 90px; max-width: 210px; height: 30px; padding: 4px 7px; overflow: hidden; border: 1px solid transparent; border-radius: 2px; color: #222; background: transparent; font-size: 13px; font-weight: 700; text-overflow: ellipsis; }
+.preview-scene input:not(:disabled):hover, .preview-scene input:not(:disabled):focus { border-color: var(--line-light); background: #fff; }
 .preview-toolbar span { color: var(--dim); font-size: 12px; }
 .preview-toolbar strong { color: #222; font-size: 13px; }
 .ratio-control { display: flex; align-items: center; gap: 7px; color: var(--dim); }
@@ -99,6 +101,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .timeline-panel { min-height: 0; overflow: hidden; padding: 12px 14px 10px; border-top: 1px solid var(--line); background: #fff; }
 .timeline-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 9px; }
 .timeline-toolbar > div { display: grid; gap: 2px; }
+.timeline-actions { display: flex !important; align-items: center; justify-content: flex-end; gap: 7px; }
+.timeline-view-control { display: flex; align-items: center; gap: 6px; color: var(--dim); font-size: 12px; }
+.timeline-view-control select { min-height: 31px; max-width: 210px; padding: 4px 24px 4px 8px; border: 1px solid var(--line-light); border-radius: 2px; color: #333; background: #fff; }
+.main-timeline-button { min-height: 31px; padding-block: 5px; font-size: 12px; }
 .split-button { min-height: 31px; padding-block: 5px; font-size: 12px; }
 .timeline-editor { --playhead-position: 0%; max-height: 214px; overflow: auto; border: 1px solid var(--line); background: #fff; }
 .timeline-ruler-row, .layer-row { min-width: 520px; display: grid; grid-template-columns: 132px minmax(0, 1fr); }
@@ -197,6 +203,9 @@ button.layer-label:hover { color: var(--accent-dark); background: var(--accent-s
   .editor-shell { grid-template-columns: 1fr; }
   .workspace { grid-row: 1; min-height: 720px; }
   .preview-toolbar { gap: 8px; padding-inline: 10px; }
+  .timeline-toolbar { align-items: flex-start; }
+  .timeline-actions { flex-wrap: wrap; }
+  .timeline-view-control span { display: none; }
   .ratio-control > span { display: none; }
   .component-panel { grid-row: 2; border-top: 1px solid var(--line); border-right: 0; }
   .component-dialog { width: calc(100vw - 20px); }
