@@ -6,7 +6,7 @@ This folder is deliberately separate from the SDK package. It contains a small b
 - split the selected file into named scene ranges;
 - add tooltip, card, choice, and form components, then edit their HTML and CSS appearance;
 - edit on a layered timeline with one video track and a separate draggable, resizable track for every UI component.
-- configure components in a modal dialog; choices and forms can pause playback and map conditions or results to destination scenes.
+- configure components in a modal dialog; choices and forms can map True and False answers to two destination scenes and branch when their layer ends.
 - switch between Media and Components tabs, choose a canvas ratio, and export the selected item as a `.pvo.mp4` or `.pvo.mov` file.
 
 Each component has an absolute start and end time constrained to its scene. Full animation keyframes and easing are intentionally deferred.

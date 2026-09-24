@@ -33,7 +33,7 @@ export type PvoAction =
   | (ActionBase & { type: "open_url"; url: string })
   | (ActionBase & { type: "chain"; actions: PvoAction[] })
   | (ActionBase & { type: "branch"; cases: Array<{ when: PvoCondition; then: PvoAction | PvoAction[] }>; else?: PvoAction | PvoAction[] })
-  | (ActionBase & { type: "custom"; name: string; payload?: JsonValue });
+  | (ActionBase & { type: "custom"; name: string; payload?: JsonValue; into?: string });
 
 export interface PvoScene {
   id: string;
@@ -47,6 +47,7 @@ export interface PvoScene {
 
 export interface PvoChoiceOption { label: string; value?: JsonValue; action?: PvoAction; actions?: PvoAction[] }
 export interface PvoFormField { name: string; label?: string; type?: "text" | "number" | "email" | "choice"; required?: boolean; placeholder?: string; default?: JsonValue; options?: Array<{ label: string; value?: JsonValue }> }
+export interface PvoSceneChange { enabled: boolean; executeAt: "end"; routes: Array<{ condition: "true" | "false"; sceneId: string }> }
 export interface PvoComponent {
   id: string;
   kind: "tooltip" | "card" | "choice" | "form";
@@ -60,6 +61,7 @@ export interface PvoComponent {
   on_submit?: PvoAction | PvoAction[];
   submit_label?: string;
   success_text?: string;
+  scene_change?: PvoSceneChange;
   [key: string]: unknown;
 }
 

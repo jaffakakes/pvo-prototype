@@ -45,9 +45,9 @@ Coordinates are relative to the actual video content, not to any letterbox area 
 - `choice`: two or more options; every option owns an action or action list.
 - `form`: typed fields and an `on_submit` action list.
 
-Components may also carry an optional sanitized `html`/`css` presentation plus normalized layout and timing in `presentation`. Semantic fields remain present so a host can replace that presentation with native UI. Choice and form components may preserve authoring routes in `scene_change`.
+Components may also carry an optional sanitized `html`/`css` presentation plus normalized layout and timing in `presentation`. Semantic fields remain present so a host can replace that presentation with native UI. Choice and form components may preserve a binary `scene_change` with one `true` destination, one `false` destination, and `executeAt: "end"`.
 
-Choices and forms do not need visual scene connectors. They route by declaring `goto_scene` in their actions.
+Selecting a choice or submitting a form records its result without seeking immediately. At the end of that component's presentation range, a timed `branch` checks the recorded result and runs the matching `goto_scene`. If the viewer supplied no result, neither route runs. The True and False routes must target two different scenes.
 
 ### Actions
 
@@ -61,15 +61,17 @@ Choices and forms do not need visual scene connectors. They route by declaring `
 | `open_url` | ask before opening an external URL |
 | `chain` | execute actions in order |
 | `branch` | execute the first matching case |
-| `custom` | hand a named event to an extended host player |
+| `custom` | hand a named event to an extended host player; optional `into` stores its returned result in state |
 
 Every action may have `when`. Conditions read either state (`{"key":"path","is":"left"}`) or a request response (`{"response":"/ok","is":true}`). Supported comparisons are `is`, `not`, `gt`, `gte`, `lt`, `lte`, `in`, and `exists`.
+
+For forms, a host can return `true` or `false` from a `custom` submit action and store it through `into`. The end-of-layer branch then reads that recorded result exactly like a choice answer.
 
 Strings may contain `{state.path}` or `{response.message}` templates. Templates never execute code.
 
 ## 4. Playback
 
-The player identifies the scene containing the current video time. It runs `on_enter` when entering a scene and `on_exit` at its end. If no choice or form is waiting and the scene declares `next`, the player seeks to that scene. Otherwise playback pauses.
+The player identifies the scene containing the current video time. It runs `on_enter` when entering a scene and `on_exit` at its end. A choice or form with scene routing continues playing after an answer and branches only when that component layer ends. If no answer was supplied, playback follows the scene normally.
 
 All alternate footage lives in the same source video. Branching is a seek, so no media network or secondary video file is required.
 

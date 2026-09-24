@@ -229,6 +229,8 @@ function validateActions(actions, path, errors, warnings, ids) {
     if (action.type === "seek" && !action.scene && !Number.isFinite(action.time)) errors.push(`${at} needs a scene or numeric time.`);
     if (action.type === "request" && (typeof action.url !== "string" || !/^https?:\/\//i.test(action.url))) errors.push(`${at}.url must be an absolute HTTP(S) URL.`);
     if (action.type === "open_url" && (typeof action.url !== "string" || !/^https?:\/\//i.test(action.url))) errors.push(`${at}.url must be an absolute HTTP(S) URL.`);
+    if (action.type === "custom" && typeof action.name !== "string") errors.push(`${at}.name is required.`);
+    if (action.type === "custom" && action.into != null && typeof action.into !== "string") errors.push(`${at}.into must be a state path.`);
     if (action.type === "chain" && !Array.isArray(action.actions)) errors.push(`${at}.actions must be an array.`);
     if (action.type === "chain") validateActions(action.actions, `${at}.actions`, errors, warnings, ids);
     if (action.type === "branch") {
@@ -304,6 +306,31 @@ export function validatePvo(manifest) {
           errors.push(`${path}.fields[${fieldIndex}].options is required for a choice field.`);
         }
       });
+    }
+    if (component?.scene_change) {
+      const sceneChange = component.scene_change;
+      if (typeof sceneChange.enabled !== "boolean") errors.push(`${path}.scene_change.enabled must be a boolean.`);
+      if (sceneChange.executeAt !== "end") errors.push(`${path}.scene_change.executeAt must be "end".`);
+      if (!Array.isArray(sceneChange.routes) || sceneChange.routes.length !== 2) {
+        errors.push(`${path}.scene_change.routes must contain the True and False routes.`);
+      } else {
+        const conditions = new Set(sceneChange.routes.map((route) => route?.condition));
+        if (!conditions.has("true") || !conditions.has("false")) {
+          errors.push(`${path}.scene_change.routes must contain one True route and one False route.`);
+        }
+        const destinations = sceneChange.routes.map((route, routeIndex) => {
+          if (!ids.scenes.has(route?.sceneId)) {
+            errors.push(`${path}.scene_change.routes[${routeIndex}] references a missing scene.`);
+          }
+          if (route?.sceneId === component.presentation?.scene) {
+            errors.push(`${path}.scene_change.routes[${routeIndex}] must target a different scene.`);
+          }
+          return route?.sceneId;
+        });
+        if (destinations[0] && destinations[0] === destinations[1]) {
+          errors.push(`${path}.scene_change routes must target two different scenes.`);
+        }
+      }
     }
   }
   if (manifest.initial_scene && !ids.scenes.has(manifest.initial_scene)) {
@@ -512,8 +539,11 @@ export class PvoRuntime {
         }
         return url;
       }
-      case "custom":
-        return this.handlers.custom?.(action.name, resolveTemplates(action.payload, actionContext), actionContext);
+      case "custom": {
+        const result = await this.handlers.custom?.(action.name, resolveTemplates(action.payload, actionContext), actionContext);
+        if (action.into && result !== undefined) this.setState(action.into, result);
+        return result;
+      }
       default:
         throw new Error(`Unsupported PVO action "${action.type}".`);
     }

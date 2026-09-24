@@ -173,6 +173,59 @@ test("runtime executes guarded state, navigation, visibility, and request outcom
   assert.deepEqual(events, [["show", "tip"], ["goto", "ending"], ["hide", "tip"]]);
 });
 
+test("true and false scene routes wait for a recorded answer", async () => {
+  const delayed = manifest();
+  delayed.scenes.push({ id: "decline", start: 10, end: 15 });
+  delayed.components[1].presentation = { scene: "intro", start: 1, end: 4, x: 0.2, y: 0.2, width: 0.5, height: 0.3 };
+  delayed.components[1].scene_change = {
+    enabled: true,
+    executeAt: "end",
+    routes: [
+      { condition: "true", sceneId: "ending" },
+      { condition: "false", sceneId: "decline" },
+    ],
+  };
+  const branch = {
+    type: "branch",
+    cases: [
+      { when: { key: "answers.choice", is: true }, then: [{ type: "goto_scene", scene: "ending" }] },
+      { when: { key: "answers.choice", is: false }, then: [{ type: "goto_scene", scene: "decline" }] },
+    ],
+  };
+  delayed.triggers.push({ id: "choice_branch", scene: "intro", at: 4, actions: [branch] });
+  assert.equal(validatePvo(delayed).valid, true);
+
+  const destinations = [];
+  const runtime = createPvoRuntime(delayed, {
+    gotoScene(scene) { destinations.push(scene); },
+    custom(name) {
+      assert.equal(name, "submit_form");
+      return false;
+    },
+  });
+  await runtime.execute(branch);
+  assert.deepEqual(destinations, []);
+  await runtime.execute([{ type: "custom", name: "submit_form", into: "answers.choice" }, branch]);
+  assert.equal(runtime.state.answers.choice, false);
+  assert.deepEqual(destinations, ["decline"]);
+});
+
+test("scene changes require distinct True and False destination scenes", () => {
+  const broken = manifest();
+  broken.components[1].presentation = { scene: "intro", start: 1, end: 4, x: 0.2, y: 0.2, width: 0.5, height: 0.3 };
+  broken.components[1].scene_change = {
+    enabled: true,
+    executeAt: "end",
+    routes: [
+      { condition: "true", sceneId: "ending" },
+      { condition: "false", sceneId: "ending" },
+    ],
+  };
+  const result = validatePvo(broken);
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some((error) => error.includes("two different scenes")));
+});
+
 test("runtime blocks requests outside allowed_domains", async () => {
   const runtime = createPvoRuntime(manifest());
   await assert.rejects(

@@ -40,7 +40,7 @@
           <div class="component-buttons">
             <button type="button" data-add-component="tooltip" disabled><strong>Tooltip</strong><span>Small label</span></button>
             <button type="button" data-add-component="card" disabled><strong>Card</strong><span>Title and copy</span></button>
-            <button type="button" data-add-component="choice" disabled><strong>Choice</strong><span>Two actions</span></button>
+            <button type="button" data-add-component="choice" disabled><strong>Choice</strong><span>True / false branch</span></button>
             <button type="button" data-add-component="form" disabled><strong>Form</strong><span>Fields and submit</span></button>
           </div>
         </section>
@@ -121,14 +121,13 @@
           <section class="scene-routing-section" id="sceneRoutingSection" aria-labelledby="sceneRoutingTitle" hidden>
             <header class="dialog-section-title"><h3 id="sceneRoutingTitle">Scene change</h3><span>Choice and form only</span></header>
             <label class="scene-change-toggle">
-              <span><strong>Pause and change scene</strong><small>Pause playback when this component appears.</small></span>
+              <span><strong>Branch at layer end</strong><small>After an answer, change scene when this layer finishes.</small></span>
               <input id="changeSceneToggle" type="checkbox" role="switch" />
             </label>
             <div class="scene-route-fields" id="sceneRouteFields" hidden>
               <p class="route-source">From <strong id="routeSourceScene">Scene 1</strong></p>
               <div class="scene-route-list" id="sceneRouteList"></div>
-              <button class="button add-route-button" id="addSceneRoute" type="button">Add condition</button>
-              <p class="route-help">Each condition or result selects the scene that should play next.</p>
+              <p class="route-help">True and False must lead to two different scenes. With no answer, playback continues normally.</p>
             </div>
           </section>
         </div>

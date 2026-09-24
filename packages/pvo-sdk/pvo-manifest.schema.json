@@ -58,14 +58,17 @@
           },
           "scene_change": {
             "type": "object",
+            "required": ["enabled", "executeAt", "routes"],
             "properties": {
-              "enabled": { "type": "boolean" }, "pauseAtStart": { "type": "boolean" },
+              "enabled": { "type": "boolean" }, "executeAt": { "const": "end" },
               "routes": {
                 "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
                 "items": {
                   "type": "object",
                   "required": ["condition", "sceneId"],
-                  "properties": { "condition": { "type": "string" }, "sceneId": { "type": "string" } },
+                  "properties": { "condition": { "enum": ["true", "false"] }, "sceneId": { "type": "string" } },
                   "additionalProperties": false
                 }
               }
@@ -126,7 +129,7 @@
       "properties": {
         "type": { "enum": ["show", "hide", "set", "goto_scene", "seek", "request", "open_url", "chain", "branch", "custom"] },
         "when": { "$ref": "#/$defs/condition" }, "component": { "type": ["string", "object"] },
-        "scene": { "type": "string" }, "time": { "type": "number" }, "key": { "type": "string" },
+        "scene": { "type": "string" }, "time": { "type": "number" }, "key": { "type": "string" }, "into": { "type": "string" },
         "actions": { "$ref": "#/$defs/actionList" }, "on_success": { "$ref": "#/$defs/actionList" }, "on_error": { "$ref": "#/$defs/actionList" }
       },
       "additionalProperties": true
