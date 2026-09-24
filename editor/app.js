@@ -29,7 +29,7 @@ const refs = {
   timelineView: $("#timelineView"), mainTimelineButton: $("#mainTimelineButton"),
   name: $("#componentName"), x: $("#componentX"), y: $("#componentY"),
   width: $("#componentW"), height: $("#componentH"), html: $("#componentHtml"), css: $("#componentCss"),
-  playhead: $("#playhead"), status: $("#status"), videoInput: $("#videoInput"),
+  playhead: $("#playhead"), status: $("#status"), saveStatus: $("#saveStatus"), videoInput: $("#videoInput"),
 };
 
 const canvasRatios = {
@@ -129,6 +129,15 @@ let mediaCounter = 0;
 let clipCounter = 0;
 let sceneCounter = 0;
 let componentCounter = 0;
+let persistenceReady = false;
+let projectDatabasePromise = null;
+let saveTimer = null;
+let savePromise = Promise.resolve();
+let storageWarning = "";
+
+const projectDatabaseName = "pvo-editor";
+const projectDatabaseVersion = 1;
+const activeProjectKey = "active-project";
 
 class EditorOverlay extends HTMLElement {
   constructor() {
@@ -208,6 +217,162 @@ function formatFileSize(bytes) {
 
 function setStatus(message) {
   refs.status.textContent = message;
+}
+
+function openProjectDatabase() {
+  if (projectDatabasePromise) return projectDatabasePromise;
+  projectDatabasePromise = new Promise((resolve, reject) => {
+    if (!window.indexedDB) {
+      reject(new Error("Browser storage is unavailable"));
+      return;
+    }
+    const request = window.indexedDB.open(projectDatabaseName, projectDatabaseVersion);
+    request.onupgradeneeded = () => {
+      const database = request.result;
+      if (!database.objectStoreNames.contains("projects")) database.createObjectStore("projects");
+      if (!database.objectStoreNames.contains("media")) database.createObjectStore("media");
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error("Could not open browser storage"));
+  });
+  return projectDatabasePromise;
+}
+
+function requestResult(request) {
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error("Browser storage request failed"));
+  });
+}
+
+function transactionComplete(transaction) {
+  return new Promise((resolve, reject) => {
+    transaction.oncomplete = () => resolve();
+    transaction.onabort = () => reject(transaction.error || new Error("Browser storage transaction was cancelled"));
+    transaction.onerror = () => reject(transaction.error || new Error("Browser storage transaction failed"));
+  });
+}
+
+function persistentComponents() {
+  return components.map((component) => {
+    const copy = structuredClone(component);
+    delete copy.pendingAnswer;
+    return copy;
+  });
+}
+
+function projectStateSnapshot() {
+  return {
+    storageVersion: 1,
+    savedAt: Date.now(),
+    media: mediaItems.filter((item) => item.stored).map((item) => ({
+      id: item.id,
+      name: item.name,
+      duration: item.duration,
+      error: false,
+    })),
+    clips: structuredClone(clips),
+    components: persistentComponents(),
+    canvasRatio,
+    timelineViewKey,
+    selectedClipId,
+    selectedComponentId,
+    counters: { mediaCounter, clipCounter, sceneCounter, componentCounter },
+  };
+}
+
+async function persistMediaSource(item) {
+  const database = await openProjectDatabase();
+  const transaction = database.transaction("media", "readwrite");
+  const done = transactionComplete(transaction);
+  const request = transaction.objectStore("media").put({ id: item.id, file: item.file }, item.id);
+  await Promise.all([requestResult(request), done]);
+  item.stored = true;
+}
+
+async function saveProjectNow() {
+  if (!persistenceReady) return;
+  const database = await openProjectDatabase();
+  const transaction = database.transaction("projects", "readwrite");
+  const done = transactionComplete(transaction);
+  const request = transaction.objectStore("projects").put(projectStateSnapshot(), activeProjectKey);
+  await Promise.all([requestResult(request), done]);
+  if (storageWarning === "Could not save in browser") storageWarning = "";
+  refs.saveStatus.textContent = storageWarning || "Saved in browser";
+}
+
+function queueProjectSave() {
+  if (!persistenceReady) return;
+  window.clearTimeout(saveTimer);
+  refs.saveStatus.textContent = "Saving…";
+  saveTimer = window.setTimeout(() => {
+    saveTimer = null;
+    void flushProjectSave();
+  }, 180);
+}
+
+function flushProjectSave() {
+  if (!persistenceReady) return Promise.resolve();
+  window.clearTimeout(saveTimer);
+  saveTimer = null;
+  savePromise = savePromise.catch(() => {}).then(saveProjectNow).catch(() => {
+    storageWarning = "Could not save in browser";
+    refs.saveStatus.textContent = storageWarning;
+  });
+  return savePromise;
+}
+
+function largestCounter(items, prefix) {
+  return items.reduce((largest, item) => {
+    const match = String(item.id || "").match(new RegExp(`^${prefix}_(\\d+)$`));
+    return Math.max(largest, Number(match?.[1] || 0));
+  }, 0);
+}
+
+async function restoreSavedProject() {
+  const database = await openProjectDatabase();
+  const transaction = database.transaction(["projects", "media"], "readonly");
+  const done = transactionComplete(transaction);
+  const projectRequest = transaction.objectStore("projects").get(activeProjectKey);
+  const mediaRequest = transaction.objectStore("media").getAll();
+  const [project, storedMedia] = await Promise.all([requestResult(projectRequest), requestResult(mediaRequest), done]);
+  if (!project?.media?.length) return false;
+
+  const storedById = new Map(storedMedia.map((item) => [item.id, item]));
+  mediaItems = project.media.flatMap((item) => {
+    const stored = storedById.get(item.id);
+    if (!(stored?.file instanceof Blob)) return [];
+    return [{
+      id: item.id,
+      file: stored.file,
+      name: item.name,
+      url: URL.createObjectURL(stored.file),
+      duration: item.duration,
+      error: false,
+      stored: true,
+    }];
+  });
+  if (!mediaItems.length) return false;
+
+  const availableMediaIds = new Set(mediaItems.map((item) => item.id));
+  clips = (project.clips || [])
+    .filter((clip) => availableMediaIds.has(clip.mediaId))
+    .map((clip) => ({ ...clip, placement: clip.placement || "main" }));
+  const availableClipIds = new Set(clips.map((clip) => clip.id));
+  components = (project.components || []).filter((component) => availableClipIds.has(component.clipId));
+  canvasRatio = Object.hasOwn(canvasRatios, project.canvasRatio) ? project.canvasRatio : "16:9";
+  timelineViewKey = typeof project.timelineViewKey === "string" ? project.timelineViewKey : "main";
+  selectedClipId = availableClipIds.has(project.selectedClipId) ? project.selectedClipId : mainClips()[0]?.id || clips[0]?.id || null;
+  selectedComponentId = components.some((component) => component.id === project.selectedComponentId) ? project.selectedComponentId : null;
+  mediaCounter = Math.max(Number(project.counters?.mediaCounter || 0), largestCounter(mediaItems, "media"));
+  clipCounter = Math.max(Number(project.counters?.clipCounter || 0), largestCounter(clips, "clip"));
+  sceneCounter = Math.max(Number(project.counters?.sceneCounter || 0), largestCounter(clips.map((clip) => ({ id: clip.sceneId })), "scene"));
+  componentCounter = Math.max(Number(project.counters?.componentCounter || 0), largestCounter(components, "component"));
+  refs.canvasRatio.value = canvasRatio;
+  canvasFrame.dataset.ratio = canvasRatio;
+  refs.projectName.textContent = mediaItems.length === 1 ? mediaItems[0].name : "PVO project";
+  if (mediaItems.length !== project.media.length) storageWarning = "Some saved media is unavailable";
+  return true;
 }
 
 function mediaItem(id) {
@@ -484,6 +649,7 @@ function renameSelectedScene(value) {
   clips.filter((candidate) => candidate.sceneId === clip.sceneId).forEach((candidate) => { candidate.sceneName = name; });
   refs.sceneName.value = name;
   renderTimeline();
+  queueProjectSave();
   setStatus(`Scene renamed to ${name}`);
 }
 
@@ -540,6 +706,7 @@ async function importMediaFiles(files) {
       url: URL.createObjectURL(file),
       duration: null,
       error: false,
+      stored: false,
     };
     mediaItems.push(item);
     renderMediaLibrary();
@@ -549,6 +716,14 @@ async function importMediaFiles(files) {
       if (!selectedClipId) selectClip(clip.id);
       else renderAll();
       setStatus(`${item.name} added after the last clip`);
+      refs.saveStatus.textContent = "Saving media…";
+      try {
+        await persistMediaSource(item);
+        queueProjectSave();
+      } catch {
+        storageWarning = `${item.name} could not be saved in browser storage`;
+        refs.saveStatus.textContent = storageWarning;
+      }
     } catch (error) {
       item.error = true;
       setStatus(`${item.name} could not be opened · ${error.message}`);
@@ -781,6 +956,7 @@ function renderSceneRouting(component) {
       executedSceneChanges.delete(component.id);
       renderTimelineNavigation();
       renderTimeline();
+      queueProjectSave();
       setStatus(`${component.name} ${route.condition === "true" ? "Yes" : "No"} branch set to ${mediaItem(route.mediaId)?.name || "no media"}`);
     });
     destinationLabel.append(destination);
@@ -834,6 +1010,7 @@ function updateComponentFromInspector() {
   renderTimelineNavigation();
   renderTimeline();
   renderOverlays();
+  queueProjectSave();
 }
 
 function renderTimeline() {
@@ -1017,6 +1194,7 @@ function startOverlayDrag(event, component, element) {
     element.removeEventListener("pointermove", move);
     element.removeEventListener("pointerup", stop);
     element.removeEventListener("pointercancel", stop);
+    queueProjectSave();
   };
   element.addEventListener("pointermove", move);
   element.addEventListener("pointerup", stop);
@@ -1034,6 +1212,7 @@ function renderAll() {
   refs.deleteClipButton.disabled = !clip;
   refs.projectDuration.textContent = formatTime(projectDuration());
   renderExportState();
+  queueProjectSave();
 }
 
 function setCanvasRatio(value) {
@@ -1042,6 +1221,7 @@ function setCanvasRatio(value) {
   refs.canvasRatio.value = value;
   canvasFrame.dataset.ratio = value;
   renderOverlays();
+  queueProjectSave();
   setStatus(`Canvas changed to ${value}`);
   return canvasRatios[value];
 }
@@ -1307,7 +1487,13 @@ video.addEventListener("ended", () => {
   if (!executeBranchAtLayerEnd(localTime)) advanceAtClipEnd(localTime, true);
 });
 window.addEventListener("resize", positionCanvasFrame);
-window.addEventListener("beforeunload", () => mediaItems.forEach((item) => URL.revokeObjectURL(item.url)));
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") void flushProjectSave();
+});
+window.addEventListener("beforeunload", () => {
+  void flushProjectSave();
+  mediaItems.forEach((item) => URL.revokeObjectURL(item.url));
+});
 new ResizeObserver(positionCanvasFrame).observe(videoArea);
 
 addComponentButtons.forEach((button) => button.addEventListener("click", () => addComponent(button.dataset.addComponent)));
@@ -1345,6 +1531,7 @@ refs.changeSceneToggle.addEventListener("change", () => {
   renderSceneRouting(component);
   renderTimelineNavigation();
   renderTimeline();
+  queueProjectSave();
   setStatus(`${component.name} media branch ${sceneChange.enabled ? "enabled" : "disabled"}`);
 });
 [refs.name, refs.x, refs.y, refs.width, refs.height, refs.html, refs.css].forEach((input) => input.addEventListener("input", updateComponentFromInspector));
@@ -1420,7 +1607,7 @@ function registerWebMcpTools() {
   register({
     name: "set_component_media_routing",
     title: "Set component media routing",
-    description: "Map a choice or form's Yes and No outcomes to media items already on the timeline.",
+    description: "Map a choice or form's Yes and No outcomes to imported media items.",
     inputSchema: {
       type: "object",
       properties: {
@@ -1434,7 +1621,33 @@ function registerWebMcpTools() {
   });
 }
 
-setPanelTab("media");
-setMediaReady(false);
-renderAll();
-registerWebMcpTools();
+async function initializeEditor() {
+  setPanelTab("media");
+  setMediaReady(false);
+  renderAll();
+  try {
+    const restored = await restoreSavedProject();
+    persistenceReady = true;
+    if (!restored) {
+      refs.saveStatus.textContent = "Browser storage ready";
+      return;
+    }
+    renderTimelineNavigation();
+    const viewClips = visibleClips();
+    if (viewClips.length && !viewClips.some((clip) => clip.id === selectedClipId)) {
+      selectedClipId = viewClips[0].id;
+      selectedComponentId = components.find((component) => component.clipId === selectedClipId)?.id || null;
+    }
+    renderAll();
+    const clip = selectedClip();
+    if (clip) loadClipPreview(clip);
+    else setMediaReady(false);
+    setStatus("Saved project restored");
+    refs.saveStatus.textContent = storageWarning || "Saved in browser";
+  } catch {
+    persistenceReady = false;
+    refs.saveStatus.textContent = "Browser storage unavailable";
+  }
+}
+
+void initializeEditor().finally(registerWebMcpTools);
