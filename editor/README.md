@@ -4,6 +4,7 @@ This folder is deliberately separate from the SDK package. It contains a small b
 
 - import multiple MP4 or MOV files and append each one after the last clip on one shared timeline;
 - split timeline clips for normal editing without creating a new scene, and rename scenes separately;
+- delete a selected timeline clip with the toolbar or keyboard while keeping its source in Media so it can be added back;
 - add tooltip, card, choice, and form components, then edit their HTML and CSS appearance;
 - edit on a layered timeline with one video track and a separate draggable, resizable track for every UI component.
 - configure components in a modal dialog; choices and forms can map Yes and No to media already on the timeline, including the same destination, and branch when their layer ends;

@@ -20,7 +20,8 @@ const refs = {
   routeFields: $("#sceneRouteFields"), routeSource: $("#routeSourceScene"), routeList: $("#sceneRouteList"),
   changeSceneToggle: $("#changeSceneToggle"), canvasRatio: $("#canvasRatio"),
   mediaStart: $("#mediaStart"), mediaStartTitle: $("#mediaStartTitle"), mediaStartMessage: $("#mediaStartMessage"),
-  splitButton: $("#splitButton"), mediaTab: $("#mediaTab"), componentsTab: $("#componentsTab"),
+  splitButton: $("#splitButton"), deleteClipButton: $("#deleteClipButton"),
+  mediaTab: $("#mediaTab"), componentsTab: $("#componentsTab"),
   mediaPanel: $("#mediaPanel"), componentsPanel: $("#componentsPanel"),
   mediaLibrary: $("#mediaLibrary"), mediaCount: $("#mediaCount"),
   exportPvoButton: $("#exportPvoButton"), exportHelp: $("#exportHelp"),
@@ -309,17 +310,19 @@ function renderExportState() {
 function setMediaReady(ready, copy = {}) {
   mediaReady = ready;
   const hasClips = clips.length > 0;
+  const hasReusableMedia = mediaItems.some((item) => item.duration && !item.error);
   refs.mediaStart.hidden = ready;
   canvasFrame.hidden = !ready;
   refs.canvasRatio.disabled = !hasClips;
   refs.splitButton.disabled = !ready;
+  refs.deleteClipButton.disabled = !selectedClip();
   refs.playhead.hidden = !hasClips;
   refs.sceneName.disabled = !hasClips;
   timelineEditor.classList.toggle("is-empty", !hasClips);
   addComponentButtons.forEach((button) => { button.disabled = !ready; });
   if (!ready) {
-    refs.mediaStartTitle.textContent = copy.title || (hasClips ? "Loading preview…" : "Add media to start");
-    refs.mediaStartMessage.textContent = copy.message || (hasClips ? "Preparing the selected clip." : "Use Add media in the top-right corner.");
+    refs.mediaStartTitle.textContent = copy.title || (hasClips ? "Loading preview…" : hasReusableMedia ? "Add media to the timeline" : "Add media to start");
+    refs.mediaStartMessage.textContent = copy.message || (hasClips ? "Preparing the selected clip." : hasReusableMedia ? "Choose an imported file in Media to add it back." : "Use Add media in the top-right corner.");
   }
   renderExportState();
   renderMediaLibrary();
@@ -348,6 +351,7 @@ function renderMediaLibrary() {
   }
   mediaItems.forEach((item) => {
     const active = item.id === activeMediaId;
+    const onTimeline = clips.some((clip) => clip.mediaId === item.id);
     const button = document.createElement("button");
     button.type = "button";
     button.className = `media-item${active ? " active" : ""}${item.error ? " error" : ""}`;
@@ -365,12 +369,20 @@ function renderMediaLibrary() {
     const state = document.createElement("span");
     state.className = "media-item-state";
     if (item.error) state.textContent = "Could not open";
-    else if (active) state.textContent = "Selected";
-    else state.textContent = "On timeline";
+    else if (active && onTimeline) state.textContent = "Selected";
+    else if (onTimeline) state.textContent = "On timeline";
+    else state.textContent = "Add to timeline";
     button.append(main, state);
     button.addEventListener("click", () => {
       const clip = clips.find((candidate) => candidate.mediaId === item.id);
-      if (!clip) return;
+      if (!clip) {
+        if (!item.duration || item.error) return;
+        const restoredClip = appendMediaClip(item);
+        setTimelineView("main", false);
+        selectClip(restoredClip.id);
+        setStatus(`${item.name} added back after the last clip`);
+        return;
+      }
       setTimelineView("main", false);
       selectClip(clip.id);
     });
@@ -470,6 +482,19 @@ function probeMedia(item) {
   });
 }
 
+function appendMediaClip(item) {
+  const clip = {
+    id: `clip_${++clipCounter}`,
+    mediaId: item.id,
+    sceneId: `scene_${++sceneCounter}`,
+    sceneName: sceneLabelFromFile(item.name),
+    sourceStart: 0,
+    sourceEnd: item.duration,
+  };
+  clips.push(clip);
+  return clip;
+}
+
 async function importMediaFiles(files) {
   const supported = files.filter((file) => /\.(mp4|mov)$/i.test(file.name) || ["video/mp4", "video/quicktime"].includes(file.type));
   if (!supported.length) {
@@ -490,15 +515,7 @@ async function importMediaFiles(files) {
     renderMediaLibrary();
     try {
       item.duration = await probeMedia(item);
-      const clip = {
-        id: `clip_${++clipCounter}`,
-        mediaId: item.id,
-        sceneId: `scene_${++sceneCounter}`,
-        sceneName: sceneLabelFromFile(item.name),
-        sourceStart: 0,
-        sourceEnd: item.duration,
-      };
-      clips.push(clip);
+      const clip = appendMediaClip(item);
       if (!selectedClipId) selectClip(clip.id);
       else renderAll();
       setStatus(`${item.name} added after the last clip`);
@@ -546,6 +563,47 @@ function splitClipAt(localTime) {
 
 function splitAtPlayhead() {
   return splitClipAt(currentLocalTime());
+}
+
+function deleteSelectedClip() {
+  const clip = selectedClip();
+  if (!clip) return false;
+  const removedIndex = clips.findIndex((candidate) => candidate.id === clip.id);
+  const removedComponentIds = new Set(components.filter((component) => component.clipId === clip.id).map((component) => component.id));
+  clips.splice(removedIndex, 1);
+  components = components.filter((component) => component.clipId !== clip.id);
+  removedComponentIds.forEach((id) => executedSceneChanges.delete(id));
+
+  if (!clips.some((candidate) => candidate.mediaId === clip.mediaId)) {
+    components.forEach((component) => {
+      component.sceneChange?.routes?.forEach((route) => {
+        if (route.mediaId === clip.mediaId) route.mediaId = "";
+      });
+    });
+  }
+
+  timelineViewKey = "main";
+  const replacement = clips[removedIndex] || clips[removedIndex - 1] || null;
+  if (replacement) {
+    selectClip(replacement.id);
+  } else {
+    video.pause();
+    pendingPreview = null;
+    switchingClip = false;
+    selectedClipId = null;
+    selectedComponentId = null;
+    activeMediaId = null;
+    loadedMediaId = null;
+    previousPreviewTime = 0;
+    video.removeAttribute("src");
+    video.load();
+    refs.currentTime.textContent = formatTime(0);
+    refs.totalTime.textContent = formatTime(0);
+    setMediaReady(false);
+    renderAll();
+  }
+  setStatus(`${clip.sceneName} clip deleted · source media kept in Media`);
+  return true;
 }
 
 function isBranchingComponent(component) {
@@ -946,6 +1004,7 @@ function renderAll() {
   renderMediaLibrary();
   const clip = selectedClip();
   refs.sceneName.value = clip?.sceneName || "No scene";
+  refs.deleteClipButton.disabled = !clip;
   refs.projectDuration.textContent = formatTime(projectDuration());
   renderExportState();
 }
@@ -1226,6 +1285,7 @@ new ResizeObserver(positionCanvasFrame).observe(videoArea);
 
 addComponentButtons.forEach((button) => button.addEventListener("click", () => addComponent(button.dataset.addComponent)));
 refs.splitButton.addEventListener("click", () => { try { splitAtPlayhead(); } catch { /* status already explains it */ } });
+refs.deleteClipButton.addEventListener("click", deleteSelectedClip);
 refs.sceneName.addEventListener("change", () => renameSelectedScene(refs.sceneName.value));
 refs.videoInput.addEventListener("change", (event) => {
   void importMediaFiles([...event.target.files]);
@@ -1263,6 +1323,14 @@ refs.changeSceneToggle.addEventListener("change", () => {
 [refs.name, refs.x, refs.y, refs.width, refs.height, refs.html, refs.css].forEach((input) => input.addEventListener("input", updateComponentFromInspector));
 trackWrap.addEventListener("click", (event) => seekFromTimeline(event, trackWrap));
 ruler.addEventListener("click", (event) => seekFromTimeline(event, ruler));
+document.addEventListener("keydown", (event) => {
+  if (!["Delete", "Backspace"].includes(event.key) || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+  const target = event.target;
+  if (refs.componentDialog.open || target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target?.isContentEditable) return;
+  if (!selectedClip()) return;
+  event.preventDefault();
+  deleteSelectedClip();
+});
 
 function registerWebMcpTools() {
   const context = document.modelContext;
@@ -1325,7 +1393,7 @@ function registerWebMcpTools() {
   register({
     name: "set_component_media_routing",
     title: "Set component media routing",
-    description: "Map a choice or form's Yes and No outcomes to two different media items already on the timeline.",
+    description: "Map a choice or form's Yes and No outcomes to media items already on the timeline.",
     inputSchema: {
       type: "object",
       properties: {
