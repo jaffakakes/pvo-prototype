@@ -40,18 +40,24 @@
 
         <section class="timeline-panel" aria-label="Video timeline">
           <div class="timeline-toolbar">
-            <div><h2>Timeline</h2><span>Splits create scene ranges</span></div>
+            <div><h2>Timeline</h2><span>Video and UI layers</span></div>
             <button class="button split-button" id="splitButton" type="button">Split at playhead</button>
           </div>
-          <div class="ruler" id="ruler"></div>
-          <div class="track-wrap">
-            <div class="clip-track" id="clipTrack"></div>
-            <div class="playhead" id="playhead"><span></span></div>
+          <div class="timeline-editor" id="timelineEditor">
+            <div class="timeline-ruler-row">
+              <div class="layer-heading">Layers</div>
+              <div class="ruler" id="ruler"></div>
+            </div>
+            <div class="layer-row video-layer-row">
+              <div class="layer-label"><strong>Video</strong><span>Scene clips</span></div>
+              <div class="track-wrap">
+                <div class="clip-track" id="clipTrack"></div>
+                <div class="playhead" id="playhead"><span></span></div>
+              </div>
+            </div>
+            <div class="component-layers" id="componentLayers"></div>
           </div>
-          <div class="component-timeline-head"><span>UI components</span><small>Drag a bar to move it · drag either end to change duration</small></div>
-          <div class="component-track-wrap">
-            <div class="component-track" id="componentTrack"></div>
-          </div>
+          <p class="timeline-help">Each component has its own layer. Drag a bar to move it; drag either edge to change its duration.</p>
         </section>
       </main>
 
@@ -76,7 +82,7 @@
       </aside>
     </div>
 
-    <div class="status-bar"><span id="status">Ready</span><span>Scene clips + timed UI components</span></div>
+    <div class="status-bar"><span id="status">Ready</span><span>Video + UI layers</span></div>
     <script type="module" src="./app.js"></script>
   </body>
 </html>

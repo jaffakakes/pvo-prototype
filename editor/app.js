@@ -3,7 +3,8 @@ const video = $("#video");
 const videoArea = $("#videoArea");
 const overlayLayer = $("#overlayLayer");
 const clipTrack = $("#clipTrack");
-const componentTrack = $("#componentTrack");
+const componentLayers = $("#componentLayers");
+const timelineEditor = $("#timelineEditor");
 const ruler = $("#ruler");
 const trackWrap = document.querySelector(".track-wrap");
 
@@ -303,17 +304,38 @@ function renderTimeline() {
 }
 
 function renderComponentTimeline(duration) {
-  componentTrack.innerHTML = "";
-  componentTrack.style.height = `${Math.max(38, components.length * 32 + 4)}px`;
+  componentLayers.innerHTML = "";
+
+  if (components.length === 0) {
+    const row = document.createElement("div");
+    row.className = "layer-row empty-layer-row";
+    row.innerHTML = '<div class="layer-label"><strong>UI</strong><span>No layers yet</span></div><div class="component-lane"><span class="empty-layer-message">Add a component to create a layer</span></div>';
+    componentLayers.append(row);
+    return;
+  }
 
   components.forEach((component, index) => {
+    const row = document.createElement("div");
+    row.className = `layer-row component-layer-row${component.id === selectedComponentId ? " active" : ""}`;
+
+    const layerLabel = document.createElement("button");
+    layerLabel.type = "button";
+    layerLabel.className = "layer-label component-layer-label";
+    const layerName = document.createElement("strong");
+    layerName.textContent = component.name;
+    const layerType = document.createElement("span");
+    layerType.textContent = `${component.kind} · layer ${index + 1}`;
+    layerLabel.append(layerName, layerType);
+    layerLabel.addEventListener("click", () => selectComponent(component.id));
+
+    const lane = document.createElement("div");
+    lane.className = "component-lane";
     const bar = document.createElement("div");
     bar.className = `component-bar${component.id === selectedComponentId ? " active" : ""}`;
     bar.dataset.kind = component.kind;
     bar.dataset.componentId = component.id;
     bar.style.left = `${component.start / duration * 100}%`;
     bar.style.width = `${Math.max(0.35, (component.end - component.start) / duration * 100)}%`;
-    bar.style.top = `${index * 32 + 4}px`;
     bar.innerHTML = '<span class="resize-handle start" data-resize="start"></span><span class="component-bar-label"></span><span class="resize-handle end" data-resize="end"></span>';
     updateTimingBarLabel(bar, component);
     bar.addEventListener("click", (event) => {
@@ -322,9 +344,11 @@ function renderComponentTimeline(duration) {
     });
     bar.addEventListener("pointerdown", (event) => {
       const mode = event.target.dataset.resize || "move";
-      startTimingDrag(event, component, bar, mode, duration);
+      startTimingDrag(event, component, bar, lane, mode, duration);
     });
-    componentTrack.append(bar);
+    lane.append(bar);
+    row.append(layerLabel, lane);
+    componentLayers.append(row);
   });
 }
 
@@ -333,7 +357,7 @@ function updateTimingBarLabel(bar, component) {
   if (label) label.textContent = `${component.name} · ${(component.end - component.start).toFixed(1)}s`;
 }
 
-function startTimingDrag(event, component, bar, mode, duration) {
+function startTimingDrag(event, component, bar, lane, mode, duration) {
   event.preventDefault();
   event.stopPropagation();
   const clip = clips.find((item) => item.id === component.clipId);
@@ -344,12 +368,14 @@ function startTimingDrag(event, component, bar, mode, duration) {
   renderComponentList();
   renderInspector();
   renderOverlays();
-  componentTrack.querySelectorAll(".component-bar.active").forEach((item) => item.classList.remove("active"));
+  componentLayers.querySelectorAll(".component-bar.active").forEach((item) => item.classList.remove("active"));
+  componentLayers.querySelectorAll(".component-layer-row.active").forEach((item) => item.classList.remove("active"));
+  bar.closest(".component-layer-row")?.classList.add("active");
   bar.classList.add("active");
 
   const startPointer = event.clientX;
   const original = { start: component.start, end: component.end };
-  const trackWidth = componentTrack.getBoundingClientRect().width || 1;
+  const trackWidth = lane.getBoundingClientRect().width || 1;
   const minimumDuration = Math.min(0.2, clip.end - clip.start);
   bar.setPointerCapture(event.pointerId);
 
@@ -459,7 +485,8 @@ function startDrag(event, component, element) {
   renderInspector();
   overlayLayer.querySelectorAll(".overlay-component.selected").forEach((item) => item.classList.remove("selected"));
   element.classList.add("selected");
-  componentTrack.querySelectorAll(".component-bar").forEach((item) => item.classList.toggle("active", item.dataset.componentId === component.id));
+  componentLayers.querySelectorAll(".component-bar").forEach((item) => item.classList.toggle("active", item.dataset.componentId === component.id));
+  componentLayers.querySelectorAll(".component-layer-row").forEach((item) => item.classList.toggle("active", item.querySelector(`[data-component-id="${component.id}"]`) !== null));
   const start = { clientX: event.clientX, clientY: event.clientY, x: component.x, y: component.y };
   element.setPointerCapture(event.pointerId);
   const move = (moveEvent) => {
@@ -485,6 +512,7 @@ function updateTime() {
   refs.currentTime.textContent = formatTime(video.currentTime);
   const percentage = duration ? video.currentTime / duration * 100 : 0;
   refs.playhead.style.left = `${clamp(percentage, 0, 100)}%`;
+  timelineEditor.style.setProperty("--playhead-position", `${clamp(percentage, 0, 100)}%`);
   const current = sceneAt(video.currentTime);
   if (current && current.id !== selectedClipId && performance.now() >= ignoreSceneSyncUntil) {
     selectedClipId = current.id;
