@@ -1,6 +1,7 @@
 const $ = (selector) => document.querySelector(selector);
 const video = $("#video");
 const videoArea = $("#videoArea");
+const canvasFrame = $("#canvasFrame");
 const overlayLayer = $("#overlayLayer");
 const clipTrack = $("#clipTrack");
 const componentLayers = $("#componentLayers");
@@ -15,9 +16,17 @@ const refs = {
   dialogTitle: $("#componentDialogTitle"), routingSection: $("#sceneRoutingSection"),
   routeFields: $("#sceneRouteFields"), routeSource: $("#routeSourceScene"), routeList: $("#sceneRouteList"),
   changeSceneToggle: $("#changeSceneToggle"),
+  canvasRatio: $("#canvasRatio"),
   name: $("#componentName"), x: $("#componentX"), y: $("#componentY"),
   width: $("#componentW"), height: $("#componentH"), html: $("#componentHtml"), css: $("#componentCss"),
   playhead: $("#playhead"), status: $("#status"), videoInput: $("#videoInput"),
+};
+
+const canvasRatios = {
+  "16:9": { width: 16, height: 9 },
+  "9:16": { width: 9, height: 16 },
+  "1:1": { width: 1, height: 1 },
+  "4:5": { width: 4, height: 5 },
 };
 
 const presets = {
@@ -92,6 +101,7 @@ let clipCounter = 0;
 let objectUrl = null;
 let ignoreSceneSyncUntil = 0;
 let pausedAtComponentId = null;
+let canvasRatio = "16:9";
 
 class EditorOverlay extends HTMLElement {
   constructor() {
@@ -552,22 +562,17 @@ function renderInspector() {
   renderSceneRouting(component);
 }
 
-function positionOverlayLayer() {
-  const areaWidth = videoArea.clientWidth;
-  const areaHeight = videoArea.clientHeight;
-  const videoWidth = video.videoWidth || 16;
-  const videoHeight = video.videoHeight || 9;
-  const scale = Math.min(areaWidth / videoWidth, areaHeight / videoHeight);
-  const width = videoWidth * scale;
-  const height = videoHeight * scale;
-  Object.assign(overlayLayer.style, {
-    left: `${(areaWidth - width) / 2}px`, top: `${(areaHeight - height) / 2}px`,
-    width: `${width}px`, height: `${height}px`,
-  });
+function positionCanvasFrame() {
+  const areaWidth = Math.max(1, videoArea.clientWidth - 32);
+  const areaHeight = Math.max(1, videoArea.clientHeight - 32);
+  const ratio = canvasRatios[canvasRatio];
+  const scale = Math.min(areaWidth / ratio.width, areaHeight / ratio.height);
+  canvasFrame.style.width = `${ratio.width * scale}px`;
+  canvasFrame.style.height = `${ratio.height * scale}px`;
 }
 
 function renderOverlays() {
-  positionOverlayLayer();
+  positionCanvasFrame();
   overlayLayer.innerHTML = "";
   const time = video.currentTime;
   components.filter((component) => component.clipId === selectedClipId && time >= component.start - 0.03 && time < component.end).forEach((component) => {
@@ -585,6 +590,16 @@ function renderOverlays() {
     wrapper.addEventListener("click", (event) => { event.stopPropagation(); selectComponent(component.id, false); });
     overlayLayer.append(wrapper);
   });
+}
+
+function setCanvasRatio(value) {
+  if (!Object.hasOwn(canvasRatios, value)) throw new Error("ratio must be 16:9, 9:16, 1:1, or 4:5");
+  canvasRatio = value;
+  refs.canvasRatio.value = value;
+  canvasFrame.dataset.ratio = value;
+  renderOverlays();
+  setStatus(`Canvas changed to ${value}`);
+  return canvasRatios[value];
 }
 
 function startDrag(event, component, element) {
@@ -710,8 +725,8 @@ video.addEventListener("loadedmetadata", () => {
 });
 video.addEventListener("timeupdate", updateTime);
 video.addEventListener("seeked", updateTime);
-window.addEventListener("resize", positionOverlayLayer);
-new ResizeObserver(positionOverlayLayer).observe(videoArea);
+window.addEventListener("resize", positionCanvasFrame);
+new ResizeObserver(positionCanvasFrame).observe(videoArea);
 
 document.querySelectorAll("[data-add-component]").forEach((button) => button.addEventListener("click", () => addComponent(button.dataset.addComponent)));
 $("#splitButton").addEventListener("click", () => { try { splitAtPlayhead(); } catch { /* status explains the invalid split */ } });
@@ -737,6 +752,7 @@ refs.videoInput.addEventListener("change", (event) => {
   const file = event.target.files[0];
   if (file) loadVideo(file, file.name);
 });
+refs.canvasRatio.addEventListener("change", () => setCanvasRatio(refs.canvasRatio.value));
 
 function seekFromTimeline(event, lane) {
   const bounds = lane.getBoundingClientRect();
@@ -762,7 +778,18 @@ function registerWebMcpTools() {
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
     annotations: { readOnlyHint: true, untrustedContentHint: true },
     execute() {
-      return { selectedScene: selectedClipId, selectedComponent: selectedComponentId, scenes: structuredClone(clips), components: structuredClone(components) };
+      return { canvasRatio, selectedScene: selectedClipId, selectedComponent: selectedComponentId, scenes: structuredClone(clips), components: structuredClone(components) };
+    },
+  });
+  register({
+    name: "set_canvas_ratio",
+    title: "Set canvas ratio",
+    description: "Set the editor canvas to a supported landscape, portrait, square, or social ratio.",
+    inputSchema: { type: "object", properties: { ratio: { enum: ["16:9", "9:16", "1:1", "4:5"] } }, required: ["ratio"], additionalProperties: false },
+    annotations: { readOnlyHint: false, untrustedContentHint: false },
+    execute(input) {
+      const ratio = setCanvasRatio(input?.ratio);
+      return { ratio: canvasRatio, width: ratio.width, height: ratio.height };
     },
   });
   register({

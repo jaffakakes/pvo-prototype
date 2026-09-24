@@ -27,12 +27,23 @@
 
       <main class="workspace">
         <div class="preview-toolbar">
-          <div><span>Preview</span><strong id="sceneName">Scene 1</strong></div>
+          <div class="preview-scene"><span>Preview</span><strong id="sceneName">Scene 1</strong></div>
+          <label class="ratio-control" for="canvasRatio">
+            <span>Ratio</span>
+            <select id="canvasRatio">
+              <option value="16:9">16:9</option>
+              <option value="9:16">9:16</option>
+              <option value="1:1">1:1</option>
+              <option value="4:5">4:5</option>
+            </select>
+          </label>
           <div class="timecode"><span id="currentTime">00:00.0</span><span>/</span><span id="totalTime">00:24.0</span></div>
         </div>
         <div class="video-area" id="videoArea">
-          <video id="video" controls playsinline preload="metadata"></video>
-          <div class="overlay-layer" id="overlayLayer" aria-label="Component canvas"></div>
+          <div class="canvas-frame" id="canvasFrame" data-ratio="16:9">
+            <video id="video" controls playsinline preload="metadata"></video>
+            <div class="overlay-layer" id="overlayLayer" aria-label="Component canvas"></div>
+          </div>
         </div>
 
         <section class="timeline-panel" aria-label="Video timeline">
