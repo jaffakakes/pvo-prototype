@@ -234,6 +234,10 @@ function clipDuration(clip) {
   return clip ? Math.max(0, clip.sourceEnd - clip.sourceStart) : 0;
 }
 
+function mainClips() {
+  return clips.filter((clip) => clip.placement !== "branch");
+}
+
 function sceneLabelFromFile(name) {
   return name.replace(/\.pvo\.(mp4|mov)$/i, "").replace(/\.(mp4|mov)$/i, "") || `Scene ${sceneCounter + 1}`;
 }
@@ -248,7 +252,10 @@ function branchViewOptions() {
   return components.flatMap((component) => {
     if (!component.sceneChange?.enabled) return [];
     const routes = binaryMediaRoutes(component);
-    const validRoutes = routes.filter((route) => mediaItem(route.mediaId) && clips.some((clip) => clip.mediaId === route.mediaId));
+    const validRoutes = routes.filter((route) => {
+      const item = mediaItem(route.mediaId);
+      return item?.duration && !item.error;
+    });
     if (validRoutes.length !== 2) return [];
     return validRoutes.map((route) => ({
       key: `branch:${component.id}:${route.condition}`,
@@ -260,13 +267,19 @@ function branchViewOptions() {
   });
 }
 
+function branchTargetMediaIds() {
+  return new Set(components.flatMap((component) => component.sceneChange?.enabled
+    ? component.sceneChange.routes.map((route) => route.mediaId).filter(Boolean)
+    : []));
+}
+
 function currentBranchView() {
   return branchViewOptions().find((view) => view.key === timelineViewKey) || null;
 }
 
 function visibleClips() {
   const branch = currentBranchView();
-  return branch ? clips.filter((clip) => clip.mediaId === branch.mediaId) : clips;
+  return branch ? clips.filter((clip) => clip.mediaId === branch.mediaId) : mainClips();
 }
 
 function clipLayouts(viewClips = visibleClips()) {
@@ -283,7 +296,7 @@ function viewDuration() {
 }
 
 function projectDuration() {
-  return clipLayouts(clips).at(-1)?.end || 0;
+  return clipLayouts(mainClips()).at(-1)?.end || 0;
 }
 
 function selectedLayout() {
@@ -296,7 +309,8 @@ function timelineTime() {
 }
 
 function canExportTimeline() {
-  return clips.length > 0 && new Set(clips.map((clip) => clip.mediaId)).size === 1;
+  const sourceIds = new Set([...clips.map((clip) => clip.mediaId), ...branchTargetMediaIds()]);
+  return mainClips().length > 0 && sourceIds.size === 1;
 }
 
 function renderExportState() {
@@ -309,7 +323,8 @@ function renderExportState() {
 
 function setMediaReady(ready, copy = {}) {
   mediaReady = ready;
-  const hasClips = clips.length > 0;
+  const hasClips = visibleClips().length > 0;
+  const hasSelectedClip = Boolean(selectedClip());
   const hasReusableMedia = mediaItems.some((item) => item.duration && !item.error);
   refs.mediaStart.hidden = ready;
   canvasFrame.hidden = !ready;
@@ -317,7 +332,7 @@ function setMediaReady(ready, copy = {}) {
   refs.splitButton.disabled = !ready;
   refs.deleteClipButton.disabled = !selectedClip();
   refs.playhead.hidden = !hasClips;
-  refs.sceneName.disabled = !hasClips;
+  refs.sceneName.disabled = !hasSelectedClip;
   timelineEditor.classList.toggle("is-empty", !hasClips);
   addComponentButtons.forEach((button) => { button.disabled = !ready; });
   if (!ready) {
@@ -351,7 +366,8 @@ function renderMediaLibrary() {
   }
   mediaItems.forEach((item) => {
     const active = item.id === activeMediaId;
-    const onTimeline = clips.some((clip) => clip.mediaId === item.id);
+    const onTimeline = mainClips().some((clip) => clip.mediaId === item.id);
+    const usedByBranch = branchTargetMediaIds().has(item.id);
     const button = document.createElement("button");
     button.type = "button";
     button.className = `media-item${active ? " active" : ""}${item.error ? " error" : ""}`;
@@ -371,15 +387,18 @@ function renderMediaLibrary() {
     if (item.error) state.textContent = "Could not open";
     else if (active && onTimeline) state.textContent = "Selected";
     else if (onTimeline) state.textContent = "On timeline";
+    else if (usedByBranch) state.textContent = active ? "Branch selected" : "Used by branch";
     else state.textContent = "Add to timeline";
     button.append(main, state);
     button.addEventListener("click", () => {
-      const clip = clips.find((candidate) => candidate.mediaId === item.id);
+      let clip = mainClips().find((candidate) => candidate.mediaId === item.id);
       if (!clip) {
         if (!item.duration || item.error) return;
-        const restoredClip = appendMediaClip(item);
+        clip = clips.find((candidate) => candidate.mediaId === item.id && candidate.placement === "branch");
+        if (clip) clip.placement = "main";
+        else clip = appendMediaClip(item);
         setTimelineView("main", false);
-        selectClip(restoredClip.id);
+        selectClip(clip.id);
         setStatus(`${item.name} added back after the last clip`);
         return;
       }
@@ -414,6 +433,8 @@ function renderTimelineNavigation() {
 }
 
 function setTimelineView(key, selectTarget = true) {
+  const requestedBranch = branchViewOptions().find((view) => view.key === key);
+  if (requestedBranch) ensureBranchClip(requestedBranch.mediaId);
   timelineViewKey = key;
   renderTimelineNavigation();
   const viewClips = visibleClips();
@@ -482,7 +503,7 @@ function probeMedia(item) {
   });
 }
 
-function appendMediaClip(item) {
+function appendMediaClip(item, placement = "main") {
   const clip = {
     id: `clip_${++clipCounter}`,
     mediaId: item.id,
@@ -490,9 +511,18 @@ function appendMediaClip(item) {
     sceneName: sceneLabelFromFile(item.name),
     sourceStart: 0,
     sourceEnd: item.duration,
+    placement,
   };
   clips.push(clip);
   return clip;
+}
+
+function ensureBranchClip(mediaId) {
+  const existing = clips.find((clip) => clip.mediaId === mediaId);
+  if (existing) return existing;
+  const item = mediaItem(mediaId);
+  if (!item?.duration || item.error) return null;
+  return appendMediaClip(item, "branch");
 }
 
 async function importMediaFiles(files) {
@@ -568,22 +598,18 @@ function splitAtPlayhead() {
 function deleteSelectedClip() {
   const clip = selectedClip();
   if (!clip) return false;
+  const mainIndex = mainClips().findIndex((candidate) => candidate.id === clip.id);
   const removedIndex = clips.findIndex((candidate) => candidate.id === clip.id);
   const removedComponentIds = new Set(components.filter((component) => component.clipId === clip.id).map((component) => component.id));
   clips.splice(removedIndex, 1);
   components = components.filter((component) => component.clipId !== clip.id);
   removedComponentIds.forEach((id) => executedSceneChanges.delete(id));
 
-  if (!clips.some((candidate) => candidate.mediaId === clip.mediaId)) {
-    components.forEach((component) => {
-      component.sceneChange?.routes?.forEach((route) => {
-        if (route.mediaId === clip.mediaId) route.mediaId = "";
-      });
-    });
-  }
-
   timelineViewKey = "main";
-  const replacement = clips[removedIndex] || clips[removedIndex - 1] || null;
+  const remainingMainClips = mainClips();
+  const replacement = mainIndex >= 0
+    ? remainingMainClips[mainIndex] || remainingMainClips[mainIndex - 1] || null
+    : remainingMainClips[0] || null;
   if (replacement) {
     selectClip(replacement.id);
   } else {
@@ -618,7 +644,7 @@ function ensureSceneChange(component) {
 
 function destinationMedia(component) {
   const sourceMediaId = clips.find((clip) => clip.id === component.clipId)?.mediaId;
-  return mediaItems.filter((item) => !item.error && item.id !== sourceMediaId && clips.some((clip) => clip.mediaId === item.id));
+  return mediaItems.filter((item) => item.duration && !item.error && item.id !== sourceMediaId);
 }
 
 function binaryMediaRoutes(component) {
@@ -635,8 +661,8 @@ function binaryMediaRoutes(component) {
 function validateMediaRoutes(component) {
   if (!component.sceneChange?.enabled) return [];
   const targets = binaryMediaRoutes(component).map((route) => mediaItem(route.mediaId));
-  if (targets.some((target) => !target || !clips.some((clip) => clip.mediaId === target.id))) {
-    throw new Error(`${component.name} needs timeline media for both Yes and No`);
+  if (targets.some((target) => !target?.duration || target.error)) {
+    throw new Error(`${component.name} needs imported media for both Yes and No`);
   }
   return targets;
 }
@@ -722,7 +748,7 @@ function renderSceneRouting(component) {
   if (!destinations.length) {
     const empty = document.createElement("p");
     empty.className = "route-empty";
-    empty.textContent = "Add another media file to the timeline for the Yes and No outcomes.";
+    empty.textContent = "Import another media file for the Yes and No outcomes.";
     refs.routeList.append(empty);
   }
   routes.forEach((route) => {
@@ -740,7 +766,7 @@ function renderSceneRouting(component) {
     const destination = document.createElement("select");
     const placeholder = document.createElement("option");
     placeholder.value = "";
-    placeholder.textContent = destinations.length ? "Select timeline media" : "Add more media first";
+    placeholder.textContent = destinations.length ? "Select imported media" : "Import more media first";
     destination.append(placeholder);
     destinations.forEach((item) => {
       const option = document.createElement("option");
@@ -751,6 +777,7 @@ function renderSceneRouting(component) {
     destination.value = route.mediaId;
     destination.addEventListener("change", () => {
       route.mediaId = destination.value;
+      if (timelineViewKey === `branch:${component.id}:${route.condition}` && route.mediaId) ensureBranchClip(route.mediaId);
       executedSceneChanges.delete(component.id);
       renderTimelineNavigation();
       renderTimeline();
@@ -769,7 +796,7 @@ function setComponentMediaRouting(componentId, enabled, routes) {
     const route = routes.find((candidate) => String(candidate?.condition).toLowerCase() === condition);
     const mediaId = String(route?.mediaId || "");
     if (enabled && !destinationMedia(component).some((item) => item.id === mediaId)) {
-      throw new Error(`${condition} must target media already on the timeline`);
+      throw new Error(`${condition} must target imported media`);
     }
     return { condition, mediaId };
   });
@@ -1043,7 +1070,7 @@ function executeBranchAtLayerEnd(localTime) {
   catch (error) { setStatus(error.message); return false; }
   const condition = component.pendingAnswer === true ? "true" : "false";
   const target = component.pendingAnswer === true ? targets[0] : targets[1];
-  const targetClip = clips.find((clip) => clip.mediaId === target.id);
+  const targetClip = ensureBranchClip(target.id);
   if (!targetClip) return false;
   const autoplay = !video.paused;
   executedSceneChanges.add(component.id);
