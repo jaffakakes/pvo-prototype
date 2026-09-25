@@ -10,22 +10,22 @@
   <body>
     <header class="site-header">
       <a class="site-title" href="/">PVO SDK 0.1 documentation</a>
-      <nav aria-label="SDK resources"><a href="#api">API</a><a href="#manifest">Manifest</a><a href="#container">Container</a><a href="#boundaries">Boundaries</a></nav>
+      <nav aria-label="SDK resources"><a href="/player/">Player</a><a href="/editor/">Editor</a><a href="#api">API</a><a href="#manifest">Manifest</a><a href="#container">Container</a><a href="#boundaries">Boundaries</a></nav>
     </header>
 
     <main>
       <aside class="side-nav" aria-label="On this page">
         <strong>0.1 prototype</strong>
-        <a href="#quick-start">Quick start</a><a href="#api">Four functions</a><a href="#manifest">Manifest model</a><a href="#actions">Actions</a><a href="#container">Media box</a><a href="#boundaries">Scope boundary</a>
+        <a href="#quick-start">Quick start</a><a href="#api">Core API</a><a href="#manifest">Manifest model</a><a href="#actions">Actions</a><a href="#container">PVO package</a><a href="#boundaries">Scope boundary</a>
       </aside>
 
       <article class="content">
         <section class="lead" id="quick-start">
           <h1>PVO SDK</h1>
           <p class="version">Release 0.1 prototype</p>
-          <p>PVO is a normal MP4 or MOV with a declarative manifest appended to it. This SDK reads, validates, writes, and runs that data without depending on Restyle—or on any particular editor, player, payment provider, or server.</p>
+          <p>PVO is a self-contained interactive video file. One <code>.pvo</code> package carries the main media, every possible branch, components, conditions, and a declarative manifest without depending on Restyle or any particular editor, payment provider, or server.</p>
           <div class="code-window"><div class="code-bar"><span>quick-start.js</span><button data-copy="quickStart" type="button">Copy</button></div><pre id="quickStart"><code>import {
-  packPvo,
+  packPvoProject,
   readPvo,
   validatePvo,
   createPvoRuntime
@@ -34,16 +34,23 @@
 const check = validatePvo(manifest);
 if (!check.valid) throw new Error(check.errors.join("\n"));
 
-const pvo = await packPvo(mediaFile, manifest);
+const pvo = await packPvoProject({
+  manifest,
+  assets: [
+    { id: "main", file: mainVideo },
+    { id: "yes_branch", file: yesVideo },
+    { id: "no_branch", file: noVideo }
+  ]
+});
 const decoded = await readPvo(pvo);
 const runtime = createPvoRuntime(decoded.manifest, hostAdapters);</code></pre></div>
         </section>
 
         <section id="api">
-          <header class="section-title"><div><h2>A four-function surface</h2><p>Small enough to integrate into another creative tool, with the file details kept behind the API.</p></div></header>
+          <header class="section-title"><div><h2>A small integration surface</h2><p>Creative tools provide the files and manifest; the SDK handles the package details.</p></div></header>
           <div class="api-grid">
-            <article><code>packPvo(media, manifest)</code><p>Validates the manifest, removes an older PVO box, and appends one canonical replacement while preserving MP4 or MOV.</p><span>write</span></article>
-            <article><code>readPvo(file)</code><p>Finds the PVO box and returns its manifest, validation result, and the plain fallback video bytes.</p><span>read</span></article>
+            <article><code>packPvoProject({ manifest, assets })</code><p>Validates and writes one self-contained <code>.pvo</code> containing every main and branch media asset.</p><span>write</span></article>
+            <article><code>readPvo(file)</code><p>Reads the manifest and exposes the packaged media as browser-ready blobs.</p><span>read</span></article>
             <article><code>validatePvo(manifest)</code><p>Checks scene ranges, IDs, coordinates, action references, component kinds, and request declarations.</p><span>inspect</span></article>
             <article><code>createPvoRuntime(manifest)</code><p>Runs state, conditions, requests, and navigation through adapters supplied by the host application.</p><span>execute</span></article>
           </div>
@@ -52,7 +59,7 @@ const runtime = createPvoRuntime(decoded.manifest, hostAdapters);</code></pre></
         <section id="manifest">
           <header class="section-title"><div><h2>The manifest is the program</h2><p>No user JavaScript lives in the file. An Adobe integration and an independent open-source player can inspect the same data.</p></div></header>
           <div class="split">
-            <div class="definition-list"><div><strong>scenes</strong><span>Named start/end ranges inside one source video</span></div><div><strong>components</strong><span>Tooltip, card, choice, and form</span></div><div><strong>hotspots</strong><span>Normalized rectangles and tap actions</span></div><div><strong>triggers</strong><span>Actions fired at declared video times</span></div><div><strong>state</strong><span>Values for templates and conditions</span></div></div>
+            <div class="definition-list"><div><strong>media</strong><span>Main and branch assets packaged in the file</span></div><div><strong>playback</strong><span>Main timeline and outcome timelines</span></div><div><strong>components</strong><span>Tooltip, card, choice, and form</span></div><div><strong>scenes</strong><span>Named ranges within media assets</span></div><div><strong>state</strong><span>Values for templates and conditions</span></div></div>
             <div class="code-window small"><div class="code-bar"><span>scene.json</span></div><pre><code>{
   "id": "intro",
   "start": 0,
@@ -66,7 +73,7 @@ const runtime = createPvoRuntime(decoded.manifest, hostAdapters);</code></pre></
         </section>
 
         <section id="actions">
-          <header class="section-title"><div><h2>Choices and forms route with actions</h2><p>There is no visual scene-connector format. A choice or form outcome simply runs <code>goto_scene</code>, optionally guarded by <code>when</code>.</p></div></header>
+          <header class="section-title"><div><h2>Choices and forms route playback</h2><p>An answer is recorded when selected. At the end of that component layer, the player opens only the matching outcome timeline.</p></div></header>
           <div class="action-table" role="table" aria-label="PVO action types"><div role="row"><strong role="cell">show / hide</strong><span role="cell">Change component visibility</span><em role="cell">local</em></div><div role="row"><strong role="cell">set</strong><span role="cell">Write state or increment a counter</span><em role="cell">local</em></div><div role="row"><strong role="cell">goto_scene / seek</strong><span role="cell">Move between time ranges in the source video</span><em role="cell">local</em></div><div role="row"><strong role="cell">request</strong><span role="cell">Call a creator URL; map success and error</span><em role="cell">network</em></div><div role="row"><strong role="cell">open_url</strong><span role="cell">Hand an external link to the host</span><em role="cell">network</em></div><div role="row"><strong role="cell">chain / branch</strong><span role="cell">Compose declared actions</span><em role="cell">mixed</em></div></div>
           <div class="code-window"><div class="code-bar"><span>form-route.json</span><button data-copy="routeCode" type="button">Copy</button></div><pre id="routeCode"><code>{
   "type": "request",
@@ -82,14 +89,14 @@ const runtime = createPvoRuntime(decoded.manifest, hostAdapters);</code></pre></
         </section>
 
         <section id="container">
-          <header class="section-title"><div><h2>One extra box; still your video</h2><p>The prototype uses a standards-safe top-level <code>uuid</code> box. Normal MP4 and MOV players skip it. PVO-aware software reads the fixed UUID and <code>pvom</code> subtype.</p></div></header>
-          <div class="box-map" aria-label="PVO media box layout"><div><code>ftyp</code><span>file type</span></div><i>→</i><div><code>moov</code><span>video index</span></div><i>→</i><div class="wide"><code>mdat</code><span>video + audio</span></div><i>→</i><div class="pvo"><code>uuid · pvom</code><span>JSON manifest</span></div></div>
-          <dl class="binary-facts"><div><dt>User type</dt><dd>5a125a6e-8c7a-4ba8-9dd9-5e449a275056</dd></div><div><dt>Manifest limit</dt><dd>2 MiB</dd></div><div><dt>Filename</dt><dd>name.pvo.mp4 / name.pvo.mov</dd></div></dl>
+          <header class="section-title"><div><h2>One self-contained file</h2><p>The package begins with a small readable index, followed by the original media bytes. The videos are not rendered together or recompressed.</p></div></header>
+          <div class="box-map" aria-label="PVO package layout"><div class="pvo"><code>PVOPACK1</code><span>package marker</span></div><i>→</i><div><code>header</code><span>manifest + asset index</span></div><i>→</i><div class="wide"><code>main media</code><span>original bytes</span></div><i>→</i><div><code>branches</code><span>original bytes</span></div></div>
+          <dl class="binary-facts"><div><dt>MIME type</dt><dd>application/vnd.pvo</dd></div><div><dt>Manifest limit</dt><dd>2 MiB</dd></div><div><dt>Filename</dt><dd>name.pvo</dd></div></dl>
         </section>
 
         <section id="boundaries">
           <header class="section-title"><div><h2>The boundary is part of the design</h2><p>The SDK describes interaction; products decide what that interaction means.</p></div></header>
-          <div class="boundary-grid"><article><strong>PVO owns</strong><p>Container metadata, scenes, UI descriptions, normalized hotspots, state, conditions, generic requests, and response mapping.</p></article><article><strong>The host owns</strong><p>Rendering, accounts, servers, payments, databases, analytics, moderation, and any brand-specific behavior.</p></article><article><strong>Deferred</strong><p>Complete player UI, signing, asset packs, builder layers, offline queues, native bindings, collaboration, and AI authoring.</p></article></div>
+          <div class="boundary-grid"><article><strong>PVO owns</strong><p>Packaged media, timelines, scenes, UI descriptions, state, conditions, generic requests, and response mapping.</p></article><article><strong>The host owns</strong><p>Rendering choices, accounts, servers, payments, databases, analytics, moderation, and any brand-specific behavior.</p></article><article><strong>Deferred</strong><p>Signing, builder layers, offline queues, native bindings, collaboration, and AI authoring.</p></article></div>
         </section>
       </article>
     </main>

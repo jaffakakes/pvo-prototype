@@ -2,12 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import {
+  PVO_CONTAINER_MIME,
   PVO_UUID,
   createPvoRuntime,
   evaluateWhen,
   inspectMp4,
   packPvo,
+  packPvoProject,
   readPvo,
+  readPvoProject,
   resolveTemplates,
   tryReadPvo,
   validatePvo,
@@ -131,6 +134,73 @@ test("packPvo repairs a final size-zero box before appending", async () => {
 test("tryReadPvo distinguishes a plain MP4", async () => {
   assert.equal(await tryReadPvo(makeTinyMp4()), null);
   await assert.rejects(() => readPvo(makeTinyMp4()), /No PVO manifest/);
+});
+
+test("self-contained .pvo packages keep the main media and every branch asset", async () => {
+  const projectManifest = {
+    spec_version: "0.1-prototype",
+    title: "Branch package",
+    initial_scene: "main_scene",
+    media: [
+      { id: "main_media", asset_id: "main_media", name: "main.mp4", type: "video/mp4" },
+      { id: "branch_media", asset_id: "branch_media", name: "answer.mov", type: "video/quicktime" },
+    ],
+    playback: {
+      initial_timeline: "main",
+      timelines: [
+        { id: "main", kind: "main", clips: [{ id: "main_clip", asset_id: "main_media", scene: "main_scene", start: 0, end: 5 }] },
+        { id: "branch:choice:true", kind: "branch", condition: "true", clips: [{ id: "branch_clip", asset_id: "branch_media", scene: "branch_scene", start: 0, end: 5 }] },
+        { id: "branch:choice:false", kind: "branch", condition: "false", clips: [{ id: "branch_clip", asset_id: "branch_media", scene: "branch_scene", start: 0, end: 5 }] },
+      ],
+    },
+    scenes: [
+      { id: "main_scene", asset_id: "main_media", start: 0, end: 5 },
+      { id: "branch_scene", asset_id: "branch_media", start: 0, end: 5 },
+    ],
+    components: [{
+      id: "choice",
+      kind: "choice",
+      options: [
+        { label: "Yes", actions: [{ type: "set", key: "answers.choice", value: true }] },
+        { label: "No", actions: [{ type: "set", key: "answers.choice", value: false }] },
+      ],
+      presentation: { scene: "main_scene", clip: "main_clip", timeline: "main", start: 1, end: 4, x: 0.2, y: 0.2, width: 0.5, height: 0.3 },
+      scene_change: {
+        enabled: true,
+        executeAt: "end",
+        routes: [
+          { condition: "true", timelineId: "branch:choice:true" },
+          { condition: "false", timelineId: "branch:choice:false" },
+        ],
+      },
+    }],
+    hotspots: [],
+    triggers: [],
+  };
+  assert.equal(validatePvo(projectManifest).valid, true);
+
+  const main = makeTinyMp4();
+  const branch = makeTinyMov();
+  const packed = await packPvoProject({
+    manifest: projectManifest,
+    assets: [
+      { id: "main_media", name: "main.mp4", file: main },
+      { id: "branch_media", name: "answer.mov", file: branch },
+    ],
+  });
+  assert.equal(packed.type, PVO_CONTAINER_MIME);
+
+  const project = await readPvoProject(packed);
+  assert.equal(project.container, true);
+  assert.equal(project.assets.length, 2);
+  assert.deepEqual(project.assets.map((asset) => [asset.id, asset.type, asset.size]), [
+    ["main_media", "video/mp4", main.size],
+    ["branch_media", "video/quicktime", branch.size],
+  ]);
+  const decoded = await readPvo(packed);
+  assert.equal(decoded.container, true);
+  assert.equal(decoded.videoBlob.size, main.size);
+  assert.equal(decoded.manifest.playback.timelines.length, 3);
 });
 
 test("conditions and templates read state and response paths", () => {

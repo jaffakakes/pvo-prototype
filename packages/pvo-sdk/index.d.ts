@@ -1,6 +1,8 @@
 export const PVO_SPEC_VERSION: "0.1-prototype";
 export const PVO_MANIFEST_LIMIT: number;
 export const PVO_UUID: "5a125a6e-8c7a-4ba8-9dd9-5e449a275056";
+export const PVO_CONTAINER_MIME: "application/vnd.pvo";
+export const PVO_CONTAINER_VERSION: 1;
 
 export type BinaryInput = Blob | ArrayBuffer | Uint8Array | ArrayBufferView;
 export type Scalar = string | number | boolean | null;
@@ -38,6 +40,7 @@ export type PvoAction =
 export interface PvoScene {
   id: string;
   label?: string;
+  asset_id?: string;
   start: number;
   end: number;
   next?: string;
@@ -47,7 +50,7 @@ export interface PvoScene {
 
 export interface PvoChoiceOption { label: string; value?: JsonValue; action?: PvoAction; actions?: PvoAction[] }
 export interface PvoFormField { name: string; label?: string; type?: "text" | "number" | "email" | "choice"; required?: boolean; placeholder?: string; default?: JsonValue; options?: Array<{ label: string; value?: JsonValue }> }
-export interface PvoSceneChange { enabled: boolean; executeAt: "end"; routes: Array<{ condition: "true" | "false"; sceneId: string }> }
+export interface PvoSceneChange { enabled: boolean; executeAt: "end"; routes: Array<{ condition: "true" | "false"; sceneId?: string; timelineId?: string }> }
 export interface PvoComponent {
   id: string;
   kind: "tooltip" | "card" | "choice" | "form";
@@ -67,6 +70,10 @@ export interface PvoComponent {
 
 export interface PvoHotspot { id: string; label?: string; scene?: string; start?: number; end?: number; x: number; y: number; width: number; height: number; actions: PvoAction | PvoAction[] }
 export interface PvoTrigger { id?: string; scene?: string; at: number; actions: PvoAction | PvoAction[] }
+export interface PvoMedia { id: string; asset_id?: string; name?: string; type?: string }
+export interface PvoTimelineClip { id: string; source_clip?: string; asset_id: string; scene?: string; start: number; end: number }
+export interface PvoTimeline { id: string; kind?: "main" | "branch"; source_component?: string; condition?: "true" | "false"; clips: PvoTimelineClip[] }
+export interface PvoPlayback { initial_timeline: string; timelines: PvoTimeline[] }
 export interface PvoManifest {
   spec_version: string;
   id?: string;
@@ -74,6 +81,8 @@ export interface PvoManifest {
   initial_scene?: string;
   allowed_domains?: string[];
   state?: { initial?: Record<string, JsonValue>; persist?: boolean };
+  media?: PvoMedia[];
+  playback?: PvoPlayback;
   scenes: PvoScene[];
   components: PvoComponent[];
   hotspots?: PvoHotspot[];
@@ -83,7 +92,10 @@ export interface PvoManifest {
 
 export interface ValidationResult { valid: boolean; errors: string[]; warnings: string[] }
 export interface Mp4Box { offset: number; size: number; headerSize: number; type: string; uuidOffset: number; payloadOffset: number; extendsToEnd: boolean }
-export interface PvoReadResult { manifest: PvoManifest; validation: ValidationResult; videoBlob: Blob; fileName: string }
+export interface PvoAssetInput { id: string; name?: string; type?: string; file?: BinaryInput; blob?: BinaryInput; data?: BinaryInput }
+export interface PvoAsset { id: string; name: string; type: string; blob: Blob; size: number }
+export interface PvoReadResult { manifest: PvoManifest; validation: ValidationResult; videoBlob: Blob; fileName: string; assets?: PvoAsset[]; container?: boolean }
+export interface PvoProjectReadResult { manifest: PvoManifest; validation: ValidationResult; assets: PvoAsset[]; container: true; fileName: string }
 export interface RuntimeContext { state: Record<string, unknown>; response?: unknown; [key: string]: unknown }
 export interface RuntimeHandlers {
   show?(component: PvoComponent, context: RuntimeContext): unknown | Promise<unknown>;
@@ -99,6 +111,8 @@ export interface RuntimeEvent { type: string; state: Record<string, unknown>; vi
 
 export function inspectMp4(input: Uint8Array | ArrayBuffer): Mp4Box[];
 export function packPvo(media: BinaryInput, manifest: PvoManifest): Promise<Blob>;
+export function packPvoProject(project: { manifest: PvoManifest; assets: PvoAssetInput[] }): Promise<Blob>;
+export function readPvoProject(file: BinaryInput & { name?: string }): Promise<PvoProjectReadResult>;
 export function readPvo(file: BinaryInput & { name?: string }): Promise<PvoReadResult>;
 export function tryReadPvo(file: BinaryInput & { name?: string }): Promise<PvoReadResult | null>;
 export function validatePvo(manifest: unknown): ValidationResult;

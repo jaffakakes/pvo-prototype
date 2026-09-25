@@ -2,32 +2,36 @@
 
 ## 1. Purpose
 
-A Playable Video Object (PVO) is a standard ISO Base Media file—currently MP4 or MOV—plus a declarative interaction manifest. A normal player plays the base video. A PVO-aware player also displays timed UI and runs safe, inspectable actions.
+A Playable Video Object (PVO) is a self-contained package containing original video assets plus a declarative interaction manifest. A PVO-aware player follows its main timeline, displays timed UI, evaluates choices, and plays only the selected branch.
 
-This prototype is creator-authored. It intentionally excludes signatures, viewer layers, embedded asset packs, and multiplayer.
+This prototype is creator-authored. It intentionally excludes signatures, viewer layers, and multiplayer.
 
 ## 2. Container
 
-The PVO manifest is stored in a top-level ISO Base Media File Format `uuid` box appended after the existing MP4 or MOV boxes.
+The current PVO file begins with a fixed package prefix and JSON header, followed by the unchanged bytes of every referenced media asset.
 
 | Field | Value |
 | --- | --- |
-| box type | `uuid` |
-| user type | `5a125a6e-8c7a-4ba8-9dd9-5e449a275056` |
-| payload subtype | four bytes: `pvom` |
-| remaining payload | UTF-8 JSON manifest |
+| magic | eight bytes: `PVOPACK1` |
+| header length | unsigned 32-bit big-endian integer |
+| header | UTF-8 JSON manifest and asset index |
+| payload | original media assets at indexed byte ranges |
 | maximum manifest | 2 MiB |
 
-A writer must replace existing PVO manifest boxes when re-exporting. A reader uses the last valid PVO manifest when more than one is encountered. Unknown media boxes are preserved byte-for-byte. A size-zero final media box is rewritten with an explicit size before PVO data is appended.
+Asset index entries declare a stable ID, name, MIME type, payload-relative byte offset, and byte length. Asset byte ranges must be valid and may not overlap. Packaging does not transcode or join the source videos.
 
-The recommended filename preserves the source container: `name.pvo.mp4` or `name.pvo.mov`. This keeps ordinary operating-system and browser video handling intact.
+The filename is `name.pvo` and the MIME type is `application/vnd.pvo`.
+
+The SDK continues to read and write the earlier MP4/MOV `uuid`-box prototype for compatibility. New editor exports use only the self-contained `.pvo` package.
 
 ## 3. Manifest
 
 The top-level object contains:
 
 - `spec_version`: currently `0.1-prototype`.
-- `initial_scene`: scene to enter first.
+- `media`: packaged media IDs, names, and MIME types.
+- `playback`: the main timeline plus each possible outcome timeline.
+- `initial_scene`: compatibility scene entered first.
 - `canvas`: the authored display ratio and its numeric width/height relationship.
 - `scenes`: named `[start, end]` time ranges in seconds.
 - `components`: UI definitions with a stable ID and one of four kinds.
@@ -45,9 +49,9 @@ Coordinates are relative to the actual video content, not to any letterbox area 
 - `choice`: two or more options; every option owns an action or action list.
 - `form`: typed fields and an `on_submit` action list.
 
-Components may also carry an optional sanitized `html`/`css` presentation plus normalized layout and timing in `presentation`. Semantic fields remain present so a host can replace that presentation with native UI. Choice and form components may preserve a binary `scene_change` with one `true` destination, one `false` destination, and `executeAt: "end"`.
+Components may also carry optional sanitized `html`/`css` presentation plus normalized layout, clip ID, and clip-local timing in `presentation`. Semantic fields remain present so a host can replace that presentation with native UI. Choice and form components may preserve a binary `scene_change` with one `true` timeline, one `false` timeline, and `executeAt: "end"`.
 
-Selecting a choice or submitting a form records its result without seeking immediately. At the end of that component's presentation range, a timed `branch` checks the recorded result and runs the matching `goto_scene`. If the viewer supplied no result, neither route runs. The True and False routes must target two different scenes.
+Selecting a choice or submitting a form records its result without switching immediately. At the end of that component's presentation range, playback opens the matching outcome timeline. If no result has been supplied, playback pauses and keeps the component visible. The True and False routes use distinct timeline IDs; those timelines may intentionally reuse the same media asset.
 
 ### Actions
 
@@ -71,9 +75,11 @@ Strings may contain `{state.path}` or `{response.message}` templates. Templates 
 
 ## 4. Playback
 
-The player identifies the scene containing the current video time. It runs `on_enter` when entering a scene and `on_exit` at its end. A choice or form with scene routing continues playing after an answer and branches only when that component layer ends. If no answer was supplied, playback follows the scene normally.
+The player starts with `playback.initial_timeline`. It advances through that timeline's clip list, loading each clip's packaged asset and respecting its source start/end range.
 
-All alternate footage lives in the same source video. Branching is a seek, so no media network or secondary video file is required.
+On the main timeline, a choice or form with routing continues playing after an early answer and branches only when that component layer ends. If the layer ends before an answer is supplied, the player pauses there. Once answered, it loads only the matching outcome timeline. The unselected outcome remains packaged but is not played. Playback ends when that selected branch ends.
+
+Restart clears recorded answers and returns to the first clip of the main timeline.
 
 ## 5. Network boundary
 
@@ -86,7 +92,7 @@ A player should limit requests to `allowed_domains`, expose network activity to 
 - Manifests are data, never executable code.
 - Presentation HTML and CSS are untrusted data. Players must sanitize them again, block scripts and network-loading CSS, and isolate rendered UI from the host page.
 - `open_url` requires viewer confirmation.
-- Manifest size is capped at 2 MiB in this prototype.
+- Manifest size is capped at 2 MiB and the package header at 4 MiB in this prototype.
 - Player implementations should validate all references, scene ranges, and normalized coordinates before playback.
 
 Cryptographic signing and a creator trust model are future format work, not implied by this prototype.

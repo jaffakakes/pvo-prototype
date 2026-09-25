@@ -1,11 +1,13 @@
 /**
  * PVO SDK prototype
- * A PVO is an ordinary MP4 or MOV with one top-level `uuid` box appended to it.
- * The box contains a four-byte `pvom` subtype followed by a UTF-8 manifest.
+ * The current .pvo container stores a manifest followed by every referenced
+ * media asset. Legacy MP4/MOV files with an appended `uuid` box remain readable.
  */
 
 export const PVO_SPEC_VERSION = "0.1-prototype";
 export const PVO_MANIFEST_LIMIT = 2 * 1024 * 1024;
+export const PVO_CONTAINER_MIME = "application/vnd.pvo";
+export const PVO_CONTAINER_VERSION = 1;
 
 // 5a125a6e-8c7a-4ba8-9dd9-5e449a275056 (stable prototype UUID)
 export const PVO_UUID = "5a125a6e-8c7a-4ba8-9dd9-5e449a275056";
@@ -17,6 +19,9 @@ const UUID_TYPE = Uint8Array.from([0x75, 0x75, 0x69, 0x64]);
 const MANIFEST_SUBTYPE = Uint8Array.from([0x70, 0x76, 0x6f, 0x6d]); // pvom
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
+const PVO_CONTAINER_MAGIC = textEncoder.encode("PVOPACK1");
+const PVO_CONTAINER_PREFIX_SIZE = 12;
+const PVO_CONTAINER_HEADER_LIMIT = 4 * 1024 * 1024;
 
 const ACTION_TYPES = new Set([
   "show",
@@ -58,6 +63,35 @@ async function toBytes(input) {
     return new Uint8Array(await input.arrayBuffer());
   }
   throw new TypeError("PVO input must be a Blob, File, ArrayBuffer, or Uint8Array.");
+}
+
+function inputSize(input) {
+  if (typeof input?.size === "number") return input.size;
+  if (input instanceof ArrayBuffer) return input.byteLength;
+  if (ArrayBuffer.isView(input)) return input.byteLength;
+  throw new TypeError("PVO input must expose its byte length.");
+}
+
+async function readInputRange(input, start, end) {
+  if (typeof input?.slice === "function" && typeof input?.arrayBuffer === "function") {
+    return toBytes(input.slice(start, end));
+  }
+  const bytes = await toBytes(input);
+  return bytes.subarray(start, end);
+}
+
+async function inputStartsWith(input, signature) {
+  if (inputSize(input) < signature.length) return false;
+  const prefix = await readInputRange(input, 0, signature.length);
+  return bytesEqual(prefix, 0, signature);
+}
+
+async function inputSliceBlob(input, start, end, type) {
+  if (typeof input?.slice === "function" && typeof input?.arrayBuffer === "function") {
+    return input.slice(start, end, type);
+  }
+  const bytes = await toBytes(input);
+  return new Blob([bytes.subarray(start, end)], { type });
 }
 
 function readBoxSize(view, offset, available) {
@@ -147,6 +181,127 @@ function mediaMimeType(input) {
   return type === "video/quicktime" || /(?:\.pvo)?\.mov$/i.test(name) ? "video/quicktime" : "video/mp4";
 }
 
+/** Pack a self-contained .pvo file with a manifest and every referenced media asset. */
+export async function packPvoProject({ manifest, assets }) {
+  const result = validatePvo(manifest);
+  if (!result.valid) {
+    throw new Error(`Invalid PVO manifest:\n${result.errors.join("\n")}`);
+  }
+  if (!Array.isArray(assets) || assets.length === 0) {
+    throw new Error("A PVO project needs at least one media asset.");
+  }
+  const manifestBytes = textEncoder.encode(JSON.stringify(manifest));
+  if (manifestBytes.length > PVO_MANIFEST_LIMIT) {
+    throw new Error(`Manifest exceeds the ${PVO_MANIFEST_LIMIT / 1024 / 1024} MB prototype limit.`);
+  }
+
+  const ids = new Set();
+  let offset = 0;
+  const prepared = assets.map((asset, index) => {
+    const id = String(asset?.id || "").trim();
+    if (!id) throw new Error(`assets[${index}].id is required.`);
+    if (ids.has(id)) throw new Error(`Asset id "${id}" is duplicated.`);
+    ids.add(id);
+    const source = asset.file ?? asset.blob ?? asset.data;
+    const length = inputSize(source);
+    if (!length) throw new Error(`Asset "${id}" is empty.`);
+    const entry = {
+      id,
+      name: String(asset.name || source?.name || id),
+      type: String(asset.type || source?.type || mediaMimeType(source)),
+      offset,
+      length,
+    };
+    offset += length;
+    return { entry, source };
+  });
+
+  for (const media of manifest.media || []) {
+    const assetId = media?.asset_id || media?.id;
+    if (assetId && !ids.has(assetId)) throw new Error(`Manifest media "${assetId}" is not included in the PVO package.`);
+  }
+
+  const headerBytes = textEncoder.encode(JSON.stringify({
+    format: "pvo",
+    version: PVO_CONTAINER_VERSION,
+    manifest,
+    assets: prepared.map(({ entry }) => entry),
+  }));
+  if (headerBytes.length > PVO_CONTAINER_HEADER_LIMIT) {
+    throw new Error(`PVO package header exceeds ${PVO_CONTAINER_HEADER_LIMIT / 1024 / 1024} MB.`);
+  }
+  const prefix = new Uint8Array(PVO_CONTAINER_PREFIX_SIZE);
+  prefix.set(PVO_CONTAINER_MAGIC, 0);
+  new DataView(prefix.buffer).setUint32(PVO_CONTAINER_MAGIC.length, headerBytes.length, false);
+  return new Blob([prefix, headerBytes, ...prepared.map(({ source }) => source)], { type: PVO_CONTAINER_MIME });
+}
+
+/** Read a self-contained .pvo package without copying its media payloads when Blob slicing is available. */
+export async function readPvoProject(file) {
+  if (!(await inputStartsWith(file, PVO_CONTAINER_MAGIC))) {
+    throw new Error("No PVO package header was found.");
+  }
+  const size = inputSize(file);
+  if (size < PVO_CONTAINER_PREFIX_SIZE) throw new Error("The PVO package header is incomplete.");
+  const prefix = await readInputRange(file, 0, PVO_CONTAINER_PREFIX_SIZE);
+  const headerLength = new DataView(prefix.buffer, prefix.byteOffset, prefix.byteLength).getUint32(PVO_CONTAINER_MAGIC.length, false);
+  if (!headerLength || headerLength > PVO_CONTAINER_HEADER_LIMIT || PVO_CONTAINER_PREFIX_SIZE + headerLength > size) {
+    throw new Error("The PVO package header length is invalid.");
+  }
+
+  let header;
+  try {
+    const headerBytes = await readInputRange(file, PVO_CONTAINER_PREFIX_SIZE, PVO_CONTAINER_PREFIX_SIZE + headerLength);
+    header = JSON.parse(textDecoder.decode(headerBytes));
+  } catch (error) {
+    throw new Error(`The PVO package header is not valid JSON: ${error.message}`);
+  }
+  if (header?.format !== "pvo" || header?.version !== PVO_CONTAINER_VERSION) {
+    throw new Error(`Unsupported PVO package version "${header?.version ?? "unknown"}".`);
+  }
+  if (textEncoder.encode(JSON.stringify(header.manifest)).length > PVO_MANIFEST_LIMIT) {
+    throw new Error(`PVO manifest exceeds the ${PVO_MANIFEST_LIMIT / 1024 / 1024} MB prototype limit.`);
+  }
+  if (!Array.isArray(header.assets) || !header.assets.length) throw new Error("The PVO package has no media assets.");
+
+  const payloadStart = PVO_CONTAINER_PREFIX_SIZE + headerLength;
+  const payloadLength = size - payloadStart;
+  const ids = new Set();
+  const ranges = [];
+  const assets = await Promise.all(header.assets.map(async (asset, index) => {
+    const id = String(asset?.id || "").trim();
+    const offset = Number(asset?.offset);
+    const length = Number(asset?.length);
+    if (!id) throw new Error(`PVO package asset ${index + 1} has no id.`);
+    if (ids.has(id)) throw new Error(`PVO package asset id "${id}" is duplicated.`);
+    ids.add(id);
+    if (!Number.isSafeInteger(offset) || offset < 0 || !Number.isSafeInteger(length) || length <= 0 || offset + length > payloadLength) {
+      throw new Error(`PVO package asset "${id}" has an invalid byte range.`);
+    }
+    ranges.push({ id, start: offset, end: offset + length });
+    const type = String(asset.type || "application/octet-stream");
+    const blob = await inputSliceBlob(file, payloadStart + offset, payloadStart + offset + length, type);
+    return { id, name: String(asset.name || id), type, blob, size: length };
+  }));
+  ranges.sort((a, b) => a.start - b.start);
+  for (let index = 1; index < ranges.length; index += 1) {
+    if (ranges[index].start < ranges[index - 1].end) throw new Error(`PVO package assets "${ranges[index - 1].id}" and "${ranges[index].id}" overlap.`);
+  }
+  for (const media of header.manifest?.media || []) {
+    const assetId = media?.asset_id || media?.id;
+    if (assetId && !ids.has(assetId)) throw new Error(`PVO package is missing media asset "${assetId}".`);
+  }
+
+  const validation = validatePvo(header.manifest);
+  return {
+    manifest: header.manifest,
+    validation,
+    assets,
+    container: true,
+    fileName: file?.name || "video.pvo",
+  };
+}
+
 /** Append or replace the PVO manifest in an MP4 or MOV while preserving its media type. */
 export async function packPvo(media, manifest) {
   const result = validatePvo(manifest);
@@ -164,6 +319,15 @@ export async function packPvo(media, manifest) {
 
 /** Read a PVO file and return both its manifest and its plain-video fallback bytes. */
 export async function readPvo(file) {
+  if (await inputStartsWith(file, PVO_CONTAINER_MAGIC)) {
+    const project = await readPvoProject(file);
+    const firstClip = project.manifest.playback?.timelines
+      ?.find((timeline) => timeline.id === project.manifest.playback?.initial_timeline)
+      ?.clips?.[0];
+    const mainAssetId = firstClip?.asset_id || project.manifest.media?.[0]?.asset_id || project.manifest.media?.[0]?.id;
+    const mainAsset = project.assets.find((asset) => asset.id === mainAssetId) || project.assets[0];
+    return { ...project, videoBlob: mainAsset.blob };
+  }
   const bytes = await toBytes(file);
   const boxes = inspectMp4(bytes);
   const manifests = boxes.filter((box) => isManifestBox(bytes, box));
@@ -195,7 +359,7 @@ export async function tryReadPvo(file) {
   try {
     return await readPvo(file);
   } catch (error) {
-    if (String(error?.message).includes("No PVO manifest")) return null;
+    if (String(error?.message).includes("No PVO manifest") || String(error?.message).includes("No PVO package header")) return null;
     throw error;
   }
 }
@@ -260,7 +424,19 @@ export function validatePvo(manifest) {
   if (!Array.isArray(manifest.scenes) || !manifest.scenes.length) errors.push("scenes must contain at least one scene.");
   if (!Array.isArray(manifest.components)) errors.push("components must be an array.");
 
-  const ids = { scenes: new Set(), components: new Set(), hotspots: new Set() };
+  const ids = {
+    scenes: new Set(), components: new Set(), hotspots: new Set(),
+    media: new Set(), assets: new Set(), timelines: new Set(), clips: new Set(),
+  };
+  for (const [index, media] of (manifest.media || []).entries()) {
+    const path = `media[${index}]`;
+    if (!media?.id || typeof media.id !== "string") errors.push(`${path}.id is required.`);
+    else if (ids.media.has(media.id)) errors.push(`${path}.id "${media.id}" is duplicated.`);
+    else ids.media.add(media.id);
+    const assetId = media?.asset_id || media?.id;
+    if (typeof assetId !== "string" || !assetId) errors.push(`${path}.asset_id is required.`);
+    else ids.assets.add(assetId);
+  }
   for (const [index, scene] of (manifest.scenes || []).entries()) {
     const path = `scenes[${index}]`;
     if (!scene?.id || typeof scene.id !== "string") errors.push(`${path}.id is required.`);
@@ -268,13 +444,47 @@ export function validatePvo(manifest) {
     else ids.scenes.add(scene.id);
     if (!Number.isFinite(scene?.start) || scene.start < 0) errors.push(`${path}.start must be 0 or greater.`);
     if (!Number.isFinite(scene?.end) || scene.end <= scene.start) errors.push(`${path}.end must be greater than start.`);
+    if (scene?.asset_id && !ids.assets.has(scene.asset_id)) errors.push(`${path}.asset_id references missing media.`);
   }
-  const orderedScenes = [...(manifest.scenes || [])]
+  const sceneGroups = new Map();
+  [...(manifest.scenes || [])]
     .filter((scene) => Number.isFinite(scene?.start) && Number.isFinite(scene?.end))
-    .sort((a, b) => a.start - b.start);
-  for (let index = 1; index < orderedScenes.length; index += 1) {
-    if (orderedScenes[index].start < orderedScenes[index - 1].end) {
-      errors.push(`Scenes "${orderedScenes[index - 1].id}" and "${orderedScenes[index].id}" overlap.`);
+    .forEach((scene) => {
+      const group = scene.asset_id || "legacy";
+      if (!sceneGroups.has(group)) sceneGroups.set(group, []);
+      sceneGroups.get(group).push(scene);
+    });
+  for (const groupedScenes of sceneGroups.values()) {
+    const orderedScenes = groupedScenes.sort((a, b) => a.start - b.start);
+    for (let index = 1; index < orderedScenes.length; index += 1) {
+      if (orderedScenes[index].start < orderedScenes[index - 1].end) {
+        errors.push(`Scenes "${orderedScenes[index - 1].id}" and "${orderedScenes[index].id}" overlap.`);
+      }
+    }
+  }
+
+  if (manifest.playback != null) {
+    if (!Array.isArray(manifest.playback?.timelines) || !manifest.playback.timelines.length) {
+      errors.push("playback.timelines must contain at least the main timeline.");
+    }
+    for (const [timelineIndex, timeline] of (manifest.playback?.timelines || []).entries()) {
+      const path = `playback.timelines[${timelineIndex}]`;
+      if (!timeline?.id || typeof timeline.id !== "string") errors.push(`${path}.id is required.`);
+      else if (ids.timelines.has(timeline.id)) errors.push(`${path}.id "${timeline.id}" is duplicated.`);
+      else ids.timelines.add(timeline.id);
+      if (!Array.isArray(timeline?.clips) || !timeline.clips.length) errors.push(`${path}.clips must contain at least one clip.`);
+      for (const [clipIndex, clip] of (timeline?.clips || []).entries()) {
+        const clipPath = `${path}.clips[${clipIndex}]`;
+        if (!clip?.id || typeof clip.id !== "string") errors.push(`${clipPath}.id is required.`);
+        else ids.clips.add(clip.id);
+        if (!ids.assets.has(clip?.asset_id)) errors.push(`${clipPath}.asset_id references missing media.`);
+        if (!Number.isFinite(clip?.start) || clip.start < 0) errors.push(`${clipPath}.start must be 0 or greater.`);
+        if (!Number.isFinite(clip?.end) || clip.end <= clip.start) errors.push(`${clipPath}.end must be greater than start.`);
+        if (clip?.scene && !ids.scenes.has(clip.scene)) errors.push(`${clipPath}.scene references a missing scene.`);
+      }
+    }
+    if (!ids.timelines.has(manifest.playback?.initial_timeline)) {
+      errors.push("playback.initial_timeline references a missing timeline.");
     }
   }
   for (const [index, component] of (manifest.components || []).entries()) {
@@ -282,6 +492,7 @@ export function validatePvo(manifest) {
     if (!component?.id || typeof component.id !== "string") errors.push(`${path}.id is required.`);
     else if (ids.components.has(component.id)) errors.push(`${path}.id "${component.id}" is duplicated.`);
     else ids.components.add(component.id);
+    if (component?.presentation?.clip && !ids.clips.has(component.presentation.clip)) errors.push(`${path}.presentation.clip references a missing clip.`);
     if (!COMPONENT_KINDS.has(component?.kind)) errors.push(`${path}.kind must be tooltip, card, choice, or form.`);
     if (component?.kind === "tooltip" && typeof component.text !== "string") errors.push(`${path}.text is required for a tooltip.`);
     if (component?.kind === "card" && typeof component.title !== "string" && typeof component.text !== "string") errors.push(`${path} needs a title or text.`);
@@ -319,16 +530,18 @@ export function validatePvo(manifest) {
           errors.push(`${path}.scene_change.routes must contain one True route and one False route.`);
         }
         const destinations = sceneChange.routes.map((route, routeIndex) => {
-          if (!ids.scenes.has(route?.sceneId)) {
-            errors.push(`${path}.scene_change.routes[${routeIndex}] references a missing scene.`);
+          if (route?.timelineId) {
+            if (!ids.timelines.has(route.timelineId)) errors.push(`${path}.scene_change.routes[${routeIndex}] references a missing timeline.`);
+            if (route.timelineId === component.presentation?.timeline) errors.push(`${path}.scene_change.routes[${routeIndex}] must target a different timeline.`);
+            return route.timelineId;
           }
-          if (route?.sceneId === component.presentation?.scene) {
-            errors.push(`${path}.scene_change.routes[${routeIndex}] must target a different scene.`);
-          }
+          if (!ids.scenes.has(route?.sceneId)) errors.push(`${path}.scene_change.routes[${routeIndex}] references a missing scene.`);
+          if (route?.sceneId === component.presentation?.scene) errors.push(`${path}.scene_change.routes[${routeIndex}] must target a different scene.`);
           return route?.sceneId;
         });
         if (destinations[0] && destinations[0] === destinations[1]) {
-          errors.push(`${path}.scene_change routes must target two different scenes.`);
+          const destinationKind = sceneChange.routes.some((route) => route?.timelineId) ? "timelines" : "scenes";
+          errors.push(`${path}.scene_change routes must target two different ${destinationKind}.`);
         }
       }
     }

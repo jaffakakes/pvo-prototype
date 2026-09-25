@@ -11,7 +11,10 @@
     <header class="app-header">
       <div class="title-block"><strong>PVO Editor</strong><span>basic prototype</span></div>
       <div class="project-name"><span id="projectName">No video selected</span><small id="projectDuration">00:00.0</small></div>
-      <label class="button file-button"><input id="videoInput" type="file" accept="video/mp4,video/quicktime,.mp4,.mov" multiple />Add media</label>
+      <div class="header-actions">
+        <a class="button" href="/player/">PVO player</a>
+        <label class="button file-button"><input id="videoInput" type="file" accept="video/mp4,video/quicktime,.mp4,.mov" multiple />Add media</label>
+      </div>
     </header>
 
     <div class="editor-shell">
@@ -28,8 +31,8 @@
               <p class="media-empty">Choose MP4 or MOV files to begin.</p>
             </div>
             <div class="export-section">
-              <button class="button export-button" id="exportPvoButton" type="button" disabled>Export PVO video</button>
-              <p id="exportHelp">A multi-media timeline can be previewed here. Combined video rendering is a later export step.</p>
+              <button class="button export-button" id="exportPvoButton" type="button" disabled>Export .pvo</button>
+              <p id="exportHelp">Exports one self-contained .pvo file with the main timeline, every branch and all components.</p>
             </div>
           </div>
         </section>

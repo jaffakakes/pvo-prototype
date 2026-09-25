@@ -1,4 +1,4 @@
-import { packPvo, PVO_SPEC_VERSION } from "../packages/pvo-sdk/index.js";
+import { packPvoProject, PVO_SPEC_VERSION } from "../packages/pvo-sdk/index.js";
 
 const $ = (selector) => document.querySelector(selector);
 const video = $("#video");
@@ -698,7 +698,7 @@ function mainClips() {
 }
 
 function sceneLabelFromFile(name) {
-  return name.replace(/\.pvo\.(mp4|mov)$/i, "").replace(/\.(mp4|mov)$/i, "") || `Scene ${sceneCounter + 1}`;
+  return name.replace(/\.pvo\.(mp4|mov)$/i, "").replace(/\.(mp4|mov|pvo)$/i, "") || `Scene ${sceneCounter + 1}`;
 }
 
 function currentLocalTime() {
@@ -767,17 +767,31 @@ function timelineTime() {
   return layout ? layout.start + currentLocalTime() : 0;
 }
 
+function exportProblem() {
+  if (!mainClips().length) return "Add media to the main timeline before exporting.";
+  const mainClipIds = new Set(mainClips().map((clip) => clip.id));
+  const referencedMediaIds = new Set(mainClips().map((clip) => clip.mediaId));
+  for (const component of components.filter((item) => mainClipIds.has(item.clipId) && item.sceneChange?.enabled)) {
+    const routes = binaryMediaRoutes(component);
+    if (routes.length !== 2 || routes.some((route) => !route.mediaId)) {
+      return `${component.name} needs media for both Yes and No.`;
+    }
+    for (const route of routes) referencedMediaIds.add(route.mediaId);
+  }
+  const unavailable = [...referencedMediaIds].map(mediaItem).find((item) => !item?.duration || item.error || !item.file);
+  return unavailable ? "Every main and branch media file must be available before exporting." : "";
+}
+
 function canExportTimeline() {
-  const sourceIds = new Set([...clips.map((clip) => clip.mediaId), ...branchTargetMediaIds()]);
-  return mainClips().length > 0 && sourceIds.size === 1;
+  return !exportProblem();
 }
 
 function renderExportState() {
   const canExport = canExportTimeline();
   refs.exportPvoButton.disabled = !mediaReady || !canExport || exporting;
   refs.exportHelp.textContent = canExport
-    ? "Exports this single-source timeline with its PVO interaction data attached."
-    : "Multi-media preview is ready. Combining its media into one rendered video is the next export step.";
+    ? "Exports one self-contained .pvo file with the main timeline, every branch and all components."
+    : exportProblem();
 }
 
 function setMediaReady(ready, copy = {}) {
@@ -1645,7 +1659,37 @@ function exportFormFields(component) {
   });
 }
 
-function exportedComponent(component) {
+function branchTimelineId(component, condition) {
+  return `branch:${component.id}:${condition}`;
+}
+
+function timelineClip(clip) {
+  return {
+    id: clip.id,
+    source_clip: clip.id,
+    asset_id: clip.mediaId,
+    scene: clip.sceneId,
+    start: clip.sourceStart,
+    end: clip.sourceEnd,
+  };
+}
+
+function branchSourceClips(mediaId) {
+  const existing = clips.filter((clip) => clip.mediaId === mediaId);
+  if (existing.length) return existing;
+  const item = mediaItem(mediaId);
+  return [{
+    id: `branch_clip_${mediaId}`,
+    mediaId,
+    sceneId: `branch_scene_${mediaId}`,
+    sceneName: sceneLabelFromFile(item?.name || mediaId),
+    sourceStart: 0,
+    sourceEnd: item?.duration || 0,
+    placement: "branch",
+  }];
+}
+
+function exportedComponent(component, mainClipIds) {
   const clip = clips.find((item) => item.id === component.clipId);
   const exported = {
     id: component.id,
@@ -1655,8 +1699,10 @@ function exportedComponent(component) {
     css: sanitizeCss(component.css),
     presentation: {
       scene: clip.sceneId,
-      start: clip.sourceStart + component.start,
-      end: clip.sourceStart + component.end,
+      clip: clip.id,
+      timeline: mainClipIds.has(clip.id) ? "main" : undefined,
+      start: component.start,
+      end: component.end,
       x: component.x / 100, y: component.y / 100,
       width: component.width / 100, height: component.height / 100,
     },
@@ -1670,57 +1716,98 @@ function exportedComponent(component) {
     exported.fields = exportFormFields(component);
     exported.on_submit = [{ type: "custom", name: "submit_form", payload: { component: component.id }, into: answerStateKey(component) }];
   }
+  if (mainClipIds.has(component.clipId) && component.sceneChange?.enabled) {
+    exported.scene_change = {
+      enabled: true,
+      executeAt: "end",
+      routes: binaryMediaRoutes(component).map((route) => ({
+        condition: route.condition,
+        timelineId: branchTimelineId(component, route.condition),
+      })),
+    };
+  }
   return exported;
 }
 
 function buildPvoManifest() {
-  if (!canExportTimeline()) throw new Error("Combined multi-media export needs the renderer step");
-  const item = mediaItem(clips[0].mediaId);
+  const problem = exportProblem();
+  if (problem) throw new Error(problem);
+  const main = mainClips();
+  const mainClipIds = new Set(main.map((clip) => clip.id));
+  const item = mediaItem(main[0].mediaId);
   const title = sceneLabelFromFile(item.name);
   const id = title.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "pvo_video";
+  const branchingComponents = components.filter((component) => mainClipIds.has(component.clipId) && component.sceneChange?.enabled);
+  const timelines = [{ id: "main", kind: "main", clips: main.map(timelineClip) }];
+  branchingComponents.forEach((component) => {
+    binaryMediaRoutes(component).forEach((route) => {
+      timelines.push({
+        id: branchTimelineId(component, route.condition),
+        kind: "branch",
+        source_component: component.id,
+        condition: route.condition,
+        clips: branchSourceClips(route.mediaId).map(timelineClip),
+      });
+    });
+  });
+  const referencedMediaIds = new Set(timelines.flatMap((timeline) => timeline.clips.map((clip) => clip.asset_id)));
+  const exportedClips = timelines.flatMap((timeline) => timeline.clips.map((exported) => {
+    const source = clips.find((clip) => clip.id === exported.source_clip)
+      || branchSourceClips(exported.asset_id).find((clip) => clip.id === exported.source_clip);
+    return source;
+  })).filter(Boolean);
+  const exportedClipIds = new Set(exportedClips.map((clip) => clip.id));
   const scenesById = new Map();
-  clips.forEach((clip) => {
+  exportedClips.forEach((clip) => {
     const existing = scenesById.get(clip.sceneId);
     if (existing) {
       existing.start = Math.min(existing.start, clip.sourceStart);
       existing.end = Math.max(existing.end, clip.sourceEnd);
-    } else scenesById.set(clip.sceneId, { id: clip.sceneId, label: clip.sceneName, start: clip.sourceStart, end: clip.sourceEnd });
-  });
-  const triggers = components.flatMap((component) => {
-    const clip = clips.find((item) => item.id === component.clipId);
-    return [{
-      id: `${component.id}_show`, scene: clip.sceneId, at: clip.sourceStart + component.start,
-      actions: [{ type: "show", component: component.id }],
-    }, {
-      id: `${component.id}_hide`, scene: clip.sceneId, at: clip.sourceStart + component.end,
-      actions: [{ type: "hide", component: component.id }],
-    }];
+    } else scenesById.set(clip.sceneId, {
+      id: clip.sceneId,
+      label: clip.sceneName,
+      asset_id: clip.mediaId,
+      start: clip.sourceStart,
+      end: clip.sourceEnd,
+    });
   });
   const ratio = canvasRatios[canvasRatio];
   return {
     spec_version: PVO_SPEC_VERSION,
     id,
     title,
-    initial_scene: clips[0].sceneId,
+    initial_scene: main[0].sceneId,
     canvas: { ratio: canvasRatio, width: ratio.width, height: ratio.height },
     state: { initial: {} },
+    media: [...referencedMediaIds].map((mediaId) => {
+      const media = mediaItem(mediaId);
+      return { id: media.id, asset_id: media.id, name: media.name, type: media.file.type || (mediaItemIsMov(media) ? "video/quicktime" : "video/mp4") };
+    }),
+    playback: { initial_timeline: "main", timelines },
     scenes: [...scenesById.values()],
-    components: components.map(exportedComponent),
+    components: components.filter((component) => exportedClipIds.has(component.clipId)).map((component) => exportedComponent(component, mainClipIds)),
     hotspots: [],
-    triggers,
+    triggers: [],
   };
 }
 
 async function exportPvoVideo() {
   if (!canExportTimeline() || exporting) return;
-  const item = mediaItem(clips[0].mediaId);
+  const item = mediaItem(mainClips()[0].mediaId);
   exporting = true;
   renderExportState();
   refs.exportPvoButton.textContent = "Exporting…";
-  setStatus("Packing PVO video…");
+  setStatus("Packing the self-contained PVO…");
   try {
-    const output = await packPvo(item.file, buildPvoManifest());
-    const name = `${sceneLabelFromFile(item.name)}.pvo.${mediaItemIsMov(item) ? "mov" : "mp4"}`;
+    const manifest = buildPvoManifest();
+    const output = await packPvoProject({
+      manifest,
+      assets: manifest.media.map((media) => {
+        const source = mediaItem(media.asset_id);
+        return { id: media.asset_id, name: source.name, type: source.file.type, file: source.file };
+      }),
+    });
+    const name = `${sceneLabelFromFile(item.name)}.pvo`;
     const url = URL.createObjectURL(output);
     const link = document.createElement("a");
     link.href = url;
@@ -1734,7 +1821,7 @@ async function exportPvoVideo() {
     setStatus(`Export failed · ${error.message}`);
   } finally {
     exporting = false;
-    refs.exportPvoButton.textContent = "Export PVO video";
+    refs.exportPvoButton.textContent = "Export .pvo";
     renderExportState();
   }
 }

@@ -12,6 +12,7 @@ const mime = {
   ".svg": "image/svg+xml",
   ".mp4": "video/mp4",
   ".mov": "video/quicktime",
+  ".pvo": "application/vnd.pvo",
   ".md": "text/markdown; charset=utf-8",
 };
 
