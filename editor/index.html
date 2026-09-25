@@ -10,7 +10,46 @@
     <link rel="stylesheet" href="./restyle-theme.css" />
   </head>
   <body>
+    <section class="mobile-capture" id="mobileCapture" aria-label="Mobile camera">
+      <div class="capture-stage" id="captureStage" data-ratio="9:16">
+        <video id="cameraPreview" autoplay muted playsinline></video>
+        <div class="capture-grid" id="captureGrid" aria-hidden="true"></div>
+        <button class="capture-placeholder" id="mobileStartCameraButton" type="button">
+          <span class="capture-placeholder-icon" aria-hidden="true">●</span>
+          <strong>Open camera</strong>
+          <span>Tap to frame your next PVO</span>
+        </button>
+
+        <div class="capture-topbar">
+          <button class="capture-round-button" id="captureCloseButton" type="button" aria-label="Pause camera">×</button>
+          <div class="capture-brand"><strong>Restyle</strong><span>PVO camera</span></div>
+        </div>
+
+        <div class="capture-side-tools" aria-label="Camera tools">
+          <button id="cameraFlipButton" type="button" aria-label="Flip camera"><span aria-hidden="true">↻</span><small>Flip</small></button>
+          <button id="captureGridButton" type="button" aria-label="Toggle camera grid" aria-pressed="false"><span aria-hidden="true">▦</span><small>Grid</small></button>
+          <button id="captureRatioButton" type="button" aria-label="Change camera ratio"><span aria-hidden="true">9:16</span><small>Ratio</small></button>
+          <button id="mobileOpenEditorButton" type="button" aria-label="Open timeline editor"><span aria-hidden="true">≋</span><small>Edit</small></button>
+        </div>
+
+        <div class="capture-status" id="captureStatus" aria-live="polite">Ready</div>
+        <div class="capture-duration" id="captureDuration">00:00</div>
+        <div class="capture-mode"><span>15s</span><span>60s</span><strong>VIDEO</strong></div>
+
+        <div class="capture-bottom">
+          <button class="capture-library-button" id="mobileMediaPickerButton" type="button" aria-label="Choose media from library">
+            <span aria-hidden="true">▧</span><small>Library</small>
+          </button>
+          <button class="capture-record-button" id="captureRecordButton" type="button" aria-label="Start recording" aria-pressed="false"><span></span></button>
+          <button class="capture-edit-button" id="mobileOpenEditorBottomButton" type="button" aria-label="Open timeline editor">
+            <span aria-hidden="true">→</span><small>Edit</small>
+          </button>
+        </div>
+      </div>
+    </section>
+
     <header class="app-header">
+      <button class="mobile-editor-back" id="mobileEditorBackButton" type="button" aria-label="Return to camera">‹</button>
       <div class="title-block" aria-label="PVO editor"><strong>PVO</strong></div>
       <div class="project-name"><span id="projectName">Untitled experience</span><small><span id="projectDuration">00:00.0</span> · saved locally</small></div>
       <div class="header-actions">
@@ -25,6 +64,7 @@
         <div class="panel-tabs" role="tablist" aria-label="Editor tools">
           <button id="mediaTab" type="button" role="tab" aria-selected="true" aria-controls="mediaPanel">Media</button>
           <button id="componentsTab" type="button" role="tab" aria-selected="false" aria-controls="componentsPanel" tabindex="-1">Components</button>
+          <button class="mobile-panel-close" id="mobilePanelCloseButton" type="button" aria-label="Close panel">×</button>
         </div>
 
         <section id="mediaPanel" role="tabpanel" aria-labelledby="mediaTab">
@@ -79,8 +119,9 @@
             <span>Space to play · drag UI on the canvas</span>
           </div>
         </div>
+      </main>
 
-        <section class="timeline-panel" aria-label="Video timeline">
+      <section class="timeline-panel" aria-label="Video timeline">
           <div class="timeline-toolbar">
             <div><h2 id="timelineTitle">Main timeline</h2><span id="timelineSubtitle">All media and UI layers</span></div>
             <div class="timeline-actions">
@@ -129,8 +170,7 @@
               <span>Preview</span>
             </a>
           </nav>
-        </section>
-      </main>
+      </section>
     </div>
 
     <dialog class="component-dialog" id="componentDialog" aria-labelledby="componentDialogTitle">

@@ -34,6 +34,14 @@ const refs = {
   playhead: $("#playhead"), status: $("#status"), saveStatus: $("#saveStatus"), videoInput: $("#videoInput"),
   previewBack: $("#previewBackButton"), previewPlay: $("#previewPlayButton"), previewForward: $("#previewForwardButton"),
   timelineZoom: $("#timelineZoom"),
+  mobileCapture: $("#mobileCapture"), captureStage: $("#captureStage"), cameraPreview: $("#cameraPreview"),
+  captureGrid: $("#captureGrid"), mobileStartCameraButton: $("#mobileStartCameraButton"),
+  captureCloseButton: $("#captureCloseButton"), cameraFlipButton: $("#cameraFlipButton"),
+  captureGridButton: $("#captureGridButton"), captureRatioButton: $("#captureRatioButton"),
+  mobileOpenEditorButton: $("#mobileOpenEditorButton"), mobileOpenEditorBottomButton: $("#mobileOpenEditorBottomButton"),
+  mobileMediaPickerButton: $("#mobileMediaPickerButton"), captureRecordButton: $("#captureRecordButton"),
+  captureStatus: $("#captureStatus"), captureDuration: $("#captureDuration"),
+  mobileEditorBackButton: $("#mobileEditorBackButton"), mobilePanelCloseButton: $("#mobilePanelCloseButton"),
 };
 
 const canvasRatios = {
@@ -144,6 +152,13 @@ let existingCardPolishVersion = 1;
 let restoredCardPolishCount = 0;
 let existingComponentPolishVersion = 1;
 let restoredComponentPolishCount = 0;
+let mobileCameraStream = null;
+let mobileRecorder = null;
+let mobileRecorderChunks = [];
+let mobileRecordingStartedAt = 0;
+let mobileRecordingTimer = null;
+let mobileFacingMode = "environment";
+let mobileCaptureRatio = "9:16";
 
 const projectDatabaseName = "pvo-editor";
 const projectDatabaseVersion = 1;
@@ -982,9 +997,163 @@ function setPanelTab(name) {
 
 function openPanelFromBottom(name) {
   setPanelTab(name);
-  if (window.matchMedia("(max-width: 760px)").matches) {
-    document.querySelector(".component-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (isMobileLayout()) document.body.classList.add("mobile-edit-mode", "mobile-panel-open");
+}
+
+function isMobileLayout() {
+  return window.matchMedia("(max-width: 760px)").matches;
+}
+
+function openMobileEditor() {
+  if (!isMobileLayout()) return;
+  document.body.classList.add("mobile-edit-mode");
+  document.body.classList.remove("mobile-panel-open");
+  if (!mobileRecorder || mobileRecorder.state === "inactive") stopMobileCamera();
+  window.requestAnimationFrame(positionCanvasFrame);
+}
+
+function closeMobileEditor() {
+  if (!isMobileLayout()) return;
+  document.body.classList.remove("mobile-edit-mode", "mobile-panel-open");
+  refs.captureStatus.textContent = mobileCameraStream ? "Ready" : "Tap Open camera to begin";
+}
+
+function updateCaptureDuration() {
+  if (!mobileRecordingStartedAt) {
+    refs.captureDuration.textContent = "00:00";
+    return;
   }
+  const seconds = Math.max(0, Math.floor((Date.now() - mobileRecordingStartedAt) / 1000));
+  refs.captureDuration.textContent = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+function stopMobileCamera() {
+  if (mobileRecorder && mobileRecorder.state !== "inactive") mobileRecorder.stop();
+  if (mobileRecordingTimer) window.clearInterval(mobileRecordingTimer);
+  mobileRecordingTimer = null;
+  mobileRecordingStartedAt = 0;
+  mobileCameraStream?.getTracks().forEach((track) => track.stop());
+  mobileCameraStream = null;
+  refs.cameraPreview.srcObject = null;
+  refs.mobileStartCameraButton.hidden = false;
+  refs.captureStage.classList.remove("is-recording");
+  refs.captureRecordButton.setAttribute("aria-pressed", "false");
+  refs.captureRecordButton.setAttribute("aria-label", "Start recording");
+  updateCaptureDuration();
+}
+
+async function startMobileCamera() {
+  if (mobileCameraStream) return mobileCameraStream;
+  if (!navigator.mediaDevices?.getUserMedia) {
+    refs.captureStatus.textContent = "Camera requires localhost or HTTPS — use Library";
+    return null;
+  }
+  refs.captureStatus.textContent = "Opening camera…";
+  try {
+    mobileCameraStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: mobileFacingMode },
+        width: { ideal: 1080 },
+        height: { ideal: 1920 },
+      },
+      audio: true,
+    });
+    refs.cameraPreview.srcObject = mobileCameraStream;
+    refs.captureStage.dataset.facing = mobileFacingMode === "user" ? "user" : "environment";
+    refs.mobileStartCameraButton.hidden = true;
+    refs.captureStatus.textContent = "Ready";
+    await refs.cameraPreview.play().catch(() => {});
+    return mobileCameraStream;
+  } catch (error) {
+    refs.captureStatus.textContent = error?.name === "NotAllowedError"
+      ? "Camera access was declined — use Library"
+      : "Camera unavailable — use Library";
+    stopMobileCamera();
+    return null;
+  }
+}
+
+function preferredRecorderOptions() {
+  if (typeof MediaRecorder === "undefined") return null;
+  const candidates = ["video/mp4;codecs=avc1.42E01E,mp4a.40.2", "video/mp4"];
+  const mimeType = candidates.find((candidate) => MediaRecorder.isTypeSupported?.(candidate));
+  return mimeType ? { mimeType } : {};
+}
+
+async function toggleMobileRecording() {
+  if (mobileRecorder && mobileRecorder.state !== "inactive") {
+    mobileRecorder.stop();
+    return;
+  }
+  const stream = await startMobileCamera();
+  const options = preferredRecorderOptions();
+  if (!stream || options === null) {
+    refs.captureStatus.textContent = "Recording is unavailable — use Library";
+    return;
+  }
+  try {
+    mobileRecorderChunks = [];
+    mobileRecorder = new MediaRecorder(stream, options);
+    mobileRecorder.addEventListener("dataavailable", (event) => {
+      if (event.data?.size) mobileRecorderChunks.push(event.data);
+    });
+    mobileRecorder.addEventListener("stop", async () => {
+      const mimeType = mobileRecorder.mimeType || mobileRecorderChunks[0]?.type || "";
+      const isMp4 = /mp4|quicktime/i.test(mimeType);
+      refs.captureStage.classList.remove("is-recording");
+      refs.captureRecordButton.setAttribute("aria-pressed", "false");
+      refs.captureRecordButton.setAttribute("aria-label", "Start recording");
+      if (mobileRecordingTimer) window.clearInterval(mobileRecordingTimer);
+      mobileRecordingTimer = null;
+      mobileRecordingStartedAt = 0;
+      updateCaptureDuration();
+      if (!isMp4) {
+        refs.captureStatus.textContent = "This browser records WebM — use Library or Safari on iPhone";
+        mobileRecorderChunks = [];
+        return;
+      }
+      refs.captureStatus.textContent = "Adding recording…";
+      const blob = new Blob(mobileRecorderChunks, { type: "video/mp4" });
+      const file = new File([blob], `PVO-${Date.now()}.mp4`, { type: "video/mp4" });
+      mobileRecorderChunks = [];
+      stopMobileCamera();
+      await importMediaFiles([file]);
+      openMobileEditor();
+    }, { once: true });
+    mobileRecorder.start(250);
+    mobileRecordingStartedAt = Date.now();
+    mobileRecordingTimer = window.setInterval(updateCaptureDuration, 250);
+    refs.captureStage.classList.add("is-recording");
+    refs.captureRecordButton.setAttribute("aria-pressed", "true");
+    refs.captureRecordButton.setAttribute("aria-label", "Stop recording");
+    refs.captureStatus.textContent = "Recording";
+    updateCaptureDuration();
+  } catch {
+    refs.captureStatus.textContent = "Recording could not start — use Library";
+  }
+}
+
+async function flipMobileCamera() {
+  if (mobileRecorder && mobileRecorder.state !== "inactive") {
+    refs.captureStatus.textContent = "Stop recording before flipping the camera";
+    return;
+  }
+  mobileFacingMode = mobileFacingMode === "environment" ? "user" : "environment";
+  const wasRunning = Boolean(mobileCameraStream);
+  stopMobileCamera();
+  if (wasRunning) await startMobileCamera();
+}
+
+function toggleCaptureGrid() {
+  const visible = refs.captureStage.classList.toggle("grid-visible");
+  refs.captureGridButton.setAttribute("aria-pressed", String(visible));
+}
+
+function cycleCaptureRatio() {
+  const ratios = ["9:16", "1:1", "16:9"];
+  mobileCaptureRatio = ratios[(ratios.indexOf(mobileCaptureRatio) + 1) % ratios.length];
+  refs.captureStage.dataset.ratio = mobileCaptureRatio;
+  refs.captureRatioButton.querySelector("span").textContent = mobileCaptureRatio;
 }
 
 function renderMediaLibrary() {
@@ -2117,12 +2286,19 @@ video.addEventListener("ended", () => {
   const localTime = clipDuration(selectedClip());
   if (!executeBranchAtLayerEnd(localTime)) advanceAtClipEnd(localTime, true);
 });
-window.addEventListener("resize", positionCanvasFrame);
+window.addEventListener("resize", () => {
+  positionCanvasFrame();
+  if (!isMobileLayout()) {
+    document.body.classList.remove("mobile-edit-mode", "mobile-panel-open");
+    stopMobileCamera();
+  }
+});
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") void flushProjectSave();
 });
 window.addEventListener("beforeunload", () => {
   void flushProjectSave();
+  stopMobileCamera();
   mediaItems.forEach((item) => URL.revokeObjectURL(item.url));
 });
 new ResizeObserver(positionCanvasFrame).observe(videoArea);
@@ -2131,9 +2307,11 @@ addComponentButtons.forEach((button) => button.addEventListener("click", () => a
 refs.splitButton.addEventListener("click", () => { try { splitAtPlayhead(); } catch { /* status already explains it */ } });
 refs.deleteClipButton.addEventListener("click", deleteSelectedClip);
 refs.sceneName.addEventListener("change", () => renameSelectedScene(refs.sceneName.value));
-refs.videoInput.addEventListener("change", (event) => {
-  void importMediaFiles([...event.target.files]);
+refs.videoInput.addEventListener("change", async (event) => {
+  const files = [...event.target.files];
+  await importMediaFiles(files);
   event.target.value = "";
+  if (files.length && isMobileLayout()) openMobileEditor();
 });
 refs.exportPvoButton.addEventListener("click", exportPvoVideo);
 refs.previewBack.addEventListener("click", () => nudgePreview(-5));
@@ -2149,6 +2327,19 @@ refs.mediaTab.addEventListener("click", () => setPanelTab("media"));
 refs.componentsTab.addEventListener("click", () => setPanelTab("components"));
 refs.bottomMediaButton.addEventListener("click", () => openPanelFromBottom("media"));
 refs.bottomComponentsButton.addEventListener("click", () => openPanelFromBottom("components"));
+refs.mobileStartCameraButton.addEventListener("click", startMobileCamera);
+refs.captureRecordButton.addEventListener("click", toggleMobileRecording);
+refs.cameraFlipButton.addEventListener("click", flipMobileCamera);
+refs.captureGridButton.addEventListener("click", toggleCaptureGrid);
+refs.captureRatioButton.addEventListener("click", cycleCaptureRatio);
+refs.mobileMediaPickerButton.addEventListener("click", () => refs.videoInput.click());
+[refs.mobileOpenEditorButton, refs.mobileOpenEditorBottomButton].forEach((button) => button.addEventListener("click", openMobileEditor));
+refs.mobileEditorBackButton.addEventListener("click", closeMobileEditor);
+refs.mobilePanelCloseButton.addEventListener("click", () => document.body.classList.remove("mobile-panel-open"));
+refs.captureCloseButton.addEventListener("click", () => {
+  stopMobileCamera();
+  refs.captureStatus.textContent = "Camera paused";
+});
 [refs.mediaTab, refs.componentsTab].forEach((tab) => tab.addEventListener("keydown", (event) => {
   if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
   event.preventDefault();
