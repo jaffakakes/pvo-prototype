@@ -21,6 +21,7 @@ const refs = {
   changeSceneToggle: $("#changeSceneToggle"), canvasRatio: $("#canvasRatio"),
   mediaStart: $("#mediaStart"), mediaStartTitle: $("#mediaStartTitle"), mediaStartMessage: $("#mediaStartMessage"),
   splitButton: $("#splitButton"), deleteClipButton: $("#deleteClipButton"),
+  bottomMediaButton: $("#bottomMediaButton"), bottomComponentsButton: $("#bottomComponentsButton"),
   mediaTab: $("#mediaTab"), componentsTab: $("#componentsTab"),
   mediaPanel: $("#mediaPanel"), componentsPanel: $("#componentsPanel"),
   mediaLibrary: $("#mediaLibrary"), mediaCount: $("#mediaCount"),
@@ -854,6 +855,7 @@ function setMediaReady(ready, copy = {}) {
   canvasFrame.hidden = !ready;
   refs.canvasRatio.disabled = !hasClips;
   refs.splitButton.disabled = !ready;
+  refs.bottomComponentsButton.disabled = !ready;
   refs.deleteClipButton.disabled = !selectedClip();
   refs.playhead.hidden = !hasClips;
   refs.sceneName.disabled = !hasSelectedClip;
@@ -876,6 +878,17 @@ function setPanelTab(name) {
   refs.componentsTab.tabIndex = showMedia ? -1 : 0;
   refs.mediaPanel.hidden = !showMedia;
   refs.componentsPanel.hidden = showMedia;
+  refs.bottomMediaButton.classList.toggle("active", showMedia);
+  refs.bottomComponentsButton.classList.toggle("active", !showMedia);
+  refs.bottomMediaButton.setAttribute("aria-pressed", String(showMedia));
+  refs.bottomComponentsButton.setAttribute("aria-pressed", String(!showMedia));
+}
+
+function openPanelFromBottom(name) {
+  setPanelTab(name);
+  if (window.matchMedia("(max-width: 760px)").matches) {
+    document.querySelector(".component-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }
 
 function renderMediaLibrary() {
@@ -1415,7 +1428,17 @@ function renderTimeline() {
     scene.textContent = clip.sceneName;
     const details = document.createElement("span");
     details.textContent = `${mediaItem(clip.mediaId)?.name || "Missing media"} · ${formatTime(clip.sourceStart)}–${formatTime(clip.sourceEnd)}`;
-    button.append(scene, details);
+    const filmstrip = document.createElement("span");
+    filmstrip.className = "clip-filmstrip";
+    for (let index = 0; index < 6; index += 1) {
+      const frame = document.createElement("i");
+      frame.style.setProperty("--frame", index);
+      filmstrip.append(frame);
+    }
+    const copy = document.createElement("span");
+    copy.className = "clip-copy";
+    copy.append(scene, details);
+    button.append(filmstrip, copy);
     button.addEventListener("click", (event) => { event.stopPropagation(); selectClip(clip.id); });
     clipTrack.append(button);
   });
@@ -1972,6 +1995,8 @@ refs.timelineView.addEventListener("change", () => setTimelineView(refs.timeline
 refs.mainTimelineButton.addEventListener("click", () => setTimelineView("main"));
 refs.mediaTab.addEventListener("click", () => setPanelTab("media"));
 refs.componentsTab.addEventListener("click", () => setPanelTab("components"));
+refs.bottomMediaButton.addEventListener("click", () => openPanelFromBottom("media"));
+refs.bottomComponentsButton.addEventListener("click", () => openPanelFromBottom("components"));
 [refs.mediaTab, refs.componentsTab].forEach((tab) => tab.addEventListener("keydown", (event) => {
   if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
   event.preventDefault();
