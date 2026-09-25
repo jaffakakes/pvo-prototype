@@ -15,7 +15,11 @@ const refs = {
   restart: document.querySelector("#restartButton"),
   play: document.querySelector("#playButton"),
   mute: document.querySelector("#muteButton"),
+  volume: document.querySelector("#volumeControl"),
   progress: document.querySelector("#progress"),
+  fullscreen: document.querySelector("#fullscreenButton"),
+  share: document.querySelector("#shareButton"),
+  endShare: document.querySelector("#endShareButton"),
   timeline: document.querySelector("#timelineLabel"),
   time: document.querySelector("#timeLabel"),
   status: document.querySelector("#status"),
@@ -34,6 +38,7 @@ let answers = new Map();
 let handledBranches = new Set();
 let renderedOverlayKey = "";
 let controlsTimer = null;
+let resumeAfterScrub = false;
 
 function sanitizeHtml(html) {
   const template = document.createElement("template");
@@ -132,22 +137,40 @@ function elapsedTime() {
   return before + Math.max(0, Math.min(clip.end - clip.start, refs.video.currentTime - clip.start));
 }
 
+function clipAtElapsedTime(value) {
+  const clips = currentTimeline?.clips || [];
+  const total = timelineDuration();
+  const targetTime = Math.max(0, Math.min(Number(value) || 0, total));
+  let cursor = 0;
+  for (let index = 0; index < clips.length; index += 1) {
+    const duration = Math.max(0, clips[index].end - clips[index].start);
+    const isLast = index === clips.length - 1;
+    if (targetTime < cursor + duration || isLast) {
+      return { index, local: Math.max(0, Math.min(duration - .01, targetTime - cursor)) };
+    }
+    cursor += duration;
+  }
+  return null;
+}
+
 function updateProgress() {
   const elapsed = elapsedTime();
   const total = timelineDuration();
   refs.progress.max = Math.max(total, 1);
   refs.progress.value = Math.min(elapsed, total);
+  refs.progress.style.setProperty("--progress", `${total ? elapsed / total * 100 : 0}%`);
   refs.time.textContent = `${formatTime(elapsed)} / ${formatTime(total)}`;
   const paused = refs.video.paused;
   refs.play.textContent = paused ? "▶" : "❚❚";
   refs.play.setAttribute("aria-label", paused ? "Play" : "Pause");
   refs.mute.textContent = refs.video.muted ? "🔇" : "🔊";
   refs.mute.setAttribute("aria-label", refs.video.muted ? "Unmute" : "Mute");
+  if (refs.volume) refs.volume.value = refs.video.muted ? 0 : refs.video.volume;
   refs.centerPlay.hidden = !paused || Boolean(awaitingComponent) || finished || switchingClip;
 }
 
 function hideControls() {
-  if (switchingClip) return;
+  if (switchingClip || refs.video.paused || finished || awaitingComponent) return;
   refs.frame.classList.remove("controls-visible");
 }
 
@@ -155,7 +178,7 @@ function showControls(sticky = false) {
   refs.frame.classList.add("controls-visible");
   window.clearTimeout(controlsTimer);
   controlsTimer = null;
-  if (!sticky) controlsTimer = window.setTimeout(hideControls, 2200);
+  if (!sticky) controlsTimer = window.setTimeout(hideControls, 2600);
 }
 
 function activeClip() {
@@ -263,6 +286,54 @@ async function loadClip(index, autoplay = false) {
       setStatus("Tap to play", false, true);
       showControls();
     });
+  }
+}
+
+async function seekToElapsed(value, autoplay = false) {
+  if (!currentTimeline || finished || awaitingComponent) return;
+  const target = clipAtElapsedTime(value);
+  if (!target) return;
+  if (target.index !== currentClipIndex) await loadClip(target.index, false);
+  const clip = activeClip();
+  if (!clip) return;
+  refs.video.currentTime = Math.min(clip.end - .01, clip.start + target.local);
+  renderedOverlayKey = "";
+  renderOverlays(true);
+  updateProgress();
+  if (autoplay) await refs.video.play().catch(() => showControls());
+}
+
+async function toggleFullscreen() {
+  try {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+    } else if (refs.frame.requestFullscreen) {
+      await refs.frame.requestFullscreen();
+    } else if (refs.video.webkitEnterFullscreen) {
+      refs.video.webkitEnterFullscreen();
+    }
+  } catch {
+    setStatus("Full screen is unavailable in this browser.", true);
+  }
+}
+
+async function shareExperience() {
+  const url = new URL(window.location.href);
+  url.hash = "";
+  const shareData = {
+    title: document.title,
+    text: "What would you choose? Play this interactive video.",
+    url: url.href,
+  };
+  try {
+    if (navigator.share) await navigator.share(shareData);
+    else {
+      await navigator.clipboard.writeText(url.href);
+      setStatus("Link copied", false, true);
+      window.setTimeout(() => setStatus(""), 1600);
+    }
+  } catch (error) {
+    if (error?.name !== "AbortError") setStatus("Could not share this link.", true);
   }
 }
 
@@ -415,6 +486,27 @@ refs.mute.addEventListener("click", () => {
   updateProgress();
   showControls();
 });
+refs.volume?.addEventListener("input", () => {
+  refs.video.volume = Number(refs.volume.value);
+  refs.video.muted = refs.video.volume === 0;
+  updateProgress();
+  showControls(true);
+});
+refs.progress.addEventListener("pointerdown", () => {
+  resumeAfterScrub = !refs.video.paused;
+  refs.video.pause();
+  showControls(true);
+});
+refs.progress.addEventListener("input", () => { void seekToElapsed(Number(refs.progress.value)); });
+refs.progress.addEventListener("change", () => {
+  const shouldResume = resumeAfterScrub;
+  resumeAfterScrub = false;
+  void seekToElapsed(Number(refs.progress.value), shouldResume);
+  showControls();
+});
+refs.fullscreen.addEventListener("click", () => { void toggleFullscreen(); });
+refs.share?.addEventListener("click", () => { void shareExperience(); });
+refs.endShare?.addEventListener("click", () => { void shareExperience(); });
 refs.video.addEventListener("click", togglePlayback);
 refs.video.addEventListener("play", () => {
   setStatus("");
@@ -448,12 +540,24 @@ refs.frame.addEventListener("focusin", () => showControls(true));
 refs.frame.addEventListener("focusout", () => showControls());
 document.addEventListener("keydown", (event) => {
   if (refs.shell.hidden) return;
-  showControls();
   const tag = event.target?.tagName;
-  if (event.code === "Space" && !["INPUT", "SELECT", "TEXTAREA", "BUTTON"].includes(tag)) {
-    event.preventDefault();
-    togglePlayback();
-  }
+  if (["INPUT", "SELECT", "TEXTAREA", "BUTTON"].includes(tag)) return;
+  const key = event.key.toLowerCase();
+  if (![" ", "arrowleft", "arrowright", "m", "f", "r"].includes(key)) return;
+  event.preventDefault();
+  showControls();
+  if (key === " ") togglePlayback();
+  else if (key === "arrowleft") void seekToElapsed(elapsedTime() - 5, !refs.video.paused);
+  else if (key === "arrowright") void seekToElapsed(elapsedTime() + 5, !refs.video.paused);
+  else if (key === "m") refs.mute.click();
+  else if (key === "f") void toggleFullscreen();
+  else if (key === "r") void restartExperience(true);
+});
+document.addEventListener("fullscreenchange", () => {
+  const expanded = Boolean(document.fullscreenElement);
+  refs.fullscreen.textContent = expanded ? "✕" : "⛶";
+  refs.fullscreen.setAttribute("aria-label", expanded ? "Exit full screen" : "Enter full screen");
+  showControls();
 });
 
 ["dragenter", "dragover"].forEach((eventName) => refs.dropZone?.addEventListener(eventName, (event) => {

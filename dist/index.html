@@ -29,7 +29,7 @@
     <meta name="twitter:image" content="https://pvo-interactive-demo.ngumajaphet.chatgpt.site/og.png" />
     <link rel="stylesheet" href="./player/styles.css" />
   </head>
-  <body data-pvo-src="./demo.pvo" data-autoplay="true">
+  <body data-pvo-src="./demo.pvo" data-autoplay="true" data-shareable="true">
     <main>
       <section class="empty-state" id="emptyState" hidden>
         <div class="drop-zone" id="dropZone"><p>Video unavailable.</p><input id="pvoInput" type="file" hidden /></div>
@@ -41,18 +41,36 @@
           <div class="overlay-layer" id="overlayLayer"></div>
           <button class="center-play" id="centerPlayButton" type="button" aria-label="Play" hidden>▶</button>
 
+          <div class="player-topbar">
+            <a class="player-brand" href="/editor/" aria-label="Create with Restyle">Restyle</a>
+            <button class="top-share-button" id="shareButton" type="button" aria-label="Share this interactive video">Share</button>
+          </div>
+
           <div class="end-screen" id="endScreen" hidden>
-            <button class="restart-experience" id="endRestartButton" type="button">Restart</button>
+            <div class="end-card">
+              <span class="end-eyebrow">Made with Restyle</span>
+              <h1>What would your friend choose?</h1>
+              <p>Send them the same interactive story and compare your answers.</p>
+              <div class="end-actions">
+                <button class="share-experience" id="endShareButton" type="button">Share with a friend</button>
+                <button class="restart-experience" id="endRestartButton" type="button">Watch again</button>
+              </div>
+              <a class="create-link" href="/editor/">Make your own interactive video</a>
+            </div>
           </div>
 
           <div class="player-controls" id="playerControls">
-            <button class="control-button" id="playButton" type="button" aria-label="Play">▶</button>
-            <div class="progress-block">
-              <progress id="progress" max="1" value="0"></progress>
-              <div><span id="timelineLabel">Main timeline</span><span id="timeLabel">00:00 / 00:00</span></div>
+            <input class="progress-control" id="progress" type="range" min="0" max="1" value="0" step="0.01" aria-label="Video progress" />
+            <div class="control-row">
+              <button class="control-button" id="playButton" type="button" aria-label="Play">▶</button>
+              <span class="time-label" id="timeLabel">00:00 / 00:00</span>
+              <span id="timelineLabel" hidden>Main timeline</span>
+              <span class="control-spacer"></span>
+              <button class="control-button" id="muteButton" type="button" aria-label="Unmute">🔇</button>
+              <input class="volume-control" id="volumeControl" type="range" min="0" max="1" value="1" step="0.05" aria-label="Volume" />
+              <button class="control-button restart-button" id="restartButton" type="button" aria-label="Restart">↻</button>
+              <button class="control-button fullscreen-button" id="fullscreenButton" type="button" aria-label="Enter full screen">⛶</button>
             </div>
-            <button class="control-button" id="muteButton" type="button" aria-label="Unmute">🔇</button>
-            <button class="control-button restart-button" id="restartButton" type="button" aria-label="Restart">↻</button>
           </div>
 
           <p class="player-status is-visible" id="status" aria-live="polite">Loading…</p>
