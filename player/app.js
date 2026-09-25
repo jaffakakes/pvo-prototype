@@ -272,6 +272,7 @@ function branchAtCurrentTime() {
     .find((item) => local >= Number(item.presentation?.end || 0) - 0.04);
   if (!component) return false;
   if (!answers.has(component.id)) {
+    if (awaitingComponent?.id === component.id) return true;
     awaitingComponent = component;
     refs.video.pause();
     const clip = activeClip();
@@ -377,9 +378,11 @@ refs.overlay.addEventListener("pvo-answer", (event) => {
   const component = manifest?.components?.find((item) => item.id === event.detail.componentId);
   if (!component) return;
   answers.set(component.id, event.detail.answer);
-  renderOverlays(true);
   if (awaitingComponent?.id === component.id) void startSelectedBranch(component);
-  else setStatus(`${event.detail.answer ? "Yes" : "No"} selected · playback will branch when this component ends.`);
+  else {
+    renderOverlays(true);
+    setStatus(`${event.detail.answer ? "Yes" : "No"} selected · playback will branch when this component ends.`);
+  }
 });
 
 ["dragenter", "dragover"].forEach((eventName) => refs.dropZone.addEventListener(eventName, (event) => {
