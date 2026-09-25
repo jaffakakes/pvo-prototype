@@ -1,5 +1,5 @@
 # PVO Editor
 
-The editor has been reset to a blank starting point. Its current page only displays “Hello world”.
+The editor is a blank starting point. Its current page has no user interface.
 
 The PVO SDK, format implementation, and player remain separate and unchanged.
