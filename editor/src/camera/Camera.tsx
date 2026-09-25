@@ -1,3 +1,4 @@
+import { cx } from "../styles";
 import { useEffect, useRef } from "react";
 import { Icon } from "../lib/icons";
 import { clamp, fmt, round2 } from "../lib/format";
@@ -99,40 +100,40 @@ export function Camera() {
   const hint = s.countdown ? "Tap to cancel" : s.recording ? "Release or tap to stop" : s.replacing != null ? "Record the new take" : count ? "Tap or hold to add another clip" : "Tap or hold to record";
 
   return <>
-    <div className="camWrap">
-      <div className="viewfinder">
-        {s.camOn ? <video ref={videoRef} className="live" autoPlay muted playsInline style={{ transform: s.facing === "user" ? "scaleX(-1)" : undefined, filter: FX[s.liveFx].css }} /> :
-          <div className="fallback" style={{ filter: FX[s.liveFx].css }}><span className="fallbackIco"><Icon name="camera" size={30} /></span><h2>Camera is off</h2><p>Allow access to record, or tap the shutter to make demo clips.</p><button className="press" onClick={startCam}>Allow camera</button></div>}
-        <div className="topScrim" />
-        <div className="camTop"><div className="segbar" aria-label={`${fmt(used + live)} of ${fmt(s.mode)} recorded`}>
-          {activeClips.map(c => <span key={c.id} className="seg" style={{ width: `${Math.max(0, (c.out - c.in) / c.speed / s.mode * 100)}%` }} />)}
-          {s.recording && <span className="seg segLive" style={{ width: `${live / s.mode * 100}%` }} />}
-        </div><div className="recLine">{s.recording && <span className="recPill"><i />REC {fmt(live)}</span>}<span className="timeNote">{fmt(used + live)} / {fmt(s.mode)}</span></div></div>
-        <div className="camControls"><button className="sq42" onClick={startOver} aria-label="Start over" title="Start over" style={{ opacity: !count && s.replacing == null ? .5 : 1 }}><Icon name="close" /></button>
-          <button className="soundPill" onClick={() => s.patch({ sheet: "sound" })}><Icon name="music" size={15} /> <span>{s.sound ? SOUNDS[s.sound].name : "Add sound"}</span></button>
-          <button className="sq42" onClick={flip} aria-label="Flip camera" title="Flip camera"><Icon name="flip" /></button></div>
-        <div className="rightRail">
-          <button className="rail" data-on={s.flash} onClick={toggleFlash} aria-label="Flash" title="Flash"><Icon name="flash" size={18} /></button>
-          <button className="rail" data-on={s.timer > 0} onClick={() => { if (s.recording) return; const timer = s.timer === 0 ? 3 : s.timer === 3 ? 10 : 0; s.patch({ timer }); s.notify(timer ? `Timer ${timer}s` : "Timer off"); }} aria-label="Timer" title="Timer"><Icon name="timer" size={18} />{s.timer > 0 && <span className="railBadge">{s.timer}s</span>}</button>
-          <button className="rail" data-on={s.speedRow || s.recSpeed !== 1} onClick={() => { if (!s.recording) s.patch({ speedRow: !s.speedRow }); }} aria-label="Speed" title="Speed"><Icon name="speed" size={18} /></button>
-          <button className="rail" data-on={s.liveFx > 0} onClick={() => s.patch({ sheet: "fx", fxScope: "camera" })} aria-label="Filters" title="Filters"><Icon name="filters" size={18} /></button>
+    <div className={cx("camWrap")}>
+      <div className={cx("viewfinder")}>
+        {s.camOn ? <video ref={videoRef} className={cx("live")} autoPlay muted playsInline style={{ transform: s.facing === "user" ? "scaleX(-1)" : undefined, filter: FX[s.liveFx].css }} /> :
+          <div className={cx("fallback")} style={{ filter: FX[s.liveFx].css }}><span className={cx("fallbackIco")}><Icon name="camera" size={30} /></span><h2>Camera is off</h2><p>Allow access to record, or tap the shutter to make demo clips.</p><button className={cx("press")} onClick={startCam}>Allow camera</button></div>}
+        <div className={cx("topScrim")} />
+        <div className={cx("camTop")}><div className={cx("segbar")} aria-label={`${fmt(used + live)} of ${fmt(s.mode)} recorded`}>
+          {activeClips.map(c => <span key={c.id} className={cx("seg")} style={{ width: `${Math.max(0, (c.out - c.in) / c.speed / s.mode * 100)}%` }} />)}
+          {s.recording && <span className={cx("seg segLive")} style={{ width: `${live / s.mode * 100}%` }} />}
+        </div><div className={cx("recLine")}>{s.recording && <span className={cx("recPill")}><i />REC {fmt(live)}</span>}<span className={cx("timeNote")}>{fmt(used + live)} / {fmt(s.mode)}</span></div></div>
+        <div className={cx("camControls")}><button className={cx("sq42")} onClick={startOver} aria-label="Start over" title="Start over" style={{ opacity: !count && s.replacing == null ? .5 : 1 }}><Icon name="close" /></button>
+          <button className={cx("soundPill")} onClick={() => s.patch({ sheet: "sound" })}><Icon name="music" size={15} /> <span>{s.sound ? SOUNDS[s.sound].name : "Add sound"}</span></button>
+          <button className={cx("sq42")} onClick={flip} aria-label="Flip camera" title="Flip camera"><Icon name="flip" /></button></div>
+        <div className={cx("rightRail")}>
+          <button className={cx("rail")} data-on={s.flash} onClick={toggleFlash} aria-label="Flash" title="Flash"><Icon name="flash" size={18} /></button>
+          <button className={cx("rail")} data-on={s.timer > 0} onClick={() => { if (s.recording) return; const timer = s.timer === 0 ? 3 : s.timer === 3 ? 10 : 0; s.patch({ timer }); s.notify(timer ? `Timer ${timer}s` : "Timer off"); }} aria-label="Timer" title="Timer"><Icon name="timer" size={18} />{s.timer > 0 && <span className={cx("railBadge")}>{s.timer}s</span>}</button>
+          <button className={cx("rail")} data-on={s.speedRow || s.recSpeed !== 1} onClick={() => { if (!s.recording) s.patch({ speedRow: !s.speedRow }); }} aria-label="Speed" title="Speed"><Icon name="speed" size={18} /></button>
+          <button className={cx("rail")} data-on={s.liveFx > 0} onClick={() => s.patch({ sheet: "fx", fxScope: "camera" })} aria-label="Filters" title="Filters"><Icon name="filters" size={18} /></button>
         </div>
-        {s.replacing != null && <div className="replacing">Replacing clip {s.clips.findIndex(c => c.id === s.replacing) + 1}<button onClick={() => s.patch({ replacing: null, screen: "editor" })} aria-label="Cancel replace"><Icon name="close" size={12} /></button></div>}
-        {!!last && !s.recording && s.replacing == null && <button className="dock" onClick={() => s.patch({ screen: "editor", sel: -1, t: 0 })} aria-label="Open editor"><span className="dockThumb" style={{ background: last.color }}>
+        {s.replacing != null && <div className={cx("replacing")}>Replacing clip {s.clips.findIndex(c => c.id === s.replacing) + 1}<button onClick={() => s.patch({ replacing: null, screen: "editor" })} aria-label="Cancel replace"><Icon name="close" size={12} /></button></div>}
+        {!!last && !s.recording && s.replacing == null && <button className={cx("dock")} onClick={() => s.patch({ screen: "editor", sel: -1, t: 0 })} aria-label="Open editor"><span className={cx("dockThumb")} style={{ background: last.color }}>
           {last.url && <video src={`${last.url}#t=${last.in.toFixed(1)}`} muted playsInline style={{ filter: FX[last.fx].css, transform: last.mirror ? "scaleX(-1)" : undefined }} />}
-          <span className="dockEdit">EDIT</span><span className="dockCount">{count}</span></span><span className="dockCaption">Open editor</span></button>}
-        <div className="camBottom">
-          {s.speedRow && !s.recording && <div className="speedRow">{([.3, .5, 1, 2, 3] as const).map(speed => <button key={speed} data-on={s.recSpeed === speed} onClick={() => s.patch({ recSpeed: speed, speedRow: false })}>{speed}x</button>)}</div>}
-          <div className="modeRow">{([15, 60, 180] as const).map(mode => <button key={mode} data-on={s.mode === mode} data-disabled={used > mode} onClick={() => changeMode(mode)}>{mode === 15 ? "15s" : mode === 60 ? "1m" : "3m"}</button>)}</div>
-          <div className="shutterRow"><button className="sideAction" onClick={() => count && s.replacing == null ? removeLast() : uploadRef.current?.click()} aria-label={count && s.replacing == null ? "Undo last take" : "Upload video"}><span className="side50 press"><Icon name={count && s.replacing == null ? "undoTake" : "upload"} size={22} /></span><span className="sideLabel">{count && s.replacing == null ? "Undo" : "Upload"}</span></button>
-            <button className="shutter" data-rec={s.recording} onPointerDown={onShutterDown} onPointerUp={onShutterUp} onPointerCancel={onShutterUp} aria-label={s.recording ? "Stop recording" : "Record"}><span className="ring" /><svg width="88" height="88" viewBox="0 0 88 88"><circle cx="44" cy="44" r="41" fill="none" stroke="#FF9FBC" strokeWidth="5" strokeLinecap="round" strokeDasharray={`${pct * (2 * Math.PI * 41)} ${2 * Math.PI * 41}`} transform="rotate(-90 44 44)" /></svg><span className="core" /></button>
-            <button className="sideAction" onClick={() => s.patch({ sheet: "fx", fxScope: "camera" })}><span className="side50 press"><Icon name="sparkle" size={22} /></span><span className="sideLabel">{s.liveFx ? FX[s.liveFx].name : "Effects"}</span></button></div>
-          <span className="camHint">{hint}</span>
+          <span className={cx("dockEdit")}>EDIT</span><span className={cx("dockCount")}>{count}</span></span><span className={cx("dockCaption")}>Open editor</span></button>}
+        <div className={cx("camBottom")}>
+          {s.speedRow && !s.recording && <div className={cx("speedRow")}>{([.3, .5, 1, 2, 3] as const).map(speed => <button key={speed} data-on={s.recSpeed === speed} onClick={() => s.patch({ recSpeed: speed, speedRow: false })}>{speed}x</button>)}</div>}
+          <div className={cx("modeRow")}>{([15, 60, 180] as const).map(mode => <button key={mode} data-on={s.mode === mode} data-disabled={used > mode} onClick={() => changeMode(mode)}>{mode === 15 ? "15s" : mode === 60 ? "1m" : "3m"}</button>)}</div>
+          <div className={cx("shutterRow")}><button className={cx("sideAction")} onClick={() => count && s.replacing == null ? removeLast() : uploadRef.current?.click()} aria-label={count && s.replacing == null ? "Undo last take" : "Upload video"}><span className={cx("side50 press")}><Icon name={count && s.replacing == null ? "undoTake" : "upload"} size={22} /></span><span className={cx("sideLabel")}>{count && s.replacing == null ? "Undo" : "Upload"}</span></button>
+            <button className={cx("shutter")} data-rec={s.recording} onPointerDown={onShutterDown} onPointerUp={onShutterUp} onPointerCancel={onShutterUp} aria-label={s.recording ? "Stop recording" : "Record"}><span className={cx("ring")} /><svg width="88" height="88" viewBox="0 0 88 88"><circle cx="44" cy="44" r="41" fill="none" stroke="#FF9FBC" strokeWidth="5" strokeLinecap="round" strokeDasharray={`${pct * (2 * Math.PI * 41)} ${2 * Math.PI * 41}`} transform="rotate(-90 44 44)" /></svg><span className={cx("core")} /></button>
+            <button className={cx("sideAction")} onClick={() => s.patch({ sheet: "fx", fxScope: "camera" })}><span className={cx("side50 press")}><Icon name="sparkle" size={22} /></span><span className={cx("sideLabel")}>{s.liveFx ? FX[s.liveFx].name : "Effects"}</span></button></div>
+          <span className={cx("camHint")}>{hint}</span>
         </div>
-        {s.countdown > 0 && <div className="countdown" aria-live="assertive">{s.countdown}</div>}
+        {s.countdown > 0 && <div className={cx("countdown")} aria-live="assertive">{s.countdown}</div>}
       </div>
     </div>
-    <footer className="camFoot"><span className="brand"><span className="brandMark"><img src="restyle-mark.png" alt="" /></span><span>restyle</span></span><span>{count ? `${count} clip${count === 1 ? "" : "s"} · ${fmt(total(s.clips))}` : "No clips yet"}</span></footer>
+    <footer className={cx("camFoot")}><span className={cx("brand")}><span className={cx("brandMark")}><img src="restyle-mark.png" alt="" /></span><span>restyle</span></span><span>{count ? `${count} clip${count === 1 ? "" : "s"} · ${fmt(total(s.clips))}` : "No clips yet"}</span></footer>
     <input ref={uploadRef} type="file" accept="video/*" multiple hidden onChange={e => upload(e.target.files)} />
   </>;
 }

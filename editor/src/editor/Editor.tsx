@@ -1,3 +1,4 @@
+import { cx } from "../styles";
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { Icon } from "../lib/icons";
@@ -89,19 +90,19 @@ function Preview() {
   };
   const textUp = () => { const d = drag.current; drag.current = null; if (d && !d.moved) s.patch({ sheet: "text" }); };
 
-  return <div className="previewArea"><div ref={boxRef} className="pvBox" style={{ width: bw, height: bh }}>
-    {clip?.url ? <video ref={videoRef} className="pvVideo" playsInline style={{ filter: FX[clip.fx].css, transform: `scale(${clip.mirror ? -clip.zoom : clip.zoom},${clip.zoom})` }} /> :
-      <div className="pvFallback" style={{ background: `linear-gradient(160deg,${clip?.color ?? "#15151C"},#15151C)`, filter: FX[clip?.fx ?? 0].css }}><img src="restyle-mark.png" alt="" /></div>}
-    {s.texts.filter(x => s.t >= x.start && s.t <= x.end).map(x => <button key={x.id} className="textOverlay" onPointerDown={e => textDown(e, x)} onPointerMove={textMove} onPointerUp={textUp} style={{ left: `${x.x}%`, top: `${x.y}%`, background: TEXT_COLORS[x.color].bg, color: TEXT_COLORS[x.color].fg, fontSize: fs, padding: `${fs * .2}px ${fs * .65}px` }}>{x.text}</button>)}
-    <span className="tag pvTag"><i />Clip {(located?.i ?? 0) + 1} · {clip ? dur(clip).toFixed(1) : "0.0"}s</span>
+  return <div className={cx("previewArea")}><div ref={boxRef} className={cx("pvBox")} style={{ width: bw, height: bh }}>
+    {clip?.url ? <video ref={videoRef} className={cx("pvVideo")} playsInline style={{ filter: FX[clip.fx].css, transform: `scale(${clip.mirror ? -clip.zoom : clip.zoom},${clip.zoom})` }} /> :
+      <div className={cx("pvFallback")} style={{ background: `linear-gradient(160deg,${clip?.color ?? "#15151C"},#15151C)`, filter: FX[clip?.fx ?? 0].css }}><img src="restyle-mark.png" alt="" /></div>}
+    {s.texts.filter(x => s.t >= x.start && s.t <= x.end).map(x => <button key={x.id} className={cx("textOverlay")} onPointerDown={e => textDown(e, x)} onPointerMove={textMove} onPointerUp={textUp} style={{ left: `${x.x}%`, top: `${x.y}%`, background: TEXT_COLORS[x.color].bg, color: TEXT_COLORS[x.color].fg, fontSize: fs, padding: `${fs * .2}px ${fs * .65}px` }}>{x.text}</button>)}
+    <span className={cx("tag pvTag")}><i />Clip {(located?.i ?? 0) + 1} · {clip ? dur(clip).toFixed(1) : "0.0"}s</span>
   </div></div>;
 }
 
 function Transport() {
   const s = useCapture();
-  return <div className="transport"><div className="transportTime">{fmt(s.t)} <span>/ {fmt(total(s.clips))}</span></div>
-    <button className="playBtn press" onClick={() => s.patch({ playing: !s.playing, t: s.t >= total(s.clips) ? 0 : s.t })} aria-label={s.playing ? "Pause" : "Play"}><Icon name={s.playing ? "pause" : "play"} size={s.playing ? 18 : 20} /></button>
-    <div className="transportRight"><button onClick={s.undo} disabled={!s.past.length} aria-label="Undo"><Icon name="undo" size={14} /></button><button onClick={s.redo} disabled={!s.future.length} aria-label="Redo"><Icon name="redo" size={14} /></button><button onClick={() => document.querySelector<HTMLElement>(".pvBox")?.requestFullscreen?.()} aria-label="Full screen"><Icon name="fullscreen" size={14} /></button></div>
+  return <div className={cx("transport")}><div className={cx("transportTime")}>{fmt(s.t)} <span>/ {fmt(total(s.clips))}</span></div>
+    <button className={cx("playBtn press")} onClick={() => s.patch({ playing: !s.playing, t: s.t >= total(s.clips) ? 0 : s.t })} aria-label={s.playing ? "Pause" : "Play"}><Icon name={s.playing ? "pause" : "play"} size={s.playing ? 18 : 20} /></button>
+    <div className={cx("transportRight")}><button onClick={s.undo} disabled={!s.past.length} aria-label="Undo"><Icon name="undo" size={14} /></button><button onClick={s.redo} disabled={!s.future.length} aria-label="Redo"><Icon name="redo" size={14} /></button><button onClick={() => document.querySelector<HTMLElement>(".pvBox")?.requestFullscreen?.()} aria-label="Full screen"><Icon name="fullscreen" size={14} /></button></div>
   </div>;
 }
 
@@ -166,18 +167,18 @@ function Timeline() {
     state.patch({ trim: null, t: clamp(state.t - shift / PPS, 0, total(state.clips)) });
   };
 
-  return <div ref={timelineRef} className="tl" onPointerDown={scrubDown} onPointerMove={scrubMove} onPointerUp={scrubUp}>
-    <div className="strip" style={{ left: stripLeft(s.t, trimShift), width: LEAD + length * PPS + 240 }}>
-      {ticks.map(k => <span key={k} className="tick" style={{ left: LEAD + k * PPS }}>{k % 2 ? "·" : fmt(k)}</span>)}
-      <button className="mute" style={{ left: 8 }} onPointerDown={e => e.stopPropagation()} onClick={() => { s.edit({ muted: !s.muted }); s.notify(s.muted ? "Clip audio on" : "Clip audio off"); }} aria-label="Clip audio"><Icon name={s.muted ? "muted" : "speaker"} size={18} /></button>
-      <div className="tlClips" style={{ left: LEAD }}>{s.clips.map((clip, i) => <button key={clip.id} className="tlClip" data-index={i} data-sel={s.sel === i} style={{ width: dur(clip) * PPS, background: `linear-gradient(160deg,${clip.color},#15151C)` }} onClick={() => { if (!ignoreClick.current) s.patch({ sel: i, orb: false }); }}>
+  return <div ref={timelineRef} className={cx("tl")} onPointerDown={scrubDown} onPointerMove={scrubMove} onPointerUp={scrubUp}>
+    <div className={cx("strip")} style={{ left: stripLeft(s.t, trimShift), width: LEAD + length * PPS + 240 }}>
+      {ticks.map(k => <span key={k} className={cx("tick")} style={{ left: LEAD + k * PPS }}>{k % 2 ? "·" : fmt(k)}</span>)}
+      <button className={cx("mute")} style={{ left: 8 }} onPointerDown={e => e.stopPropagation()} onClick={() => { s.edit({ muted: !s.muted }); s.notify(s.muted ? "Clip audio on" : "Clip audio off"); }} aria-label="Clip audio"><Icon name={s.muted ? "muted" : "speaker"} size={18} /></button>
+      <div className={cx("tlClips")} style={{ left: LEAD }}>{s.clips.map((clip, i) => <button key={clip.id} className={cx("tlClip")} data-index={i} data-sel={s.sel === i} style={{ width: dur(clip) * PPS, background: `linear-gradient(160deg,${clip.color},#15151C)` }} onClick={() => { if (!ignoreClick.current) s.patch({ sel: i, orb: false }); }}>
         {clip.url && <video src={`${clip.url}#t=${(Math.round(clip.in * 2) / 2).toFixed(1)}`} muted playsInline style={{ filter: FX[clip.fx].css, transform: clip.mirror ? "scaleX(-1)" : undefined }} />}
-        {dur(clip) * PPS > 46 && <span className="clipLen" style={{ left: s.sel === i ? 18 : 6 }}>{dur(clip).toFixed(1)}s</span>}
-        {s.sel === i && <><span className="handle handleL" onPointerDown={e => trimDown(e, i, "l")} onPointerMove={trimMove} onPointerUp={trimUp} /><span className="handle handleR" onPointerDown={e => trimDown(e, i, "r")} onPointerMove={trimMove} onPointerUp={trimUp} /></>}
-      </button>)}<button className="addClip" onPointerDown={e => e.stopPropagation()} onClick={() => s.patch({ screen: "camera", sel: -1, playing: false })} aria-label="Add clip"><Icon name="plus" size={16} /></button></div>
-      <div className="audioTrack" style={{ left: LEAD, width: Math.max(40, length * PPS), opacity: s.muted && !s.sound ? .4 : 1 }}><span>♪ {s.sound ? ["", "Summer Groove", "Night Drive", "Hype Mode", "Soft Focus"][s.sound] : "original sound"}{s.muted && !s.sound ? " · muted" : ""}</span></div>
-      {s.texts.length ? s.texts.map(x => <button key={x.id} className="textBar" style={{ left: LEAD + x.start * PPS, width: Math.max(24, (x.end - x.start) * PPS), background: TEXT_COLORS[x.color].bg, color: TEXT_COLORS[x.color].fg }} onPointerDown={e => e.stopPropagation()} onClick={() => s.patch({ sheet: "text" })}>{x.text}</button>) : <button className="textAdd" style={{ left: LEAD, width: Math.max(140, length * PPS) }} onPointerDown={e => e.stopPropagation()} onClick={() => s.patch({ sheet: "text" })}>＋ Add text</button>}
-    </div><div className="playhead" />
+        {dur(clip) * PPS > 46 && <span className={cx("clipLen")} style={{ left: s.sel === i ? 18 : 6 }}>{dur(clip).toFixed(1)}s</span>}
+        {s.sel === i && <><span className={cx("handle handleL")} onPointerDown={e => trimDown(e, i, "l")} onPointerMove={trimMove} onPointerUp={trimUp} /><span className={cx("handle handleR")} onPointerDown={e => trimDown(e, i, "r")} onPointerMove={trimMove} onPointerUp={trimUp} /></>}
+      </button>)}<button className={cx("addClip")} onPointerDown={e => e.stopPropagation()} onClick={() => s.patch({ screen: "camera", sel: -1, playing: false })} aria-label="Add clip"><Icon name="plus" size={16} /></button></div>
+      <div className={cx("audioTrack")} style={{ left: LEAD, width: Math.max(40, length * PPS), opacity: s.muted && !s.sound ? .4 : 1 }}><span>♪ {s.sound ? ["", "Summer Groove", "Night Drive", "Hype Mode", "Soft Focus"][s.sound] : "original sound"}{s.muted && !s.sound ? " · muted" : ""}</span></div>
+      {s.texts.length ? s.texts.map(x => <button key={x.id} className={cx("textBar")} style={{ left: LEAD + x.start * PPS, width: Math.max(24, (x.end - x.start) * PPS), background: TEXT_COLORS[x.color].bg, color: TEXT_COLORS[x.color].fg }} onPointerDown={e => e.stopPropagation()} onClick={() => s.patch({ sheet: "text" })}>{x.text}</button>) : <button className={cx("textAdd")} style={{ left: LEAD, width: Math.max(140, length * PPS) }} onPointerDown={e => e.stopPropagation()} onClick={() => s.patch({ sheet: "text" })}>＋ Add text</button>}
+    </div><div className={cx("playhead")} />
   </div>;
 }
 
@@ -215,9 +216,9 @@ function ToolRow() {
     if (kind === "title") { s.edit({ texts: [...s.texts, { id: uid(), text: "Day in the life", color: 2, start: 0, end: length, x: 50, y: 16 }], orb: false }); s.notify("✦ Title added"); }
     if (kind === "warm") { s.edit({ clips: s.clips.map(c => ({ ...c, fx: 1 })), orb: false }); s.notify("✦ Warm look applied"); }
   };
-  return <div className="toolBar"><div className="tools">{tools.map(([icon, label, name]) => <button key={name} className={`tool tool-${name}`} onClick={() => action(name)} aria-label={label || "Collapse clip tools"}><Icon name={icon} size={20} />{label && <span>{label}</span>}</button>)}</div>
-    <button className="orb" data-awake={s.orb} onClick={() => s.patch({ orb: !s.orb, playing: false })} aria-label="Restyle AI"><img src="restyle-mark.png" alt="" /></button>
-    {s.orb && !s.sheet && <div className="orbActs">{[["pace", length > s.mode + .05 ? `Fit to ${s.mode}s` : "Tighten pace 1.25×", "#FF6FA6"], ["title", "Add a title", "#FFD23E"], ["warm", "Warm every clip", "#FF9F6E"]].map(([kind, label, color]) => <button key={kind} className="orbAct" onClick={() => orbAction(kind)}><i style={{ background: color, boxShadow: `0 0 8px ${color}` }} />✦ {label}</button>)}</div>}
+  return <div className={cx("toolBar")}><div className={cx("tools")}>{tools.map(([icon, label, name]) => <button key={name} className={cx(`tool tool-${name}`)} onClick={() => action(name)} aria-label={label || "Collapse clip tools"}><Icon name={icon} size={20} />{label && <span>{label}</span>}</button>)}</div>
+    <button className={cx("orb")} data-awake={s.orb} onClick={() => s.patch({ orb: !s.orb, playing: false })} aria-label="Restyle AI"><img src="restyle-mark.png" alt="" /></button>
+    {s.orb && !s.sheet && <div className={cx("orbActs")}>{[["pace", length > s.mode + .05 ? `Fit to ${s.mode}s` : "Tighten pace 1.25×", "#FF6FA6"], ["title", "Add a title", "#FFD23E"], ["warm", "Warm every clip", "#FF9F6E"]].map(([kind, label, color]) => <button key={kind} className={cx("orbAct")} onClick={() => orbAction(kind)}><i style={{ background: color, boxShadow: `0 0 8px ${color}` }} />✦ {label}</button>)}</div>}
   </div>;
 }
 
@@ -226,7 +227,7 @@ export function Editor() {
   const length = total(s.clips);
   useEffect(() => { if (!s.clips.length) s.patch({ screen: "camera" }); }, [s.clips.length]);
   if (!s.clips.length) return null;
-  return <><header className="editorHead"><button className="backBtn" onClick={() => s.patch({ screen: "camera", sel: -1, orb: false, playing: false })} aria-label="Back to camera"><Icon name="back" size={19} /></button><div className="editorTitle"><h1>Edit</h1><p>{clipCount(s.clips.length, length)}</p></div><button className="nextBtn press" onClick={() => s.patch({ sheet: "export", playing: false, orb: false })}>Next <Icon name="arrow" size={16} /></button></header>
+  return <><header className={cx("editorHead")}><button className={cx("backBtn")} onClick={() => s.patch({ screen: "camera", sel: -1, orb: false, playing: false })} aria-label="Back to camera"><Icon name="back" size={19} /></button><div className={cx("editorTitle")}><h1>Edit</h1><p>{clipCount(s.clips.length, length)}</p></div><button className={cx("nextBtn press")} onClick={() => s.patch({ sheet: "export", playing: false, orb: false })}>Next <Icon name="arrow" size={16} /></button></header>
     <Preview /><Transport /><Timeline /><ToolRow />
   </>;
 }

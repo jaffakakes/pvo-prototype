@@ -8,6 +8,7 @@ const errors = [];
 page.on("pageerror", error => errors.push(error.message));
 try {
   await page.goto("http://127.0.0.1:5173/", { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Record" }).waitFor();
   await page.screenshot({ path: resolve(tmpdir(), "capture-camera.png") });
   await page.getByRole("button", { name: "Record" }).click();
   await page.waitForTimeout(900);
