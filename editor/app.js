@@ -654,6 +654,7 @@ async function restoreSavedProject() {
     restoredComponentPolishCount = polishExistingSavedComponents();
     existingComponentPolishVersion = 1;
   }
+  syncBranchClipPlacements({ ensureClips: false });
   canvasRatio = Object.hasOwn(canvasRatios, project.canvasRatio) ? project.canvasRatio : "16:9";
   timelineViewKey = typeof project.timelineViewKey === "string" ? project.timelineViewKey : "main";
   selectedClipId = availableClipIds.has(project.selectedClipId) ? project.selectedClipId : mainClips()[0]?.id || clips[0]?.id || null;
@@ -722,6 +723,7 @@ function branchViewOptions() {
       condition: route.condition,
       mediaId: route.mediaId,
       label: `${component.name} — ${route.condition === "true" ? "Yes" : "No"}`,
+      optionLabel: `${route.condition === "true" ? "Yes" : "No"} — ${mediaItem(route.mediaId)?.name || "Missing media"}`,
     }));
   });
 }
@@ -730,6 +732,28 @@ function branchTargetMediaIds() {
   return new Set(components.flatMap((component) => component.sceneChange?.enabled
     ? component.sceneChange.routes.map((route) => route.mediaId).filter(Boolean)
     : []));
+}
+
+function syncBranchClipPlacements({ ensureClips = true } = {}) {
+  const targets = branchTargetMediaIds();
+  if (ensureClips) targets.forEach((mediaId) => ensureBranchClip(mediaId));
+  let changed = false;
+  clips.forEach((clip) => {
+    if (targets.has(clip.mediaId) && clip.placement !== "branch") {
+      clip.placementBeforeBranch = clip.placement || "main";
+      clip.placement = "branch";
+      changed = true;
+    } else if (!targets.has(clip.mediaId) && clip.placement === "branch" && clip.placementBeforeBranch) {
+      clip.placement = clip.placementBeforeBranch;
+      delete clip.placementBeforeBranch;
+      changed = true;
+    }
+  });
+  if (timelineViewKey === "main" && selectedClip() && !mainClips().some((clip) => clip.id === selectedClipId)) {
+    selectedClipId = mainClips()[0]?.id || null;
+    selectedComponentId = components.find((component) => component.clipId === selectedClipId)?.id || null;
+  }
+  return changed;
 }
 
 function currentBranchView() {
@@ -867,6 +891,14 @@ function renderMediaLibrary() {
       let clip = mainClips().find((candidate) => candidate.mediaId === item.id);
       if (!clip) {
         if (!item.duration || item.error) return;
+        if (usedByBranch) {
+          const branch = branchViewOptions().find((view) => view.mediaId === item.id);
+          if (branch) {
+            setTimelineView(branch.key);
+            setStatus(`${branch.label} branch opened`);
+            return;
+          }
+        }
         clip = clips.find((candidate) => candidate.mediaId === item.id && candidate.placement === "branch");
         if (clip) clip.placement = "main";
         else clip = appendMediaClip(item);
@@ -890,11 +922,21 @@ function renderTimelineNavigation() {
   main.value = "main";
   main.textContent = "Main timeline";
   refs.timelineView.append(main);
+  const groups = new Map();
   views.forEach((view) => {
-    const option = document.createElement("option");
-    option.value = view.key;
-    option.textContent = view.label;
-    refs.timelineView.append(option);
+    if (!groups.has(view.componentId)) groups.set(view.componentId, []);
+    groups.get(view.componentId).push(view);
+  });
+  groups.forEach((componentViews, componentId) => {
+    const group = document.createElement("optgroup");
+    group.label = components.find((component) => component.id === componentId)?.name || "Choice";
+    componentViews.forEach((view) => {
+      const option = document.createElement("option");
+      option.value = view.key;
+      option.textContent = view.optionLabel;
+      group.append(option);
+    });
+    refs.timelineView.append(group);
   });
   refs.timelineView.value = timelineViewKey;
   const branch = currentBranchView();
@@ -1260,10 +1302,11 @@ function renderSceneRouting(component) {
     destination.value = route.mediaId;
     destination.addEventListener("change", () => {
       route.mediaId = destination.value;
-      if (timelineViewKey === `branch:${component.id}:${route.condition}` && route.mediaId) ensureBranchClip(route.mediaId);
+      syncBranchClipPlacements();
       executedSceneChanges.delete(component.id);
       renderTimelineNavigation();
       renderTimeline();
+      renderMediaLibrary();
       queueProjectSave();
       setStatus(`${component.name} ${route.condition === "true" ? "Yes" : "No"} branch set to ${mediaItem(route.mediaId)?.name || "no media"}`);
     });
@@ -1285,6 +1328,7 @@ function setComponentMediaRouting(componentId, enabled, routes) {
     return { condition, mediaId };
   });
   component.sceneChange = { enabled: Boolean(enabled), executeAt: "end", routes: normalized };
+  syncBranchClipPlacements();
   renderAll();
   return component;
 }
@@ -1908,6 +1952,7 @@ refs.changeSceneToggle.addEventListener("change", () => {
   const sceneChange = ensureSceneChange(component);
   sceneChange.enabled = refs.changeSceneToggle.checked;
   if (sceneChange.enabled) binaryMediaRoutes(component);
+  syncBranchClipPlacements();
   executedSceneChanges.delete(component.id);
   renderSceneRouting(component);
   renderTimelineNavigation();
