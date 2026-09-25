@@ -4,18 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Create and publish interactive PVO video experiences." />
-    <meta name="theme-color" content="#111318" />
+    <meta name="theme-color" content="#0f0a0b" />
     <title>PVO Editor</title>
     <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./restyle-theme.css" />
   </head>
   <body>
     <header class="app-header">
-      <div class="title-block"><strong>PVO</strong><span>Editor</span></div>
-      <div class="project-name"><span id="projectName">No video selected</span><small id="projectDuration">00:00.0</small></div>
+      <div class="title-block" aria-label="PVO editor"><strong>PVO</strong></div>
+      <div class="project-name"><span id="projectName">Untitled experience</span><small><span id="projectDuration">00:00.0</span> · saved locally</small></div>
       <div class="header-actions">
         <a class="button button-quiet preview-link" href="/player/"><span aria-hidden="true">▶</span><span class="button-text">Preview</span></a>
-        <label class="button file-button"><input id="videoInput" type="file" accept="video/mp4,video/quicktime,.mp4,.mov" multiple /><span aria-hidden="true">+</span><span class="button-text">Add media</span></label>
-        <button class="button export-button header-export" id="exportPvoButton" type="button" disabled>Export PVO</button>
+        <label class="button file-button"><input id="videoInput" type="file" accept="video/mp4,video/quicktime,.mp4,.mov" multiple /><span aria-hidden="true">＋</span><span class="button-text">Add media</span></label>
+        <button class="button export-button header-export" id="exportPvoButton" type="button" disabled><span aria-hidden="true">↗</span> Export</button>
       </div>
     </header>
 
@@ -27,7 +28,7 @@
         </div>
 
         <section id="mediaPanel" role="tabpanel" aria-labelledby="mediaTab">
-          <header class="panel-header"><h2>Media</h2><span id="mediaCount">0 items</span></header>
+          <header class="panel-header"><div><span>Your library</span><h2>Media</h2></div><span id="mediaCount">0 items</span></header>
           <div class="media-controls">
             <div class="media-library" id="mediaLibrary" aria-live="polite">
               <p class="media-empty">Choose MP4 or MOV files to begin.</p>
@@ -37,12 +38,12 @@
         </section>
 
         <section id="componentsPanel" role="tabpanel" aria-labelledby="componentsTab" hidden>
-          <header class="panel-header"><h2>Components</h2><span>Add to selected clip</span></header>
+          <header class="panel-header"><div><span>Interactive layer</span><h2>Components</h2></div><span>Add to clip</span></header>
           <div class="component-buttons">
-            <button type="button" data-add-component="tooltip" disabled><strong>Tooltip</strong><span>Small label</span></button>
-            <button type="button" data-add-component="card" disabled><strong>Card</strong><span>Title and copy</span></button>
-            <button type="button" data-add-component="choice" disabled><strong>Choice</strong><span>True / false branch</span></button>
-            <button type="button" data-add-component="form" disabled><strong>Form</strong><span>Fields and submit</span></button>
+            <button type="button" data-add-component="tooltip" disabled><i aria-hidden="true">Aa</i><strong>Tooltip</strong><span>Small label</span></button>
+            <button type="button" data-add-component="card" disabled><i aria-hidden="true">▤</i><strong>Card</strong><span>Title and copy</span></button>
+            <button type="button" data-add-component="choice" disabled><i aria-hidden="true">↗</i><strong>Choice</strong><span>Branch the story</span></button>
+            <button type="button" data-add-component="form" disabled><i aria-hidden="true">✓</i><strong>Form</strong><span>Fields and submit</span></button>
           </div>
         </section>
       </aside>
@@ -63,8 +64,9 @@
         </div>
         <div class="video-area" id="videoArea">
           <section class="media-start" id="mediaStart" aria-labelledby="mediaStartTitle">
-            <h2 id="mediaStartTitle">Add media to start</h2>
-            <p id="mediaStartMessage">Use Add media in the top-right corner.</p>
+            <span class="start-kicker">New PVO</span>
+            <h2 id="mediaStartTitle">Start with a clip</h2>
+            <p id="mediaStartMessage">Use Add media above, then layer interactions on top.</p>
           </section>
           <div class="canvas-frame" id="canvasFrame" data-ratio="16:9" hidden>
             <video id="video" playsinline preload="metadata"></video>
@@ -74,7 +76,7 @@
             <button id="previewBackButton" type="button" aria-label="Back five seconds" title="Back 5 seconds">−5</button>
             <button class="preview-play" id="previewPlayButton" type="button" aria-label="Play" title="Play or pause">&#9654;</button>
             <button id="previewForwardButton" type="button" aria-label="Forward five seconds" title="Forward 5 seconds">+5</button>
-            <span>Space to play</span>
+            <span>Space to play · drag UI on the canvas</span>
           </div>
         </div>
 
