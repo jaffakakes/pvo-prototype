@@ -136,6 +136,8 @@ let savePromise = Promise.resolve();
 let storageWarning = "";
 let existingCardPolishVersion = 1;
 let restoredCardPolishCount = 0;
+let existingComponentPolishVersion = 1;
+let restoredComponentPolishCount = 0;
 
 const projectDatabaseName = "pvo-editor";
 const projectDatabaseVersion = 1;
@@ -263,6 +265,21 @@ function persistentComponents() {
   });
 }
 
+function fitComponentBox(component, minimumWidth, minimumHeight) {
+  const width = Math.min(100, Math.max(Number(component.width) || 0, minimumWidth));
+  const height = Math.min(100, Math.max(Number(component.height) || 0, minimumHeight));
+  component.x = clamp(Number(component.x), 0, Math.max(0, 100 - width));
+  component.y = clamp(Number(component.y), 0, Math.max(0, 100 - height));
+  component.width = width;
+  component.height = height;
+}
+
+function moveChildren(source, destination, excludedNode = null) {
+  [...source.childNodes].forEach((node) => {
+    if (node !== excludedNode) destination.append(node);
+  });
+}
+
 function polishExistingCard(component) {
   const template = document.createElement("template");
   template.innerHTML = sanitizeHtml(component.html);
@@ -317,12 +334,205 @@ function polishExistingCard(component) {
 }
 .card p + p { margin-top: 2px; }
 .card a { color: #173d73; text-underline-offset: 3px; }`;
-  const desiredWidth = Math.max(Number(component.width) || 0, 48);
-  const desiredHeight = Math.max(Number(component.height) || 0, 38);
-  component.x = clamp(Number(component.x), 0, Math.max(0, 100 - desiredWidth));
-  component.y = clamp(Number(component.y), 0, Math.max(0, 100 - desiredHeight));
-  component.width = Math.min(desiredWidth, 100 - component.x);
-  component.height = Math.min(desiredHeight, 100 - component.y);
+  fitComponentBox(component, 48, 38);
+}
+
+function polishExistingTooltip(component) {
+  const template = document.createElement("template");
+  template.innerHTML = sanitizeHtml(component.html);
+  const sourceTooltip = template.content.querySelector(".tooltip");
+  const source = sourceTooltip?.querySelector(":scope > .tooltip-content") || sourceTooltip || template.content;
+  const tooltip = document.createElement("aside");
+  tooltip.className = "tooltip";
+  tooltip.setAttribute("role", "note");
+  tooltip.setAttribute("aria-label", component.name || "Tooltip");
+  const content = document.createElement("div");
+  content.className = "tooltip-content";
+  moveChildren(source, content);
+  tooltip.append(content);
+  component.html = tooltip.outerHTML;
+  component.css = `.tooltip {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 10px;
+  background: #111827;
+  color: #ffffff;
+  font: 600 15px/1.45 Arial, Helvetica, sans-serif;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, .28);
+}
+.tooltip-content {
+  width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.tooltip a { color: #ffffff; text-underline-offset: 3px; }`;
+  fitComponentBox(component, 32, 18);
+}
+
+function polishExistingChoice(component) {
+  const template = document.createElement("template");
+  template.innerHTML = sanitizeHtml(component.html);
+  const sourceChoice = template.content.querySelector(".choice") || template.content.querySelector("fieldset");
+  const source = sourceChoice || template.content;
+  const existingLegend = sourceChoice?.querySelector(":scope > legend") || null;
+  const existingOptions = sourceChoice?.querySelector(":scope > .choice-options") || null;
+  const choice = document.createElement("fieldset");
+  choice.className = "choice";
+  const legend = document.createElement("legend");
+  if (existingLegend) moveChildren(existingLegend, legend);
+  if (!legend.textContent.trim()) legend.textContent = component.name || "Choose an option";
+  const options = document.createElement("div");
+  options.className = "choice-options";
+  if (existingOptions) {
+    moveChildren(existingOptions, options);
+  } else {
+    moveChildren(source, options, existingLegend);
+  }
+  choice.append(legend, options);
+  component.html = choice.outerHTML;
+  component.css = `.choice {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 22px 24px 24px;
+  overflow: auto;
+  border: 1px solid #d8dde5;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #111827;
+  font-family: Arial, Helvetica, sans-serif;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, .22);
+}
+.choice legend {
+  width: 100%;
+  margin: 0 0 16px;
+  padding: 0;
+  color: #111827;
+  font-size: clamp(20px, 2.2vw, 24px);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -.02em;
+  overflow-wrap: anywhere;
+}
+.choice-options {
+  clear: both;
+  display: grid;
+  gap: 10px;
+}
+.choice label {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 46px;
+  padding: 11px 14px;
+  border: 1px solid #d8dde5;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1f2937;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.choice label:has(input:checked) {
+  border-color: #111827;
+  background: #f3f4f6;
+}
+.choice input[type="radio"], .choice input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #111827;
+}`;
+  fitComponentBox(component, 58, 48);
+}
+
+function polishExistingForm(component) {
+  const template = document.createElement("template");
+  template.innerHTML = sanitizeHtml(component.html);
+  const sourceForm = template.content.querySelector(".form") || template.content.querySelector("form");
+  const source = sourceForm?.querySelector(":scope > .form-content") || sourceForm || template.content;
+  const form = document.createElement("form");
+  form.className = "form";
+  form.setAttribute("aria-label", component.name || "Form");
+  const content = document.createElement("div");
+  content.className = "form-content";
+  moveChildren(source, content);
+  form.append(content);
+  component.html = form.outerHTML;
+  component.css = `.form {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 24px;
+  overflow: auto;
+  border: 1px solid #d8dde5;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #111827;
+  font-family: Arial, Helvetica, sans-serif;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, .22);
+}
+.form-content {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 14px;
+}
+.form label {
+  display: grid;
+  gap: 7px;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.form input, .form select, .form textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #c8ced8;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111827;
+  font: 400 15px/1.4 Arial, Helvetica, sans-serif;
+}
+.form textarea { min-height: 88px; resize: vertical; }
+.form input:focus, .form select:focus, .form textarea:focus {
+  outline: 2px solid #111827;
+  outline-offset: 2px;
+}
+.form button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #111827;
+  border-radius: 8px;
+  background: #111827;
+  color: #ffffff;
+  font: 700 15px/1.2 Arial, Helvetica, sans-serif;
+  cursor: pointer;
+}`;
+  fitComponentBox(component, 46, 48);
+}
+
+function polishExistingSavedComponents() {
+  const polishers = {
+    tooltip: polishExistingTooltip,
+    card: polishExistingCard,
+    choice: polishExistingChoice,
+    form: polishExistingForm,
+  };
+  const savedComponents = components.filter((component) => polishers[component.kind]);
+  savedComponents.forEach((component) => polishers[component.kind](component));
+  return savedComponents.length;
 }
 
 function polishExistingSavedCards() {
@@ -348,6 +558,7 @@ function projectStateSnapshot() {
     selectedClipId,
     selectedComponentId,
     existingCardPolishVersion,
+    existingComponentPolishVersion,
     counters: { mediaCounter, clipCounter, sceneCounter, componentCounter },
   };
 }
@@ -401,6 +612,8 @@ function largestCounter(items, prefix) {
 }
 
 async function restoreSavedProject() {
+  restoredCardPolishCount = 0;
+  restoredComponentPolishCount = 0;
   const database = await openProjectDatabase();
   const transaction = database.transaction(["projects", "media"], "readonly");
   const done = transactionComplete(transaction);
@@ -435,6 +648,11 @@ async function restoreSavedProject() {
   if (existingCardPolishVersion < 1) {
     restoredCardPolishCount = polishExistingSavedCards();
     existingCardPolishVersion = 1;
+  }
+  existingComponentPolishVersion = Number(project.existingComponentPolishVersion || 0);
+  if (existingComponentPolishVersion < 1) {
+    restoredComponentPolishCount = polishExistingSavedComponents();
+    existingComponentPolishVersion = 1;
   }
   canvasRatio = Object.hasOwn(canvasRatios, project.canvasRatio) ? project.canvasRatio : "16:9";
   timelineViewKey = typeof project.timelineViewKey === "string" ? project.timelineViewKey : "main";
@@ -1718,9 +1936,12 @@ async function initializeEditor() {
     const clip = selectedClip();
     if (clip) loadClipPreview(clip);
     else setMediaReady(false);
-    setStatus(restoredCardPolishCount
-      ? `Saved project restored · ${restoredCardPolishCount} ${restoredCardPolishCount === 1 ? "card" : "cards"} improved`
-      : "Saved project restored");
+    setStatus(restoredComponentPolishCount
+      ? `Saved project restored · ${restoredComponentPolishCount} ${restoredComponentPolishCount === 1 ? "component" : "components"} improved`
+      : restoredCardPolishCount
+        ? `Saved project restored · ${restoredCardPolishCount} ${restoredCardPolishCount === 1 ? "card" : "cards"} improved`
+        : "Saved project restored");
+    if (restoredComponentPolishCount || restoredCardPolishCount) await flushProjectSave();
     refs.saveStatus.textContent = storageWarning || "Saved in browser";
   } catch {
     persistenceReady = false;
