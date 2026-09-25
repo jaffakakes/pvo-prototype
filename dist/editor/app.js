@@ -6,8 +6,9 @@ const videoArea = $("#videoArea");
 const canvasFrame = $("#canvasFrame");
 const overlayLayer = $("#overlayLayer");
 const clipTrack = $("#clipTrack");
-const componentLayers = $("#componentLayers");
 const timelineEditor = $("#timelineEditor");
+const timelineTracks = $("#timelineTracks");
+const videoLayerRow = $("#videoLayerRow");
 const ruler = $("#ruler");
 const trackWrap = document.querySelector(".track-wrap");
 const addComponentButtons = [...document.querySelectorAll("[data-add-component]")];
@@ -116,6 +117,7 @@ const presets = {
 let mediaItems = [];
 let clips = [];
 let components = [];
+let layerOrder = ["video"];
 let selectedClipId = null;
 let selectedComponentId = null;
 let activeMediaId = null;
@@ -136,6 +138,7 @@ let persistenceReady = false;
 let projectDatabasePromise = null;
 let saveTimer = null;
 let savePromise = Promise.resolve();
+let draggingLayerKey = null;
 let storageWarning = "";
 let existingCardPolishVersion = 1;
 let restoredCardPolishCount = 0;
@@ -286,10 +289,100 @@ function transactionComplete(transaction) {
 }
 
 function persistentComponents() {
-  return components.map((component) => {
+  return componentsInLayerOrder().map((component) => {
     const copy = structuredClone(component);
     delete copy.pendingAnswer;
     return copy;
+  });
+}
+
+function normalizeLayerOrder(order = layerOrder) {
+  const componentIds = new Set(components.map((component) => component.id));
+  const next = [];
+  for (const key of Array.isArray(order) ? order : []) {
+    if ((key === "video" || componentIds.has(key)) && !next.includes(key)) next.push(key);
+  }
+  if (!next.includes("video")) next.push("video");
+  for (const component of components) {
+    if (next.includes(component.id)) continue;
+    const videoIndex = next.indexOf("video");
+    next.splice(videoIndex < 0 ? next.length : videoIndex, 0, component.id);
+  }
+  layerOrder = next;
+  return layerOrder;
+}
+
+function componentsInLayerOrder() {
+  const order = normalizeLayerOrder();
+  const positions = new Map(order.map((key, index) => [key, index]));
+  return [...components].sort((a, b) => (positions.get(a.id) ?? order.length) - (positions.get(b.id) ?? order.length));
+}
+
+function insertComponentTrack(componentId) {
+  normalizeLayerOrder();
+  if (layerOrder.includes(componentId)) return;
+  const videoIndex = layerOrder.indexOf("video");
+  layerOrder.splice(videoIndex < 0 ? layerOrder.length : videoIndex, 0, componentId);
+}
+
+function removeComponentTracks(componentIds) {
+  const removed = componentIds instanceof Set ? componentIds : new Set(componentIds);
+  layerOrder = normalizeLayerOrder().filter((key) => !removed.has(key));
+}
+
+function visibleLayerKeys(visibleComponents) {
+  const visible = new Set(visibleComponents.map((component) => component.id));
+  return normalizeLayerOrder().filter((key) => key === "video" || visible.has(key));
+}
+
+function clearTrackDropMarkers() {
+  timelineTracks.querySelectorAll(".layer-row").forEach((row) => row.classList.remove("is-dragging", "drop-before", "drop-after"));
+}
+
+function reorderLayerTrack(sourceKey, targetKey, placeAfter = false) {
+  if (!sourceKey || !targetKey || sourceKey === targetKey) return false;
+  const order = [...normalizeLayerOrder()];
+  const sourceIndex = order.indexOf(sourceKey);
+  if (sourceIndex < 0 || !order.includes(targetKey)) return false;
+  order.splice(sourceIndex, 1);
+  const targetIndex = order.indexOf(targetKey);
+  order.splice(targetIndex + (placeAfter ? 1 : 0), 0, sourceKey);
+  layerOrder = order;
+  clearTrackDropMarkers();
+  renderTimeline();
+  renderOverlays();
+  queueProjectSave();
+  const component = components.find((item) => item.id === sourceKey);
+  setStatus(`${component?.name || "Track"} moved ${placeAfter ? "down" : "up"}`);
+  return true;
+}
+
+function moveLayerTrack(sourceKey, direction, visibleKeys) {
+  const index = visibleKeys.indexOf(sourceKey);
+  const targetIndex = index + direction;
+  if (index < 0 || targetIndex < 0 || targetIndex >= visibleKeys.length) return false;
+  return reorderLayerTrack(sourceKey, visibleKeys[targetIndex], direction > 0);
+}
+
+function bindTrackDropTarget(row, targetKey) {
+  if (row.dataset.dropBound === "true") return;
+  row.dataset.dropBound = "true";
+  row.addEventListener("dragover", (event) => {
+    if (!draggingLayerKey || draggingLayerKey === targetKey) return;
+    event.preventDefault();
+    const after = event.clientY > row.getBoundingClientRect().top + row.getBoundingClientRect().height / 2;
+    clearTrackDropMarkers();
+    row.classList.add(after ? "drop-after" : "drop-before");
+  });
+  row.addEventListener("dragleave", (event) => {
+    if (!(event.relatedTarget instanceof Node) || !row.contains(event.relatedTarget)) row.classList.remove("drop-before", "drop-after");
+  });
+  row.addEventListener("drop", (event) => {
+    if (!draggingLayerKey || draggingLayerKey === targetKey) return;
+    event.preventDefault();
+    const after = event.clientY > row.getBoundingClientRect().top + row.getBoundingClientRect().height / 2;
+    reorderLayerTrack(draggingLayerKey, targetKey, after);
+    draggingLayerKey = null;
   });
 }
 
@@ -571,7 +664,7 @@ function polishExistingSavedCards() {
 
 function projectStateSnapshot() {
   return {
-    storageVersion: 1,
+    storageVersion: 2,
     savedAt: Date.now(),
     media: mediaItems.filter((item) => item.stored).map((item) => ({
       id: item.id,
@@ -581,6 +674,7 @@ function projectStateSnapshot() {
     })),
     clips: structuredClone(clips),
     components: persistentComponents(),
+    layerOrder: [...normalizeLayerOrder()],
     canvasRatio,
     timelineViewKey,
     selectedClipId,
@@ -672,6 +766,8 @@ async function restoreSavedProject() {
     .map((clip) => ({ ...clip, placement: clip.placement || "main" }));
   const availableClipIds = new Set(clips.map((clip) => clip.id));
   components = (project.components || []).filter((component) => availableClipIds.has(component.clipId));
+  layerOrder = Array.isArray(project.layerOrder) ? project.layerOrder.map(String) : [...components.map((component) => component.id), "video"];
+  normalizeLayerOrder();
   existingCardPolishVersion = Number(project.existingCardPolishVersion || 0);
   if (existingCardPolishVersion < 1) {
     restoredCardPolishCount = polishExistingSavedCards();
@@ -1169,6 +1265,7 @@ function deleteSelectedClip() {
   const removedComponentIds = new Set(components.filter((component) => component.clipId === clip.id).map((component) => component.id));
   clips.splice(removedIndex, 1);
   components = components.filter((component) => component.clipId !== clip.id);
+  removeComponentTracks(removedComponentIds);
   removedComponentIds.forEach((id) => executedSceneChanges.delete(id));
 
   timelineViewKey = "main";
@@ -1257,6 +1354,7 @@ function addComponent(kind, openDialog = true) {
     x: preset.x, y: preset.y, width: preset.width, height: preset.height,
   };
   components.push(component);
+  insertComponentTrack(component.id);
   selectedComponentId = component.id;
   video.currentTime = clip.sourceStart + Math.min(component.end - 0.01, component.start + 0.01);
   renderAll();
@@ -1270,6 +1368,7 @@ function deleteComponent() {
   const component = selectedComponent();
   if (!component) return;
   components = components.filter((item) => item.id !== component.id);
+  removeComponentTracks([component.id]);
   selectedComponentId = components.find((item) => item.clipId === selectedClipId)?.id || null;
   if (timelineViewKey.startsWith(`branch:${component.id}:`)) timelineViewKey = "main";
   closeComponentDialog();
@@ -1452,31 +1551,72 @@ function renderTimeline() {
 }
 
 function renderComponentTimeline(layouts, duration) {
-  componentLayers.innerHTML = "";
+  timelineTracks.querySelectorAll(".component-layer-row, .empty-layer-row").forEach((row) => row.remove());
+  bindTrackDropTarget(videoLayerRow, "video");
   const visibleIds = new Set(layouts.map((layout) => layout.clip.id));
   const visibleComponents = components.filter((component) => visibleIds.has(component.clipId));
   if (!visibleComponents.length) {
     const row = document.createElement("div");
     row.className = "layer-row empty-layer-row";
-    row.innerHTML = `<div class="layer-label"><strong>UI</strong><span>No layers yet</span></div><div class="component-lane"><span class="empty-layer-message">${layouts.length ? "Add a component to create a layer" : "Add media to start"}</span></div>`;
+    row.innerHTML = `<div class="layer-label empty-layer-label"><span class="track-grip is-static" aria-hidden="true">＋</span><span class="track-label-copy"><strong>New layer</strong><span>Components appear here</span></span></div><div class="component-lane"><span class="empty-layer-message">${layouts.length ? "Add a component to create a track" : "Add media to start"}</span></div>`;
     const lane = row.querySelector(".component-lane");
     lane.addEventListener("click", (event) => seekFromTimeline(event, lane));
-    componentLayers.append(row);
+    timelineTracks.insertBefore(row, videoLayerRow);
     return;
   }
-  visibleComponents.forEach((component, index) => {
+  const visibleOrder = visibleLayerKeys(visibleComponents);
+  const rows = new Map([["video", videoLayerRow]]);
+  const orderedComponents = componentsInLayerOrder().filter((component) => visibleIds.has(component.clipId));
+  orderedComponents.forEach((component) => {
     const layout = layouts.find((candidate) => candidate.clip.id === component.clipId);
     const row = document.createElement("div");
     row.className = `layer-row component-layer-row${component.id === selectedComponentId ? " active" : ""}`;
-    const layerLabel = document.createElement("button");
-    layerLabel.type = "button";
+    row.dataset.trackKey = component.id;
+    const layerLabel = document.createElement("div");
     layerLabel.className = "layer-label component-layer-label";
+    const grip = document.createElement("button");
+    grip.type = "button";
+    grip.className = "track-grip";
+    grip.draggable = true;
+    grip.title = `Drag ${component.name} track`;
+    grip.setAttribute("aria-label", `Drag ${component.name} track to reorder layers`);
+    grip.textContent = "⠿";
+    grip.addEventListener("dragstart", (event) => {
+      draggingLayerKey = component.id;
+      row.classList.add("is-dragging");
+      event.dataTransfer?.setData("text/plain", component.id);
+      if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+    });
+    grip.addEventListener("dragend", () => {
+      draggingLayerKey = null;
+      clearTrackDropMarkers();
+    });
+    const layerCopy = document.createElement("button");
+    layerCopy.type = "button";
+    layerCopy.className = "track-label-copy";
     const layerName = document.createElement("strong");
     layerName.textContent = component.name;
     const layerType = document.createElement("span");
-    layerType.textContent = `${component.kind} · layer ${index + 1}${component.sceneChange?.enabled ? " · branches" : ""}`;
-    layerLabel.append(layerName, layerType);
-    layerLabel.addEventListener("click", () => selectComponent(component.id));
+    layerType.textContent = `${component.kind} track${component.sceneChange?.enabled ? " · branches" : ""}`;
+    layerCopy.append(layerName, layerType);
+    layerCopy.addEventListener("click", () => selectComponent(component.id));
+    const orderControls = document.createElement("span");
+    orderControls.className = "track-order-controls";
+    const visibleIndex = visibleOrder.indexOf(component.id);
+    [
+      { direction: -1, label: "Move track up", symbol: "↑" },
+      { direction: 1, label: "Move track down", symbol: "↓" },
+    ].forEach(({ direction, label, symbol }) => {
+      const control = document.createElement("button");
+      control.type = "button";
+      control.textContent = symbol;
+      control.title = label;
+      control.setAttribute("aria-label", `${label}: ${component.name}`);
+      control.disabled = visibleIndex + direction < 0 || visibleIndex + direction >= visibleOrder.length;
+      control.addEventListener("click", () => moveLayerTrack(component.id, direction, visibleOrder));
+      orderControls.append(control);
+    });
+    layerLabel.append(grip, layerCopy, orderControls);
     const lane = document.createElement("div");
     lane.className = "component-lane";
     lane.addEventListener("click", (event) => seekFromTimeline(event, lane));
@@ -1491,7 +1631,12 @@ function renderComponentTimeline(layouts, duration) {
     bar.addEventListener("pointerdown", (event) => startTimingDrag(event, component, bar, lane, event.target.dataset.resize || "move", duration));
     lane.append(bar);
     row.append(layerLabel, lane);
-    componentLayers.append(row);
+    bindTrackDropTarget(row, component.id);
+    rows.set(component.id, row);
+  });
+  visibleOrder.forEach((key) => {
+    const row = rows.get(key);
+    if (row) timelineTracks.append(row);
   });
 }
 
@@ -1554,11 +1699,18 @@ function renderOverlays() {
   const clip = selectedClip();
   if (!clip) return;
   const time = currentLocalTime();
-  components.filter((component) => component.clipId === clip.id && time >= component.start - 0.03 && time < component.end).forEach((component) => {
+  const orderedLayers = componentsInLayerOrder().filter((component) => component.clipId === clip.id && time >= component.start - 0.03 && time < component.end);
+  orderedLayers.forEach((component, index) => {
     const wrapper = document.createElement("div");
     wrapper.className = `overlay-component${isBranchingComponent(component) ? " interactive" : ""}${component.id === selectedComponentId ? " selected" : ""}`;
     wrapper.dataset.label = component.name;
-    Object.assign(wrapper.style, { left: `${component.x}%`, top: `${component.y}%`, width: `${component.width}%`, height: `${component.height}%` });
+    Object.assign(wrapper.style, {
+      left: `${component.x}%`,
+      top: `${component.y}%`,
+      width: `${component.width}%`,
+      height: `${component.height}%`,
+      zIndex: String(orderedLayers.length - index + 2),
+    });
     const preview = document.createElement("editor-overlay");
     preview.update(component);
     preview.addEventListener("pvo-answer", (event) => {
@@ -1880,7 +2032,7 @@ function buildPvoManifest() {
     }),
     playback: { initial_timeline: "main", timelines },
     scenes: [...scenesById.values()],
-    components: components.filter((component) => exportedClipIds.has(component.clipId)).map((component) => exportedComponent(component, mainClipIds)),
+    components: componentsInLayerOrder().filter((component) => exportedClipIds.has(component.clipId)).map((component) => exportedComponent(component, mainClipIds)),
     hotspots: [],
     triggers: [],
   };
