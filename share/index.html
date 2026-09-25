@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#000000" />
+    <title>Do you want to hear more?</title>
+    <meta name="description" content="An interactive PVO video. Choose what happens next." />
+    <link rel="canonical" href="https://pvo-interactive-demo.ngumajaphet.chatgpt.site/" />
+
+    <meta property="og:type" content="video.other" />
+    <meta property="og:site_name" content="PVO" />
+    <meta property="og:title" content="Do you want to hear more?" />
+    <meta property="og:description" content="An interactive PVO video. Choose what happens next." />
+    <meta property="og:url" content="https://pvo-interactive-demo.ngumajaphet.chatgpt.site/" />
+    <meta property="og:image" content="https://pvo-interactive-demo.ngumajaphet.chatgpt.site/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Do you want to hear more? An interactive PVO video." />
+    <meta property="og:video" content="https://pvo-interactive-demo.ngumajaphet.chatgpt.site/preview.mp4" />
+    <meta property="og:video:secure_url" content="https://pvo-interactive-demo.ngumajaphet.chatgpt.site/preview.mp4" />
+    <meta property="og:video:type" content="video/mp4" />
+    <meta property="og:video:width" content="720" />
+    <meta property="og:video:height" content="1280" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Do you want to hear more?" />
+    <meta name="twitter:description" content="An interactive PVO video. Choose what happens next." />
+    <meta name="twitter:image" content="https://pvo-interactive-demo.ngumajaphet.chatgpt.site/og.png" />
+    <link rel="stylesheet" href="./player/styles.css" />
+  </head>
+  <body data-pvo-src="./demo.pvo" data-autoplay="true">
+    <main>
+      <section class="empty-state" id="emptyState" hidden>
+        <div class="drop-zone" id="dropZone"><p>Video unavailable.</p><input id="pvoInput" type="file" hidden /></div>
+      </section>
+
+      <section class="player-shell" id="playerShell">
+        <div class="player-frame controls-visible" id="playerFrame">
+          <video id="video" playsinline preload="auto" muted></video>
+          <div class="overlay-layer" id="overlayLayer"></div>
+          <button class="center-play" id="centerPlayButton" type="button" aria-label="Play" hidden>▶</button>
+
+          <div class="end-screen" id="endScreen" hidden>
+            <button class="restart-experience" id="endRestartButton" type="button">Restart</button>
+          </div>
+
+          <div class="player-controls" id="playerControls">
+            <button class="control-button" id="playButton" type="button" aria-label="Play">▶</button>
+            <div class="progress-block">
+              <progress id="progress" max="1" value="0"></progress>
+              <div><span id="timelineLabel">Main timeline</span><span id="timeLabel">00:00 / 00:00</span></div>
+            </div>
+            <button class="control-button" id="muteButton" type="button" aria-label="Unmute">🔇</button>
+            <button class="control-button restart-button" id="restartButton" type="button" aria-label="Restart">↻</button>
+          </div>
+
+          <p class="player-status is-visible" id="status" aria-live="polite">Loading…</p>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./player/app.js"></script>
+  </body>
+</html>
