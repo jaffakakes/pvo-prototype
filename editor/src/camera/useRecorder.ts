@@ -22,8 +22,7 @@ export function useRecorder() {
     clearInterval(tick.current);
     const s = useCapture.getState();
     const real = Math.max(.3, (performance.now() - startedAt.current) / 1000);
-    const maxTimeline = Math.max(.3, s.mode - total(s.clips.filter(c => c.id !== s.replacing)));
-    const clip = mkClip(round2(Math.min(real, maxTimeline * s.recSpeed)), null, s.clips.length);
+    const clip = mkClip(round2(real), null, s.clips.length);
     clip.speed = s.recSpeed;
     clip.fx = s.liveFx;
     clip.mirror = s.facing === "user" && !!getCameraStream();
@@ -70,9 +69,7 @@ export function useRecorder() {
     tick.current = window.setInterval(() => {
       const current = useCapture.getState();
       const elapsed = (performance.now() - startedAt.current) / 1000 / current.recSpeed;
-      const used = total(current.clips.filter(c => c.id !== current.replacing));
-      if (used + elapsed >= current.mode) stopRec();
-      else current.patch({ elapsed });
+      current.patch({ elapsed });
     }, 100);
   }, [stopRec]);
 
@@ -87,8 +84,6 @@ export function useRecorder() {
     const s = useCapture.getState();
     if (s.countdown) { cancelCountdown(); return; }
     if (active.current || s.recording) { stopRec(); return; }
-    const used = total(s.clips.filter(c => c.id !== s.replacing));
-    if (used >= s.mode - .3) { s.notify("Time's up — open the editor"); return; }
     if (s.timer) {
       let remaining = s.timer;
       s.patch({ countdown: remaining });

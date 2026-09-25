@@ -36,7 +36,7 @@ export const mkClip = (length: number, url: string | null, index: number): Clip 
 });
 
 export type CaptureState = {
-  screen: "camera" | "editor"; mode: 15 | 60 | 180; recording: boolean; elapsed: number; camOn: boolean;
+  screen: "camera" | "editor"; recording: boolean; elapsed: number; camOn: boolean;
   facing: "user" | "environment"; flash: boolean; timer: 0 | 3 | 10; countdown: number;
   recSpeed: .3 | .5 | 1 | 2 | 3; speedRow: boolean; liveFx: number; replacing: number | null;
   clips: Clip[]; texts: TextOverlay[]; ratio: Ratio; muted: boolean; sound: number;
@@ -50,7 +50,7 @@ export type CaptureState = {
 };
 
 const base = {
-  screen: "camera" as const, mode: 15 as const, recording: false, elapsed: 0, camOn: false,
+  screen: "camera" as const, recording: false, elapsed: 0, camOn: false,
   facing: "user" as const, flash: false, timer: 0 as const, countdown: 0,
   recSpeed: 1 as const, speedRow: false, liveFx: 0, replacing: null,
   clips: [] as Clip[], texts: [] as TextOverlay[], ratio: "9:16" as Ratio, muted: false, sound: 0,

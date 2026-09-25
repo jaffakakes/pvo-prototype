@@ -212,13 +212,13 @@ function ToolRow() {
   type CaptureStateSheet = "text" | "sound" | "ratio" | "speed" | "crop";
   const tools = selected ? [["down", "", "collapse"], ["split", "Split", "split"], ["replace", "Replace", "replace"], ["delete", "Delete", "delete"], ["speed", "Speed", "speed"], ["crop", "Crop", "crop"], ["filters", "Filter", "filter"]] : [["edit", "Edit clip", "edit"], ["text", "Text", "text"], ["filters", "Filters", "filters"], ["music", "Sound", "sound"], ["ratio", "Ratio", "ratio"]];
   const orbAction = (kind: string) => {
-    if (kind === "pace") { const factor = length > s.mode + .05 ? length / s.mode : 1.25; s.edit({ clips: s.clips.map(c => ({ ...c, speed: Math.min(3, round2(c.speed * factor)) })), orb: false }); s.notify("✦ Paced up"); }
+    if (kind === "pace") { s.edit({ clips: s.clips.map(c => ({ ...c, speed: Math.min(3, round2(c.speed * 1.25)) })), orb: false }); s.notify("✦ Paced up"); }
     if (kind === "title") { s.edit({ texts: [...s.texts, { id: uid(), text: "Day in the life", color: 2, start: 0, end: length, x: 50, y: 16 }], orb: false }); s.notify("✦ Title added"); }
     if (kind === "warm") { s.edit({ clips: s.clips.map(c => ({ ...c, fx: 1 })), orb: false }); s.notify("✦ Warm look applied"); }
   };
   return <div className={cx("toolBar")}><div className={cx("tools")}>{tools.map(([icon, label, name]) => <button key={name} className={cx(`tool tool-${name}`)} onClick={() => action(name)} aria-label={label || "Collapse clip tools"}><Icon name={icon} size={20} />{label && <span>{label}</span>}</button>)}</div>
     <button className={cx("orb")} data-awake={s.orb} onClick={() => s.patch({ orb: !s.orb, playing: false })} aria-label="Restyle AI"><img src="restyle-mark.png" alt="" /></button>
-    {s.orb && !s.sheet && <div className={cx("orbActs")}>{[["pace", length > s.mode + .05 ? `Fit to ${s.mode}s` : "Tighten pace 1.25×", "#FF6FA6"], ["title", "Add a title", "#FFD23E"], ["warm", "Warm every clip", "#FF9F6E"]].map(([kind, label, color]) => <button key={kind} className={cx("orbAct")} onClick={() => orbAction(kind)}><i style={{ background: color, boxShadow: `0 0 8px ${color}` }} />✦ {label}</button>)}</div>}
+    {s.orb && !s.sheet && <div className={cx("orbActs")}>{[["pace", "Tighten pace 1.25×", "#FF6FA6"], ["title", "Add a title", "#FFD23E"], ["warm", "Warm every clip", "#FF9F6E"]].map(([kind, label, color]) => <button key={kind} className={cx("orbAct")} onClick={() => orbAction(kind)}><i style={{ background: color, boxShadow: `0 0 8px ${color}` }} />✦ {label}</button>)}</div>}
   </div>;
 }
 

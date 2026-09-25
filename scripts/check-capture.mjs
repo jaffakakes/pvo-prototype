@@ -9,6 +9,7 @@ page.on("pageerror", error => errors.push(error.message));
 try {
   await page.goto("http://127.0.0.1:5173/", { waitUntil: "networkidle" });
   await page.getByRole("button", { name: "Record" }).waitFor();
+  if (await page.locator(".modeRow").count()) throw new Error("Timed recording modes are still visible");
   await page.screenshot({ path: resolve(tmpdir(), "capture-camera.png") });
   await page.getByRole("button", { name: "Record" }).click();
   await page.waitForTimeout(900);
@@ -87,6 +88,17 @@ try {
     await realSaved.saveAs(resolve(tmpdir(), "capture-real-export.webm"));
     console.log("Real video upload, replacement, trim, speed, crop, filter, sound, split, and export passed");
     await real.close();
+  }
+  if (process.argv[3]) {
+    const long = await browser.newPage();
+    await long.goto("http://127.0.0.1:5173/", { waitUntil: "networkidle" });
+    await long.locator('input[type="file"]').setInputFiles(process.argv[3]);
+    await long.getByRole("button", { name: "Open editor" }).waitFor();
+    const footer = await long.locator(".camFoot").innerText();
+    const match = footer.match(/(\d+):(\d+)$/);
+    if (!match || Number(match[1]) * 60 + Number(match[2]) <= 15) throw new Error(`Long upload was capped: ${footer}`);
+    console.log(`Unlimited upload passed: ${footer.replaceAll("\n", " ")}`);
+    await long.close();
   }
   const cameraContext = await browser.newContext({ viewport: { width: 500, height: 1000 }, permissions: ["camera", "microphone"] });
   const camera = await cameraContext.newPage();
