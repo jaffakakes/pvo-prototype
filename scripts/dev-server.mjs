@@ -1,8 +1,9 @@
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = new URL("../", import.meta.url).pathname;
+const root = fileURLToPath(new URL("../dist/", import.meta.url));
 const port = Number(process.env.PVO_PORT || 4173);
 const mime = {
   ".html": "text/html; charset=utf-8",
@@ -14,6 +15,9 @@ const mime = {
   ".mov": "video/quicktime",
   ".pvo": "application/vnd.pvo",
   ".md": "text/markdown; charset=utf-8",
+  ".png": "image/png",
+  ".webm": "video/webm",
+  ".woff2": "font/woff2",
 };
 
 createServer((request, response) => {

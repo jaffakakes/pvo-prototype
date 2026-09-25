@@ -2,11 +2,11 @@
 
 PVO is an open prototype format for interactive video. A self-contained `.pvo` file stores the original main and branch media alongside a declarative manifest describing timelines, scenes, interface components, state, conditions, requests, and branching.
 
-This repository contains the independent `@pvo/sdk` plus a small editor prototype used to exercise the format. Neither depends on Restyle.
+This repository contains the independent `@pvo/sdk`, a PVO player, and a Restyle Capture camera/editor prototype. The SDK and player do not depend on Restyle.
 
 ## Run the prototype
 
-Requires Node.js 22 or newer. There are no third-party runtime dependencies.
+Requires Node.js 22 or newer. Install dependencies first with `npm install`.
 
 ```sh
 npm run dev
@@ -14,11 +14,14 @@ npm run dev
 
 Open [http://127.0.0.1:4173](http://127.0.0.1:4173) for the SDK documentation, [http://127.0.0.1:4173/editor/](http://127.0.0.1:4173/editor/) for the editor, or [http://127.0.0.1:4173/player/](http://127.0.0.1:4173/player/) for the PVO player.
 
+The editor opens directly into the camera. If camera access is denied, the shutter creates coloured demo clips. Recording, upload, trim, split, speed, crop, mirror, filters, text, ratio, sound and WebM export are available in the browser. The prototype's named sound choices use generated instrumental loops because the design reference contains no audio assets. Chrome and Firefox support the browser recording/export path; use `npm run dev:editor` for live UI development.
+
 Run the checks with:
 
 ```sh
 npm test
 npm run check
+npm run check:editor
 ```
 
 ## SDK
@@ -56,7 +59,7 @@ PVO does not define payments or business objects. A creator can make a generic `
 
 ## Prototype scope
 
-Included now: self-contained multi-media `.pvo` packages, MP4 and MOV assets, main and branch timelines, scene ranges, normalized hotspot data, tooltip/card/choice/form definitions, end-of-layer True/False branching, state, conditions, response mapping, generic HTTP actions, pack/read/validate, a host-adapted runtime, a layered editor, and a PVO player.
+Included now: self-contained multi-media `.pvo` packages, MP4 and MOV assets, main and branch timelines, scene ranges, normalized hotspot data, tooltip/card/choice/form definitions, end-of-layer True/False branching, state, conditions, response mapping, generic HTTP actions, pack/read/validate, the Restyle Capture editor, and a PVO player.
 
 Deferred: animation keyframes, signatures, compression, builder layers, streaming indexes, offline request queues, native bindings, accounts, collaboration, payments, and AI authoring.
 

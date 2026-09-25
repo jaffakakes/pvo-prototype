@@ -8,10 +8,29 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "node scripts/build-share-site.mjs",
-    "dev": "node scripts/dev-server.mjs",
+    "build": "node scripts/build-share-site.mjs && vite build --config editor/vite.config.ts",
+    "dev": "npm run build && node scripts/dev-server.mjs",
+    "dev:editor": "vite --config editor/vite.config.ts --host 127.0.0.1",
+    "check:editor": "tsc --noEmit -p editor/tsconfig.json",
     "test": "node --test tests/*.test.mjs",
     "build:sample": "node scripts/build-sample.mjs",
     "check": "node --check packages/pvo-sdk/index.js && node --check scripts/build-sample.mjs && node --check scripts/dev-server.mjs && node --check player/app.js && node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.4",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^5.2.0",
+    "playwright-core": "^1.63.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.6"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-win32-x64-msvc": "^4.63.5"
   }
 }
