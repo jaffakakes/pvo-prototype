@@ -1,0 +1,122 @@
+/* Components add one lane to the existing editor; the camera remains unchanged. */
+.tl {
+  height: 206px;
+}
+.pvBox[data-trying="true"] {
+  border-color: var(--violet);
+}
+.tl[data-trying="true"],
+.scenesRow[data-trying="true"],
+.toolBar[data-trying="true"] {
+  opacity: 0.45;
+}
+.tool-components svg {
+  color: var(--violet);
+}
+.compAdd,
+.compBar,
+.compMarker {
+  position: absolute;
+  top: 164px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 24px;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  border-radius: 8px;
+  font: 800 10.5px/1 var(--f-ui);
+  cursor: pointer;
+  touch-action: none;
+}
+.compAdd {
+  min-width: 140px;
+  padding: 0 10px;
+  background: transparent;
+  border: 2px dashed rgba(167, 139, 250, 0.45);
+  color: rgba(167, 139, 250, 0.75);
+  font-weight: 700;
+}
+.compAdd svg {
+  flex: none;
+  color: var(--violet);
+}
+.compAdd:hover,
+.compAdd:focus-visible {
+  border-color: rgba(167, 139, 250, 0.8);
+  color: var(--violet);
+}
+.compBar,
+.compMarker {
+  padding: 0 8px;
+  background: var(--violet);
+  color: var(--ink);
+  border: 2px solid #000;
+}
+.compBar svg,
+.compMarker svg {
+  flex: none;
+}
+.compBar span,
+.compMarker span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.compMarker {
+  min-width: 44px;
+  justify-content: center;
+  overflow: visible;
+}
+.compTail {
+  position: absolute;
+  left: calc(100% + 2px);
+  top: 6px;
+  width: 16px;
+  height: 14px;
+  opacity: 0.75;
+  background: repeating-linear-gradient(
+    135deg,
+    var(--violet) 0 3px,
+    transparent 3px 6px
+  );
+  pointer-events: none;
+}
+.compBar.compSelected,
+.compMarker.compSelected {
+  border: 3px solid var(--pale);
+  box-shadow: 0 0 0 3px rgba(255, 159, 188, 0.3);
+  z-index: 2;
+}
+.compHandle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 12px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: var(--pale);
+  cursor: ew-resize;
+  touch-action: none;
+  z-index: 2;
+}
+.compHandle:first-child {
+  left: 0;
+}
+.compHandle:last-child {
+  right: 0;
+}
+.compHandle::after {
+  content: "";
+  width: 2px;
+  height: 14px;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 1px;
+}
+.compBar.compSelected .compHandle {
+  display: flex;
+}

@@ -1,0 +1,118 @@
+.toolbar {
+  height: 54px;
+  min-height: 54px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.06);
+}
+.tools,
+.right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.tools {
+  flex: 1;
+}
+.right {
+  flex-shrink: 0;
+}
+.tool {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: transparent;
+  color: #d8d5cb;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 20px;
+}
+.tool:hover:enabled {
+  background: rgba(255, 255, 255, 0.07);
+}
+.tool:disabled {
+  color: #4a4757;
+  cursor: not-allowed;
+}
+.tool[data-active="true"] {
+  color: #ff6fa6;
+  background: rgba(255, 45, 120, 0.14);
+}
+.tool:focus-visible,
+.zoom:focus-visible {
+  outline: 2px solid #ff6fa6;
+  outline-offset: 2px;
+}
+.separator {
+  width: 2px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0 6px;
+  flex-shrink: 0;
+}
+.selection {
+  height: 28px;
+  max-width: 220px;
+  min-width: 0;
+  padding: 0 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  line-height: 24px;
+  font-size: 11px;
+  font-weight: 800;
+  border: 2px dashed rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  color: rgba(255, 255, 255, 0.45);
+}
+.selection[data-selected="true"] {
+  background: #ff2d78;
+  border: 2px solid #000;
+  box-shadow: 2px 2px 0 #000;
+  color: #fff;
+}
+.zoom {
+  width: 96px;
+  height: 5px;
+  accent-color: #ff6fa6;
+  cursor: pointer;
+}
+.assistant {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+@media (max-width: 1279px) {
+  .zoom {
+    width: 72px;
+  }
+  .selection {
+    max-width: 150px;
+  }
+}
+@media (pointer: coarse) {
+  .tool {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+  }
+  .toolbar {
+    gap: 4px;
+    padding: 0 6px;
+  }
+  .separator {
+    margin: 0 2px;
+  }
+  .selection {
+    max-width: 110px;
+  }
+}

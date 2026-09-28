@@ -1,0 +1,86 @@
+.shutter svg circle {
+  transition:
+    stroke-dasharray 0.12s linear,
+    stroke-dashoffset 0.12s linear;
+}
+.cameraFrame,
+.cameraGuide {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  overflow: hidden;
+  border: 2.5px solid var(--pale);
+  border-radius: 12px;
+  transition:
+    width 0.25s,
+    height 0.25s;
+}
+.cameraFrame {
+  background: #000;
+}
+.cameraFrame .live {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.flipFreeze {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  visibility: hidden;
+}
+.flipFreeze[data-visible="true"] {
+  visibility: visible;
+}
+.flipButton:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.flipButton[data-switching="true"] svg {
+  color: var(--pale);
+  transform-origin: center;
+  animation: flipRock 0.7s ease-in-out infinite;
+}
+@keyframes flipRock {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(30deg);
+  }
+  75% {
+    transform: rotate(-30deg);
+  }
+}
+.cameraGuide {
+  pointer-events: none;
+  box-shadow: 0 0 0 100vmax rgba(11, 11, 15, 0.58);
+}
+.cameraFrame[data-fill="true"],
+.cameraGuide[data-fill="true"] {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+@media (min-width: 600px) and (max-height: 500px) {
+  .camBottom {
+    background: none;
+    pointer-events: none;
+  }
+  .camBottom button,
+  .camBottom .speedRow {
+    pointer-events: auto;
+  }
+  .rightRail {
+    top: 112px;
+    gap: 2px;
+  }
+}

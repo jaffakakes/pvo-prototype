@@ -1,0 +1,72 @@
+.picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 54px;
+  min-height: 54px;
+  padding: 0 12px;
+  border-bottom: 2px solid rgba(167, 139, 250, 0.35);
+  background: rgba(167, 139, 250, 0.07);
+  border-radius: 14px 14px 0 0;
+}
+
+.copy {
+  display: flex;
+  align-items: baseline;
+  flex: 1;
+  min-width: 0;
+  gap: 12px;
+}
+
+.copy strong {
+  font-size: 13px;
+  color: #d8cbff;
+}
+
+.copy span {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.copy .error {
+  color: #ff9fbc;
+}
+
+.time {
+  color: #d8cbff;
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.picker button {
+  height: 36px;
+  padding: 0 14px;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9px;
+  background: #15151c;
+  color: #f2f0e9;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.picker .accept {
+  color: #111;
+  background: #a78bfa;
+  border-color: #000;
+  box-shadow: 2px 2px 0 #000;
+}
+
+@media (max-width: 1279px) {
+  .copy {
+    flex-direction: column;
+    gap: 2px;
+  }
+}
+
+@media (pointer: coarse) {
+  .picker button {
+    height: 44px;
+  }
+}

@@ -1,0 +1,50 @@
+.header {
+  height: 56px;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px;
+}
+
+.title { flex: 1; min-width: 0; padding: 0 3px; }
+.title h1 { margin: 0; font: 17px/1.1 var(--f-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.title p { margin: 4px 0 0; font: 600 10px/1.2 var(--f-ui); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.iconButton, .tryButton {
+  display: grid;
+  flex: none;
+  width: 44px;
+  min-height: 44px;
+  place-items: center;
+  padding: 0;
+  color: var(--text);
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+}
+.iconButton:disabled, .tryButton:disabled { opacity: .4; cursor: default; }
+.tryButton { min-width: 44px; padding: 0 7px; background: var(--pale); color: var(--ink); border: 2px solid #000; font: 800 12px var(--f-ui); }
+.iconButton:focus-visible, .tryButton:focus-visible { outline: 3px solid #ff9fbc; outline-offset: -3px; }
+.ratio, .guest { display: none; }
+.export { display: flex; flex: none; align-items: center; justify-content: center; gap: 8px; min-width: 44px; height: 44px; padding: 0 10px; background: var(--accent); border: 2px solid #000; border-radius: 12px; font-size: 13px; font-weight: 800; cursor: pointer; }
+.export:disabled { opacity: .4; }
+.export > span { display: none; }
+
+@media (min-width: 390px) {
+  .header { gap: 4px; padding: 0 10px; }
+  .title h1 { font-size: 19px; }
+  .title p { font-size: 11px; }
+}
+
+@media (min-width: 768px) {
+  .header { height: 76px; padding: 0 24px; gap: 12px; background: var(--bar); border-bottom: 2px solid var(--q08); }
+  .title h1 { font-size: 22px; }
+  .title p { font-size: 12px; }
+  .export > span { display: inline; }
+  .export { padding: 0 16px; box-shadow: 3px 3px 0 #000; }
+  .guest { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 8px 0 12px; background: var(--surface); border: 2px solid var(--q14); border-radius: 10px; color: var(--muted); font-size: 12px; cursor: pointer; }
+  .guest i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+  .guest span { padding: 5px 8px; border: 1px solid var(--q14); border-radius: 7px; background: var(--input); color: var(--text); font-size: 11px; }
+  .ratio { display: block; padding: 9px 12px; border: 2px solid var(--q14); border-radius: 10px; font-size: 12px; }
+}

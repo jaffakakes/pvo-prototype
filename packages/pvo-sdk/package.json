@@ -20,6 +20,9 @@
     "index.js",
     "index.d.ts",
     "pvo-manifest.schema.json",
-    "README.md"
+    "README.md",
+    "container",
+    "manifest",
+    "runtime"
   ]
 }

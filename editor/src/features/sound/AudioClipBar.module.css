@@ -1,0 +1,36 @@
+.clip {
+  position: absolute;
+  top: 0;
+  height: 28px;
+  border: 1px solid #398d7b;
+  border-radius: 7px;
+  background: #204d42;
+  color: #c7f6e8;
+  padding: 0 12px;
+  overflow: hidden;
+  text-align: left;
+  font: 700 10px var(--f-ui);
+  touch-action: none;
+  cursor: grab;
+}
+.clip[data-selected="true"] {
+  border: 2px solid #a1efd7;
+}
+.name {
+  white-space: nowrap;
+  pointer-events: none;
+}
+.handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 9px;
+  background: #a1efd7;
+  cursor: ew-resize;
+}
+.handle[data-edge="l"] {
+  left: 0;
+}
+.handle[data-edge="r"] {
+  right: 0;
+}

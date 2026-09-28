@@ -1,0 +1,16 @@
+.panel { display: flex; flex-direction: column; gap: 18px; height: 100%; min-height: 0; padding: 22px 20px 16px; background: var(--bar); border-right: 2px solid var(--q08); overflow-y: auto; }
+.heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.heading h2 { margin: 0; font: 22px var(--f-display); }
+.heading span { color: var(--muted); font-size: 11px; }
+.upload, .record { display: flex; flex: none; align-items: center; justify-content: center; gap: 8px; min-height: 44px; border: 2px solid var(--q14); border-radius: 12px; background: var(--surface); font-size: 12px; font-weight: 700; cursor: pointer; }
+.upload { background: var(--accent-soft); border-color: #000; box-shadow: 3px 3px 0 #000; }
+.list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 14px 10px; flex: 1; }
+.list > p { grid-column: 1 / -1; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.clip { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; }
+.clip > div { position: relative; width: 100%; height: 110px; border: 2px solid #000; border-radius: 12px; overflow: hidden; }
+.clip[aria-pressed="true"] > div { border-color: var(--pale); box-shadow: 0 0 0 2px var(--accent); }
+.clip video { width: 100%; height: 100%; object-fit: cover; }
+.clip span { position: absolute; bottom: 5px; right: 5px; padding: 2px 5px; border-radius: 4px; background: #000b; font-size: 9px; }
+.clip strong { font-size: 12px; }
+.clip small { color: var(--muted); font-size: 10px; }
+.footer { margin: 0; text-align: center; color: var(--muted); font-size: 10px; line-height: 1.5; }

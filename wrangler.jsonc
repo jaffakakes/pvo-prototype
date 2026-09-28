@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lingering-butterfly-9ba8",
+  "account_id": "84880ccf8f98bb789d58cbea5436a645",
+  "main": "server/worker.js",
+  "ai": { "binding": "AI" },
+  "durable_objects": {
+    "bindings": [
+      { "name": "RELEASES", "class_name": "ReleaseChannel" },
+      { "name": "ASSISTANT_BUDGET", "class_name": "AssistantBudget" }
+    ]
+  },
+  "migrations": [
+    { "tag": "release-channel-v1", "new_sqlite_classes": ["ReleaseChannel"] },
+    { "tag": "assistant-budget-v1", "new_sqlite_classes": ["AssistantBudget"] }
+  ],
+  "compatibility_date": "2026-09-27",
+  "observability": { "enabled": true, "traces": { "enabled": true } },
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/", "/api", "/api/*", "/media", "/media/*", "/player/published", "/player/published.html", "/docs", "/docs/*", "/demo", "/demo/*"],
+    "not_found_handling": "none"
+  },
+  "vars": {
+    "PUBLISHING_ENABLED": "false",
+    "PUBLIC_ORIGIN": "https://lingering-butterfly-9ba8.jaffakakes28.workers.dev",
+    "MAX_UPLOAD_BYTES": "52428800",
+    "OWNER_STORAGE_BYTES": "524288000",
+    "TOTAL_STORAGE_BYTES": "5368709120"
+  },
+  "triggers": { "crons": ["0 * * * *"] }
+}

@@ -1,0 +1,5 @@
+.transport { display: grid; grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr); align-items: center; height: 52px; gap: 10px; padding: 4px 12px; }
+.time { width: auto; min-width: 84px; flex: none; font-size: 11px; }
+.time span { color: var(--muted); }
+.play { width: 44px; height: 44px; flex: none; border-width: 2px; box-shadow: 2px 2px 0 #000; }
+.play:focus-visible { outline: 3px solid #ff9fbc; outline-offset: 1px; }

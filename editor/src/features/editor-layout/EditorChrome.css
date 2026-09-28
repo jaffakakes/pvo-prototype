@@ -1,0 +1,40 @@
+.editorHead {
+  height: 64px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 18px;
+}
+.backBtn {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border: 2px solid var(--q14);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.editorTitle h1 {
+  margin: 0;
+  font: 19px/1 var(--f-display);
+}
+.editorTitle p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font: 600 11px var(--f-ui);
+}
+.nextBtn {
+  margin-left: auto;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px 0 16px;
+  background: var(--accent);
+  border: 2.5px solid #000;
+  border-radius: 12px;
+  box-shadow: 3px 3px 0 #000;
+  font: 800 13px var(--f-ui);
+}

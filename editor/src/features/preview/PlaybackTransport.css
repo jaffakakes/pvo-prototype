@@ -1,0 +1,47 @@
+.transport {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 20px 10px;
+}
+.transportTime {
+  width: 110px;
+  font: 700 12px var(--f-ui);
+}
+.transportTime span {
+  color: rgba(242, 240, 233, 0.4);
+}
+.playBtn {
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  border: 3px solid #000;
+  border-radius: 50%;
+  box-shadow: 3px 3px 0 #000;
+}
+.playBtn svg {
+  margin-left: 2px;
+}
+.transportRight {
+  width: 110px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.transportRight button {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: var(--surface);
+  border: 2px solid var(--q12);
+  border-radius: 9px;
+  cursor: pointer;
+}
+.transportRight button:disabled {
+  color: var(--disabled);
+}

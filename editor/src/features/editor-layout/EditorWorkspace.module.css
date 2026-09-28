@@ -1,0 +1,141 @@
+.workspace {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: grid;
+  background: var(--deep);
+  /* System gesture areas stay outside every panel size, including transitions. */
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px);
+  grid-template-rows: var(--header-height, 64px) var(--preview-height, 0px) var(--playback-height, 66px) var(--dock-height, 320px);
+  grid-template-columns: minmax(0, 1fr);
+  overflow: clip;
+  transition: grid-template-rows 320ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.workspace[data-resizing="true"] { transition: none; }
+.media { display: none; min-height: 0; min-width: 0; }
+.workspace[data-playback-visible="false"] ~ :global(.tryBanner) { visibility: hidden; pointer-events: none; }
+.header, .playback { min-height: 0; min-width: 0; overflow: clip; }
+.header, .preview, .playback { transition: opacity 180ms ease, visibility 180ms; }
+.header[data-visible="false"], .preview[data-visible="false"], .playback[data-visible="false"] {
+  visibility: hidden;
+  pointer-events: none;
+}
+.workspace[data-resizing="true"] > .header,
+.workspace[data-resizing="true"] > .preview,
+.workspace[data-resizing="true"] > .playback { transition: none; }
+.preview { min-height: 0; display: flex; overflow: hidden; }
+.preview :global(.previewArea) { padding: 8px 20px; }
+.preview :global(.pvBox) { transition: none; }
+.playback { min-height: 0; }
+.dock { position: relative; min-height: 0; }
+.workspace[data-trying="true"] .dock { visibility: hidden; overflow: hidden; pointer-events: none; }
+.workspace[data-keyboard-open="true"] :global([data-component-tabs]) { display: none; }
+.workspace[data-keyboard-open="true"] :global([data-sheet-body]) {
+  padding-bottom: calc(20px + var(--keyboard-height));
+  scroll-padding: 12px 0 24px;
+}
+
+.timelinePane, .sheetPane {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(12px);
+  transition: opacity 180ms ease, transform 240ms ease, visibility 240ms;
+}
+
+.timelinePane[data-active="true"], .sheetPane[data-active="true"] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.timelinePane {
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+  background: var(--ground);
+}
+.timelineContent { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+.timelineContent > :global(.tl) {
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: none;
+  background: var(--ground);
+}
+.timelinePane :global(.layerName) { background: var(--ground); }
+.sheetPane {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--ground);
+  border-top: 2.5px solid #000;
+  border-radius: 20px 20px 0 0;
+}
+
+.sheetContent { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+.workspace[data-code-expanded="true"] .sheetPane { container: expanded-code / size; }
+
+.workspace[data-panel-fullscreen="true"] .sheetPane {
+  border-radius: 0;
+  border-top-color: transparent;
+}
+
+.resizeHandle {
+  height: 26px;
+  flex: 0 0 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+  outline-offset: -5px;
+}
+
+.resizeHandle span {
+  width: 48px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--muted);
+  transition: background 120ms ease, width 120ms ease;
+}
+
+.resizeHandle:hover span, .resizeHandle:focus-visible span {
+  background: var(--highlight);
+  width: 56px;
+}
+
+.resizeHandle:focus-visible { outline: 2px solid var(--highlight); }
+.workspace[data-resizing="true"] .resizeHandle span { background: var(--accent); }
+
+:global(.app[data-reduce-motion="true"]) .workspace,
+:global(.app[data-reduce-motion="true"]) .header,
+:global(.app[data-reduce-motion="true"]) .preview,
+:global(.app[data-reduce-motion="true"]) .playback,
+:global(.app[data-reduce-motion="true"]) .timelinePane,
+:global(.app[data-reduce-motion="true"]) .sheetPane,
+:global(.app[data-reduce-motion="true"]) .resizeHandle span { transition: none; }
+
+@media (pointer: coarse) {
+  .resizeHandle { height: 44px; flex-basis: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace, .header, .preview, .playback, .timelinePane, .sheetPane, .resizeHandle span { transition: none; }
+}
+
+@media (min-width: 1100px) {
+  .workspace { grid-template-columns: 280px minmax(0, 1fr); }
+  .header { grid-column: 1 / -1; grid-row: 1; }
+  .media { display: block; grid-column: 1; grid-row: 2 / 4; overflow: hidden; }
+  .preview { grid-column: 2; grid-row: 2; }
+  .playback { grid-column: 2; grid-row: 3; }
+  .dock { grid-column: 1 / -1; grid-row: 4; }
+  .preview :global(.previewArea) { padding: 20px 40px; }
+}

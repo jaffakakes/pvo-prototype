@@ -1,0 +1,69 @@
+.tryPill {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  z-index: 4;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 9px 0 7px;
+  background: var(--surface);
+  color: var(--text);
+  border: 2px solid #000;
+  border-radius: 8px;
+  box-shadow: 2px 2px 0 #000;
+  font: 800 10px var(--f-ui);
+  cursor: pointer;
+}
+.tryPill svg {
+  color: var(--violet);
+}
+.tryPill[data-trying="true"] {
+  background: var(--violet);
+  color: var(--ink);
+  letter-spacing: 0.4px;
+}
+.tryPill[data-trying="true"] svg {
+  color: var(--ink);
+}
+.tryBanner {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 30px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 56px;
+  padding: 10px 10px 10px 14px;
+  background: var(--surface);
+  border: 2.5px solid #000;
+  border-radius: 14px;
+  box-shadow: 3px 3px 0 #000;
+  font: 700 12px/1.25 var(--f-ui);
+}
+.tryBanner::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  flex: none;
+  background: var(--violet);
+  border-radius: 50%;
+}
+.tryBanner span {
+  flex: 1;
+  min-width: 0;
+}
+.tryBanner button {
+  min-width: 48px;
+  min-height: 40px;
+  padding: 0 8px;
+  background: var(--text);
+  color: var(--ink);
+  border: 2px solid #000;
+  border-radius: 10px;
+  font: 800 12px var(--f-ui);
+  cursor: pointer;
+}

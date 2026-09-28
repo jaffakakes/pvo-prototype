@@ -1,0 +1,39 @@
+import { OrbAssistant } from "../features/assistant/OrbAssistant";
+import { useAssistant } from "../state/assistant/assistantStore";
+import { EditorWorkspace } from "../features/editor-layout/EditorWorkspace";
+import { EditorHeader } from "../features/editor-layout/EditorHeader";
+import { Preview } from "../features/preview/Preview";
+import { Transport } from "../features/preview/Transport";
+import { SceneTimeline } from "../features/scenes/SceneTimeline";
+import { Timeline } from "../features/timeline/Timeline";
+import { ToolRow } from "../features/timeline/ToolRow";
+import { useCapture } from "../state/captureStore";
+import { Sheets } from "./Sheets";
+import { DesktopEditor } from "../features/desktop-editor/DesktopEditor";
+import { useWideLayout } from "../infrastructure/viewport";
+import { useComponentAuthoring } from "../state/components/componentAuthoringStore";
+import { useEditorPreferences } from "../state/preferences/editorPreferences";
+
+export function Editor() {
+  const wide = useWideLayout();
+  const scenes = useCapture(state => state.scenes);
+  const sheetOpen = useCapture(state => state.sheet !== null && !state.playheadPick);
+  const componentSheet = useCapture(state => state.sheet === "component" || state.sheet === "components");
+  const selectedComponent = useCapture(state => state.sheet === "component" ? state.selComp : null);
+  const authoring = useComponentAuthoring();
+  const advanced = useEditorPreferences(state => state.advancedEditingEnabled);
+  const codeEditingId = advanced && authoring.tab === "advanced" && authoring.componentId === selectedComponent
+    ? selectedComponent ?? undefined : undefined;
+  const trying = useCapture(state => !!state.tryMode);
+  const assistantActive = useAssistant(state => state.phase !== "idle");
+  if (!scenes.length) return null;
+  if (wide) return <DesktopEditor />;
+  return <>
+    <EditorWorkspace open={sheetOpen} componentSheet={componentSheet} codeEditingId={codeEditingId} trying={trying}
+      header={<EditorHeader />} preview={<Preview />} playback={<Transport />}
+      timeline={<><SceneTimeline><Timeline /></SceneTimeline><ToolRow /></>} sheets={<Sheets />}
+      assistant={(expanded, target) => <OrbAssistant placement={expanded ? "floating" : "workspace"} portalTarget={target} />}
+      assistantActive={assistantActive}
+      onDismiss={() => useCapture.getState().patch({ sheet: null })} />
+  </>;
+}

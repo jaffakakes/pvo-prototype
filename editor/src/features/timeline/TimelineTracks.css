@@ -1,0 +1,247 @@
+.tl {
+  position: relative;
+  flex: none;
+  height: 172px;
+  overflow: hidden;
+  background: var(--deep);
+  border-top: 2px solid var(--q08);
+  border-bottom: 2px solid var(--q08);
+  touch-action: none;
+  cursor: grab;
+}
+.strip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+.tick {
+  position: absolute;
+  top: 7px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  color: rgba(242, 240, 233, 0.38);
+  font: 600 9.5px var(--f-ui);
+  pointer-events: none;
+}
+.mute {
+  position: absolute;
+  top: 30px;
+  width: 44px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border: 2px solid var(--q12);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.tlClips {
+  position: absolute;
+  top: 28px;
+  display: flex;
+  align-items: center;
+}
+.tlClip {
+  position: relative;
+  flex: none;
+  height: 56px;
+  overflow: hidden;
+  padding: 0;
+  border: 2px solid #000;
+  border-radius: 10px;
+  cursor: pointer;
+  z-index: 1;
+}
+.tlClip[data-sel="true"] {
+  border: 3px solid var(--pale);
+  box-shadow: 0 0 0 3px rgba(255, 159, 188, 0.3);
+  z-index: 2;
+}
+.tlClip video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+.clipLen {
+  position: absolute;
+  top: 5px;
+  padding: 1px 6px;
+  background: rgba(0, 0, 0, 0.75);
+  border-radius: 5px;
+  font: 700 9px var(--f-ui);
+  pointer-events: none;
+}
+.handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--pale);
+  cursor: ew-resize;
+  touch-action: none;
+  z-index: 2;
+}
+.handleL {
+  left: 0;
+}
+.handleR {
+  right: 0;
+}
+.handle::after {
+  content: "";
+  width: 2px;
+  height: 18px;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 1px;
+}
+.addClip {
+  flex: none;
+  margin-left: 10px;
+  width: 44px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 2px dashed rgba(255, 255, 255, 0.28);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.audioTrack {
+  position: absolute;
+  top: 92px;
+  height: 30px;
+  overflow: hidden;
+  border: 2px solid #000;
+  border-radius: 8px;
+  background: #1f3d33
+    repeating-linear-gradient(90deg, #2ec4b6 0 2px, transparent 2px 5px);
+  background-size: auto 60%;
+  background-position: 0 50%;
+}
+.audioTrack span {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 6px 7px;
+  padding: 1px 6px;
+  background: rgba(0, 0, 0, 0.75);
+  border-radius: 5px;
+  font: 700 9px var(--f-ui);
+}
+.textBar,
+.textAdd {
+  position: absolute;
+  top: 130px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.textBar {
+  padding: 0 8px;
+  border: 2px solid #000;
+  font: 800 10.5px var(--f-ui);
+}
+.textAdd {
+  padding: 0 10px;
+  background: none;
+  border: 2px dashed rgba(255, 255, 255, 0.18);
+  color: var(--faint);
+  font: 700 10.5px var(--f-ui);
+}
+.textAdd:hover {
+  border-color: rgba(255, 210, 62, 0.55);
+  color: var(--yellow);
+}
+.playhead {
+  position: absolute;
+  transform: translateX(-50%);
+  top: 22px;
+  bottom: 8px;
+  width: 2.5px;
+  background: var(--text);
+  box-shadow: 0 0 0 1px #000;
+  pointer-events: none;
+  z-index: 3;
+}
+.playhead::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  border: 2px solid #000;
+  border-radius: 5px;
+}
+.toolBar {
+  position: relative;
+  flex: none;
+  background: var(--bar);
+  border-top: 2px solid rgba(255, 255, 255, 0.1);
+}
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 14px calc(10px + env(safe-area-inset-bottom));
+  scrollbar-width: none;
+}
+.tools::-webkit-scrollbar {
+  display: none;
+}
+.tool {
+  flex: 1 0 62px;
+  min-width: 0;
+  height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: var(--surface);
+  border: 2px solid #000;
+  border-radius: 12px;
+  box-shadow: 2px 2px 0 #000;
+  font: 700 10px var(--f-ui);
+  cursor: pointer;
+  transition:
+    transform 0.08s,
+    box-shadow 0.08s;
+}
+.tool span {
+  font-size: 9.5px;
+  letter-spacing: -0.4px;
+  white-space: nowrap;
+}
+.tool:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 #000;
+}
+.tool-collapse {
+  flex: 0 0 44px;
+}
+.tool-text svg {
+  color: var(--yellow);
+}
+.tool-sound svg {
+  color: var(--teal);
+}
+.tool-delete {
+  color: var(--red);
+}

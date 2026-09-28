@@ -1,0 +1,45 @@
+# Agent coding instructions
+
+These rules apply throughout this repository. Read the [coding standard](docs/engineering/coding-standards.md) before changing code and the [architecture](docs/engineering/architecture.md) when choosing where code belongs. The [code audit](docs/engineering/code-audit.md) records existing debt, not exceptions for new code.
+
+## Core rules
+
+- Give each file one cohesive responsibility and one main reason to change. Closely related private helpers may stay together; unrelated screens, workflows, or rules must not.
+- Prefer small, readable files grouped by feature. There is no hard line limit. Files growing toward 500 lines or beyond need an explicit responsibility review and usually a split; extract earlier when responsibilities diverge. Never compress code or JSX to reduce the count.
+- Apply SOLID through functions, modules, and narrow interfaces. Do not add class hierarchies, factories, or one-line forwarding modules just to satisfy an acronym.
+- Keep business rules, validation, calculations, and state transitions separate from rendering, event wiring, browser APIs, and network effects.
+- Put domain models beside domain rules. New domain code must not import React, Zustand, application UI, the DOM, or store types. Pass required data and effect adapters explicitly.
+- Use the same command for toolbar, keyboard, and other entry points to the same operation. Do not copy editing or playback rules into each handler.
+- Keep entry points and store composition thin. UI components render state and translate interactions into named commands; the store integrates commands and history.
+- Follow the [notification policy](docs/engineering/notification-policy.md): approved typed events, short copy, one surface, and no routine edit toasts. Preserve unresolved save/recording status after dismissal.
+
+## Ownership and dependencies
+
+- `docs/site/`: documentation website. `docs/language/`: PVO authoring guide. `docs/engineering/`: standards, architecture, audits. `SPEC.md`: canonical format note. Keep each document focused and link related material.
+- `editor/`: authoring and recording application. `player/`: viewing application. Neither application may import the other's internals.
+- `packages/`: shared format/compiler/runtime code exposed through public entry points. Packages must not import editor, player, or documentation application code.
+- `packages/pvo-language/`: Rust compiler rules under `src/{structure,style,logic,compiler}/`, JSON/WASM exports in `bindings.rs`, and browser initialization in the root JavaScript facade. Follow its package `AGENTS.md`; keep host effects outside the compiler.
+- `share/`: public demo landing page and its assets. `scripts/build/`, `scripts/dev/`, and `scripts/checks/`: tooling grouped by purpose. `dist/`, language `pkg/`, and Cargo `target/`: generated output, never the source of a fix.
+- Group related files in a feature folder; co-locate its UI, hooks, and styles. Promote code to shared ownership only when the responsibility is genuinely shared.
+- Preserve public SDK imports, types, schema, and file compatibility during structural refactors. Update static build copying, package publication lists, and test servers when adding imported modules.
+
+## Working method
+
+1. Inspect relevant instructions, callers, tests, and `git status`. Preserve existing user changes.
+2. Identify the responsibility and dependency direction before editing. Follow the target architecture incrementally; do not create empty scaffolding or rewrite unrelated features.
+3. Separate behavior changes from file extraction. Add meaningful regression coverage for moved rules or risky lifecycles where coverage is missing.
+4. Keep effects at adapters, release owned media/URLs/listeners/workers, and report failures with useful operation context. Preserve sandbox, request, and confirmation boundaries.
+5. Review the diff for mixed responsibilities, duplicated rules, circular imports, unreadable formatting, and stale documentation.
+6. Run relevant checks and report what passed, failed, or was not run. Do not imply lint or architectural enforcement exists when it does not.
+7. After completing app changes, rebuild the beta with `npm run build` and verify that the running beta serves the new service-worker revision. The user expects changes to appear through **New beta release**, not only in source or a temporary preview. Locate the active beta server's actual output directory: it may serve a separate checkout, so updating this repository's `dist/` alone is not enough. Copy built assets there before the HTML and service worker, retaining old hashed assets for open clients. Preserve pending generated output in a backup before replacing it. Respect an explicit local-only request, and do not force an update or reload over the user's editing session.
+
+## Verification
+
+- `npm run check`: source JavaScript syntax checks and the Node test suite (includes editor layer/history tests).
+- `npm run check:editor`: strict editor TypeScript checking.
+- `npm run check:language` and `npm run check:language:format`: native Rust behavior tests and formatting. Build WASM with `npm run build:language` and verify browser contracts when compiler or bindings change.
+- `npm run build`: static demo/player/docs output and editor build; this replaces `dist/`. Preserve pending generated changes or use an isolated build directory before running it in a dirty checkout.
+- For browser behavior, use `npm run check:browser -- <suite> [checks...]` or the named suite commands. Read [scripts/README.md](scripts/README.md) for browser/server prerequisites. Node and native Rust tests alone do not verify recording, layout, playback, WASM integration, or sandbox isolation.
+- A documentation-only change needs link/content verification, not artificial unit tests. Refactors need checks of observable behavior, not assertions about filenames or line counts.
+
+Existing large modules are migration work. Do not expand their unrelated responsibilities; extract a coherent part when the change requires touching that part. Record a specific follow-up if a safe extraction needs a separate change.

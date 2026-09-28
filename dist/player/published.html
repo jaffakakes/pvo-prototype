@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Watch this shared video." />
+    <meta name="theme-color" content="#000000" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta property="og:title" content="{{TITLE}}" />
+    <meta property="og:type" content="video.other" />
+    <meta property="og:url" content="{{CANONICAL_URL}}" />
+    <title>{{TITLE}}</title>
+    <link rel="canonical" href="{{CANONICAL_URL}}" />
+    <link rel="stylesheet" href="/player/styles.css" />
+    <link rel="stylesheet" href="/player/publication/styles.css" />
+  </head>
+  <body data-publication-id="{{PUBLICATION_ID}}" data-publication-format="{{FORMAT}}"
+    data-publication-src="{{MEDIA_URL}}" data-publication-type="{{CONTENT_TYPE}}" data-shareable="true" data-autoplay="false">
+    <main>
+      <section class="empty-state" id="emptyState" hidden>
+        <div class="publication-error" role="status">
+          <h1>Video unavailable</h1>
+          <p>The video could not be loaded. Check your connection and try again.</p>
+          <button class="restart-experience" id="publicationRetry" type="button">Try again</button>
+          <a class="create-link" href="/">Create a video</a>
+        </div>
+      </section>
+      <section class="player-shell" id="playerShell" hidden>
+        <div class="player-frame controls-visible" id="playerFrame">
+          <video id="video" playsinline preload="auto"></video>
+          <div class="overlay-layer" id="overlayLayer"></div>
+          <button class="center-play" id="centerPlayButton" type="button" aria-label="Play" hidden>▶</button>
+          <div class="player-topbar">
+            <a class="player-brand" href="/">Create a video</a>
+            <button class="top-share-button" id="shareButton" type="button" hidden>Share</button>
+          </div>
+          <div class="end-screen" id="endScreen" hidden>
+            <div class="end-card">
+              <h1>Playback complete</h1>
+              <div class="end-actions">
+                <button class="restart-experience" id="endRestartButton" type="button">Watch again</button>
+                <button class="share-experience" id="endShareButton" type="button" hidden>Share video</button>
+              </div>
+              <a class="create-link" href="/">Create a video</a>
+            </div>
+          </div>
+          <div class="player-controls" id="playerControls">
+            <input class="progress-control" id="progress" type="range" min="0" max="1" value="0" step="0.01" aria-label="Video progress" />
+            <div class="control-row">
+              <button class="control-button" id="playButton" type="button" aria-label="Play">▶</button>
+              <span class="time-label" id="timeLabel">00:00 / 00:00</span>
+              <span id="timelineLabel" hidden>Main timeline</span>
+              <span class="control-spacer"></span>
+              <button class="control-button" id="muteButton" type="button" aria-label="Mute">🔊</button>
+              <input class="volume-control" id="volumeControl" type="range" min="0" max="1" value="1" step="0.05" aria-label="Volume" />
+              <button class="control-button restart-button" id="restartButton" type="button" aria-label="Restart">↻</button>
+              <button class="control-button fullscreen-button" id="fullscreenButton" type="button" aria-label="Enter full screen">⛶</button>
+            </div>
+          </div>
+          <p class="player-status" id="status" aria-live="polite"></p>
+        </div>
+      </section>
+    </main>
+    <noscript>Enable JavaScript to watch this video.</noscript>
+    <script type="module" src="/player/publication/entry.js"></script>
+  </body>
+</html>

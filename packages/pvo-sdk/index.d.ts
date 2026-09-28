@@ -40,6 +40,8 @@ export type PvoAction =
 export interface PvoScene {
   id: string;
   label?: string;
+  /** Tree ownership. Omitted in legacy flat manifests; the root has no parent. */
+  parent?: string | null;
   asset_id?: string;
   start: number;
   end: number;
@@ -79,6 +81,7 @@ export interface PvoManifest {
   id?: string;
   title?: string;
   initial_scene?: string;
+  /** Exact hosts (including a port when used) authorized for request actions. Omission permits no requests. */
   allowed_domains?: string[];
   state?: { initial?: Record<string, JsonValue>; persist?: boolean };
   media?: PvoMedia[];
@@ -97,12 +100,17 @@ export interface PvoAsset { id: string; name: string; type: string; blob: Blob; 
 export interface PvoReadResult { manifest: PvoManifest; validation: ValidationResult; videoBlob: Blob; fileName: string; assets?: PvoAsset[]; container?: boolean }
 export interface PvoProjectReadResult { manifest: PvoManifest; validation: ValidationResult; assets: PvoAsset[]; container: true; fileName: string }
 export interface RuntimeContext { state: Record<string, unknown>; response?: unknown; [key: string]: unknown }
+export interface RuntimeExecutionContext {
+  /** Reject request failures after on_error; intended for imperative pvo.request() bridges. */
+  throwOnRequestError?: boolean;
+  [key: string]: unknown;
+}
 export interface RuntimeHandlers {
   show?(component: PvoComponent, context: RuntimeContext): unknown | Promise<unknown>;
   hide?(component: PvoComponent | string, context: RuntimeContext): unknown | Promise<unknown>;
   gotoScene?(scene: string, context: RuntimeContext): unknown | Promise<unknown>;
   seek?(time: number, context: RuntimeContext): unknown | Promise<unknown>;
-  request?(request: { url: string; method: string; headers: Record<string, string>; body?: string }, context: RuntimeContext): unknown | Promise<unknown>;
+  request?(request: { url: string; method: string; headers: Record<string, string>; body?: string; redirect: "error" }, context: RuntimeContext): unknown | Promise<unknown>;
   openUrl?(url: string, context: RuntimeContext): unknown | Promise<unknown>;
   custom?(name: string, payload: unknown, context: RuntimeContext): unknown | Promise<unknown>;
   onEvent?(event: RuntimeEvent): void;
@@ -113,6 +121,15 @@ export function inspectMp4(input: Uint8Array | ArrayBuffer): Mp4Box[];
 export function packPvo(media: BinaryInput, manifest: PvoManifest): Promise<Blob>;
 export function packPvoProject(project: { manifest: PvoManifest; assets: PvoAssetInput[] }): Promise<Blob>;
 export function readPvoProject(file: BinaryInput & { name?: string }): Promise<PvoProjectReadResult>;
+export function inspectPvoProject(source: {
+  size: number;
+  readRange(start: number, end: number): Promise<Uint8Array>;
+}, options?: { maxHeaderBytes?: number }): Promise<{
+  manifest: PvoManifest;
+  validation: ValidationResult;
+  assets: Array<{ id: string; name: string; type: string; offset: number; length: number }>;
+  payloadStart: number;
+}>;
 export function readPvo(file: BinaryInput & { name?: string }): Promise<PvoReadResult>;
 export function tryReadPvo(file: BinaryInput & { name?: string }): Promise<PvoReadResult | null>;
 export function validatePvo(manifest: unknown): ValidationResult;
@@ -129,6 +146,6 @@ export class PvoRuntime {
   setState(key: string, value: unknown): void;
   reset(): void;
   getComponent(idOrObject: string | PvoComponent): PvoComponent | undefined;
-  execute(actionOrActions: PvoAction | PvoAction[], context?: Record<string, unknown>): Promise<unknown>;
+  execute(actionOrActions: PvoAction | PvoAction[], context?: RuntimeExecutionContext): Promise<unknown>;
 }
 export function createPvoRuntime(manifest: PvoManifest, handlers?: RuntimeHandlers): PvoRuntime;

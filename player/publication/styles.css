@@ -1,0 +1,13 @@
+.publication-error {
+  width: min(400px, 100%);
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  text-align: center;
+}
+.publication-error h1, .publication-error p { margin: 0; }
+.publication-error p { color: #c6c0c2; line-height: 1.5; }
+.publication-error .restart-experience { min-width: 150px; }
+.player-frame[data-publication-format="video"] video { object-fit: contain; }
+.player-frame[data-publication-format="video"] .player-topbar { pointer-events: none; }
+.player-frame[data-publication-format="video"] .player-topbar > * { pointer-events: auto; }

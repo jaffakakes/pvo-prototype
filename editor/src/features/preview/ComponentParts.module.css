@@ -1,0 +1,37 @@
+.part[data-part-selected=true] {
+  outline: 2.5px solid #FF9FBC;
+  outline-offset: 3px;
+}
+
+.fields {
+  display: grid;
+  gap: calc(6 * var(--u));
+  margin: calc(7 * var(--u)) 0;
+}
+
+.fields .field {
+  display: grid;
+  gap: calc(3 * var(--u));
+  font-size: inherit;
+  font-weight: inherit;
+  text-align: inherit;
+}
+
+.field span {
+  font-size: inherit;
+}
+
+.field select {
+  width: 100%;
+  min-height: calc(30 * var(--u));
+  font: inherit;
+  background: #1c1c24;
+  color: #F2F0E9;
+  border: 1px solid #8f8d95;
+  border-radius: calc(7 * var(--u));
+}
+
+.part:disabled {
+  opacity: 1;
+}
+

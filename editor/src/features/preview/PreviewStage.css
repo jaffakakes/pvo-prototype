@@ -1,0 +1,83 @@
+.pvTag {
+  max-width: calc(100% - 20px);
+}
+.pvBox:has(.tryPill) .pvTag {
+  max-width: calc(100% - 80px);
+}
+.pvBox[data-compact="true"] .pvTag {
+  top: 44px;
+  max-width: calc(100% - 20px);
+}
+.pvTag span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.previewArea {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pvBox {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  background: var(--surface);
+  border: 2.5px solid #000;
+  border-radius: 16px;
+  box-shadow: 4px 4px 0 #000;
+  transition:
+    width 0.25s,
+    height 0.25s;
+}
+.pvVideo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pvFallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+.pvFallback img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  opacity: 0.22;
+  filter: invert(1);
+}
+.pvTag {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+.pvTag i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--highlight);
+}
+.textOverlay {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  border: 2.5px solid #000;
+  border-radius: 10px;
+  box-shadow: 3px 3px 0 #000;
+  font-family: var(--f-display);
+  line-height: 1.15;
+  cursor: grab;
+  touch-action: none;
+}

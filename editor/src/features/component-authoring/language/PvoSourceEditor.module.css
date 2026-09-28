@@ -1,0 +1,197 @@
+.frame {
+  --source-font-size: 11.5px;
+  --source-line-height: 19.55px;
+  --source-padding-y: 12px;
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 156px;
+  overflow: hidden;
+  border: 2px solid var(--q14, rgba(255, 255, 255, .14));
+  border-radius: 14px;
+  background: var(--deep, #060609);
+}
+
+.frame:focus-within {
+  border-color: var(--violet, #A78BFA);
+}
+
+.frame[data-expanded="true"] {
+  --source-padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+  order: 1;
+  min-height: 72px;
+  border-bottom: 0;
+  border-radius: 14px 14px 0 0;
+}
+
+.assistantTarget {
+  position: absolute;
+  inset: 0 0 env(safe-area-inset-bottom, 0px);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.surface {
+  position: absolute;
+  inset: 0 0 0 34px;
+  min-width: 0;
+}
+
+.gutter,
+.highlight,
+.textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--source-font-size);
+  font-weight: 400;
+  line-height: var(--source-line-height);
+  font-variant-ligatures: none;
+  font-kerning: none;
+  letter-spacing: 0;
+  tab-size: 2;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+.gutter {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 34px;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: var(--source-padding-y) 0;
+  border-right: 1px solid var(--q10, rgba(255, 255, 255, .1));
+  color: #8C899A;
+  font-size: 11.5px;
+  text-align: right;
+  pointer-events: none;
+  user-select: none;
+}
+
+.gutter span {
+  display: block;
+  height: var(--source-line-height);
+  padding-right: 7px;
+}
+
+.highlight,
+.textarea {
+  position: absolute;
+  inset: 0 auto auto 0;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: var(--source-padding-y) 40px var(--source-padding-bottom, var(--source-padding-y)) 10px;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
+  text-align: left;
+  text-indent: 0;
+}
+
+.highlight {
+  overflow: hidden;
+  color: var(--text, #F2F0E9);
+  pointer-events: none;
+  user-select: none;
+}
+
+.textarea {
+  z-index: 1;
+  overflow: auto;
+  resize: none;
+  background: transparent;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  caret-color: var(--text, #F2F0E9);
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.textarea::placeholder {
+  color: #A6A2B3;
+  -webkit-text-fill-color: #A6A2B3;
+  opacity: 1;
+}
+
+.textarea::selection {
+  background: rgba(167, 139, 250, .4);
+  color: transparent;
+}
+
+.plain { color: var(--text, #F2F0E9); }
+.tag { color: #84CCFF; }
+.attribute { color: #FFD08A; }
+.string { color: #B7E596; }
+.keyword { color: #D6B1FF; }
+.function { color: #7CE1CF; }
+.number { color: #FFB68B; }
+.property { color: #9CCAFF; }
+.selector { color: #F3A4CF; }
+.punctuation { color: #BBB8C9; }
+.template { color: #FFE077; }
+
+.expand {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 2px solid #000;
+  border-radius: 8px;
+  background: var(--surface, #15151C);
+  color: var(--text, #F2F0E9);
+  font: 800 15px var(--f-ui);
+  cursor: pointer;
+}
+
+.expand:focus-visible {
+  outline: 2px solid var(--pale, #FF9FBC);
+  outline-offset: 2px;
+}
+
+@media (max-width: 767px), (any-pointer: coarse) {
+  .frame {
+    --source-font-size: 16px;
+    --source-line-height: 25px;
+  }
+}
+
+@media (forced-colors: active) {
+  .frame {
+    border-color: CanvasText;
+    background: Canvas;
+  }
+
+  .highlight { display: none; }
+  .gutter { color: GrayText; border-color: GrayText; }
+
+  .textarea {
+    color: CanvasText;
+    -webkit-text-fill-color: CanvasText;
+    caret-color: CanvasText;
+  }
+
+  .textarea::placeholder {
+    color: GrayText;
+    -webkit-text-fill-color: GrayText;
+  }
+
+  .textarea::selection {
+    color: HighlightText;
+    -webkit-text-fill-color: HighlightText;
+    background: Highlight;
+  }
+
+  .expand {
+    color: ButtonText;
+    border-color: ButtonText;
+    background: ButtonFace;
+  }
+}

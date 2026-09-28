@@ -8,15 +8,28 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "node scripts/build-share-site.mjs && vite build --config editor/vite.config.ts",
-    "dev": "npm run build && node scripts/dev-server.mjs",
-    "dev:editor": "vite --config editor/vite.config.ts --host 127.0.0.1",
+    "build": "npm run build:language && node scripts/build/share-site.mjs && vite build --config editor/vite.config.ts && node scripts/build/editor-pwa.mjs",
+    "build:language": "node scripts/build/pvo-language.mjs",
+    "build:docs": "node scripts/build/docs-site.mjs",
+    "dev:worker": "wrangler dev",
+    "deploy": "npm run build && node scripts/build/deploy.mjs",
+    "dev": "npm run build && node scripts/dev/server.mjs",
+    "dev:editor": "npm run build:language && vite --config editor/vite.config.ts --host 127.0.0.1",
+    "check:language": "cargo test --locked --manifest-path packages/pvo-language/Cargo.toml",
     "check:editor": "tsc --noEmit -p editor/tsconfig.json",
     "test": "node --test tests/*.test.mjs",
-    "build:sample": "node scripts/build-sample.mjs",
-    "check": "node --check packages/pvo-sdk/index.js && node --check scripts/build-sample.mjs && node --check scripts/dev-server.mjs && node --check player/app.js && node --test tests/*.test.mjs"
+    "build:sample": "node scripts/build/sample.mjs",
+    "check": "node scripts/checks/javascript.mjs && npm run check:architecture && npm test",
+    "check:language:format": "cargo fmt --manifest-path packages/pvo-language/Cargo.toml -- --check",
+    "check:browser": "node scripts/checks/run.mjs",
+    "check:browser:language": "node scripts/checks/run.mjs language",
+    "check:browser:editor": "node scripts/checks/run.mjs editor",
+    "check:browser:player": "node scripts/checks/run.mjs player",
+    "check:browser:runtime": "node scripts/checks/run.mjs runtime",
+    "check:architecture": "node scripts/checks/dependencies.mjs"
   },
   "dependencies": {
+    "jose": "^6.2.12",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zustand": "^5.0.15"
@@ -26,9 +39,13 @@
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^5.2.0",
+    "esbuild": "^0.28.2",
+    "miniflare": "^5.20260926.0-alpha",
     "playwright-core": "^1.63.0",
     "typescript": "^5.9.3",
-    "vite": "^7.3.6"
+    "vite": "^7.3.6",
+    "wrangler": "^4.142.0",
+    "ws": "^8.21.0"
   },
   "optionalDependencies": {
     "@rollup/rollup-win32-x64-msvc": "^4.63.5"

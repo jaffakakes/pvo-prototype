@@ -1,0 +1,13 @@
+@media (max-width: 360px) {
+  .componentTypeTile {
+    min-height: 106px;
+    padding: 9px;
+  }
+  .componentOptionRow {
+    flex-wrap: wrap;
+  }
+  .componentOptionRow .componentOutcome {
+    max-width: none;
+    flex: 1;
+  }
+}

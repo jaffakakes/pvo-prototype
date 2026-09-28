@@ -1,0 +1,77 @@
+.tl {
+  max-height: 30dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  touch-action: pan-y;
+}
+.timelineContent {
+  position: relative;
+  min-width: 100%;
+  overflow: hidden;
+}
+.layerName {
+  position: absolute;
+  left: 0;
+  z-index: 4;
+  width: 70px;
+  display: flex;
+  align-items: center;
+  padding: 0 9px;
+  border: 0;
+  border-right: 1px solid var(--q10);
+  border-radius: 0;
+  background: var(--deep);
+  color: var(--muted);
+  font: 700 9px var(--f-ui);
+  text-transform: capitalize;
+  cursor: pointer;
+}
+.layerName[data-sel="true"] {
+  color: var(--pale);
+  border-left: 3px solid var(--pale);
+}
+.layerName,
+.tlClip {
+  touch-action: none;
+  cursor: grab;
+}
+.tl[data-reordering="true"],
+.tl[data-reordering="true"] button {
+  cursor: grabbing;
+}
+.strip > [data-dragging="true"] {
+  z-index: 6;
+  opacity: 0.85;
+  filter: drop-shadow(0 4px 6px #0008);
+}
+.layerDropTarget {
+  position: absolute;
+  left: 72px;
+  right: 4px;
+  pointer-events: none;
+  border: 1px dashed var(--pale);
+  border-radius: 8px;
+  background: rgba(255, 159, 188, 0.08);
+}
+.textBar {
+  touch-action: none;
+  gap: 4px;
+}
+.textBar > span:not(.compHandle) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.textBar[data-sel="true"] {
+  border: 3px solid var(--pale);
+  box-shadow: 0 0 0 2px rgba(255, 159, 188, 0.3);
+  padding: 0 16px;
+}
+.textBar[data-sel="true"] .compHandle {
+  display: flex;
+}
+.textBar .compHandle[data-side="l"] {
+  left: 0;
+}
+.textBar .compHandle[data-side="r"] {
+  right: 0;
+}

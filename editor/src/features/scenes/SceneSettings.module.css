@@ -1,0 +1,25 @@
+.section, .form, .confirm { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.section { padding-bottom: 18px; border-bottom: 1px solid var(--q14); }
+.section h3 { margin: 0; font: 800 14px var(--f-ui); overflow-wrap: anywhere; }
+.section button {
+  min-height: 44px;
+  padding: 10px 12px;
+  text-align: left;
+  background: var(--surface);
+  border: 2px solid var(--q14);
+  border-radius: 10px;
+  font: 700 12px var(--f-ui);
+  cursor: pointer;
+}
+.section button:disabled { opacity: .4; }
+.section button:focus-visible, .form input:focus-visible { outline: 3px solid #FF9FBC; outline-offset: 2px; }
+.section .danger { color: var(--red); }
+.form label { display: flex; flex-direction: column; gap: 8px; font: 700 11px var(--f-ui); }
+.form input { width: 100%; min-height: 44px; padding: 10px; border: 2px solid var(--q14); border-radius: 10px; background: var(--input); color: var(--text); }
+.actions { display: flex; gap: 8px; }
+.actions button { flex: 1; text-align: center; }
+.confirm p, .confirm ul { margin: 0; font: 600 11px/1.6 var(--f-ui); color: var(--muted); overflow-wrap: anywhere; }
+.confirm ul { padding-left: 18px; }
+.confirm li + li { margin-top: 6px; }
+.confirm li span { display: block; }
+.confirm strong { color: var(--text); }

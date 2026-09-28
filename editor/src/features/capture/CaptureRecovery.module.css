@@ -1,0 +1,10 @@
+.recovery { display: flex; flex-direction: column; gap: 12px; min-width: 0; padding: 12px; border: 1px solid var(--q14); border-radius: 10px; background: var(--bar); }
+.recovery h3 { margin: 0 0 6px; font: 800 12px var(--f-ui); }
+.recovery p, .recovery ul { margin: 6px 0; color: var(--muted); font: 600 11px/1.4 var(--f-ui); overflow-wrap: anywhere; }
+.recovery ul { padding-left: 18px; max-height: 80px; overflow: auto; }
+.recovery button { min-height: 40px; padding: 8px 10px; border: 1px solid var(--q14); border-radius: 8px; background: var(--surface); color: var(--text); font: 700 11px var(--f-ui); }
+.recovery button:disabled { opacity: .5; }
+.recovery button:focus-visible { outline: 2px solid var(--pale); outline-offset: 2px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.camera { flex: none; display: flex; flex-direction: column; gap: 8px; max-height: 28vh; overflow: auto; padding: 8px 12px; }
+.camera:empty { display: none; }

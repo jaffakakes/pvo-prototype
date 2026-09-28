@@ -1,0 +1,92 @@
+.position {
+  position: absolute;
+  z-index: 56;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  left: 12px;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.notice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  pointer-events: auto;
+  animation: updateSlideUp .3s var(--spring) both;
+}
+
+.update,
+.dismiss {
+  flex: none;
+  min-height: 44px;
+  color: var(--text);
+  background: var(--surface);
+  border: 2.5px solid #000;
+  border-radius: 13px;
+  box-shadow: 3px 3px 0 var(--accent);
+  cursor: pointer;
+}
+
+.update {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100vw - 74px);
+  padding: 5px 7px 5px 10px;
+  font: 800 12px/1.1 var(--f-ui);
+  white-space: nowrap;
+}
+
+.update img {
+  width: 19px;
+  height: 19px;
+  flex: none;
+  object-fit: contain;
+  filter: invert(1);
+}
+
+.update span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.update strong {
+  flex: none;
+  padding: 5px 7px;
+  color: var(--ink);
+  background: var(--pale);
+  border: 1.5px solid #000;
+  border-radius: 7px;
+  font: 800 11px/1 var(--f-ui);
+}
+
+.update:disabled {
+  cursor: wait;
+}
+
+.dismiss {
+  width: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  font: 700 23px/1 var(--f-ui);
+}
+
+.update:focus-visible,
+.dismiss:focus-visible {
+  outline: 3px solid var(--highlight);
+  outline-offset: 2px;
+}
+
+@keyframes updateSlideUp {
+  from { opacity: 0; transform: translateY(calc(100% + 24px)); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notice { animation: none; }
+}

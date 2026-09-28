@@ -12,5 +12,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm test
-      - run: node --check packages/pvo-sdk/index.js
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+          targets: wasm32-unknown-unknown
+      - run: npm ci
+      - run: cargo install wasm-pack --version 0.15.0 --locked
+      - run: npm run check:language:format
+      - run: npm run check:language
+      - run: npm run build
+      - run: npm run check
+      - run: npm run check:editor

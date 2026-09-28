@@ -1,0 +1,90 @@
+.textEntry {
+  display: flex;
+  gap: 10px;
+}
+.textEntry input {
+  flex: 1;
+  min-width: 0;
+  height: 52px;
+  padding: 0 14px;
+  background: var(--input);
+  color: var(--text);
+  border: 2px solid var(--pale);
+  border-radius: 14px;
+  box-shadow: 0 0 0 3px rgba(255, 159, 188, 0.25);
+  font: 700 15px var(--f-ui);
+}
+.textEntry button {
+  height: 52px;
+  padding: 0 20px;
+  background: var(--accent);
+  border: 3px solid #000;
+  border-radius: 14px;
+  box-shadow: 3px 3px 0 #000;
+  font: 800 15px var(--f-ui);
+}
+.textEntry button:disabled {
+  background: rgba(255, 45, 120, 0.35);
+  box-shadow: none;
+  opacity: 0.6;
+}
+.colorRow {
+  display: flex;
+  gap: 12px;
+}
+.colorSwatch {
+  width: 38px;
+  height: 38px;
+  border: 3px solid #000;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.colorSwatch[data-on="true"] {
+  box-shadow: 0 0 0 3px var(--highlight);
+}
+.textList {
+  max-height: 150px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.textItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px 9px 12px;
+  background: var(--surface);
+  border: 2px solid var(--q10);
+  border-radius: 12px;
+}
+.textItem i {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border: 2px solid #000;
+  border-radius: 5px;
+}
+.textItem span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 700 13px var(--f-ui);
+}
+.textItem small {
+  color: var(--faint);
+  font: 600 11px var(--f-ui);
+}
+.textItem button {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: var(--ground);
+  color: var(--red);
+  border: 2px solid #000;
+  border-radius: 8px;
+  cursor: pointer;
+}

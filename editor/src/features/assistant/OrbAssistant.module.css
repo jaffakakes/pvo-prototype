@@ -1,0 +1,154 @@
+.root {
+  --assistant-toolbar-height: 100px;
+  --assistant-inset: max(0px, var(--assistant-toolbar-height) - 100px);
+  --assistant-orb-bottom: calc(var(--assistant-inset) + 64px);
+  --assistant-bubble-bottom: calc(var(--assistant-inset) + 150px);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: var(--text);
+  font-family: var(--f-ui);
+  container-type: size;
+}
+
+.root button, .root input { font-family: inherit; }
+.root button { cursor: pointer; }
+.root button:disabled { cursor: default; }
+.root button:focus-visible { outline: 2px solid var(--pale); outline-offset: 4px; }
+
+.dismissArea {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: var(--assistant-toolbar-height);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  pointer-events: auto;
+}
+
+.root[data-placement="workspace"] .dismissArea { height: 100%; }
+
+.orb {
+  position: absolute;
+  left: calc(100% - 72px);
+  bottom: var(--assistant-orb-bottom);
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  padding: 0;
+  border: 3px solid #000;
+  border-radius: 50%;
+  background: #15151c;
+  box-shadow: 3px 3px 0 #000;
+  color: var(--text);
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  transition: left 420ms cubic-bezier(.2,.8,.2,1), bottom 420ms cubic-bezier(.2,.8,.2,1), transform 220ms ease;
+}
+
+.orb img { width: 32px; height: 32px; object-fit: contain; filter: invert(1); opacity: .45; pointer-events: none; }
+.orbRing { position: absolute; inset: -6px; border-radius: 50%; pointer-events: none; }
+.root[data-assistant-phase="idle"][data-has-target="true"] .orbRing { border: 3px solid #a78bfa; }
+.root:not([data-assistant-phase="idle"]) .orb { left: 14px; }
+.root:not([data-assistant-phase="idle"]) .orb img { opacity: .9; }
+.root[data-assistant-phase="listening"] .orb { transform: scale(1.18); }
+.root[data-assistant-phase="listening"] .orbRing { box-shadow: 0 0 0 6px #a78bfa59; animation: listening 1300ms ease-in-out infinite; }
+.root[data-assistant-phase="working"] .orb { animation: working 1400ms ease-in-out infinite; }
+.root[data-assistant-phase="review"] .orb { left: calc(50% - 29px); bottom: calc(var(--assistant-orb-bottom) + 14px); }
+
+.composer {
+  position: absolute;
+  left: 84px;
+  right: 14px;
+  bottom: calc(var(--assistant-inset) + 12px);
+  display: flex;
+  gap: 7px;
+  height: 44px;
+  pointer-events: auto;
+  animation: rise 300ms ease-out both;
+}
+
+.composer input {
+  flex: 1;
+  min-width: 0;
+  width: 0;
+  padding: 0 10px;
+  border: 2px solid #a78bfa;
+  border-radius: 11px;
+  background: #1c1c24;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  outline: none;
+}
+.composer input:focus { border-color: #ff9fbc; box-shadow: 0 0 0 3px #ff9fbc33; }
+.composer input::placeholder { color: var(--muted); }
+.composer button { flex: 0 0 44px; display: grid; place-items: center; padding: 0; border: 2px solid #000; border-radius: 11px; background: #ff2d78; color: var(--text); }
+.composer button:disabled { background: #2a2a33; opacity: .6; }
+
+.liveBubble {
+  position: absolute;
+  left: 14px;
+  bottom: var(--assistant-bubble-bottom);
+  width: min(330px, calc(100% - 28px));
+  max-height: calc(100% - var(--assistant-bubble-bottom) - 16px);
+  padding: 14px;
+  box-sizing: border-box;
+  border: 2.5px solid #000;
+  border-radius: 18px;
+  background: #15151c;
+  box-shadow: 4px 4px 0 #000;
+  pointer-events: auto;
+  animation: rise 300ms ease-out both;
+}
+.liveBubble::after { content: ""; position: absolute; bottom: -10px; left: 20px; width: 16px; height: 16px; background: #15151c; border-right: 2.5px solid #000; border-bottom: 2.5px solid #000; transform: rotate(45deg); }
+.liveHeading { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 9px; color: #a78bfa; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.mode { color: var(--muted); font-size: 9px; font-weight: 500; text-transform: none; }
+.liveBubble p { margin: 0; max-height: 25vh; overflow: auto; font-size: 15px; font-weight: 700; line-height: 1.4; overflow-wrap: anywhere; }
+.status { display: block; margin-top: 10px; font-size: 10px; line-height: 1.4; color: var(--muted); }
+.cursor { display: inline-block; height: 1em; margin-left: 3px; border-right: 2px solid #a78bfa; vertical-align: text-bottom; animation: blink 1s step-end infinite; }
+
+:global(.app[data-reduce-motion="true"]) .root *,
+:global(.app[data-reduce-motion="true"]) .root *::before,
+:global(.app[data-reduce-motion="true"]) .root *::after { animation: none !important; transition: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .root *, .root *::before, .root *::after { animation: none !important; transition: none !important; }
+}
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes listening { 50% { box-shadow: 0 0 0 10px #a78bfa20; } }
+@keyframes working { 50% { transform: scale(1.08); box-shadow: 0 0 0 6px #a78bfa35, 3px 3px 0 #000; } }
+@keyframes blink { 50% { opacity: 0; } }
+
+.root[data-placement="toolbar"] {
+  --assistant-inset: 46px;
+  --assistant-orb-bottom: 0px;
+  --assistant-bubble-bottom: 124px;
+  inset: auto 0 0 auto;
+  width: min(460px, calc(100vw - 32px));
+  height: var(--assistant-available-height);
+}
+.root[data-placement="toolbar"] .orb {
+  left: calc(100% - 46px);
+  bottom: 0;
+  width: 46px;
+  height: 46px;
+  transform: none;
+}
+.root[data-placement="toolbar"] .orb img { width: 26px; height: 26px; }
+.root[data-placement="toolbar"]:not([data-assistant-phase="idle"]) .orb { background: var(--accent); }
+.root[data-placement="toolbar"] .orbRing { inset: -2px; border-width: 2px; }
+.root[data-placement="toolbar"] .composer { left: 14px; right: 0; bottom: 58px; }
+.root[data-placement="toolbar"] .liveBubble { left: auto; right: 0; }
+.root[data-placement="toolbar"] .dismissArea { position: fixed; inset: 0; width: 100vw; height: 100dvh; z-index: -1; }
+
+.root[data-placement="floating"] { --assistant-inset: 0px; }
+.root[data-placement="floating"][data-assistant-phase="idle"] .orb { bottom: 14px; }
+.root[data-placement="floating"] .dismissArea { height: 100%; }
+.root[data-placement="floating"] .composer input { font-size: 16px; }

@@ -1,0 +1,60 @@
+.soundList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: min(410px, 55dvh);
+  overflow: auto;
+}
+.soundList button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 2px solid var(--q10);
+  border-radius: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.soundList button[data-on="true"] {
+  border: 2.5px solid var(--pale);
+}
+.soundList button > i {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  color: #111;
+  border: 2px solid #000;
+  border-radius: 10px;
+}
+.soundList button > span {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.soundList strong {
+  font: 800 14px var(--f-ui);
+}
+.soundList small {
+  color: var(--muted);
+  font: 600 11px var(--f-ui);
+}
+.soundList em {
+  font: 700 11px var(--f-ui);
+  color: var(--muted);
+  font-style: normal;
+}
+.soundList b {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  border: 2px solid #000;
+  border-radius: 50%;
+}

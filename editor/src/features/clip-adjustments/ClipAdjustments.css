@@ -1,0 +1,22 @@
+.speedGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+.speedGrid .sheetPill {
+  font-size: 13px;
+}
+.zoomLabel {
+  display: flex;
+  justify-content: space-between;
+  font: 700 12px var(--f-ui);
+}
+.zoomLabel strong {
+  color: var(--highlight);
+  font-size: 13px;
+}
+.zoomRange {
+  width: 100%;
+  height: 28px;
+  accent-color: var(--accent);
+}

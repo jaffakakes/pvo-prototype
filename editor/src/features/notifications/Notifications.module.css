@@ -1,0 +1,88 @@
+.host {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 10px);
+  left: max(16px, env(safe-area-inset-left, 0px));
+  right: max(16px, env(safe-area-inset-right, 0px));
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 5px;
+  pointer-events: none;
+}
+.notice {
+  --notice-accent: #a1cfff;
+  width: 100%;
+  max-width: 398px;
+  min-height: 48px;
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 2px 0 12px;
+  color: #f8f5ee;
+  background: #19334e;
+  border: 1px solid var(--notice-accent);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px #0005;
+  pointer-events: auto;
+  animation: arrive 170ms ease-out both;
+}
+.notice[data-severity="error"] { --notice-accent: #ff9aa0; background: #51282d; }
+.notice[data-severity="warning"] { --notice-accent: #ffd477; background: #493a1e; }
+.notice[data-severity="success"] { --notice-accent: #82e7ba; background: #1c4436; }
+.icon { display: flex; flex: none; color: var(--notice-accent); }
+.message { flex: 1; min-width: 0; padding-block: 9px; font: 800 12px/1.45 var(--f-ui); overflow-wrap: break-word; }
+.dismiss {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  font: 600 24px/1 var(--f-ui);
+  cursor: pointer;
+}
+.dismiss:hover { background: #ffffff12; }
+.issues { position: relative; max-width: 100%; pointer-events: auto; }
+.issueToggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  max-width: 100%;
+  border: 1px solid #ff9aa066;
+  border-radius: 11px;
+  padding: 0 11px;
+  background: #24191d;
+  color: #ffb5ba;
+  font: 700 11px/1.3 var(--f-ui);
+  cursor: pointer;
+}
+.issueToggle span { display: grid; place-items: center; width: 16px; height: 16px; border: 1px solid; border-radius: 50%; }
+.issuePanel {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  width: min(330px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  max-height: min(430px, 60dvh);
+  overflow-y: auto;
+  padding: 6px 12px 12px;
+  border: 1px solid #ff9aa066;
+  border-radius: 12px;
+  background: #211a20;
+  box-shadow: 0 4px 16px #0006;
+}
+.issueHeading { display: flex; align-items: center; justify-content: space-between; font: 800 12px/1.4 var(--f-ui); }
+.issuePanel ul { list-style: none; padding: 0; margin: 0; }
+.issuePanel li + li { margin-top: 10px; border-top: 1px solid #ffffff20; padding-top: 8px; }
+.issueLink { display: block; width: 100%; min-height: 44px; padding: 8px 0; background: none; border: 0; text-align: left; color: #ffb5ba; font: 700 12px/1.4 var(--f-ui); cursor: pointer; }
+.issuePanel p { margin: 0; color: #f2f0e9bb; font: 600 11px/1.5 var(--f-ui); }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+@keyframes arrive { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .notice { animation: none; } }

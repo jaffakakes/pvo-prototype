@@ -42,6 +42,12 @@ The top-level object contains:
 
 Coordinates are relative to the actual video content, not to any letterbox area added by a player.
 
+### Scene tree
+
+Scenes may include `parent`, a scene ID or `null` for the root. When tree metadata is present, every scene declares its parent, exactly one scene is the root, and parent references must exist and form no cycles. Legacy manifests omit `parent` on every scene and retain their flat-scene behavior. Parent ownership describes the tree and can guide prefetching; it does not restrict which scene an explicit action may target.
+
+Restyle uses `main` as its permanent root. Interactive export includes a separate video asset and timeline for every scene, along with its parent. Every scene needs a clip before export; the editor reports empty branches instead of dropping them. Flat video export renders only Main.
+
 ### Components
 
 - `tooltip`: a short label, normally positioned from the hotspot that revealed it.
@@ -49,9 +55,13 @@ Coordinates are relative to the actual video content, not to any letterbox area 
 - `choice`: two or more options; every option owns an action or action list.
 - `form`: typed fields and an `on_submit` action list.
 
-Components may also carry optional sanitized `html`/`css` presentation plus normalized layout, clip ID, and clip-local timing in `presentation`. Semantic fields remain present so a host can replace that presentation with native UI. Choice and form components may preserve a binary `scene_change` with one `true` timeline, one `false` timeline, and `executeAt: "end"`.
+Components may also carry optional sanitized `html`/`css` presentation plus normalized layout, clip ID, and clip-local timing in `presentation`. Semantic fields remain present so a host can replace that presentation with native UI. The Restyle editor does not expose raw HTML/CSS/JavaScript authoring: its Advanced route packages PVO Structure, Style and Logic source, and compiled presentation is a generated artifact. The current Restyle player requires those language sources for a Restyle custom component; legacy Restyle code assets without them are rejected. Choice and form components may preserve a binary `scene_change` with one `true` timeline, one `false` timeline, and `executeAt: "end"`.
 
-Selecting a choice or submitting a form records its result without switching immediately. At the end of that component's presentation range, playback opens the matching outcome timeline. If no result has been supplied, playback pauses and keeps the component visible. The True and False routes use distinct timeline IDs; those timelines may intentionally reuse the same media asset.
+Selecting a choice executes that option's action list; submitting a form executes `on_submit`. Neither interaction creates an implicit branch. Only when the optional `scene_change` is enabled does the player also record a binary result for an end-of-layer branch. In that case, an early answer does not switch timelines immediately: at the end of the component's presentation range, playback opens the matching outcome timeline. If no result has been supplied by then, playback pauses and keeps the component visible. The True and False routes use distinct timeline IDs; those timelines may intentionally reuse the same media asset.
+
+Restyle components keep their center in `restyle_capture.x` and `.y` (canvas percentages). Optional `scaleX` and `scaleY` independently scale the original rendered width and height, including content, around that center. An absent axis inherits `scale`; absent uniform scale defaults to one. Each factor is bounded to 0.25–3. The reference editor and player share these rules for visual and code-owned components. The standard `presentation` rectangle carries bounded fallback dimensions for other hosts.
+
+Optional `restyle_capture.width` and `.height` set explicit canvas-pixel dimensions (1–16384 px) before uniform `scale`. Authoring pixels use a fixed 1080px short edge: portrait 9:16 is 1080 × 1920, landscape 16:9 is 1920 × 1080. Each explicit dimension overrides that axis's legacy scale factor. The reference hosts measure untransformed content and scale it to these dimensions, retaining the authored size across viewport and content changes. Absent pixel dimensions retain the original scale-based behavior. This coordinate system is independent of preview zoom and export quality.
 
 ### Actions
 
@@ -77,20 +87,22 @@ Strings may contain `{state.path}` or `{response.message}` templates. Templates 
 
 The player starts with `playback.initial_timeline`. It advances through that timeline's clip list, loading each clip's packaged asset and respecting its source start/end range.
 
-On the main timeline, a choice or form with routing continues playing after an early answer and branches only when that component layer ends. If the layer ends before an answer is supplied, the player pauses there. Once answered, it loads only the matching outcome timeline. The unselected outcome remains packaged but is not played. Playback ends when that selected branch ends.
+On any timeline, a choice or form with `scene_change` routing continues playing after an early answer and branches only when that component layer ends. If the layer ends before an answer is supplied, the player pauses there with the component visible. Once answered, it loads only the matching outcome timeline. The unselected outcome remains packaged but is not played. Playback ends when that selected branch ends; nothing returns to the timeline that routed there. Without `scene_change`, the option or submit action list runs without an automatic timeline switch; an explicit `goto_scene` or `seek` action can still route playback, and a branch entered that way ends the same way.
 
 Restart clears recorded answers and returns to the first clip of the main timeline.
+
+Restyle packages carry `restyle_capture` for layout only: canvas positions, sizes, looks, text layers and each scene's layer order. They declare no playback rules of their own. A Restyle choice with **Branch at layer end** exports the standard `scene_change` above; every other route is an explicit action. A component behind the opaque video in the layer order cannot wait for a tap, so the player does not pause for it.
 
 ## 5. Network boundary
 
 `request` is deliberately generic. The format does not know about Stripe, products, bookings, quizzes, or databases. A creator supplies a URL, request data, and response conditions; the creator's server supplies the meaning.
 
-A player should limit requests to `allowed_domains`, expose network activity to the viewer, and preserve an explicit error path.
+A player must send requests only to exact hosts declared in `allowed_domains`, expose network activity to the viewer, and preserve an explicit error path. An absent or empty allow-list authorizes no requests. A failed or offline request runs `on_error` when present; otherwise it has no effect and is not queued for later. The reference editor and player store submitted Form values at `state.form.<component-id>.<field-name>` for request templates.
 
 ## 6. Security
 
 - Manifests are data, never executable code.
-- Presentation HTML and CSS are untrusted data. Players must sanitize them again, block scripts and network-loading CSS, and isolate rendered UI from the host page.
+- Presentation HTML and CSS, including generated presentation, are untrusted data. Players must sanitize them again, block scripts and network-loading CSS, and isolate rendered UI from the host page. Restyle PVO Logic is declarative, not JavaScript; its grammar and host checks are described in the [PVO language guide](docs/engineering/pvo-language.md).
 - `open_url` requires viewer confirmation.
 - Manifest size is capped at 2 MiB and the package header at 4 MiB in this prototype.
 - Player implementations should validate all references, scene ranges, and normalized coordinates before playback.

@@ -1,0 +1,13 @@
+.bar { display: flex; align-items: center; gap: 8px; height: 46px; flex: none; padding: 0 10px; border-bottom: 2px solid #ffffff0f; }
+.label { color: #f2f0e966; font-size: 9.5px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; }
+.strip { display: flex; align-items: center; flex: 1; gap: 6px; min-width: 0; overflow-x: auto; overscroll-behavior: contain; }
+.chip { display: inline-flex; align-items: center; gap: 5px; height: 26px; flex: none; max-width: 150px; padding: 0 8px; border: 2px solid var(--q12); border-radius: 9px; background: var(--surface); color: #a7a3b8; font: 700 11px var(--f-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+button.chip { cursor: pointer; }
+.chip:disabled { cursor: not-allowed; opacity: .5; }
+.chip i { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--violet); }
+.current { border-color: #000; background: var(--accent); color: var(--text); box-shadow: 2px 2px 0 #000; font-weight: 800; }
+.separator { color: #ffffff59; }
+.add { border-style: dashed; background: none; }
+.tree { display: grid; place-items: center; flex: none; width: 30px; height: 30px; padding: 0; background: var(--surface); border: 2px solid var(--q12); border-radius: 9px; color: #a7a3b8; cursor: pointer; }
+@media (max-width: 1279px) { .label { display: none; } .bar { gap: 5px; padding-inline: 8px; } }
+@media (any-pointer: coarse) { .chip { height: 40px; } .tree { width: 40px; height: 40px; } }

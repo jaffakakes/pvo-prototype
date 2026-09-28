@@ -1,0 +1,40 @@
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+  padding: 0 16px 0 14px;
+  border-bottom: 2px solid var(--q08);
+  background: var(--ground);
+}
+.header button { cursor: pointer; }
+.header button:disabled { cursor: not-allowed; opacity: .5; }
+.mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 2.5px solid #000;
+  border-radius: 11px;
+  background: var(--surface);
+  box-shadow: 3px 3px 0 var(--accent-soft);
+}
+.mark img { width: 22px; height: 22px; object-fit: contain; filter: invert(1); }
+.title { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.title h1 { margin: 0; font: 17px/1.1 var(--f-display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.title p { margin: 0; color: var(--muted); font: 600 11px/1.2 var(--f-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.actions { display: flex; align-items: center; gap: 10px; flex: none; margin-left: auto; }
+.guest, .target { display: inline-flex; align-items: center; height: 36px; border: 2px solid var(--q14); border-radius: 10px; background: var(--surface); }
+.guest { gap: 8px; padding: 0 6px 0 12px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.guest > i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+.guest button { height: 24px; padding: 0 9px; background: var(--input); border: 2px solid var(--q14); border-radius: 7px; font-size: 11px; font-weight: 800; }
+.target { padding: 0 12px; font-size: 12px; font-weight: 700; }
+.export { display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 16px; border: 2.5px solid #000; border-radius: 12px; background: var(--accent); box-shadow: 3px 3px 0 #000; font-size: 13px; font-weight: 800; }
+.export:not(:disabled):active { transform: translate(3px, 3px); box-shadow: none; }
+@media (any-pointer: coarse) {
+  .mark, .target, .export { min-height: 44px; }
+  .guest { height: 44px; padding-right: 0; }
+  .guest button { height: 40px; }
+}

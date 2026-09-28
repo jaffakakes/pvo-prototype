@@ -1,0 +1,12 @@
+/editor/sw.js
+  Cache-Control: no-cache
+  Content-Type: application/javascript
+
+/editor/release.json
+  Cache-Control: no-store
+
+/*.wasm
+  Content-Type: application/wasm
+
+/*.pvo
+  Content-Type: application/vnd.pvo

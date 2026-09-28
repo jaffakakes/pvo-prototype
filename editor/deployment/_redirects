@@ -1,0 +1,5 @@
+# Preserve the editor's exact precache URL without a redirected cached response.
+/editor/index.html /editor/ 200
+/ /editor/?home=1 302
+/editor /editor/ 301
+/player /player/ 301

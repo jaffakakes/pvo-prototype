@@ -1,0 +1,235 @@
+/* Component picker and field-based editor use the shared bottom-sheet shell. */
+.componentPicker {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+}
+.componentTypeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.componentTypeTile {
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  padding: 11px 12px;
+  background: var(--surface);
+  border: 2px solid var(--q14);
+  border-radius: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.componentTypeTile:hover {
+  border-color: var(--violet);
+}
+.componentTypeGlyph {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  margin-bottom: 2px;
+  background: var(--ground);
+  color: var(--violet);
+  border: 2px solid #000;
+  border-radius: 10px;
+  box-shadow: 2px 2px 0 #000;
+}
+.componentTypeTile strong {
+  font: 800 13px var(--f-ui);
+}
+.componentTypeTile small {
+  color: var(--muted);
+  font: 600 10.5px/1.2 var(--f-ui);
+}
+.componentList {
+  max-height: min(190px, 25dvh);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+.componentList > p {
+  margin: 0;
+  color: var(--muted);
+  font: 700 11px var(--f-ui);
+  letter-spacing: 0.4px;
+}
+.componentList > div,
+.componentList > button {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 9px;
+  background: var(--surface);
+  border: 2px solid var(--q10);
+  border-radius: 12px;
+  text-align: left;
+}
+.componentList > button {
+  cursor: pointer;
+}
+.componentListTitle {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font: 700 11px var(--f-ui);
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+.componentList .componentTypeGlyph {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  flex: none;
+  margin: 0;
+  border-radius: 6px;
+  box-shadow: none;
+}
+.componentList > div > button {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+}
+.componentList > div > button:first-of-type {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.componentList > div > button:last-child {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: var(--ground);
+  color: var(--red);
+  border: 2px solid #000;
+  border-radius: 8px;
+}
+.componentList svg {
+  flex: none;
+  color: var(--violet);
+}
+.componentList > div > button:last-child svg {
+  color: var(--red);
+}
+.componentList span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 700 12px var(--f-ui);
+}
+.componentList small {
+  color: var(--muted);
+  font: 600 10px var(--f-ui);
+}
+.componentSheet {
+  max-height: calc(100dvh - 20px);
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.componentSheet .sheetHead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--ground);
+}
+.componentSheet .sheetHead .componentTypeGlyph {
+  width: 38px;
+  height: 38px;
+  box-shadow: 2px 2px 0 var(--violet);
+}
+.componentSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.componentSection > label,
+.componentSection > h3 {
+  margin: 0;
+  color: var(--muted);
+  font: 700 11px var(--f-ui);
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+.componentInput,
+.componentTextArea {
+  width: 100%;
+  min-width: 0;
+  padding: 0 14px;
+  background: var(--input);
+  color: var(--text);
+  border: 2px solid var(--q14);
+  border-radius: 14px;
+  font: 700 15px var(--f-ui);
+  outline: none;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.componentInput {
+  height: 52px;
+}
+.componentTextArea {
+  min-height: 80px;
+  padding-top: 13px;
+  resize: vertical;
+}
+.componentInput:focus,
+.componentTextArea:focus {
+  border-color: var(--pale);
+  box-shadow: 0 0 0 3px rgba(255, 159, 188, 0.25);
+}
+.componentOptionRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.componentOptionRow .componentInput {
+  height: 46px;
+  flex: 1;
+  min-width: 50px;
+  border-radius: 12px;
+}
+.componentOptionRow .componentRemove {
+  min-width: 40px;
+  min-height: 40px;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  color: var(--red);
+  border: 2px solid #000;
+  border-radius: 9px;
+  cursor: pointer;
+}
+.componentOutcome {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex: none;
+  max-width: 42%;
+  overflow: hidden;
+  padding: 0 10px;
+  background: var(--surface);
+  color: var(--violet);
+  border: 2px solid var(--violet);
+  border-radius: 12px;
+  font: 800 11.5px/1.1 var(--f-ui);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}

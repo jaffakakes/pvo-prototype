@@ -1,0 +1,71 @@
+import { sceneDuration as sceneLength } from "../../domain/audio/editing";
+import type { PvoAssetInput } from "../../../../packages/pvo-sdk/index.js";
+import { packPvoProject } from "../../../../packages/pvo-sdk/index.js";
+import { buildPvoManifest } from "../../domain/export/manifest";
+import type { Scene } from "../../domain/project/model";
+import type { ExportSnapshot } from "../../domain/publishing/model";
+import { clamp } from "../../domain/project/numbers";
+import { compileLanguages } from "../../infrastructure/language/compileProject";
+import { exportVideo, type ExportResult } from "../../infrastructure/media/exportVideo";
+
+/** Render each scene's media, then package compiled PVO language interactions. */
+export async function exportPvo(state: ExportSnapshot, onPct: (progress: number) => void): Promise<ExportResult> {
+  const scenes = state.scenes;
+  if (!scenes.length)
+    throw new Error("Record or upload a clip before exporting.");
+  const empty = scenes.find(scene => sceneLength(scene) <= 0);
+  if (empty)
+    throw new Error(`Add a clip to ${empty.name} before exporting the whole scene tree.`);
+  const languages = await compileLanguages(state);
+  // Catch incomplete routes before real-time media rendering begins.
+  buildPvoManifest(state, scenes.map((scene, index) => ({
+    scene, assetId: `scene-asset-${index}`, name: `media/${scene.id}.webm`, type: "video/webm",
+  })), languages);
+  const duration = scenes.reduce((sum, scene) => sum + sceneLength(scene), 0);
+  const assets: PvoAssetInput[] = [];
+  const rendered: Array<{
+    scene: Scene;
+    assetId: string;
+    name: string;
+    type: string;
+  }> = [];
+  let done = 0;
+  for (const [index, scene] of scenes.entries()) {
+    const sceneDuration = sceneLength(scene);
+    const result = await exportVideo({ ...state, clips: scene.clips, texts: [], components: [], layers: ["video"], muted: scene.muted, sound: scene.sound, audioClips: scene.audioClips }, (progress) => {
+      onPct(clamp((done + progress * sceneDuration) / duration, 0, 1));
+    });
+    try {
+      const blob = result.blob;
+      const extension = blob.type.includes("mp4") ? "mp4" : "webm";
+      const assetId = `scene-asset-${index}`;
+      const name = `media/${scene.id}.${extension}`;
+      assets.push({ id: assetId, name, type: blob.type, blob });
+      rendered.push({ scene, assetId, name, type: blob.type });
+    }
+    finally {
+      URL.revokeObjectURL(result.url);
+    }
+    done += sceneDuration;
+  }
+  const manifest = buildPvoManifest(state, rendered, languages);
+  for (const scene of scenes)
+    for (const component of scene.components) {
+      const base = `components/${component.id}`;
+      const language = languages.get(component.id);
+      if (!language)
+        throw new Error(`${scene.name} · ${component.type}: PVO language was not compiled.`);
+      for (const [part, name] of [
+        [language.source.structure, "structure.pvo"],
+        [language.source.style, "style.pvo"],
+        [language.source.logic, "logic.pvo"],
+      ] as const) {
+        const path = `${base}/${name}`;
+        // The container rejects zero-byte assets; whitespace is equivalent to empty Style/Logic.
+        assets.push({ id: path, name: path, type: "text/plain", blob: new Blob([part || " "], { type: "text/plain" }) });
+      }
+    }
+  const blob = await packPvoProject({ manifest, assets });
+  onPct(1);
+  return { blob, url: URL.createObjectURL(blob), name: "restyle-video.pvo" };
+}

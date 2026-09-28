@@ -1,0 +1,27 @@
+.host {
+  position: absolute;
+  right: env(safe-area-inset-right, 0px);
+  bottom: 0;
+  left: env(safe-area-inset-left, 0px);
+  z-index: 45;
+  pointer-events: none;
+  isolation: isolate;
+}
+
+.toolbarHost {
+  position: relative;
+  flex: none;
+  width: 46px;
+  height: 46px;
+  z-index: 45;
+  pointer-events: none;
+  isolation: isolate;
+}
+
+.floatingHost {
+  position: absolute;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+  isolation: isolate;
+}

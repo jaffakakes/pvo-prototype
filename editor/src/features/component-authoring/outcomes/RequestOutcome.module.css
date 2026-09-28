@@ -1,0 +1,12 @@
+.config{display:flex;flex-direction:column;gap:10px;padding:12px;background:var(--surface);border:2px solid var(--violet);border-radius:14px}
+.config label{display:flex;flex-direction:column;gap:6px;color:var(--muted);font:700 11px var(--f-ui);letter-spacing:.3px;text-transform:uppercase}
+.config input{font-size:12px;letter-spacing:0;text-transform:none}
+.config textarea{min-height:88px;font:600 12px/1.5 ui-monospace,Menlo,monospace;letter-spacing:0;text-transform:none}
+.methods{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.methods button{height:40px;color:var(--text);background:var(--ground);border:2px solid var(--q14);border-radius:10px;font:800 12px var(--f-ui);cursor:pointer}
+.methods button[data-on=true]{color:var(--ink);background:var(--violet);border-color:#000;box-shadow:2px 2px 0 #000}
+.note{margin:0;color:var(--muted);font:600 11px/1.4 var(--f-ui);overflow-wrap:anywhere}
+.routes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.routes button{min-height:52px;display:flex;flex-direction:column;justify-content:center;gap:4px;min-width:0;padding:6px 10px;text-align:left;color:var(--text);background:var(--ground);border:2px solid var(--q14);border-radius:10px;cursor:pointer}
+.routes span{color:var(--muted);font:700 10px var(--f-ui)}
+.routes strong{color:var(--violet);font:800 12px var(--f-ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

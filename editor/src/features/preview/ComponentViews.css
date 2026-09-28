@@ -1,0 +1,178 @@
+/* --u is one preview pixel at a 247px-wide reference frame. */
+.compOverlay {
+  --u: 1px;
+  position: absolute;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.compOverlay.compSelected,
+.compOverlay[data-sel="true"] {
+  outline: 2.5px solid var(--pale);
+  outline-offset: 6px;
+  border-radius: 10px;
+}
+.compOverlay[data-trying="true"] {
+  cursor: default;
+  touch-action: auto;
+}
+.compTooltip,
+.compCard,
+.compChoice,
+.compForm {
+  box-sizing: border-box;
+}
+.compTooltip {
+  display: flex;
+  align-items: center;
+  gap: calc(6 * var(--u));
+  max-width: calc(216 * var(--u));
+  padding: calc(6 * var(--u)) calc(10 * var(--u));
+  background: var(--text);
+  color: var(--ink);
+  border: 2px solid #000;
+  border-radius: calc(9 * var(--u));
+  box-shadow: 2px 2px 0 #000;
+  font: 700 calc(10.5 * var(--u)) / 1.25 var(--f-ui);
+}
+.compTooltip i {
+  width: calc(7 * var(--u));
+  height: calc(7 * var(--u));
+  flex: none;
+  background: var(--violet);
+  border: 1.5px solid #000;
+  border-radius: 50%;
+}
+.compCard,
+.compForm {
+  width: calc(190 * var(--u));
+  padding: calc(12 * var(--u));
+  background: var(--surface);
+  color: var(--text);
+  border: 2.5px solid #000;
+  border-radius: calc(14 * var(--u));
+  box-shadow: 3px 3px 0 #000;
+}
+.compCard h3,
+.compForm h3 {
+  margin: 0;
+  font: calc(14 * var(--u)) / 1 var(--f-display);
+}
+.compCard p,
+.compForm p {
+  margin: calc(7 * var(--u)) 0;
+  color: rgba(242, 240, 233, 0.7);
+  font: 600 calc(10.5 * var(--u)) / 1.3 var(--f-ui);
+}
+.compCardButtons {
+  display: flex;
+  gap: calc(6 * var(--u));
+  margin-top: calc(8 * var(--u));
+}
+.compCardButtons button {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.compCard button,
+.compForm button,
+.compChoice button {
+  min-height: calc(30 * var(--u));
+  border: 2px solid #000;
+  border-radius: calc(8 * var(--u));
+  background: var(--text);
+  color: var(--ink);
+  font: 800 calc(10.5 * var(--u)) / 1.1 var(--f-ui);
+  cursor: pointer;
+}
+.compCard button + button {
+  background: var(--surface);
+  color: var(--text);
+}
+.compChoice {
+  width: calc(176 * var(--u));
+  display: flex;
+  flex-direction: column;
+  gap: calc(7 * var(--u));
+}
+.compChoice h3 {
+  align-self: center;
+  max-width: 100%;
+  margin: 0;
+  padding: calc(6 * var(--u)) calc(11 * var(--u));
+  background: var(--violet);
+  color: var(--ink);
+  border: 2.5px solid #000;
+  border-radius: calc(10 * var(--u));
+  box-shadow: 3px 3px 0 #000;
+  text-align: center;
+  font: calc(13 * var(--u)) / 1 var(--f-display);
+}
+.compChoice button {
+  height: calc(36 * var(--u));
+  min-height: calc(36 * var(--u));
+  border-radius: calc(10 * var(--u));
+  box-shadow: 3px 3px 0 #000;
+  font-size: calc(12 * var(--u));
+}
+.compChoice button:active,
+.compForm button:active {
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+.compForm input {
+  width: 100%;
+  min-height: calc(30 * var(--u));
+  margin: calc(5 * var(--u)) 0;
+  padding: 0 calc(8 * var(--u));
+  background: var(--input);
+  color: var(--text);
+  border: 1.5px solid var(--q14);
+  border-radius: calc(7 * var(--u));
+  font: 600 calc(10 * var(--u)) var(--f-ui);
+}
+.compForm label {
+  display: flex;
+  align-items: center;
+  gap: calc(6 * var(--u));
+  font: 600 calc(10 * var(--u)) var(--f-ui);
+}
+.compForm input[type="checkbox"] {
+  width: calc(16 * var(--u));
+  min-height: calc(16 * var(--u));
+  height: calc(16 * var(--u));
+  padding: 0;
+  accent-color: var(--violet);
+}
+.compForm button {
+  width: 100%;
+  height: calc(34 * var(--u));
+  margin-top: calc(5 * var(--u));
+  background: var(--accent);
+  color: var(--text);
+}
+.compOverlay iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+}
+.compCustomShell {
+  position: relative;
+  overflow: visible;
+}
+.compCustomRuntime {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: top left;
+}
+.compOverlay:not([data-trying="true"]) .compCustomRuntime {
+  pointer-events: none;
+}

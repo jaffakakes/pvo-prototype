@@ -1,0 +1,7 @@
+/* A stable height lets the assistant borrow the row without moving the timeline. */
+.assistantToolbar:global(.toolBar) { height: calc(100px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
+.assistantToolbar > :global(.tools) { padding-top: 36px; }
+.pickTools { gap: 6px; }
+.pickQuestion { flex: 1; align-self: center; min-width: 0; font: 700 12px var(--f-ui); }
+.pickTools > button { flex: none; min-width: 64px; min-height: 44px; padding: 0 8px; }
+.pickError { margin: 0 0 8px; color: #ffb9b9; font: 700 11px/1.4 var(--f-ui); }

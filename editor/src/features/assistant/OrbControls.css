@@ -1,0 +1,66 @@
+.orb {
+  position: absolute;
+  right: 14px;
+  top: -72px;
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: var(--surface);
+  border: 3px solid #000;
+  border-radius: 50%;
+  box-shadow: 3px 3px 0 #000;
+  z-index: 5;
+  cursor: pointer;
+  transition:
+    top 0.25s var(--spring),
+    background 0.25s;
+}
+.orb img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  filter: invert(1);
+  opacity: 0.45;
+}
+.orb[data-awake="true"] {
+  top: -80px;
+  background: var(--accent);
+  animation: rsBreathe 1.6s ease-in-out infinite;
+}
+.orb[data-awake="true"] img {
+  opacity: 1;
+}
+.orbActs {
+  position: absolute;
+  right: 12px;
+  bottom: calc(100% + 94px);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  animation: rsUp 0.25s var(--spring) both;
+}
+.orbAct {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  background: rgba(21, 21, 28, 0.97);
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  border-radius: 22px;
+  box-shadow:
+    0 0 0 2px rgba(255, 45, 120, 0.16),
+    0 0 22px rgba(255, 45, 120, 0.35),
+    3px 3px 0 rgba(0, 0, 0, 0.6);
+  font: 700 12px var(--f-ui);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.orbAct i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
