@@ -1,0 +1,50 @@
+name: Promotion policy
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, edited]
+    branches: [dev, preprod, prod]
+
+permissions:
+  contents: read
+
+jobs:
+  promotion:
+    name: promotion
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate promotion route
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          BASE_REPO: ${{ github.event.pull_request.base.repo.full_name }}
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          case "$BASE_REF" in
+            dev)
+              case "$HEAD_REF" in
+                feature/*|fix/*|hotfix/*|chore/*|docs/*|codex/*)
+                  ;;
+                *)
+                  echo "::error::Changes entering dev must come from a feature/*, fix/*, hotfix/*, chore/*, docs/*, or codex/* branch."
+                  exit 1
+                  ;;
+              esac
+              ;;
+            preprod)
+              if [ "$HEAD_REF" != "dev" ] || [ "$HEAD_REPO" != "$BASE_REPO" ]; then
+                echo "::error::Only this repository's dev branch can be promoted to preprod."
+                exit 1
+              fi
+              ;;
+            prod)
+              if [ "$HEAD_REF" != "preprod" ] || [ "$HEAD_REPO" != "$BASE_REPO" ]; then
+                echo "::error::Only this repository's preprod branch can be promoted to prod."
+                exit 1
+              fi
+              ;;
+            *)
+              echo "::error::Unsupported promotion target: $BASE_REF"
+              exit 1
+              ;;
+          esac
