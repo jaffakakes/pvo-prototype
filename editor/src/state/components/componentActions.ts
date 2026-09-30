@@ -9,6 +9,7 @@ import { componentPixelDimension } from "../../../../packages/pvo-component-runt
 import { clampComponentStart } from "../../domain/components/timing";
 import { createLook } from "../../domain/components/look";
 import { remapComponentReferences } from "../../domain/components/requestReferences";
+import { constrainOverlayPosition } from "../../domain/layers/transform";
 import {
   acceptsResponse,
   DEFAULT_RESPONSE_POLICY,
@@ -92,10 +93,13 @@ export function createComponentActions(get: () => CaptureState): Pick<CaptureSta
         const appearance = changes.look && !("code" in changes)
           ? editComponentLook({ ...component, ...synchronized }, changes.look)
           : {};
+        const position = constrainOverlayPosition({
+          x: changes.x === undefined ? component.x : changes.x,
+          y: changes.y === undefined ? component.y : changes.y,
+        });
         const next: PvoComponent = {
           ...component, ...changes, ...synchronized, ...appearance, id, sceneId: scene.id,
-          x: changes.x === undefined ? component.x : clamp(changes.x, 8, 92),
-          y: changes.y === undefined ? component.y : clamp(changes.y, 6, 94),
+          ...position,
           ...(changes.scale === undefined ? {} : { scale: componentScale(changes.scale) }),
           ...(changes.scaleX === undefined ? {} : { scaleX: componentScale(changes.scaleX) }),
           ...(changes.scaleY === undefined ? {} : { scaleY: componentScale(changes.scaleY) }),

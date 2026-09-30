@@ -1,0 +1,60 @@
+.section {
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #ffffff24;
+}
+
+.controls {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.controls h3 {
+  margin: 0;
+  font: 800 13px/1.4 var(--f-ui);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 520px;
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: #f2f0e9;
+  font: 700 12px/1.4 var(--f-ui);
+}
+
+.field input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #ffffff30;
+  border-radius: 10px;
+  background: #1c1c24;
+  color: inherit;
+  font: 700 14px/1.4 var(--f-ui);
+  user-select: text;
+}
+
+.field input:focus-visible {
+  outline: 3px solid #ff9fbc;
+  outline-offset: 2px;
+}
+
+.unit,
+.controls p {
+  color: #c8c6c3;
+}
+
+.controls p {
+  margin: 0;
+  font: 600 11px/1.5 var(--f-ui);
+}
