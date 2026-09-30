@@ -22,10 +22,17 @@ try {
       t: 2, selComp: null, selText: null, sel: -1, tryMode: null, past: [], future: [] });
     const id = useCapture.getState().addComponent("form");
     useCapture.getState().updateComponent(id, { code: undefined,
-      fields: { fieldKinds: ["name", "email"], submitLabel: "Send", outcome: {
+      fields: {
+        heading: "Send details",
+        formFields: [{ name: "Name", type: "text" }, { name: "Email", type: "text" }],
+        submitLabel: "Send", waitingLabel: "Sending…", formSubmitMode: "request",
+        destination: "https://example.com/answers",
+        successOutcome: { kind: "time", t: 3 }, failureOutcome: null,
+        outcome: {
         kind: "request", url: "https://example.com/answers", method: "GET", body: "",
         onSuccess: { kind: "time", t: 3 }, onError: null,
-      } } });
+        },
+      } });
   });
   await page.getByRole("tab", { name: "Action", exact: true }).click();
   await page.getByRole("button", { name: "Open Advanced", exact: true }).click();
@@ -35,19 +42,21 @@ try {
   assert.equal(await page.getByLabel("While sending, the button says", { exact: true }).count(), 0);
   const logic = page.getByLabel("Logic source", { exact: true });
   const originalLogic = await logic.inputValue();
-  await logic.fill(originalLogic.replace('"onError":null', '"onError":{"kind":"time","t":2}'));
+  await logic.fill(originalLogic.replace(/"onError"\s*:\s*null/, '"onError":{"kind":"time","t":2}'));
   await page.waitForFunction(() => window.capture.getState().components[0]?.code?.pvoTouched === false);
-  assert.equal((await component()).fields.outcome.onSuccess.t, 3, "Legacy success route survives a direct failure-route edit");
-  assert.equal((await component()).fields.outcome.onError.t, 2, "PVO edits set the independent failure route");
-  assert.deepEqual((await component()).fields.fieldKinds, ["name", "email"], "Request editing keeps legacy runtime field identities");
-  assert.equal((await component()).fields.formFields, undefined);
+  assert.equal((await component()).fields.successOutcome.t, 3, "Success route survives a direct failure-route edit");
+  assert.equal((await component()).fields.failureOutcome.t, 2, "PVO edits set the independent failure route");
+  assert.deepEqual((await component()).fields.formFields, [
+    { name: "Name", type: "text" }, { name: "Email", type: "text" },
+  ], "Request editing keeps current form field identities");
+  assert.equal((await component()).fields.fieldKinds, undefined);
   await page.getByRole("button", { name: "Undo", exact: true }).click();
-  assert.equal((await component()).fields.formFields, undefined, "Undo retains the legacy field format");
-  assert.equal((await component()).fields.outcome.onError, null, "Undo restores the original request");
-  await logic.fill(originalLogic.replace('"onError":null', '"onError":{"kind":"time","t":7}'));
+  assert.equal((await component()).fields.fieldKinds, undefined, "Undo retains the current field format");
+  assert.equal((await component()).fields.failureOutcome, null, "Undo restores the original request");
+  await logic.fill(originalLogic.replace(/"onError"\s*:\s*null/, '"onError":{"kind":"time","t":7}'));
   await page.waitForFunction(() => window.capture.getState().components[0]?.code?.pvoTouched === false);
-  assert.equal((await component()).fields.outcome.onSuccess.t, 3);
-  assert.equal((await component()).fields.outcome.onError.t, 7, "Source-only Advanced can independently change response routes");
+  assert.equal((await component()).fields.successOutcome.t, 3);
+  assert.equal((await component()).fields.failureOutcome.t, 7, "Source-only Advanced can independently change response routes");
 
   await page.evaluate(async () => {
     const state = window.capture.getState();
@@ -90,7 +99,7 @@ try {
   await page.getByRole("button", { name: /New scene/ }).click();
   assert.equal(await page.evaluate(() => window.capture.getState().scenes.length), sceneCount, "Invalid Logic cannot create an unrouted scene");
   assert.deepEqual(errors, []);
-  console.log("Action editing passed: source-only Advanced request branches, retained legacy field identities, undo, invalid-draft actions, picker feedback and new-scene preflight.");
+  console.log("Action editing passed: source-only Advanced request branches, current field identities, undo, invalid-draft actions, picker feedback and new-scene preflight.");
 } finally {
   await browser.close();
 }

@@ -8,7 +8,8 @@ import { componentScale } from "../../domain/components/scale";
 import { componentPixelDimension } from "../../../../packages/pvo-component-runtime/index.js";
 import { clampComponentStart } from "../../domain/components/timing";
 import { createLook } from "../../domain/components/look";
-import { remapComponentRequests } from "../../domain/components/requestReferences";
+import { remapComponentReferences } from "../../domain/components/requestReferences";
+import { DEFAULT_RESPONSE_POLICY } from "../../domain/components/responsePolicy";
 import type { PvoComponent } from "../../domain/project/model";
 import { clamp } from "../../domain/project/numbers";
 import { cloneComponent, cloneOutcome } from "../../domain/project/snapshot";
@@ -27,6 +28,7 @@ export function createComponentActions(get: () => CaptureState): Pick<CaptureSta
         dur: 3,
         x: 50, y: type === "tooltip" ? 28 : 60,
         fields: defaultFields(type),
+        ...(type === "tooltip" ? {} : { responsePolicy: { ...DEFAULT_RESPONSE_POLICY } }),
         look: createLook("bold", type === "choice" ? 2 : type === "tooltip" ? 0 : 1),
       };
       state.edit({
@@ -112,7 +114,7 @@ export function createComponentActions(get: () => CaptureState): Pick<CaptureSta
       if (!scene || !component)
         return null;
       const newId = `component-${uid()}`;
-      const copy = remapComponentRequests(cloneComponent(component), new Map([[component.id, newId]]));
+      const copy = remapComponentReferences(cloneComponent(component), new Map([[component.id, newId]]));
       copy.id = newId;
       copy.at = clampComponentStart(component.at + 1, total(scene.clips));
       state.updateScene(scene.id, { components: [...scene.components, copy] });

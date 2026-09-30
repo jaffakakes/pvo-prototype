@@ -7,7 +7,7 @@ const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH 
 try {
   const page = await browser.newPage();
   page.setDefaultTimeout(10000);
-  await page.goto(process.env.EDITOR_URL || "http://127.0.0.1:5173/", { waitUntil: "networkidle" });
+  await page.goto(process.env.EDITOR_URL || "http://127.0.0.1:5173/", { waitUntil: "domcontentloaded" });
   const result = await page.evaluate(async root => {
     const { defaultFields } = await import("/src/domain/components/defaults.ts");
     const { createLook } = await import("/src/domain/components/look.ts");
@@ -19,14 +19,23 @@ try {
     const compiledCases = [];
     for (const type of ["tooltip", "card", "choice", "form"]) {
       for (const preset of ["bold", "soft", "minimal", "contrast"]) {
-        const component = { id: `${type}-${preset}`, type, sceneId: "main", at: 1, dur: 3, hold: false, x: 50, y: 50, fields: defaultFields(type), look: createLook(preset, type === "choice" ? 2 : type === "tooltip" ? 0 : 1) };
+        const component = {
+          id: `${type}-${preset}`, type, sceneId: "main", at: 1, dur: 3, x: 50, y: 50,
+          ...(type === "tooltip" ? {} : { responsePolicy: { dispatch: "interaction", unanswered: "continue" } }),
+          fields: defaultFields(type), look: createLook(preset, type === "choice" ? 2 : type === "tooltip" ? 0 : 1),
+        };
         await compilePvoComponent(type, componentLanguageSource(component));
         compiledCases.push(`${type}/${preset}`);
       }
     }
-    const component = { id: "form-player", type: "form", sceneId: "main", at: 1, dur: null, hold: true, x: 50, y: 60, fields: {
+    const component = {
+      id: "form-player", type: "form", sceneId: "main", at: 1, dur: null, x: 50, y: 60,
+      responsePolicy: { dispatch: "interaction", unanswered: "pause" },
+      fields: {
       ...defaultFields("form"), formFields: [{ name: "Height", type: "number" }, { name: "Subscribe?", type: "yesno" }], waitingLabel: "Working…",
-    }, look: createLook("soft", 1) };
+      },
+      look: createLook("soft", 1),
+    };
     component.look.body.color = "#FF5C5C";
     component.look.body.size = "XL";
     component.look.btns[0].fill = "#00E5A0";
@@ -69,8 +78,8 @@ try {
   assert.equal(result.before.submitFill, "rgb(0, 229, 160)");
   assert.equal(result.validNumber, true);
   assert.deepEqual(result.pending, { disabled: true, label: "Working…" });
-  assert.deepEqual(result.after, { disabled: false, label: "Send" });
-  await page.reload({ waitUntil: "networkidle" });
+  assert.deepEqual(result.after, { disabled: false, label: "Continue" });
+  await page.reload({ waitUntil: "domcontentloaded" });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(async () => {
     const moduleUrl = name => performance.getEntriesByType("resource").map(item => item.name).find(url => url.includes(`/src/state/${name}.ts`));

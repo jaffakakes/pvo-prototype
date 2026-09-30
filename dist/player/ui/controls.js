@@ -11,9 +11,7 @@ export function createPlayerControls({ session, refs, adapters, publication = nu
       refs.timeline.textContent = scene.label || scene.id;
       return;
     }
-    refs.timeline.textContent = timeline.kind === "branch"
-      ? `${timeline.condition === "true" ? "Yes" : "No"} branch`
-      : "Main timeline";
+    refs.timeline.textContent = timeline.kind === "branch" ? "Branch timeline" : "Main timeline";
   }
 
   function setStatus(message, error = false, visible = error) {

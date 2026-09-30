@@ -1,16 +1,18 @@
 import { type TextStyle } from "../../../packages/pvo-text-runtime/index.js";
 import type { AudioClip } from "../domain/audio/model";
 import { type LayerId } from "../domain/layers/model";
-import type { Clip, ComponentType, Outcome, OutcomeTarget, ProjectSnapshot, PvoComponent, Ratio, Scene, TextOverlay } from "../domain/project/model";
+import type { Clip, ComponentResponse, ComponentType, Outcome, OutcomeTarget, ProjectSnapshot, PvoComponent, Ratio, Scene, TextOverlay } from "../domain/project/model";
 
 export type TryMode = {
   playing: boolean;
-  /** Choice waiting at the end of its layer for an answer. */
+  /** Interactive component waiting at the end of its layer for a response. */
   holdingId: string | null;
-  /** Components whose end-of-layer branch already ran in this scene. */
+  /** Components whose response boundary has already been processed in this scene. */
   handled: string[];
-  /** Recorded answers for branch-at-end choices: true for the first option. */
-  answers: Record<string, boolean>;
+  /** Responses captured locally; layer-end responses have not reached Logic yet. */
+  capturedResponses: Record<string, ComponentResponse>;
+  /** Responses already handed to Logic, used to prevent duplicate requests. */
+  dispatched: string[];
 };
 export type PlayheadPick = ({
   kind: "component-at";

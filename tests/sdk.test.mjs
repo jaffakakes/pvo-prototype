@@ -12,6 +12,7 @@ import {
   packPvoProject,
   readPvo,
   readPvoProject,
+  resolveTextTemplate,
   resolveTemplates,
   tryReadPvo,
   validatePvo,
@@ -55,11 +56,16 @@ function manifest() {
     ],
     components: [
       { id: "tip", kind: "tooltip", text: "Score: {state.score}" },
-      { id: "choice", kind: "choice", options: [
+      { id: "choice", kind: "choice",
+        presentation: { scene: "intro", start: 1, end: 4, x: 0.2, y: 0.2, width: 0.5, height: 0.3 },
+        response_policy: { dispatch: "interaction", unanswered: "continue" }, options: [
         { label: "End", actions: [{ type: "goto_scene", scene: "ending" }] },
         { label: "Stay", actions: [{ type: "seek", time: 0 }] },
       ] },
-      { id: "form", kind: "form", fields: [], on_submit: [{ type: "request", url: "https://creator.example/submit" }] },
+      { id: "form", kind: "form",
+        presentation: { scene: "intro", start: 1, end: 4, x: 0.2, y: 0.2, width: 0.5, height: 0.3 },
+        response_policy: { dispatch: "interaction", unanswered: "continue" },
+        fields: [], on_submit: [{ type: "request", url: "https://creator.example/submit" }] },
     ],
     hotspots: [
       { id: "target", scene: "intro", start: 0, end: 5, x: 0.1, y: 0.2, width: 0.3, height: 0.25, actions: [{ type: "show", component: "tip" }] },
@@ -78,12 +84,109 @@ test("validatePvo checks Card button actions without treating button wrappers as
   const project = manifest();
   project.components.push({
     id: "card", kind: "card", title: "Next step",
+    presentation: { scene: "intro", start: 1, end: 4, x: 0.2, y: 0.2, width: 0.5, height: 0.3 },
+    response_policy: { dispatch: "interaction", unanswered: "continue" },
     actions: [{ label: "Continue", action: { type: "goto_scene", scene: "ending" } }],
   });
   assert.deepEqual(validatePvo(project).errors, []);
 
   project.components.at(-1).actions[0].action.scene = "missing";
   assert.match(validatePvo(project).errors.join("\n"), /missing scene/);
+});
+
+test("response policies accept every dispatch and unanswered combination", () => {
+  for (const dispatch of ["interaction", "layer_end"])
+    for (const unanswered of ["continue", "pause"]) {
+      const project = manifest();
+      project.components[1].presentation = {
+        scene: "intro", start: 1, end: 4, x: 0.2, y: 0.2, width: 0.5, height: 0.3,
+      };
+      project.components[1].response_policy = { dispatch, unanswered };
+      assert.deepEqual(validatePvo(project).errors, [], `${dispatch}/${unanswered}`);
+    }
+});
+
+test("response policies are required for interactive timed components and forbidden on tooltips", () => {
+  const invalid = manifest();
+  invalid.components[0].response_policy = { dispatch: "later", unanswered: "wait" };
+  const errors = validatePvo(invalid).errors.join("\n");
+  assert.match(errors, /dispatch must be "interaction" or "layer_end"/);
+  assert.match(errors, /unanswered must be "continue" or "pause"/);
+  assert.match(errors, /only available for card, choice, or form/);
+
+  const extra = manifest();
+  extra.components[1].presentation = {
+    scene: "intro", start: 1, end: 4, x: 0.2, y: 0.2, width: 0.5, height: 0.3,
+  };
+  extra.components[1].response_policy = { dispatch: "interaction", unanswered: "continue", wait: true };
+  assert.match(validatePvo(extra).errors.join("\n"), /unsupported fields: wait/);
+
+  const missing = manifest();
+  delete missing.components[1].response_policy;
+  assert.match(validatePvo(missing).errors.join("\n"), /response_policy is required/);
+});
+
+test("validatePvo rejects the removed scene_change component field", () => {
+  const project = manifest();
+  project.components[1].scene_change = { scene: "ending" };
+  assert.match(
+    validatePvo(project).errors.join("\n"),
+    /scene_change is not supported; use an explicit goto_scene or seek action/,
+  );
+});
+
+test("validatePvo rejects removed binary branch timeline metadata", () => {
+  const project = manifest();
+  project.media = [{ id: "video", asset_id: "video" }];
+  project.playback = {
+    initial_timeline: "main",
+    timelines: [{
+      id: "main", kind: "main", source_component: "choice", condition: "true",
+      clips: [{ id: "clip", asset_id: "video", scene: "intro", start: 0, end: 5 }],
+    }],
+  };
+  const errors = validatePvo(project).errors.join("\n");
+  assert.match(errors, /source_component is not supported/);
+  assert.match(errors, /condition is not supported/);
+});
+
+test("validatePvo rejects removed pause and direct Card-action shapes", () => {
+  const removed = manifest();
+  removed.components[0].pause = true;
+  assert.match(validatePvo(removed).errors.join("\n"), /pause is not supported/);
+
+  const direct = manifest();
+  direct.components.push({
+    id: "card", kind: "card", title: "Go",
+    presentation: { scene: "intro", start: 1, end: 4, x: .2, y: .2, width: .5, height: .3 },
+    response_policy: { dispatch: "interaction", unanswered: "continue" },
+    actions: [{ type: "seek", time: 2 }],
+  });
+  assert.match(validatePvo(direct).errors.join("\n"), /must be a Card button with an action or actions/);
+});
+
+test("validatePvo requires the complete interactive presentation contract", () => {
+  const project = manifest();
+  project.components[1].presentation = { scene: "missing", start: 4, end: 2, x: -1, y: 0, width: 2 };
+  const errors = validatePvo(project).errors.join("\n");
+  assert.match(errors, /presentation\.scene references a missing scene/);
+  assert.match(errors, /presentation\.end must be greater than start/);
+  assert.match(errors, /presentation\.x must be between 0 and 1/);
+  assert.match(errors, /presentation\.width must be between 0 and 1/);
+  assert.match(errors, /presentation\.height must be between 0 and 1/);
+
+  delete project.components[1].presentation;
+  assert.match(validatePvo(project).errors.join("\n"), /presentation is required/);
+});
+
+test("a buttonless Card cannot pause for a response nobody can provide", () => {
+  const project = manifest();
+  project.components.push({
+    id: "announcement", kind: "card", title: "Read this", actions: [],
+    presentation: { scene: "intro", start: 1, end: 4, x: .2, y: .2, width: .5, height: .3 },
+    response_policy: { dispatch: "layer_end", unanswered: "pause" },
+  });
+  assert.match(validatePvo(project).errors.join("\n"), /cannot pause for a response without at least one Card button/);
 });
 
 test("validatePvo reports broken references and coordinates", () => {
@@ -162,8 +265,7 @@ test("self-contained .pvo packages keep the main media and every branch asset", 
       initial_timeline: "main",
       timelines: [
         { id: "main", kind: "main", clips: [{ id: "main_clip", asset_id: "main_media", scene: "main_scene", start: 0, end: 5 }] },
-        { id: "branch:choice:true", kind: "branch", condition: "true", clips: [{ id: "branch_clip", asset_id: "branch_media", scene: "branch_scene", start: 0, end: 5 }] },
-        { id: "branch:choice:false", kind: "branch", condition: "false", clips: [{ id: "branch_clip", asset_id: "branch_media", scene: "branch_scene", start: 0, end: 5 }] },
+        { id: "branch:choice", kind: "branch", clips: [{ id: "branch_clip", asset_id: "branch_media", scene: "branch_scene", start: 0, end: 5 }] },
       ],
     },
     scenes: [
@@ -174,18 +276,11 @@ test("self-contained .pvo packages keep the main media and every branch asset", 
       id: "choice",
       kind: "choice",
       options: [
-        { label: "Yes", actions: [{ type: "set", key: "answers.choice", value: true }] },
-        { label: "No", actions: [{ type: "set", key: "answers.choice", value: false }] },
+        { label: "Yes", actions: [{ type: "goto_scene", scene: "branch_scene" }] },
+        { label: "No", actions: [{ type: "seek", time: 0 }] },
       ],
       presentation: { scene: "main_scene", clip: "main_clip", timeline: "main", start: 1, end: 4, x: 0.2, y: 0.2, width: 0.5, height: 0.3 },
-      scene_change: {
-        enabled: true,
-        executeAt: "end",
-        routes: [
-          { condition: "true", timelineId: "branch:choice:true" },
-          { condition: "false", timelineId: "branch:choice:false" },
-        ],
-      },
+      response_policy: { dispatch: "layer_end", unanswered: "pause" },
     }],
     hotspots: [],
     triggers: [],
@@ -213,7 +308,7 @@ test("self-contained .pvo packages keep the main media and every branch asset", 
   const decoded = await readPvo(packed);
   assert.equal(decoded.container, true);
   assert.equal(decoded.videoBlob.size, main.size);
-  assert.equal(decoded.manifest.playback.timelines.length, 3);
+  assert.equal(decoded.manifest.playback.timelines.length, 2);
 });
 
 test("conditions and templates read state and response paths", () => {
@@ -222,6 +317,10 @@ test("conditions and templates read state and response paths", () => {
   assert.equal(evaluateWhen({ response: "/ok", is: true }, context), true);
   assert.equal(evaluateWhen({ all: [{ key: "score", gte: 4 }, { response: "/id", exists: true }] }, context), true);
   assert.deepEqual(resolveTemplates({ title: "Hi {state.user.name}", id: "{response.id}" }, context), { title: "Hi Ada", id: 9 });
+  assert.equal(resolveTextTemplate("Score: {state.score}", context), "Score: 4");
+  assert.equal(resolveTextTemplate("{state.user.name}", context), "Ada");
+  assert.equal(resolveTextTemplate("{state.missing}", context), "");
+  assert.equal(resolveTextTemplate("{state.user}", context), "");
 });
 
 test("runtime executes guarded state, navigation, visibility, and request outcomes", async () => {
@@ -256,18 +355,9 @@ test("runtime executes guarded state, navigation, visibility, and request outcom
   assert.deepEqual(events, [["show", "tip"], ["goto", "ending"], ["hide", "tip"]]);
 });
 
-test("true and false scene routes wait for a recorded answer", async () => {
+test("branch actions wait for matching recorded state", async () => {
   const delayed = manifest();
   delayed.scenes.push({ id: "decline", start: 10, end: 15 });
-  delayed.components[1].presentation = { scene: "intro", start: 1, end: 4, x: 0.2, y: 0.2, width: 0.5, height: 0.3 };
-  delayed.components[1].scene_change = {
-    enabled: true,
-    executeAt: "end",
-    routes: [
-      { condition: "true", sceneId: "ending" },
-      { condition: "false", sceneId: "decline" },
-    ],
-  };
   const branch = {
     type: "branch",
     cases: [
@@ -291,22 +381,6 @@ test("true and false scene routes wait for a recorded answer", async () => {
   await runtime.execute([{ type: "custom", name: "submit_form", into: "answers.choice" }, branch]);
   assert.equal(runtime.state.answers.choice, false);
   assert.deepEqual(destinations, ["decline"]);
-});
-
-test("scene changes require distinct True and False destination scenes", () => {
-  const broken = manifest();
-  broken.components[1].presentation = { scene: "intro", start: 1, end: 4, x: 0.2, y: 0.2, width: 0.5, height: 0.3 };
-  broken.components[1].scene_change = {
-    enabled: true,
-    executeAt: "end",
-    routes: [
-      { condition: "true", sceneId: "ending" },
-      { condition: "false", sceneId: "ending" },
-    ],
-  };
-  const result = validatePvo(broken);
-  assert.equal(result.valid, false);
-  assert.ok(result.errors.some((error) => error.includes("two different scenes")));
 });
 
 test("request actions send real HTTP, expose responses, and run ordered actions without implicit routing", async (t) => {
@@ -451,10 +525,47 @@ test("imperative request bridges receive parsed data or a rejected Promise", asy
   );
 });
 
+test("an aborted request cannot write state or run success or error actions", async () => {
+  let release;
+  let markStarted;
+  const started = new Promise((resolve) => { markStarted = resolve; });
+  const events = [];
+  const runtime = createPvoRuntime(manifest(), {
+    request() {
+      markStarted();
+      return new Promise((resolve) => { release = resolve; });
+    },
+    onEvent(event) { events.push(event.type); },
+  });
+  const controller = new AbortController();
+  const pending = runtime.execute({
+    type: "request",
+    url: "https://creator.example/submit",
+    into: "responses.card",
+    on_success: { type: "set", key: "success", value: true },
+    on_error: { type: "set", key: "error", value: true },
+  }, { signal: controller.signal });
+  await started;
+  controller.abort();
+  release({ ok: true, message: "late" });
+  await assert.rejects(pending, (error) => error?.name === "AbortError");
+  assert.equal(runtime.state.responses, undefined);
+  assert.equal(runtime.state.success, undefined);
+  assert.equal(runtime.state.error, undefined);
+  assert.deepEqual(events, ["request_start"]);
+});
+
 test("an on_success action failure is not misreported as a network failure", async () => {
   const m = manifest();
   let errors = 0;
-  const runtime = createPvoRuntime(m, { request() { return { ok: true }; }, custom() { throw new Error("Action failed"); } });
+  const events = [];
+  const runtime = createPvoRuntime(m, {
+    request() { return { ok: true }; },
+    custom() { throw new Error("Action failed"); },
+    onEvent(event) {
+      if (event.type.startsWith("request_")) events.push(event.type);
+    },
+  });
   await assert.rejects(() => runtime.execute({
     type: "request", url: "https://creator.example/submit",
     on_success: { type: "custom", name: "broken" },
@@ -462,6 +573,7 @@ test("an on_success action failure is not misreported as a network failure", asy
   }), /Action failed/);
   errors = runtime.state.error_count || 0;
   assert.equal(errors, 0);
+  assert.deepEqual(events, ["request_start", "request_success"]);
 });
 
 test("state paths cannot traverse inherited properties or mutate prototypes", () => {
@@ -471,12 +583,8 @@ test("state paths cannot traverse inherited properties or mutate prototypes", ()
   assert.equal({}.polluted, undefined);
 });
 
-test("published schema parses and the packed sample is readable", async () => {
+test("published schema declares the required response policy", async () => {
   const schema = JSON.parse(await readFile(new URL("../packages/pvo-sdk/pvo-manifest.schema.json", import.meta.url), "utf8"));
   assert.equal(schema.$schema, "https://json-schema.org/draft/2020-12/schema");
-  const sample = await readFile(new URL("../examples/signal-path.pvo.mp4", import.meta.url));
-  const decoded = await readPvo(sample);
-  assert.equal(decoded.validation.valid, true);
-  assert.equal(decoded.manifest.scenes.length, 4);
-  assert.ok(decoded.videoBlob.size < sample.length);
+  assert.deepEqual(schema.properties.components.items.properties.response_policy.required, ["dispatch", "unanswered"]);
 });

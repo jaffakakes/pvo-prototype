@@ -49,7 +49,18 @@ export type Outcome = PlaybackOutcome | {
   onSuccess: PlaybackOutcome;
   onError: PlaybackOutcome | null;
 };
+export type ComponentResponse = {
+  index: number;
+  outcome: Outcome;
+  formValues?: Record<string, string | number | boolean>;
+};
 export type FormField = { name: string; type: "text" | "number" | "yesno" };
+export type ResponsePolicy = {
+  /** When the captured response is handed to Logic and its authored action runs. */
+  dispatch: "interaction" | "layer_end";
+  /** What playback does at the layer end when no response has been captured. */
+  unanswered: "continue" | "pause";
+};
 export type ComponentFields = {
   text?: string;
   title?: string;
@@ -65,7 +76,6 @@ export type ComponentFields = {
   }[];
   fieldKinds?: ("name" | "email" | "phone" | "short" | "yesno")[];
   formFields?: FormField[];
-  /** Absent on older projects, which retain their destination-required submission behavior. */
   formSubmitMode?: "local" | "request";
   heading?: string;
   destination?: string;
@@ -82,8 +92,8 @@ export type PvoComponent = {
   at: number;
   /** Seconds on screen; null shows the component until its clip ends. */
   dur: number | null;
-  /** Choice only: remember the answer and open its scene when this layer ends, waiting there if unanswered. */
-  branchAtEnd?: boolean;
+  /** Required for interactive components; absent only on display-only Notes. */
+  responsePolicy?: ResponsePolicy;
   x: number;
   y: number;
   scale?: number;

@@ -1,4 +1,4 @@
-import { substituteFieldTokens } from "./field-tokens.js";
+import { substituteRuntimeTokens } from "./field-tokens.js";
 import { parseHandler } from "./handlers.js";
 
 const TAGS = new Set([
@@ -42,10 +42,10 @@ const INPUT_TYPES = new Set([
 ]);
 const BUTTON_TYPES = new Set(["button", "submit", "reset"]);
 
-export function sanitizeMarkup(html, fields, onError) {
+export function sanitizeMarkup(html, fields, state, onError) {
   // Template content does not activate scripts or load embedded resources.
   const source = document.createElement("template");
-  source.innerHTML = substituteFieldTokens(html, fields);
+  source.innerHTML = substituteRuntimeTokens(html, fields, state);
   const fragment = document.createDocumentFragment();
   const handlers = new Map();
   let nodes = 0;

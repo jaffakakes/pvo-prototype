@@ -36,7 +36,8 @@ export function templateProject(template: ProjectTemplate, media: Clip, nextId: 
   });
   if (template.interactive) {
     scenes[0].components.push({
-      id: `component-${nextId()}`, type: "choice", sceneId: "main", at: 2, dur: null, branchAtEnd: true,
+      id: `component-${nextId()}`, type: "choice", sceneId: "main", at: 2, dur: null,
+      responsePolicy: { dispatch: "layer_end", unanswered: "pause" },
       x: 50, y: 50, look: createLook("bold", 2),
       fields: { prompt: "Choose your path", options: [
         { label: "Explore", outcome: { kind: "scene", sceneId: scenes[1].id } },

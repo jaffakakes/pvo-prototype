@@ -6,5 +6,5 @@ export { packPvoProject, readPvoProject } from "./container/project.js";
 export { inspectPvoProject } from "./container/inspect.js";
 export { readPvo, tryReadPvo } from "./container/read.js";
 export { validatePvo } from "./manifest/validate.js";
-export { evaluateWhen, resolveTemplates } from "./runtime/conditions.js";
+export { evaluateWhen, resolveTemplates, resolveTextTemplate } from "./runtime/conditions.js";
 export { PvoRuntime, createPvoRuntime } from "./runtime/PvoRuntime.js";

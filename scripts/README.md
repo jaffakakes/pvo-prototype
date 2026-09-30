@@ -33,7 +33,7 @@ scripts/
 | `npm run check:editor` | Check editor TypeScript. |
 | `npm run check:language` | Run native Rust tests with the checked-in Cargo lockfile. |
 | `npm run check:language:format` | Verify Rust formatting. |
-| `npm run build:sample` | Regenerate the example PVO-in-MP4 fixture. |
+| `npm run build:sample` | Regenerate the self-contained example `.pvo` package. |
 
 Rust, the `wasm32-unknown-unknown` target, and wasm-pack are needed for language builds. The browser bridge imports generated `pkg/` bindings; build them before editor builds or tests that bundle the editor. `target/`, `pkg/`, and `dist/` are output, not source to edit.
 
@@ -68,11 +68,11 @@ For editor layout changes, `npm run check:browser -- editor sheet-dock timeline-
 
 `npm run check:browser -- editor pvo-formatting` checks automatic formatting on opening valid compact source, leaving a changed field, and receiving AI changes. Card and Form fixtures verify identical compiler output, preserved text and request literals, untouched focused text and invalid drafts, no Format button, and single-step Undo/Redo. It requires Vite, generated WASM and Chrome; only the AI HTTP response is mocked.
 
-`npm run check:browser -- editor no-code-action-editing` covers direct PVO response-route edits in older forms, retained field identities and undo, action edits beside invalid source drafts, inline feedback for uneditable Logic, timeline-picker failures and scene-creation preflight.
+`npm run check:browser -- editor no-code-action-editing` covers direct PVO Form response-route edits, retained field identities and undo, action edits beside invalid source drafts, inline feedback for uneditable Logic, timeline-picker failures and scene-creation preflight.
 
-`npm run check:browser -- editor request-separation` checks local form playback actions without network traffic, direct PVO request authoring in Advanced, retained requests when Advanced is hidden, typed submission and undoable replacement with a local action. It requires Vite and Chrome. Form domain/runtime tests also verify local answer state and native exported-player behavior, including compatibility with older destination-required forms.
+`npm run check:browser -- editor request-separation` checks local form playback actions without network traffic, direct PVO request authoring in Advanced, retained requests when Advanced is hidden, typed submission and undoable replacement with a local action. It requires Vite and Chrome. Form domain/runtime tests also verify local response state and native exported-player behavior using the current request contract.
 
-`npm run check:browser -- editor scene-tree` covers contextual scene navigation, the full tree confined to the timeline, phone-width overflow, scene management and outcome destinations. It runs against Vite or a production editor URL. Scene domain, persistence, return playback and manifest rules also have Node regression tests.
+`npm run check:browser -- editor scene-tree` covers contextual scene navigation, the full tree confined to the timeline, phone-width overflow, scene management and outcome destinations. It runs against Vite or a production editor URL. Scene domain, persistence, terminal routed-scene playback and manifest rules also have Node regression tests.
 
 Editor scripts honor `EDITOR_URL`, then the legacy `RESTYLE_EDITOR_URL`, then `http://127.0.0.1:5173/`. Player scripts honor `PVO_PLAYER_URL`, defaulting to `http://127.0.0.1:4173/player/`. Self-contained language checks use temporary local ports and need neither development server.
 

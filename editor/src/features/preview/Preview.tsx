@@ -12,7 +12,7 @@ import { TextLayer } from "../text/TextLayer";
 import { ComponentOverlay,componentVisible } from "./ComponentOverlay";
 import { fitPreviewSize } from "./geometry";
 import styles from "./Preview.module.css";
-import { runOutcome } from "./tryMode";
+import { runComponentResponse } from "./tryMode";
 import { usePlayback } from "./usePlayback";
 import { useOverlayGestures } from "./useOverlayGestures";
 import { Icon } from "../../ui/Icon";
@@ -69,7 +69,7 @@ export function Preview({ desktop = false, safeZone = false, onAddMedia }: Props
         return <ComponentOverlay key={component.id}
           component={proposed ? assistant.review!.proposed : component} proposed={proposed} before={reviewing && assistant.before}
           width={bw} zIndex={layerZ(s, `component:${component.id}`)} selected={s.selComp === component.id}
-          trying={!!s.tryMode} onOutcome={runOutcome} />;
+          trying={!!s.tryMode} onResponse={runComponentResponse} />;
       })}
     {!compact && !s.tryMode && clip && <span className={cx("tag pvTag")}><i /><span>Clip {(located?.i ?? 0) + 1} · {dur(clip).toFixed(1)}s</span></span>}
     {desktop && safeZone && clip && <div className={styles.guides} data-portrait={s.ratio === "9:16"} aria-hidden="true">

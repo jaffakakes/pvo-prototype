@@ -9,10 +9,10 @@ export type FormControl = {
   inputType: "text" | "number" | "email" | "tel";
 };
 
-/** Older named-field forms require a destination unless the author explicitly chooses a local action. */
+/** A Form is a request only when its current action explicitly says so. */
 export function formUsesRequest(fields: ComponentFields): boolean {
   if (fields.formSubmitMode) return fields.formSubmitMode === "request";
-  return fields.outcome?.kind === "request" || !!fields.formFields;
+  return fields.outcome?.kind === "request";
 }
 
 export function getFormFields(fields: ComponentFields): FormField[] {
@@ -21,7 +21,7 @@ export function getFormFields(fields: ComponentFields): FormField[] {
   }));
 }
 
-/** Entering the visual form editor retains existing request destinations and response routes. */
+/** Project an explicitly authored Form action into the visual editor fields. */
 export function toVisualFormFields(fields: ComponentFields): ComponentFields {
   if (fields.formFields) return fields;
   const request = fields.outcome?.kind === "request" ? fields.outcome : null;
@@ -72,7 +72,7 @@ export function formSubmissionOutcome(
     return fields.outcome?.kind !== "request" ? fields.outcome ?? fields.successOutcome ?? { kind: "continue" }
       : fields.successOutcome ?? { kind: "continue" };
   const authoredRequest = fields.outcome?.kind === "request" ? fields.outcome : null;
-  if (!fields.formFields && !authoredRequest && fields.formSubmitMode !== "request")
+  if (!authoredRequest && fields.formSubmitMode !== "request")
     return fields.outcome ?? { kind: "continue" };
   const destination = fields.destination ?? authoredRequest?.url;
   if (!destination?.trim()) return null;

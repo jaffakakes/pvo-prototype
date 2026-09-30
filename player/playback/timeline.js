@@ -21,7 +21,11 @@ export function createTimelineReader({ session, readMediaTime }) {
       const duration = Math.max(0, clips[index].end - clips[index].start);
       const isLast = index === clips.length - 1;
       if (targetTime < cursor + duration || isLast) {
-        return { index, local: Math.max(0, Math.min(duration - (session.captureMode ? .001 : .01), targetTime - cursor)) };
+        return {
+          index,
+          local: Math.max(0, Math.min(duration - (session.captureMode ? .001 : .01), targetTime - cursor)),
+          elapsed: targetTime,
+        };
       }
       cursor += duration;
     }

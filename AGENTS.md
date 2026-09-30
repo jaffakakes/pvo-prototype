@@ -12,6 +12,7 @@ These rules apply throughout this repository. Read the [coding standard](docs/en
 - Use the same command for toolbar, keyboard, and other entry points to the same operation. Do not copy editing or playback rules into each handler.
 - Keep entry points and store composition thin. UI components render state and translate interactions into named commands; the store integrates commands and history.
 - Follow the [notification policy](docs/engineering/notification-policy.md): approved typed events, short copy, one surface, and no routine edit toasts. Preserve unresolved save/recording status after dismissal.
+- This repository is development-only and has no production users. Maintain exactly one current contract: do not add legacy fallbacks, compatibility adapters, dual-read or dual-write paths, migrations, deprecated fields, or support for superseded project/manifest shapes unless the user explicitly requests it. When a contract changes, remove the old behavior and update source, tests, fixtures, and documentation together.
 
 ## Ownership and dependencies
 
@@ -21,7 +22,7 @@ These rules apply throughout this repository. Read the [coding standard](docs/en
 - `packages/pvo-language/`: Rust compiler rules under `src/{structure,style,logic,compiler}/`, JSON/WASM exports in `bindings.rs`, and browser initialization in the root JavaScript facade. Follow its package `AGENTS.md`; keep host effects outside the compiler.
 - `share/`: public demo landing page and its assets. `scripts/build/`, `scripts/dev/`, and `scripts/checks/`: tooling grouped by purpose. `dist/`, language `pkg/`, and Cargo `target/`: generated output, never the source of a fix.
 - Group related files in a feature folder; co-locate its UI, hooks, and styles. Promote code to shared ownership only when the responsibility is genuinely shared.
-- Preserve public SDK imports, types, schema, and file compatibility during structural refactors. Update static build copying, package publication lists, and test servers when adding imported modules.
+- During behavior-neutral structural refactors, preserve current public SDK imports, types, schema, and file compatibility. Contract changes use only the new canonical shape under the development-only rule above. Update static build copying, package publication lists, and test servers when adding imported modules.
 
 ## Working method
 

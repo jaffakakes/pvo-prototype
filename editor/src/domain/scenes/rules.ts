@@ -1,4 +1,3 @@
-import { upgradeLegacyComponent } from "../components/branching";
 import type { PvoComponent, Scene } from "../project/model";
 
 export const mainScene = (): Scene => ({
@@ -10,11 +9,10 @@ export const componentCount = (scenes: readonly Scene[]) => scenes.reduce((n, sc
 export const sceneChildren = (scenes: readonly Scene[], id: string): Scene[] =>
   scenes.filter(scene => scene.id !== "main" && (scene.parent ?? "main") === id);
 
-/** Components keep their identity unless they carry a stale scene or a pre-documented-model field. */
+/** Components keep their identity unless they carry a stale scene reference. */
 function normalizeComponents(scene: Scene): PvoComponent[] {
-  const normalized = scene.components.map(component => upgradeLegacyComponent(
-    component.sceneId === scene.id ? component : { ...component, sceneId: scene.id },
-  ));
+  const normalized = scene.components.map(component =>
+    component.sceneId === scene.id ? component : { ...component, sceneId: scene.id });
   return normalized.every((component, index) => component === scene.components[index]) ? scene.components : normalized;
 }
 

@@ -4,7 +4,7 @@ import type { PvoComponent as ManifestComponent, PvoManifest } from "../../../..
 import { PVO_SPEC_VERSION } from "../../../../packages/pvo-sdk/index.js";
 import { dur } from "../clips/timing";
 import { actionFor, collectRequestDomains, requestHost } from "../components/actions";
-import { branchAtEndIssue, branchRoutes } from "../components/branching";
+import { responsePolicyFor } from "../components/responsePolicy";
 import { componentScale, componentSize } from "../components/scale";
 import { componentPixelDimension, type ComponentDimensions } from "../../../../packages/pvo-component-runtime/index.js";
 import { formFieldControls, formSubmissionOutcome, validateFormFields } from "../components/forms";
@@ -78,11 +78,15 @@ function manifestComponent(component: PvoComponent, scene: Scene, available: Set
   let outcomes: Outcome[] = [];
   const fields = component.fields;
   const structure = language?.compiled.structure;
-  const result: ManifestComponent = {
-    id: component.id,
-    kind: component.type,
-    presentation,
-  };
+  const responsePolicy = component.type === "tooltip" ? undefined : responsePolicyFor(component);
+  const result: ManifestComponent = component.type === "tooltip"
+    ? { id: component.id, kind: "tooltip", presentation }
+    : {
+        id: component.id,
+        kind: component.type,
+        presentation,
+        response_policy: { ...responsePolicy! },
+      };
   if (component.type === "tooltip") {
     result.text = structure?.type === "tooltip" ? structure.text : fields.text || "";
   }
@@ -90,6 +94,9 @@ function manifestComponent(component: PvoComponent, scene: Scene, available: Set
     result.title = structure?.type === "card" ? structure.title || "" : fields.title || "";
     result.text = structure?.type === "card" ? structure.body || "" : fields.body || "";
     const buttons = structure?.type === "card" ? structure.buttons : (fields.buttons || []).slice(0, 2);
+    if (!buttons.length && responsePolicy?.unanswered === "pause") {
+      throw new Error(`${scene.name} · Message: add a button or turn off Pause if nobody responds.`);
+    }
     outcomes = buttons.map((button, index) => language
       ? ruleOutcome(language, "id" in button ? button.id : null)
       : fields.buttons?.[index]?.outcome || { kind: "continue" });
@@ -108,17 +115,6 @@ function manifestComponent(component: PvoComponent, scene: Scene, available: Set
       label: option.label,
       action: actionFor(outcomes[index], component.id),
     }));
-    if (component.branchAtEnd && !component.code?.custom) {
-      const routes = branchRoutes(component);
-      if (!routes)
-        throw new Error(`${scene.name} · choice: ${branchAtEndIssue(component)}`);
-      // The tap only records the answer; the format opens the matching scene when the layer ends.
-      result.options = result.options.map((option) => ({ label: option.label, action: actionFor({ kind: "continue" }, component.id) }));
-      result.scene_change = { enabled: true, executeAt: "end", routes: [
-        { condition: "true", sceneId: routes.trueSceneId },
-        { condition: "false", sceneId: routes.falseSceneId },
-      ] };
-    }
   }
   else if (component.type === "form") {
     if (visualForm) {
@@ -163,7 +159,7 @@ function manifestComponent(component: PvoComponent, scene: Scene, available: Set
     ...(component.scaleX === undefined ? {} : { scaleX: size.width }),
     ...(component.scaleY === undefined ? {} : { scaleY: size.height }),
     ...(component.look ? { look: cloneLook(component.look) } : {}),
-    outcomes: result.scene_change ? outcomes.map(() => ({ kind: "continue" as const })) : outcomes,
+    outcomes,
     ...(visualForm ? { form: {
       ...(fields.formSubmitMode ? { submitMode: fields.formSubmitMode } : {}),
       heading: fields.heading ?? "", destination: fields.destination ?? "", waitingLabel: fields.waitingLabel || "Sending…",

@@ -18,13 +18,6 @@ function sanitizeCss(css) {
   return String(css || "").replace(/@import[^;]+;/gi, "").replace(/url\([^)]*\)/gi, "none");
 }
 
-function normalizeAnswer(value) {
-  const normalized = String(value).trim().toLowerCase();
-  if (["true", "yes", "1", "on"].includes(normalized)) return true;
-  if (["false", "no", "0", "off"].includes(normalized)) return false;
-  return Boolean(value);
-}
-
 class PvoComponentView extends HTMLElement {
   constructor() {
     super();
@@ -34,7 +27,10 @@ class PvoComponentView extends HTMLElement {
       const control = event.target;
       if (!(control instanceof HTMLInputElement || control instanceof HTMLSelectElement)) return;
       if ((control.type === "radio" || control.type === "checkbox") && !control.checked) return;
-      this.sendAnswer(control.value || control.checked, control.dataset.optionIndex);
+      const optionIndex = control instanceof HTMLSelectElement
+        ? control.selectedIndex
+        : Number(control.dataset.optionIndex);
+      this.sendAnswer(optionIndex);
     });
     this.shadowRoot.addEventListener("click", (event) => {
       const button = event.target.closest?.("button");
@@ -50,7 +46,7 @@ class PvoComponentView extends HTMLElement {
       }
       if (button.type === "submit" && button.closest("form")) return;
       event.preventDefault();
-      this.sendAnswer(button.value || "true", button.dataset.optionIndex);
+      this.sendAnswer(Number(button.dataset.optionIndex));
     });
     this.shadowRoot.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -70,7 +66,7 @@ class PvoComponentView extends HTMLElement {
     });
   }
 
-  update(component, answer, fieldsMode = false, visualUnit = 1) {
+  update(component, selectedIndex, fieldsMode = false, visualUnit = 1) {
     this.componentId = component.id;
     this.component = component;
     this.visualUnit = visualUnit;
@@ -85,15 +81,24 @@ class PvoComponentView extends HTMLElement {
       .component-root { width: 100%; height: 100%; }
       ${sanitizeCss(component.css)}
     </style><div class="component-root">${sanitizeHtml(component.html)}</div>`;
-    if (answer !== undefined) {
-      this.shadowRoot.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach((input) => {
-        input.checked = normalizeAnswer(input.value) === answer;
-      });
-    }
-    if (component.kind === "choice") {
+    if (component.kind === "choice" || component.kind === "card") {
+      const count = component.kind === "choice" ? component.options?.length : component.actions?.length;
       const buttons = this.shadowRoot.querySelectorAll("button");
       buttons.forEach((button, index) => {
-        if (index < component.options?.length) button.dataset.optionIndex = String(index);
+        if (index >= count) return;
+        button.dataset.optionIndex = String(index);
+        button.setAttribute("aria-pressed", String(index === selectedIndex));
+        button.toggleAttribute("data-selected", index === selectedIndex);
+      });
+      this.shadowRoot.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach((input, index) => {
+        if (index >= count) return;
+        input.dataset.optionIndex = String(index);
+        input.checked = index === selectedIndex;
+      });
+      this.shadowRoot.querySelectorAll("select").forEach((select) => {
+        if (Number.isInteger(selectedIndex) && selectedIndex >= 0 && selectedIndex < select.options.length) {
+          select.selectedIndex = selectedIndex;
+        }
       });
     }
   }
@@ -194,12 +199,12 @@ class PvoComponentView extends HTMLElement {
       : this.component.submit_label || "Send";
   }
 
-  sendAnswer(value, optionIndex) {
+  sendAnswer(optionIndex) {
+    if (!Number.isInteger(optionIndex)) return;
     this.dispatchEvent(new CustomEvent("pvo-answer", {
       bubbles: true,
       composed: true,
-      detail: { componentId: this.componentId, answer: normalizeAnswer(value),
-        index: Number.isInteger(Number(optionIndex)) && optionIndex != null ? Number(optionIndex) : undefined },
+      detail: { componentId: this.componentId, index: optionIndex },
     }));
   }
 }
