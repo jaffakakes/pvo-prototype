@@ -9,12 +9,47 @@ import { componentPixelDimension } from "../../../../packages/pvo-component-runt
 import { clampComponentStart } from "../../domain/components/timing";
 import { createLook } from "../../domain/components/look";
 import { remapComponentReferences } from "../../domain/components/requestReferences";
-import { DEFAULT_RESPONSE_POLICY } from "../../domain/components/responsePolicy";
+import {
+  acceptsResponse,
+  DEFAULT_RESPONSE_POLICY,
+  responsePolicyFor,
+} from "../../domain/components/responsePolicy";
 import type { PvoComponent } from "../../domain/project/model";
 import { clamp } from "../../domain/project/numbers";
 import { cloneComponent, cloneOutcome } from "../../domain/project/snapshot";
 import { uid } from "../../infrastructure/ids";
 import type { CaptureState } from "../types";
+
+function releaseUnansweredHold(
+  state: CaptureState,
+  previous: PvoComponent,
+  next: PvoComponent,
+): Pick<CaptureState, "playing" | "tryMode"> | null {
+  const mode = state.tryMode;
+  // A captured response uses the same hold while its layer-end outcome settles;
+  // changing the unanswered policy must not bypass that work.
+  if (
+    !mode ||
+    mode.holdingId !== previous.id ||
+    mode.capturedResponses[previous.id] !== undefined ||
+    !acceptsResponse(previous) ||
+    !acceptsResponse(next) ||
+    responsePolicyFor(previous).unanswered !== "pause" ||
+    responsePolicyFor(next).unanswered !== "continue"
+  )
+    return null;
+  return {
+    playing: true,
+    tryMode: {
+      ...mode,
+      playing: true,
+      holdingId: null,
+      handled: mode.handled.includes(previous.id)
+        ? mode.handled
+        : [...mode.handled, previous.id],
+    },
+  };
+}
 
 export function createComponentActions(get: () => CaptureState): Pick<CaptureState, "addComponent" | "updateComponent" | "updateOutcome" | "deleteComponent" | "duplicateComponent"> {
   return {
@@ -42,6 +77,7 @@ export function createComponentActions(get: () => CaptureState): Pick<CaptureSta
       const scene = state.scenes.find(item => item.components.some(component => component.id === id));
       if (!scene)
         return;
+      const previous = scene.components.find(component => component.id === id)!;
       const components = scene.components.map(component => {
         if (component.id !== id) return component;
         const fields = component.type === "choice" && changes.fields ? {
@@ -70,7 +106,14 @@ export function createComponentActions(get: () => CaptureState): Pick<CaptureSta
           ? component : next;
       });
       if (components.every((component, index) => component === scene.components[index])) return;
-      state.updateScene(scene.id, { components }, undoable);
+      const updated = components.find(component => component.id === id)!;
+      const release = releaseUnansweredHold(state, previous, updated);
+      const scenes = state.scenes.map(item => item.id === scene.id ? { ...item, components } : item);
+      const values = { scenes, ...(release ?? {}) };
+      if (undoable)
+        state.edit(values);
+      else
+        state.patch(values);
     },
     updateOutcome: (id, target, outcome, undoable = true) => {
       const state = get();
