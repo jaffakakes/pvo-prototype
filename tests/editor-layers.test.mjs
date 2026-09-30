@@ -115,6 +115,73 @@ test("a choice covered by the video cannot wait at its layer end for taps nobody
   state.patch({ tryMode: null });
 });
 
+test("turning off an active unanswered pause releases and handles its boundary", () => {
+  const state = start();
+  const id = state.addComponent("choice");
+  state.updateComponent(id, {
+    responsePolicy: { dispatch: "layer_end", unanswered: "pause" },
+  });
+  state.patch({
+    t: 3.95,
+    playing: true,
+    tryMode: {
+      playing: true,
+      holdingId: null,
+      handled: [],
+      capturedResponses: {},
+      dispatched: [],
+    },
+  });
+  assert.equal(advanceTry(useCapture.getState(), 4.05), true);
+  assert.equal(useCapture.getState().tryMode.holdingId, id);
+
+  const historyLength = useCapture.getState().past.length;
+  state.updateComponent(id, {
+    responsePolicy: { dispatch: "layer_end", unanswered: "continue" },
+  });
+
+  const released = useCapture.getState();
+  assert.equal(released.components[0].responsePolicy.unanswered, "continue");
+  assert.equal(released.scenes[0].components[0].responsePolicy.unanswered, "continue");
+  assert.equal(released.tryMode.holdingId, null);
+  assert.equal(released.playing, true);
+  assert.equal(released.tryMode.playing, true);
+  assert.deepEqual(released.tryMode.handled, [id]);
+  assert.equal(released.past.length, historyLength + 1);
+  assert.equal(advanceTry(released, 4.05), false, "The released boundary must not pause again");
+});
+
+test("turning off unanswered pause does not release an answered layer-end hold", () => {
+  const state = start();
+  const id = state.addComponent("choice");
+  state.updateComponent(id, {
+    responsePolicy: { dispatch: "layer_end", unanswered: "pause" },
+  });
+  const response = { index: 0, outcome: { kind: "continue" } };
+  state.patch({
+    playing: false,
+    tryMode: {
+      playing: false,
+      holdingId: id,
+      handled: [id],
+      capturedResponses: { [id]: response },
+      dispatched: [],
+    },
+  });
+
+  state.updateComponent(id, {
+    responsePolicy: { dispatch: "layer_end", unanswered: "continue" },
+  });
+
+  const held = useCapture.getState();
+  assert.equal(held.components[0].responsePolicy.unanswered, "continue");
+  assert.equal(held.tryMode.holdingId, id);
+  assert.equal(held.playing, false);
+  assert.equal(held.tryMode.playing, false);
+  assert.strictEqual(held.tryMode.capturedResponses[id], response);
+  assert.deepEqual(held.tryMode.handled, [id]);
+});
+
 test("vertical dragging can cross mixed row heights and go behind the video", () => {
   const order = ["video", "text:1", "component:card", "text:2"];
   assert.deepEqual(dragLayer(order, "text:2", 40), ["video", "text:1", "text:2", "component:card"]);
