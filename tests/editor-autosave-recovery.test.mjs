@@ -13,10 +13,11 @@ function fixture(t) {
   let state = initial();
   let storage = { phase: "idle", dirty: false, savedAt: null, error: null };
   let restore = async () => null;
+  let discard = async () => {};
   let flush = async () => publish({ phase: "saved", dirty: false, savedAt: 1, error: null });
   const stateListeners = new Set();
   const storageListeners = new Set();
-  const calls = { restores: 0, schedules: [], hydrated: [], failed: [], recovered: [] };
+  const calls = { restores: 0, discards: 0, schedules: [], hydrated: [], failed: [], recovered: [] };
   const patch = values => {
     const previous = state;
     state = { ...state, ...values };
@@ -27,6 +28,7 @@ function fixture(t) {
     store: { getState: () => state, subscribe: listener => { stateListeners.add(listener); return () => stateListeners.delete(listener); } },
     persistence: {
       restore: () => { calls.restores++; return restore(); },
+      discardSavedProject: () => { calls.discards++; return discard(); },
       schedule: value => calls.schedules.push(value),
       flush: () => flush(),
       getStatus: () => storage,
@@ -38,7 +40,8 @@ function fixture(t) {
   });
   t.after(() => controller.dispose());
   return { controller, calls, patch, publish,
-    setRestore: handler => { restore = handler; }, setFlush: handler => { flush = handler; },
+    setRestore: handler => { restore = handler; }, setDiscard: handler => { discard = handler; },
+    setFlush: handler => { flush = handler; },
     listeners: () => ({ state: stateListeners.size, storage: storageListeners.size }),
   };
 }
@@ -72,6 +75,64 @@ test("an explicit successful recovery hydrates first, then enables normal saving
   assert(f.calls.recovered.includes("restoreFailed"));
   f.patch({ ratio: "1:1" });
   assert.equal(f.calls.schedules.at(-1).ratio, "1:1");
+});
+
+test("explicit discard removes an unread checkpoint before saving can resume", async t => {
+  const f = fixture(t);
+  f.setRestore(async () => { throw new Error("unsupported checkpoint"); });
+  await f.controller.start();
+
+  assert.equal(await f.controller.discardRecovery(), true);
+  assert.equal(f.calls.discards, 1);
+  assert.equal(f.controller.getStatus().phase, "ready");
+  assert.equal(f.calls.schedules.length, 0, "A clean placeholder must not replace another current project");
+  assert(f.calls.recovered.includes("restoreFailed"));
+  await f.controller.saveBeforeUpdate();
+  assert.equal(f.calls.schedules.length, 0, "The create preflight must still skip the clean placeholder");
+  f.patch({ localId: "replacement-project", screen: "editor" });
+  assert.equal(f.calls.schedules.length, 1);
+});
+
+test("discard cannot remove a saved checkpoint after new in-memory work begins", async t => {
+  const f = fixture(t);
+  f.setRestore(async () => { throw new Error("unsupported checkpoint"); });
+  await f.controller.start();
+  f.patch({ ratio: "4:5" });
+
+  assert.equal(await f.controller.discardRecovery(), false);
+  assert.equal(f.calls.discards, 0);
+  assert.equal(f.calls.schedules.length, 0);
+  assert.equal(f.controller.getStatus().phase, "restore-failed");
+  assert.equal(f.controller.getStatus().recoveryBlocked, true);
+});
+
+test("failed checkpoint deletion leaves recovery blocked and reports the failure", async t => {
+  const f = fixture(t);
+  f.setRestore(async () => { throw new Error("unsupported checkpoint"); });
+  f.setDiscard(async () => { throw new Error("storage blocked"); });
+  await f.controller.start();
+
+  assert.equal(await f.controller.discardRecovery(), false);
+  assert.equal(f.calls.discards, 1);
+  assert.equal(f.calls.schedules.length, 0);
+  assert.equal(f.controller.getStatus().phase, "restore-failed");
+  assert.match(f.calls.failed.at(-1).error.message, /storage blocked/);
+});
+
+test("replacement work completed during checkpoint deletion is scheduled after discard", async t => {
+  const f = fixture(t);
+  f.setRestore(async () => { throw new Error("unsupported checkpoint"); });
+  let finishDiscard;
+  f.setDiscard(() => new Promise(resolve => { finishDiscard = resolve; }));
+  await f.controller.start();
+
+  const discarding = f.controller.discardRecovery();
+  f.patch({ ratio: "4:5" });
+  finishDiscard();
+  assert.equal(await discarding, true);
+  assert.equal(f.controller.getStatus().phase, "ready");
+  assert.equal(f.calls.schedules.length, 1);
+  assert.equal(f.calls.schedules[0].ratio, "4:5");
 });
 
 test("new edits arriving during async recovery preserve both projects and leave saving paused", async t => {

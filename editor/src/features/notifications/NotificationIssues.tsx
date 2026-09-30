@@ -9,10 +9,11 @@ const issueLabels: Record<string, string> = {
 };
 
 /** A dismissed banner is an acknowledgement, never proof of recovery. */
-export function NotificationIssues() {
-  const unresolved = useNotifications(state => state.unresolved);
+export function NotificationIssues({ hideRestore = false }: { hideRestore?: boolean }) {
+  const allUnresolved = useNotifications(state => state.unresolved);
   const current = useNotifications(state => state.current);
   const [expanded, setExpanded] = useState(false);
+  const unresolved = hideRestore ? allUnresolved.filter(issue => issue.id !== "restoreFailed") : allUnresolved;
   if (!unresolved.length) return null;
   if (!expanded && unresolved.length === 1 && unresolved[0].key === current?.key) return null;
   const hasStorageIssue = unresolved.some(issue => issue.id === "saveFailed" || issue.id === "restoreFailed");
