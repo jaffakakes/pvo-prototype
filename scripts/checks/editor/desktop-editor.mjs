@@ -139,9 +139,44 @@ try {
   await page.keyboard.press("Escape");
   assert.equal(await input.count(), 0);
 
+  const ruler = timeline.getByLabel("Seek timeline", { exact: true });
+  await ruler.click({ position: { x: 1, y: 10 } });
+  await page.waitForFunction(() => document.querySelector(".pvVideo")?.currentTime < .15);
+  await page.getByRole("tab", { name: "Components", exact: true }).click();
+  await page.getByRole("button", { name: /Let viewers choose/ }).click();
+  const playhead = timeline.locator("[data-desktop-playhead]");
+  const choiceOverlay = page.locator(".compOverlay").filter({ hasText: "Which one?" });
+  assert.equal(await choiceOverlay.count(), 1);
+
+  await player.getByRole("button", { name: "Play", exact: true }).click();
+  await page.waitForFunction(() => {
+    const video = document.querySelector(".pvVideo");
+    const marker = document.querySelector("[data-desktop-playhead]");
+    return video?.currentTime > .2 && Number.parseFloat(marker?.style.left ?? "0") > 8;
+  });
+  assert(Number.parseFloat(await playhead.evaluate(element => element.style.left)) > 8,
+    "Normal playback did not advance the desktop playhead");
+  await player.getByRole("button", { name: "Pause", exact: true }).click();
+  await ruler.click({ position: { x: 1, y: 10 } });
+  await page.waitForFunction(() => {
+    const video = document.querySelector(".pvVideo");
+    return video && !video.seeking && video.currentTime < .15;
+  });
+
   await player.getByRole("button", { name: "Try", exact: true }).click();
   assert.equal(await page.locator("[data-desktop-inspector]").evaluate(element => !!element.closest("[inert]")), true);
-  await page.waitForFunction(() => document.querySelector(".pvVideo")?.currentTime > .2);
+  await choiceOverlay.waitFor({ state: "detached", timeout: 8000 });
+  const tryPlayback = await page.evaluate(() => ({
+    videoTime: document.querySelector(".pvVideo")?.currentTime ?? 0,
+    playheadTime: Number.parseFloat(document.querySelector("[data-desktop-playhead]")?.dataset.time ?? "0"),
+  }));
+  assert(tryPlayback.playheadTime > 2.8, "Try did not advance the desktop playhead past the component layer");
+  assert(Math.abs(tryPlayback.videoTime - tryPlayback.playheadTime) < .25,
+    `Try video and desktop playhead diverged: ${JSON.stringify(tryPlayback)}`);
+  assert.equal(await player.getByRole("button", { name: "Stop trying", exact: true }).count(), 1,
+    "Try stopped instead of continuing after the unanswered component ended");
+  assert.equal(await page.locator(".pvVideo").evaluate(video => video.paused), false,
+    "Video paused after a continuing component layer ended");
   await player.getByRole("button", { name: "Stop trying", exact: true }).click();
   assert.equal(await page.locator("[data-desktop-inspector]").evaluate(element => !!element.closest("[inert]")), false);
   await page.getByRole("button", { name: "Export", exact: true }).click();

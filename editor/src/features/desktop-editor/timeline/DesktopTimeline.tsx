@@ -404,7 +404,7 @@ export function DesktopTimeline({
                 emptyLane("audio", "♪ Add audio")
               )}
             </div>
-            <div className={styles.playhead} style={{ left: state.t * zoom }}>
+            <div data-desktop-playhead data-time={state.t} className={styles.playhead} style={{ left: state.t * zoom }}>
               <span />
             </div>
           </div>

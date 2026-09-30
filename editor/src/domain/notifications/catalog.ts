@@ -38,6 +38,7 @@ export const notificationCatalog = {
     recovery: "Open the storage issue or More to retry recovery. Your saved project is retained." },
   exportFailed: { message: "Export failed. Try again.", kind: "error" },
   tryFailed: { message: "Couldn't start preview.", kind: "error" },
+  tryPlaybackFailed: { message: "Preview stopped. Try again.", kind: "error" },
   audioPreviewFailed: { message: "Couldn't play extracted audio.", kind: "error" },
 } as const satisfies Record<string, Definition>;
 
