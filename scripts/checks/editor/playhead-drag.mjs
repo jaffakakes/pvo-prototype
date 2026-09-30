@@ -1,16 +1,18 @@
 import assert from "node:assert/strict";
 import { chromium } from "playwright-core";
 
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
-  headless: true,
-});
+const chromePath =
+  process.env.CHROME_PATH ||
+  (process.platform === "darwin"
+    ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    : "C:/Program Files/Google/Chrome/Application/chrome.exe");
+const browser = await chromium.launch({ executablePath: chromePath, headless: true });
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, hasTouch: true });
   page.setDefaultTimeout(10000);
   const errors = [];
   page.on("pageerror", error => errors.push(error.message));
-  const url = new URL(process.env.EDITOR_URL || process.env.RESTYLE_EDITOR_URL || "http://127.0.0.1:5173/");
+  const url = new URL(process.env.EDITOR_URL || "http://127.0.0.1:5173/");
   url.searchParams.set("home", "1");
   await page.goto(url.href);
   await page.getByRole("button", { name: "Try a sample clip", exact: true }).click();
@@ -48,7 +50,7 @@ try {
   near(forward.strip, initial.strip, "Visible clips stay still while dragging the head");
   await page.waitForFunction(time => Math.abs(document.querySelector(".pvVideo").currentTime - time) < 0.08, forward.time);
   await touchDrag(-50, { line: true });
-  near((await snapshot()).time, initial.time + 1, "The playhead line also supports dragging backwards");
+  near((await snapshot()).time, initial.time + 1, "The playhead handle supports dragging backwards");
 
   const beforeCancel = await snapshot();
   await touchDrag(70, { cancel: true });

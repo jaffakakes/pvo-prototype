@@ -3,22 +3,25 @@ import { audioDuration } from "../../domain/audio/editing";
 import type { AudioClip } from "../../domain/audio/model";
 import { useCapture } from "../../state/captureStore";
 import { useTimingPointer } from "../timeline/useTimingPointer";
+import type { TimingSnapSettings } from "../timeline/timingSnap";
 import styles from "./AudioClipBar.module.css";
 
 export function AudioClipBar({
   clip,
   pixelsPerSecond,
+  snap,
   style,
 }: {
   clip: AudioClip;
   pixelsPerSecond: number;
+  snap?: TimingSnapSettings;
   style?: CSSProperties;
 }) {
   const selected = useCapture((state) => state.selAudio === clip.id);
   const blocked = useCapture(
     (state) => !!state.tryMode || !!state.playheadPick,
   );
-  const timing = useTimingPointer(pixelsPerSecond);
+  const timing = useTimingPointer(pixelsPerSecond, snap);
   const select = () =>
     useCapture
       .getState()
@@ -40,7 +43,7 @@ export function AudioClipBar({
       disabled={blocked}
       style={{
         left: clip.start * pixelsPerSecond,
-        width: Math.max(24, audioDuration(clip) * pixelsPerSecond),
+        width: audioDuration(clip) * pixelsPerSecond,
         ...style,
       }}
       onPointerDown={(event) => {
@@ -49,11 +52,20 @@ export function AudioClipBar({
         const edge = (event.target as HTMLElement).closest<HTMLElement>(
           "[data-edge]",
         )?.dataset.edge;
-        timing.begin(event, {
-          kind: "audio",
-          id: clip.id,
-          mode: edge === "l" || edge === "r" ? edge : "move",
-        });
+        const mode = edge === "l" || edge === "r" ? edge : "move";
+        timing.begin(
+          event,
+          {
+            kind: "audio",
+            id: clip.id,
+            mode,
+          },
+          mode === "l"
+            ? clip.start
+            : mode === "r"
+              ? clip.start + audioDuration(clip)
+              : undefined,
+        );
       }}
       onPointerMove={timing.move}
       onPointerUp={timing.end}

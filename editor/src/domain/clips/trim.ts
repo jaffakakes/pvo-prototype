@@ -15,16 +15,17 @@ export function trimClip(
     : { ...clip, out: clamp(clip.out + delta, clip.in + minimum, clip.srcDur) };
 }
 
-/** Timeline handles snap to tenths and keep a half-second visible segment. */
+/** Timeline handles use tenths unless an exact snap target is supplied. */
 export function trimClipHandle(
   clip: Clip,
   side: "l" | "r",
   deltaSeconds: number,
+  exact = false,
 ) {
   const duration = (clip.out - clip.in) / clip.speed;
-  const rounded = Math.round(deltaSeconds * 10) / 10;
-  if (rounded === 0) return clip;
+  const adjusted = exact ? deltaSeconds : Math.round(deltaSeconds * 10) / 10;
+  if (adjusted === 0) return clip;
   // A preexisting short segment may grow, but the handle must not silently
   // lengthen it or shorten it further just to meet the normal minimum.
-  return trimClip(clip, side, rounded, Math.min(duration, 0.5));
+  return trimClip(clip, side, adjusted, Math.min(duration, 0.5));
 }
