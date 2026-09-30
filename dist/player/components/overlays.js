@@ -1,6 +1,7 @@
 import { drawText } from "../../packages/pvo-text-runtime/index.js";
 import { mountCustomComponent } from "../../packages/pvo-code-runtime/index.js";
 import { canvasPixelSize, componentPixelTransform, componentSize, observeComponentSize } from "../../packages/pvo-component-runtime/index.js";
+import { componentWithRuntimeState } from "./state.js";
 
 export function createOverlayRenderer({ session, refs, adapters }) {
   const sizeObservers = new Set();
@@ -16,7 +17,8 @@ export function createOverlayRenderer({ session, refs, adapters }) {
     const sceneLayers = session.captureMode ? session.manifest.restyle_capture?.scene_layers?.[adapters.activeClip()?.scene] : null;
     const order = Array.isArray(sceneLayers?.order) ? sceneLayers.order : [];
     const texts = session.finished ? [] : (sceneLayers?.texts || []).filter(text => adapters.elapsedTime() >= text.start && adapters.elapsedTime() < text.end);
-    const key = visible.map((component) => `${component.id}:${String(session.answers.get(component.id))}`).join("|") + `:${session.currentTimeline?.id}:${texts.map(text => text.id).join(",")}:${refs.frame.clientWidth}`;
+    const key = visible.map((component) => component.id).join("|")
+      + `:${session.currentTimeline?.id}:${texts.map(text => text.id).join(",")}:${refs.frame.clientWidth}:${session.runtimeStateRevision}`;
     if (!force && key === session.renderedOverlayKey) return;
     session.renderedOverlayKey = key;
     destroyCustomOverlays();
@@ -39,7 +41,7 @@ export function createOverlayRenderer({ session, refs, adapters }) {
       const presentation = component.presentation || {};
       const position = document.createElement("div");
       const custom = session.captureMode && session.pvoLanguageSources.has(component.id);
-      const interactive = custom || (session.captureMode ? component.kind !== "tooltip" : ["choice", "form"].includes(component.kind));
+      const interactive = custom || (session.captureMode ? component.kind !== "tooltip" : ["card", "choice", "form"].includes(component.kind));
       position.className = `component-position${interactive ? " interactive" : ""}${session.captureMode ? " capture-position" : ""}`;
       if (custom) position.classList.add("code-position", `code-${component.kind}`);
       if (session.captureMode) {
@@ -60,6 +62,7 @@ export function createOverlayRenderer({ session, refs, adapters }) {
         const source = session.pvoLanguageSources.get(component.id);
         const mounted = mountCustomComponent(position, {
           ...source,
+          state: component.kind === "tooltip" ? session.actionRuntime?.state ?? {} : undefined,
           componentId: component.id,
           interactive: true,
           onAction: (action) => {
@@ -72,7 +75,11 @@ export function createOverlayRenderer({ session, refs, adapters }) {
         mounted.setPending(session.pendingComponents.has(component.id));
       } else {
         const view = document.createElement("pvo-component-view");
-        view.update(component, session.answers.get(component.id), session.captureMode, refs.frame.clientWidth / 247);
+        const response = session.capturedResponses.get(component.id);
+        const selected = (component.kind === "choice" || component.kind === "card") && response
+          ? response.index : undefined;
+        const displayed = componentWithRuntimeState(component, session.actionRuntime?.state);
+        view.update(displayed, selected, session.captureMode, refs.frame.clientWidth / 247);
         view.setPending?.(session.pendingComponents.has(component.id));
         position.append(view);
       }
@@ -94,5 +101,41 @@ export function createOverlayRenderer({ session, refs, adapters }) {
     });
   }
 
-  return { renderOverlays, destroyCustomOverlays, setComponentPending };
+  /** Refresh one answered/pending control without replacing unrelated live form DOM. */
+  function updateComponentResponse(componentId) {
+    const component = session.manifest?.components?.find((item) => item.id === componentId);
+    if (!component) return;
+    session.mountedCustom.get(componentId)?.setPending(session.pendingComponents.has(componentId));
+    refs.overlay.querySelectorAll("pvo-component-view").forEach(view => {
+      if (view.componentId !== componentId) return;
+      const response = session.capturedResponses.get(componentId);
+      const selected = (component.kind === "choice" || component.kind === "card") && response
+        ? response.index : undefined;
+      view.update(componentWithRuntimeState(component, session.actionRuntime?.state), selected,
+        session.captureMode, refs.frame.clientWidth / 247);
+      view.setPending?.(session.pendingComponents.has(componentId));
+    });
+  }
+
+  /** Refresh visible Notes without rebuilding unrelated interactive component DOM. */
+  function updateRuntimeState(state = {}) {
+    const components = new Map((session.manifest?.components || []).map(component => [component.id, component]));
+    session.mountedCustom.forEach((mounted, componentId) => {
+      if (components.get(componentId)?.kind === "tooltip") mounted.update({ state });
+    });
+    refs.overlay.querySelectorAll("pvo-component-view").forEach(view => {
+      const component = components.get(view.componentId);
+      if (component?.kind !== "tooltip") return;
+      view.update(componentWithRuntimeState(component, state), undefined,
+        session.captureMode, refs.frame.clientWidth / 247);
+    });
+  }
+
+  return {
+    renderOverlays,
+    destroyCustomOverlays,
+    setComponentPending,
+    updateComponentResponse,
+    updateRuntimeState,
+  };
 }

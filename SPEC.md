@@ -31,7 +31,7 @@ The top-level object contains:
 - `spec_version`: currently `0.1-prototype`.
 - `media`: packaged media IDs, names, and MIME types.
 - `playback`: the main timeline plus each possible outcome timeline.
-- `initial_scene`: compatibility scene entered first.
+- `initial_scene`: scene entered first.
 - `canvas`: the authored display ratio and its numeric width/height relationship.
 - `scenes`: named `[start, end]` time ranges in seconds.
 - `components`: UI definitions with a stable ID and one of four kinds.
@@ -44,7 +44,7 @@ Coordinates are relative to the actual video content, not to any letterbox area 
 
 ### Scene tree
 
-Scenes may include `parent`, a scene ID or `null` for the root. When tree metadata is present, every scene declares its parent, exactly one scene is the root, and parent references must exist and form no cycles. Legacy manifests omit `parent` on every scene and retain their flat-scene behavior. Parent ownership describes the tree and can guide prefetching; it does not restrict which scene an explicit action may target.
+Scenes may include `parent`, a scene ID or `null` for the root. Parent metadata is either declared on every scene or omitted on every scene. When present, exactly one scene is the root, and parent references must exist and form no cycles. Parent ownership describes the tree and can guide prefetching; it does not restrict which scene an explicit action may target.
 
 Restyle uses `main` as its permanent root. Interactive export includes a separate video asset and timeline for every scene, along with its parent. Every scene needs a clip before export; the editor reports empty branches instead of dropping them. Flat video export renders only Main.
 
@@ -55,9 +55,20 @@ Restyle uses `main` as its permanent root. Interactive export includes a separat
 - `choice`: two or more options; every option owns an action or action list.
 - `form`: typed fields and an `on_submit` action list.
 
-Components may also carry optional sanitized `html`/`css` presentation plus normalized layout, clip ID, and clip-local timing in `presentation`. Semantic fields remain present so a host can replace that presentation with native UI. The Restyle editor does not expose raw HTML/CSS/JavaScript authoring: its Advanced route packages PVO Structure, Style and Logic source, and compiled presentation is a generated artifact. The current Restyle player requires those language sources for a Restyle custom component; legacy Restyle code assets without them are rejected. Choice and form components may preserve a binary `scene_change` with one `true` timeline, one `false` timeline, and `executeAt: "end"`.
+Components may also carry optional sanitized `html`/`css` presentation plus normalized layout, clip ID, and clip-local timing in `presentation`. Semantic fields remain present so a host can replace that presentation with native UI. The Restyle editor does not expose raw HTML/CSS/JavaScript authoring: its Advanced route packages PVO Structure, Style and Logic source, and compiled presentation is a generated artifact. A Restyle custom component must include its PVO language sources; a compiled presentation alone is invalid.
 
-Selecting a choice executes that option's action list; submitting a form executes `on_submit`. Neither interaction creates an implicit branch. Only when the optional `scene_change` is enabled does the player also record a binary result for an end-of-layer branch. In that case, an early answer does not switch timelines immediately: at the end of the component's presentation range, playback opens the matching outcome timeline. If no result has been supplied by then, playback pauses and keeps the component visible. The True and False routes use distinct timeline IDs; those timelines may intentionally reuse the same media asset.
+Every card, choice, and form component declares a timed `presentation` and a `response_policy`:
+
+| Field | Value | Meaning |
+| --- | --- | --- |
+| `dispatch` | `interaction` | Run the selected button, option, or submit action when the viewer responds. |
+| `dispatch` | `layer_end` | Remember the response locally and run its action when `presentation.end` is reached. |
+| `unanswered` | `continue` | Cross `presentation.end` without running an action when nobody responded. |
+| `unanswered` | `pause` | Pause at `presentation.end` and keep the component available until the viewer responds. |
+
+The two fields are independent. With `layer_end`, the latest valid response before the boundary is the one dispatched. A response supplied after playback has paused dispatches immediately because the layer boundary has already been reached. No empty or made-up response is dispatched when nobody responds. A request begins only when its response action is dispatched. Tooltip components do not accept a response policy because they have no viewer action.
+
+Responding does not itself mean branching. The selected action may update state, make a request, continue, seek to another time, or open another scene. Only an explicit `seek` or `goto_scene` changes playback.
 
 Restyle components keep their center in `restyle_capture.x` and `.y` (canvas percentages). Optional `scaleX` and `scaleY` independently scale the original rendered width and height, including content, around that center. An absent axis inherits `scale`; absent uniform scale defaults to one. Each factor is bounded to 0.25–3. The reference editor and player share these rules for visual and code-owned components. The standard `presentation` rectangle carries bounded fallback dimensions for other hosts.
 
@@ -79,25 +90,25 @@ Optional `restyle_capture.width` and `.height` set explicit canvas-pixel dimensi
 
 Every action may have `when`. Conditions read either state (`{"key":"path","is":"left"}`) or a request response (`{"response":"/ok","is":true}`). Supported comparisons are `is`, `not`, `gt`, `gte`, `lt`, `lte`, `in`, and `exists`.
 
-For forms, a host can return `true` or `false` from a `custom` submit action and store it through `into`. The end-of-layer branch then reads that recorded result exactly like a choice answer.
-
 Strings may contain `{state.path}` or `{response.message}` templates. Templates never execute code.
+
+A tooltip (called a Note in Restyle) may use a state template in `text`, for example `"Recommendation: {state.responses.choice-1.title}"`. A visible tooltip is resolved again whenever runtime state changes, so either a GET or POST response stored with `into` can update it. Missing or null values render as empty text.
 
 ## 4. Playback
 
 The player starts with `playback.initial_timeline`. It advances through that timeline's clip list, loading each clip's packaged asset and respecting its source start/end range.
 
-On any timeline, a choice or form with `scene_change` routing continues playing after an early answer and branches only when that component layer ends. If the layer ends before an answer is supplied, the player pauses there with the component visible. Once answered, it loads only the matching outcome timeline. The unselected outcome remains packaged but is not played. Playback ends when that selected branch ends; nothing returns to the timeline that routed there. Without `scene_change`, the option or submit action list runs without an automatic timeline switch; an explicit `goto_scene` or `seek` action can still route playback, and a branch entered that way ends the same way.
+For a component with `response_policy`, the player dispatches its authored action at the declared time and applies the unanswered rule at the component layer's end. A deferred response is local data until dispatch: it does not call Logic, start a request, update shared runtime state, seek, or open a scene early. If the dispatched action enters another timeline, that selected timeline plays to its end; nothing automatically returns to the timeline that routed there.
 
-Restart clears recorded answers and returns to the first clip of the main timeline.
+Restart clears captured responses and runtime state, then returns to the first clip of the main timeline.
 
-Restyle packages carry `restyle_capture` for layout only: canvas positions, sizes, looks, text layers and each scene's layer order. They declare no playback rules of their own. A Restyle choice with **Branch at layer end** exports the standard `scene_change` above; every other route is an explicit action. A component behind the opaque video in the layer order cannot wait for a tap, so the player does not pause for it.
+Restyle packages carry `restyle_capture` for layout only: canvas positions, sizes, looks, text layers and each scene's layer order. They declare no playback rules of their own. Restyle exports response timing and unanswered behavior through the standard `response_policy`; routes remain explicit actions. A component behind the opaque video in the layer order cannot wait for a tap, so the reference player does not pause for it.
 
 ## 5. Network boundary
 
 `request` is deliberately generic. The format does not know about Stripe, products, bookings, quizzes, or databases. A creator supplies a URL, request data, and response conditions; the creator's server supplies the meaning.
 
-A player must send requests only to exact hosts declared in `allowed_domains`, expose network activity to the viewer, and preserve an explicit error path. An absent or empty allow-list authorizes no requests. A failed or offline request runs `on_error` when present; otherwise it has no effect and is not queued for later. The reference editor and player store submitted Form values at `state.form.<component-id>.<field-name>` for request templates.
+A player must send requests only to exact hosts declared in `allowed_domains`, expose network activity to the viewer, and preserve an explicit error path. An absent or empty allow-list authorizes no requests. A failed or offline request runs `on_error` when present; otherwise it has no effect and is not queued for later. The reference editor and player store submitted Form values at `state.form.<component-id>.<field-name>` and component request responses at `state.responses.<component-id>` for later templates.
 
 ## 6. Security
 

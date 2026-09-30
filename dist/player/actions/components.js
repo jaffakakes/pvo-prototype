@@ -1,98 +1,161 @@
 import { isPvoLanguageActionAllowed } from "../../packages/pvo-language/index.js";
 import { formValuesForComponent } from "./form-values.js";
+import {
+  actionOperationIsCurrent,
+  beginActionOperation,
+  finishActionOperation,
+} from "./operations.js";
+import { responsePolicyFor } from "./response-policy.js";
+import { clearComponentRequestFailure, markComponentRequestFailure } from "./request-status.js";
 
-/** Validate viewer commands and execute their compiled or manifest-authored actions. */
+/** Validate viewer commands, capture responses, and dispatch authored actions. */
 export function createComponentActions({ session, adapters }) {
+  function componentFor(detail) {
+    return session.manifest?.components?.find((item) => item.id === detail.componentId);
+  }
+
   function answerComponent(detail) {
-    const component = session.manifest?.components?.find((item) => item.id === detail.componentId);
+    const component = componentFor(detail);
     if (!component) return;
-    const index = component.kind === "choice"
-      ? (Number.isInteger(detail.index) ? detail.index : detail.answer ? 0 : 1)
-      : 0;
-    if (component.kind === "choice" && (index < 0 || index >= component.options.length)) return;
-    return runComponentActions(component, index);
+    const indexed = component.kind === "choice" || component.kind === "card";
+    const index = indexed ? detail.index : 0;
+    const count = component.kind === "choice"
+      ? component.options?.length || 0
+      : component.kind === "card" ? component.actions?.length || 0 : 1;
+    if (indexed && (index < 0 || index >= count)) return;
+    return captureComponentResponse(component, index);
   }
 
   function answerFieldComponent(detail) {
     if (!session.captureMode) return;
-    const component = session.manifest?.components?.find((item) => item.id === detail.componentId);
+    const component = componentFor(detail);
     if (!component) return;
-    return runComponentActions(component, detail.index, detail.fields);
+    return captureComponentResponse(component, detail.index, detail.fields);
   }
 
   function submitFormComponent(detail) {
     if (session.captureMode) return;
-    const component = session.manifest?.components?.find((item) => item.id === detail.componentId);
-    if (component?.kind === "form") return runComponentActions(component, 0, detail.fields);
+    const component = componentFor(detail);
+    if (component?.kind === "form") return captureComponentResponse(component, 0, detail.fields);
   }
 
   function componentAction(component, index) {
     if (component.kind === "choice") return component.options?.[index]?.actions || component.options?.[index]?.action;
-    if (component.kind === "card") return component.actions?.[index]?.actions || component.actions?.[index]?.action;
+    if (component.kind === "card") {
+      const control = component.actions?.[index];
+      return control?.actions || control?.action;
+    }
     if (component.kind === "form") return component.on_submit;
     return null;
   }
 
-  async function runComponentActions(component, index, fields) {
+  function normalizeFields(component, fields) {
+    if (fields == null) return undefined;
+    return formValuesForComponent(component, fields, session.pvoLanguageSources.get(component.id)?.structure);
+  }
+
+  /**
+   * A layer-end response is local viewer state until its boundary. Replacing it
+   * before then deliberately implements "latest response wins" without calling Logic.
+   */
+  function captureComponentResponse(component, index, fields) {
     if (session.pendingComponents.has(component.id)) return;
-    session.pendingComponents.add(component.id);
+    const policy = responsePolicyFor(component);
+    const previous = session.capturedResponses.get(component.id);
+    if (policy.dispatch === "interaction" && previous?.status === "complete") return;
+    if (session.handledResponses.has(component.id) && session.awaitingComponent?.id !== component.id) return;
+    let normalizedFields;
+    try {
+      normalizedFields = normalizeFields(component, fields);
+    } catch (error) {
+      adapters.setStatus(String(error?.message || error), true);
+      return;
+    }
+
+    const response = {
+      componentId: component.id,
+      index,
+      fields: normalizedFields,
+      status: "captured",
+    };
+    session.capturedResponses.set(component.id, response);
+    adapters.updateComponentResponse?.(component.id);
+
+    if (policy.dispatch === "layer_end" && session.awaitingComponent?.id !== component.id) return;
+    return dispatchCapturedResponse(component.id);
+  }
+
+  /** Dispatch a previously captured response; used by both taps and layer boundaries. */
+  async function dispatchCapturedResponse(componentId) {
+    const response = session.capturedResponses.get(componentId);
+    const component = session.manifest?.components?.find((item) => item.id === componentId);
+    if (!response || !component || response.status === "pending" || response.status === "complete") return;
+    return runComponentActions(component, response.index, response.fields, response);
+  }
+
+  async function runComponentActions(component, index, fields, capturedResponse) {
+    if (session.pendingComponents.has(component.id) || !session.actionRuntime) return;
+    const runtime = session.actionRuntime;
+    clearComponentRequestFailure(session, component.id, adapters.setStatus);
+    const operation = beginActionOperation(session, component.id);
+    const interaction = {
+      outcome: null,
+      unhandledRequestFailed: false,
+      operation,
+    };
+    if (capturedResponse) capturedResponse.status = "pending";
     adapters.setComponentPending?.(component.id, true);
-    const interaction = { outcome: null, requestFailed: false };
-    const previousChoices = session.actionRuntime?.state?.choices || {};
-    const previousChoice = Object.hasOwn(previousChoices, component.id) ? previousChoices[component.id] : undefined;
-    const previousAnswers = session.actionRuntime?.state?.answers || {};
-    const previousAnswer = Object.hasOwn(previousAnswers, component.id) ? previousAnswers[component.id] : undefined;
+
     let unsubscribe = null;
     try {
+      // Runtime state changes at dispatch, never while a layer-end response is merely captured.
       if (fields != null) {
-        fields = formValuesForComponent(component, fields, session.pvoLanguageSources.get(component.id)?.structure);
-        // Component IDs are opaque strings. Replace the top-level map rather than
-        // treating the ID as a dotted state path (which could contain '.', etc.).
-        session.actionRuntime?.setState("form", { ...(session.actionRuntime.state.form || {}), [component.id]: fields });
+        runtime.setState("form", { ...(runtime.state.form || {}), [component.id]: fields });
       }
       const form = component.restyle_capture?.form;
       if (component.kind === "form" && form && form.submitMode !== "local" && !form.destination && !form.failureOutcome) {
         adapters.setStatus("This form is not set up to send yet.", true);
+        if (capturedResponse) capturedResponse.status = "failed";
         return;
       }
       if (component.kind === "choice") {
-        // Preserve all 2–4 option indices. `answers` remains the separate binary
-        // value consumed by the optional true/false scene_change route.
-        session.actionRuntime?.setState("choices", { ...(session.actionRuntime.state.choices || {}), [component.id]: index });
-        if (component.options?.length === 2 || component.scene_change?.enabled) {
-          session.actionRuntime?.setState("answers", { ...(session.actionRuntime.state.answers || {}), [component.id]: index === 0 });
-        }
+        // Preserve the selected 2–4 option index; routing remains an explicit action.
+        runtime.setState("choices", { ...(runtime.state.choices || {}), [component.id]: index });
       }
-      unsubscribe = session.actionRuntime?.subscribe((event) => {
-        if (event.type === "request_error") interaction.requestFailed = true;
+      unsubscribe = runtime.subscribe((event) => {
+        if (event.type === "request_error" && event.componentId === component.id) {
+          interaction.unhandledRequestFailed ||= event.handled !== true;
+        }
       });
       const action = componentAction(component, index);
-      const result = await session.actionRuntime?.execute(action, {
-        componentId: component.id, optionIndex: index, form: fields, playerInteraction: interaction,
+      await runtime.execute(action, {
+        componentId: component.id,
+        optionIndex: index,
+        form: fields,
+        playerInteraction: interaction,
+        signal: operation.controller.signal,
       });
-      if (interaction.requestFailed && !interaction.outcome) {
-        if (component.kind === "choice") {
-          session.actionRuntime?.setState("choices", { ...(session.actionRuntime.state.choices || {}), [component.id]: previousChoice });
-          if (component.options?.length === 2 || component.scene_change?.enabled) {
-            session.actionRuntime?.setState("answers", { ...(session.actionRuntime.state.answers || {}), [component.id]: previousAnswer });
-          }
-        }
+      if (!actionOperationIsCurrent(session, operation)) return;
+
+      if (interaction.unhandledRequestFailed && !interaction.outcome) {
+        if (capturedResponse) capturedResponse.status = "failed";
+        markComponentRequestFailure(session, component.id, adapters.setStatus);
         return;
       }
-      let answer = index === 0;
-      if (component.kind === "form") answer = typeof result === "boolean" ? result : true;
-      session.answers.set(component.id, answer);
-      if (component.kind === "form") session.actionRuntime?.setState("answers", {
-        ...(session.actionRuntime.state.answers || {}), [component.id]: answer,
-      });
+
+      if (capturedResponse) capturedResponse.status = "complete";
       const fallback = session.captureMode ? adapters.captureOutcome(component, index) : { kind: "continue" };
       await adapters.applyActionOutcome(component, index, interaction.outcome || fallback);
     } catch (error) {
+      if (!actionOperationIsCurrent(session, operation)) return;
+      if (capturedResponse) capturedResponse.status = "failed";
       adapters.setStatus(String(error?.message || error), true);
     } finally {
       unsubscribe?.();
-      session.pendingComponents.delete(component.id);
-      adapters.setComponentPending?.(component.id, false);
+      if (finishActionOperation(session, operation)) {
+        adapters.setComponentPending?.(component.id, false);
+        adapters.updateComponentResponse?.(component.id);
+      }
     }
   }
 
@@ -111,9 +174,9 @@ export function createComponentActions({ session, adapters }) {
         const count = component.kind === "choice" ? Math.min(4, component.options?.length || 0)
           : component.kind === "card" ? Math.min(2, component.restyle_capture?.buttons?.length || 0) : 0;
         if (!Number.isInteger(index) || index < 0 || index >= count) throw new Error("That option is not available.");
-        await runComponentActions(component, index);
+        await captureComponentResponse(component, index);
       } else if (method === "submit") {
-        await runComponentActions(component, 0, args[0]);
+        await captureComponentResponse(component, 0, args[0]);
       } else {
         throw new Error("That player action is not supported.");
       }
@@ -122,5 +185,11 @@ export function createComponentActions({ session, adapters }) {
     }
   }
 
-  return { handleCustomAction, answerComponent, answerFieldComponent, submitFormComponent };
+  return {
+    handleCustomAction,
+    answerComponent,
+    answerFieldComponent,
+    submitFormComponent,
+    dispatchCapturedResponse,
+  };
 }

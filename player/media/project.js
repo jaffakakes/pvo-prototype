@@ -1,5 +1,11 @@
 import { readPvo, validatePvo } from "../../packages/pvo-sdk/index.js";
 import { readPvoLanguage } from "../components/language.js";
+import {
+  clearResponseProgress,
+  invalidateActionOperations,
+  invalidatePlaybackNavigation,
+} from "../actions/operations.js";
+import { clearRequestStatus, updateRequestStatus } from "../actions/request-status.js";
 
 export function createProjectLoader({ session, refs, adapters }) {
   function revokeAssetUrls() {
@@ -7,16 +13,38 @@ export function createProjectLoader({ session, refs, adapters }) {
     session.assetUrls = new Map();
   }
 
-  async function openPvo(file, { autoplay = false } = {}) {
-    if (!file) return;
+  function beginProjectLoad() {
+    session.projectLoadController?.abort();
+    const operation = {
+      id: ++session.projectLoadSequence,
+      controller: new AbortController(),
+    };
+    session.projectLoadController = operation.controller;
+    invalidatePlaybackNavigation(session);
+    invalidateActionOperations(session);
+    clearResponseProgress(session);
+    clearRequestStatus(session);
+    // Detach the old runtime immediately; a late Promise may mutate it, but can
+    // no longer affect the replacement project or render into this session.
+    session.actionRuntime = null;
+    return operation;
+  }
+
+  const projectLoadIsCurrent = (operation) => operation.id === session.projectLoadSequence
+    && operation.controller === session.projectLoadController
+    && !operation.controller.signal.aborted;
+
+  async function loadPvo(file, { autoplay = false } = {}, operation) {
     adapters.setStatus("Loading…", false, true);
     try {
       const decoded = await readPvo(file);
+      if (!projectLoadIsCurrent(operation)) return;
       if (!decoded.container || !decoded.manifest?.playback?.timelines?.length) {
         throw new Error("Choose a self-contained .pvo file exported by this editor.");
       }
       if (!decoded.validation.valid) throw new Error(decoded.validation.errors[0] || "The PVO manifest is invalid.");
       const nextLanguageSources = await readPvoLanguage(decoded);
+      if (!projectLoadIsCurrent(operation)) return;
       const languageValidation = validatePvo(decoded.manifest);
       if (!languageValidation.valid) throw new Error(languageValidation.errors[0] || "PVO language produced an invalid component.");
       adapters.destroyCustomOverlays();
@@ -34,25 +62,41 @@ export function createProjectLoader({ session, refs, adapters }) {
       refs.empty.hidden = true;
       refs.shell.hidden = false;
       await Promise.all([document.fonts.load('700 18px "Open Sauce Sans"'), document.fonts.load('400 18px "Peace Sans"')]);
+      if (!projectLoadIsCurrent(operation)) return;
       await adapters.restartExperience(autoplay);
+      if (!projectLoadIsCurrent(operation)) return;
       if (!autoplay) adapters.showControls();
-      if (!refs.video.paused) adapters.setStatus("");
+      updateRequestStatus(session, adapters.setStatus);
     } catch (error) {
+      if (!projectLoadIsCurrent(operation)) return;
       adapters.setStatus(`Could not open PVO · ${error.message}`, true);
       refs.empty.hidden = false;
     }
   }
 
+  async function openPvo(file, options = {}) {
+    if (!file) return;
+    return loadPvo(file, options, beginProjectLoad());
+  }
+
   async function openPvoUrl(source, { autoplay = true } = {}) {
+    const operation = beginProjectLoad();
     try {
       const url = new URL(source, window.location.href);
       if (url.origin !== window.location.origin) throw new Error("The video must be hosted with this player.");
       adapters.setStatus("Loading…", false, true);
-      const response = await fetch(url, { credentials: "omit", redirect: "error" });
+      const response = await fetch(url, {
+        credentials: "omit",
+        redirect: "error",
+        signal: operation.controller.signal,
+      });
+      if (!projectLoadIsCurrent(operation)) return;
       if (!response.ok) throw new Error(`Video could not be loaded (${response.status}).`);
       const blob = await response.blob();
-      await openPvo(blob, { autoplay });
+      if (!projectLoadIsCurrent(operation)) return;
+      await loadPvo(blob, { autoplay }, operation);
     } catch (error) {
+      if (!projectLoadIsCurrent(operation)) return;
       adapters.setStatus(error.message, true);
       refs.empty.hidden = false;
     }

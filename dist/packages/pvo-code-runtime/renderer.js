@@ -38,7 +38,7 @@ export function createRenderer(renderFrame, renderShell, report, setHandlers) {
     const root = doc?.getElementById("pvo-root");
     if (!root) return report("Component renderer is unavailable.");
     try {
-      const safe = sanitizeMarkup(sources.html, sources.fields, report);
+      const safe = sanitizeMarkup(sources.html, sources.fields, options.state, report);
       setHandlers(safe.handlers);
       root.replaceChildren(doc.importNode(safe.fragment, true));
       let style = doc.getElementById("pvo-custom-style");

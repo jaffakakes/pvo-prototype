@@ -73,7 +73,7 @@ try {
   const widthRedone = await barWidth();
   assert(Math.abs(widthRedone - widthAfter) < 2, "Redo did not restore the card trim");
 
-  // Set the Card button to jump to the current playhead, then add a hold Form.
+  // Set the Card button to jump to the current playhead, then add a pausing Form.
   await scrubBy(-50);
   await page.getByRole("button", { name: "Edit", exact: true }).click();
   dialog = page.getByRole("dialog", { name: "Card" });
@@ -95,7 +95,7 @@ try {
   await page.getByRole("button", { name: "Back", exact: true }).click();
   await page.getByRole("dialog", { name: "Form" }).getByRole("button", { name: "Close" }).click();
 
-  // Viewer preview: the Card routes to 0:01; the Form holds until submitted.
+  // Viewer preview: the Card routes to 0:01; the Form pauses until submitted.
   await scrubBy(80);
   await page.getByRole("button", { name: "Try viewer preview" }).click();
   await page.locator(".compCardButtons button").waitFor({ state: "visible", timeout: 5000 });
@@ -140,7 +140,7 @@ try {
   assert(sample.width > 0 && sample.height > 0, "Flat export is not decodable video");
   assert(sample.luminance > 65, `Card appears to have been burned into the flat video: ${JSON.stringify(sample)}`);
   assert.deepEqual(pageErrors, [], "Uncaught browser errors occurred");
-  console.log(JSON.stringify({ card: "fields, move, trim, undo, redo, jump", form: "fields, continue, hold, submit", export: download.suggestedFilename(), sample }, null, 2));
+  console.log(JSON.stringify({ card: "fields, move, trim, undo, redo, jump", form: "fields, continue, pause, submit", export: download.suggestedFilename(), sample }, null, 2));
 } finally {
   await browser.close();
 }

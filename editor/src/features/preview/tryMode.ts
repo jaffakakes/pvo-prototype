@@ -8,11 +8,16 @@ import {
   reportEmptyScene,
   useTryFeedback,
 } from "./tryFeedbackStore";
+import { clearTryRuntimeState, publishTryRuntimeState } from "./tryRuntimeStateStore";
 
 // The application owns one preview session; each factory instance owns its own runtime.
 const session = createTrySession({
   getState: useCapture.getState,
   request: (...args) => fetch(...args),
+  publishRuntimeState: state => {
+    if (state) publishTryRuntimeState(state);
+    else clearTryRuntimeState();
+  },
   feedback: () => useTryFeedback.getState().components,
   clearFeedback: clearTryFeedback,
   clearNotice: () => clearNotificationScope("try"),
@@ -27,7 +32,7 @@ export const {
   getTryRuntime,
   startTry,
   stopTry,
-  runOutcome,
+  runComponentResponse,
   runFormSubmission,
   advanceTry,
 } = session;
