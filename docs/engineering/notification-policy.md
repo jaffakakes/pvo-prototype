@@ -122,7 +122,7 @@ The notification host renders one compact top banner and retains acknowledged cr
 
 Camera and More expose import results and recording recovery when a problem exists. Failed files can be retried together; failed recordings have a Record again action. A video-only camera fallback has a local microphone status. These states do not imply that missing footage was captured.
 
-Storage failures appear as short top toasts, never as a panel pinned below the camera. Detailed recovery controls appear only when the user opens the retained storage issue or More. Writes are gated behind successful restoration. Retry cannot hydrate over new session work or overwrite the unread saved checkpoint. New edits arriving during recovery block hydration; the user can export current work before reloading. Healthy autosaves remain silent.
+Storage failures appear as short top toasts, never as a panel pinned below the camera. Detailed recovery controls appear when the user opens the retained storage issue or More. The desktop new-project screen instead owns its recovery panel while creation is blocked; the duplicate restore toast and retained-issue control stay hidden on that screen. Writes are gated behind successful restoration. Retry cannot hydrate over new session work or overwrite the unread saved checkpoint. New edits arriving during recovery block hydration; the user can export current work before reloading. Healthy autosaves remain silent.
 
 Export retains Retry and collapsed details; its banner is scoped to the active Export workflow. Try requests expose pending/failure status on their component and honour authored error routes without another global toast. Component rendering failures have local details; source diagnostics remain in the code editor.
 

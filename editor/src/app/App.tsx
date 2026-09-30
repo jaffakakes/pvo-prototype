@@ -40,7 +40,7 @@ export default function App() {
       {!showLanding && screen !== "editor" && <Sheets />}
       <AuthDialog />
       <UpdatePrompt />
-      <NotificationHost />
+      <NotificationHost inlineRestore={showLanding} />
     </div>
   );
 }

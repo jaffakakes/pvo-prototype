@@ -1,5 +1,10 @@
 import { useRef, useState, useSyncExternalStore } from "react";
-import { getProjectStorageStatus, subscribeProjectStorage } from "../../app/projectAutosave";
+import {
+  discardProjectRecovery,
+  getProjectStorageStatus,
+  retryProjectStorage,
+  subscribeProjectStorage,
+} from "../../app/projectAutosave";
 import { nameFromFile } from "../../domain/project/creation";
 import type { Ratio } from "../../domain/project/model";
 import { PROJECT_TEMPLATES, type ProjectTemplate } from "../../domain/project/templates";
@@ -7,6 +12,7 @@ import { useCapture } from "../../state/captureStore";
 import { Icon } from "../../ui/Icon";
 import { MediaInput } from "./MediaInput";
 import { DropReadyPanel } from "./DropReadyPanel";
+import { ProjectRecoveryNotice } from "./ProjectRecoveryNotice";
 import { RatioPicker } from "./RatioPicker";
 import { TemplateGallery } from "./TemplateGallery";
 import { createProject, resumeProject } from "./projectCommands";
@@ -30,6 +36,7 @@ export function CreateProjectPage({ hero = "studio", templateId, active = true, 
   const hasProject = useCapture(state => !!state.localId);
   const storage = useSyncExternalStore(subscribeProjectStorage, getProjectStorageStatus);
   const unavailable = storage.phase !== "ready";
+  const recovering = storage.phase === "restore-failed" || storage.phase === "retrying";
   const pick = () => input.current?.click();
 
   const addFiles = async (files: File[]) => {
@@ -81,7 +88,7 @@ export function CreateProjectPage({ hero = "studio", templateId, active = true, 
       {dropHero ? <section className={styles.dropHero} aria-labelledby="create-title">
         <button className={styles.heroTarget} type="button" onClick={pick} disabled={busy} aria-label="Choose video files" />
         <img className={styles.heroMark} src="./restyle-mark.png" alt="" />
-        <span className={styles.freeBadge}>✦ AI video studio</span>
+        <span className={styles.freeBadge}>✦ Free · no sign-up</span>
         <span className={styles.heroFormats}>MP4 · MOV · HEVC · up to 2 GB</span>
         <span className={styles.uploadIcon}><Icon name="export" size={38} /></span>
         <h1 id="create-title">Drop clips to start editing</h1>
@@ -112,7 +119,15 @@ export function CreateProjectPage({ hero = "studio", templateId, active = true, 
           </div>
         </form>
       </section>}
-      {(staged.error || failure || unavailable) && <p className={styles.error} role="alert">{staged.error || failure || "Restore your saved project from the storage notice before starting a new edit."}</p>}
+      {(staged.error || failure) && <p className={styles.error} role="alert">{staged.error || failure}</p>}
+      {recovering && <ProjectRecoveryNotice
+        blocked={storage.recoveryBlocked}
+        busy={storage.phase === "retrying"}
+        onRetry={retryProjectStorage}
+        onDiscard={discardProjectRecovery}
+      />}
+      {!staged.error && !failure && storage.phase === "starting"
+        && <p className={styles.storagePending} role="status">Checking saved edits…</p>}
       <TemplateGallery disabled={busy || unavailable} onSelect={selected => { void useTemplate(selected); }} />
     </main>
     {dragging && <div className={styles.dropOverlay}><Icon name="export" size={40} /><strong>Drop your clips anywhere</strong><span>Let's start your next edit.</span></div>}
