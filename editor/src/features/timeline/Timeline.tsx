@@ -171,6 +171,7 @@ export function Timeline() {
               key={clip.id}
               clip={clip}
               pixelsPerSecond={PPS}
+              snap={{ enabled: true, playhead: s.t }}
               style={{
                 top: rowEnd + index * 34,
                 left: LEAD + clip.start * PPS,
@@ -187,7 +188,7 @@ export function Timeline() {
               style={{
                 top: rowTop(`text:${x.id}`),
                 left: LEAD + x.start * PPS,
-                width: Math.max(24, (x.end - x.start) * PPS),
+                width: (x.end - x.start) * PPS,
                 background:
                   textStyle(x).background === "transparent"
                     ? "#FFD23E"
@@ -232,7 +233,7 @@ export function Timeline() {
               style={{
                 top: rowTop(`component:${component.id}`),
                 left: LEAD + component.at * PPS,
-                width: Math.max(24, componentLength(component, s.clips) * PPS),
+                width: componentLength(component, s.clips) * PPS,
               }}
               onPointerDown={(event) => compDown(event, component)}
               onPointerMove={compMove}
@@ -248,8 +249,10 @@ export function Timeline() {
               {s.selComp === component.id && (
                 <span className={cx("compHandle")} data-side="l" />
               )}
-              <Icon name={component.type} size={11} />
-              <span>{componentLabel(component)}</span>
+              <span className={cx("compContent")}>
+                <Icon name={component.type} size={11} />
+                <span>{componentLabel(component)}</span>
+              </span>
               {s.selComp === component.id && (
                 <span className={cx("compHandle")} data-side="r" />
               )}

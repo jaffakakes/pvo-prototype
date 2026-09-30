@@ -5,6 +5,7 @@ import type {
   TextOverlay,
 } from "../../../domain/project/model";
 import { clamp } from "../../../domain/project/numbers";
+import { TIMING_SNAP_DISTANCE_PX } from "../../timeline/timingSnap";
 
 export const MIN_ZOOM = 16;
 export const MAX_ZOOM = 120;
@@ -38,7 +39,8 @@ export function snappedTime(
       Math.abs(point - bounded) < Math.abs(best - bounded) ? point : best,
     Infinity,
   );
-  return Math.abs(nearest - bounded) <= 8 / pixelsPerSecond
+  return Math.abs(nearest - bounded) <=
+    TIMING_SNAP_DISTANCE_PX / pixelsPerSecond
     ? clamp(nearest, 0, length)
     : bounded;
 }
