@@ -1,0 +1,28 @@
+{
+  "name": "@pvo/language",
+  "version": "0.1.0",
+  "description": "Compile the safe PVO Structure, Style, and Logic language in browsers and workers.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js"
+    },
+    "./worker": {
+      "types": "./worker.d.ts",
+      "import": "./worker.js"
+    }
+  },
+  "types": "./index.d.ts",
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "result.js",
+    "worker.js",
+    "worker.d.ts",
+    "pkg",
+    "README.md"
+  ]
+}
