@@ -3,6 +3,14 @@ import { writePath, readPath } from "./state-paths.js";
 import { evaluateWhen, resolveTemplates } from "./conditions.js";
 import { checkedRequestUrl } from "./request-policy.js";
 
+function throwIfAborted(signal) {
+  if (!signal?.aborted) return;
+  if (signal.reason instanceof Error) throw signal.reason;
+  const error = new Error("The interaction was cancelled.");
+  error.name = "AbortError";
+  throw error;
+}
+
 export class PvoRuntime {
   constructor(manifest, handlers = {}) {
     const validation = validatePvo(manifest);
@@ -42,6 +50,7 @@ export class PvoRuntime {
   }
 
   async execute(actionOrActions, context = {}) {
+    throwIfAborted(context.signal);
     if (Array.isArray(actionOrActions)) {
       let last;
       for (const action of actionOrActions) last = await this.execute(action, context);
@@ -123,7 +132,12 @@ export class PvoRuntime {
       const resolvedBody = resolveTemplates(action.body, context);
       const headers = resolveTemplates(action.headers || {}, context);
       // A redirect to an undeclared host must not bypass allowed_domains.
-      const options = { method, headers: { ...headers }, redirect: "error" };
+      const options = {
+        method,
+        headers: { ...headers },
+        redirect: "error",
+        ...(context.signal ? { signal: context.signal } : {}),
+      };
       if (resolvedBody != null && method !== "GET" && method !== "HEAD") {
         if (typeof resolvedBody === "string") options.body = resolvedBody;
         else {
@@ -134,19 +148,28 @@ export class PvoRuntime {
         }
       }
 
-      this.emit("request_start", { url, method });
+      this.emit("request_start", { url, method, componentId: context.componentId ?? null });
       const response = this.handlers.request
         ? await this.handlers.request({ url, ...options }, context)
         : await fetch(url, options);
+      throwIfAborted(context.signal);
       if (response && typeof response.json === "function") {
         if (!response.ok) throw new Error(`Request failed with ${response.status}.`);
         const type = response.headers?.get?.("content-type") || "";
         data = type.includes("json") ? await response.json() : await response.text();
       } else data = response;
+      throwIfAborted(context.signal);
     } catch (error) {
+      if (context.signal?.aborted) throw error;
       const message = error instanceof Error ? error.message : String(error);
       const errorContext = { ...context, state: this.state, response: { error: message } };
-      this.emit("request_error", { url, method, error: message });
+      this.emit("request_error", {
+        url,
+        method,
+        error: message,
+        handled: action.on_error !== undefined && action.on_error !== null,
+        componentId: context.componentId ?? null,
+      });
       await this.execute(action.on_error, errorContext);
       // An imperative pvo.request() call needs a rejecting Promise so creator
       // functions can handle failure. Declarative manifest actions default to
@@ -155,10 +178,15 @@ export class PvoRuntime {
       return undefined;
     }
 
+    throwIfAborted(context.signal);
+    // This event closes the network lifecycle. Authored success actions run
+    // afterward and may fail independently without leaving hosts pending or
+    // turning a completed request into a network error.
+    this.emit("request_success", { url, method, response: data, componentId: context.componentId ?? null });
     if (action.into) this.setState(action.into, data);
     const nextContext = { ...context, state: this.state, response: data };
     await this.execute(action.on_success, nextContext);
-    this.emit("request_success", { url, method, response: data });
+    throwIfAborted(context.signal);
     return data;
   }
 }

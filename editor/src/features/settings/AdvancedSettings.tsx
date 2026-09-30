@@ -55,7 +55,7 @@ export function AdvancedSettings() {
         onChange={event => changeDomains(event.target.value)}
       />
       <p id={noteId} role={error ? "alert" : undefined}>
-        {error ? `Not saved — ${error}` : "Separate hosts with commas. Include a non-default port when used; no https:// or paths. Fields request hosts are added automatically."}
+        {error ? `Not saved — ${error}` : "Separate hosts with commas. Include a non-default port when used; no https:// or paths. Authored request hosts are added automatically."}
       </p>
     </div>
   </section>;

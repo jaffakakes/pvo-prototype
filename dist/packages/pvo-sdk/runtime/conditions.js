@@ -37,3 +37,15 @@ export function resolveTemplates(value, context = {}) {
     return resolved == null ? "" : String(resolved);
   });
 }
+
+/** Resolve display text without leaking object coercions such as "[object Object]". */
+export function resolveTextTemplate(value, context = {}) {
+  const text = value == null ? "" : String(value);
+  const display = (resolved) => {
+    if (resolved == null || typeof resolved === "object" || typeof resolved === "function") return "";
+    return String(resolved);
+  };
+  const exact = text.match(/^\{(state|response)\.([^}]+)\}$/);
+  if (exact) return display(readPath(context[exact[1]], exact[2]));
+  return text.replace(/\{(state|response)\.([^}]+)\}/g, (_, source, path) => display(readPath(context[source], path)));
+}

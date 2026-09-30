@@ -11,7 +11,7 @@ const manifest = {
   spec_version: PVO_SPEC_VERSION,
   initial_scene: "main",
   canvas: { ratio: "9:16", width: 9, height: 16 },
-  restyle_capture: { version: 1, routing: "return-to-caller" },
+  restyle_capture: { version: 1 },
   media: [
     { id: "media-main", asset_id: "asset-main", name: "media/main.mp4", type: "video/mp4" },
     { id: "media-branch", asset_id: "asset-branch", name: "media/branch.mp4", type: "video/mp4" },
@@ -32,24 +32,26 @@ const manifest = {
   },
   components: [
     {
-      id: "choice-main", kind: "choice", title: "Choose a path", pause: true,
+      id: "choice-main", kind: "choice", title: "Choose a path",
+      response_policy: { dispatch: "interaction", unanswered: "pause" },
       presentation: { scene: "main", start: .35, end: .4, x: .015, y: .42, width: .71, height: .4 },
       options: [
         { label: "Open Scene B", action: { type: "goto_scene", scene: "branch" } },
         { label: "Continue", action: continueAction },
       ],
       restyle_capture: {
-        version: 1, at: .35, dur: null, hold: true, x: 37, y: 62,
+        version: 1, at: .35, dur: null, x: 37, y: 62,
         outcomes: [{ kind: "scene", sceneId: "branch" }, { kind: "continue" }],
       },
     },
     {
-      id: "form-branch", kind: "form", title: "Leave a note", pause: true,
+      id: "form-branch", kind: "form", title: "Leave a note",
+      response_policy: { dispatch: "interaction", unanswered: "pause" },
       presentation: { scene: "branch", start: .35, end: .4, x: .345, y: .23, width: .77, height: .38 },
       fields: [{ name: "name_0", label: "Name", type: "text", required: true }],
       submit_label: "Send", on_submit: { type: "goto_scene", scene: "detail" },
       restyle_capture: {
-        version: 1, at: .35, dur: null, hold: true, x: 73, y: 42,
+        version: 1, at: .35, dur: null, x: 73, y: 42,
         outcomes: [{ kind: "scene", sceneId: "detail" }],
         code: { language: {
           version: 1,
@@ -136,14 +138,12 @@ try {
   await form.getByRole("button", { name: "Send" }).click();
   await page.locator('#video[data-asset-id="asset-detail"]').waitFor({ timeout: 10000 });
   assert.equal(await page.locator("#timelineLabel").textContent(), "Scene i");
-  await page.locator('#video[data-asset-id="asset-branch"]').waitFor({ timeout: 10000 });
-  const branchReturnTime = await page.locator("#video").evaluate(video => video.currentTime);
-  assert.ok(branchReturnTime >= .35 && branchReturnTime < .75, `Nested branch should return to its Form at .35, received ${branchReturnTime}`);
-  await page.locator('#video[data-asset-id="asset-main"]').waitFor({ timeout: 10000 });
   await page.locator("#endScreen").waitFor({ state: "visible", timeout: 10000 });
+  assert.equal(await page.locator("#video").getAttribute("data-asset-id"), "asset-detail",
+    "An explicit scene outcome must end on its selected timeline without an implicit return.");
   assert.deepEqual(browserErrors, [], "Player emitted browser errors");
   assert.equal(await page.locator("#status.error.is-visible").count(), 0, "Player displayed an error");
-  console.log("PVO player smoke passed: Choice → Scene B → Form → Scene i → Scene B → Main, authored return times and centers, zero errors.");
+  console.log("PVO player smoke passed: paused answers, Choice → Scene B → Form → Scene i, explicit terminal routing, authored centers, zero errors.");
 } catch (error) {
   console.error(`PVO player smoke failed: ${error.message}`);
   console.error(`Player status: ${await page.locator("#status").textContent().catch(() => "unavailable")}`);

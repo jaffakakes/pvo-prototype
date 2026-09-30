@@ -99,7 +99,7 @@ test("Keep synchronizes content, actions, Look and exact PVO in one undoable edi
   assert.equal(selected().fields.prompt, "Choose your next scene");
   assert.deepEqual(selected().fields.options.map(option => option.outcome), [{ kind: "time", t: 3 }, { kind: "time", t: 3 }]);
   assert.equal(selected().look.whole.bg.toUpperCase(), "#123456");
-  for (const key of ["id", "sceneId", "type", "x", "y", "scale", "at", "dur", "hold"])
+  for (const key of ["id", "sceneId", "type", "x", "y", "scale", "at", "dur", "responsePolicy"])
     assert.deepEqual(selected()[key], original[key], `Keep preserves ${key}`);
   assert.deepEqual(after.project.scenes[0].layers, before.project.scenes[0].layers);
   assert.equal(keepAssistantReview(review), false, "An already-applied proposal cannot add a second undo step");

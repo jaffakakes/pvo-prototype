@@ -8,6 +8,8 @@ export type PvoCodeOptions = {
   css: string;
   js: string;
   fields?: Record<string, unknown>;
+  /** Runtime state for escaped `{state.path}` presentation templates. Omit to show authored tokens literally. */
+  state?: Record<string, unknown>;
   componentId?: string;
   /** Maximum CSS-pixel dimensions of the sandboxed renderer. Defaults to 247×600. */
   maxWidth?: number;

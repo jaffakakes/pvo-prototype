@@ -52,29 +52,49 @@ export interface PvoScene {
 
 export interface PvoChoiceOption { label: string; value?: JsonValue; action?: PvoAction; actions?: PvoAction[] }
 export interface PvoFormField { name: string; label?: string; type?: "text" | "number" | "email" | "choice"; required?: boolean; placeholder?: string; default?: JsonValue; options?: Array<{ label: string; value?: JsonValue }> }
-export interface PvoSceneChange { enabled: boolean; executeAt: "end"; routes: Array<{ condition: "true" | "false"; sceneId?: string; timelineId?: string }> }
-export interface PvoComponent {
+/**
+ * Controls when a viewer response reaches its authored action and what playback
+ * does if the component reaches the end of its presentation without a response.
+ */
+export interface PvoResponsePolicy {
+  dispatch: "interaction" | "layer_end";
+  unanswered: "continue" | "pause";
+}
+export interface PvoPresentation {
+  scene: string;
+  clip?: string;
+  timeline?: string;
+  start: number;
+  end: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+export interface PvoComponentBase {
   id: string;
-  kind: "tooltip" | "card" | "choice" | "form";
   title?: string;
   text?: string;
-  pause?: boolean;
+  presentation?: PvoPresentation;
   position?: { x: number; y: number };
   options?: PvoChoiceOption[];
   fields?: PvoFormField[];
-  actions?: Array<{ label?: string; action?: PvoAction; actions?: PvoAction[] }>;
+  actions?: Array<{ label: string; action?: PvoAction; actions?: PvoAction[] }>;
   on_submit?: PvoAction | PvoAction[];
   submit_label?: string;
   success_text?: string;
-  scene_change?: PvoSceneChange;
   [key: string]: unknown;
 }
+export type PvoComponent = PvoComponentBase & (
+  | { kind: "tooltip"; response_policy?: never }
+  | { kind: "card" | "choice" | "form"; presentation: PvoPresentation; response_policy: PvoResponsePolicy }
+);
 
 export interface PvoHotspot { id: string; label?: string; scene?: string; start?: number; end?: number; x: number; y: number; width: number; height: number; actions: PvoAction | PvoAction[] }
 export interface PvoTrigger { id?: string; scene?: string; at: number; actions: PvoAction | PvoAction[] }
 export interface PvoMedia { id: string; asset_id?: string; name?: string; type?: string }
 export interface PvoTimelineClip { id: string; source_clip?: string; asset_id: string; scene?: string; start: number; end: number }
-export interface PvoTimeline { id: string; kind?: "main" | "branch"; source_component?: string; condition?: "true" | "false"; clips: PvoTimelineClip[] }
+export interface PvoTimeline { id: string; kind?: "main" | "branch"; clips: PvoTimelineClip[] }
 export interface PvoPlayback { initial_timeline: string; timelines: PvoTimeline[] }
 export interface PvoManifest {
   spec_version: string;
@@ -103,6 +123,8 @@ export interface RuntimeContext { state: Record<string, unknown>; response?: unk
 export interface RuntimeExecutionContext {
   /** Reject request failures after on_error; intended for imperative pvo.request() bridges. */
   throwOnRequestError?: boolean;
+  /** Cancels pending work before it can update state or run follow-up actions. */
+  signal?: AbortSignal;
   [key: string]: unknown;
 }
 export interface RuntimeHandlers {
@@ -110,7 +132,7 @@ export interface RuntimeHandlers {
   hide?(component: PvoComponent | string, context: RuntimeContext): unknown | Promise<unknown>;
   gotoScene?(scene: string, context: RuntimeContext): unknown | Promise<unknown>;
   seek?(time: number, context: RuntimeContext): unknown | Promise<unknown>;
-  request?(request: { url: string; method: string; headers: Record<string, string>; body?: string; redirect: "error" }, context: RuntimeContext): unknown | Promise<unknown>;
+  request?(request: { url: string; method: string; headers: Record<string, string>; body?: string; redirect: "error"; signal?: AbortSignal }, context: RuntimeContext): unknown | Promise<unknown>;
   openUrl?(url: string, context: RuntimeContext): unknown | Promise<unknown>;
   custom?(name: string, payload: unknown, context: RuntimeContext): unknown | Promise<unknown>;
   onEvent?(event: RuntimeEvent): void;
@@ -135,6 +157,8 @@ export function tryReadPvo(file: BinaryInput & { name?: string }): Promise<PvoRe
 export function validatePvo(manifest: unknown): ValidationResult;
 export function evaluateWhen(condition: PvoCondition | PvoCondition[] | undefined, context?: Partial<RuntimeContext>): boolean;
 export function resolveTemplates<T>(value: T, context?: Partial<RuntimeContext>): T;
+/** Resolve a display template to scalar text; missing, null, and structured values become empty text. */
+export function resolveTextTemplate(value: unknown, context?: Partial<RuntimeContext>): string;
 
 export class PvoRuntime {
   constructor(manifest: PvoManifest, handlers?: RuntimeHandlers);

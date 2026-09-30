@@ -67,7 +67,7 @@ editor/src/
     audio/                      Extracted audio, source ranges and scene duration
     scenes/                     Naming and scene-reference rules
     layers/                     Layer identity and ordering
-    components/                 Defaults, Fields/PVO source mapping, outcomes and end-of-layer branching
+    components/                 Defaults, Fields/PVO source mapping, outcomes and response timing policy
     assistant/                  Review, request context and proposal validation
     notifications/              Approved events, short copy, priority and repetition rules
     export/                     Pure project-to-manifest construction
@@ -128,7 +128,7 @@ Feature CSS is co-located with its views. `EditorStyles.module.css` imports the 
 
 The component sheet separates Content, Look and Action. Timing belongs to Content; Advanced is a device preference that exposes another editable view of the same component. `domain/components/` owns source/visual projection, exact appearance edits, named form fields and draft transitions. Source-backed rendering does not imply a visual editing lock. Pending or invalid drafts temporarily block Content and Look updates while retaining the draft and last validated source for explicit recovery. `componentAuthoringStore` holds only the selected tab and part, outside project history. Focused text edits and continuous colour gestures use the existing undoable command boundary.
 
-Simple Action controls expose local playback routes. The Advanced switch reveals the PVO source editor for Structure, Style and Logic; network requests are authored directly in Logic, without a visual request setup panel. New forms explicitly store `fields.formSubmitMode: "local"`; compiling a request action projects `"request"` into the form fields. Absent mode preserves legacy destination requirements. Native exports carry the mode in `restyle_capture.form.submitMode`, so Try and the standalone player agree about whether form submission needs a network destination. Visual content and appearance edits preserve authored request methods, payloads and field identifiers.
+Simple Action controls expose local playback routes. The Advanced switch reveals the PVO source editor for Structure, Style and Logic; network requests are authored directly in Logic, without a visual request setup panel. Forms store `fields.formSubmitMode: "local"` or `"request"`; compiling a request action projects `"request"` into the form fields. Native exports carry the mode in `restyle_capture.form.submitMode`, so Try and the standalone player agree about whether form submission needs a network destination. Visual content and appearance edits preserve authored request methods, payloads and field identifiers.
 
 `pvo-component-runtime` contains pure, validated appearance values used by the editor and standalone player. Visual component exports retain native manifest controls plus `restyle_capture` appearance/form metadata; code-owned components use the isolated PVO renderer. Both routes keep request destinations and playback outcomes under the existing checked host adapters. Form submission status follows the actual response.
 
@@ -157,7 +157,7 @@ packages/pvo-sdk/
 
 The player owns an explicit per-viewer session and passes capabilities to controllers. Rendering, media access, action execution, and playback decisions have separate owners. Some controllers still combine decisions with host coordination; they are not all pure domain functions.
 
-SDK public import paths, exports, declarations, schema, legacy file support, and container bytes remain compatibility contracts. The publication list includes internal module folders. The static build copies the player and JavaScript package trees so their relative imports work after deployment.
+SDK public import paths, exports, declarations, schema, and container bytes describe the current development contract. Contract changes replace superseded shapes instead of adding compatibility paths. The publication list includes internal module folders. The static build copies the player and JavaScript package trees so their relative imports work after deployment.
 
 ## Rust language organization
 

@@ -27,6 +27,7 @@ test("Restyle field-based components remain valid in a self-contained scene pack
     components: [
       {
         id: "choice-1", kind: "choice", title: "Which look next?",
+        response_policy: { dispatch: "interaction", unanswered: "continue" },
         presentation: { scene: "main", start: 2, end: 5, x: .5, y: .62, width: .71, height: .4 },
         options: [
           { label: "Streetwear", action: { type: "goto_scene", scene: "b" } },
@@ -39,6 +40,7 @@ test("Restyle field-based components remain valid in a self-contained scene pack
       },
       {
         id: "form-1", kind: "form",
+        response_policy: { dispatch: "interaction", unanswered: "continue" },
         presentation: { scene: "b", start: 1, end: 3, x: .5, y: .62, width: .77, height: .38 },
         fields: [{ name: "name_0", label: "Name", type: "text" }], on_submit: continueAction,
         submit_label: "Send",

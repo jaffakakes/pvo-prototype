@@ -1,3 +1,5 @@
+import { updateRequestStatus } from "../actions/request-status.js";
+
 /** Translate shell and media events into the application's named commands. */
 export function bindPlayerEvents({ session, refs, adapters }) {
   function handleInput(event) {
@@ -57,7 +59,7 @@ export function bindPlayerEvents({ session, refs, adapters }) {
   refs.video.addEventListener("click", adapters.togglePlayback);
 
   refs.video.addEventListener("play", () => {
-    adapters.setStatus("");
+    updateRequestStatus(session, adapters.setStatus);
     adapters.updateProgress();
     adapters.showControls(false);
   });
@@ -71,7 +73,7 @@ export function bindPlayerEvents({ session, refs, adapters }) {
     if (session.switchingClip || session.finished) return;
     adapters.renderOverlays();
     adapters.updateProgress();
-    if (!adapters.branchAtCurrentTime()) adapters.advanceAtClipEnd();
+    if (!adapters.handleResponseBoundary()) adapters.advanceAtClipEnd();
   });
 
   refs.video.addEventListener("ended", () => adapters.advanceAtClipEnd(true));

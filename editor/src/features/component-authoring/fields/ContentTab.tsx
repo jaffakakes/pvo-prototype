@@ -1,13 +1,32 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { choiceOptions, fieldsShownFor } from "../../../domain/components/fields";
-import type { ComponentFields, PvoComponent } from "../../../domain/project/model";
+import type { ComponentFields, Outcome, PvoComponent, Scene } from "../../../domain/project/model";
 import { useCapture } from "../../../state/captureStore";
 import { FieldInput } from "./FieldInput";
 import { FormContent } from "./FormContent";
 import styles from "../NoCodeEditor.module.css";
 
+const isRequest = (outcome: Outcome | undefined) => outcome?.kind === "request";
+
+function responseSources(scenes: readonly Scene[]) {
+  return scenes.flatMap((scene) => scene.components.flatMap((item) => {
+    if (item.type === "tooltip") return [];
+    const fields = fieldsShownFor(item);
+    const requests = fields.buttons?.some((button) => isRequest(button.outcome))
+      || fields.options?.some((option) => isRequest(option.outcome))
+      || isRequest(fields.outcome)
+      || (item.type === "form" && fields.formSubmitMode === "request");
+    if (!requests) return [];
+    const label = fields.title || fields.prompt || fields.heading || fields.submitLabel
+      || (item.type === "form" ? "Form" : item.type === "choice" ? "Choice" : "Message");
+    return [{ id: item.id, label, scene: scene.name }];
+  }));
+}
+
 export function ContentTab({ component, disabled }: { component: PvoComponent; disabled: boolean }) {
   const [error, setError] = useState<string | null>(null);
+  const scenes = useCapture(state => state.scenes);
+  const requestComponents = useMemo(() => responseSources(scenes), [scenes]);
   const fields = fieldsShownFor(component);
   const change = (patch: Partial<ComponentFields>, undoable = true) => {
     const state = useCapture.getState();
@@ -22,8 +41,20 @@ export function ContentTab({ component, disabled }: { component: PvoComponent; d
   };
   return <fieldset className={styles.content} disabled={disabled} data-locked={disabled}>
     {error && <p className={styles.error} role="alert">{error}</p>}
-    {component.type === "tooltip" && <FieldInput label="Text" value={fields.text ?? ""}
-      maxLength={40} onChange={(text, undoable) => change({ text }, undoable)} />}
+    {component.type === "tooltip" && <>
+      <FieldInput label="Text" value={fields.text ?? ""}
+        maxLength={240} onChange={(text, undoable) => change({ text }, undoable)} />
+      {requestComponents.length ? <>
+        <p className={styles.hint}>Insert a request result, then replace <code>field</code> with the response field to show.</p>
+        {requestComponents.map(source => {
+          const token = `{state.responses.${source.id}.field}`;
+          return <button key={source.id} className={styles.secondary} type="button"
+            onClick={() => change({ text: `${fields.text ?? ""}${fields.text?.trim() ? " " : ""}${token}` })}>
+            Insert {source.label} result · {source.scene}
+          </button>;
+        })}
+      </> : <p className={styles.hint}>After another component sends a request, its result can appear here.</p>}
+    </>}
     {component.type === "card" && <>
       <FieldInput label="Title" value={fields.title ?? ""} maxLength={30}
         onChange={(title, undoable) => change({ title }, undoable)} />

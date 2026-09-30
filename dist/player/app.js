@@ -57,7 +57,11 @@ const media = createVideoController({
     setStatus: (...args) => controls.setStatus(...args),
     showControls: (...args) => controls.showControls(...args),
     clipAtElapsedTime: (...args) => timeline.clipAtElapsedTime(...args),
+    elapsedTime: (...args) => timeline.elapsedTime(...args),
     activeClip: (...args) => timeline.activeClip(...args),
+    replaceActionRuntime: (...args) => runtime.replaceActionRuntime(...args),
+    dispatchCapturedResponse: (...args) => actions.dispatchCapturedResponse(...args),
+    captureAboveVideo: (...args) => visibility.captureAboveVideo(...args),
   },
 });
 
@@ -102,6 +106,7 @@ const runtime = createActionRuntimeAdapter({
   refs: { frame: refs.frame },
   adapters: {
     renderOverlays: (...args) => overlays.renderOverlays(...args),
+    updateRuntimeState: (...args) => overlays.updateRuntimeState(...args),
     activeClip: (...args) => timeline.activeClip(...args),
     elapsedTime: (...args) => timeline.elapsedTime(...args),
     setStatus: (...args) => controls.setStatus(...args),
@@ -116,23 +121,22 @@ const actions = createComponentActions({
     applyActionOutcome: (...args) => outcomes.applyActionOutcome(...args),
     setStatus: (...args) => controls.setStatus(...args),
     visibleComponents: (...args) => visibility.visibleComponents(...args),
+    renderOverlays: (...args) => overlays.renderOverlays(...args),
+    updateComponentResponse: (...args) => overlays.updateComponentResponse(...args),
   },
 });
 
 const outcomes = createOutcomeRouter({
   session,
-  refs: { video: refs.video },
+  refs: { video: refs.video, endScreen: refs.endScreen },
   adapters: {
     captureTimelineForScene: (...args) => timeline.captureTimelineForScene(...args),
     renderOverlays: (...args) => overlays.renderOverlays(...args),
     loadClip: (...args) => media.loadClip(...args),
     seekToElapsed: (...args) => media.seekToElapsed(...args),
-    startSelectedBranch: (...args) => playback.startSelectedBranch(...args),
     showControls: (...args) => controls.showControls(...args),
-    elapsedTime: (...args) => timeline.elapsedTime(...args),
+    replaceActionRuntime: (...args) => runtime.replaceActionRuntime(...args),
     setStatus: (...args) => controls.setStatus(...args),
-    timelineDuration: (...args) => timeline.timelineDuration(...args),
-    componentsForClip: (...args) => visibility.componentsForClip(...args),
   },
 });
 
@@ -147,13 +151,12 @@ const playback = createPlaybackTransitions({
     updateProgress: (...args) => controls.updateProgress(...args),
     setStatus: (...args) => controls.setStatus(...args),
     showControls: (...args) => controls.showControls(...args),
-    routeForAnswer: (...args) => outcomes.routeForAnswer(...args),
     timelineById: (...args) => timeline.timelineById(...args),
-    captureTimelineForScene: (...args) => timeline.captureTimelineForScene(...args),
     loadClip: (...args) => media.loadClip(...args),
     localClipTime: (...args) => timeline.localClipTime(...args),
     activeClip: (...args) => timeline.activeClip(...args),
-    seekToElapsed: (...args) => media.seekToElapsed(...args),
+    dispatchCapturedResponse: (...args) => actions.dispatchCapturedResponse(...args),
+    replaceActionRuntime: (...args) => runtime.replaceActionRuntime(...args),
   },
 });
 
@@ -171,7 +174,7 @@ bindPlayerEvents({
     toggleFullscreen: (...args) => controls.toggleFullscreen(...args),
     shareExperience: (...args) => controls.shareExperience(...args),
     setStatus: (...args) => controls.setStatus(...args),
-    branchAtCurrentTime: (...args) => playback.branchAtCurrentTime(...args),
+    handleResponseBoundary: (...args) => playback.handleResponseBoundary(...args),
     advanceAtClipEnd: (...args) => playback.advanceAtClipEnd(...args),
     answerComponent: (...args) => actions.answerComponent(...args),
     answerFieldComponent: (...args) => actions.answerFieldComponent(...args),

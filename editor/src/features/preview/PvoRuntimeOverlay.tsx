@@ -5,9 +5,12 @@ import { resolveLanguageSource,validateEditableLanguage } from "../../domain/com
 import { type Clip,type PvoComponent } from "../../domain/project/model";
 import { useCapture } from "../../state/captureStore";
 import { cx } from "../../styles";
-import { runOutcome } from "./tryMode";
+import { runComponentResponse } from "./tryMode";
 import { useTryFeedback } from "./tryFeedbackStore";
+import { useTryRuntimeState } from "./tryRuntimeStateStore";
 import feedbackStyles from "./PreviewFeedback.module.css";
+
+const EMPTY_RUNTIME_STATE: Record<string, unknown> = {};
 
 function submittedFields(input: unknown, names: { name: string; kind: string; label?: string }[], modern: boolean) {
   if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("Form submission must contain fields.");
@@ -41,6 +44,10 @@ export function PvoRuntimeOverlay({ component, width, trying, isVisible, immedia
   const source = component.code?.pvoTouched && component.code.pvoLastValid
     ? component.code.pvoLastValid : component.code?.pvo;
   const pending = useTryFeedback(state => state.components[component.id]?.phase === "pending");
+  const runtimeState = useTryRuntimeState(state => trying && component.type === "tooltip" ? state.value : null);
+  const templateState = trying && component.type === "tooltip" ? runtimeState ?? EMPTY_RUNTIME_STATE : undefined;
+  const templateStateRef = useRef<Record<string, unknown> | undefined>(templateState);
+  templateStateRef.current = templateState;
 
   useEffect(() => () => { runtime.current?.destroy(); runtime.current = null; }, []);
   useEffect(() => {
@@ -78,6 +85,7 @@ export function PvoRuntimeOverlay({ component, width, trying, isVisible, immedia
           css: compiled.css,
           js: compiled.js,
           fields: {},
+          state: templateStateRef.current,
           componentId: component.id,
           maxWidth: 247,
           maxHeight: 285,
@@ -96,16 +104,15 @@ export function PvoRuntimeOverlay({ component, width, trying, isVisible, immedia
               const index = Number(args[0]);
               if (!controls || !Number.isInteger(index) || index < 0 || index >= controls.length) return;
               const rule = compiled.rules.find(item => item.target === controls[index].id);
-              if (rule) void runOutcome(active, rule.action);
+              if (rule) void runComponentResponse(active, { index, outcome: rule.action });
               return;
             }
 
             if (method === "submit" && compiled.structure.type === "form") {
               const modern = compiled.structure.heading !== undefined || compiled.structure.waiting !== undefined || compiled.structure.fields.some(field => field.label !== undefined || field.kind === "number");
               const fields = submittedFields(args[0], compiled.structure.fields, modern);
-              window.dispatchEvent(new CustomEvent("pvo-submit", { detail: { componentId: active.id, fields } }));
               const rule = compiled.rules.find(item => item.target === null);
-              if (rule) return runOutcome(active, rule.action, fields);
+              if (rule) return runComponentResponse(active, { index: 0, outcome: rule.action, formValues: fields });
             }
           },
           onError: reportRuntimeError,
@@ -123,6 +130,7 @@ export function PvoRuntimeOverlay({ component, width, trying, isVisible, immedia
 
   useEffect(() => { runtime.current?.setInteractive(trying); }, [trying]);
   useEffect(() => { runtime.current?.setPending(pending); }, [pending]);
+  useEffect(() => { runtime.current?.update({ state: templateState }); }, [templateState]);
   const scale = width / 247;
   return <div className={cx("compCustomShell")} style={{ width: failure ? width : contentSize.width * scale, height: failure ? "auto" : contentSize.height * scale }}>
     <div className={cx("compCustomRuntime")} ref={host} style={{

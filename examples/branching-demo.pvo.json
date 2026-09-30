@@ -6,6 +6,47 @@
   "allowed_domains": [
     "jsonplaceholder.typicode.com"
   ],
+  "media": [
+    {
+      "id": "demo_media",
+      "asset_id": "demo_media",
+      "name": "media/signal-path.mp4",
+      "type": "video/mp4"
+    }
+  ],
+  "playback": {
+    "initial_timeline": "timeline_intro",
+    "timelines": [
+      {
+        "id": "timeline_intro",
+        "kind": "main",
+        "clips": [
+          { "id": "clip_intro", "asset_id": "demo_media", "scene": "intro", "start": 0, "end": 6 }
+        ]
+      },
+      {
+        "id": "timeline_workshop",
+        "kind": "branch",
+        "clips": [
+          { "id": "clip_workshop", "asset_id": "demo_media", "scene": "workshop", "start": 6, "end": 12 }
+        ]
+      },
+      {
+        "id": "timeline_rooftop",
+        "kind": "branch",
+        "clips": [
+          { "id": "clip_rooftop", "asset_id": "demo_media", "scene": "rooftop", "start": 12, "end": 18 }
+        ]
+      },
+      {
+        "id": "timeline_ending",
+        "kind": "branch",
+        "clips": [
+          { "id": "clip_ending", "asset_id": "demo_media", "scene": "ending", "start": 18, "end": 24 }
+        ]
+      }
+    ]
+  },
   "state": {
     "initial": {
       "path": "unselected",
@@ -22,6 +63,8 @@
     {
       "id": "intro",
       "label": "01 · Signal",
+      "asset_id": "demo_media",
+      "parent": null,
       "start": 0,
       "end": 6,
       "on_exit": [
@@ -34,12 +77,14 @@
     {
       "id": "workshop",
       "label": "02A · Workshop",
+      "asset_id": "demo_media",
+      "parent": "intro",
       "start": 6,
       "end": 12,
       "on_enter": [
         {
           "type": "show",
-          "component": "path_card"
+          "component": "workshop_card"
         }
       ],
       "next": "ending"
@@ -47,12 +92,14 @@
     {
       "id": "rooftop",
       "label": "02B · Rooftop",
+      "asset_id": "demo_media",
+      "parent": "intro",
       "start": 12,
       "end": 18,
       "on_enter": [
         {
           "type": "show",
-          "component": "path_card"
+          "component": "rooftop_card"
         }
       ],
       "next": "ending"
@@ -60,6 +107,8 @@
     {
       "id": "ending",
       "label": "03 · Rejoin",
+      "asset_id": "demo_media",
+      "parent": "intro",
       "start": 18,
       "end": 24
     }
@@ -69,20 +118,24 @@
       "id": "signal_tip",
       "kind": "tooltip",
       "text": "You found the signal. The video can react without changing its pixels.",
-      "pause": false
+      "presentation": { "scene": "intro", "start": 1, "end": 5.8, "x": 0.5, "y": 0.12, "width": 0.45, "height": 0.1 }
     },
     {
       "id": "intro_card",
       "kind": "card",
       "title": "One MP4. More than one path.",
       "text": "Tap the outlined signal, then choose where the story should go.",
-      "pause": false
+      "presentation": { "scene": "intro", "start": 0.25, "end": 5.8, "x": 0.12, "y": 0.55, "width": 0.76, "height": 0.28 },
+      "response_policy": { "dispatch": "interaction", "unanswered": "continue" },
+      "actions": []
     },
     {
       "id": "path_choice",
       "kind": "choice",
       "title": "Where should the signal lead?",
       "text": "Both choices are time ranges inside this same MP4.",
+      "presentation": { "scene": "intro", "start": 1, "end": 5.8, "x": 0.12, "y": 0.5, "width": 0.76, "height": 0.38 },
+      "response_policy": { "dispatch": "layer_end", "unanswered": "pause" },
       "options": [
         {
           "label": "Enter workshop",
@@ -117,11 +170,22 @@
       ]
     },
     {
-      "id": "path_card",
+      "id": "workshop_card",
       "kind": "card",
-      "title": "Path: {state.path}",
+      "title": "Workshop path",
       "text": "The player sought to this scene because a data action said goto_scene.",
-      "pause": false
+      "presentation": { "scene": "workshop", "start": 0.2, "end": 5.8, "x": 0.12, "y": 0.58, "width": 0.76, "height": 0.25 },
+      "response_policy": { "dispatch": "interaction", "unanswered": "continue" },
+      "actions": []
+    },
+    {
+      "id": "rooftop_card",
+      "kind": "card",
+      "title": "Rooftop path",
+      "text": "The player sought to this scene because a data action said goto_scene.",
+      "presentation": { "scene": "rooftop", "start": 0.2, "end": 5.8, "x": 0.12, "y": 0.58, "width": 0.76, "height": 0.25 },
+      "response_policy": { "dispatch": "interaction", "unanswered": "continue" },
+      "actions": []
     },
     {
       "id": "contact_form",
@@ -129,6 +193,8 @@
       "title": "Send a note from the video",
       "text": "PVO sends ordinary HTTP. Your server decides what the request means.",
       "submit_label": "Send request",
+      "presentation": { "scene": "ending", "start": 2.5, "end": 5.8, "x": 0.1, "y": 0.22, "width": 0.8, "height": 0.62 },
+      "response_policy": { "dispatch": "interaction", "unanswered": "pause" },
       "fields": [
         {
           "name": "viewer_name",
@@ -163,11 +229,11 @@
           "method": "POST",
           "url": "https://jsonplaceholder.typicode.com/posts",
           "body": {
-            "title": "PVO hello from {state.viewer_name}",
-            "body": "I build {state.viewer_role}",
+            "title": "PVO hello from {state.form.contact_form.viewer_name}",
+            "body": "I build {state.form.contact_form.viewer_role}",
             "userId": 1
           },
-          "into": "demo_response",
+          "into": "responses.contact_form",
           "on_success": [
             {
               "type": "show",
@@ -194,16 +260,20 @@
     {
       "id": "request_success",
       "kind": "card",
-      "title": "Server replied · #{state.demo_response.id}",
+      "title": "Server replied",
       "text": "The response changed this card. PVO never needed to know what your server does.",
-      "pause": false
+      "presentation": { "scene": "ending", "start": 2.5, "end": 5.9, "x": 0.12, "y": 0.55, "width": 0.76, "height": 0.25 },
+      "response_policy": { "dispatch": "interaction", "unanswered": "continue" },
+      "actions": []
     },
     {
       "id": "request_error",
       "kind": "card",
       "title": "Request could not connect",
       "text": "The error path is also declared in the file. Try again when you are online.",
-      "pause": false
+      "presentation": { "scene": "ending", "start": 2.5, "end": 5.9, "x": 0.12, "y": 0.55, "width": 0.76, "height": 0.25 },
+      "response_policy": { "dispatch": "interaction", "unanswered": "continue" },
+      "actions": []
     }
   ],
   "hotspots": [

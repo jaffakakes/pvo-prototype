@@ -39,7 +39,8 @@ try {
   await page.getByRole("button", { name: "Soft", exact: true }).first().click();
   const afterPreset = await component();
   assert.deepEqual(afterPreset.fields, beforePreset.fields);
-  for (const key of ["at", "dur", "x", "y", "hold"]) assert.equal(afterPreset[key], beforePreset[key]);
+  for (const key of ["at", "dur", "x", "y"]) assert.equal(afterPreset[key], beforePreset[key]);
+  assert.deepEqual(afterPreset.responsePolicy, beforePreset.responsePolicy);
   assert.equal(afterPreset.look.preset, "soft");
   await page.getByRole("dialog", { name: "Choice", exact: true }).getByRole("button", { name: "Street", exact: true }).click();
   await page.getByRole("button", { name: "XL", exact: true }).click();

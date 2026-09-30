@@ -344,11 +344,12 @@ test("deleting a branch repairs modern Form outcomes and saved code before it ca
   assert.match(component.archivedCode.pvo.logic, /continue\(\)/);
 });
 
-test("duplicate requests reference copied forms and responses while retaining literal prose", () => {
+test("duplicate state references follow copied components while literal prose stays unchanged", () => {
   const state = start();
   const originalScene = state.createScene();
   const formId = state.addComponent("form");
   const cardId = state.addComponent("card");
+  const noteId = state.addComponent("tooltip");
   const request = {
     kind: "request", method: "POST", url: `https://example.com/{state.form.${formId}.name_0}`,
     body: JSON.stringify({ name: `{state.form.${formId}.name_0}`, saved: `{state.responses.${cardId}.ok}`, prose: formId, external: "{state.form.external.name}" }),
@@ -360,10 +361,12 @@ test("duplicate requests reference copied forms and responses while retaining li
     pvoCompiled: { structure: { type: "card", title: "Send", body: null, buttons: [{ id: "send", label: "Send" }] }, rules: [{ event: "press", target: "send", action: request }] },
   };
   state.updateComponent(cardId, { fields: { buttons: [{ label: "Send", outcome: request }] }, code, archivedCode: code });
+  state.updateComponent(noteId, { fields: { text: `Saved: {state.responses.${cardId}.ok}` } });
   const copyId = state.duplicateScene(originalScene);
   const copied = useCapture.getState().scenes.find(item => item.id === copyId);
   const copiedFormId = copied.components[0].id;
   const copiedCard = copied.components[1];
+  const copiedNote = copied.components[2];
   for (const outcome of [copiedCard.fields.buttons[0].outcome, copiedCard.code.pvoCompiled.rules[0].action, copiedCard.archivedCode.pvoCompiled.rules[0].action]) {
     assert.equal(outcome.url, `https://example.com/{state.form.${copiedFormId}.name_0}`);
     assert.deepEqual(JSON.parse(outcome.body), {
@@ -373,6 +376,7 @@ test("duplicate requests reference copied forms and responses while retaining li
   }
   assert.ok(copiedCard.code.pvo.logic.includes(`{state.form.${copiedFormId}.name_0}`));
   assert.ok(copiedCard.archivedCode.pvo.logic.includes(`{state.responses.${copiedCard.id}.ok}`));
+  assert.equal(copiedNote.fields.text, `Saved: {state.responses.${copiedCard.id}.ok}`);
   assert.equal(copiedCard.code.pvo.structure, `Literal ${formId}`);
   assert.equal(useCapture.getState().scenes.find(item => item.id === originalScene).components[1].fields.buttons[0].outcome.url, request.url);
 });

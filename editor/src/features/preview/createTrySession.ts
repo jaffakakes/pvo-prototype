@@ -1,14 +1,7 @@
 import { sceneDuration } from "../../domain/audio/editing";
-import type { PvoRuntime } from "../../../../packages/pvo-sdk/index.js";
-import {
-  createPvoRuntime,
-  PVO_SPEC_VERSION,
-} from "../../../../packages/pvo-sdk/index.js";
-import {
-  actionFor,
-  collectRequestDomains,
-} from "../../domain/components/actions";
-import { branchRoutes, branchesAtEnd } from "../../domain/components/branching";
+import { actionFor } from "../../domain/components/actions";
+import { fieldsShownFor } from "../../domain/components/fields";
+import { acceptsResponse, responsePolicyFor } from "../../domain/components/responsePolicy";
 import {
   formSubmissionOutcome,
   formValuesForSubmission,
@@ -17,12 +10,13 @@ import {
 import { componentEnd } from "../../domain/components/timing";
 import { layerZ } from "../../domain/layers/order";
 import type {
-  Outcome,
+  ComponentResponse,
   PlaybackOutcome,
   PvoComponent,
 } from "../../domain/project/model";
 import { clamp } from "../../domain/project/numbers";
 import type { CaptureState, TryMode } from "../../state/types";
+import { createTryRuntimeBridge } from "./createTryRuntimeBridge";
 
 type TrySessionState = Pick<
   CaptureState,
@@ -45,6 +39,7 @@ type TrySessionState = Pick<
 type Host = {
   getState(): TrySessionState;
   request: typeof fetch;
+  publishRuntimeState(state: Record<string, unknown> | null): void;
   feedback(): Record<string, { phase: string }>;
   clearFeedback(): void;
   clearNotice(): void;
@@ -54,81 +49,63 @@ type Host = {
   finishRequest(id: string, operation: number, failed: boolean): void;
 };
 
-const freshMode = (): TryMode => ({ playing: true, holdingId: null, handled: [], answers: {} });
+const freshMode = (): TryMode => ({
+  playing: true,
+  holdingId: null,
+  handled: [],
+  capturedResponses: {},
+  dispatched: [],
+});
 
 /**
  * Viewer preview follows the format note: components show for their layer,
- * explicit routes act on tap, a choice with "Branch at layer end" remembers the
- * answer and opens its scene when the layer ends, waiting there if unanswered,
- * and a chosen scene is the rest of the video.
+ * explicit routes run according to each component's response policy, while
+ * routing remains an ordinary optional action independent from waiting.
  */
 export function createTrySession(host: Host) {
-  let tryRuntime: PvoRuntime | null = null;
+  let trySessionEpoch = 0;
+  const requestOperations = new Map<string, {
+    controller: AbortController;
+    feedbackOperation: number;
+  }>();
   type EditingLocation = Pick<
     TrySessionState,
     "currentSceneId" | "t" | "sel" | "selComp" | "selText" | "sheet"
   >;
   let editingLocation: EditingLocation | null = null;
+  const runtimeBridge = createTryRuntimeBridge({
+    getState: host.getState,
+    request: host.request,
+    publishRuntimeState: host.publishRuntimeState,
+    applyPlaybackOutcome: runPlaybackOutcome,
+  });
   function getTryRuntime() {
-    return tryRuntime;
+    return runtimeBridge.current();
   }
-  function componentFromContext(context: Record<string, unknown>) {
-    const id = context.componentId;
-    return typeof id === "string"
-      ? host.getState().components.find((item) => item.id === id)
-      : undefined;
-  }
-  function createTryRuntime(state: TrySessionState) {
-    const allowed_domains = collectRequestDomains(
-      state.scenes,
-      state.allowedDomains,
-    );
-    let runtime: PvoRuntime;
-    const active = () => tryRuntime === runtime && !!host.getState().tryMode;
-    runtime = createPvoRuntime(
-      {
-        spec_version: PVO_SPEC_VERSION,
-        scenes: [{ id: "main", start: 0, end: 1 }],
-        components: [],
-        allowed_domains,
-      },
-      {
-        gotoScene: (sceneId, context) => {
-          if (!active()) return;
-          const component = componentFromContext(context);
-          if (component)
-            runPlaybackOutcome(component, { kind: "scene", sceneId });
-        },
-        seek: (time, context) => {
-          if (!active()) return;
-          const component = componentFromContext(context);
-          if (component)
-            runPlaybackOutcome(component, { kind: "time", t: time });
-        },
-        custom: (name, _payload, context) => {
-          if (!active()) return;
-          const component = componentFromContext(context);
-          if (name === "restyle_continue" && component)
-            runPlaybackOutcome(component, { kind: "continue" });
-        },
-        request: ({ url, ...options }) =>
-          host.request(url, {
-            ...options,
-            credentials: "omit",
-            redirect: "error",
-            referrerPolicy: "no-referrer",
-          }),
-      },
-    );
-    return runtime;
+  function cancelRequestOperations(exceptComponentId?: string) {
+    requestOperations.forEach((operation, componentId) => {
+      if (componentId !== exceptComponentId) {
+        operation.controller.abort();
+        host.finishRequest(componentId, operation.feedbackOperation, false);
+      }
+    });
+    for (const componentId of [...requestOperations.keys()]) {
+      if (componentId !== exceptComponentId) requestOperations.delete(componentId);
+    }
   }
   function startTry() {
     const s = host.getState();
     if (s.tryMode || sceneDuration(s) <= 0) return;
     try {
+      const unanswerable = s.scenes.flatMap((scene) => scene.components).find((component) => component.type === "card"
+        && responsePolicyFor(component).unanswered === "pause"
+        && !(fieldsShownFor(component).buttons?.length));
+      if (unanswerable) throw new Error("A Message cannot pause for a response without a button.");
+      trySessionEpoch += 1;
+      cancelRequestOperations();
       host.clearFeedback();
       host.clearNotice();
-      tryRuntime = createTryRuntime(s);
+      runtimeBridge.start(s);
     } catch (error) {
       console.error("Could not start viewer preview:", error);
       host.startFailed();
@@ -152,7 +129,9 @@ export function createTrySession(host: Host) {
     });
   }
   function stopTry() {
-    tryRuntime = null;
+    trySessionEpoch += 1;
+    cancelRequestOperations();
+    runtimeBridge.stop();
     host.clearFeedback();
     host.clearNotice();
     const state = host.getState();
@@ -175,52 +154,27 @@ export function createTrySession(host: Host) {
       host.emptyScene(component.id);
       return false;
     }
+    cancelRequestOperations(component.id);
     host.clearFeedback();
     s.switchScene(target.id, { undoable: false, preserveTry: true });
     host.getState().patch({ tryMode: freshMode(), t: 0, playing: true });
     return true;
   }
-  function branchTarget(component: PvoComponent, answer: boolean): string | null {
-    const routes = branchRoutes(component);
-    return routes ? (answer ? routes.trueSceneId : routes.falseSceneId) : null;
-  }
-  /** A branch-at-end choice remembers the tap; the branch itself waits for the layer to end. */
-  function recordAnswer(component: PvoComponent, answer: boolean) {
-    const s = host.getState();
-    const mode = s.tryMode;
-    if (!mode) return;
-    const answers = { ...mode.answers, [component.id]: answer };
-    if (mode.holdingId !== component.id) {
-      s.patch({ tryMode: { ...mode, answers } });
-      return;
-    }
-    const target = branchTarget(component, answer);
-    if (target && enterScene(component, target)) return;
-    s.patch({
-      tryMode: { ...mode, playing: true, holdingId: null, handled: [...mode.handled, component.id], answers },
-      playing: true,
-    });
-  }
   function runPlaybackOutcome(
     component: PvoComponent,
     outcome: PlaybackOutcome,
-  ) {
+  ): boolean {
     const s = host.getState();
     const mode = s.tryMode;
-    if (!mode) return;
-    const routes = branchesAtEnd(component) ? branchRoutes(component) : null;
-    if (routes && outcome.kind === "scene") {
-      recordAnswer(component, outcome.sceneId === routes.trueSceneId);
-      return;
-    }
+    if (!mode) return false;
     if (outcome.kind === "scene") {
-      enterScene(component, outcome.sceneId);
-      return;
+      return enterScene(component, outcome.sceneId);
     }
-    // Another component's plain continue cannot release a choice waiting at its layer end.
-    if (outcome.kind === "continue" && mode.holdingId && mode.holdingId !== component.id) return;
+    // Another component's plain continue cannot release a response waiting at its layer end.
+    if (outcome.kind === "continue" && mode.holdingId && mode.holdingId !== component.id) return true;
     const t = outcome.kind === "time" ? clamp(outcome.t, 0, sceneDuration(s)) : s.t;
-    // Seeking back before a finished branch point lets that choice ask again.
+    if (outcome.kind === "time") cancelRequestOperations(component.id);
+    // Seeking behind a processed boundary lets that component accept a new response.
     const handled =
       t < s.t
         ? mode.handled.filter((id) => {
@@ -228,37 +182,76 @@ export function createTrySession(host: Host) {
             return !!item && componentEnd(item, s.clips) < t;
           })
         : mode.handled;
+    const keepResponse = (id: string) => {
+      const item = s.components.find((candidate) => candidate.id === id);
+      return !!item && componentEnd(item, s.clips) < t;
+    };
+    const capturedResponses = t < s.t
+      ? Object.fromEntries(Object.entries(mode.capturedResponses).filter(([id]) => keepResponse(id)))
+      : mode.capturedResponses;
+    const dispatched = t < s.t ? mode.dispatched.filter(keepResponse) : mode.dispatched;
     s.patch({
       t,
-      tryMode: { ...mode, playing: true, holdingId: null, handled },
+      tryMode: { ...mode, playing: true, holdingId: null, handled, capturedResponses, dispatched },
       playing: true,
     });
+    return true;
   }
-  /** Execute a field-authored action with the same SDK request policy as an exported PVO. */
-  async function runOutcome(
+
+  function writeResponseState(component: PvoComponent, response: ComponentResponse) {
+    const runtime = runtimeBridge.current();
+    if (!runtime) return;
+    if (component.type === "form" && response.formValues) {
+      runtime.setState("form", {
+        ...(runtime.state.form as Record<string, unknown> | undefined),
+        [component.id]: response.formValues,
+      });
+    }
+    if (component.type === "choice") {
+      runtime.setState("choices", {
+        ...(runtime.state.choices as Record<string, unknown> | undefined),
+        [component.id]: response.index,
+      });
+    }
+  }
+
+  /** Execute a captured response with the same SDK request policy as an exported PVO. */
+  async function executeResponse(
     component: PvoComponent,
-    outcome: Outcome,
-    formValues?: Record<string, string | number | boolean>,
-  ) {
+    response: ComponentResponse,
+  ): Promise<boolean> {
     const state = host.getState();
-    if (!state.tryMode) return;
+    const outcome = response.outcome;
+    if (!state.tryMode) return false;
     if (
       outcome.kind === "request" &&
       host.feedback()[component.id]?.phase === "pending"
     )
-      return;
-    if (formValues && component.type === "form") {
-      if (!/^[A-Za-z0-9_-]+$/.test(component.id))
-        throw new Error("Form ID contains unsupported characters.");
-      tryRuntime?.setState(`form.${component.id}`, formValues);
+      return false;
+    writeResponseState(component, response);
+    if (
+      component.type === "form" &&
+      component.fields.formFields &&
+      formSubmissionOutcome(component) === null
+    ) {
+      if (component.fields.failureOutcome)
+        return runPlaybackOutcome(component, component.fields.failureOutcome);
+      const operation = host.beginRequest(component.id);
+      host.finishRequest(component.id, operation, true);
+      return false;
     }
     if (outcome.kind !== "request") {
-      runPlaybackOutcome(component, outcome);
-      return;
+      return runPlaybackOutcome(component, outcome);
     }
-    if (!tryRuntime) return;
-    const runtime = tryRuntime;
+    const runtime = runtimeBridge.current();
+    if (!runtime) return false;
     const operation = host.beginRequest(component.id);
+    const requestOperation = {
+      controller: new AbortController(),
+      feedbackOperation: operation,
+    };
+    requestOperations.set(component.id, requestOperation);
+    const previewInteraction = { routeFailed: false };
     let actionReady = false;
     try {
       const action = actionFor(outcome, component.id);
@@ -266,14 +259,20 @@ export function createTrySession(host: Host) {
       await runtime.execute(action, {
         componentId: component.id,
         throwOnRequestError: true,
+        signal: requestOperation.controller.signal,
+        previewInteraction,
       });
+      if (requestOperations.get(component.id) !== requestOperation) return false;
       host.finishRequest(component.id, operation, false);
+      return !previewInteraction.routeFailed;
     } catch (error) {
+      if (requestOperation.controller.signal.aborted || requestOperations.get(component.id) !== requestOperation)
+        return false;
       // No error route is deliberately a no-op: the component stays available to retry.
       console.warn("PVO request failed in Try mode:", error);
       const latest = host.getState();
       if (
-        runtime === tryRuntime &&
+        runtimeBridge.isCurrent(runtime) &&
         latest.tryMode &&
         latest.currentSceneId === state.currentSceneId
       ) {
@@ -285,9 +284,68 @@ export function createTrySession(host: Host) {
           !(actionReady && outcome.onError),
         );
       }
+      return !!(actionReady && outcome.onError && !previewInteraction.routeFailed);
+    } finally {
+      if (requestOperations.get(component.id) === requestOperation)
+        requestOperations.delete(component.id);
     }
   }
-  /** Form answers stay in session state; only an explicit request sends them to a destination. */
+
+  async function dispatchCapturedResponse(component: PvoComponent): Promise<void> {
+    const state = host.getState();
+    const mode = state.tryMode;
+    const response = mode?.capturedResponses[component.id];
+    if (!mode || !response || mode.dispatched.includes(component.id)) return;
+    const epoch = trySessionEpoch;
+    const runtime = runtimeBridge.current();
+    state.patch({
+      tryMode: { ...mode, dispatched: [...mode.dispatched, component.id] },
+    });
+    const succeeded = await executeResponse(component, response);
+    const latest = host.getState();
+    const latestMode = latest.tryMode;
+    const terminalSettled = epoch === trySessionEpoch && runtimeBridge.isCurrent(runtime) && latestMode
+      && latest.currentSceneId === component.sceneId
+      && latestMode.holdingId === null
+      && latest.t >= sceneDuration(latest) - .001
+      && requestOperations.size === 0;
+    if (terminalSettled) {
+      stopTry();
+      return;
+    }
+    if (succeeded || epoch !== trySessionEpoch || !runtimeBridge.isCurrent(runtime) || !latestMode
+        || latest.currentSceneId !== component.sceneId
+        || latestMode.capturedResponses[component.id] !== response) return;
+    latest.patch({
+      tryMode: {
+        ...latestMode,
+        dispatched: latestMode.dispatched.filter((id) => id !== component.id),
+      },
+    });
+  }
+
+  /** Capture locally first; the policy decides when the response reaches Logic. */
+  async function runComponentResponse(
+    component: PvoComponent,
+    response: ComponentResponse,
+  ): Promise<void> {
+    const state = host.getState();
+    const mode = state.tryMode;
+    if (!mode || !acceptsResponse(component)) return;
+    const policy = responsePolicyFor(component);
+    const atBoundary = mode.holdingId === component.id;
+    if (mode.dispatched.includes(component.id)) return;
+    if (!atBoundary && mode.handled.includes(component.id)) return;
+    const capturedResponses = { ...mode.capturedResponses, [component.id]: response };
+    const handled = atBoundary && !mode.handled.includes(component.id)
+      ? [...mode.handled, component.id]
+      : mode.handled;
+    state.patch({ tryMode: { ...mode, capturedResponses, handled } });
+    if (policy.dispatch === "interaction" || atBoundary)
+      await dispatchCapturedResponse(component);
+  }
+
+  /** Form values stay in session state; only an explicit request sends them to a destination. */
   async function runFormSubmission(
     component: PvoComponent,
     values: Record<string, string>,
@@ -300,42 +358,39 @@ export function createTrySession(host: Host) {
     try {
       if (component.fields.formFields)
         validateFormFields(component.fields.formFields);
-      const outcome = formSubmissionOutcome(component);
-      if (!outcome) {
-        if (component.fields.failureOutcome)
-          runPlaybackOutcome(component, component.fields.failureOutcome);
-        else {
-          const operation = host.beginRequest(component.id);
-          host.finishRequest(component.id, operation, true);
-        }
-        return;
-      }
+      const outcome = formSubmissionOutcome(component)
+        ?? component.fields.failureOutcome
+        ?? { kind: "continue" };
       const formValues = formValuesForSubmission(component.fields, values);
-      await runOutcome(component, outcome, formValues);
+      await runComponentResponse(component, { index: 0, outcome, formValues });
     } catch (error) {
       console.warn("Could not submit form in Try mode:", error);
       const operation = host.beginRequest(component.id);
       host.finishRequest(component.id, operation, true);
     }
   }
-  /** Returns true when an end-of-layer branch or the end of the video consumed this playback frame. */
+  /** Returns true when a response boundary or the end of the video consumed this playback frame. */
   function advanceTry(s: TrySessionState, next: number) {
     const mode = s.tryMode;
     if (!mode) return false;
-    // A choice covered by the opaque video cannot wait for a tap nobody can see.
+    // A component covered by the opaque video cannot wait for a response nobody can provide.
     const ending = s.components
       .filter(
-        (component) =>
-          branchesAtEnd(component) &&
+        (component) => {
+          if (!acceptsResponse(component)) return false;
+          const policy = responsePolicyFor(component);
+          return (policy.dispatch === "layer_end" || policy.unanswered === "pause") &&
           layerZ(s, `component:${component.id}`) > layerZ(s, "video") &&
-          !mode.handled.includes(component.id),
+          !mode.handled.includes(component.id);
+        },
       )
       .map((component) => ({ component, end: componentEnd(component, s.clips) }))
       .filter(({ end }) => end >= s.t - 0.001 && end <= next + 0.001)
       .sort((a, b) => a.end - b.end)[0];
     if (ending) {
-      const answer = mode.answers[ending.component.id];
-      if (answer === undefined) {
+      const response = mode.capturedResponses[ending.component.id];
+      const policy = responsePolicyFor(ending.component);
+      if (!response && policy.unanswered === "pause") {
         s.patch({
           t: ending.end,
           playing: false,
@@ -343,16 +398,35 @@ export function createTrySession(host: Host) {
         });
         return true;
       }
-      const target = branchTarget(ending.component, answer);
-      if (target && enterScene(ending.component, target)) return true;
+      const handled = [...mode.handled, ending.component.id];
+      if (response && policy.dispatch === "layer_end") {
+        // A captured response is answered, but its outcome must be resolved at
+        // this exact boundary before playback can safely continue or route.
+        s.patch({
+          t: ending.end,
+          playing: false,
+          tryMode: { ...mode, playing: false, holdingId: ending.component.id, handled },
+        });
+        void dispatchCapturedResponse(ending.component);
+        return true;
+      }
       s.patch({
         t: ending.end,
-        tryMode: { ...mode, handled: [...mode.handled, ending.component.id] },
+        tryMode: { ...mode, handled },
       });
       return true;
     }
     if (next < sceneDuration(s)) return false;
-    // The video ends with its timeline; a selected branch is the ending.
+    if (requestOperations.size) {
+      const end = sceneDuration(s);
+      s.patch({
+        t: end,
+        playing: false,
+        tryMode: { ...mode, playing: false, holdingId: null },
+      });
+      return true;
+    }
+    // The active scene owns the remaining viewing path and ends with its timeline.
     stopTry();
     return true;
   }
@@ -361,7 +435,7 @@ export function createTrySession(host: Host) {
     getTryRuntime,
     startTry,
     stopTry,
-    runOutcome,
+    runComponentResponse,
     runFormSubmission,
     advanceTry,
   };

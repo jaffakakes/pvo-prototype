@@ -64,14 +64,14 @@ test("named form controls keep safe identities and legacy email/phone behavior",
   assert.equal(setFormDestination({}, " https://example.com/send ").destination, "https://example.com/send");
 });
 
-test("entering visual form editing retains a legacy request destination and both response routes", () => {
+test("visual form editing projects an explicit request and both response routes", () => {
   const fields = {
     fieldKinds: ["name", "email"], submitLabel: "Join", outcome: {
       kind: "request", url: "https://example.com/join", method: "POST", body: "{}",
       onSuccess: { kind: "time", t: 5 }, onError: { kind: "time", t: 1 },
     },
   };
-  assert.equal(formSubmissionOutcome({ id: "legacy", fields }), fields.outcome, "Unedited forms retain their exact request contract");
+  assert.equal(formSubmissionOutcome({ id: "explicit", fields }), fields.outcome, "The authored request remains exact");
   const migrated = toVisualFormFields(fields);
   assert.equal(migrated.formSubmitMode, "request");
   assert.equal(migrated.destination, fields.outcome.url);
@@ -81,8 +81,10 @@ test("entering visual form editing retains a legacy request destination and both
   const local = toVisualFormFields({ fieldKinds: ["name"], outcome: { kind: "time", t: 2 } });
   assert.equal(local.formSubmitMode, "local");
   assert.deepEqual(formSubmissionOutcome({ id: "local", fields: local }), { kind: "time", t: 2 });
-  assert.equal(formUsesRequest({ formFields: [] }), true, "Older named-field forms still require a destination");
-  assert.equal(formUsesRequest({ formSubmitMode: "local", outcome: fields.outcome }), false, "Explicit local replaces a retained request");
+  assert.equal(formUsesRequest({ formFields: [] }), false, "Form fields do not imply a request");
+  assert.equal(formUsesRequest({ formFields: [], destination: fields.outcome.url }), false, "A destination does not imply a request");
+  assert.equal(formUsesRequest({ outcome: fields.outcome }), true, "An authored request is explicit");
+  assert.equal(formUsesRequest({ formSubmitMode: "local", outcome: fields.outcome }), false, "Explicit local replaces an authored request");
 });
 
 test("modern form source and compiled projection retain heading, labels, numeric input, waiting and request routes", () => {
@@ -118,7 +120,7 @@ test("modern form source and compiled projection retain heading, labels, numeric
   assert.deepEqual(changed.code.pvoCompiled.rules[0].action.onSuccess, { kind: "time", t: 7 });
 });
 
-test("legacy request methods and custom payloads survive destination and response edits after visual migration", () => {
+test("explicit request methods and custom payloads survive projected destination and response edits", () => {
   for (const method of ["GET", "POST"]) {
     start();
     const request = {
@@ -126,7 +128,7 @@ test("legacy request methods and custom payloads survive destination and respons
       onSuccess: { kind: "time", t: 6 }, onError: { kind: "time", t: 1 },
     };
     const migrated = toVisualFormFields({ fieldKinds: ["name"], submitLabel: "Check", outcome: request });
-    assert.deepEqual(formSubmissionOutcome({ id: "legacy", fields: migrated }), request);
+    assert.deepEqual(formSubmissionOutcome({ id: "explicit", fields: migrated }), request);
     const component = update({ ...setFormDestination(migrated, "https://example.com/revised"),
       successOutcome: { kind: "time", t: 7 }, failureOutcome: null });
     const expected = { ...request, url: "https://example.com/revised", onSuccess: { kind: "time", t: 7 }, onError: null };
@@ -143,7 +145,7 @@ test("legacy request methods and custom payloads survive destination and respons
   }
 });
 
-test("Advanced destination edits keep legacy runtime field names and request payload references", () => {
+test("Advanced destination edits keep source-authored runtime field names and request payload references", () => {
   const request = { kind: "request", url: "https://example.com/original", method: "POST",
     body: '{"email":"{state.form.legacy.email_0}"}', onSuccess: { kind: "continue" }, onError: null };
   const fields = { fieldKinds: ["email"], submitLabel: "Send", outcome: request };
@@ -276,25 +278,16 @@ test("Try waits for the real response, submits typed answers once and follows su
   stopTry();
 });
 
-test("legacy missing destination never sends or succeeds, and failed requests keep forms available to retry", async t => {
+test("Form fields and a destination do not imply a request without an explicit request action", async t => {
   start();
-  const component = update({ formSubmitMode: undefined });
+  const component = update({ formSubmitMode: undefined, destination: "https://example.com/answers" });
   let sends = 0;
   t.mock.method(globalThis, "fetch", async () => { sends++; return new Response("No", { status: 503 }); });
-  t.mock.method(console, "warn", () => {});
+  assert.deepEqual(formSubmissionOutcome(component), { kind: "continue" });
   startTry();
   await runFormSubmission(component, { field_1: "Sam", field_2: "sam@example.com" });
   assert.equal(sends, 0);
-  assert.deepEqual(useCapture.getState().tryMode.handled, []);
-  assert.equal(useTryFeedback.getState().components[component.id].phase, "failed");
-  stopTry();
-  const configured = update({ destination: "https://example.com/answers" });
-  startTry();
-  await runFormSubmission(configured, { field_1: "Sam" });
-  assert.equal(sends, 1);
-  assert.deepEqual(useCapture.getState().tryMode.handled, []);
-  await runFormSubmission(configured, { field_1: "Sam" });
-  assert.equal(sends, 2);
+  assert.deepEqual(getTryRuntime().state.form[component.id], { field_1: "Sam", field_2: "sam@example.com" });
   stopTry();
 });
 
@@ -364,7 +357,7 @@ test("local forms keep typed answers in Try and follow Continue, time and scene 
   assert.equal(requests, 0);
 });
 
-test("native packages and player execute every local form route while retaining answers without a destination", async () => {
+test("native packages and player execute every local form route while retaining form state without a destination", async () => {
   for (const outcome of [{ kind: "continue" }, { kind: "time", t: 4 }, { kind: "scene", sceneId: "branch" }]) {
     start();
     update({ formFields: [{ name: "Seats", type: "number" }], outcome });
@@ -400,26 +393,6 @@ test("native packages and player execute every local form route while retaining 
     assert.deepEqual(statuses, []);
     assert.equal(requests, 0);
     assert.deepEqual(session.actionRuntime.state.form[component.id], { field_1: 4 });
-    assert.equal(session.answers.get(component.id), true);
+    assert.equal(session.actionRuntime.state.answers, undefined);
   }
-});
-
-test("older native packages without local mode keep the missing-destination failure", async () => {
-  start();
-  update({ formSubmitMode: undefined });
-  const exported = manifest();
-  const component = exported.components[0];
-  assert.equal(component.restyle_capture.form.submitMode, undefined);
-  const session = createPlaybackSession();
-  session.manifest = exported;
-  session.captureMode = true;
-  session.actionRuntime = createPvoRuntime(exported);
-  const statuses = [];
-  const actions = createComponentActions({ session, adapters: {
-    setStatus: (...args) => statuses.push(args),
-    applyActionOutcome: () => { throw new Error("Missing destination must not continue"); },
-  } });
-  await actions.answerFieldComponent({ componentId: component.id, index: 0, fields: { field_1: "Sam" } });
-  assert.deepEqual(statuses, [["This form is not set up to send yet.", true]]);
-  assert.equal(session.answers.has(component.id), false);
 });

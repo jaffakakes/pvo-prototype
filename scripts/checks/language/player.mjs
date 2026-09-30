@@ -66,7 +66,7 @@ function manifestFor(language) {
     spec_version: PVO_SPEC_VERSION,
     initial_scene: "main",
     canvas: { ratio: "9:16", width: 9, height: 16 },
-    restyle_capture: { version: 1, routing: "return-to-caller" },
+    restyle_capture: { version: 1 },
     media: [
       { id: "media-main", asset_id: "asset-main", name: "media/main.mp4", type: "video/mp4" },
       { id: "media-branch", asset_id: "asset-branch", name: "media/branch.mp4", type: "video/mp4" },
@@ -85,15 +85,15 @@ function manifestFor(language) {
     components: [{
       id: componentId,
       kind: "choice",
+      response_policy: { dispatch: "interaction", unanswered: "pause" },
       title: language ? "Language source" : "Legacy code",
-      pause: true,
       presentation: { scene: "main", start: 0.2, end: 0.25, x: 0.15, y: 0.42, width: 0.71, height: 0.4 },
       options: [
         { label: "Open branch", action: language ? { type: "custom", name: "restyle_continue" } : { type: "goto_scene", scene: "branch" } },
         { label: "Continue", action: { type: "custom", name: "restyle_continue" } },
       ],
       restyle_capture: {
-        version: 1, at: 0.2, dur: null, hold: true, x: 50, y: 62,
+        version: 1, at: 0.2, dur: null, x: 50, y: 62,
         outcomes: [language ? { kind: "continue" } : { kind: "scene", sceneId: "branch" }, { kind: "continue" }],
         code: {
           html: `${base}/index.html`,
