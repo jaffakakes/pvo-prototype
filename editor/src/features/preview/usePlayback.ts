@@ -4,7 +4,8 @@ import { locate, total } from "../../domain/clips/timing";
 import { clamp } from "../../domain/project/numbers";
 import { useCapture } from "../../state/captureStore";
 import type { CaptureState } from "../../state/types";
-import { advanceTry } from "./tryMode";
+import { runPlaybackFrame } from "./playbackFrame";
+import { advanceTry, failTry } from "./tryMode";
 
 const UPDATE_MS = 1000 / 30;
 const SEEK_TOLERANCE = .015;
@@ -110,7 +111,18 @@ export function usePlayback(videoRef: React.RefObject<HTMLVideoElement>) {
       return;
     }
 
-    const tick = (time: number) => {
+    const frameFailure = {
+      isTrying: () => !!useCapture.getState().tryMode,
+      failTry,
+      stopPlayback: (error: unknown) => {
+        console.error("Preview playback stopped after a frame failure:", error);
+        useCapture.getState().patch({ playing: false });
+      },
+    };
+    function tick(time: number) {
+      runPlaybackFrame(runFrame, time, videoRef.current, frameFailure);
+    }
+    const runFrame = (time: number) => {
       const dt = lastFrame.current ? Math.min(.1, (time - lastFrame.current) / 1000) : 0;
       lastFrame.current = time;
       const state = useCapture.getState();

@@ -1,7 +1,11 @@
 import { sceneDuration } from "../../domain/audio/editing";
 import { actionFor } from "../../domain/components/actions";
 import { fieldsShownFor } from "../../domain/components/fields";
-import { acceptsResponse, responsePolicyFor } from "../../domain/components/responsePolicy";
+import {
+  acceptsResponse,
+  assertResponsePolicyContract,
+  responsePolicyFor,
+} from "../../domain/components/responsePolicy";
 import {
   formSubmissionOutcome,
   formValuesForSubmission,
@@ -44,6 +48,7 @@ type Host = {
   clearFeedback(): void;
   clearNotice(): void;
   startFailed(): void;
+  playbackFailed(): void;
   emptyScene(id: string): void;
   beginRequest(id: string): number;
   finishRequest(id: string, operation: number, failed: boolean): void;
@@ -97,7 +102,9 @@ export function createTrySession(host: Host) {
     const s = host.getState();
     if (s.tryMode || sceneDuration(s) <= 0) return;
     try {
-      const unanswerable = s.scenes.flatMap((scene) => scene.components).find((component) => component.type === "card"
+      const components = s.scenes.flatMap((scene) => scene.components);
+      assertResponsePolicyContract(components);
+      const unanswerable = components.find((component) => component.type === "card"
         && responsePolicyFor(component).unanswered === "pause"
         && !(fieldsShownFor(component).buttons?.length));
       if (unanswerable) throw new Error("A Message cannot pause for a response without a button.");
@@ -145,6 +152,11 @@ export function createTrySession(host: Host) {
       tryMode: null,
       playing: false,
     });
+  }
+  function failTry(error: unknown) {
+    console.error("Viewer preview stopped after a playback failure:", error);
+    if (host.getState().tryMode) stopTry();
+    host.playbackFailed();
   }
   /** A chosen scene is the rest of the video: nothing returns to the scene that routed there. */
   function enterScene(component: PvoComponent, sceneId: string): boolean {
@@ -435,6 +447,7 @@ export function createTrySession(host: Host) {
     getTryRuntime,
     startTry,
     stopTry,
+    failTry,
     runComponentResponse,
     runFormSubmission,
     advanceTry,
