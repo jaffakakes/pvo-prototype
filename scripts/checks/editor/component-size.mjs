@@ -55,7 +55,7 @@ async function reselectComponentLook() {
 }
 
 try {
-  await page.goto(process.env.EDITOR_URL || "http://127.0.0.1:5173/", { waitUntil: "networkidle" });
+  await page.goto(process.env.EDITOR_URL || "http://127.0.0.1:5173/", { waitUntil: "domcontentloaded" });
   await page.evaluate(async () => {
     window.sizeCapture = (await import("/src/store.ts")).useCapture;
     const clip = { id: 1, url: null, color: "#4d4257", srcDur: 20, in: 0, out: 20, speed: 1, zoom: 1, mirror: false, width: 720, height: 1280, fit: "cover" };
@@ -146,7 +146,8 @@ try {
     frame.append(overlay);
     document.body.append(frame);
     const renderer = createOverlayRenderer({
-      session: { captureMode: true, manifest, mountedCustom: new Map(), pvoLanguageSources: new Map(), answers: new Map(), pendingComponents: new Set() },
+      session: { captureMode: true, manifest, mountedCustom: new Map(), pvoLanguageSources: new Map(),
+        capturedResponses: new Map(), pendingComponents: new Set() },
       refs: { frame, overlay, video: document.createElement("video") },
       adapters: { activeClip: () => ({ scene: "main" }), visibleComponents: () => manifest.components, elapsedTime: () => 4 },
     });
