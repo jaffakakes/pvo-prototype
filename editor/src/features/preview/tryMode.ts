@@ -24,6 +24,9 @@ const session = createTrySession({
   startFailed: () => {
     notify("tryFailed", { scope: "try", currentAttempt: true });
   },
+  playbackFailed: () => {
+    notify("tryPlaybackFailed", { scope: "try", currentAttempt: true });
+  },
   emptyScene: reportEmptyScene,
   beginRequest: beginTryRequest,
   finishRequest: finishTryRequest,
@@ -32,6 +35,7 @@ export const {
   getTryRuntime,
   startTry,
   stopTry,
+  failTry,
   runComponentResponse,
   runFormSubmission,
   advanceTry,
