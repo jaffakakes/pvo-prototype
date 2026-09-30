@@ -5,7 +5,10 @@ import type {
 } from "react";
 import { useRef } from "react";
 import { locate, total } from "../../domain/clips/timing";
-import { type TimingDragMode } from "../../domain/components/timing";
+import {
+  componentLength,
+  type TimingDragMode,
+} from "../../domain/components/timing";
 import { type LayerId } from "../../domain/layers/model";
 import { layerOrder } from "../../domain/layers/order";
 import type {
@@ -22,6 +25,7 @@ import {
 } from "../../state/editing/timelineEditingCommands";
 import { stopTry } from "../preview/tryMode";
 import { PPS, timelineRows } from "./geometry";
+import { snappedTimingDelta } from "./timingSnap";
 import { usePlayheadScrub } from "./usePlayheadScrub";
 import { useLayerDrag } from "./useLayerDrag";
 
@@ -47,6 +51,8 @@ export function useTimelineGestures() {
     side: "l" | "r";
     index: number;
     moved: boolean;
+    edgeTime: number | null;
+    playhead: number;
   } | null>(null);
   const compDrag = useRef<{
     id: string;
@@ -55,6 +61,8 @@ export function useTimelineGestures() {
     timing: ComponentTimingTransaction | null;
     selected: boolean;
     moved: boolean;
+    edgeTime: number | null;
+    playhead: number;
   } | null>(null);
   const textDrag = useRef<{
     id: number;
@@ -64,6 +72,8 @@ export function useTimelineGestures() {
     mode: "move" | "l" | "r";
     selected: boolean;
     moved: boolean;
+    edgeTime: number | null;
+    playhead: number;
   } | null>(null);
   const length = sceneDuration(s);
   const trimShift = s.trim?.shift ?? 0;
@@ -211,7 +221,16 @@ export function useTimelineGestures() {
     if (event.button > 0) return;
     event.currentTarget.setPointerCapture(event.pointerId);
     const clip = s.clips[index];
-    trimRef.current = { x: event.clientX, clip, side, index, moved: false };
+    trimRef.current = {
+      x: event.clientX,
+      clip,
+      side,
+      index,
+      moved: false,
+      edgeTime:
+        side === "r" ? total(s.clips.slice(0, index + 1)) : null,
+      playhead: s.t,
+    };
     s.patch({
       playing: false,
       trim: {
@@ -226,8 +245,26 @@ export function useTimelineGestures() {
     const d = trimRef.current;
     if (!d) return;
     const dx = event.clientX - d.x;
-    if (!d.moved && Math.abs(dx) < 2) return;
-    previewClipTrim(d.clip, d.index, d.side, dx / PPS, !d.moved, PPS);
+    const rawDelta = dx / PPS;
+    const result =
+      d.edgeTime == null
+        ? { delta: rawDelta, snapped: false }
+        : snappedTimingDelta(
+            d.edgeTime,
+            rawDelta,
+            d.playhead,
+            PPS,
+            true,
+          );
+    if (!d.moved && Math.abs(dx) < 2 && !result.snapped) return;
+    previewClipTrim(
+      d.clip,
+      d.index,
+      d.side,
+      result.delta,
+      !d.moved,
+      PPS,
+    );
     d.moved = true;
   };
   const trimUp = () => {
@@ -261,6 +298,13 @@ export function useTimelineGestures() {
       timing: null,
       selected: s.selComp === component.id,
       moved: false,
+      edgeTime:
+        mode === "start"
+          ? component.at
+          : mode === "end"
+            ? component.at + componentLength(component, s.clips)
+            : null,
+      playhead: s.t,
     };
     s.patch({ selComp: component.id, sel: -1, selText: null, playing: false, orb: false });
   };
@@ -275,12 +319,23 @@ export function useTimelineGestures() {
       }
     }
     const dx = event.clientX - drag.x;
-    if (!drag.moved && Math.abs(dx) < 2) return;
+    const rawDelta = dx / PPS;
+    const result =
+      drag.edgeTime == null
+        ? { delta: rawDelta, snapped: false }
+        : snappedTimingDelta(
+            drag.edgeTime,
+            rawDelta,
+            drag.playhead,
+            PPS,
+            true,
+          );
+    if (!drag.moved && Math.abs(dx) < 2 && !result.snapped) return;
     drag.moved = true;
     // The command owns the timing limits and the single undo step; this handler only converts pixels to seconds.
     if (!drag.timing)
       drag.timing = beginComponentTimingDrag(drag.id, drag.mode);
-    drag.timing?.update(dx / PPS);
+    drag.timing?.update(result.delta);
   };
   const compUp = (event: ReactPointerEvent) => {
     const cancelled = event.type === "pointercancel";
@@ -317,6 +372,8 @@ export function useTimelineGestures() {
       mode: side === "l" || side === "r" ? side : "move",
       selected: s.selText === text.id,
       moved: false,
+      edgeTime: side === "l" ? text.start : side === "r" ? text.end : null,
+      playhead: s.t,
     };
     s.patch({ selText: text.id, sel: -1, selComp: null, playing: false, orb: false });
   };
@@ -330,9 +387,27 @@ export function useTimelineGestures() {
         return;
       }
     }
-    const delta = (event.clientX - drag.x) / PPS;
-    if (!drag.moved && Math.abs(delta * PPS) < 3) return;
-    previewTextTiming(drag.id, drag, drag.mode, delta, length, !drag.moved);
+    const rawDelta = (event.clientX - drag.x) / PPS;
+    const result =
+      drag.edgeTime == null
+        ? { delta: rawDelta, snapped: false }
+        : snappedTimingDelta(
+            drag.edgeTime,
+            rawDelta,
+            drag.playhead,
+            PPS,
+            true,
+          );
+    if (!drag.moved && Math.abs(rawDelta * PPS) < 3 && !result.snapped)
+      return;
+    previewTextTiming(
+      drag.id,
+      drag,
+      drag.mode,
+      result.delta,
+      length,
+      !drag.moved,
+    );
     drag.moved = true;
   };
   const textBarUp = (event: ReactPointerEvent) => {

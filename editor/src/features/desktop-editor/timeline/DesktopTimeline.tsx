@@ -42,10 +42,15 @@ export function DesktopTimeline({
   const content = useRef<HTMLDivElement>(null);
   const scroll = useRef<HTMLDivElement>(null);
   const scrubbing = useRef<number | null>(null);
-  const timing = useTimingPointer(zoom);
+  const timing = useTimingPointer(zoom, {
+    enabled: snap,
+    playhead: state.t,
+  });
   const length = sceneDuration(state);
   const scene = state.scenes.find((item) => item.id === state.currentSceneId);
   const ticks = Array.from({ length: Math.ceil(length) + 9 }, (_, i) => i);
+  let clipEnd = 0;
+  const clipEnds = state.clips.map((clip) => (clipEnd += dur(clip)));
   const blocked = !!state.tryMode;
   const editingBlocked = blocked || !!state.playheadPick;
   useEffect(() => {
@@ -224,10 +229,7 @@ export function DesktopTimeline({
                   data-selected={state.selComp === component.id}
                   style={{
                     left: component.at * zoom,
-                    width: Math.max(
-                      28,
-                      componentLength(component, state.clips) * zoom,
-                    ),
+                    width: componentLength(component, state.clips) * zoom,
                   }}
                   aria-label={`${component.type}: ${componentLabel(component)}`}
                   disabled={editingBlocked}
@@ -236,12 +238,22 @@ export function DesktopTimeline({
                     const edge = (
                       event.target as HTMLElement
                     ).closest<HTMLElement>("[data-edge]")?.dataset.edge;
-                    timing.begin(event, {
-                      kind: "component",
-                      id: component.id,
-                      mode:
-                        edge === "l" ? "start" : edge === "r" ? "end" : "move",
-                    });
+                    const mode =
+                      edge === "l" ? "start" : edge === "r" ? "end" : "move";
+                    timing.begin(
+                      event,
+                      {
+                        kind: "component",
+                        id: component.id,
+                        mode,
+                      },
+                      mode === "start"
+                        ? component.at
+                        : mode === "end"
+                          ? component.at +
+                            componentLength(component, state.clips)
+                          : undefined,
+                    );
                   }}
                   onPointerMove={timing.move}
                   onPointerUp={timing.end}
@@ -278,7 +290,7 @@ export function DesktopTimeline({
                   data-selected={state.selText === text.id}
                   style={{
                     left: text.start * zoom,
-                    width: Math.max(28, (text.end - text.start) * zoom),
+                    width: (text.end - text.start) * zoom,
                   }}
                   aria-label={`Text: ${text.text}`}
                   disabled={editingBlocked}
@@ -287,11 +299,20 @@ export function DesktopTimeline({
                     const edge = (
                       event.target as HTMLElement
                     ).closest<HTMLElement>("[data-edge]")?.dataset.edge;
-                    timing.begin(event, {
-                      kind: "text",
-                      id: text.id,
-                      mode: edge === "l" || edge === "r" ? edge : "move",
-                    });
+                    const mode = edge === "l" || edge === "r" ? edge : "move";
+                    timing.begin(
+                      event,
+                      {
+                        kind: "text",
+                        id: text.id,
+                        mode,
+                      },
+                      mode === "l"
+                        ? text.start
+                        : mode === "r"
+                          ? text.end
+                          : undefined,
+                    );
                   }}
                   onPointerMove={timing.move}
                   onPointerUp={timing.end}
@@ -351,11 +372,15 @@ export function DesktopTimeline({
                               className={styles.clipHandle}
                               data-edge={side}
                               onPointerDown={(event) =>
-                                timing.begin(event, {
-                                  kind: "clip",
-                                  id: clip.id,
-                                  mode: side,
-                                })
+                                timing.begin(
+                                  event,
+                                  {
+                                    kind: "clip",
+                                    id: clip.id,
+                                    mode: side,
+                                  },
+                                  side === "r" ? clipEnds[index] : undefined,
+                                )
                               }
                               onPointerMove={timing.move}
                               onPointerUp={timing.end}
@@ -379,7 +404,11 @@ export function DesktopTimeline({
             </div>
             {state.audioClips.map((clip) => (
               <div key={clip.id} className={styles.lane} data-kind="audio">
-                <AudioClipBar clip={clip} pixelsPerSecond={zoom} />
+                <AudioClipBar
+                  clip={clip}
+                  pixelsPerSecond={zoom}
+                  snap={{ enabled: snap, playhead: state.t }}
+                />
               </div>
             ))}
             <div
@@ -404,7 +433,12 @@ export function DesktopTimeline({
                 emptyLane("audio", "♪ Add audio")
               )}
             </div>
-            <div data-desktop-playhead data-time={state.t} className={styles.playhead} style={{ left: state.t * zoom }}>
+            <div
+              data-desktop-playhead
+              data-time={state.t}
+              className={styles.playhead}
+              style={{ left: state.t * zoom }}
+            >
               <span />
             </div>
           </div>

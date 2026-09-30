@@ -145,6 +145,23 @@ test("clip handles enforce half-second minimum and snapping uses timeline pixels
   assert.equal(snappedTime(1.15, points, 40, 8, false), 1.15);
 });
 
+test("an exact clip-handle snap bypasses normal tenth-second rounding", () => {
+  const snapped = trimClipHandle(clip, "r", -1.97, true);
+  assert.ok(Math.abs(snapped.out - 5.06) < Number.EPSILON * 8);
+  assert.equal(trimClipHandle(clip, "r", -1.97).out, 5);
+});
+
+test("video trimming keeps its playhead target stationary until release", () => {
+  setup();
+  useCapture.getState().patch({ t: 7, playing: true });
+  const drag = beginTimelineTimingDrag({ kind: "clip", id: 2, mode: "r" });
+  assert.equal(useCapture.getState().playing, false);
+  drag.update(-3, true);
+  assert.equal(useCapture.getState().t, 7);
+  drag.commit();
+  assert.equal(useCapture.getState().t, 5);
+});
+
 test("a cancelled timing drag preserves pending redo and later edits", () => {
   setup();
   duplicateTimelineSelection();

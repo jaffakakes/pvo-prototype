@@ -5,22 +5,32 @@ import {
   beginTimelineTimingDrag,
   type TimelineTimingTarget,
 } from "../../state/editing/timelineTimingDrag";
+import {
+  snappedTimingDelta,
+  type TimingSnapSettings,
+} from "./timingSnap";
 
 type Target =
   | { kind: "audio"; id: number; mode: "move" | "l" | "r" }
   | TimelineTimingTarget
   | { kind: "component"; id: string; mode: "move" | "start" | "end" };
-type Transaction =
-  | NonNullable<ReturnType<typeof beginAudioTimingDrag>>
-  | NonNullable<ReturnType<typeof beginComponentTimingDrag>>
-  | NonNullable<ReturnType<typeof beginTimelineTimingDrag>>;
+type Transaction = {
+  update(delta: number, exact?: boolean): boolean;
+  commit(): void;
+  cancel(): void;
+};
 
-export function useTimingPointer(pixelsPerSecond: number) {
+export function useTimingPointer(
+  pixelsPerSecond: number,
+  snap?: TimingSnapSettings,
+) {
   const gesture = useRef<{
     pointerId: number;
     element: HTMLElement;
     x: number;
     scale: number;
+    pixelsPerSecond: number;
+    snap: { edgeTime: number; playhead: number } | null;
     transaction: Transaction;
   } | null>(null);
   useEffect(() => {
@@ -48,7 +58,11 @@ export function useTimingPointer(pixelsPerSecond: number) {
   }, []);
 
   return {
-    begin(event: PointerEvent<HTMLElement>, target: Target) {
+    begin(
+      event: PointerEvent<HTMLElement>,
+      target: Target,
+      edgeTime?: number,
+    ) {
       event.stopPropagation();
       if (event.button > 0 || gesture.current) return;
       const transaction =
@@ -59,24 +73,40 @@ export function useTimingPointer(pixelsPerSecond: number) {
             : beginTimelineTimingDrag(target);
       if (!transaction) return;
       const element = event.currentTarget;
-      const scale = element.offsetWidth
-        ? element.getBoundingClientRect().width / element.offsetWidth
-        : 1;
+      const renderedWidth = element.getBoundingClientRect().width;
+      const layoutWidth = Number.parseFloat(getComputedStyle(element).width);
+      const scale = layoutWidth > 0 ? renderedWidth / layoutWidth : 1;
       gesture.current = {
         pointerId: event.pointerId,
         element,
         x: event.clientX,
         scale,
+        pixelsPerSecond,
+        snap:
+          snap?.enabled && edgeTime != null
+            ? { edgeTime, playhead: snap.playhead }
+            : null,
         transaction,
       };
       element.setPointerCapture(event.pointerId);
     },
     move(event: PointerEvent<HTMLElement>) {
       const active = gesture.current;
-      if (active?.pointerId === event.pointerId)
-        active.transaction.update(
-          (event.clientX - active.x) / active.scale / pixelsPerSecond,
-        );
+      if (active?.pointerId !== event.pointerId) return;
+      const delta =
+        (event.clientX - active.x) /
+        active.scale /
+        active.pixelsPerSecond;
+      const result = active.snap
+        ? snappedTimingDelta(
+            active.snap.edgeTime,
+            delta,
+            active.snap.playhead,
+            active.pixelsPerSecond,
+            true,
+          )
+        : { delta, snapped: false };
+      active.transaction.update(result.delta, result.snapped);
     },
     end(event: PointerEvent<HTMLElement>) {
       const active = gesture.current;

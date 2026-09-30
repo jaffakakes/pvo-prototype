@@ -1,22 +1,42 @@
 .clip {
+  appearance: none;
   position: absolute;
   top: 0;
   height: 28px;
-  border: 1px solid #398d7b;
+  min-width: 0;
+  border: 0;
   border-radius: 7px;
   background: #204d42;
   color: #c7f6e8;
-  padding: 0 12px;
-  overflow: hidden;
+  padding: 0;
+  overflow: visible;
+  box-shadow: inset 0 0 0 1px #398d7b;
   text-align: left;
   font: 700 10px var(--f-ui);
   touch-action: none;
   cursor: grab;
 }
+.clip:not([data-selected="true"])::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 50%;
+  width: max(100%, 24px);
+  transform: translateX(-50%);
+}
 .clip[data-selected="true"] {
-  border: 2px solid #a1efd7;
+  box-shadow:
+    inset 0 0 0 2px #a1efd7,
+    0 0 0 2px rgba(161, 239, 215, 0.22);
+  z-index: 4;
 }
 .name {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
   pointer-events: none;
 }
@@ -24,13 +44,24 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 9px;
-  background: #a1efd7;
+  width: 12px;
+  display: flex;
+  align-items: center;
+  background: transparent;
   cursor: ew-resize;
 }
+.handle::after {
+  content: "";
+  width: 2px;
+  height: 18px;
+  border-radius: 2px;
+  background: #a1efd7;
+}
 .handle[data-edge="l"] {
-  left: 0;
+  left: -12px;
+  justify-content: flex-end;
 }
 .handle[data-edge="r"] {
-  right: 0;
+  right: -12px;
+  justify-content: flex-start;
 }

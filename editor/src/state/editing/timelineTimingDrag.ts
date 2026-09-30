@@ -1,3 +1,4 @@
+import { sceneDuration } from "../../domain/audio/editing";
 import { total } from "../../domain/clips/timing";
 import { trimClipHandle } from "../../domain/clips/trim";
 import { clamp } from "../../domain/project/numbers";
@@ -21,6 +22,7 @@ export function beginTimelineTimingDrag(target: TimelineTimingTarget) {
       ? before.texts.find((item) => item.id === target.id)
       : undefined;
   if ((!clip && !text) || before.tryMode || before.playheadPick) return null;
+  before.patch({ playing: false });
   const snapshot = projectSnapshot(before);
   const sceneLength = total(before.clips);
   let ended = false;
@@ -78,18 +80,20 @@ export function beginTimelineTimingDrag(target: TimelineTimingTarget) {
   };
 
   return {
-    update(delta: number) {
+    update(delta: number, exact = false) {
       if (!active()) return false;
       const state = useCapture.getState();
       if (clip && target.kind === "clip") {
-        const next = trimClipHandle(clip, target.mode, delta);
+        const next = trimClipHandle(clip, target.mode, delta, exact);
         changed = next.in !== clip.in || next.out !== clip.out;
         const clips = state.clips.map((item) =>
           item.id === clip.id ? next : item,
         );
         state.patch({
           clips,
-          t: clamp(state.t, 0, total(clips)),
+          // Keep the magnetic target stationary for the whole preview. If the
+          // final video becomes shorter, commit clamps the playhead once.
+          t: before.t,
           playing: false,
         });
       }
@@ -110,7 +114,11 @@ export function beginTimelineTimingDrag(target: TimelineTimingTarget) {
       }
       if (changed) {
         const state = useCapture.getState();
-        state.patch({ past: [...state.past, snapshot].slice(-40), future: [] });
+        state.patch({
+          t: clip ? clamp(before.t, 0, sceneDuration(state)) : state.t,
+          past: [...state.past, snapshot].slice(-40),
+          future: [],
+        });
       }
       ended = true;
     },
