@@ -1,6 +1,6 @@
 const CACHE_PREFIX = "restyle-editor-shell-";
-const CACHE_NAME = "restyle-editor-shell-653a8e264b975cab";
-const PRECACHE_URLS = ["./apple-touch-icon.png","./assets/index-BKws5-C7.css","./assets/index-DueTY_pi.js","./assets/open-sauce-600-CojrWn5c.woff2","./assets/open-sauce-700-CK0NdHF9.woff2","./assets/open-sauce-800-sc-qgB3L.woff2","./assets/peace-sans-EIq_JFAO.woff2","./assets/pvo_language_bg-DArXHdZK.wasm","./icon-192.png","./icon-512.png","./index.html","./manifest.json","./restyle-mark.png"];
+const CACHE_NAME = "restyle-editor-shell-36f4c095d824894e";
+const PRECACHE_URLS = ["./apple-touch-icon.png","./assets/index-BE-mHGBt.js","./assets/index-CJTu0VKg.css","./assets/open-sauce-600-CojrWn5c.woff2","./assets/open-sauce-700-CK0NdHF9.woff2","./assets/open-sauce-800-sc-qgB3L.woff2","./assets/peace-sans-EIq_JFAO.woff2","./assets/pvo_language_bg-DArXHdZK.wasm","./icon-192.png","./icon-512.png","./index.html","./manifest.json","./restyle-mark.png"];
 
 const scope = new URL(self.registration.scope);
 const shellUrl = new URL("./index.html", scope);

@@ -1,10 +1,10 @@
 .handle {
   position: absolute;
-  top: -14px;
-  bottom: 0;
+  top: -22px;
   left: 50%;
-  width: 20px;
-  min-height: 44px;
+  width: 44px;
+  height: 30px;
+  min-height: 0;
   transform: translateX(-50%);
   border: 0;
   padding: 0;
@@ -19,11 +19,7 @@
 .handle::before {
   content: "";
   position: absolute;
-  top: 0;
-  left: 50%;
-  width: 44px;
-  height: 44px;
-  transform: translateX(-50%);
+  inset: 0;
 }
 .handle:focus-visible {
   outline: 2px solid var(--pale);
