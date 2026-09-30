@@ -48,5 +48,6 @@ const autosave = createProjectAutosaveController({
 export const startProjectAutosave = autosave.start;
 export const saveProjectBeforeUpdate = autosave.saveBeforeUpdate;
 export const retryProjectStorage = autosave.retry;
+export const discardProjectRecovery = autosave.discardRecovery;
 export const getProjectStorageStatus = autosave.getStatus;
 export const subscribeProjectStorage = autosave.subscribe;

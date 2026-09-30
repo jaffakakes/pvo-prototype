@@ -42,6 +42,82 @@ async function saved(page, id) {
   assert.fail(`Project ${id} was not saved`);
 }
 
+const oldChoice = {
+  id: "choice", type: "choice", sceneId: "main", at: 0, dur: 2, x: 50, y: 50,
+  branchAtEnd: true,
+  fields: { prompt: "Choose", options: [
+    { label: "A", outcome: { kind: "continue" } },
+    { label: "B", outcome: { kind: "continue" } },
+  ] },
+};
+
+function checkpoint(id, components = [], assetIds = []) {
+  return {
+    version: 2,
+    localId: id,
+    projectName: id === "legacy-project" ? "Legacy edit" : "Keep me",
+    savedAt: Date.now(),
+    project: {
+      scenes: [{ id: "main", name: "Main", parent: null, clips: [], texts: [], components, muted: false, sound: 0 }],
+      currentSceneId: "main", ratio: "9:16", allowedDomains: [],
+    },
+    past: [], future: [], assetIds,
+    resume: { screen: "editor", t: 0, sel: 0, selComp: null, selText: null, exportFormat: "video", quality: "1080p" },
+  };
+}
+
+async function seedProjectStorage(page, checkpoints, mediaIds) {
+  await page.goto(new URL("./restyle-mark.png", editorUrl).href);
+  await page.evaluate(async ({ checkpoints: records, mediaIds: ids }) => {
+    const database = await new Promise((resolve, reject) => {
+      const request = indexedDB.open("restyle-editor-project", 2);
+      request.onupgradeneeded = () => {
+        const value = request.result;
+        if (!value.objectStoreNames.contains("checkpoints")) value.createObjectStore("checkpoints");
+        if (!value.objectStoreNames.contains("media")) value.createObjectStore("media");
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const transaction = database.transaction(["checkpoints", "media"], "readwrite");
+    for (const [key, record] of records) transaction.objectStore("checkpoints").put(record, key);
+    for (const id of ids) transaction.objectStore("media").put(new Blob([id]), id);
+    await new Promise((resolve, reject) => {
+      transaction.oncomplete = resolve;
+      transaction.onabort = () => reject(transaction.error);
+      transaction.onerror = () => reject(transaction.error);
+    });
+    database.close();
+  }, { checkpoints, mediaIds });
+}
+
+async function inspectProjectStorage(page, checkpointKeys, mediaKeys) {
+  return page.evaluate(async ({ checkpointKeys: recordKeys, mediaKeys: assetKeys }) => {
+    const database = await new Promise((resolve, reject) => {
+      const request = indexedDB.open("restyle-editor-project");
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const transaction = database.transaction(["checkpoints", "media"], "readonly");
+    const complete = new Promise((resolve, reject) => {
+      transaction.oncomplete = resolve;
+      transaction.onabort = () => reject(transaction.error);
+      transaction.onerror = () => reject(transaction.error);
+    });
+    const read = (store, key) => new Promise((resolve, reject) => {
+      const request = transaction.objectStore(store).get(key);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const checkpointReads = recordKeys.map(key => read("checkpoints", key));
+    const mediaReads = assetKeys.map(key => read("media", key));
+    const [checkpoints, media] = await Promise.all([Promise.all(checkpointReads), Promise.all(mediaReads)]);
+    await complete;
+    database.close();
+    return { checkpointIds: checkpoints.map(value => value?.localId ?? null), media: media.map(Boolean) };
+  }, { checkpointKeys, mediaKeys });
+}
+
 async function run(width) {
   const height = width === 1024 ? 768 : 900;
   const context = await browser.newContext({ viewport: { width, height }, hasTouch: width === 1024 });
@@ -123,6 +199,8 @@ async function dropVariant() {
   url.search = "?home=1&drop";
   await page.goto(url.href);
   await page.getByRole("heading", { name: "Drop clips to start editing" }).waitFor();
+  assert.equal(await page.getByText("AI video studio", { exact: false }).count(), 0);
+  await page.getByText("Free · no sign-up", { exact: false }).waitFor();
   const transfer = await page.evaluateHandle(bytes => {
     const transfer = new DataTransfer();
     transfer.items.add(new File([new Uint8Array(bytes)], "dropped-video.mp4", { type: "video/mp4" }));
@@ -173,10 +251,179 @@ async function stagedResize() {
   await context.close();
 }
 
+async function recoveryDiscard() {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+  page.setDefaultTimeout(15000);
+  await page.route("**/api/publishing", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ available: false, authenticated: false, maxBytes: 0 }) }));
+  const legacy = checkpoint("legacy-project", [oldChoice], ["asset:legacy", "asset:shared"]);
+  await seedProjectStorage(page, [
+    ["current", legacy],
+    ["project:legacy-project", legacy],
+    ["project:kept-project", checkpoint("kept-project", [], ["asset:kept", "asset:shared"])],
+  ], ["asset:legacy", "asset:kept", "asset:shared"]);
+
+  const home = new URL(editorUrl);
+  home.search = "?home=1";
+  await page.goto(home.href);
+  await page.getByRole("heading", { name: "Start a new edit" }).waitFor();
+  await page.getByLabel("Saved edit recovery").filter({ hasText: "Your saved edit couldn’t be opened" }).waitFor();
+  assert.equal(await page.locator('[data-notification-id="restoreFailed"]').count(), 0, "The inline recovery surface replaces the duplicate toast");
+  assert.equal(await page.getByRole("button", { name: "Restore issue" }).count(), 0, "The inline recovery surface replaces the duplicate retained issue");
+  const start = page.getByRole("button", { name: "Start editing", exact: true });
+  assert.equal(await start.isDisabled(), true);
+  await page.getByLabel("Upload video files").setInputFiles(videoFile);
+  await page.getByText("Clips are ready", { exact: true }).waitFor();
+  assert.equal(await start.isDisabled(), true, "Staging media must not overwrite an unread checkpoint");
+  await page.getByRole("button", { name: "Discard saved edit", exact: true }).click();
+  await page.getByRole("button", { name: "Discard and continue", exact: true }).click();
+  await page.waitForFunction(() => {
+    const button = [...document.querySelectorAll("button")].find(item => item.textContent?.trim().startsWith("Start editing"));
+    return button && !button.disabled;
+  });
+  await page.getByText("Clips are ready", { exact: true }).waitFor();
+  const retained = await inspectProjectStorage(page,
+    ["current", "project:legacy-project", "project:kept-project"],
+    ["asset:legacy", "asset:kept", "asset:shared"]);
+  assert.deepEqual(retained, {
+    checkpointIds: [null, null, "kept-project"],
+    media: [false, true, true],
+  }, "Discard must remove only the unreadable edit and its unshared media");
+  await start.click();
+  await desktop(page).waitFor();
+  const projectId = new URL(page.url()).searchParams.get("project");
+  assert.ok(projectId);
+  assert.equal(await clips(page).count(), 1, "The staged upload must survive recovery discard");
+  await saved(page, projectId);
+  await context.close();
+}
+
+async function targetedRecoveryDiscard() {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+  page.setDefaultTimeout(15000);
+  const kept = checkpoint("kept-project", [], ["asset:kept", "asset:shared"]);
+  await seedProjectStorage(page, [
+    ["current", kept],
+    ["project:kept-project", kept],
+    ["project:legacy-project", checkpoint("legacy-project", [oldChoice], ["asset:legacy", "asset:shared"])],
+  ], ["asset:legacy", "asset:kept", "asset:shared"]);
+  const url = new URL(editorUrl);
+  url.search = "?project=legacy-project";
+  await page.goto(url.href);
+  await page.getByLabel("Saved edit recovery").waitFor();
+  const start = page.getByRole("button", { name: "Start editing", exact: true });
+  await page.getByLabel("Upload video files").setInputFiles([
+    { name: "preview.mp4", mimeType: "video/mp4", buffer: videoBytes },
+    { name: "notes.txt", mimeType: "text/plain", buffer: Buffer.from("not video") },
+  ]);
+  await page.getByText("Clips are ready", { exact: true }).waitFor();
+  await page.getByRole("alert").filter({ hasText: "isn't a supported video" }).waitFor();
+  await page.getByRole("button", { name: "Discard saved edit", exact: true }).click();
+  await page.waitForFunction(() => document.activeElement?.textContent?.trim() === "Keep saved edit");
+  await page.keyboard.press("Escape");
+  await page.waitForFunction(() => document.activeElement?.textContent?.trim() === "Discard saved edit");
+  await page.getByRole("button", { name: "Discard saved edit", exact: true }).click();
+  await page.getByRole("button", { name: "Discard and continue", exact: true }).click();
+  await page.waitForFunction(() => {
+    const button = [...document.querySelectorAll("button")].find(item => item.textContent?.trim().startsWith("Start editing"));
+    return button && !button.disabled;
+  });
+  await page.waitForTimeout(1000);
+  assert.deepEqual(await inspectProjectStorage(page,
+    ["current", "project:kept-project", "project:legacy-project"],
+    ["asset:kept", "asset:shared", "asset:legacy"]), {
+    checkpointIds: ["kept-project", "kept-project", null],
+    media: [true, true, false],
+  }, "A targeted discard must not replace the unrelated current project with a blank workspace");
+  await start.click();
+  await desktop(page).waitFor();
+  const projectId = new URL(page.url()).searchParams.get("project");
+  assert.ok(projectId);
+  await saved(page, projectId);
+  assert.deepEqual(await inspectProjectStorage(page,
+    ["current", "project:kept-project", `project:${projectId}`], ["asset:kept"]), {
+    checkpointIds: [projectId, "kept-project", projectId], media: [true],
+  }, "Starting the replacement must preserve the unrelated named project and media");
+  await context.close();
+}
+
+async function malformedRetainedCheckpoint() {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+  const legacy = checkpoint("legacy-project", [oldChoice], ["asset:legacy"]);
+  const malformed = checkpoint("malformed-project");
+  delete malformed.assetIds;
+  await seedProjectStorage(page, [
+    ["current", legacy],
+    ["project:legacy-project", legacy],
+    ["project:malformed-project", malformed],
+  ], ["asset:legacy", "asset:unknown"]);
+  const home = new URL(editorUrl);
+  home.search = "?home=1";
+  await page.goto(home.href);
+  await page.getByRole("button", { name: "Discard saved edit", exact: true }).click();
+  await page.getByRole("button", { name: "Discard and continue", exact: true }).click();
+  await page.getByLabel("Saved edit recovery").waitFor({ state: "detached" });
+  assert.deepEqual(await inspectProjectStorage(page,
+    ["current", "project:legacy-project", "project:malformed-project"],
+    ["asset:legacy", "asset:unknown"]), {
+    checkpointIds: [null, null, "malformed-project"],
+    media: [true, true],
+  }, "Unreadable retained metadata must disable media cleanup instead of risking another project");
+  await page.getByLabel("Upload video files").setInputFiles(videoFile);
+  await page.getByText("Clips are ready", { exact: true }).waitFor();
+  await page.getByRole("button", { name: "Start editing", exact: true }).click();
+  await desktop(page).waitFor();
+  const projectId = new URL(page.url()).searchParams.get("project");
+  assert.ok(projectId);
+  await saved(page, projectId);
+  assert.deepEqual(await inspectProjectStorage(page,
+    ["current", "project:malformed-project", `project:${projectId}`],
+    ["asset:legacy", "asset:unknown"]), {
+    checkpointIds: [projectId, "malformed-project", projectId],
+    media: [true, true],
+  }, "Malformed retained metadata must not prevent the replacement edit from saving");
+  await context.close();
+}
+
+async function mobileTargetedRecoveryImport() {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
+  const page = await context.newPage();
+  page.setDefaultTimeout(15000);
+  const kept = checkpoint("kept-project", [], ["asset:kept"]);
+  await seedProjectStorage(page, [
+    ["current", kept],
+    ["project:kept-project", kept],
+    ["project:legacy-project", checkpoint("legacy-project", [oldChoice], [])],
+  ], ["asset:kept"]);
+  const url = new URL(editorUrl);
+  url.search = "?project=legacy-project";
+  await page.goto(url.href);
+  await page.locator('[data-notification-id="restoreFailed"]').waitFor();
+  await page.getByRole("button", { name: "Dismiss notification", exact: true }).click();
+  await page.getByRole("button", { name: "Restore issue", exact: true }).click();
+  const storage = page.getByRole("region", { name: "Project storage", exact: true });
+  await storage.getByRole("button", { name: "Discard saved edit", exact: true }).click();
+  await storage.getByRole("button", { name: "Discard and continue", exact: true }).click();
+  await page.locator('input[type="file"]').setInputFiles(videoFile);
+  await page.getByRole("button", { name: "Open editor", exact: true }).waitFor();
+  await page.waitForTimeout(1200);
+  assert.deepEqual(await inspectProjectStorage(page,
+    ["current", "project:kept-project", "project:legacy-project"], ["asset:kept"]), {
+    checkpointIds: [null, "kept-project", null], media: [true],
+  }, "Anonymous mobile replacement footage must not delete an unrelated current project's named checkpoint");
+  await context.close();
+}
+
 try {
   for (const width of [1024, 1280, 1440]) await run(width);
   await dropVariant();
   await stagedResize();
+  await recoveryDiscard();
+  await targetedRecoveryDiscard();
+  await malformedRetainedCheckpoint();
+  await mobileTargetedRecoveryImport();
   assert.deepEqual(errors, []);
-  console.log(`Responsive create passed: 1024/1280/1440 landscape plus existing phone/portrait editor, upload, ratio, auth dismissal, stable routes, saved media, multiple projects, templates and page-wide drop-ready strip. Screenshots: ${screenshots}`);
+  console.log(`Responsive create passed: 1024/1280/1440 landscape plus existing phone/portrait editor, upload, ratio, auth dismissal, stable routes, saved media, targeted recovery discard, multiple projects, templates and page-wide drop-ready strip. Screenshots: ${screenshots}`);
 } finally { await browser.close(); }

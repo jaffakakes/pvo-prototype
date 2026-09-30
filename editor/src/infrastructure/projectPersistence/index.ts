@@ -9,6 +9,7 @@ import {
 } from "./checkpoint";
 import { clearProjectDiscarded, isProjectDiscarded } from "./discardMarker";
 import {
+  discardProjectCheckpoint,
   listProjectMediaIds,
   openProjectDatabase,
   readProjectCheckpoint,
@@ -27,6 +28,7 @@ export type ProjectPersistenceStatus = {
 
 export type ProjectPersistence = {
   restore(): Promise<RestoredProject | null>;
+  discardSavedProject(): Promise<void>;
   schedule(state: PersistenceSnapshot): void;
   flush(): Promise<void>;
   dispose(): Promise<void>;
@@ -102,7 +104,7 @@ function shouldQueue(
   return !state.playing && current.t !== previous.t;
 }
 
-function contextualError(operation: "load" | "save", error: unknown): Error {
+function contextualError(operation: "load" | "save" | "discard", error: unknown): Error {
   const detail = error instanceof Error ? error.message : String(error);
   return new Error(
     `Could not ${operation} the Restyle project in browser storage: ${detail}`,
@@ -198,7 +200,7 @@ export function createProjectPersistence(
         const savedAt = Date.now();
         const record = storeCheckpoint(draft, assetIdByUrl, savedAt);
         if (target !== revision) continue;
-        await writeProjectCheckpoint(database, record, newMedia);
+        await writeProjectCheckpoint(database, record, newMedia, isProjectDiscarded());
         savedRevision = target;
         knownAssetIds = await listProjectMediaIds(database);
         const wanted = new Set(urls);
@@ -312,6 +314,23 @@ export function createProjectPersistence(
     }));
   }
 
+  async function discardSavedProject(): Promise<void> {
+    if (disposed) throw new Error("Project storage has been closed.");
+    try {
+      const database = await getDatabase();
+      await discardProjectCheckpoint(database, requestedId);
+      restorePromise = Promise.resolve(null);
+      knownAssetIds = null;
+      mediaCache.clear();
+      assetIdByUrl.clear();
+      publish({ phase: "idle", dirty: false, savedAt: null, error: null });
+    } catch (error) {
+      const failure = contextualError("discard", error);
+      publish({ ...status, phase: "error", error: failure.message });
+      throw failure;
+    }
+  }
+
   function dispose(): Promise<void> {
     if (disposePromise) return disposePromise;
     closing = true;
@@ -340,6 +359,7 @@ export function createProjectPersistence(
 
   return {
     restore,
+    discardSavedProject,
     schedule,
     flush,
     dispose: async () => {
