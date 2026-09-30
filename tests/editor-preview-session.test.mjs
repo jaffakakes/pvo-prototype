@@ -20,7 +20,7 @@ const { createTrySession, initial } = await import(
 function fixture(time, request = async () => new Response("{}"), component = {
   id: "card", type: "card", at: 5, dur: null,
   responsePolicy: { dispatch: "interaction", unanswered: "continue" }, fields: {},
-}, { allowStartFailure = false } = {}) {
+}, { allowStartFailure = false, allowPlaybackFailure = false } = {}) {
   const state = initial();
   state.t = time;
   state.clips = [{ id: 1, in: 0, out: 10, srcDur: 10, speed: 1 }];
@@ -35,6 +35,7 @@ function fixture(time, request = async () => new Response("{}"), component = {
   const runtimeHistory = [];
   let serial = 0;
   let startFailures = 0;
+  let playbackFailures = 0;
   const session = createTrySession({
     getState: () => state,
     request,
@@ -50,6 +51,10 @@ function fixture(time, request = async () => new Response("{}"), component = {
     startFailed() {
       startFailures += 1;
       if (!allowStartFailure) assert.fail("Preview should start");
+    },
+    playbackFailed() {
+      playbackFailures += 1;
+      if (!allowPlaybackFailure) assert.fail("Preview playback should not fail");
     },
     emptyScene() {},
     beginRequest(id) {
@@ -70,6 +75,7 @@ function fixture(time, request = async () => new Response("{}"), component = {
     runtimeState: () => runtimeState,
     runtimeHistory,
     startFailures: () => startFailures,
+    playbackFailures: () => playbackFailures,
   };
 }
 
@@ -99,6 +105,38 @@ test("Try rejects a buttonless pausing Message in any scene", () => {
   assert.equal(harness.startFailures(), 1);
   assert.equal(harness.state.tryMode, null);
   assert.equal(harness.session.getTryRuntime(), null);
+});
+
+test("Try rejects every interactive component without the current response policy before playback starts", () => {
+  for (const type of ["choice", "form"]) {
+    const component = {
+      id: `stale-${type}`, type, sceneId: "main", at: 0, dur: 2,
+      fields: type === "choice"
+        ? { prompt: "Choose", options: [] }
+        : { heading: "Details", formFields: [], submitLabel: "Continue" },
+    };
+    const harness = fixture(0, undefined, component, { allowStartFailure: true });
+
+    harness.session.startTry();
+
+    assert.equal(harness.startFailures(), 1);
+    assert.equal(harness.state.tryMode, null);
+    assert.equal(harness.state.playing, false);
+    assert.equal(harness.session.getTryRuntime(), null);
+  }
+});
+
+test("a playback failure exits an active Try without reporting a startup failure", () => {
+  const harness = fixture(1, undefined, undefined, { allowPlaybackFailure: true });
+  harness.session.startTry();
+
+  harness.session.failTry(new Error("frame failed"));
+
+  assert.equal(harness.state.tryMode, null);
+  assert.equal(harness.state.playing, false);
+  assert.equal(harness.session.getTryRuntime(), null);
+  assert.equal(harness.playbackFailures(), 1);
+  assert.equal(harness.startFailures(), 0);
 });
 
 test("preview sessions retain independent runtimes and restore their own editing positions", () => {

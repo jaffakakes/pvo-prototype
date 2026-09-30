@@ -1,4 +1,5 @@
 import type { ProjectSnapshot, Scene } from "../../domain/project/model";
+import { assertResponsePolicyContract } from "../../domain/components/responsePolicy";
 import { cloneScenes } from "../../domain/project/snapshot";
 import { normalizeSceneTree } from "../../domain/scenes/rules";
 
@@ -45,6 +46,7 @@ export type StoredCheckpoint = {
 };
 
 export type CheckpointDraft = Omit<StoredCheckpoint, "savedAt" | "assetIds">;
+type CheckpointProjects = Pick<CheckpointDraft, "project" | "past" | "future">;
 
 function cloneProject(project: ProjectSnapshot): ProjectSnapshot {
   return {
@@ -56,7 +58,7 @@ function cloneProject(project: ProjectSnapshot): ProjectSnapshot {
 }
 
 export function captureCheckpoint(state: PersistenceSnapshot): CheckpointDraft {
-  return {
+  const draft: CheckpointDraft = {
     version: 2,
     localId: state.localId ?? undefined,
     projectName: state.projectName,
@@ -73,14 +75,26 @@ export function captureCheckpoint(state: PersistenceSnapshot): CheckpointDraft {
       quality: state.quality,
     },
   };
+  assertCheckpointComponentContracts(draft);
+  return draft;
 }
 
-function allScenes(checkpoint: CheckpointDraft): Scene[][] {
+function allScenes(checkpoint: CheckpointProjects): Scene[][] {
   return [
     checkpoint.project.scenes,
     ...checkpoint.past.map((item) => item.scenes),
     ...checkpoint.future.map((item) => item.scenes),
   ];
+}
+
+function assertCheckpointComponentContracts(checkpoint: CheckpointProjects): void {
+  for (const scenes of allScenes(checkpoint)) {
+    for (const scene of scenes) {
+      if (!Array.isArray(scene.components))
+        throw new Error("Project component data is invalid.");
+      assertResponsePolicyContract(scene.components);
+    }
+  }
 }
 
 export function referencedMedia(checkpoint: CheckpointDraft): string[] {
@@ -115,6 +129,7 @@ export function storeCheckpoint(
   assetIdByUrl: Map<string, string>,
   savedAt: number,
 ): StoredCheckpoint {
+  assertCheckpointComponentContracts(draft);
   const assetIds = referencedMedia(draft).map((url) => {
     const assetId = assetIdByUrl.get(url);
     if (!assetId) throw new Error("A video clip has no browser storage ID.");
@@ -180,6 +195,12 @@ export function validateCheckpoint(
     )
   )
     throw new Error("Saved project data is incomplete.");
+  try {
+    assertCheckpointComponentContracts(value as StoredCheckpoint);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`Saved component response policy is not supported: ${detail}`);
+  }
   for (const scenes of allScenes(value as StoredCheckpoint)) {
     for (const scene of scenes) {
       if (scene.audioClips !== undefined && (!Array.isArray(scene.audioClips) || scene.audioClips.some(clip =>
