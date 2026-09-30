@@ -11,6 +11,7 @@ import type { TextOverlay } from "../../domain/project/model";
 import { textTimingAt } from "../../domain/text/timing";
 import { useCapture } from "../../state/captureStore";
 import { cx } from "../../styles";
+import { LayerPositionControls } from "../overlay-position/LayerPositionControls";
 import { beginPlayheadPick } from "../timeline/playheadPick";
 
 export function TextEditor() {
@@ -149,6 +150,9 @@ export function TextEditor() {
         )}
         {tab === "Style" && (
           <div className={cx("textStyleControls")}>
+            {text && <div className={cx("textPosition")}>
+              <LayerPositionControls key={text.id} target={{ kind: "text", id: text.id }} x={text.x} y={text.y} />
+            </div>}
             <label className={cx("textField")}>
               Font
               <select

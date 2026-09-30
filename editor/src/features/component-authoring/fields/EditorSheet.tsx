@@ -9,6 +9,8 @@ import { setComponentAuthoringTab, useComponentAuthoring, type ComponentAuthorin
 import { setAdvancedEditingEnabled, useEditorPreferences } from "../../../state/preferences/editorPreferences";
 import { fmt } from "../../../ui/formatTime";
 import { useSheetDock } from "../../../ui/sheets/SheetDockContext";
+import { LayerPositionControls } from "../../overlay-position/LayerPositionControls";
+import positionStyles from "../../overlay-position/LayerPositionControls.module.css";
 import { nameOf } from "../catalog";
 import { PvoLanguageRoute } from "../language/PvoLanguageRoute";
 import { usePvoCompilation } from "../language/usePvoCompilation";
@@ -117,6 +119,10 @@ export function EditorSheet({ Frame = SheetFrame, lookPreviewScale }: {
         <TimingControls component={component} />
       </>}
       {tab === "look" && <>
+        <section className={positionStyles.section}>
+          <LayerPositionControls key={component.id} target={{ kind: "component", id: component.id }}
+            x={component.x} y={component.y} />
+        </section>
         {wide && <ComponentSizeControls key={component.id} component={component} />}
         <LookTab component={component} disabled={blocked} previewScale={lookPreviewScale} />
       </>}
