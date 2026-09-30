@@ -17,10 +17,13 @@ type Dependencies = {
   recovered(kind: "saveFailed" | "restoreFailed"): void;
 };
 
+function hasPersistableProject(state: CaptureState) {
+  return !!state.localId || hasUnfinishedWork({ scenes: state.scenes, ratio: state.ratio, allowedDomains: state.allowedDomains,
+    hasHistory: state.past.length > 0 || state.future.length > 0 });
+}
+
 function hasWork(state: CaptureState) {
-  return state.recording || state.importing || state.countdown > 0 || state.ex === "running"
-    || hasUnfinishedWork({ scenes: state.scenes, ratio: state.ratio, allowedDomains: state.allowedDomains,
-      hasHistory: state.past.length > 0 || state.future.length > 0 });
+  return state.recording || state.importing || state.countdown > 0 || state.ex === "running" || hasPersistableProject(state);
 }
 
 /** Gates writes behind a successful restore; retry can never replace new work. */
@@ -29,6 +32,7 @@ export function createProjectAutosaveController({ persistence, store, hydrate, f
   let startup: Promise<void> | null = null;
   let restoring: Promise<void> | null = null;
   let restoringChanges = false;
+  let awaitingReplacementProject = false;
   let restoreError: unknown;
   const listeners = new Set<() => void>();
   const publish = (values: Partial<AutosaveStatus>) => {
@@ -44,6 +48,8 @@ export function createProjectAutosaveController({ persistence, store, hydrate, f
   });
   const unsubscribeStore = store.subscribe((next, previous) => {
     if (status.phase === "ready") {
+      if (awaitingReplacementProject && !hasPersistableProject(next)) return;
+      awaitingReplacementProject = false;
       persistence.schedule(next);
       return;
     }
@@ -95,12 +101,38 @@ export function createProjectAutosaveController({ persistence, store, hydrate, f
   const retry = async () => {
     if (status.phase === "restore-failed") return restore(true);
     if (status.phase !== "ready") return;
-    persistence.schedule(store.getState());
+    const state = store.getState();
+    if (awaitingReplacementProject && !hasPersistableProject(state)) return;
+    awaitingReplacementProject = false;
+    persistence.schedule(state);
     try { await persistence.flush(); } catch { /* The storage subscription reports this attempt. */ }
   };
 
   return {
     start, retry,
+    async discardRecovery() {
+      if (status.phase !== "restore-failed") return false;
+      if (hasWork(store.getState())) {
+        publish({ recoveryBlocked: true });
+        return false;
+      }
+      publish({ phase: "retrying", recoveryBlocked: false });
+      try {
+        await persistence.discardSavedProject();
+        restoreError = undefined;
+        const state = store.getState();
+        awaitingReplacementProject = !hasPersistableProject(state);
+        publish({ phase: "ready", recoveryBlocked: false });
+        recovered("restoreFailed");
+        if (!awaitingReplacementProject) persistence.schedule(state);
+        return true;
+      } catch (error) {
+        restoreError = error;
+        publish({ phase: "restore-failed", recoveryBlocked: hasWork(store.getState()) });
+        failed("restoreFailed", error);
+        return false;
+      }
+    },
     getStatus: () => status,
     subscribe: (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; },
     async saveBeforeUpdate() {
@@ -111,6 +143,8 @@ export function createProjectAutosaveController({ persistence, store, hydrate, f
         if (hasWork(state)) throw restoreError ?? new Error("Project recovery is still pending.");
         return;
       }
+      if (awaitingReplacementProject && !hasPersistableProject(state)) return;
+      awaitingReplacementProject = false;
       persistence.schedule(state);
       try { await persistence.flush(); } catch (error) { if (hasWork(state)) throw error; }
     },

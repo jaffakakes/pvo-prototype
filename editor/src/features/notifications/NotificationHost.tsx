@@ -15,16 +15,18 @@ function NotificationIcon({ kind }: { kind: NotificationKind }) {
   </svg>;
 }
 
-export function NotificationHost() {
+export function NotificationHost({ inlineRestore = false }: { inlineRestore?: boolean }) {
   const current = useNotifications(state => state.current);
   const announcement = useNotifications(state => state.announcement);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
-  const definition = current && notificationDefinition(current.id);
-  const announced = announcement && notificationDefinition(announcement.id);
-  useEffect(() => { setHovered(false); setFocused(false); }, [current?.key, current?.createdAt]);
+  const visibleCurrent = inlineRestore && current?.id === "restoreFailed" ? null : current;
+  const visibleAnnouncement = inlineRestore && announcement?.id === "restoreFailed" ? null : announcement;
+  const definition = visibleCurrent && notificationDefinition(visibleCurrent.id);
+  const announced = visibleAnnouncement && notificationDefinition(visibleAnnouncement.id);
+  useEffect(() => { setHovered(false); setFocused(false); }, [visibleCurrent?.key, visibleCurrent?.createdAt]);
   useNotificationContext();
-  useNotificationTimeout(current, hovered || focused);
+  useNotificationTimeout(visibleCurrent, hovered || focused);
   return <div className={styles.host} data-notification-root>
     <div className={styles.srOnly} role="status" aria-live="polite" aria-atomic="true">
       {announced && announced.kind !== "error" ? `${announced.kind}: ${announced.message}` : ""}
@@ -32,8 +34,8 @@ export function NotificationHost() {
     <div className={styles.srOnly} role="alert" aria-atomic="true">
       {announced?.kind === "error" ? `Error: ${announced.message}` : ""}
     </div>
-    {current && definition && <div key={`${current.key}:${current.createdAt}`} className={styles.notice}
-      data-notification-id={current.id} data-severity={definition.kind} role="group" aria-label={`${definition.kind} notification`}
+    {visibleCurrent && definition && <div key={`${visibleCurrent.key}:${visibleCurrent.createdAt}`} className={styles.notice}
+      data-notification-id={visibleCurrent.id} data-severity={definition.kind} role="group" aria-label={`${definition.kind} notification`}
       onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
       onFocusCapture={() => setFocused(true)} onBlurCapture={event => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
@@ -44,6 +46,6 @@ export function NotificationHost() {
         setHovered(false); setFocused(false); dismissNotification();
       }}>×</button>
     </div>}
-    <NotificationIssues />
+    <NotificationIssues hideRestore={inlineRestore} />
   </div>;
 }
