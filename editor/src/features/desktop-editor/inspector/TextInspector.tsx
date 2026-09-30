@@ -4,6 +4,7 @@ import type { TextOverlay } from "../../../domain/project/model";
 import { dragTextTiming } from "../../../domain/text/timing";
 import { useCapture } from "../../../state/captureStore";
 import { fmt } from "../../../ui/formatTime";
+import { LayerPositionControls } from "../../overlay-position/LayerPositionControls";
 import { InspectorSections, type InspectorSection } from "./InspectorControls";
 import styles from "./Inspector.module.css";
 
@@ -45,12 +46,17 @@ export function TextInspector({ text, tab }: { text: TextOverlay; tab: string })
     { kind: "chips", label: "Size", options: Object.keys(SIZES),
       value: Object.entries(SIZES).find(([, size]) => size === appearance.size)?.[0] ?? "",
       onPick: value => restyle({ size: SIZES[value as keyof typeof SIZES] }) },
-    { kind: "chips", label: "Position", options: Object.keys(POSITIONS),
+    { kind: "chips", label: "Vertical preset", options: Object.keys(POSITIONS),
       value: Object.entries(POSITIONS).find(([, y]) => y === text.y)?.[0] ?? "",
       onPick: value => change({ y: POSITIONS[value as keyof typeof POSITIONS] }) },
     { kind: "slider", label: "Font size", value: appearance.size, min: 8, max: 64, step: 1, unit: "",
       onChange: (size, undoable) => change({ style: { ...appearance, size } }, undoable) },
     { kind: "note", text: "Drag the text on the video to place it." },
   ] }];
-  return <InspectorSections sections={sections} />;
+  return <>
+    <section className={styles.section}>
+      <LayerPositionControls target={{ kind: "text", id: text.id }} x={text.x} y={text.y} />
+    </section>
+    <InspectorSections sections={sections} />
+  </>;
 }

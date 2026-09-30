@@ -85,6 +85,10 @@
   flex-direction: column;
   gap: 15px;
 }
+.textPosition {
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--q12);
+}
 .textField {
   display: flex;
   align-items: center;
