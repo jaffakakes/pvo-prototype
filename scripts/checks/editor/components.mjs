@@ -26,19 +26,21 @@ try {
   await recordDemo(1200);
   await page.getByRole("button", { name: "Open editor" }).click();
   await page.getByRole("heading", { name: "Edit" }).waitFor();
-  assert.ok(!(await page.locator(".editorTitle p").textContent())?.includes("$"), "Editor subtitle should not contain template punctuation");
+  const editorSummary = page.locator("header.editorHead p");
+  assert.ok(!(await editorSummary.textContent())?.includes("$"), "Editor subtitle should not contain template punctuation");
 
   // Fields-route authoring: create a Choice, change its copy, and link Option A to a new scene.
   await page.getByRole("button", { name: "Components", exact: true }).click();
   if (process.env.CAPTURE_SHOTS) await page.screenshot({ path: resolve(tmpdir(), "restyle-components-picker.png") });
-  await page.locator(".componentTypeTile").filter({ hasText: "Choice" }).click();
+  await page.getByRole("button", { name: /Let viewers choose/ }).click();
   if (process.env.CAPTURE_SHOTS) await page.screenshot({ path: resolve(tmpdir(), "restyle-components-fields.png") });
   const choiceSheet = page.getByRole("dialog", { name: "Choice" });
-  await choiceSheet.locator("input.componentInput").first().fill("Choose a look");
-  await choiceSheet.getByRole("textbox", { name: "Option 1 label" }).fill("Go B");
-  await choiceSheet.locator(".componentOptionRow").first().locator(".componentOutcome").click();
-  await page.getByRole("dialog", { name: /Go B.*where/ }).waitFor();
-  await page.getByRole("button", { name: /Go to scene/ }).click();
+  await choiceSheet.getByRole("textbox", { name: "Prompt" }).fill("Choose a look");
+  await choiceSheet.getByRole("textbox", { name: "Option 1" }).fill("Go B");
+  await choiceSheet.getByRole("tab", { name: "Action", exact: true }).click();
+  await choiceSheet.getByRole("switch", { name: "Pause if nobody responds" }).click();
+  await choiceSheet.getByRole("button", { name: /When viewers tap “Go B”/ }).click();
+  await choiceSheet.getByRole("button", { name: /Go to a scene/ }).click();
   await page.getByRole("button", { name: "＋ New scene" }).click();
   await page.locator(".sceneBanner").getByText(/Scene A.*Go B/).waitFor();
   await recordDemo(750);
@@ -47,31 +49,33 @@ try {
 
   // A second component proves that media and component lists are scoped to each scene.
   await page.getByRole("button", { name: "Components", exact: true }).click();
-  await page.locator(".componentTypeTile").filter({ hasText: "Tooltip" }).click();
-  await page.getByRole("dialog", { name: "Tooltip" }).locator("input.componentInput").fill("Scene A note");
-  await page.getByRole("button", { name: "Close" }).click();
+  await page.getByRole("button", { name: /Add a note/ }).click();
+  await page.getByRole("dialog", { name: "Note" }).getByRole("textbox", { name: "Text" }).fill("Scene A note");
+  await page.getByRole("button", { name: "Done", exact: true }).click();
   if (process.env.CAPTURE_SHOTS) await page.screenshot({ path: resolve(tmpdir(), "restyle-components-editor.png") });
   assert.equal(await page.locator(".compBar, .compMarker").count(), 1, "Scene A should show only its Tooltip lane item");
   await page.locator(".sceneChip").filter({ hasText: "Main" }).click();
   assert.equal(await page.locator(".compBar, .compMarker").count(), 1, "Main should show only its Choice lane item");
 
-  // Try mode hides the scene row, routes to Scene A, then returns to Main.
-  await page.getByRole("button", { name: "Try viewer preview" }).click();
-  await page.locator(".holdTag").waitFor({ timeout: 5000 });
-  await page.locator(".compChoice").getByRole("button", { name: "Go B" }).click();
-  await page.locator(".editorTitle p").filter({ hasText: /^Scene A ·/ }).waitFor({ timeout: 5000 });
+  // Try mode hides the scene row, ends in Scene A, then restores the Main editing location.
+  await page.getByRole("button", { name: "Try", exact: true }).click();
+  await page.getByRole("button", { name: "Stop", exact: true }).waitFor({ timeout: 5000 });
+  await page.getByRole("button", { name: "Go B", exact: true }).click();
+  await editorSummary.filter({ hasText: /^Scene A ·/ }).waitFor({ timeout: 5000 });
   assert.equal(await page.getByRole("button", { name: "Show the whole scene tree" }).count(), 0);
   let tryFailure = "";
   try {
-    await page.locator(".editorTitle p").filter({ hasText: /^Main ·/ }).waitFor({ timeout: 5000 });
-    await page.getByRole("button", { name: "Try viewer preview" }).waitFor({ timeout: 5000 });
+    await editorSummary.filter({ hasText: /^Main ·/ }).waitFor({ timeout: 5000 });
+    await page.getByRole("button", { name: "Try", exact: true }).waitFor({ timeout: 5000 });
   } catch (error) {
-    tryFailure = `Try mode did not finish after returning from Scene A: ${error.message}`;
+    tryFailure = `Try mode did not finish in Scene A and restore the Main editing location: ${error.message}`;
     await page.getByRole("button", { name: "Stop", exact: true }).click();
   }
 
   // Interactive export contains the Main scene and its branch.
-  await page.getByRole("button", { name: "Next" }).click();
+  await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
+  await page.getByRole("dialog", { name: "More" })
+    .getByRole("button", { name: "Interactive (.pvo)", exact: true }).click();
   const exportDialog = page.getByRole("dialog", { name: "Export" });
   await exportDialog.getByRole("button", { name: /Interactive/ }).waitFor();
   assert.equal(await exportDialog.getByRole("button", { name: /Interactive/ }).getAttribute("data-on"), "true", "Interactive should be preselected");
@@ -101,10 +105,10 @@ try {
   await viewer.goto(process.env.PVO_PLAYER_URL || new URL("../player/", editorUrl).href, { waitUntil: "networkidle" });
   await viewer.locator("#pvoInput").setInputFiles(await download.path());
   await viewer.locator("#playerShell").waitFor({ state: "visible", timeout: 10000 });
-  const choiceFrame = viewer.locator(".code-position iframe").first().contentFrame();
-  await choiceFrame.getByRole("button", { name: "Go B" }).waitFor({ state: "visible", timeout: 10000 });
+  const viewerChoice = viewer.locator("pvo-component-view").filter({ hasText: "Choose a look" });
+  await viewerChoice.getByRole("button", { name: "Go B" }).waitFor({ state: "visible", timeout: 10000 });
   await viewer.waitForTimeout(400);
-  await choiceFrame.getByRole("button", { name: "Go B" }).click();
+  await viewerChoice.getByRole("button", { name: "Go B" }).click();
   await viewer.locator(`[data-asset-id="${branch.asset_id}"]`).waitFor({ timeout: 10000 });
   assert.deepEqual(pageErrors, [], "The editor should not report page errors");
   assert.equal(tryFailure, "", tryFailure);

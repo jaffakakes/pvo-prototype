@@ -10,7 +10,7 @@ const bundle = buildSync({
   `, resolveDir: process.cwd() },
   bundle: true, write: false, format: "esm", platform: "browser",
 });
-const { componentPanelMaximum, keyboardPanelHeight, workspaceGeometry, startTry, stopTry, runOutcome, advanceTry, useCapture, mkClip } =
+const { componentPanelMaximum, keyboardPanelHeight, workspaceGeometry, startTry, stopTry, runComponentResponse, advanceTry, useCapture, mkClip } =
   await import(`data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString("base64")}`);
 
 test("component panels retain the player, header and playback controls at phone sizes", () => {
@@ -48,7 +48,7 @@ test("Try preserves the editing session and Stop restores it after visiting anot
   startTry();
   assert.equal(useCapture.getState().sheet, "component");
   assert.equal(useCapture.getState().selComp, id);
-  await runOutcome(component, { kind: "scene", sceneId: "branch" });
+  await runComponentResponse(component, { index: 0, outcome: { kind: "scene", sceneId: "branch" } });
   assert.equal(useCapture.getState().currentSceneId, "branch");
   stopTry();
   const restored = useCapture.getState();

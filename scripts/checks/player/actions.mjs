@@ -27,7 +27,7 @@ const manifest = {
   spec_version: PVO_SPEC_VERSION,
   initial_scene: "main",
   canvas: { ratio: "9:16", width: 9, height: 16 },
-  restyle_capture: { version: 1, routing: "return-to-caller" },
+  restyle_capture: { version: 1 },
   allowed_domains: [host],
   media: [{ id: "main", asset_id: "video", name: "media/main.mp4", type: "video/mp4" }],
   scenes: [{ id: "main", label: "Main", asset_id: "video", start: 0, end: 2 }],
@@ -36,29 +36,60 @@ const manifest = {
   }] },
   components: [
     {
-      id: "choice", kind: "choice", title: "Send choice?", pause: true,
+      id: "choice", kind: "choice", title: "Send choice?",
+      response_policy: { dispatch: "interaction", unanswered: "pause" },
       presentation: { scene: "main", start: .3, end: .35, x: .1, y: .2, width: .8, height: .4 },
       options: [
         { label: "Send", action: { type: "request", url: `http://${host}/choice`, method: "POST",
           body: { choice: "A" }, on_success: [next] } },
         { label: "Skip", action: next },
       ],
-      restyle_capture: { version: 1, at: .3, dur: null, hold: true, x: 50, y: 40,
+      restyle_capture: { version: 1, at: .3, dur: null, x: 50, y: 40,
         outcomes: [{ kind: "continue" }, { kind: "continue" }] },
     },
     {
-      id: "form", kind: "form", title: "Name", pause: true,
+      id: "form", kind: "form", title: "Name",
+      response_policy: { dispatch: "interaction", unanswered: "pause" },
       presentation: { scene: "main", start: .8, end: .85, x: .1, y: .25, width: .8, height: .4 },
       fields: [{ name: "name_0", label: "Name", type: "text", required: true }],
       submit_label: "Send", on_submit: { type: "request", url: `http://${host}/form`, method: "POST",
         body: { name: "{state.form.form.name_0}" }, on_success: [next] },
-      restyle_capture: { version: 1, at: .8, dur: null, hold: true, x: 50, y: 45,
+      restyle_capture: { version: 1, at: .8, dur: null, x: 50, y: 45,
         outcomes: [{ kind: "continue" }] },
     },
   ],
 };
 const packageBlob = await packPvoProject({ manifest,
   assets: [{ id: "video", name: "media/main.mp4", blob: new Blob([video], { type: "video/mp4" }) }] });
+const exactIndexManifest = {
+  spec_version: PVO_SPEC_VERSION,
+  initial_scene: "main",
+  canvas: { ratio: "9:16", width: 9, height: 16 },
+  allowed_domains: [host],
+  media: [{ id: "main", asset_id: "video", name: "media/main.mp4", type: "video/mp4" }],
+  scenes: [{ id: "main", label: "Main", asset_id: "video", start: 0, end: 2 }],
+  playback: { initial_timeline: "timeline-main", timelines: [{
+    id: "timeline-main", kind: "main", clips: [{ id: "clip-main", scene: "main", asset_id: "video", start: 0, end: 2 }],
+  }] },
+  components: [{
+    id: "four-choice", kind: "choice", title: "Choose one of four",
+    html: "<div><h3>Choose one of four</h3><button>One</button><button>Two</button><button>Three</button><button>Four</button></div>",
+    css: "button { display: block; min-height: 32px; width: 100%; }",
+    response_policy: { dispatch: "interaction", unanswered: "pause" },
+    presentation: { scene: "main", start: .3, end: .35, x: .1, y: .2, width: .8, height: .5 },
+    options: [
+      { label: "One", action: next },
+      { label: "Two", action: next },
+      { label: "Three", action: next },
+      { label: "Four", action: { type: "request", url: `http://${host}/fourth`, method: "POST",
+        body: { choice: "D" }, on_success: [next] } },
+    ],
+  }],
+};
+const exactIndexPackage = await packPvoProject({
+  manifest: exactIndexManifest,
+  assets: [{ id: "video", name: "media/main.mp4", blob: new Blob([video], { type: "video/mp4" }) }],
+});
 const browser = await chromium.launch({ executablePath: chromePath, headless: true, args: ["--no-sandbox"] });
 const context = await browser.newContext({ viewport: { width: 430, height: 932 } });
 const page = await context.newPage();
@@ -91,8 +122,20 @@ try {
   await form.getByRole("button", { name: "Send" }).click();
   await page.locator("#endScreen").waitFor({ state: "visible", timeout: 10000 });
   assert.deepEqual(received[1], { path: "/form", method: "POST", body: { name: "Ada" } });
+
+  await page.locator("#pvoInput").setInputFiles({ name: "exact-index.pvo", mimeType: "application/vnd.pvo",
+    buffer: Buffer.from(await exactIndexPackage.arrayBuffer()) });
+  const fourChoice = page.locator("pvo-component-view").filter({ hasText: "Choose one of four" });
+  const fourth = fourChoice.getByRole("button", { name: "Four", exact: true });
+  await fourth.waitFor({ state: "visible", timeout: 10000 });
+  await fourth.click();
+  for (let attempt = 0; attempt < 50 && received.length < 3; attempt += 1)
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  assert.deepEqual(received[2], { path: "/fourth", method: "POST", body: { choice: "D" } });
+  assert.equal(await fourChoice.getByRole("button", { name: "Four", exact: true }).getAttribute("aria-pressed"), "true");
+  assert.equal(await fourChoice.getByRole("button", { name: "One", exact: true }).getAttribute("aria-pressed"), "false");
   assert.deepEqual(browserErrors, []);
-  console.log("Player actions passed: Choice and Form requests, offline failure, form state, no implicit branch.");
+  console.log("Player actions passed: Choice and Form requests, offline failure, form state, exact four-option index, no implicit branch.");
 } catch (error) {
   console.error(`Player actions failed: ${error.message}`);
   console.error(`Status: ${await page.locator("#status").textContent().catch(() => "unavailable")}`);

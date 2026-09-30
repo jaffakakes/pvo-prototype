@@ -56,3 +56,33 @@ test("component duplication remaps its requests and saved source to the new subm
   assert.equal(useCapture.getState().components[1].id, duplicateId);
   assert(useCapture.getState().components[1].code.pvo.logic.includes(`state.form.${duplicateId}.field_1`));
 });
+
+test("component duplication remaps reactive Note text in current, cached and saved Structure", () => {
+  useCapture.setState(initial());
+  const state = useCapture.getState();
+  state.patch({ clips: [mkClip(8, null, 0)], screen: "editor" });
+  const id = state.addComponent("tooltip");
+  const text = `Saved: {state.responses.${id}.message}`;
+  const source = { structure: `<tooltip><text>${text}</text></tooltip>`, style: "", logic: "" };
+  const code = {
+    custom: true,
+    pvoLiteral: true,
+    pvoTouched: false,
+    pvo: source,
+    pvoLastValid: { ...source },
+    pvoCompiled: { structure: { type: "tooltip", text }, rules: [] },
+  };
+  state.updateComponent(id, { fields: { text }, code, archivedCode: structuredClone(code) });
+
+  const duplicateId = state.duplicateComponent(id);
+  const duplicate = useCapture.getState().components.find(item => item.id === duplicateId);
+  const expected = `Saved: {state.responses.${duplicateId}.message}`;
+  assert.equal(duplicate.fields.text, expected);
+  assert.ok(duplicate.code.pvo.structure.includes(expected));
+  assert.ok(duplicate.code.pvoLastValid.structure.includes(expected));
+  assert.equal(duplicate.code.pvoCompiled.structure.text, expected);
+  assert.ok(duplicate.archivedCode.pvo.structure.includes(expected));
+  assert.ok(duplicate.archivedCode.pvoLastValid.structure.includes(expected));
+  assert.equal(duplicate.archivedCode.pvoCompiled.structure.text, expected);
+  assert.equal(useCapture.getState().components[0].fields.text, text);
+});

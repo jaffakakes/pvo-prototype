@@ -88,8 +88,8 @@ try {
       const state = useCapture.getState();
       state.patch({ scenes: [...state.scenes, { id: "branch", parent: "main", name: "Branch", clips: state.clips,
         texts: [], components: [], layers: ["video"], muted: false, sound: 0 }] });
-      const { runOutcome } = await import("/src/features/preview/tryMode.ts");
-      await runOutcome(state.components[0], { kind: "scene", sceneId: "branch" });
+      const { runComponentResponse } = await import("/src/features/preview/tryMode.ts");
+      await runComponentResponse(state.components[0], { index: 0, outcome: { kind: "scene", sceneId: "branch" } });
     });
     await page.getByRole("heading", { name: "Trying · Branch", exact: true }).waitFor();
     await page.getByRole("button", { name: "Stop", exact: true }).click();

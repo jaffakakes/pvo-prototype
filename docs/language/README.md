@@ -85,7 +85,7 @@ on choose(street) { go_to_scene("street-scene"); }
 on choose(formal) { continue(); }
 ```
 
-These actions are the outcomes themselves, not calls to arbitrary functions. `jump_to` requires a finite, non-negative time; `go_to_scene` requires a nonempty scene ID. The editor/player host must additionally verify that the time is inside the scene and the named scene exists. A Choice does not implicitly split a scene; the separate `scene_change` behaviour in [`SPEC.md`](../../SPEC.md) remains explicit.
+These actions are the outcomes themselves, not calls to arbitrary functions. `jump_to` requires a finite, non-negative time; `go_to_scene` requires a nonempty scene ID. The editor/player host must additionally verify that the time is inside the scene and the named scene exists. A Choice does not implicitly split a scene. The component's manifest-level [`response_policy`](../../SPEC.md) decides when the host sends a response to Logic and whether unanswered playback waits; it does not change what any Logic action means.
 
 `request({JSON})` takes exactly `url`, `method`, `body`, `onSuccess`, and `onError`. The URL must be absolute HTTP(S) with a fixed host; the method is `GET` or `POST`; the body is `""` or a string containing valid JSON. `onSuccess` is a route object: `{ "kind": "continue" }`, `{ "kind": "time", "t": 3 }`, or `{ "kind": "scene", "sceneId": "next" }`. `onError` is one of those routes or `null`. The compiler bounds the URL, body, and request size and rejects other keys or route kinds.
 

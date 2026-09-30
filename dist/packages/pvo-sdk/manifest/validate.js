@@ -62,6 +62,12 @@ export function validatePvo(manifest) {
     }
     for (const [timelineIndex, timeline] of (manifest.playback?.timelines || []).entries()) {
       const path = `playback.timelines[${timelineIndex}]`;
+      if (timeline && Object.hasOwn(timeline, "source_component")) {
+        errors.push(`${path}.source_component is not supported; route with component actions.`);
+      }
+      if (timeline && Object.hasOwn(timeline, "condition")) {
+        errors.push(`${path}.condition is not supported; route with component actions.`);
+      }
       if (!timeline?.id || typeof timeline.id !== "string") errors.push(`${path}.id is required.`);
       else if (ids.timelines.has(timeline.id)) errors.push(`${path}.id "${timeline.id}" is duplicated.`);
       else ids.timelines.add(timeline.id);
@@ -82,10 +88,33 @@ export function validatePvo(manifest) {
   }
   for (const [index, component] of (manifest.components || []).entries()) {
     const path = `components[${index}]`;
+    if (component && Object.hasOwn(component, "scene_change")) {
+      errors.push(`${path}.scene_change is not supported; use an explicit goto_scene or seek action.`);
+    }
+    if (component && Object.hasOwn(component, "pause")) {
+      errors.push(`${path}.pause is not supported; use response_policy.unanswered.`);
+    }
     if (!component?.id || typeof component.id !== "string") errors.push(`${path}.id is required.`);
     else if (ids.components.has(component.id)) errors.push(`${path}.id "${component.id}" is duplicated.`);
     else ids.components.add(component.id);
-    if (component?.presentation?.clip && !ids.clips.has(component.presentation.clip)) errors.push(`${path}.presentation.clip references a missing clip.`);
+    const presentation = component?.presentation;
+    if (presentation !== undefined) {
+      if (!presentation || typeof presentation !== "object" || Array.isArray(presentation)) {
+        errors.push(`${path}.presentation must be an object.`);
+      } else {
+        if (typeof presentation.scene !== "string" || !presentation.scene) errors.push(`${path}.presentation.scene is required.`);
+        else if (!ids.scenes.has(presentation.scene)) errors.push(`${path}.presentation.scene references a missing scene.`);
+        if (presentation.clip && !ids.clips.has(presentation.clip)) errors.push(`${path}.presentation.clip references a missing clip.`);
+        if (presentation.timeline && !ids.timelines.has(presentation.timeline)) errors.push(`${path}.presentation.timeline references a missing timeline.`);
+        if (!Number.isFinite(presentation.start) || presentation.start < 0) errors.push(`${path}.presentation.start must be 0 or greater.`);
+        if (!Number.isFinite(presentation.end) || presentation.end <= presentation.start) errors.push(`${path}.presentation.end must be greater than start.`);
+        for (const key of ["x", "y", "width", "height"]) {
+          if (!Number.isFinite(presentation[key]) || presentation[key] < 0 || presentation[key] > 1) {
+            errors.push(`${path}.presentation.${key} must be between 0 and 1.`);
+          }
+        }
+      }
+    }
     if (!COMPONENT_KINDS.has(component?.kind)) errors.push(`${path}.kind must be tooltip, card, choice, or form.`);
     if (component?.kind === "tooltip" && typeof component.text !== "string") errors.push(`${path}.text is required for a tooltip.`);
     if (component?.kind === "card" && typeof component.title !== "string" && typeof component.text !== "string") errors.push(`${path} needs a title or text.`);
@@ -111,31 +140,35 @@ export function validatePvo(manifest) {
         }
       });
     }
-    if (component?.scene_change) {
-      const sceneChange = component.scene_change;
-      if (typeof sceneChange.enabled !== "boolean") errors.push(`${path}.scene_change.enabled must be a boolean.`);
-      if (sceneChange.executeAt !== "end") errors.push(`${path}.scene_change.executeAt must be "end".`);
-      if (!Array.isArray(sceneChange.routes) || sceneChange.routes.length !== 2) {
-        errors.push(`${path}.scene_change.routes must contain the True and False routes.`);
+    const acceptsResponse = ["card", "choice", "form"].includes(component?.kind);
+    const hasResponsePolicy = !!component && Object.hasOwn(component, "response_policy");
+    if (acceptsResponse && presentation === undefined) {
+      errors.push(`${path}.presentation is required for card, choice, and form components.`);
+    }
+    if (acceptsResponse && !hasResponsePolicy) {
+      errors.push(`${path}.response_policy is required for card, choice, and form components.`);
+    }
+    if (hasResponsePolicy) {
+      const policy = component.response_policy;
+      if (!policy || typeof policy !== "object" || Array.isArray(policy)) {
+        errors.push(`${path}.response_policy must be an object.`);
       } else {
-        const conditions = new Set(sceneChange.routes.map((route) => route?.condition));
-        if (!conditions.has("true") || !conditions.has("false")) {
-          errors.push(`${path}.scene_change.routes must contain one True route and one False route.`);
+        if (!["interaction", "layer_end"].includes(policy.dispatch)) {
+          errors.push(`${path}.response_policy.dispatch must be "interaction" or "layer_end".`);
         }
-        const destinations = sceneChange.routes.map((route, routeIndex) => {
-          if (route?.timelineId) {
-            if (!ids.timelines.has(route.timelineId)) errors.push(`${path}.scene_change.routes[${routeIndex}] references a missing timeline.`);
-            if (route.timelineId === component.presentation?.timeline) errors.push(`${path}.scene_change.routes[${routeIndex}] must target a different timeline.`);
-            return route.timelineId;
-          }
-          if (!ids.scenes.has(route?.sceneId)) errors.push(`${path}.scene_change.routes[${routeIndex}] references a missing scene.`);
-          if (route?.sceneId === component.presentation?.scene) errors.push(`${path}.scene_change.routes[${routeIndex}] must target a different scene.`);
-          return route?.sceneId;
-        });
-        if (destinations[0] && destinations[0] === destinations[1]) {
-          const destinationKind = sceneChange.routes.some((route) => route?.timelineId) ? "timelines" : "scenes";
-          errors.push(`${path}.scene_change routes must target two different ${destinationKind}.`);
+        if (!["continue", "pause"].includes(policy.unanswered)) {
+          errors.push(`${path}.response_policy.unanswered must be "continue" or "pause".`);
         }
+        const unsupported = Object.keys(policy).filter((key) => !["dispatch", "unanswered"].includes(key));
+        if (unsupported.length) {
+          errors.push(`${path}.response_policy contains unsupported fields: ${unsupported.join(", ")}.`);
+        }
+      }
+      if (!acceptsResponse) {
+        errors.push(`${path}.response_policy is only available for card, choice, or form components.`);
+      }
+      if (component?.kind === "card" && policy?.unanswered === "pause" && !(component.actions?.length > 0)) {
+        errors.push(`${path} cannot pause for a response without at least one Card button.`);
       }
     }
   }
@@ -153,16 +186,18 @@ export function validatePvo(manifest) {
       validateActions(option.actions || option.action, `components[${index}].options[${optionIndex}].actions`, errors, warnings, ids);
     }
     validateActions(component.on_submit, `components[${index}].on_submit`, errors, warnings, ids);
-    if (component.kind === "card" && Array.isArray(component.actions)) {
+    if (component.kind === "card" && component.actions !== undefined && !Array.isArray(component.actions)) {
+      errors.push(`components[${index}].actions must be an array of Card buttons.`);
+    } else if (component.kind === "card" && Array.isArray(component.actions)) {
       component.actions.forEach((button, buttonIndex) => {
         const path = `components[${index}].actions[${buttonIndex}]`;
-        if (button && typeof button === "object" && (button.action != null || button.actions != null)) {
-          if (button.label != null && typeof button.label !== "string") errors.push(`${path}.label must be text.`);
-          validateActions(button.actions ?? button.action, `${path}.action`, errors, warnings, ids);
-        } else {
-          // Keep accepting SDK manifests that use a direct action without a button wrapper.
-          validateActions(button, path, errors, warnings, ids);
+        if (!button || typeof button !== "object" || Array.isArray(button) || (button.action == null && button.actions == null)) {
+          errors.push(`${path} must be a Card button with an action or actions.`);
+          return;
         }
+        if (typeof button.label !== "string") errors.push(`${path}.label is required.`);
+        if (button.action != null && button.actions != null) errors.push(`${path} must use action or actions, not both.`);
+        validateActions(button.actions ?? button.action, `${path}.action`, errors, warnings, ids);
       });
     } else validateActions(component.actions, `components[${index}].actions`, errors, warnings, ids);
   }

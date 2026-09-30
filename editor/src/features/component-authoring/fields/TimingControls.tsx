@@ -27,6 +27,6 @@ export function TimingControls({ component }: { component: PvoComponent }) {
         {dur === null ? "Until clip ends" : `${dur}s`}
       </button>)}
     </div>
-    {component.type === "choice" && <p className={styles.hint}>Viewers can answer while the video plays. Under Action, choose whether the answer opens its scene when this layer ends.</p>}
+    {component.type !== "tooltip" && <p className={styles.hint}>Under Action, choose whether a viewer’s response runs its selected action right away or when this layer ends.</p>}
   </section>;
 }

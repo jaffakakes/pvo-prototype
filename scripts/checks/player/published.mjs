@@ -23,14 +23,14 @@ const template = await readFile(new URL("../../../player/published.html", import
 const video = await readFile(new URL("../../../share/assets/preview.mp4", import.meta.url));
 const manifest = {
   spec_version: PVO_SPEC_VERSION, initial_scene: "main", canvas: { ratio: "9:16", width: 9, height: 16 },
-  restyle_capture: { version: 1, routing: "return-to-caller" },
+  restyle_capture: { version: 1 },
   media: [{ id: "media", asset_id: "video", name: "media/video.mp4", type: "video/mp4" }],
   scenes: [{ id: "main", label: "Published", asset_id: "video", start: 0, end: 2 }],
   playback: { initial_timeline: "main", timelines: [{ id: "main", kind: "main",
     clips: [{ id: "clip", scene: "main", asset_id: "video", start: 0, end: 2 }] }] },
-  components: [{ id: "note", kind: "tooltip", text: "Published PVO", pause: false,
+  components: [{ id: "note", kind: "tooltip", text: "Published PVO",
     presentation: { scene: "main", start: 0, end: 2, x: .2, y: .2, width: .5, height: .1 },
-    restyle_capture: { version: 1, at: 0, dur: 2, hold: false, x: 50, y: 30 } }],
+    restyle_capture: { version: 1, at: 0, dur: 2, x: 50, y: 30 } }],
 };
 const pvo = Buffer.from(await (await packPvoProject({ manifest,
   assets: [{ id: "video", name: "media/video.mp4", blob: new Blob([video], { type: "video/mp4" }) }],

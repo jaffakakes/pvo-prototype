@@ -102,12 +102,12 @@ test("a choice covered by the video cannot wait at its layer end for taps nobody
   state.switchScene("main");
   state.patch({ t: 1 });
   const id = state.addComponent("choice");
-  state.updateComponent(id, { branchAtEnd: true, fields: { prompt: "Next?", options: [
+  state.updateComponent(id, { responsePolicy: { dispatch: "layer_end", unanswered: "pause" }, fields: { prompt: "Next?", options: [
     { label: "Street", outcome: { kind: "scene", sceneId: street } },
     { label: "Detail", outcome: { kind: "scene", sceneId: detail } },
   ] } });
   state.reorderLayer(`component:${id}`, "down");
-  state.patch({ t: 3.95, tryMode: { playing: true, holdingId: null, handled: [], answers: {} } });
+  state.patch({ t: 3.95, tryMode: { playing: true, holdingId: null, handled: [], capturedResponses: {}, dispatched: [] } });
   assert.equal(advanceTry(useCapture.getState(), 4.05), false);
   state.reorderLayer(`component:${id}`, "up");
   assert.equal(advanceTry(useCapture.getState(), 4.05), true);

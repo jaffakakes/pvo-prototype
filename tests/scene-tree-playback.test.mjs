@@ -11,24 +11,24 @@ const bundled = buildSync({
   stdin: {
     contents: `export { useCapture, mkClip } from "./editor/src/store.ts";
       export { initial } from "./editor/src/state/project/initial.ts";
-      export { startTry, stopTry, runOutcome, advanceTry } from "./editor/src/features/preview/tryMode.ts";
+      export { startTry, stopTry, runComponentResponse, advanceTry } from "./editor/src/features/preview/tryMode.ts";
       export { buildPvoManifest } from "./editor/src/domain/export/manifest.ts";`,
     resolveDir: process.cwd(),
   },
   bundle: true, write: false, format: "esm", platform: "browser",
 });
-const { useCapture, mkClip, initial, startTry, stopTry, runOutcome, advanceTry, buildPvoManifest } =
+const { useCapture, mkClip, initial, startTry, stopTry, runComponentResponse, advanceTry, buildPvoManifest } =
   await import(`data:text/javascript;base64,${Buffer.from(bundled.outputFiles[0].text).toString("base64")}`);
 
-/** Main (8s) offers street (5s) or detail (3s); street offers detail. The main choice may branch at its layer end. */
-function project({ branchAtEnd = false } = {}) {
+/** Main (8s) offers street (5s) or detail (3s); street offers detail. */
+function project({ responsePolicy = { dispatch: "interaction", unanswered: "continue" } } = {}) {
   const scenes = [["main", null, 8], ["street", "main", 5], ["detail", "street", 3]]
     .map(([id, parent, duration]) => ({
       id, parent, name: id === "main" ? "Main" : id, clips: [mkClip(duration, null, 0)],
       texts: [], components: [], muted: false, sound: 0, layers: ["video"],
     }));
   scenes[0].components.push({
-    id: "choice-main", sceneId: "main", type: "choice", at: 2, dur: null, x: 50, y: 50, branchAtEnd,
+    id: "choice-main", sceneId: "main", type: "choice", at: 2, dur: null, x: 50, y: 50, responsePolicy,
     fields: { prompt: "Next?", options: [
       { label: "Street", outcome: { kind: "scene", sceneId: "street" } },
       { label: "Detail", outcome: { kind: "scene", sceneId: "detail" } },
@@ -36,6 +36,7 @@ function project({ branchAtEnd = false } = {}) {
   });
   scenes[1].components.push({
     id: "choice-street", sceneId: "street", type: "choice", at: 1, dur: null, x: 50, y: 50,
+    responsePolicy: { dispatch: "interaction", unanswered: "continue" },
     fields: { prompt: "Next?", options: [
       { label: "Detail", outcome: { kind: "scene", sceneId: "detail" } },
       { label: "Continue", outcome: { kind: "continue" } },
@@ -57,12 +58,12 @@ test("Try opens a tapped scene at once and the video ends there instead of retur
   startTry();
   useCapture.getState().patch({ t: 3.5 });
   let state = useCapture.getState();
-  await runOutcome(state.components[0], { kind: "scene", sceneId: "street" });
+  await runComponentResponse(state.components[0], { index: 0, outcome: { kind: "scene", sceneId: "street" } });
   state = useCapture.getState();
   assert.equal(state.currentSceneId, "street");
   assert.equal(state.t, 0);
   state.patch({ t: 2 });
-  await runOutcome(state.components[0], { kind: "scene", sceneId: "detail" });
+  await runComponentResponse(state.components[0], { index: 0, outcome: { kind: "scene", sceneId: "detail" } });
   state = useCapture.getState();
   assert.equal(state.currentSceneId, "detail");
   assert.equal(advanceTry(state, 2.9), false, "The branch keeps playing to its end");
@@ -73,8 +74,8 @@ test("Try opens a tapped scene at once and the video ends there instead of retur
   assert.equal(state.past.length, 0, "Viewer routes must not add edit history");
 });
 
-test("Try waits at the end of a branch-at-end choice, then opens the answered scene", async () => {
-  useCapture.setState(project({ branchAtEnd: true }));
+test("Try waits at the end of a layer when an unanswered response policy says pause", async () => {
+  useCapture.setState(project({ responsePolicy: { dispatch: "layer_end", unanswered: "pause" } }));
   startTry();
   useCapture.getState().patch({ t: 7.9 });
   assert.equal(advanceTry(useCapture.getState(), 8), true);
@@ -82,7 +83,7 @@ test("Try waits at the end of a branch-at-end choice, then opens the answered sc
   assert.equal(state.tryMode.holdingId, "choice-main", "Unanswered, the video waits at the layer end");
   assert.equal(state.playing, false);
   assert.equal(state.currentSceneId, "main");
-  await runOutcome(state.components[0], { kind: "scene", sceneId: "detail" });
+  await runComponentResponse(state.components[0], { index: 1, outcome: { kind: "scene", sceneId: "detail" } });
   state = useCapture.getState();
   assert.equal(state.currentSceneId, "detail", "The second option is the False route");
   assert.equal(state.t, 0);
@@ -90,15 +91,16 @@ test("Try waits at the end of a branch-at-end choice, then opens the answered sc
   stopTry();
 });
 
-test("Try remembers an early answer and branches only when the layer ends", async () => {
-  useCapture.setState(project({ branchAtEnd: true }));
+test("Try captures an early response and runs its route only when the layer ends", async () => {
+  useCapture.setState(project({ responsePolicy: { dispatch: "layer_end", unanswered: "pause" } }));
   startTry();
   useCapture.getState().patch({ t: 3 });
   let state = useCapture.getState();
-  await runOutcome(state.components[0], { kind: "scene", sceneId: "street" });
+  await runComponentResponse(state.components[0], { index: 0, outcome: { kind: "scene", sceneId: "street" } });
   state = useCapture.getState();
   assert.equal(state.currentSceneId, "main", "An early answer does not switch scenes yet");
-  assert.deepEqual(state.tryMode.answers, { "choice-main": true });
+  assert.equal(state.tryMode.capturedResponses["choice-main"].index, 0);
+  assert.deepEqual(state.tryMode.dispatched, []);
   assert.equal(advanceTry(state, 3.5), false);
   state.patch({ t: 7.9 });
   assert.equal(advanceTry(useCapture.getState(), 8), true);
@@ -108,47 +110,46 @@ test("Try remembers an early answer and branches only when the layer ends", asyn
   stopTry();
 });
 
-test("interactive export writes the documented end-of-layer branch and keeps a plain choice immediate", () => {
-  const manifest = manifestFor(project({ branchAtEnd: true }));
+test("Try keeps the latest layer-end response before dispatch", async () => {
+  useCapture.setState(project({ responsePolicy: { dispatch: "layer_end", unanswered: "continue" } }));
+  startTry();
+  useCapture.getState().patch({ t: 3 });
+  let state = useCapture.getState();
+  await runComponentResponse(state.components[0], { index: 0, outcome: { kind: "scene", sceneId: "street" } });
+  await runComponentResponse(state.components[0], { index: 1, outcome: { kind: "scene", sceneId: "detail" } });
+  state = useCapture.getState();
+  assert.equal(state.currentSceneId, "main");
+  assert.equal(state.tryMode.capturedResponses["choice-main"].index, 1);
+  state.patch({ t: 7.9 });
+  assert.equal(advanceTry(useCapture.getState(), 8), true);
+  assert.equal(useCapture.getState().currentSceneId, "detail");
+  stopTry();
+});
+
+test("interactive export writes response timing independently from the authored routes", () => {
+  const manifest = manifestFor(project({ responsePolicy: { dispatch: "layer_end", unanswered: "pause" } }));
   assert.deepEqual(validatePvo(manifest).errors, []);
   const [main, street] = manifest.components;
-  assert.deepEqual(main.scene_change, { enabled: true, executeAt: "end", routes: [
-    { condition: "true", sceneId: "street" }, { condition: "false", sceneId: "detail" },
-  ] });
-  assert.deepEqual(main.options.map(option => option.action.type), ["custom", "custom"], "Taps only record the answer");
-  assert.deepEqual(main.restyle_capture.outcomes.map(outcome => outcome.kind), ["continue", "continue"]);
+  assert.deepEqual(main.response_policy, { dispatch: "layer_end", unanswered: "pause" });
+  assert.deepEqual(main.options.map(option => option.action.type), ["goto_scene", "goto_scene"]);
+  assert.deepEqual(main.restyle_capture.outcomes.map(outcome => outcome.kind), ["scene", "scene"]);
   assert.equal(main.presentation.end, 8, "The layer runs to the end of its clip");
-  assert.equal(main.pause, undefined);
-  assert.equal(main.restyle_capture.hold, undefined);
-  assert.equal(manifest.restyle_capture.routing, undefined);
-  assert.equal(street.scene_change, undefined);
+  assert.deepEqual(street.response_policy, { dispatch: "interaction", unanswered: "continue" });
   assert.equal(street.options[0].action.type, "goto_scene");
 });
 
-test("export refuses Branch at layer end without two different scenes", () => {
-  const state = project({ branchAtEnd: true });
+test("layer-end dispatch does not require a branch or two scene outcomes", () => {
+  const state = project({ responsePolicy: { dispatch: "layer_end", unanswered: "continue" } });
   state.scenes[0].components[0].fields.options[1].outcome = { kind: "continue" };
-  assert.throws(() => manifestFor(state), /both options a scene/);
+  const choice = manifestFor(state).components[0];
+  assert.equal(choice.options[1].action.type, "custom");
+  assert.deepEqual(choice.response_policy, { dispatch: "layer_end", unanswered: "continue" });
 });
 
-test("projects saved with hold components upgrade to timed layers that keep their branch", () => {
+test("interactive export rejects components without the one current response-policy contract", () => {
   const state = project();
-  const legacyMain = { ...state.scenes[0], components: [
-    { ...state.scenes[0].components[0], dur: null, hold: true },
-    { id: "form-main", sceneId: "main", type: "form", at: 4, hold: true, dur: null, x: 50, y: 50,
-      fields: { heading: "Tell us", formFields: [{ name: "Name", type: "text" }], submitLabel: "Send",
-        destination: "", successOutcome: { kind: "continue" }, failureOutcome: null } },
-  ] };
-  useCapture.setState({ ...state, scenes: [legacyMain, state.scenes[1], state.scenes[2]] });
-  useCapture.getState().patch({ scenes: useCapture.getState().scenes });
-  const [choice, form] = useCapture.getState().scenes[0].components;
-  assert.equal("hold" in choice, false);
-  assert.equal(choice.dur, null, "A held choice now shows until its clip ends");
-  assert.equal(choice.branchAtEnd, true, "Two scene routes keep the stop-and-route intent at the layer end");
-  assert.equal("hold" in form, false);
-  assert.equal(form.branchAtEnd, undefined);
-  assert.equal(form.dur, null);
-  assert.deepEqual(validatePvo(manifestFor(useCapture.getState())).errors, []);
+  delete state.scenes[0].components[0].responsePolicy;
+  assert.throws(() => manifestFor(state), /require a response policy/);
 });
 
 test("interactive exports retain every scene parent and media regardless of selected scene or array order", async () => {
@@ -206,10 +207,9 @@ function playerFor(manifest, { currentTime = 0 } = {}) {
     renderOverlays() {}, updateProgress() {}, setStatus() {}, showControls() {},
     async loadClip(index) { session.currentClipIndex = index; video.currentTime = 0; },
     async seekToElapsed(time) { video.currentTime = time; },
-    routeForAnswer: (...args) => router.routeForAnswer(...args),
-    startSelectedBranch: (...args) => playback.startSelectedBranch(...args),
+    replaceActionRuntime() {},
   };
-  const router = createOutcomeRouter({ session, refs: { video }, adapters });
+  const router = createOutcomeRouter({ session, refs: { video, endScreen: { hidden: false } }, adapters });
   const playback = createPlaybackTransitions({ session, refs: { video, endScreen }, adapters });
   return { session, video, endScreen, router, playback };
 }
@@ -227,31 +227,4 @@ test("the player opens a tapped scene at once and finishes when that branch ends
   assert.equal(session.finished, true, "Nothing returns to the scene that routed here");
   assert.equal(endScreen.hidden, false);
   assert.equal(session.currentTimeline.id, "timeline-detail");
-});
-
-test("the player waits at the end of a scene_change layer and opens the answered route", async () => {
-  const { session, video, router, playback } = playerFor(manifestFor(project({ branchAtEnd: true })));
-  const [mainChoice] = session.manifest.components;
-  video.currentTime = 8;
-  assert.equal(playback.branchAtCurrentTime(), true);
-  assert.equal(session.awaitingComponent?.id, "choice-main");
-  assert.equal(video.paused, true);
-  session.answers.set("choice-main", false);
-  await router.applyActionOutcome(mainChoice, 1, { kind: "continue" });
-  assert.equal(session.currentTimeline.id, "timeline-detail", "The second option is the False route");
-  assert.equal(session.awaitingComponent, null);
-});
-
-test("the player remembers an early answer and branches when the layer ends", async () => {
-  const { session, video, router, playback } = playerFor(manifestFor(project({ branchAtEnd: true })), { currentTime: 3 });
-  const [mainChoice] = session.manifest.components;
-  session.answers.set("choice-main", true);
-  await router.applyActionOutcome(mainChoice, 0, { kind: "continue" });
-  assert.equal(session.currentTimeline.id, "timeline-main", "An early answer keeps playing");
-  assert.equal(video.paused, false);
-  assert.equal(playback.branchAtCurrentTime(), false);
-  video.currentTime = 8;
-  assert.equal(playback.branchAtCurrentTime(), true);
-  await Promise.resolve();
-  assert.equal(session.currentTimeline.id, "timeline-street");
 });

@@ -32,7 +32,7 @@ async function setRoute(path, onError = null) {
     const s = window.__requestTestStore.getState();
     s.updateOutcome(window.__requestTestId, { kind: "form" }, {
       kind: "request", url: `http://127.0.0.1:${port}${path}`, method: "POST",
-      body: JSON.stringify({ name: `{state.form.${window.__requestTestId}.name_0}` }),
+      body: JSON.stringify({ name: `{state.form.${window.__requestTestId}.field_1}` }),
       onSuccess: { kind: "continue" }, onError,
     });
     s.patch({ t: 0, sheet: null, selComp: null, screen: "editor" });
@@ -40,11 +40,18 @@ async function setRoute(path, onError = null) {
 }
 
 async function startAndSubmit() {
-  await page.getByRole("button", { name: "Try viewer preview" }).click();
-  await page.locator(".holdTag").waitFor({ state: "visible", timeout: 5000 });
-  await page.getByRole("textbox", { name: "Name" }).fill("Ada");
-  await page.getByRole("textbox", { name: "Email" }).fill("ada@example.com");
-  await page.locator(".compForm").getByRole("button", { name: "Send" }).click();
+  await page.getByRole("button", { name: "Try", exact: true }).click();
+  const frame = page.locator('.compCustomRuntime iframe[sandbox="allow-same-origin"]').first().contentFrame();
+  await frame.getByRole("textbox", { name: "Name" }).fill("Ada");
+  await frame.getByRole("textbox", { name: "Email" }).fill("ada@example.com");
+  await page.waitForTimeout(400);
+  await frame.getByRole("button", { name: "Send" }).click();
+}
+
+async function waitForRequestCount(count) {
+  for (let attempt = 0; attempt < 100 && requests.length < count; attempt += 1)
+    await new Promise(resolve => setTimeout(resolve, 100));
+  assert.equal(requests.length, count, `Expected ${count} request${count === 1 ? "" : "s"}`);
 }
 
 try {
@@ -54,49 +61,25 @@ try {
     const s = useCapture.getState();
     s.patch({ clips: [mkClip(4, null, 0)], screen: "editor", t: 0 });
     const id = useCapture.getState().addComponent("form");
-    useCapture.getState().updateComponent(id, { at: .15 });
+    const component = useCapture.getState().components.find(item => item.id === id);
+    useCapture.getState().updateComponent(id, {
+      at: .15,
+      responsePolicy: { dispatch: "layer_end", unanswered: "pause" },
+      fields: { ...component.fields, submitLabel: "Send" },
+    });
     useCapture.getState().patch({ sheet: null, selComp: null, t: 0 });
     window.__requestTestStore = useCapture;
     window.__requestTestId = id;
   });
 
-  // Author the first request through the actual Fields sheet.
+  // Request actions are authored in Advanced; project request hosts remain separate.
   const componentId = await page.evaluate(() => window.__requestTestId);
-  await page.evaluate(() => window.__requestTestStore.getState().patch({ selComp: window.__requestTestId, sheet: "component" }));
-  await page.getByRole("dialog", { name: "Form" }).getByRole("button", { name: "Continue" }).click();
-  const outcomeDialog = page.getByRole("dialog", { name: /where\?/ });
-  await outcomeDialog.getByRole("button", { name: /Send request/ }).click();
-  await outcomeDialog.getByRole("textbox", { name: "Request URL" }).fill(`http://127.0.0.1:${port}/ok`);
-  await outcomeDialog.getByRole("button", { name: "POST" }).click();
-  await outcomeDialog.getByRole("textbox", { name: "Request JSON body" }).fill(JSON.stringify({ name: `{state.form.${componentId}.name_0}` }));
-  assert.match(await outcomeDialog.innerText(), new RegExp(`127\\.0\\.0\\.1:${port}`), "The editor did not show the allowed host");
-  if (process.env.PVO_REQUEST_UI_SHOT) await outcomeDialog.screenshot({ path: process.env.PVO_REQUEST_UI_SHOT });
-  await outcomeDialog.getByRole("button", { name: "Back", exact: true }).click();
-  await page.getByRole("dialog", { name: "Form" }).getByRole("button", { name: "Close" }).click();
-  const exported = await page.evaluate(async () => {
-    const { buildPvoManifest } = await import("/src/domain/export/manifest.ts");
-    const s = window.__requestTestStore.getState();
-    return buildPvoManifest(s, [{ scene: s.scenes[0], assetId: "test-video", name: "test.webm", type: "video/webm" }]);
-  });
-  assert.deepEqual(exported.allowed_domains, [`127.0.0.1:${port}`], "Field request host was not declared");
-  const action = exported.components[0].on_submit;
-  assert.equal(action.type, "request", "Form after-submit did not export as a request action");
-  assert.equal(action.method, "POST");
-  assert.equal(action.body.name, `{state.form.${exported.components[0].id}.name_0}`);
-  assert.equal(action.on_success.type, "custom", "Success should continue, not split the scene");
-  assert.equal(action.on_error, undefined, "Default failure should not take a playback route");
-  assert.equal(exported.components[0].scene_change, undefined, "Request should not create an implicit scene branch");
-
-  // Manual request hosts belong to the project, not to one component's PVO Logic tab.
-  await page.evaluate(() => window.__requestTestStore.getState().patch({ selComp: null, sheet: null }));
-  await page.getByRole("button", { name: "More", exact: true }).click();
+  await page.locator(".toolBar").getByRole("button", { name: "More", exact: true }).click();
   const moreDialog = page.getByRole("dialog", { name: "More" });
-  await moreDialog.getByRole("heading", { name: "Advanced", exact: true }).waitFor({ state: "visible" });
-  const allowedDomains = moreDialog.getByRole("textbox", { name: "Allowed request domains" });
-  await allowedDomains.fill("api.example.com");
+  await moreDialog.waitFor({ state: "visible" });
   const advancedEditing = moreDialog.getByRole("switch", { name: "Advanced editing", exact: true });
   assert.equal(await advancedEditing.getAttribute("aria-checked"), "false",
-    "Component code editing starts disabled; project request hosts remain configurable");
+    "Component code editing starts disabled");
   await advancedEditing.click();
   await moreDialog.getByRole("switch", { name: "Advanced editing", checked: true }).waitFor();
   await moreDialog.getByRole("button", { name: "Close", exact: true }).click();
@@ -105,38 +88,79 @@ try {
   const componentDialog = page.getByRole("dialog", { name: "Form" });
   await componentDialog.getByRole("tab", { name: "Advanced", exact: true }).click();
   await componentDialog.getByRole("tab", { name: "Logic", exact: true }).click();
-  assert.equal(await componentDialog.getByRole("textbox", { name: "Allowed request domains" }).count(), 0,
-    "Project-wide request hosts should not be edited inside a component");
+  const authoredRequest = {
+    url: `http://127.0.0.1:${port}/ok`, method: "POST",
+    body: JSON.stringify({ name: `{state.form.${componentId}.field_1}` }),
+    onSuccess: { kind: "continue" }, onError: null,
+  };
+  await componentDialog.getByRole("textbox", { name: "Logic source", exact: true })
+    .fill(`on submit { request(${JSON.stringify(authoredRequest)}); }`);
+  await componentDialog.getByText("✓ Valid · preview updated", { exact: true }).waitFor();
+  assert.match(await componentDialog.getByRole("textbox", { name: "Logic source", exact: true }).inputValue(),
+    new RegExp(`127\\.0\\.0\\.1:${port}`));
+  if (process.env.PVO_REQUEST_UI_SHOT) await componentDialog.screenshot({ path: process.env.PVO_REQUEST_UI_SHOT });
+  await componentDialog.getByRole("button", { name: "Done", exact: true }).click();
+  await page.waitForFunction(() => {
+    const component = window.__requestTestStore.getState().components.find(item => item.id === window.__requestTestId);
+    return component?.code?.pvoTouched === false && !!component.code.pvoCompiled;
+  });
+
+  const exported = await page.evaluate(async () => {
+    const { buildPvoManifest } = await import("/src/domain/export/manifest.ts");
+    const s = window.__requestTestStore.getState();
+    const component = s.components.find(item => item.id === window.__requestTestId);
+    const languages = new Map([[component.id, { source: component.code.pvo, compiled: component.code.pvoCompiled }]]);
+    return buildPvoManifest(s, [{ scene: s.scenes[0], assetId: "test-video", name: "test.webm", type: "video/webm" }], languages);
+  });
+  assert.deepEqual(exported.allowed_domains, [`127.0.0.1:${port}`], "Field request host was not declared");
+  const action = exported.components[0].on_submit;
+  assert.equal(action.type, "request", "Form after-submit did not export as a request action");
+  assert.equal(action.method, "POST");
+  assert.equal(action.body.name, `{state.form.${exported.components[0].id}.field_1}`);
+  assert.equal(action.on_success.type, "custom", "Success should continue, not split the scene");
+  assert.equal(action.on_error, undefined, "Default failure should not take a playback route");
+  assert.deepEqual(exported.components[0].response_policy,
+    { dispatch: "layer_end", unanswered: "pause" },
+    "Request timing should use the component response policy");
+
   const projectDomains = await page.evaluate(async () => {
     const { buildPvoManifest } = await import("/src/domain/export/manifest.ts");
     const s = window.__requestTestStore.getState();
-    return buildPvoManifest(s, [{ scene: s.scenes[0], assetId: "test-video", name: "test.webm", type: "video/webm" }]).allowed_domains;
+    const component = s.components.find(item => item.id === window.__requestTestId);
+    const languages = new Map([[component.id, { source: component.code.pvo, compiled: component.code.pvoCompiled }]]);
+    return buildPvoManifest(s, [{ scene: s.scenes[0], assetId: "test-video", name: "test.webm", type: "video/webm" }], languages).allowed_domains;
   });
-  assert.deepEqual(projectDomains.toSorted(), [`127.0.0.1:${port}`, "api.example.com"].toSorted(),
-    "Project-wide manual hosts must be included in the PVO allow-list");
-  await componentDialog.getByRole("button", { name: "Close", exact: true }).click();
+  assert.deepEqual(projectDomains, [`127.0.0.1:${port}`],
+    "The authored request host must be included in the PVO allow-list");
 
   await startAndSubmit();
-  await page.waitForFunction(() => !document.querySelector(".holdTag"), null, { timeout: 5000 });
-  assert.equal(requests.length, 1, "Try mode did not send the field request");
+  await waitForRequestCount(1);
+  await page.waitForFunction(() => {
+    const mode = window.__requestTestStore.getState().tryMode;
+    return !mode || mode.holdingId === null;
+  }, null, { timeout: 5000 });
   assert.deepEqual(JSON.parse(requests[0].body), { name: "Ada" }, "Form value template was not resolved");
 
-  if (await page.getByRole("button", { name: "Stop viewer preview" }).count()) {
-    await page.getByRole("button", { name: "Stop viewer preview" }).click();
+  if (await page.getByRole("button", { name: "Stop", exact: true }).count()) {
+    await page.getByRole("button", { name: "Stop", exact: true }).click();
   }
   await setRoute("/fail");
   await startAndSubmit();
+  await waitForRequestCount(2);
   await page.locator('[data-try-feedback="failed"]').waitFor({ timeout: 5000 });
   assert.equal(await page.locator('[data-notification-id="requestFailed"]').count(), 0,
     "Component request feedback must not be duplicated as a global notification");
-  assert.equal(await page.locator(".holdTag").isVisible(), true, "Failed request incorrectly took the success route");
-  assert.equal(requests.length, 2);
+  assert.equal(await page.evaluate(() => window.__requestTestStore.getState().tryMode?.holdingId), componentId,
+    "Failed request incorrectly released its response boundary");
 
-  await page.getByRole("button", { name: "Stop viewer preview" }).click();
+  await page.getByRole("button", { name: "Stop", exact: true }).click();
   await setRoute("/fail", { kind: "continue" });
   await startAndSubmit();
-  await page.waitForFunction(() => !document.querySelector(".holdTag"), null, { timeout: 5000 });
-  assert.equal(requests.length, 3, "Explicit error route did not execute after a failed request");
+  await waitForRequestCount(3);
+  await page.waitForFunction(() => {
+    const mode = window.__requestTestStore.getState().tryMode;
+    return !mode || mode.holdingId === null;
+  }, null, { timeout: 5000 });
 
   assert.deepEqual(errors, [], "Uncaught browser errors occurred");
   console.log(JSON.stringify({ status: "ok", requestHosts: projectDomains, postBody: JSON.parse(requests[0].body), failedRequestStayedHeld: true, explicitErrorContinued: true }, null, 2));

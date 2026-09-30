@@ -73,13 +73,13 @@ const runtime = createPvoRuntime(decoded.manifest, hostAdapters);</code></pre></
         </section>
 
         <section id="actions">
-          <header class="section-title"><div><h2>Choices and forms run actions</h2><p>Each choice option runs its own actions; a form runs its submit actions. Playback changes only through an explicit routing action or configured <code>scene_change</code> routing, which opens the matching outcome timeline at the end of the component layer.</p></div></header>
+          <header class="section-title"><div><h2>Responses and routes are separate</h2><p>Each button, choice, or form submission runs its own action. A component can run that action on interaction or at its layer end, and can independently continue or pause when nobody responds. Playback changes only through an explicit routing action.</p></div></header>
           <div class="action-table" role="table" aria-label="PVO action types"><div role="row"><strong role="cell">show / hide</strong><span role="cell">Change component visibility</span><em role="cell">local</em></div><div role="row"><strong role="cell">set</strong><span role="cell">Write state or increment a counter</span><em role="cell">local</em></div><div role="row"><strong role="cell">goto_scene / seek</strong><span role="cell">Move between time ranges in the source video</span><em role="cell">local</em></div><div role="row"><strong role="cell">request</strong><span role="cell">Call a creator URL; map success and error</span><em role="cell">network</em></div><div role="row"><strong role="cell">open_url</strong><span role="cell">Hand an external link to the host</span><em role="cell">network</em></div><div role="row"><strong role="cell">chain / branch</strong><span role="cell">Compose declared actions</span><em role="cell">mixed</em></div></div>
           <div class="code-window"><div class="code-bar"><span>form-route.json</span><button data-copy="routeCode" type="button">Copy</button></div><pre id="routeCode"><code>{
   "type": "request",
   "method": "POST",
   "url": "https://creator.example/submit",
-  "body": { "answer": "{state.answer}" },
+  "body": { "answer": "{state.form.signup.email}" },
   "on_success": [{
     "type": "goto_scene",
     "scene": "accepted",

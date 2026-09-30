@@ -1,22 +1,25 @@
 import { useState, type CSSProperties } from "react";
 import { lookStyles } from "../../../../packages/pvo-component-runtime/index.js";
+import { resolveTextTemplate } from "../../../../packages/pvo-sdk/index.js";
 import { formFieldControls } from "../../domain/components/forms";
 import { componentButtonCount, type LookPart } from "../../domain/components/look";
-import type { Outcome, PvoComponent } from "../../domain/project/model";
+import type { ComponentResponse, PvoComponent } from "../../domain/project/model";
 import { cx } from "../../styles";
 import { runFormSubmission } from "./tryMode";
 import { useTryFeedback } from "./tryFeedbackStore";
+import { useTryRuntimeState } from "./tryRuntimeStateStore";
 import styles from "./ComponentParts.module.css";
 
-export function ComponentFieldsView({ component, unit, trying, selectedPart, onOutcome }: {
+export function ComponentFieldsView({ component, unit, trying, selectedPart, onResponse }: {
   component: PvoComponent;
   unit: number;
   trying: boolean;
   selectedPart: LookPart | null;
-  onOutcome: (component: PvoComponent, outcome: Outcome) => void;
+  onResponse: (component: PvoComponent, response: ComponentResponse) => void;
 }) {
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const pending = useTryFeedback(state => state.components[component.id]?.phase === "pending");
+  const runtimeState = useTryRuntimeState(state => trying && component.type === "tooltip" ? state.value : null);
   const fields = component.fields;
   const appearance = component.look ? lookStyles(component.look, unit, componentButtonCount(component)) : null;
   const part = (name: LookPart, style?: Record<string, string | number>) => ({
@@ -28,9 +31,12 @@ export function ComponentFieldsView({ component, unit, trying, selectedPart, onO
   const button = (index: number) => part(`button:${index}`,
     appearance ? { ...appearance.buttons[index], height: "auto" } : undefined);
   const whole = part("whole", appearance?.whole);
+  const noteText = fields.text || "Tap to learn more";
   if (component.type === "tooltip") return <div {...whole} className={`${cx("compTooltip")} ${styles.part}`}>
     {!appearance && <i />}
-    <span {...part("body", appearance?.body)}>{fields.text || "Tap to learn more"}</span>
+    <span {...part("body", appearance?.body)}>{trying
+      ? resolveTextTemplate(noteText, { state: runtimeState ?? {} })
+      : noteText}</span>
   </div>;
   if (component.type === "card") return <div {...whole} className={`${cx("compCard")} ${styles.part}`}>
     <h3 {...part("heading", appearance?.heading)}>{fields.title || "Title"}</h3>
@@ -41,7 +47,7 @@ export function ComponentFieldsView({ component, unit, trying, selectedPart, onO
         key={index}
         type="button"
         disabled={!trying}
-        onClick={() => onOutcome(component, item.outcome ?? { kind: "continue" })}
+        onClick={() => onResponse(component, { index, outcome: item.outcome ?? { kind: "continue" } })}
       >{item.label || `Button ${index + 1}`}</button>)}
     </div>}
   </div>;
@@ -52,7 +58,7 @@ export function ComponentFieldsView({ component, unit, trying, selectedPart, onO
       key={index}
       type="button"
       disabled={!trying}
-      onClick={() => onOutcome(component, fields.options?.[index]?.outcome ?? { kind: "continue" })}
+      onClick={() => onResponse(component, { index, outcome: fields.options?.[index]?.outcome ?? { kind: "continue" } })}
     >{fields.options?.[index]?.label || `Option ${String.fromCharCode(65 + index)}`}</button>)}
   </div>;
   const controls = formFieldControls(fields);

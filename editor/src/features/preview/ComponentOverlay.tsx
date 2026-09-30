@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { componentEnd } from "../../domain/components/timing";
 import { useComponentDimensions } from "./useComponentDimensions";
-import type { Clip,Outcome,PvoComponent } from "../../domain/project/model";
+import type { Clip,ComponentResponse,PvoComponent } from "../../domain/project/model";
 import { cx } from "../../styles";
 import { PvoRuntimeOverlay } from "./PvoRuntimeOverlay";
 import { ComponentFieldsView } from "./ComponentFieldsView";
@@ -22,13 +22,13 @@ export function componentLabel(component: PvoComponent) {
   return fields.submitLabel?.trim() || "Form";
 }
 
-/** A component shows for its layer, and stays while it waits at the layer end for an answer. */
+/** A component shows for its layer, and stays while it waits at the layer end for a response. */
 export function componentVisible(component: PvoComponent, clips: Clip[], t: number, holdingId: string | null) {
   if (holdingId === component.id) return true;
   return t >= component.at && t <= componentEnd(component, clips);
 }
 
-export function ComponentOverlay({ component, width, selected, trying, onOutcome, zIndex, proposed = false, before = false }: {
+export function ComponentOverlay({ component, width, selected, trying, onResponse, zIndex, proposed = false, before = false }: {
   component: PvoComponent;
   width: number;
   selected: boolean;
@@ -36,7 +36,7 @@ export function ComponentOverlay({ component, width, selected, trying, onOutcome
   zIndex: number;
   proposed?: boolean;
   before?: boolean;
-  onOutcome: (component: PvoComponent, outcome: Outcome) => void;
+  onResponse: (component: PvoComponent, response: ComponentResponse) => void;
 }) {
   const session = useComponentAuthoring();
   const u = width / 247;
@@ -53,7 +53,7 @@ export function ComponentOverlay({ component, width, selected, trying, onOutcome
       ? <PvoRuntimeOverlay component={component} width={width} trying={trying} isVisible={componentVisible}
           immediatePreview={proposed || before} />
       : <div className={cx("compTooltip")}>Unsupported component code</div>
-      : <ComponentFieldsView component={component} unit={u} trying={trying} onOutcome={onOutcome}
+      : <ComponentFieldsView component={component} unit={u} trying={trying} onResponse={onResponse}
           selectedPart={selected && session.componentId === component.id && session.tab === "look" ? session.part : null} />}
     {trying && <TryFeedback componentId={component.id} />}
   </div>;
