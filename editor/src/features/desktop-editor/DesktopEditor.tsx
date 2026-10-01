@@ -8,6 +8,7 @@ import { DesktopLibrary } from "./library/DesktopLibrary";
 import { DesktopInspector } from "./inspector/DesktopInspector";
 import { DesktopPlayer } from "./player/DesktopPlayer";
 import { DesktopTimeline } from "./timeline/DesktopTimeline";
+import { DesktopDebugWorkspace } from "../editor-layout/debugging/DesktopDebugWorkspace";
 import styles from "./DesktopEditor.module.css";
 
 /** Desktop presentation shares the mobile editor's project, history and commands. */
@@ -33,27 +34,29 @@ export function DesktopEditor() {
     }
   }, [sheet, selText, openLibrary]);
 
-  return <div className={styles.editor} data-desktop-editor>
+  return <div className={styles.editor} data-desktop-editor data-trying={trying}>
     <div {...(assistantActive || picking ? { inert: "" } : {})}>
       <DesktopHeader onOpenProject={openProject} />
     </div>
     <main className={styles.body} aria-label="Video editor">
-      <div className={styles.region} {...(assistantActive || trying || picking ? { inert: "" } : {})}>
+      <div className={styles.region} data-editing-paused={trying} {...(assistantActive || trying || picking ? { inert: "" } : {})}>
         <DesktopLibrary tab={library} onTabChange={openLibrary} />
       </div>
       <div className={styles.region} {...(assistantActive || picking ? { inert: "" } : {})}>
         <DesktopPlayer safeZone={safeZone} onSafeZoneChange={setSafeZone}
           onOpenProject={openProject} onOpenLibrary={openLibrary} />
       </div>
-      <div className={styles.region} {...((assistantActive && !assistantTarget) || trying || picking ? { inert: "" } : {})}>
+      <div className={styles.region} data-editing-paused={trying} {...((assistantActive && !assistantTarget) || trying || picking ? { inert: "" } : {})}>
         <DesktopInspector safeZone={safeZone} onSafeZoneChange={setSafeZone}
           snap={snap} onSnapChange={setSnap} onOpenLibrary={openLibrary}
           onAssistantTargetChange={setAssistantTarget} />
       </div>
       <div className={styles.timeline}>
+        <DesktopDebugWorkspace>
         <DesktopTimeline snap={snap} onSnapChange={setSnap}
           onOpenLibrary={openLibrary} assistant={<OrbAssistant
             placement={assistantTarget ? "floating" : "toolbar"} portalTarget={assistantTarget} />} />
+        </DesktopDebugWorkspace>
       </div>
     </main>
     <DesktopDialogs />

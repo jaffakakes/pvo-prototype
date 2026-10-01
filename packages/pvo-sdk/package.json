@@ -23,6 +23,7 @@
     "README.md",
     "container",
     "manifest",
-    "runtime"
+    "runtime",
+    "diagnostics"
   ]
 }

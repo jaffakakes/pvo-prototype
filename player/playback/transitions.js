@@ -5,12 +5,17 @@ import {
 } from "../actions/operations.js";
 import { updateRequestStatus } from "../actions/request-status.js";
 import { needsResponseBoundary, responseBoundaryWork } from "../actions/response-policy.js";
+import { reportPlayerDiagnostic } from "../actions/diagnostics.js";
 
 export function createPlaybackTransitions({ session, refs, adapters }) {
   function holdAtBoundary(component, message) {
     if (session.awaitingComponent?.id === component.id) return;
     session.awaitingComponent = component;
     refs.video.pause();
+    reportPlayerDiagnostic(session, "playback.hold", session.capturedResponses.get(component.id)?.diagnostic, {
+      componentId: component.id,
+      reason: session.capturedResponses.has(component.id) ? "applying_response" : "awaiting_answer",
+    });
     const clip = adapters.activeClip();
     refs.video.currentTime = Math.min(clip.end, clip.start + Number(component.presentation?.end || 0));
     adapters.renderOverlays(true);

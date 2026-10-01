@@ -1,4 +1,4 @@
-import { createPvoRuntime } from "../../packages/pvo-sdk/index.js";
+import { createPvoRuntime, observeDiagnostic } from "../../packages/pvo-sdk/index.js";
 import { actionOperationIsCurrent } from "./operations.js";
 import { clearRequestStatus, updateRequestStatus } from "./request-status.js";
 
@@ -12,6 +12,10 @@ export function createActionRuntimeAdapter({ session, refs, adapters }) {
     };
 
     runtime = createPvoRuntime(project, {
+      ...(typeof session.onDiagnostic === "function" ? {
+        onDiagnostic: event => observeDiagnostic(session.onDiagnostic, event),
+        captureDiagnosticBodies: session.captureDiagnosticBodies,
+      } : {}),
       show(component, context) {
         if (!contextIsCurrent(context)) return;
         session.forcedHidden.delete(component.id);

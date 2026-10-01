@@ -1,6 +1,12 @@
+let diagnosticSessionSequence = 0;
+
 /** Per-viewer playback and resource state, owned by the application composition. */
-export function createPlaybackSession() {
+export function createPlaybackSession({ onDiagnostic, captureDiagnosticBodies } = {}) {
   return {
+    onDiagnostic,
+    captureDiagnosticBodies,
+    diagnosticId: `player-${++diagnosticSessionSequence}`,
+    diagnosticSequence: 0,
     manifest: null,
     assets: new Map(),
     assetUrls: new Map(),

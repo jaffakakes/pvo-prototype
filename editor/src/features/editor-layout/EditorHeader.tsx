@@ -3,6 +3,7 @@ import { useCapture } from "../../state/captureStore";
 import { Icon } from "../../ui/Icon";
 import { fmt } from "../../ui/formatTime";
 import { startTry, stopTry } from "../preview/tryMode";
+import { DebugEntry } from "./debugging/DebugEntry";
 import styles from "./EditorHeader.module.css";
 
 export function EditorHeader() {
@@ -19,9 +20,10 @@ export function EditorHeader() {
   if (trying) return <header className={`editorHead ${styles.header}`}>
     <button className={styles.tryButton} onClick={stopTry}>Stop</button>
     <div className={styles.title}>
-      <h1>Trying · {sceneName}</h1>
-      <p title={sceneSummary}>{sceneSummary}</p>
+      <h1>Trying</h1>
+      <p title={sceneSummary}>Tap like a viewer · {sceneName}</p>
     </div>
+    <DebugEntry variant="mobile" />
   </header>;
 
   return <header className={`editorHead ${styles.header}`}>

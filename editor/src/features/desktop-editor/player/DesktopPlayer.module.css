@@ -11,6 +11,8 @@
 .actions .safe { width: 30px; padding: 0; }
 .actions .safe[data-on="true"] { border-color: var(--pale); background: #ff2d7824; color: var(--highlight); }
 .actions .try[data-on="true"] { background: var(--accent); border-color: #000; box-shadow: 2px 2px 0 #000; }
+.transport:has([data-variant="desktop"]) .actions { flex: 0 0 auto; }
+.transport:has([data-variant="desktop"]) .ratio { display: none; }
 @media (max-width: 1279px) {
   .transport { padding-inline: 8px; gap: 7px; }
   .time { display: flex; flex-direction: column; font-size: 11px; }

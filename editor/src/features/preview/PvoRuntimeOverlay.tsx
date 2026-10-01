@@ -5,12 +5,14 @@ import { resolveLanguageSource,validateEditableLanguage } from "../../domain/com
 import { type Clip,type PvoComponent } from "../../domain/project/model";
 import { useCapture } from "../../state/captureStore";
 import { cx } from "../../styles";
-import { runComponentResponse } from "./tryMode";
+import { runComponentResponse, observeTryDiagnostics } from "./tryMode";
+import { sourceRevision } from "../../domain/debugging/components";
 import { useTryFeedback } from "./tryFeedbackStore";
 import { useTryRuntimeState } from "./tryRuntimeStateStore";
 import feedbackStyles from "./PreviewFeedback.module.css";
 
 const EMPTY_RUNTIME_STATE: Record<string, unknown> = {};
+let rendererSerial = 0;
 
 function submittedFields(input: unknown, names: { name: string; kind: string; label?: string }[], modern: boolean) {
   if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("Form submission must contain fields.");
@@ -68,11 +70,17 @@ export function PvoRuntimeOverlay({ component, width, trying, isVisible, immedia
   useEffect(() => {
     if (!host.current || !component.code?.custom || !source) return;
     let cancelled = false;
+    const observe = observeTryDiagnostics();
+    const rendererId = ++rendererSerial;
+    const identity = { componentId: component.id, sceneId: component.sceneId,
+      source: { revision: sourceRevision(component), lastValid: !!(component.code.pvoTouched && component.code.pvoLastValid) } };
+    const inputId = (eventId?: number) => eventId == null ? undefined : `renderer:${rendererId}:input:${eventId}`;
     setFailure(null);
     const reportRuntimeError = (error: unknown) => {
       if (cancelled) return;
       console.error(`PVO preview failed for component ${component.id}:`, error);
       setFailure(error instanceof Error ? error.message : "The component could not be rendered.");
+      if (trying) observe({ ...identity, type: "component.failed", reason: "start_error", message: error instanceof Error ? error.message : String(error) });
     };
     const render = async () => {
       try {
@@ -90,11 +98,23 @@ export function PvoRuntimeOverlay({ component, width, trying, isVisible, immedia
           maxWidth: 247,
           maxHeight: 285,
           interactive: trying,
-          onAction: ({ method, args }) => {
+          onDiagnostic: event => {
+            if (!trying || cancelled || event.type === "action.started" || event.type === "action.completed") return;
+            const hasAction = compiled.structure.type === "tooltip" || compiled.rules.length > 0;
+            observe({ ...identity, type: event.type, interactionId: inputId(event.eventId),
+              reason: event.type === "component.ready" ? hasAction ? "action_assigned" : "no_matching_rule" : event.reason, target: event.target });
+            if (event.type === "component.ready" && !hasAction)
+              observe({ ...identity, type: "component.no_action", reason: "no_matching_rule" });
+          },
+          onAction: ({ method, args }, diagnostic) => {
+            const interactionId = inputId(diagnostic?.eventId);
             const state = useCapture.getState();
             const active = state.components.find(item => item.id === component.id);
             if (!state.tryMode || !active || active.sceneId !== state.currentSceneId ||
-                !isVisible(active, state.clips, state.t, state.tryMode.holdingId)) return;
+                !isVisible(active, state.clips, state.t, state.tryMode.holdingId)) {
+              observe({ ...identity, type: "interaction.ignored", interactionId, reason: "inactive_component" });
+              return;
+            }
             if (!isPvoLanguageActionAllowed(active.type, method))
               throw new Error(`PVO ${active.type} cannot use that action.`);
 
@@ -102,9 +122,13 @@ export function PvoRuntimeOverlay({ component, width, trying, isVisible, immedia
               const controls = compiled.structure.type === "choice" ? compiled.structure.options
                 : compiled.structure.type === "card" ? compiled.structure.buttons : null;
               const index = Number(args[0]);
-              if (!controls || !Number.isInteger(index) || index < 0 || index >= controls.length) return;
+              if (!controls || !Number.isInteger(index) || index < 0 || index >= controls.length) {
+                observe({ ...identity, type: "interaction.ignored", interactionId, reason: "invalid_control" });
+                return;
+              }
               const rule = compiled.rules.find(item => item.target === controls[index].id);
-              if (rule) void runComponentResponse(active, { index, outcome: rule.action });
+              if (rule) void runComponentResponse(active, { index, outcome: rule.action }, interactionId);
+              else observe({ ...identity, type: "interaction.ignored", interactionId, reason: "no_matching_rule", target: controls[index].label });
               return;
             }
 
@@ -112,7 +136,8 @@ export function PvoRuntimeOverlay({ component, width, trying, isVisible, immedia
               const modern = compiled.structure.heading !== undefined || compiled.structure.waiting !== undefined || compiled.structure.fields.some(field => field.label !== undefined || field.kind === "number");
               const fields = submittedFields(args[0], compiled.structure.fields, modern);
               const rule = compiled.rules.find(item => item.target === null);
-              if (rule) return runComponentResponse(active, { index: 0, outcome: rule.action, formValues: fields });
+              if (rule) return runComponentResponse(active, { index: 0, outcome: rule.action, formValues: fields }, interactionId);
+              observe({ ...identity, type: "interaction.ignored", interactionId, reason: "no_matching_rule", target: compiled.structure.submit });
             }
           },
           onError: reportRuntimeError,

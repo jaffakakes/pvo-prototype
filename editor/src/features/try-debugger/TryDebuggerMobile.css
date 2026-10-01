@@ -1,0 +1,150 @@
+.sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-top: 3px solid #000;
+  border-radius: 24px 24px 0 0;
+  background: var(--ground);
+  box-shadow: 0 -5px 0 var(--pale);
+}
+
+.mobileHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex: none;
+  min-width: 0;
+  padding: 8px 12px 10px 14px;
+}
+
+.statusLine[data-density="mobile"] {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  column-gap: 10px;
+  align-items: start;
+  min-width: 0;
+}
+
+.statusLine[data-density="mobile"] .sceneChip,
+.statusLine[data-density="mobile"] .videoTime,
+.statusLine[data-density="mobile"] > .holdLink,
+.statusLine[data-density="mobile"] > .requestCount { display: none; }
+.statusLine[data-density="mobile"] .statusGlyph { grid-column: 1; grid-row: 1; width: 30px; height: 30px; border-radius: 9px; }
+.statusLine[data-density="mobile"] .statusWords { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; overflow: visible; }
+.statusLine[data-density="mobile"] .statusTitle { max-width: 100%; font-size: 15px; line-height: 1.15; white-space: normal; overflow-wrap: anywhere; }
+.statusLine[data-density="mobile"] .statusSub { display: none; }
+.statusMeta { display: flex; align-items: center; flex-wrap: wrap; column-gap: 6px; row-gap: 2px; min-width: 0; color: rgba(242, 240, 233, .58); font-size: 11.5px; font-weight: 700; line-height: 1.35; }
+.statusMeta > span + span::before { margin-right: 6px; color: var(--faint); content: "·"; }
+.statusMeta .requestInline { color: var(--pale); }
+.statusMeta .holdLink { height: auto; min-height: 26px; padding: 0; border: 0; background: none; color: #c4b3fc; font-size: 11.5px; }
+.statusMeta .holdLink .violetDot { display: none; }
+
+.mobileHeader > .moreButton,
+.mobileHeader > .closeButton { width: 40px; height: 40px; flex: none; border-radius: 12px; }
+.mobileTabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; flex: none; min-height: 44px; margin: 0 12px 10px; padding: 3px; border: 2px solid #000; border-radius: 12px; background: var(--surface); box-sizing: border-box; }
+.mobileTabs button { display: flex; align-items: center; justify-content: center; gap: 5px; min-width: 0; min-height: 36px; padding: 0 4px; border: 2px solid transparent; border-radius: 9px; background: transparent; color: rgba(242, 240, 233, .62); font-size: 11.5px; font-weight: 800; }
+.mobileTabs button[aria-selected="true"] { border-color: #000; background: var(--text); box-shadow: 2px 2px 0 #000; color: #111; }
+.mobileTabs button[aria-selected="true"] .tabCount { background: #111; color: var(--text); }
+.mobileContent { display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
+.mobileChips { display: flex; gap: 6px; flex: none; padding: 0 12px 8px; overflow-x: auto; scrollbar-width: none; }
+.mobileChips::-webkit-scrollbar { display: none; }
+.mobileChips .filterButton { min-height: 44px; max-width: none; padding: 0 10px; border-radius: 10px; font-size: 12px; }
+.mobileChips .filterButton:first-child { max-width: 175px; overflow: hidden; text-overflow: ellipsis; }
+.mobileContent .activityList,
+.mobileContent .requestsList { gap: 7px; padding: 0 12px 22px; }
+
+.activityRow[data-density="mobile"] {
+  grid-template-columns: 24px minmax(0, 1fr) 14px;
+  column-gap: 10px;
+  row-gap: 6px;
+  min-height: 85px;
+  padding: 10px 10px 11px 11px;
+  border-radius: 14px;
+}
+.activityRow[data-density="mobile"] .activityTile { grid-column: 1; grid-row: 1 / span 3; width: 24px; height: 24px; }
+.activityRow[data-density="mobile"] .activityTime { grid-column: 2; grid-row: 1; padding-top: 0; font-size: 11.5px; }
+.activityRow[data-density="mobile"] .activityTitle { grid-column: 2; grid-row: 1; margin-left: 45px; padding-top: 0; font-size: 13px; }
+.activityRow[data-density="mobile"] > .resultChip { grid-column: 2; grid-row: 2; justify-self: start; }
+.activityRow[data-density="mobile"] .activitySummary { grid-column: 2; grid-row: 3; font-size: 12px; }
+.activityRow[data-density="mobile"] .activityChevron { display: block; grid-column: 3; grid-row: 1 / span 3; align-self: center; color: var(--muted); }
+.sessionRow[data-density="mobile"] { min-height: 32px; padding: 0 10px; }
+.sessionRow[data-density="mobile"] .sessionTime { width: 28px; }
+
+.backRow { display: flex; align-items: flex-start; gap: 10px; flex: none; min-width: 0; padding: 2px 12px 10px; }
+.backRow .backButton { width: 40px; height: 40px; padding: 0; border-color: #000; border-radius: 11px; box-shadow: 2px 2px 0 #000; }
+.backRow > span { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; padding-top: 2px; }
+.backRow h2 { font-size: 15px; white-space: normal; overflow-wrap: anywhere; }
+.mobileResult { display: block; padding: 0 12px 8px; }
+.interactionDetail[data-density="mobile"],
+.requestDetails[data-density="mobile"] { overflow-y: auto; }
+.interactionDetail[data-density="mobile"] .detailBody { display: flex; flex-direction: column; gap: 12px; flex: none; min-height: auto; padding: 0 12px 20px; overflow: visible; }
+.interactionDetail[data-density="mobile"] .stages,
+.interactionDetail[data-density="mobile"] .detailRight { width: 100%; }
+.stages[data-density="mobile"] .stageWords { font-size: 13px; }
+.stages[data-density="mobile"] .stageWords small { font-size: 12px; }
+.interactionDetail[data-density="mobile"] .changedBanner { margin: 0 12px 10px; }
+.mobileActions { display: flex; gap: 9px; width: 100%; }
+.mobileActions .primaryButton { flex: 1; height: 44px; border: 2.5px solid #000; border-radius: 12px; box-shadow: 3px 3px 0 #000; font-size: 13px; }
+.mobileActions .secondaryButton { height: 44px; border-radius: 12px; font-size: 12px; }
+
+.mobileComponents { display: flex; flex: 1; flex-direction: column; min-height: 0; overflow-y: auto; }
+.mobileComponents .allComponents { width: calc(100% - 24px); min-height: 44px; margin: 0 12px 8px; }
+.readinessList[data-density="mobile"] { display: flex; flex-direction: column; gap: 7px; padding: 0 12px 22px; overflow: visible; }
+.readinessList[data-density="mobile"] .readinessRow { min-height: 65px; }
+.readinessList[data-density="mobile"] .readinessChips { justify-content: flex-start; max-width: none; }
+
+.statePane[data-density="mobile"] { display: flex; flex: 1; flex-direction: column; min-height: 0; overflow-y: auto; }
+.statePane[data-density="mobile"] .stateAside { order: 1; padding: 0 12px 12px; overflow: visible; }
+.statePane[data-density="mobile"] .stateRows { order: 2; padding: 0 12px 24px; overflow: visible; border-right: 0; }
+.mobilePlayback { display: flex; flex-direction: column; gap: 9px; order: 3; padding: 0 12px 22px; }
+.statePane[data-density="mobile"] .watchingGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.statePane[data-density="mobile"] .watchingCard strong { font-size: 26px; }
+.statePane[data-density="mobile"] .pinButton { width: 40px; height: 40px; }
+.statePane[data-density="mobile"] .stateRow { grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1.1fr); min-height: 48px; }
+
+.requestFilterRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex: none; min-height: 44px; color: var(--muted); font-size: 11.5px; font-weight: 700; }
+.requestFilterRow .filterButton { min-height: 34px; }
+.requestRow[data-density="mobile"] { grid-template-columns: 46px minmax(0, 1fr) auto 14px; min-height: 70px; border-radius: 14px; }
+.requestRow[data-density="mobile"] .methodPill { grid-column: 1; grid-row: 1 / span 2; }
+.requestRow[data-density="mobile"] .requestPath { grid-column: 2; grid-row: 1; }
+.requestRow[data-density="mobile"] > .resultChip { grid-column: 3; grid-row: 1; }
+.requestRow[data-density="mobile"] small { grid-column: 2 / span 2; grid-row: 2; }
+.requestRow[data-density="mobile"] .requestChevron { display: block; grid-column: 4; grid-row: 1 / span 2; align-self: center; color: var(--muted); }
+.requestDetails[data-density="mobile"] .requestDetailBody { display: flex; flex-direction: column; gap: 12px; flex: none; min-height: auto; padding: 0 12px 24px; overflow: visible; }
+.requestDetails[data-density="mobile"] .requestDetailBody > .secondaryButton { min-height: 44px; align-self: stretch; }
+
+.menuScrim { position: absolute; z-index: 8; inset: 0; width: 100%; border: 0; background: transparent; }
+.mobileMenu { position: absolute; z-index: 9; top: 74px; right: 12px; width: min(262px, calc(100% - 24px)); padding: 7px; border: 3px solid #000; border-radius: 18px; background: var(--surface); box-shadow: 6px 6px 0 var(--frame-shadow); box-sizing: border-box; }
+.mobileMenu button { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 44px; padding: 0 9px; border: 0; border-radius: 9px; background: transparent; font-size: 14px; font-weight: 700; text-align: left; }
+.mobileMenu button:hover { background: var(--input); }
+.mobileMenu button > .toggleTrack { margin-left: auto; }
+.mobileMenu p { margin: 6px 8px 5px; color: var(--muted); font-size: 11px; font-weight: 600; line-height: 1.45; }
+.menuDivider { display: block; height: 2px; margin: 3px 8px; background: var(--q08); }
+
+.mobileReport { display: flex; flex: 1; flex-direction: column; gap: 10px; min-height: 0; padding: 10px 12px 20px; }
+.mobileReport .backRow { padding: 0; }
+.mobileReport pre { flex: 1; min-height: 0; margin: 0; padding: 10px; overflow: auto; border: 2px solid var(--q10); border-radius: 12px; background: var(--deep); color: #d8d5cb; font: 10.5px/1.6 ui-monospace, Menlo, monospace; white-space: pre; }
+.mobileReport > .primaryButton { width: 100%; min-height: 48px; border: 2.5px solid #000; border-radius: 12px; box-shadow: 3px 3px 0 #000; font-size: 13px; }
+.sheet .feedback { bottom: 18px; left: 12px; right: 12px; max-width: none; }
+
+@media (pointer: coarse) {
+  .dockTop button,
+  .listToolbar button,
+  .listFooter button,
+  .componentPopover button,
+  .reportPopover button,
+  .detailHeader button,
+  .stateTabs button { min-height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner,
+  .listeningIcon svg { animation: none; }
+  .toggleTrack i { transition: none; }
+}
+
+:global(.app[data-reduce-motion="true"]) .spinner,
+:global(.app[data-reduce-motion="true"]) .listeningIcon svg { animation: none; }
