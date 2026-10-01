@@ -32,7 +32,7 @@ function requestChoice(id, firstAction) {
   };
 }
 
-function playerHarness(components) {
+function playerHarness(components, diagnostics = {}) {
   const main = { id: "main", clips: [{ id: "main-clip", asset_id: "main-video", scene: "main", start: 0, end: 10 }] };
   const target = { id: "target", clips: [{ id: "target-clip", asset_id: "target-video", scene: "target", start: 0, end: 3 }] };
   const manifest = {
@@ -49,7 +49,7 @@ function playerHarness(components) {
     components,
     playback: { initial_timeline: "main", timelines: [main, target] },
   };
-  const session = createPlaybackSession();
+  const session = createPlaybackSession(diagnostics);
   session.captureMode = true;
   session.manifest = manifest;
   session.currentTimeline = main;
@@ -128,7 +128,7 @@ test("concurrent requests keep their component identity and preserve an unhandle
 
   const firstRun = harness.actions.answerComponent({ componentId: first.id, index: 0 });
   const secondRun = harness.actions.answerComponent({ componentId: second.id, index: 0 });
-  pending.get("https://example.test/first").reject(new Error("offline"));
+  pending.get("https://example.test/first").reject(new TypeError("offline"));
   await new Promise((resolve) => setImmediate(resolve));
   pending.get("https://example.test/second").resolve(new Response('{"ok":true}', {
     headers: { "Content-Type": "application/json" },
@@ -140,15 +140,90 @@ test("concurrent requests keep their component identity and preserve an unhandle
   assert.deepEqual(harness.session.actionRuntime.state.choices, { first: 0, second: 0 });
   assert.deepEqual(harness.session.actionRuntime.state.responses.second, { ok: true });
   assert.deepEqual(harness.applied.map((item) => item.component), [second.id]);
-  assert.equal(harness.statuses.at(-1).message, "Request unavailable");
+  assert.equal(harness.statuses.at(-1).message, "Could not reach the service.");
 
   await harness.actions.answerComponent({ componentId: first.id, index: 1 });
   assert.equal(harness.session.capturedResponses.get(first.id).status, "complete");
   assert.equal(harness.statuses.at(-1).message, "");
 });
 
+test("optional player diagnostics explain deferred and duplicate input and keep request correlation", async t => {
+  const events = [];
+  let finish;
+  let sends = 0;
+  t.mock.method(globalThis, "fetch", () => {
+    sends += 1;
+    return new Promise(resolve => { finish = resolve; });
+  });
+  const component = requestChoice("question", request("https://example.test/scores"));
+  component.response_policy.dispatch = "layer_end";
+  const harness = playerHarness([component], { onDiagnostic(event) {
+    events.push(event);
+    throw new Error("Broken developer observer");
+  } });
+  await harness.actions.answerComponent({ componentId: component.id, index: 0 });
+  assert.equal(sends, 0);
+  assert.ok(events.some(event => event.type === "response.deferred" && event.reason === "layer_end"));
+  const input = events.find(event => event.type === "interaction.received");
+  harness.transitions.handleResponseBoundary();
+  await harness.actions.answerComponent({ componentId: component.id, index: 0 });
+  assert.ok(events.some(event => event.type === "interaction.ignored" && event.reason === "request_pending"));
+  finish(new Response("missing", { status: 404 }));
+  await new Promise(resolve => setImmediate(resolve));
+  const failed = events.find(event => event.type === "request.failed");
+  assert.equal(failed.status, 404);
+  assert.equal(failed.interactionId, input.interactionId);
+  assert.equal(sends, 1);
+  assert.equal(harness.session.capturedResponses.get(component.id).status, "failed");
+});
+
+test("enabling diagnostics preserves Continue, seek, scene, deferred and request playback behavior", async t => {
+  let responseStatus = 200;
+  let sends = 0;
+  t.mock.method(globalThis, "fetch", async () => {
+    sends += 1;
+    return new Response('{"score":3}', { status: responseStatus, headers: { "content-type": "application/json" } });
+  });
+  const cases = [
+    { label: "Continue", action: { type: "custom", name: "restyle_continue" } },
+    { label: "seek", action: { type: "seek", time: 3 } },
+    { label: "scene", action: { type: "goto_scene", scene: "target" } },
+    { label: "deferred", action: { type: "custom", name: "restyle_continue" }, deferred: true },
+    { label: "request success", action: request("https://example.test/scores", { into: "scores" }), status: 200 },
+    { label: "request failure", action: request("https://example.test/scores"), status: 404 },
+  ];
+  for (const scenario of cases) {
+    const snapshots = [];
+    for (const onDiagnostic of [undefined, () => {}, () => { throw new Error("Observer failed"); }]) {
+      sends = 0;
+      responseStatus = scenario.status ?? 200;
+      const component = requestChoice("question", scenario.action);
+      if (scenario.deferred) component.response_policy.dispatch = "layer_end";
+      const harness = playerHarness([component], { onDiagnostic });
+      await harness.actions.answerComponent({ componentId: component.id, index: 0 });
+      if (scenario.deferred) harness.transitions.handleResponseBoundary();
+      await new Promise(resolve => setImmediate(resolve));
+      snapshots.push({
+        state: harness.session.actionRuntime.state,
+        responses: [...harness.session.capturedResponses].map(([id, { diagnostic, ...response }]) => [id, response]),
+        holdingId: harness.session.awaitingComponent?.id,
+        timeline: harness.session.currentTimeline.id,
+        paused: harness.video.paused,
+        time: harness.video.currentTime,
+        applied: harness.applied,
+        loaded: harness.loaded,
+        statuses: harness.statuses,
+        sends,
+      });
+    }
+    assert.deepEqual(snapshots[1], snapshots[0], `${scenario.label}: enabling observation changed behavior`);
+    assert.deepEqual(snapshots[2], snapshots[0], `${scenario.label}: an observer failure changed behavior`);
+    assert.equal(snapshots[0].sends, scenario.status ? 1 : 0);
+  }
+});
+
 test("a handled request error runs its state action and defaults to Continue", async (t) => {
-  t.mock.method(globalThis, "fetch", async () => { throw new Error("offline"); });
+  t.mock.method(globalThis, "fetch", async () => { throw new TypeError("offline"); });
   const component = requestChoice("handled", request("https://example.test/handled", {
     onError: { type: "set", key: "request_error", value: true },
   }));
@@ -164,7 +239,7 @@ test("a handled request error runs its state action and defaults to Continue", a
 });
 
 test("one unhandled failure stays failed even if a later request error is handled", async (t) => {
-  t.mock.method(globalThis, "fetch", async () => { throw new Error("offline"); });
+  t.mock.method(globalThis, "fetch", async () => { throw new TypeError("offline"); });
   const component = requestChoice("ordered", [
     request("https://example.test/first"),
     request("https://example.test/second", { onError: { type: "set", key: "second_handled", value: true } }),
@@ -176,7 +251,29 @@ test("one unhandled failure stays failed even if a later request error is handle
   assert.equal(harness.session.actionRuntime.state.second_handled, true);
   assert.equal(harness.session.capturedResponses.get(component.id).status, "failed");
   assert.equal(harness.applied.length, 0);
-  assert.equal(harness.statuses.at(-1).message, "Request unavailable");
+  assert.equal(harness.statuses.at(-1).message, "Could not reach the service.");
+});
+
+test("player shows the HTTP cause without treating a 404 as an offline server", async (t) => {
+  t.mock.method(globalThis, "fetch", async () => new Response("Not found", { status: 404 }));
+  const component = requestChoice("missing-route", request("https://example.test/missing"));
+  const harness = playerHarness([component]);
+
+  await harness.actions.answerComponent({ componentId: component.id, index: 0 });
+
+  assert.equal(harness.session.capturedResponses.get(component.id).status, "failed");
+  assert.equal(harness.statuses.at(-1).message, "Request not found (404).");
+});
+
+test("player shows a service failure while keeping the answer retryable", async (t) => {
+  t.mock.method(globalThis, "fetch", async () => new Response("Unavailable", { status: 503 }));
+  const component = requestChoice("service-error", request("https://example.test/unavailable"));
+  const harness = playerHarness([component]);
+
+  await harness.actions.answerComponent({ componentId: component.id, index: 0 });
+
+  assert.equal(harness.session.capturedResponses.get(component.id).status, "failed");
+  assert.equal(harness.statuses.at(-1).message, "Service error (503). Try again.");
 });
 
 test("a failed success action still settles the completed network request", async (t) => {

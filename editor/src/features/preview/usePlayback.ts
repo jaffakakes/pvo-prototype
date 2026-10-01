@@ -5,7 +5,8 @@ import { clamp } from "../../domain/project/numbers";
 import { useCapture } from "../../state/captureStore";
 import type { CaptureState } from "../../state/types";
 import { runPlaybackFrame } from "./playbackFrame";
-import { advanceTry, failTry } from "./tryMode";
+import { advanceTry, failTry, observeTryDiagnostics } from "./tryMode";
+import { useTryMediaDiagnostics } from "./useTryMediaDiagnostics";
 
 const UPDATE_MS = 1000 / 30;
 const SEEK_TOLERANCE = .015;
@@ -20,11 +21,15 @@ export function usePlayback(videoRef: React.RefObject<HTMLVideoElement>) {
   const publishingVideoTime = useRef(false);
   const positionOrigin = useRef(new WeakMap<CaptureState, "video" | "external">());
   const loadedClip = useRef<LoadedClip | null>(null);
+  const syntheticClockReported = useRef(false);
   const pausedAt = useRef<number | null>(null);
   const state = useCapture();
   const { clips, t, playing, muted, trim } = state;
+  const trying = !!state.tryMode;
   const sceneTail = sceneDuration(state) > total(clips) && t >= total(clips);
   const current = trim ? { c: clips[trim.i], lt: trim.lt } : sceneTail ? null : locate(t, clips);
+  const hasMedia = !!current?.c.url;
+  useTryMediaDiagnostics(videoRef, trying, hasMedia);
   const fromVideo = positionOrigin.current.get(state) === "video";
   const pausePositionUnchanged = pausedAt.current != null && Math.abs(t - pausedAt.current) < .0001;
   const justPausedAtVideoTime = !playing && pausedAt.current == null && fromVideo;
@@ -42,6 +47,10 @@ export function usePlayback(videoRef: React.RefObject<HTMLVideoElement>) {
   useEffect(() => () => {
     loadedClip.current?.element.pause();
   }, []);
+
+  useEffect(() => {
+    syntheticClockReported.current = false;
+  }, [trying, hasMedia]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -63,8 +72,13 @@ export function usePlayback(videoRef: React.RefObject<HTMLVideoElement>) {
     let disposed = false;
 
     const resume = () => {
-      if (!disposed && useCapture.getState().playing && video.paused)
-        video.play().catch(() => { });
+      if (!disposed && useCapture.getState().playing && video.paused) {
+        const observe = observeTryDiagnostics();
+        observe({ type: "media.play_requested" });
+        video.play().catch(() => {
+          if (!disposed) observe({ type: "media.play_rejected", reason: "play_rejected" });
+        });
+      }
     };
     const sync = () => {
       if (video.muted !== (muted || !!clip.audioDetached))
@@ -105,6 +119,7 @@ export function usePlayback(videoRef: React.RefObject<HTMLVideoElement>) {
 
   useEffect(() => {
     if (!playing) {
+      syntheticClockReported.current = false;
       cancelAnimationFrame(raf.current);
       lastFrame.current = 0;
       lastPublished.current = 0;
@@ -149,6 +164,10 @@ export function usePlayback(videoRef: React.RefObject<HTMLVideoElement>) {
       else {
         // Camera-denied demo clips have no media clock.
         next = Math.min(position ? position.start + position.d : projectEnd, state.t + dt);
+        if (state.tryMode && !syntheticClockReported.current) {
+          syntheticClockReported.current = true;
+          observeTryDiagnostics()({ type: "media.playing", reason: "timeline_clock" });
+        }
       }
 
       if (advanceTry(state, next)) {

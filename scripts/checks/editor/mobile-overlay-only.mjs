@@ -107,7 +107,7 @@ try {
 
   await page.locator("body").focus();
   await page.keyboard.press("t");
-  await header.getByRole("button", { name: "Stop", exact: true }).waitFor();
+  await header.getByRole("button", { name: "Stop trying", exact: true }).waitFor();
   await page.keyboard.press("t");
   await tryButton.waitFor();
 

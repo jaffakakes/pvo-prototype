@@ -4,6 +4,7 @@ import { sceneChildren } from "../../domain/scenes/rules";
 import { useCapture } from "../../state/captureStore";
 import { Icon } from "../../ui/Icon";
 import { fmt } from "../../ui/formatTime";
+import { DebugEntry } from "../editor-layout/debugging/DebugEntry";
 import styles from "./Scenes.module.css";
 
 type Props = {
@@ -55,5 +56,6 @@ export const ScenesRow = forwardRef<HTMLButtonElement, Props>(function ScenesRow
       aria-expanded={treeOpen} aria-controls={treeId} onClick={onToggleTree}>
       <Icon name="choice" size={19} />
     </button>
+    <DebugEntry variant="lastRun" />
   </nav>;
 });

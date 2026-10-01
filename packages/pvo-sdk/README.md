@@ -11,6 +11,7 @@ import {
   tryReadPvo,
   validatePvo,
   createPvoRuntime,
+  describeRequestFailure,
   resolveTextTemplate,
 } from "@pvo/sdk";
 ```
@@ -22,6 +23,7 @@ import {
 - `tryReadPvo(file)` returns `null` for a plain MP4 or MOV.
 - `validatePvo(manifest)` returns `{ valid, errors, warnings }`.
 - `createPvoRuntime(manifest, handlers)` runs actions against host-provided player adapters.
+- `describeRequestFailure(error)` returns a short, viewer-safe failure kind and message for editor and player UI.
 - `resolveTextTemplate(text, context)` safely resolves scalar state/response values for display text.
 
 The package has no UI, server, payment, or Restyle dependency.
@@ -33,5 +35,11 @@ The JSON Schema is exported as `@pvo/sdk/schema`.
 Every card, choice, and form declares `response_policy: { dispatch, unanswered }` and a timed `presentation`; tooltips do not. Dispatch is either `interaction` or `layer_end`, and an unanswered layer either `continue`s or `pause`s. These choices are independent. Routing still requires an explicit `goto_scene` or `seek` action.
 
 Requests may store GET or POST results through `into`; Restyle uses `responses.<component-id>`. A tooltip can display that state with a text template such as `{state.responses.component-1.message}`, and a host re-resolves a visible tooltip after state changes.
+
+A request has a 15-second deadline covering the host call and response parsing. Its `request_error` event includes `failure: { kind, status?, message }` for user feedback, alongside the existing diagnostic `error` string and `handled` flag. `on_error` actions still receive `{response.error}` and run as authored; caller cancellation emits no request error. The runtime never retries a request automatically.
+
+Hosts may supply `onDiagnostic(event)` separately from `onEvent`. This optional observer receives typed action, request and state facts with action/request IDs and `context.diagnostic` correlation. Request records include a safe destination, known HTTP status and elapsed duration; cancellation is distinct from failure. A successful request followed by a failed action remains a completed request. Observer exceptions and rejected promises cannot interrupt execution.
+
+Diagnostics omit bodies and historical state values by default. `captureDiagnosticBodies()` opts in to bounded data for subsequent activity; each request samples this choice when it starts. `sanitizeDiagnosticValue` masks string values and private fields, while retaining bounded numeric/boolean shapes. Request/response headers are never captured. `sanitizeDiagnosticUrl` strips credentials, query values and fragments. Hosts own run identity, retention, UI and sanitized reports; none of this adds fields to authored PVO files. The standalone player accepts the same optional observer through `createPlaybackSession({ onDiagnostic, captureDiagnosticBodies })` for integration tests and developer hosts, with no viewer debug UI.
 
 The reference Restyle player follows the format note for every package. A selected scene plays to its end, `restyle_capture` carries layout only, and the SDK's `gotoScene` handler remains the integration boundary. See the [format note](../../SPEC.md) for playback and export contracts.

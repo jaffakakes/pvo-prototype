@@ -120,11 +120,70 @@ export interface PvoAsset { id: string; name: string; type: string; blob: Blob; 
 export interface PvoReadResult { manifest: PvoManifest; validation: ValidationResult; videoBlob: Blob; fileName: string; assets?: PvoAsset[]; container?: boolean }
 export interface PvoProjectReadResult { manifest: PvoManifest; validation: ValidationResult; assets: PvoAsset[]; container: true; fileName: string }
 export interface RuntimeContext { state: Record<string, unknown>; response?: unknown; [key: string]: unknown }
+export interface PvoRequestFailure {
+  kind: "http" | "network" | "timeout" | "policy" | "unknown";
+  status?: number;
+  message: string;
+}
+export type PvoDiagnosticType =
+  | "session.started" | "session.stopped" | "session.failed"
+  | "component.ready" | "component.failed" | "component.unavailable" | "component.active" | "component.inactive" | "component.no_action"
+  | "interaction.received" | "interaction.accepted" | "interaction.ignored" | "response.deferred"
+  | "action.selected" | "action.started" | "action.completed" | "action.skipped" | "action.failed" | "action.cancelled"
+  | "request.started" | "request.completed" | "request.failed" | "request.rejected" | "request.cancelled"
+  | "state.changed"
+  | "playback.hold" | "playback.released" | "playback.seek_requested" | "playback.scene_requested" | "playback.route_failed"
+  | "media.play_requested" | "media.playing" | "media.paused" | "media.waiting" | "media.seeking" | "media.ended" | "media.error" | "media.play_rejected";
+export interface PvoDiagnosticSource {
+  part?: "structure" | "style" | "logic";
+  revision?: string;
+  ruleId?: string;
+  line?: number;
+  column?: number;
+  lastValid?: boolean;
+}
+export type PvoDiagnosticValue = null | boolean | number | string | PvoDiagnosticValue[] | { [key: string]: PvoDiagnosticValue };
+/** Facts only. Hosts attach run identity, sequence and media time in their bounded collectors. */
+export interface PvoDiagnosticEvent {
+  type: PvoDiagnosticType;
+  componentId?: string;
+  sceneId?: string;
+  interactionId?: string;
+  actionId?: string;
+  parentActionId?: string;
+  requestId?: string;
+  source?: PvoDiagnosticSource;
+  reason?: string;
+  message?: string;
+  actionType?: string;
+  target?: string;
+  label?: string;
+  waitUntil?: number;
+  method?: string;
+  url?: string;
+  status?: number;
+  durationMs?: number;
+  failure?: PvoRequestFailure;
+  handled?: boolean;
+  path?: string;
+  before?: PvoDiagnosticValue;
+  after?: PvoDiagnosticValue;
+  captured?: boolean;
+  requestBody?: PvoDiagnosticValue;
+  responseBody?: PvoDiagnosticValue;
+}
+export interface PvoDiagnosticContext {
+  interactionId?: string;
+  sceneId?: string;
+  actionId?: string;
+  source?: PvoDiagnosticSource;
+}
 export interface RuntimeExecutionContext {
   /** Reject request failures after on_error; intended for imperative pvo.request() bridges. */
   throwOnRequestError?: boolean;
   /** Cancels pending work before it can update state or run follow-up actions. */
   signal?: AbortSignal;
+  diagnostic?: PvoDiagnosticContext;
   [key: string]: unknown;
 }
 export interface RuntimeHandlers {
@@ -136,8 +195,12 @@ export interface RuntimeHandlers {
   openUrl?(url: string, context: RuntimeContext): unknown | Promise<unknown>;
   custom?(name: string, payload: unknown, context: RuntimeContext): unknown | Promise<unknown>;
   onEvent?(event: RuntimeEvent): void;
+  /** Optional observer; exceptions and rejected promises cannot change execution. */
+  onDiagnostic?(event: PvoDiagnosticEvent): void;
+  /** Opt in for subsequent bounded data capture. Secrets and string values remain masked. */
+  captureDiagnosticBodies?(): boolean;
 }
-export interface RuntimeEvent { type: string; state: Record<string, unknown>; visible: string[]; [key: string]: unknown }
+export interface RuntimeEvent { type: string; state: Record<string, unknown>; visible: string[]; failure?: PvoRequestFailure; [key: string]: unknown }
 
 export function inspectMp4(input: Uint8Array | ArrayBuffer): Mp4Box[];
 export function packPvo(media: BinaryInput, manifest: PvoManifest): Promise<Blob>;
@@ -159,6 +222,12 @@ export function evaluateWhen(condition: PvoCondition | PvoCondition[] | undefine
 export function resolveTemplates<T>(value: T, context?: Partial<RuntimeContext>): T;
 /** Resolve a display template to scalar text; missing, null, and structured values become empty text. */
 export function resolveTextTemplate(value: unknown, context?: Partial<RuntimeContext>): string;
+/** Classify a request failure without exposing exception text to viewers. */
+export function describeRequestFailure(error: unknown): PvoRequestFailure;
+export function sanitizeDiagnosticValue(value: unknown, path?: string): PvoDiagnosticValue;
+export function sanitizeDiagnosticUrl(value: unknown): string;
+export function sanitizeDiagnosticText(value: unknown): string;
+export function observeDiagnostic(observer: ((event: PvoDiagnosticEvent) => void) | undefined, event: PvoDiagnosticEvent): void;
 
 export class PvoRuntime {
   constructor(manifest: PvoManifest, handlers?: RuntimeHandlers);
@@ -167,7 +236,7 @@ export class PvoRuntime {
   state: Record<string, unknown>;
   visible: Set<string>;
   subscribe(listener: (event: RuntimeEvent) => void): () => void;
-  setState(key: string, value: unknown): void;
+  setState(key: string, value: unknown, context?: RuntimeExecutionContext): void;
   reset(): void;
   getComponent(idOrObject: string | PvoComponent): PvoComponent | undefined;
   execute(actionOrActions: PvoAction | PvoAction[], context?: RuntimeExecutionContext): Promise<unknown>;

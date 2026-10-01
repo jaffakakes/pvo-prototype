@@ -6,6 +6,7 @@ import { Preview } from "../../preview/Preview";
 import { togglePlayback } from "../../preview/playbackCommands";
 import { startTry, stopTry } from "../../preview/tryMode";
 import { DesktopSceneBar } from "./DesktopSceneBar";
+import { DebugEntry } from "../../editor-layout/debugging/DebugEntry";
 import styles from "./DesktopPlayer.module.css";
 
 type Props = {
@@ -40,6 +41,7 @@ export function DesktopPlayer({ safeZone, onSafeZoneChange, onOpenProject, onOpe
           onClick={tryMode ? stopTry : startTry} aria-label={tryMode ? "Stop trying" : "Try"}>
           <span aria-hidden="true">{tryMode ? "■" : "▷"}</span>{tryMode ? "Stop" : "Try"}
         </button>
+        <DebugEntry variant="desktop" />
         <button type="button" className={styles.safe} data-on={safeZone} aria-label="Safe zone" aria-pressed={safeZone}
           onClick={() => onSafeZoneChange(!safeZone)}><Icon name="ratio" size={16} /></button>
         <button type="button" className={styles.ratio} onClick={onOpenProject} disabled={!!tryMode}
