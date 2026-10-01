@@ -1,4 +1,5 @@
-import { sceneDuration } from "../../domain/audio/editing";
+import { sceneDuration } from "../../domain/scenes/duration";
+import { total } from "../../domain/clips/timing";
 import { useCapture } from "../../state/captureStore";
 import { cx } from "../../styles";
 import { Icon } from "../../ui/Icon";
@@ -20,7 +21,7 @@ export function ExportSheet() {
   const interactive = components > 0 || s.scenes.length > 1;
   const format = interactive ? s.exportFormat : "video";
   const emptyScenes =
-    format === "pvo" ? s.scenes.filter((scene) => sceneDuration(scene) <= 0) : [];
+    format === "pvo" ? s.scenes.filter((scene) => total(scene.clips) <= 0) : [];
   const { failure, showShare, setShowShare, exported, start } =
     useExportSession(format);
   if (showShare && exported.artifact && exported.url)

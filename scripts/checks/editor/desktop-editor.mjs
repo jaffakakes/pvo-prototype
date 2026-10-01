@@ -92,10 +92,27 @@ async function checkVisualLayerStack() {
     const trackBox = tracks?.getBoundingClientRect();
     const labelGeometry = geometry(labels);
     const laneGeometry = geometry(lanes);
+    const blocks = [...element.querySelectorAll(
+      '[data-layer-id^="text:"], [data-layer-id^="component:"]',
+    )].map(node => {
+      const box = node.getBoundingClientRect();
+      return { left: box.left, right: box.right };
+    });
+    const events = blocks.flatMap(block => [
+      { x: block.left, delta: 1 },
+      { x: block.right, delta: -1 },
+    ]).sort((left, right) => left.x - right.x || left.delta - right.delta);
+    let active = 0, maxConcurrency = 0;
+    for (const event of events) {
+      active += event.delta;
+      maxConcurrency = Math.max(maxConcurrency, active);
+    }
     const finalLane = laneGeometry.at(-1);
     return {
       labels: labelGeometry,
       lanes: laneGeometry,
+      blockCount: blocks.length,
+      maxConcurrency,
       verticallyScrollable,
       reachedBottom: !!tracks && tracks.scrollTop > 0,
       finalRowVisible:
@@ -111,11 +128,14 @@ async function checkVisualLayerStack() {
     result.labels.map(row => row.id),
     "Layer labels and timing lanes must stay in the same stack order",
   );
-  assert.deepEqual(
-    result.lanes.map(row => row.id.split(":")[0]),
-    ["text", "text", "text", "text", "component", "component", "video"],
-    "Every visual item must get its own front-to-back timeline row",
+  const overlayLanes = result.lanes.filter(row => row.id.startsWith("overlay:"));
+  assert.equal(result.blockCount, 6, "Every visual item must render in the timeline");
+  assert.equal(
+    overlayLanes.length,
+    result.maxConcurrency,
+    "Desktop overlays must use exactly the tracks required by concurrent items",
   );
+  assert.equal(result.lanes.filter(row => row.id === "video").length, 1);
   for (let index = 0; index < result.lanes.length; index += 1) {
     assert(
       Math.abs(result.lanes[index].top - result.labels[index].top) < 1,
@@ -127,12 +147,10 @@ async function checkVisualLayerStack() {
         `Layer rows overlap at ${result.lanes[index].id}`,
       );
   }
-  assert.equal(
-    result.verticallyScrollable,
-    true,
-    "A dense desktop layer stack must remain vertically reachable",
+  assert(
+    !result.verticallyScrollable || result.reachedBottom,
+    "An overflowing packed layer stack must scroll to its final row",
   );
-  assert.equal(result.reachedBottom, true, "The desktop layer stack must scroll");
   assert.equal(
     result.finalRowVisible,
     true,

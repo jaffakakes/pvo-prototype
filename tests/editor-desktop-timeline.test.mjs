@@ -33,7 +33,7 @@ const {
   trimClipHandle,
   snappedTime,
   timelineSnapPoints,
-  desktopLayerRows,
+  desktopLayerLayout,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString("base64")}`
 );
@@ -52,6 +52,7 @@ const clip = {
   height: 16,
   fit: "contain",
 };
+const DESKTOP_ZOOM = 40;
 function setup() {
   useCapture.setState(initial());
   useCapture.getState().patch({
@@ -67,11 +68,84 @@ function setup() {
   });
 }
 
-test("desktop visual layers render front-to-back without mutating a dense mixed stack", () => {
+test("desktop visual layers use the minimum tracks and reuse touching intervals", () => {
   const source = {
+    clips: [{ ...clip, srcDur: 8, in: 0, out: 8, speed: 1 }],
     texts: [
-      { id: 11, text: "First", start: 1, end: 4 },
-      { id: 12, text: "Second", start: 1, end: 4 },
+      { id: 11, text: "First", start: 0, end: 2 },
+      { id: 12, text: "Second", start: 1, end: 3 },
+      { id: 13, text: "Third", start: 3, end: 5 },
+    ],
+    components: [
+      { id: "card", at: 2, dur: 2 },
+      { id: "choice", at: 4, dur: 2 },
+    ],
+    layers: [
+      "video",
+      "text:11",
+      "component:card",
+      "text:12",
+      "text:13",
+      "component:choice",
+    ],
+  };
+  const before = structuredClone(source);
+
+  assert.deepEqual(desktopLayerLayout(source, DESKTOP_ZOOM), {
+    rows: [
+      {
+        id: "overlay:front:0",
+        kind: "overlay",
+        side: "front",
+        layerIds: ["text:11", "component:card", "component:choice"],
+      },
+      {
+        id: "overlay:front:1",
+        kind: "overlay",
+        side: "front",
+        layerIds: ["text:12", "text:13"],
+      },
+      { id: "video", kind: "video", layerIds: ["video"] },
+    ],
+    rowIndexByLayer: {
+      "text:11": 0,
+      "component:card": 0,
+      "component:choice": 0,
+      "text:12": 1,
+      "text:13": 1,
+      video: 2,
+    },
+  });
+  assert.deepEqual(source, before, "packing must not reorder or mutate project data");
+});
+
+test("desktop packing separates overlapping minimum hit targets", () => {
+  const source = {
+    clips: [],
+    texts: [
+      { id: 11, text: "First", start: 0, end: 0.1 },
+      { id: 12, text: "Adjacent", start: 0.1, end: 0.2 },
+      { id: 13, text: "Separated", start: 0.8, end: 0.9 },
+    ],
+    components: [],
+    layers: ["video", "text:11", "text:12", "text:13"],
+  };
+
+  const layout = desktopLayerLayout(source, DESKTOP_ZOOM);
+
+  assert.deepEqual(
+    layout.rows.map((row) => row.layerIds),
+    [[], ["text:11", "text:13"], ["text:12"], ["video"]],
+    "Four-pixel clips need separate rows when their 28px targets overlap, while separated targets can reuse a row",
+  );
+});
+
+test("desktop layer packing resolves equal starts by canonical z-order", () => {
+  const source = {
+    clips: [{ ...clip, srcDur: 8, in: 0, out: 8, speed: 1 }],
+    texts: [
+      { id: 11, text: "Back text", start: 1, end: 4 },
+      { id: 12, text: "Front text", start: 1, end: 4 },
     ],
     components: [
       { id: "card", at: 1, dur: 3 },
@@ -85,64 +159,148 @@ test("desktop visual layers render front-to-back without mutating a dense mixed 
       "component:choice",
     ],
   };
-  const before = structuredClone(source);
+  const expected = desktopLayerLayout(source, DESKTOP_ZOOM);
 
-  assert.deepEqual(desktopLayerRows(source), [
-    {
-      id: "component:choice",
-      kind: "component",
-      layerId: "component:choice",
-    },
-    { id: "text:12", kind: "text", layerId: "text:12" },
-    {
-      id: "component:card",
-      kind: "component",
-      layerId: "component:card",
-    },
-    { id: "text:11", kind: "text", layerId: "text:11" },
-    { id: "video", kind: "video", layerId: "video" },
-  ]);
-  assert.deepEqual(source, before, "row projection must not reorder project data");
+  assert.deepEqual(
+    expected.rows.map((row) => row.layerIds),
+    [
+      ["component:choice"],
+      ["text:12"],
+      ["component:card"],
+      ["text:11"],
+      ["video"],
+    ],
+    "four concurrent overlays require four deterministic tracks",
+  );
+  assert.deepEqual(
+    desktopLayerLayout(
+      {
+        ...source,
+        texts: source.texts.slice().reverse(),
+        components: source.components.slice().reverse(),
+      },
+      DESKTOP_ZOOM,
+    ),
+    expected,
+    "storage-array order must not change track assignment",
+  );
 });
 
-test("desktop layer rows retain add targets for each empty visual layer type", () => {
-  assert.deepEqual(
-    desktopLayerRows({ texts: [], components: [], layers: ["video"] }),
-    [
-      { id: "add:components", kind: "empty-components", layerId: null },
-      { id: "add:text", kind: "empty-text", layerId: null },
-      { id: "video", kind: "video", layerId: "video" },
+test("desktop layer packing keeps front and back overlays on opposite sides of video", () => {
+  const source = {
+    clips: [{ ...clip, srcDur: 8, in: 0, out: 8, speed: 1 }],
+    texts: [
+      { id: 11, text: "Behind", start: 1, end: 2 },
+      { id: 12, text: "In front", start: 0, end: 1 },
     ],
-  );
-
-  assert.deepEqual(
-    desktopLayerRows({
-      texts: [{ id: 11 }],
-      components: [],
-      layers: ["video", "text:11"],
-    }),
-    [
-      { id: "add:components", kind: "empty-components", layerId: null },
-      { id: "text:11", kind: "text", layerId: "text:11" },
-      { id: "video", kind: "video", layerId: "video" },
+    components: [
+      { id: "behind", at: 0, dur: 1 },
+      { id: "front", at: 1, dur: 1 },
     ],
-  );
+    layers: [
+      "component:behind",
+      "text:11",
+      "video",
+      "text:12",
+      "component:front",
+    ],
+  };
 
-  assert.deepEqual(
-    desktopLayerRows({
-      texts: [],
-      components: [{ id: "card" }],
-      layers: ["video", "component:card"],
-    }),
-    [
-      { id: "add:text", kind: "empty-text", layerId: null },
+  assert.deepEqual(desktopLayerLayout(source, DESKTOP_ZOOM), {
+    rows: [
       {
-        id: "component:card",
-        kind: "component",
-        layerId: "component:card",
+        id: "overlay:front:0",
+        kind: "overlay",
+        side: "front",
+        layerIds: ["text:12", "component:front"],
       },
-      { id: "video", kind: "video", layerId: "video" },
+      { id: "video", kind: "video", layerIds: ["video"] },
+      {
+        id: "overlay:back:0",
+        kind: "overlay",
+        side: "back",
+        layerIds: ["component:behind", "text:11"],
+      },
     ],
+    rowIndexByLayer: {
+      "text:12": 0,
+      "component:front": 0,
+      video: 1,
+      "component:behind": 2,
+      "text:11": 2,
+    },
+  });
+});
+
+test("desktop layer layout retains add targets for each empty visual type", () => {
+  assert.deepEqual(
+    desktopLayerLayout(
+      {
+        clips: [],
+        texts: [],
+        components: [],
+        layers: ["video"],
+      },
+      DESKTOP_ZOOM,
+    ),
+    {
+      rows: [
+        { id: "add:components", kind: "empty-components", layerIds: [] },
+        { id: "add:text", kind: "empty-text", layerIds: [] },
+        { id: "video", kind: "video", layerIds: ["video"] },
+      ],
+      rowIndexByLayer: { video: 2 },
+    },
+  );
+
+  assert.deepEqual(
+    desktopLayerLayout(
+      {
+        clips: [],
+        texts: [{ id: 11, start: 0, end: 1 }],
+        components: [],
+        layers: ["video", "text:11"],
+      },
+      DESKTOP_ZOOM,
+    ),
+    {
+      rows: [
+        { id: "add:components", kind: "empty-components", layerIds: [] },
+        {
+          id: "overlay:front:0",
+          kind: "overlay",
+          side: "front",
+          layerIds: ["text:11"],
+        },
+        { id: "video", kind: "video", layerIds: ["video"] },
+      ],
+      rowIndexByLayer: { "text:11": 1, video: 2 },
+    },
+  );
+
+  assert.deepEqual(
+    desktopLayerLayout(
+      {
+        clips: [],
+        texts: [],
+        components: [{ id: "card", at: 0, dur: 1 }],
+        layers: ["video", "component:card"],
+      },
+      DESKTOP_ZOOM,
+    ),
+    {
+      rows: [
+        { id: "add:text", kind: "empty-text", layerIds: [] },
+        {
+          id: "overlay:front:0",
+          kind: "overlay",
+          side: "front",
+          layerIds: ["component:card"],
+        },
+        { id: "video", kind: "video", layerIds: ["video"] },
+      ],
+      rowIndexByLayer: { "component:card": 1, video: 2 },
+    },
   );
 });
 

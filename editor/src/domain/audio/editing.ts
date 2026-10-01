@@ -5,16 +5,6 @@ import type { AudioClip } from "./model";
 
 export const audioDuration = (clip: AudioClip) =>
   (clip.out - clip.in) / clip.speed;
-export function sceneDuration(scene: {
-  clips: Clip[];
-  audioClips?: AudioClip[];
-}): number {
-  return Math.max(
-    total(scene.clips),
-    ...(scene.audioClips ?? []).map((clip) => clip.start + audioDuration(clip)),
-  );
-}
-
 export function extractClipAudio(
   clips: Clip[],
   index: number,

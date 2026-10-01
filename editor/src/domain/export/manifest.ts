@@ -1,11 +1,12 @@
-import { sceneDuration } from "../audio/editing";
+import { sceneDuration } from "../scenes/duration";
 import { type CompiledPvoComponent, type PvoLanguageSource } from "../../../../packages/pvo-language/index.js";
 import type { PvoComponent as ManifestComponent, PvoManifest } from "../../../../packages/pvo-sdk/index.js";
 import { PVO_SPEC_VERSION } from "../../../../packages/pvo-sdk/index.js";
-import { dur } from "../clips/timing";
+import { total } from "../clips/timing";
 import { actionFor, collectRequestDomains, requestHost } from "../components/actions";
 import { responsePolicyFor } from "../components/responsePolicy";
 import { componentScale, componentSize } from "../components/scale";
+import { clampComponentStart, componentEnd } from "../components/timing";
 import { componentPixelDimension, type ComponentDimensions } from "../../../../packages/pvo-component-runtime/index.js";
 import { formFieldControls, formSubmissionOutcome, validateFormFields } from "../components/forms";
 import { cloneLook } from "../components/look";
@@ -25,15 +26,6 @@ function ruleOutcome(language: CompiledLanguage, controlId: string | null): Outc
     throw new Error(`PVO Logic has no action for ${controlId ?? "submit"}.`);
   return rule.action;
 }
-function endOfClipAt(scene: Scene, at: number) {
-  let end = 0;
-  for (const clip of scene.clips) {
-    end += dur(clip);
-    if (at < end - .001)
-      return end;
-  }
-  return sceneDuration(scene);
-}
 function assertOutcome(outcome: Outcome | undefined, scene: Scene, available: Set<string>) {
   if (outcome?.kind === "request") {
     assertOutcome(outcome.onSuccess, scene, available);
@@ -44,7 +36,7 @@ function assertOutcome(outcome: Outcome | undefined, scene: Scene, available: Se
     throw new Error(`${scene.name} links to an empty or missing scene. Add a clip there before exporting.`);
   }
   if (outcome?.kind === "time" && (!Number.isFinite(outcome.t) || outcome.t < 0 || outcome.t > sceneDuration(scene))) {
-    throw new Error(`${scene.name} has a jump outside its video. Choose a time in that scene.`);
+    throw new Error(`${scene.name} has a jump outside its timeline. Choose a time in that scene.`);
   }
 }
 function manifestComponent(component: PvoComponent, scene: Scene, available: Set<string>, languages: CompiledLanguages, canvas: ComponentDimensions): ManifestComponent {
@@ -56,8 +48,17 @@ function manifestComponent(component: PvoComponent, scene: Scene, available: Set
     throw new Error(`${scene.name} · ${component.type}: compile PVO language before building the manifest.`);
   }
   const length = sceneDuration(scene);
-  const at = clamp(component.at, 0, Math.max(0, length - .01));
-  const end = Math.min(length, component.dur == null ? endOfClipAt(scene, at) : at + Math.max(.5, component.dur));
+  const at = clamp(
+    clampComponentStart(component.at, component.dur, total(scene.clips)),
+    0,
+    Math.max(0, length - .01),
+  );
+  const timed = {
+    ...component,
+    at,
+    dur: component.dur == null ? null : Math.max(.5, component.dur),
+  };
+  const end = Math.min(length, componentEnd(timed, scene.clips));
   const scale = componentScale(component.scale);
   const size = componentSize(component);
   const pixelWidth = componentPixelDimension(component.width);

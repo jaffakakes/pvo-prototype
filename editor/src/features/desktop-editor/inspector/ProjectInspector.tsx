@@ -1,4 +1,4 @@
-import { sceneDuration } from "../../../domain/audio/editing";
+import { sceneDuration } from "../../../domain/scenes/duration";
 import type { Ratio } from "../../../domain/project/model";
 import { useCapture } from "../../../state/captureStore";
 import { fmt } from "../../../ui/formatTime";

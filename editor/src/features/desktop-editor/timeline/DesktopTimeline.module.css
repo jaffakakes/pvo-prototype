@@ -25,6 +25,20 @@
   flex-direction: column;
   gap: 6px;
 }
+.visualLabels,
+.visualStack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+.visualStack {
+  position: relative;
+  width: 100%;
+}
+.visualLabels > *,
+.visualStack > * {
+  grid-column: 1;
+}
 .currentTime {
   height: 22px;
   flex-shrink: 0;
@@ -54,6 +68,9 @@
 }
 .label[data-kind="text"] > span:first-child {
   color: #ffd23e;
+}
+.label[data-kind="overlay"] > span:first-child {
+  color: #ff9fbc;
 }
 .label[data-kind="audio"] > span:first-child {
   color: #2ec4b6;
@@ -156,8 +173,9 @@
 }
 .block {
   appearance: none;
-  position: absolute;
-  top: 0;
+  position: relative;
+  align-self: stretch;
+  justify-self: start;
   height: 28px;
   min-width: 0;
   display: flex;
@@ -172,6 +190,7 @@
   text-align: left;
   cursor: grab;
   touch-action: none;
+  z-index: 1;
 }
 .block:not([data-selected="true"])::before {
   content: "";
@@ -407,6 +426,10 @@
   }
   .labels,
   .content {
+    gap: 3px;
+  }
+  .visualLabels,
+  .visualStack {
     gap: 3px;
   }
   .scroll {

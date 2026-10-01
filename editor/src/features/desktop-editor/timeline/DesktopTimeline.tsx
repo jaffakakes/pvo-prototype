@@ -5,7 +5,7 @@ import {
   type PointerEvent,
   type ReactNode,
 } from "react";
-import { sceneDuration } from "../../../domain/audio/editing";
+import { sceneDuration } from "../../../domain/scenes/duration";
 import { dur } from "../../../domain/clips/timing";
 import { useAssistant } from "../../../state/assistant/assistantStore";
 import { useCapture } from "../../../state/captureStore";
@@ -21,7 +21,7 @@ import {
   DesktopVisualLayerLanes,
 } from "./DesktopVisualLayerRows";
 import { DEFAULT_ZOOM, snappedTime, timelineSnapPoints } from "./geometry";
-import { desktopLayerRows } from "./layerRows";
+import { desktopLayerLayout } from "./layerRows";
 import { TimelineTimePicker } from "./TimelineTimePicker";
 import { TimelineToolbar } from "./TimelineToolbar";
 
@@ -57,7 +57,7 @@ export function DesktopTimeline({
   const clipEnds = state.clips.map((clip) => (clipEnd += dur(clip)));
   const blocked = !!state.tryMode;
   const editingBlocked = blocked || !!state.playheadPick;
-  const layerRows = desktopLayerRows(state);
+  const layerLayout = desktopLayerLayout(state, zoom);
 
   useEffect(() => {
     const element = scroll.current;
@@ -139,11 +139,7 @@ export function DesktopTimeline({
       >
         <div className={styles.labels} aria-hidden="true">
           <div className={styles.currentTime}>{fmt(state.t)}</div>
-          <DesktopVisualLayerLabels
-            rows={layerRows}
-            components={state.components}
-            texts={state.texts}
-          />
+          <DesktopVisualLayerLabels rows={layerLayout.rows} />
           {state.audioClips.map((clip) => (
             <div key={clip.id} className={styles.label} data-kind="audio">
               <span>♪</span> {clip.name}
@@ -207,7 +203,7 @@ export function DesktopTimeline({
               ))}
             </div>
             <DesktopVisualLayerLanes
-              rows={layerRows}
+              layout={layerLayout}
               state={state}
               zoom={zoom}
               clipEnds={clipEnds}

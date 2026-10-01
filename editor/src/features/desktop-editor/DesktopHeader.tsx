@@ -1,4 +1,4 @@
-import { sceneDuration } from "../../domain/audio/editing";
+import { sceneDuration } from "../../domain/scenes/duration";
 import { useSyncExternalStore } from "react";
 import { getProjectStorageStatus, subscribeProjectStorage } from "../../app/projectAutosave";
 import { useCapture } from "../../state/captureStore";
@@ -13,7 +13,6 @@ export function DesktopHeader({ onOpenProject }: { onOpenProject(): void }) {
   const duration = useCapture(sceneDuration);
   const projectName = useCapture(state => state.projectName);
   const scene = useCapture(state => state.scenes.find(item => item.id === state.currentSceneId));
-  const clips = useCapture(state => state.clips);
   const ratio = useCapture(state => state.ratio);
   const busy = useCapture(state => state.importing || state.ex === "running");
   const trying = useCapture(state => !!state.tryMode);
