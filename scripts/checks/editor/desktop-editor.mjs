@@ -71,6 +71,75 @@ async function checkLayout(viewport) {
   await checkFrame();
 }
 
+async function checkVisualLayerStack() {
+  const result = await timeline.evaluate(element => {
+    const labels = [...element.querySelectorAll("[data-desktop-layer-label]")];
+    const lanes = [...element.querySelectorAll("[data-desktop-layer-lane]")];
+    const geometry = nodes => nodes.map(node => {
+      const box = node.getBoundingClientRect();
+      return {
+        id: node.getAttribute(nodes === labels
+          ? "data-desktop-layer-label"
+          : "data-desktop-layer-lane"),
+        top: box.top,
+        bottom: box.bottom,
+      };
+    });
+    const tracks = labels[0]?.parentElement?.parentElement;
+    const verticallyScrollable =
+      !!tracks && tracks.scrollHeight > tracks.clientHeight;
+    if (tracks) tracks.scrollTop = tracks.scrollHeight;
+    const trackBox = tracks?.getBoundingClientRect();
+    const labelGeometry = geometry(labels);
+    const laneGeometry = geometry(lanes);
+    const finalLane = laneGeometry.at(-1);
+    return {
+      labels: labelGeometry,
+      lanes: laneGeometry,
+      verticallyScrollable,
+      reachedBottom: !!tracks && tracks.scrollTop > 0,
+      finalRowVisible:
+        !!trackBox &&
+        !!finalLane &&
+        finalLane.top >= trackBox.top &&
+        finalLane.bottom <= trackBox.bottom,
+    };
+  });
+
+  assert.deepEqual(
+    result.lanes.map(row => row.id),
+    result.labels.map(row => row.id),
+    "Layer labels and timing lanes must stay in the same stack order",
+  );
+  assert.deepEqual(
+    result.lanes.map(row => row.id.split(":")[0]),
+    ["text", "text", "text", "text", "component", "component", "video"],
+    "Every visual item must get its own front-to-back timeline row",
+  );
+  for (let index = 0; index < result.lanes.length; index += 1) {
+    assert(
+      Math.abs(result.lanes[index].top - result.labels[index].top) < 1,
+      `Layer row ${result.lanes[index].id} is not aligned with its label`,
+    );
+    if (index > 0)
+      assert(
+        result.lanes[index].top >= result.lanes[index - 1].bottom,
+        `Layer rows overlap at ${result.lanes[index].id}`,
+      );
+  }
+  assert.equal(
+    result.verticallyScrollable,
+    true,
+    "A dense desktop layer stack must remain vertically reachable",
+  );
+  assert.equal(result.reachedBottom, true, "The desktop layer stack must scroll");
+  assert.equal(
+    result.finalRowVisible,
+    true,
+    "Scrolling must expose the final desktop layer row",
+  );
+}
+
 try {
   await page.route("**/api/publishing", route => route.fulfill({ contentType: "application/json",
     body: JSON.stringify({ available: false, authenticated: false, maxBytes: 0 }) }));
@@ -148,6 +217,11 @@ try {
   const choiceOverlay = page.locator(".compOverlay").filter({ hasText: "Which one?" });
   assert.equal(await choiceOverlay.count(), 1);
 
+  await page.getByRole("tab", { name: "Text", exact: true }).click();
+  for (const preset of ["Clean", "Headline", "Outline", "Label"])
+    await page.getByRole("button", { name: `Add ${preset} text`, exact: true }).click();
+  await checkVisualLayerStack();
+
   await player.getByRole("button", { name: "Play", exact: true }).click();
   await page.waitForFunction(() => {
     const video = document.querySelector(".pvVideo");
@@ -197,7 +271,7 @@ try {
   await page.getByRole("button", { name: "Show the whole scene tree", exact: true }).click();
   assert.equal(await page.getByRole("tab", { name: "Scenes", exact: true }).getAttribute("aria-selected"), "true");
   assert.equal(errors.length, 0, errors.join("\n"));
-  console.log("PASS: assistant placement, Try isolation, export dialog, empty scene import and scene navigation.");
+  console.log("PASS: assistant placement, stacked timeline rows, Try isolation, export dialog, empty scene import and scene navigation.");
 } finally {
   await browser.close();
 }

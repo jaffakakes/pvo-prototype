@@ -10,6 +10,7 @@ const bundle = buildSync({
       export * from './editor/src/state/editing/selectionCommands.ts';
       export * from './editor/src/state/editing/timelineTimingDrag.ts';
       export * from './editor/src/features/desktop-editor/timeline/geometry.ts';
+      export * from './editor/src/features/desktop-editor/timeline/layerRows.ts';
       export { useCapture } from './editor/src/state/captureStore.ts';
       export { initial } from './editor/src/state/project/initial.ts';
     `,
@@ -32,6 +33,7 @@ const {
   trimClipHandle,
   snappedTime,
   timelineSnapPoints,
+  desktopLayerRows,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString("base64")}`
 );
@@ -64,6 +66,85 @@ function setup() {
     future: [],
   });
 }
+
+test("desktop visual layers render front-to-back without mutating a dense mixed stack", () => {
+  const source = {
+    texts: [
+      { id: 11, text: "First", start: 1, end: 4 },
+      { id: 12, text: "Second", start: 1, end: 4 },
+    ],
+    components: [
+      { id: "card", at: 1, dur: 3 },
+      { id: "choice", at: 1, dur: 3 },
+    ],
+    layers: [
+      "video",
+      "text:11",
+      "component:card",
+      "text:12",
+      "component:choice",
+    ],
+  };
+  const before = structuredClone(source);
+
+  assert.deepEqual(desktopLayerRows(source), [
+    {
+      id: "component:choice",
+      kind: "component",
+      layerId: "component:choice",
+    },
+    { id: "text:12", kind: "text", layerId: "text:12" },
+    {
+      id: "component:card",
+      kind: "component",
+      layerId: "component:card",
+    },
+    { id: "text:11", kind: "text", layerId: "text:11" },
+    { id: "video", kind: "video", layerId: "video" },
+  ]);
+  assert.deepEqual(source, before, "row projection must not reorder project data");
+});
+
+test("desktop layer rows retain add targets for each empty visual layer type", () => {
+  assert.deepEqual(
+    desktopLayerRows({ texts: [], components: [], layers: ["video"] }),
+    [
+      { id: "add:components", kind: "empty-components", layerId: null },
+      { id: "add:text", kind: "empty-text", layerId: null },
+      { id: "video", kind: "video", layerId: "video" },
+    ],
+  );
+
+  assert.deepEqual(
+    desktopLayerRows({
+      texts: [{ id: 11 }],
+      components: [],
+      layers: ["video", "text:11"],
+    }),
+    [
+      { id: "add:components", kind: "empty-components", layerId: null },
+      { id: "text:11", kind: "text", layerId: "text:11" },
+      { id: "video", kind: "video", layerId: "video" },
+    ],
+  );
+
+  assert.deepEqual(
+    desktopLayerRows({
+      texts: [],
+      components: [{ id: "card" }],
+      layers: ["video", "component:card"],
+    }),
+    [
+      { id: "add:text", kind: "empty-text", layerId: null },
+      {
+        id: "component:card",
+        kind: "component",
+        layerId: "component:card",
+      },
+      { id: "video", kind: "video", layerId: "video" },
+    ],
+  );
+});
 
 test("selected split stays inside the selected clip and preserves speed", () => {
   setup();

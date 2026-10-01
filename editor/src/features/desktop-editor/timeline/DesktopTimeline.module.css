@@ -11,6 +11,7 @@
 }
 .tracks {
   display: flex;
+  align-items: flex-start;
   flex: 1;
   min-height: 0;
   gap: 8px;
@@ -48,14 +49,20 @@
   font-weight: 700;
   color: #d8d5cb;
 }
-.label[data-kind="components"] span {
+.label[data-kind="components"] > span:first-child {
   color: #a78bfa;
 }
-.label[data-kind="text"] span {
+.label[data-kind="text"] > span:first-child {
   color: #ffd23e;
 }
-.label[data-kind="audio"] span {
+.label[data-kind="audio"] > span:first-child {
   color: #2ec4b6;
+}
+.labelText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .videoLabel {
   height: 52px;
@@ -72,8 +79,11 @@
   color: rgba(255, 255, 255, 0.4);
 }
 .scroll {
+  align-self: flex-start;
   flex: 1;
   min-width: 0;
+  min-height: 100%;
+  box-sizing: border-box;
   overflow-x: auto;
   overflow-y: hidden;
   padding-bottom: 6px;
