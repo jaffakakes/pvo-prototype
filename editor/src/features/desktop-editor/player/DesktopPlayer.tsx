@@ -1,4 +1,4 @@
-import { sceneDuration } from "../../../domain/audio/editing";
+import { sceneDuration } from "../../../domain/scenes/duration";
 import { useCapture } from "../../../state/captureStore";
 import { Icon } from "../../../ui/Icon";
 import { pickTime } from "../../../ui/formatTime";

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { total } from "../../../domain/clips/timing";
 import type { PlaybackOutcome,Scene } from "../../../domain/project/model";
+import { sceneDuration } from "../../../domain/scenes/duration";
 import { cx } from "../../../styles";
 import { Icon } from "../../../ui/Icon";
 import { fmt } from "../../../ui/formatTime";
@@ -32,7 +32,7 @@ export function PlaybackRouteRows({ selected, pick, scene, others, playheadTime,
           <span className={styles.preview} style={{ background: clip?.color ?? "var(--surface)" }} aria-hidden="true">
             {clip?.url ? <video src={`${clip.url}#t=${clip.in.toFixed(1)}`} muted playsInline preload="metadata" /> : <Icon name="play" size={15} />}
           </span>
-          <span className={styles.copy}><strong>{item.name} <small>{fmt(total(item.clips))}</small></strong>
+          <span className={styles.copy}><strong>{item.name} <small>{fmt(sceneDuration(item))}</small></strong>
             <span>{item.id === "main" ? "top level" : `branch of ${parent?.name ?? "Main"}`}</span>
           </span>
         </button>;

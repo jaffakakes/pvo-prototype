@@ -71,6 +71,93 @@ async function checkLayout(viewport) {
   await checkFrame();
 }
 
+async function checkVisualLayerStack() {
+  const result = await timeline.evaluate(element => {
+    const labels = [...element.querySelectorAll("[data-desktop-layer-label]")];
+    const lanes = [...element.querySelectorAll("[data-desktop-layer-lane]")];
+    const geometry = nodes => nodes.map(node => {
+      const box = node.getBoundingClientRect();
+      return {
+        id: node.getAttribute(nodes === labels
+          ? "data-desktop-layer-label"
+          : "data-desktop-layer-lane"),
+        top: box.top,
+        bottom: box.bottom,
+      };
+    });
+    const tracks = labels[0]?.parentElement?.parentElement;
+    const verticallyScrollable =
+      !!tracks && tracks.scrollHeight > tracks.clientHeight;
+    if (tracks) tracks.scrollTop = tracks.scrollHeight;
+    const trackBox = tracks?.getBoundingClientRect();
+    const labelGeometry = geometry(labels);
+    const laneGeometry = geometry(lanes);
+    const blocks = [...element.querySelectorAll(
+      '[data-layer-id^="text:"], [data-layer-id^="component:"]',
+    )].map(node => {
+      const box = node.getBoundingClientRect();
+      return { left: box.left, right: box.right };
+    });
+    const events = blocks.flatMap(block => [
+      { x: block.left, delta: 1 },
+      { x: block.right, delta: -1 },
+    ]).sort((left, right) => left.x - right.x || left.delta - right.delta);
+    let active = 0, maxConcurrency = 0;
+    for (const event of events) {
+      active += event.delta;
+      maxConcurrency = Math.max(maxConcurrency, active);
+    }
+    const finalLane = laneGeometry.at(-1);
+    return {
+      labels: labelGeometry,
+      lanes: laneGeometry,
+      blockCount: blocks.length,
+      maxConcurrency,
+      verticallyScrollable,
+      reachedBottom: !!tracks && tracks.scrollTop > 0,
+      finalRowVisible:
+        !!trackBox &&
+        !!finalLane &&
+        finalLane.top >= trackBox.top &&
+        finalLane.bottom <= trackBox.bottom,
+    };
+  });
+
+  assert.deepEqual(
+    result.lanes.map(row => row.id),
+    result.labels.map(row => row.id),
+    "Layer labels and timing lanes must stay in the same stack order",
+  );
+  const overlayLanes = result.lanes.filter(row => row.id.startsWith("overlay:"));
+  assert.equal(result.blockCount, 6, "Every visual item must render in the timeline");
+  assert.equal(
+    overlayLanes.length,
+    result.maxConcurrency,
+    "Desktop overlays must use exactly the tracks required by concurrent items",
+  );
+  assert.equal(result.lanes.filter(row => row.id === "video").length, 1);
+  for (let index = 0; index < result.lanes.length; index += 1) {
+    assert(
+      Math.abs(result.lanes[index].top - result.labels[index].top) < 1,
+      `Layer row ${result.lanes[index].id} is not aligned with its label`,
+    );
+    if (index > 0)
+      assert(
+        result.lanes[index].top >= result.lanes[index - 1].bottom,
+        `Layer rows overlap at ${result.lanes[index].id}`,
+      );
+  }
+  assert(
+    !result.verticallyScrollable || result.reachedBottom,
+    "An overflowing packed layer stack must scroll to its final row",
+  );
+  assert.equal(
+    result.finalRowVisible,
+    true,
+    "Scrolling must expose the final desktop layer row",
+  );
+}
+
 try {
   await page.route("**/api/publishing", route => route.fulfill({ contentType: "application/json",
     body: JSON.stringify({ available: false, authenticated: false, maxBytes: 0 }) }));
@@ -148,6 +235,11 @@ try {
   const choiceOverlay = page.locator(".compOverlay").filter({ hasText: "Which one?" });
   assert.equal(await choiceOverlay.count(), 1);
 
+  await page.getByRole("tab", { name: "Text", exact: true }).click();
+  for (const preset of ["Clean", "Headline", "Outline", "Label"])
+    await page.getByRole("button", { name: `Add ${preset} text`, exact: true }).click();
+  await checkVisualLayerStack();
+
   await player.getByRole("button", { name: "Play", exact: true }).click();
   await page.waitForFunction(() => {
     const video = document.querySelector(".pvVideo");
@@ -197,7 +289,7 @@ try {
   await page.getByRole("button", { name: "Show the whole scene tree", exact: true }).click();
   assert.equal(await page.getByRole("tab", { name: "Scenes", exact: true }).getAttribute("aria-selected"), "true");
   assert.equal(errors.length, 0, errors.join("\n"));
-  console.log("PASS: assistant placement, Try isolation, export dialog, empty scene import and scene navigation.");
+  console.log("PASS: assistant placement, stacked timeline rows, Try isolation, export dialog, empty scene import and scene navigation.");
 } finally {
   await browser.close();
 }

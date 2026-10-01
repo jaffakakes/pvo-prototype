@@ -31,6 +31,10 @@ export type PlayheadPick = ({
   error?: string;
 };
 export type SheetName = null | "speed" | "crop" | "text" | "sound" | "more" | "export" | "discard" | "components" | "component";
+export type OverlayUpdateOptions = {
+  /** A reversible drag preview keeps its magnetic playhead fixed until commit. */
+  preservePlayhead?: boolean;
+};
 export type CaptureState = {
   localId: string | null;
   projectName: string;
@@ -105,13 +109,13 @@ export type CaptureState = {
   cancelRecordingIntoScene: () => void;
   updateScene: (id: string, changes: Partial<Omit<Scene, "id">>, undoable?: boolean) => void;
   addComponent: (type: ComponentType) => string;
-  updateComponent: (id: string, changes: Partial<PvoComponent>, undoable?: boolean) => void;
+  updateComponent: (id: string, changes: Partial<PvoComponent>, undoable?: boolean, options?: OverlayUpdateOptions) => void;
   updateOutcome: (id: string, target: OutcomeTarget, outcome: Outcome, undoable?: boolean) => boolean;
   deleteComponent: (id: string) => void;
   duplicateComponent: (id: string) => string | null;
   reorderLayer: (id: LayerId, direction: "up" | "down") => void;
   addText: (text: string, style?: TextStyle) => number;
-  updateText: (id: number, changes: Partial<TextOverlay>, undoable?: boolean) => void;
+  updateText: (id: number, changes: Partial<TextOverlay>, undoable?: boolean, options?: OverlayUpdateOptions) => void;
   deleteText: (id: number) => void;
   duplicateText: (id: number) => void;
 };

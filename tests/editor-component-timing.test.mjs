@@ -4,12 +4,12 @@ import { buildSync } from "esbuild";
 
 const bundled = buildSync({
   stdin: {
-    contents: 'export * from "./editor/src/store.ts"; export * from "./editor/src/state/components/componentTimingDrag.ts"; export * from "./editor/src/domain/components/timing.ts";',
+    contents: 'export * from "./editor/src/store.ts"; export * from "./editor/src/state/components/componentTimingDrag.ts"; export * from "./editor/src/domain/components/timing.ts"; export * from "./editor/src/domain/scenes/duration.ts";',
     resolveDir: process.cwd(),
   },
   bundle: true, write: false, format: "esm", platform: "browser",
 });
-const { useCapture, mkClip, beginComponentTimingDrag, dragComponentTiming, clampComponentStart } = await import(
+const { useCapture, mkClip, beginComponentTimingDrag, dragComponentTiming, clampComponentStart, sceneDuration } = await import(
   `data:text/javascript;base64,${Buffer.from(bundled.outputFiles[0].text).toString("base64")}`
 );
 // Compare persisted content; history clones can materialize absent optional keys as undefined.
@@ -51,7 +51,7 @@ test("a timeline move previews without history and commits as one undo step", ()
   assert.deepEqual(projectData(useCapture.getState().scenes), moved);
 });
 
-test("edge trims keep half a second, stay inside the scene, and each commit once", () => {
+test("edge trims keep half a second, may extend the scene, and each commit once", () => {
   const id = fixture();
   const start = beginComponentTimingDrag(id, "start");
   start.update(10);
@@ -62,7 +62,7 @@ test("edge trims keep half a second, stay inside the scene, and each commit once
   assert.equal(useCapture.getState().past.length, 1);
   const end = beginComponentTimingDrag(id, "end");
   end.update(10);
-  assert.deepEqual(timing(id), { at: 0, dur: 8 });
+  assert.deepEqual(timing(id), { at: 0, dur: 14 });
   end.update(-10);
   assert.deepEqual(timing(id), { at: 0, dur: .5 });
   end.commit();
@@ -98,6 +98,86 @@ test("a choice is a timed layer like any other component and can be moved and tr
   assert.deepEqual(timing(id), { at: 3, dur: 5 });
   end.commit();
   assert.equal(useCapture.getState().past.length, 2);
+});
+
+test("an explicit component move extends canonical scene duration", () => {
+  const id = fixture();
+  const drag = beginComponentTimingDrag(id, "move");
+  drag.update(100);
+  assert.deepEqual(timing(id), { at: 101, dur: 3 });
+  assert.equal(sceneDuration(useCapture.getState()), 104);
+  drag.commit();
+  useCapture.getState().undo();
+  assert.deepEqual(timing(id), { at: 1, dur: 3 });
+  assert.equal(sceneDuration(useCapture.getState()), 8);
+});
+
+test("changing a tail component to until-clip-end normalizes it and clamps the playhead", () => {
+  const id = fixture();
+  useCapture.getState().updateComponent(id, { at: 12, dur: 8 }, false);
+  useCapture.getState().patch({ t: 15, playing: true, past: [], future: [] });
+
+  useCapture.getState().updateComponent(id, { dur: null });
+
+  close(timing(id).at, 7.9);
+  assert.equal(timing(id).dur, null);
+  assert.equal(sceneDuration(useCapture.getState()), 8);
+  assert.equal(useCapture.getState().t, 8);
+  assert.equal(useCapture.getState().playing, false);
+  assert.equal(useCapture.getState().past.length, 1);
+
+  useCapture.getState().undo();
+  assert.deepEqual(timing(id), { at: 12, dur: 8 });
+  useCapture.getState().redo();
+  close(timing(id).at, 7.9);
+  assert.equal(timing(id).dur, null);
+  assert.ok(useCapture.getState().t <= sceneDuration(useCapture.getState()));
+});
+
+test("component tail drag preserves the playhead until cancel or commit", () => {
+  const id = fixture();
+  useCapture.getState().updateComponent(id, { at: 7, dur: 13 }, false);
+  useCapture.getState().patch({ t: 15, past: [], future: [] });
+
+  const cancelled = beginComponentTimingDrag(id, "end");
+  cancelled.update(-11);
+  assert.deepEqual(timing(id), { at: 7, dur: 2 });
+  assert.equal(useCapture.getState().t, 15, "Preview keeps the magnetic target stationary");
+  cancelled.cancel();
+  assert.deepEqual(timing(id), { at: 7, dur: 13 });
+  assert.equal(useCapture.getState().t, 15);
+  assert.equal(useCapture.getState().past.length, 0);
+
+  const committed = beginComponentTimingDrag(id, "end");
+  committed.update(-11);
+  assert.equal(useCapture.getState().t, 15);
+  committed.commit();
+  assert.deepEqual(timing(id), { at: 7, dur: 2 });
+  assert.equal(useCapture.getState().t, 9);
+  assert.equal(useCapture.getState().past.length, 1);
+  useCapture.getState().undo();
+  assert.deepEqual(timing(id), { at: 7, dur: 13 });
+  useCapture.getState().redo();
+  assert.deepEqual(timing(id), { at: 7, dur: 2 });
+  assert.ok(useCapture.getState().t <= sceneDuration(useCapture.getState()));
+});
+
+test("deleting the final component tail clamps the active playhead atomically", () => {
+  const id = fixture();
+  useCapture.getState().updateComponent(id, { at: 12, dur: 8 }, false);
+  useCapture.getState().patch({ t: 15, playing: true, past: [], future: [] });
+
+  useCapture.getState().deleteComponent(id);
+
+  assert.equal(useCapture.getState().components.length, 0);
+  assert.equal(useCapture.getState().t, 8);
+  assert.equal(useCapture.getState().playing, false);
+  assert.equal(useCapture.getState().past.length, 1);
+  useCapture.getState().undo();
+  assert.deepEqual(timing(id), { at: 12, dur: 8 });
+  useCapture.getState().redo();
+  assert.equal(timing(id), null);
+  assert.ok(useCapture.getState().t <= sceneDuration(useCapture.getState()));
 });
 
 test("cancelling restores the starting timing and adds no history", () => {
@@ -149,12 +229,14 @@ test("an external scene switch cancels a drag in its original scene", () => {
   assert.equal(after.past.length, 0);
 });
 
-test("the shared timing rules clamp starts and trims the same way for every entry point", () => {
-  close(clampComponentStart(12, 8), 7.9);
-  assert.equal(clampComponentStart(-1, 8), 0);
-  assert.equal(clampComponentStart(3, 0), 0);
-  assert.deepEqual(dragComponentTiming({ at: 1, length: 3 }, "move", .5, 8), { at: 1.5 });
-  assert.deepEqual(dragComponentTiming({ at: 1, length: 3 }, "start", -.5, 8), { at: .5, dur: 3.5 });
-  assert.deepEqual(dragComponentTiming({ at: 1, length: 3 }, "end", 1, 8), { dur: 4 });
-  assert.deepEqual(dragComponentTiming({ at: 1, length: 3 }, "end", 20, 8), { dur: 7 });
+test("shared timing rules only video-bound until-clip-end components", () => {
+  assert.equal(clampComponentStart(12, 3, 8), 12);
+  assert.equal(clampComponentStart(-1, 3, 8), 0);
+  close(clampComponentStart(12, null, 8), 7.9);
+  assert.equal(clampComponentStart(3, null, 0), 0);
+  assert.deepEqual(dragComponentTiming({ at: 1, dur: 3, length: 3 }, "move", .5, 8), { at: 1.5 });
+  assert.deepEqual(dragComponentTiming({ at: 1, dur: 3, length: 3 }, "start", -.5, 8), { at: .5, dur: 3.5 });
+  assert.deepEqual(dragComponentTiming({ at: 1, dur: 3, length: 3 }, "end", 1, 8), { dur: 4 });
+  assert.deepEqual(dragComponentTiming({ at: 1, dur: 3, length: 3 }, "end", 20, 8), { dur: 23 });
+  assert.deepEqual(dragComponentTiming({ at: 1, dur: null, length: 7 }, "move", 20, 8), { at: 7.9 });
 });

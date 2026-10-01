@@ -7,6 +7,7 @@ const bundled = buildSync({
     resolveDir: process.cwd(),
     contents: `
   export * from './editor/src/domain/audio/editing.ts';
+  export * from './editor/src/domain/scenes/duration.ts';
   export * from './editor/src/state/editing/audioCommands.ts';
   export * from './editor/src/infrastructure/projectPersistence/checkpoint.ts';
   export { initial } from './editor/src/state/project/initial.ts';

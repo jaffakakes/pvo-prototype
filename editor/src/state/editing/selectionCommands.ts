@@ -10,6 +10,7 @@ import {
   componentLength,
 } from "../../domain/components/timing";
 import { clamp } from "../../domain/project/numbers";
+import { sceneDuration } from "../../domain/scenes/duration";
 import { uid } from "../../infrastructure/ids";
 import { useCapture } from "../captureStore";
 import { notify } from "../notifications/notificationStore";
@@ -68,6 +69,7 @@ export function duplicateTimelineSelection() {
     if (id) {
       const at = clampComponentStart(
         original.at + componentLength(original, state.clips),
+        original.dur,
         length,
       );
       useCapture.getState().updateComponent(id, { at }, false);
@@ -81,13 +83,13 @@ export function duplicateTimelineSelection() {
     state.duplicateText(original.id);
     const after = useCapture.getState();
     const duration = original.end - original.start;
-    const start = clamp(original.end, 0, Math.max(0, length - duration));
+    const start = Math.max(0, original.end);
     if (after.selText != null)
       after.updateText(
         after.selText,
         {
           start,
-          end: Math.min(length, start + duration),
+          end: start + duration,
           x: original.x,
           y: original.y,
         },
@@ -116,7 +118,7 @@ export function deleteTimelineSelection() {
     state.edit({
       clips,
       sel: -1,
-      t: clamp(state.t, 0, total(clips)),
+      t: clamp(state.t, 0, sceneDuration({ ...state, clips })),
       playing: false,
     });
   }

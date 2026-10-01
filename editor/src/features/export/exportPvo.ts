@@ -1,19 +1,21 @@
-import { sceneDuration as sceneLength } from "../../domain/audio/editing";
+import { sceneDuration as sceneLength } from "../../domain/scenes/duration";
 import type { PvoAssetInput } from "../../../../packages/pvo-sdk/index.js";
 import { packPvoProject } from "../../../../packages/pvo-sdk/index.js";
+import { total } from "../../domain/clips/timing";
 import { buildPvoManifest } from "../../domain/export/manifest";
 import type { Scene } from "../../domain/project/model";
 import type { ExportSnapshot } from "../../domain/publishing/model";
 import { clamp } from "../../domain/project/numbers";
 import { compileLanguages } from "../../infrastructure/language/compileProject";
 import { exportVideo, type ExportResult } from "../../infrastructure/media/exportVideo";
+import { pvoSceneMediaSource } from "./pvoMediaSource";
 
 /** Render each scene's media, then package compiled PVO language interactions. */
 export async function exportPvo(state: ExportSnapshot, onPct: (progress: number) => void): Promise<ExportResult> {
   const scenes = state.scenes;
   if (!scenes.length)
     throw new Error("Record or upload a clip before exporting.");
-  const empty = scenes.find(scene => sceneLength(scene) <= 0);
+  const empty = scenes.find(scene => total(scene.clips) <= 0);
   if (empty)
     throw new Error(`Add a clip to ${empty.name} before exporting the whole scene tree.`);
   const languages = await compileLanguages(state);
@@ -32,7 +34,7 @@ export async function exportPvo(state: ExportSnapshot, onPct: (progress: number)
   let done = 0;
   for (const [index, scene] of scenes.entries()) {
     const sceneDuration = sceneLength(scene);
-    const result = await exportVideo({ ...state, clips: scene.clips, texts: [], components: [], layers: ["video"], muted: scene.muted, sound: scene.sound, audioClips: scene.audioClips }, (progress) => {
+    const result = await exportVideo(pvoSceneMediaSource(state, scene), (progress) => {
       onPct(clamp((done + progress * sceneDuration) / duration, 0, 1));
     });
     try {

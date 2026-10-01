@@ -1,5 +1,5 @@
-import { total } from "../../domain/clips/timing";
 import type { Clip } from "../../domain/project/model";
+import { sceneDuration } from "../../domain/scenes/duration";
 import { useCapture } from "../captureStore";
 
 export function adjustSelectedClip(values: Partial<Clip>, undoable = true) {
@@ -16,5 +16,5 @@ export function adjustSelectedClip(values: Partial<Clip>, undoable = true) {
 export function setSelectedClipSpeed(speed: number, undoable = true) {
   if (!adjustSelectedClip({ speed }, undoable)) return;
   const state = useCapture.getState();
-  state.patch({ t: Math.min(state.t, total(state.clips)) });
+  state.patch({ t: Math.min(state.t, sceneDuration(state)) });
 }

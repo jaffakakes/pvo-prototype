@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useWideLayout } from "../../../infrastructure/viewport";
-import { total } from "../../../domain/clips/timing";
 import type { OutcomeTarget, PlaybackOutcome, PvoComponent } from "../../../domain/project/model";
 import { clamp } from "../../../domain/project/numbers";
+import { sceneDuration } from "../../../domain/scenes/duration";
 import { useCapture } from "../../../state/captureStore";
 import { createRoutedScene } from "../../../state/scenes/sceneRoutingCommands";
 import { beginPlayheadPick } from "../../timeline/playheadPick";
@@ -32,7 +32,11 @@ export function ActionRow({ component, label, detail, outcome, target, branch, o
   const wide = useWideLayout();
   const scenes = useCapture(state => state.scenes);
   const scene = scenes.find(item => item.id === component.sceneId);
-  const playheadTime = () => clamp(useCapture.getState().t, 0, total(scene?.clips ?? []));
+  const playheadTime = () => clamp(
+    useCapture.getState().t,
+    0,
+    scene ? sceneDuration(scene) : 0,
+  );
   return <div className={styles.action}>
     <button type="button" className={styles.actionToggle} aria-expanded={open} onClick={() => setOpen(!open)}>
       <span>{label}{detail && <small>{detail}</small>}</span>

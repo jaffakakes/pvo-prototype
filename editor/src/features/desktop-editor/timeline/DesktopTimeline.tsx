@@ -1,5 +1,3 @@
-import { AudioClipBar } from "../../sound/AudioClipBar";
-import { sceneDuration } from "../../../domain/audio/editing";
 import {
   useEffect,
   useRef,
@@ -7,21 +5,25 @@ import {
   type PointerEvent,
   type ReactNode,
 } from "react";
+import { sceneDuration } from "../../../domain/scenes/duration";
 import { dur } from "../../../domain/clips/timing";
-import { componentLength } from "../../../domain/components/timing";
-import { useCapture } from "../../../state/captureStore";
 import { useAssistant } from "../../../state/assistant/assistantStore";
+import { useCapture } from "../../../state/captureStore";
 import { clearTimelineSelection } from "../../../state/editing/selectionCommands";
-import { Icon } from "../../../ui/Icon";
 import { fmt } from "../../../ui/formatTime";
-import { componentLabel } from "../../preview/ComponentOverlay";
+import { AudioClipBar } from "../../sound/AudioClipBar";
 import { SOUNDS } from "../../sound/catalog";
-import { ClipPoster } from "../../../ui/media/ClipPoster";
-import { DEFAULT_ZOOM, snappedTime, timelineSnapPoints } from "./geometry";
-import styles from "./DesktopTimeline.module.css";
-import { TimelineToolbar } from "./TimelineToolbar";
-import { TimelineTimePicker } from "./TimelineTimePicker";
 import { useTimingPointer } from "../../timeline/useTimingPointer";
+import styles from "./DesktopTimeline.module.css";
+import {
+  type DesktopTimelineSelection,
+  DesktopVisualLayerLabels,
+  DesktopVisualLayerLanes,
+} from "./DesktopVisualLayerRows";
+import { DEFAULT_ZOOM, snappedTime, timelineSnapPoints } from "./geometry";
+import { desktopLayerLayout } from "./layerRows";
+import { TimelineTimePicker } from "./TimelineTimePicker";
+import { TimelineToolbar } from "./TimelineToolbar";
 
 type Props = {
   onOpenLibrary: (tab: string) => void;
@@ -47,12 +49,16 @@ export function DesktopTimeline({
     playhead: state.t,
   });
   const length = sceneDuration(state);
-  const scene = state.scenes.find((item) => item.id === state.currentSceneId);
+  const sceneName =
+    state.scenes.find((item) => item.id === state.currentSceneId)?.name ??
+    "scene";
   const ticks = Array.from({ length: Math.ceil(length) + 9 }, (_, i) => i);
   let clipEnd = 0;
   const clipEnds = state.clips.map((clip) => (clipEnd += dur(clip)));
   const blocked = !!state.tryMode;
   const editingBlocked = blocked || !!state.playheadPick;
+  const layerLayout = desktopLayerLayout(state, zoom);
+
   useEffect(() => {
     const element = scroll.current;
     if (!element || (!state.playing && !state.tryMode?.playing)) return;
@@ -62,12 +68,8 @@ export function DesktopTimeline({
     else if (position < element.scrollLeft)
       element.scrollLeft = Math.max(0, position - 24);
   }, [state.t, state.playing, state.tryMode?.playing, zoom]);
-  const select = (values: {
-    sel?: number;
-    selComp?: string;
-    selText?: number;
-    sheet?: "component" | "text" | "sound";
-  }) => {
+
+  const select = (values: DesktopTimelineSelection) => {
     if (blocked || state.playheadPick) return;
     state.patch({
       sel: -1,
@@ -103,13 +105,13 @@ export function DesktopTimeline({
     scrubbing.current = event.pointerId;
     scrub(event);
   };
-  const emptyLane = (tab: string, label: string) => (
+  const emptyAudioLane = (
     <button
       className={styles.emptyLane}
-      onClick={() => onOpenLibrary(tab)}
+      onClick={() => onOpenLibrary("audio")}
       disabled={editingBlocked}
     >
-      {label}
+      ♪ Add audio
     </button>
   );
 
@@ -137,18 +139,7 @@ export function DesktopTimeline({
       >
         <div className={styles.labels} aria-hidden="true">
           <div className={styles.currentTime}>{fmt(state.t)}</div>
-          <div className={styles.label} data-kind="components">
-            <span>✦</span> Components
-          </div>
-          <div className={styles.label} data-kind="text">
-            <span>T</span> Text
-          </div>
-          <div className={`${styles.label} ${styles.videoLabel}`}>
-            <Icon name="pvoExport" size={16} />
-            <div>
-              Video<small>Main track</small>
-            </div>
-          </div>
+          <DesktopVisualLayerLabels rows={layerLayout.rows} />
           {state.audioClips.map((clip) => (
             <div key={clip.id} className={styles.label} data-kind="audio">
               <span>♪</span> {clip.name}
@@ -211,197 +202,17 @@ export function DesktopTimeline({
                 </span>
               ))}
             </div>
-            <div
-              className={styles.lane}
-              data-kind="components"
-              onClick={(event) => {
-                if (event.target === event.currentTarget)
-                  clearTimelineSelection();
-              }}
-            >
-              {!state.components.length &&
-                emptyLane("components", "✦ Add an interactive component")}
-              {state.components.map((component) => (
-                <button
-                  key={component.id}
-                  className={styles.block}
-                  data-kind="component"
-                  data-selected={state.selComp === component.id}
-                  style={{
-                    left: component.at * zoom,
-                    width: componentLength(component, state.clips) * zoom,
-                  }}
-                  aria-label={`${component.type}: ${componentLabel(component)}`}
-                  disabled={editingBlocked}
-                  onPointerDown={(event) => {
-                    select({ selComp: component.id, sheet: "component" });
-                    const edge = (
-                      event.target as HTMLElement
-                    ).closest<HTMLElement>("[data-edge]")?.dataset.edge;
-                    const mode =
-                      edge === "l" ? "start" : edge === "r" ? "end" : "move";
-                    timing.begin(
-                      event,
-                      {
-                        kind: "component",
-                        id: component.id,
-                        mode,
-                      },
-                      mode === "start"
-                        ? component.at
-                        : mode === "end"
-                          ? component.at +
-                            componentLength(component, state.clips)
-                          : undefined,
-                    );
-                  }}
-                  onPointerMove={timing.move}
-                  onPointerUp={timing.end}
-                  onPointerCancel={timing.end}
-                  onLostPointerCapture={timing.end}
-                  onClick={() =>
-                    select({ selComp: component.id, sheet: "component" })
-                  }
-                >
-                  {state.selComp === component.id && (
-                    <span className={styles.blockHandle} data-edge="l" />
-                  )}
-                  <span>✦ {componentLabel(component)}</span>
-                  {state.selComp === component.id && (
-                    <span className={styles.blockHandle} data-edge="r" />
-                  )}
-                </button>
-              ))}
-            </div>
-            <div
-              className={styles.lane}
-              data-kind="text"
-              onClick={(event) => {
-                if (event.target === event.currentTarget)
-                  clearTimelineSelection();
-              }}
-            >
-              {!state.texts.length && emptyLane("text", "T Add text")}
-              {state.texts.map((text) => (
-                <button
-                  key={text.id}
-                  className={styles.block}
-                  data-kind="text"
-                  data-selected={state.selText === text.id}
-                  style={{
-                    left: text.start * zoom,
-                    width: (text.end - text.start) * zoom,
-                  }}
-                  aria-label={`Text: ${text.text}`}
-                  disabled={editingBlocked}
-                  onPointerDown={(event) => {
-                    select({ selText: text.id, sheet: "text" });
-                    const edge = (
-                      event.target as HTMLElement
-                    ).closest<HTMLElement>("[data-edge]")?.dataset.edge;
-                    const mode = edge === "l" || edge === "r" ? edge : "move";
-                    timing.begin(
-                      event,
-                      {
-                        kind: "text",
-                        id: text.id,
-                        mode,
-                      },
-                      mode === "l"
-                        ? text.start
-                        : mode === "r"
-                          ? text.end
-                          : undefined,
-                    );
-                  }}
-                  onPointerMove={timing.move}
-                  onPointerUp={timing.end}
-                  onPointerCancel={timing.end}
-                  onLostPointerCapture={timing.end}
-                  onClick={() => select({ selText: text.id, sheet: "text" })}
-                >
-                  {state.selText === text.id && (
-                    <span className={styles.blockHandle} data-edge="l" />
-                  )}
-                  <span>T {text.text}</span>
-                  {state.selText === text.id && (
-                    <span className={styles.blockHandle} data-edge="r" />
-                  )}
-                </button>
-              ))}
-            </div>
-            <div
-              className={styles.videoLane}
-              onClick={(event) => {
-                if (event.target === event.currentTarget)
-                  clearTimelineSelection();
-              }}
-            >
-              {!state.clips.length ? (
-                <button
-                  className={styles.addScene}
-                  onClick={() => onOpenLibrary("media")}
-                >
-                  ＋ Add clips to {scene?.name ?? "scene"}
-                </button>
-              ) : (
-                <>
-                  <div className={styles.clips}>
-                    {state.clips.map((clip, index) => (
-                      <button
-                        key={clip.id}
-                        className={styles.clip}
-                        data-selected={state.sel === index}
-                        style={{ width: dur(clip) * zoom }}
-                        aria-label={`Clip ${index + 1}, ${dur(clip).toFixed(1)} seconds`}
-                        onClick={() => select({ sel: index })}
-                        disabled={editingBlocked}
-                      >
-                        <ClipPoster clip={clip} />
-                        <span className={styles.clipShade} />
-                        <span className={styles.clipDuration}>
-                          {dur(clip).toFixed(1)}s
-                        </span>
-                        <span className={styles.clipName}>
-                          Clip {index + 1}
-                        </span>
-                        {state.sel === index &&
-                          (["l", "r"] as const).map((side) => (
-                            <span
-                              key={side}
-                              className={styles.clipHandle}
-                              data-edge={side}
-                              onPointerDown={(event) =>
-                                timing.begin(
-                                  event,
-                                  {
-                                    kind: "clip",
-                                    id: clip.id,
-                                    mode: side,
-                                  },
-                                  side === "r" ? clipEnds[index] : undefined,
-                                )
-                              }
-                              onPointerMove={timing.move}
-                              onPointerUp={timing.end}
-                              onPointerCancel={timing.end}
-                              onLostPointerCapture={timing.end}
-                            />
-                          ))}
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    className={styles.addClip}
-                    aria-label="Add clips"
-                    disabled={editingBlocked}
-                    onClick={() => onOpenLibrary("media")}
-                  >
-                    <Icon name="plus" size={18} />
-                  </button>
-                </>
-              )}
-            </div>
+            <DesktopVisualLayerLanes
+              layout={layerLayout}
+              state={state}
+              zoom={zoom}
+              clipEnds={clipEnds}
+              editingBlocked={editingBlocked}
+              sceneName={sceneName}
+              timing={timing}
+              onOpenLibrary={onOpenLibrary}
+              onSelect={select}
+            />
             {state.audioClips.map((clip) => (
               <div key={clip.id} className={styles.lane} data-kind="audio">
                 <AudioClipBar
@@ -430,7 +241,7 @@ export function DesktopTimeline({
                   ♪ {SOUNDS[state.sound]?.name ?? "Music"}
                 </button>
               ) : (
-                emptyLane("audio", "♪ Add audio")
+                emptyAudioLane
               )}
             </div>
             <div

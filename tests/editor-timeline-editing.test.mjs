@@ -8,7 +8,9 @@ const bundle = buildSync({
     export * from './editor/src/domain/clips/trim.ts';
     export * from './editor/src/domain/text/timing.ts';
     export * from './editor/src/state/editing/timelineEditingCommands.ts';
+    export * from './editor/src/state/editing/timelineTimingDrag.ts';
     export * from './editor/src/state/editing/clipAdjustmentCommands.ts';
+    export * from './editor/src/domain/scenes/duration.ts';
     export { useCapture } from './editor/src/state/captureStore.ts';
     export { initial } from './editor/src/state/project/initial.ts';
   `,
@@ -25,10 +27,13 @@ const {
   textTimingAt,
   previewClipTrim,
   previewTextTiming,
+  finishTextTimingPreview,
+  beginTimelineTimingDrag,
   adjustSelectedClip,
   setSelectedClipSpeed,
   useCapture,
   initial,
+  sceneDuration,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString("base64")}`
 );
@@ -72,18 +77,19 @@ test("clip trimming preserves source bounds and the speed-adjusted minimum durat
   assert.equal(clip.in, 1);
 });
 
-test("text drag and numeric timing inputs share bounds without moving the other edge", () => {
+test("text timing keeps minimum and zero bounds while allowing a visual tail", () => {
   const text = { start: 1, end: 3 };
-  assert.deepEqual(dragTextTiming(text, "move", 10, 5), { start: 3, end: 5 });
-  assert.deepEqual(dragTextTiming(text, "move", -10, 5), { start: 0, end: 2 });
+  assert.deepEqual(dragTextTiming(text, "move", 10), { start: 11, end: 13 });
+  assert.deepEqual(dragTextTiming(text, "move", -10), { start: 0, end: 2 });
   assert.deepEqual(
-    dragTextTiming(text, "l", 10, 5),
-    textTimingAt(text, "start", 11, 5),
+    dragTextTiming(text, "l", 10),
+    textTimingAt(text, "start", 11),
   );
-  assert.deepEqual(dragTextTiming(text, "r", -10, 5), { end: 1.1 });
-  assert.deepEqual(dragTextTiming({ start: 1, end: 9 }, "move", 0, 5), {
-    start: 0,
-    end: 5,
+  assert.deepEqual(dragTextTiming(text, "r", -10), { end: 1.1 });
+  assert.deepEqual(dragTextTiming(text, "r", 10), { end: 13 });
+  assert.deepEqual(dragTextTiming({ start: 1, end: 9 }, "move", 0), {
+    start: 1,
+    end: 9,
   });
 });
 
@@ -102,8 +108,8 @@ test("multiple trim frames produce one undo step and keep the active scene mirro
 
 test("text movement and continuous crop changes retain grouped undo", () => {
   setup();
-  previewTextTiming(2, { start: 1, end: 3 }, "move", 0.2, 4, true);
-  previewTextTiming(2, { start: 1, end: 3 }, "move", 0.5, 4, false);
+  previewTextTiming(2, { start: 1, end: 3 }, "move", 0.2, true);
+  previewTextTiming(2, { start: 1, end: 3 }, "move", 0.5, false);
   assert.equal(useCapture.getState().past.length, 1);
   useCapture.getState().undo();
   assert.equal(useCapture.getState().texts[0].start, 1);
@@ -113,12 +119,80 @@ test("text movement and continuous crop changes retain grouped undo", () => {
   assert.equal(useCapture.getState().clips[0].zoom, 1);
 });
 
-test("speed adjustment clamps the playhead and can be undone", () => {
+test("mobile text timing keeps the playhead fixed until the gesture ends", () => {
+  setup();
+  useCapture.getState().updateText(2, { start: 7, end: 20 }, false);
+  useCapture.getState().patch({ t: 15, past: [], future: [] });
+
+  previewTextTiming(2, { start: 7, end: 20 }, "r", -11, true);
+  assert.equal(useCapture.getState().texts[0].end, 9);
+  assert.equal(useCapture.getState().t, 15);
+  assert.equal(useCapture.getState().past.length, 1);
+
+  finishTextTimingPreview();
+  assert.equal(useCapture.getState().t, 9);
+  useCapture.getState().undo();
+  assert.equal(useCapture.getState().texts[0].end, 20);
+});
+
+test("speed adjustment retains a playhead inside an explicit text tail", () => {
   setup();
   setSelectedClipSpeed(4);
-  assert.equal(useCapture.getState().t, 2);
+  assert.equal(useCapture.getState().t, 3);
   useCapture.getState().undo();
   assert.equal(useCapture.getState().clips[0].speed, 2);
+});
+
+test("text tail drag preserves the playhead until cancel or commit", () => {
+  setup();
+  useCapture.getState().updateText(2, { start: 7, end: 20 }, false);
+  useCapture.getState().patch({ t: 15, past: [], future: [] });
+
+  const cancelled = beginTimelineTimingDrag({ kind: "text", id: 2, mode: "r" });
+  cancelled.update(-11);
+  assert.equal(useCapture.getState().texts[0].end, 9);
+  assert.equal(useCapture.getState().t, 15, "Preview keeps the magnetic target stationary");
+  cancelled.cancel();
+  assert.equal(useCapture.getState().texts[0].end, 20);
+  assert.equal(useCapture.getState().t, 15);
+  assert.equal(useCapture.getState().past.length, 0);
+
+  const committed = beginTimelineTimingDrag({ kind: "text", id: 2, mode: "r" });
+  committed.update(-11);
+  assert.equal(useCapture.getState().t, 15);
+  committed.commit();
+  assert.equal(useCapture.getState().texts[0].end, 9);
+  assert.equal(useCapture.getState().t, 9);
+  assert.equal(useCapture.getState().past.length, 1);
+  useCapture.getState().undo();
+  assert.equal(useCapture.getState().texts[0].end, 20);
+  useCapture.getState().redo();
+  assert.equal(useCapture.getState().texts[0].end, 9);
+  assert.ok(useCapture.getState().t <= sceneDuration(useCapture.getState()));
+});
+
+test("updating or deleting the final text tail clamps the active playhead", () => {
+  setup();
+  useCapture.getState().updateText(2, { start: 7, end: 20 }, false);
+  useCapture.getState().patch({ t: 15, playing: true, past: [], future: [] });
+
+  useCapture.getState().updateText(2, { end: 9 });
+  assert.equal(useCapture.getState().t, 9);
+  assert.equal(useCapture.getState().playing, false);
+  assert.equal(useCapture.getState().past.length, 1);
+  useCapture.getState().undo();
+  assert.equal(useCapture.getState().texts[0].end, 20);
+
+  useCapture.getState().patch({ t: 15, playing: true, past: [], future: [] });
+  useCapture.getState().deleteText(2);
+  assert.equal(useCapture.getState().t, 4);
+  assert.equal(useCapture.getState().playing, false);
+  assert.equal(useCapture.getState().past.length, 1);
+  useCapture.getState().undo();
+  assert.equal(useCapture.getState().texts[0].end, 20);
+  useCapture.getState().redo();
+  assert.equal(useCapture.getState().texts.length, 0);
+  assert.ok(useCapture.getState().t <= sceneDuration(useCapture.getState()));
 });
 
 test("a continuous speed adjustment records one undo step and synchronizes the scene", () => {
@@ -129,7 +203,7 @@ test("a continuous speed adjustment records one undo step and synchronizes the s
   const state = useCapture.getState();
   assert.equal(state.past.length, 1);
   assert.equal(state.scenes[0].clips[0].speed, 4);
-  assert.equal(state.t, 2);
+  assert.equal(state.t, 3);
   state.undo();
   assert.equal(useCapture.getState().clips[0].speed, 2);
   useCapture.getState().redo();

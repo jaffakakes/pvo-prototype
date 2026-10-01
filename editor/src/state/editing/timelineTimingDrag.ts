@@ -1,5 +1,4 @@
-import { sceneDuration } from "../../domain/audio/editing";
-import { total } from "../../domain/clips/timing";
+import { sceneDuration } from "../../domain/scenes/duration";
 import { trimClipHandle } from "../../domain/clips/trim";
 import { clamp } from "../../domain/project/numbers";
 import { dragTextTiming } from "../../domain/text/timing";
@@ -24,7 +23,6 @@ export function beginTimelineTimingDrag(target: TimelineTimingTarget) {
   if ((!clip && !text) || before.tryMode || before.playheadPick) return null;
   before.patch({ playing: false });
   const snapshot = projectSnapshot(before);
-  const sceneLength = total(before.clips);
   let ended = false;
   let changed = false;
   const unchangedHistory = () => {
@@ -98,11 +96,11 @@ export function beginTimelineTimingDrag(target: TimelineTimingTarget) {
         });
       }
       if (text && target.kind === "text") {
-        const next = dragTextTiming(text, target.mode, delta, sceneLength);
+        const next = dragTextTiming(text, target.mode, delta);
         changed =
           (next.start ?? text.start) !== text.start ||
           (next.end ?? text.end) !== text.end;
-        state.updateText(text.id, next, false);
+        state.updateText(text.id, next, false, { preservePlayhead: true });
       }
       return true;
     },
@@ -115,7 +113,7 @@ export function beginTimelineTimingDrag(target: TimelineTimingTarget) {
       if (changed) {
         const state = useCapture.getState();
         state.patch({
-          t: clip ? clamp(before.t, 0, sceneDuration(state)) : state.t,
+          t: clamp(clip ? before.t : state.t, 0, sceneDuration(state)),
           past: [...state.past, snapshot].slice(-40),
           future: [],
         });

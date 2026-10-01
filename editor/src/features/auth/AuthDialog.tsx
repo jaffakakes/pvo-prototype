@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { total } from "../../domain/clips/timing";
+import { sceneDuration } from "../../domain/scenes/duration";
 import { createPublishingClient } from "../../infrastructure/publishing/client";
 import { signInWithPopup } from "../../infrastructure/publishing/signIn";
 import { closeAuthGate, continueToExport, useAuthGate } from "../../state/auth/authGateStore";
@@ -23,7 +23,9 @@ function OpenAuthDialog({ exporting }: { exporting: boolean }) {
   const name = useCapture(state => state.projectName);
   const ratio = useCapture(state => state.ratio);
   const scenes = useCapture(state => state.scenes);
-  const clips = scenes.find(scene => scene.id === "main")?.clips ?? [];
+  const main = scenes.find(scene => scene.id === "main");
+  const clips = main?.clips ?? [];
+  const duration = main ? sceneDuration(main) : 0;
 
   useEffect(() => {
     const focus = document.activeElement;
@@ -73,7 +75,7 @@ function OpenAuthDialog({ exporting }: { exporting: boolean }) {
       <p id="auth-description">Your edit stays right here in this browser — sign in and pick up exactly where you left off.</p>
       {exporting && <div className={styles.summary}>
         {clips[0]?.url ? <video src={clips[0].url} muted playsInline preload="metadata" /> : <Icon name="edit" size={28} />}
-        <div><strong>{name}</strong><span>{ratio} · {fmt(total(clips))} · {scenes.length} {scenes.length === 1 ? "scene" : "scenes"}</span></div>
+        <div><strong>{name}</strong><span>{ratio} · {fmt(duration)} · {scenes.length} {scenes.length === 1 ? "scene" : "scenes"}</span></div>
       </div>}
       {busy && <p role="status">Connecting…</p>}
       {status?.available && !status.authenticated && <button type="button" className={styles.provider} disabled={busy || !status.authUrl} onClick={() => { void signIn(); }}><span>G</span>Continue with Google</button>}
