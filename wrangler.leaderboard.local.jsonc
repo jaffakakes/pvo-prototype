@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "pvo-quiz-leaderboard-local",
+  "main": "server/leaderboards/worker.js",
+  "compatibility_date": "2026-09-27",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pvo-quiz-leaderboard-local",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations/leaderboards"
+    }
+  ],
+  "vars": {
+    "LEADERBOARD_SECRET": "local-development-rate-limit-salt-not-for-deployment"
+  }
+}

@@ -12,6 +12,8 @@
     "build:language": "node scripts/build/pvo-language.mjs",
     "build:docs": "node scripts/build/docs-site.mjs",
     "dev:worker": "wrangler dev",
+    "db:leaderboard:local": "wrangler d1 migrations apply DB --local --config wrangler.leaderboard.local.jsonc --persist-to .wrangler/anonymous-quiz-leaderboard",
+    "dev:leaderboard": "wrangler dev --local --config wrangler.leaderboard.local.jsonc --ip 127.0.0.1 --port 8788 --persist-to .wrangler/anonymous-quiz-leaderboard",
     "deploy": "npm run build && npm run deploy:built",
     "deploy:built": "node scripts/build/deploy.mjs",
     "dev": "npm run build && node scripts/dev/server.mjs",
