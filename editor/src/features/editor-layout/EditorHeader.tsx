@@ -17,10 +17,11 @@ export function EditorHeader() {
   const sceneName = scenes.find(scene => scene.id === currentSceneId)?.name ?? "Main";
   const sceneSummary = `${sceneName} · ${fmt(duration)} · ${clips.length ? `${clips.length} clip${clips.length === 1 ? "" : "s"}` : "no clips yet"}`;
 
-  if (trying) return <header className={`editorHead ${styles.header}`}>
-    <button className={styles.tryButton} onClick={stopTry}>Stop</button>
+  if (trying) return <header className={`editorHead ${styles.header}`} data-trying="true">
+    <button type="button" className={`${styles.iconButton} ${styles.stopTryButton}`} onClick={stopTry}
+      aria-label="Stop trying" title="Stop trying"><Icon name="close" size={18} /></button>
     <div className={styles.title}>
-      <h1>Trying</h1>
+      <h1><span className={styles.tryDot} aria-hidden="true" />Trying</h1>
       <p title={sceneSummary}>Tap like a viewer · {sceneName}</p>
     </div>
     <DebugEntry variant="mobile" />

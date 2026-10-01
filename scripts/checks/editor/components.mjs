@@ -59,7 +59,7 @@ try {
 
   // Try mode hides the scene row, ends in Scene A, then restores the Main editing location.
   await page.getByRole("button", { name: "Try", exact: true }).click();
-  await page.getByRole("button", { name: "Stop", exact: true }).waitFor({ timeout: 5000 });
+  await page.getByRole("button", { name: "Stop trying", exact: true }).waitFor({ timeout: 5000 });
   await page.getByRole("button", { name: "Go B", exact: true }).click();
   await editorSummary.filter({ hasText: /^Scene A ·/ }).waitFor({ timeout: 5000 });
   assert.equal(await page.getByRole("button", { name: "Show the whole scene tree" }).count(), 0);
@@ -69,7 +69,7 @@ try {
     await page.getByRole("button", { name: "Try", exact: true }).waitFor({ timeout: 5000 });
   } catch (error) {
     tryFailure = `Try mode did not finish in Scene A and restore the Main editing location: ${error.message}`;
-    await page.getByRole("button", { name: "Stop", exact: true }).click();
+    await page.getByRole("button", { name: "Stop trying", exact: true }).click();
   }
 
   // Interactive export contains the Main scene and its branch.

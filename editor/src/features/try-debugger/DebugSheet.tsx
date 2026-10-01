@@ -58,13 +58,18 @@ export function DebugSheet({ onClose, onEditComponent, onLocate }: DebugPanelPro
         {ui.tab === "activity" && !showComponents && !showActivityDetail && <>
           <div className={styles.mobileChips}>
             <button type="button" className={styles.filterButton} data-active={ui.componentId !== "all"} onClick={() => useDebugUi.setState({ mobileView: "components" })}>
-              {readiness.find(component => component.id === ui.componentId)?.name ?? "All components"}<DebugIcon name="down" size={12} />
+              <span>{readiness.find(component => component.id === ui.componentId)?.name ?? "All components"}</span><DebugIcon name="down" size={12} />
             </button>
-            <button type="button" className={styles.filterButton} data-active={ui.issuesOnly} aria-pressed={ui.issuesOnly} onClick={() => useDebugUi.setState({ issuesOnly: !ui.issuesOnly })}>
-              <DebugIcon name="warn" size={12} />Issues · {panel.issues}
+            <button type="button" className={styles.iconButton} data-active={ui.issuesOnly} aria-pressed={ui.issuesOnly}
+              aria-label={`Issues only, ${panel.issues}`} title="Issues only" onClick={() => useDebugUi.setState({ issuesOnly: !ui.issuesOnly })}>
+              <DebugIcon name="warn" size={17} />{panel.issues > 0 && <span>{panel.issues}</span>}
             </button>
-            <button type="button" className={styles.filterButton} data-active={ui.followLatest} aria-pressed={ui.followLatest} onClick={() => useDebugUi.setState({ followLatest: !ui.followLatest })}>
-              ↓ Follow latest
+            <button type="button" className={styles.iconButton} data-active={ui.followLatest} aria-pressed={ui.followLatest}
+              aria-label="Follow latest" title="Follow latest" onClick={() => useDebugUi.setState({ followLatest: !ui.followLatest })}>
+              <DebugIcon name="follow" size={17} />
+            </button>
+            <button type="button" className={styles.iconButton} aria-label="Clear completed" title="Clear completed activity" onClick={panel.clearCompleted}>
+              <DebugIcon name="trash" size={17} />
             </button>
           </div>
           <ActivityList groups={panel.visibleGroups} selectedId={ui.selectedGroupId} density="mobile" followLatest={ui.followLatest}
@@ -83,7 +88,6 @@ export function DebugSheet({ onClose, onEditComponent, onLocate }: DebugPanelPro
       <button type="button" className={styles.menuScrim} aria-label="Close Debug options" onClick={() => useDebugUi.setState({ overlay: null })} />
       <div className={styles.mobileMenu} role="menu">
         <button type="button" role="menuitem" onClick={() => useDebugUi.setState({ overlay: "report" })}><DebugIcon name="copy" size={16} />Copy report…</button>
-        <button type="button" role="menuitem" onClick={panel.clearCompleted}><DebugIcon name="minus" size={16} />Clear completed</button>
         <span className={styles.menuDivider} />
         <button type="button" role="menuitemcheckbox" aria-checked={panel.captureData} disabled={run?.status !== "running"} onClick={() => { panel.toggleCapture(); useDebugUi.setState({ overlay: null }); }}>
           Capture data for this run<span className={styles.toggleTrack} data-active={panel.captureData}><i /></span>

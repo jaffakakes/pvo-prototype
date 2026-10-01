@@ -46,7 +46,7 @@ export function StatePane({ run, rows, pinnedPaths, density, onTogglePin }: Stat
         </span>
       </div>)}
     </div>
-    <div className={styles.stateAside}>
+    {(density === "desktop" || pinned.length > 0) && <div className={styles.stateAside}>
       <h3 className={styles.eyebrow}>Watching</h3>
       <p className={styles.asideNote}>Current state, not a snapshot of the selected event.</p>
       <div className={styles.watchingGrid}>
@@ -58,9 +58,12 @@ export function StatePane({ run, rows, pinnedPaths, density, onTogglePin }: Stat
       </div>
       {density === "desktop" && <PlaybackCard run={run} />}
       {density === "desktop" && <p className={styles.retentionNote}>Values belong to this run · kept after Stop · replaced by the next run.</p>}
-    </div>
+    </div>}
     {density === "mobile" && <div className={styles.mobilePlayback}>
-      <PlaybackCard run={run} />
+      <details className={styles.detailDisclosure}>
+        <summary>Playback details</summary>
+        <PlaybackCard run={run} />
+      </details>
       <p className={styles.retentionNote}>Values belong to this run · kept after Stop · replaced by the next run.</p>
     </div>}
   </div>;

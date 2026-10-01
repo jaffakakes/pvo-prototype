@@ -141,8 +141,8 @@ try {
   }, null, { timeout: 5000 });
   assert.deepEqual(JSON.parse(requests[0].body), { name: "Ada" }, "Form value template was not resolved");
 
-  if (await page.getByRole("button", { name: "Stop", exact: true }).count()) {
-    await page.getByRole("button", { name: "Stop", exact: true }).click();
+  if (await page.getByRole("button", { name: "Stop trying", exact: true }).count()) {
+    await page.getByRole("button", { name: "Stop trying", exact: true }).click();
   }
   await setRoute("/fail");
   await startAndSubmit();
@@ -153,7 +153,7 @@ try {
   assert.equal(await page.evaluate(() => window.__requestTestStore.getState().tryMode?.holdingId), componentId,
     "Failed request incorrectly released its response boundary");
 
-  await page.getByRole("button", { name: "Stop", exact: true }).click();
+  await page.getByRole("button", { name: "Stop trying", exact: true }).click();
   await setRoute("/fail", { kind: "continue" });
   await startAndSubmit();
   await waitForRequestCount(3);

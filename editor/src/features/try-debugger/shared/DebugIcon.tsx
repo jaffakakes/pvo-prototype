@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-type IconName = "activity" | "timeline" | "play" | "pause" | "stop" | "check" | "close" | "warn" | "block" | "clock" | "ignored" | "minus" | "sparkle" | "code" | "back" | "chevron" | "down" | "copy" | "locate" | "pin" | "more" | "request";
+type IconName = "activity" | "timeline" | "play" | "pause" | "stop" | "check" | "close" | "warn" | "block" | "clock" | "ignored" | "minus" | "sparkle" | "code" | "back" | "chevron" | "down" | "copy" | "locate" | "pin" | "more" | "request" | "trash" | "follow" | "edit";
 
 const paths: Record<IconName, ReactNode> = {
   activity: <path d="M3 12h4l3-8 4 16 3-8h4" />,
@@ -25,6 +25,9 @@ const paths: Record<IconName, ReactNode> = {
   pin: <path d="M9 3h6l-1 6 4 4H6l4-4zM12 13v8" />,
   more: <><circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" /></>,
   request: <path d="M4 12h16m-5-5 5 5-5 5" />,
+  trash: <path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7" />,
+  follow: <path d="M12 3v13m-5-5 5 5 5-5M5 21h14" />,
+  edit: <path d="m15 4 5 5M4 20l5-1L21 7l-4-4L5 15z" />,
 };
 
 export function DebugIcon({ name, size = 14, className }: { name: IconName; size?: number; className?: string }) {

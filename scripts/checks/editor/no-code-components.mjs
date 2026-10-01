@@ -77,7 +77,7 @@ try {
   if (process.env.PVO_NO_CODE_SCREENSHOT) await page.screenshot({ path: process.env.PVO_NO_CODE_SCREENSHOT });
   const heightBeforeTry = (await page.locator(".editorDock").boundingBox()).height;
   await page.getByRole("button", { name: "Try", exact: true }).click();
-  await page.getByRole("button", { name: "Stop", exact: true }).click();
+  await page.getByRole("button", { name: "Stop trying", exact: true }).click();
   await page.waitForTimeout(400);
   assert.equal(await page.getByRole("tab", { name: "Look", exact: true }).getAttribute("aria-selected"), "true");
   assert(Math.abs((await page.locator(".editorDock").boundingBox()).height - heightBeforeTry) <= 1);
@@ -179,7 +179,7 @@ try {
     "The completed request clears pending state; handled tracks end-of-layer Choice branches");
   assert.equal(submitted.length, 1, "One explicit submit sends one request");
   assert.equal(submitted[0].answers.find(answer => answer.name === "Age").value, 22.5);
-  await page.getByRole("button", { name: "Stop", exact: true }).click();
+  await page.getByRole("button", { name: "Stop trying", exact: true }).click();
   await tab("Advanced");
   await page.getByText("✓ Valid · preview updated", { exact: true }).waitFor();
   const codeForm = await component();

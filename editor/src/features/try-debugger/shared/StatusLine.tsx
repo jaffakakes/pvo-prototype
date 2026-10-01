@@ -30,6 +30,27 @@ export function StatusLine({ status, density, holdComponentName, onHoldSelect }:
     </button>
     : null;
 
+  // The activity row names the component; the mobile header only needs its status.
+  const mobileTitle = holdComponentName
+    ? status.title.replace(` for ${holdComponentName}`, "").replace(`${holdComponentName} request`, "request")
+    : status.title;
+
+  if (density === "mobile") {
+    const words = <>
+      <span className={styles.statusTitle}>{mobileTitle}{link && <DebugIcon name="chevron" size={12} />}</span>
+      <span className={styles.statusMeta}>
+        <span>{formatVideoTime(status.videoTime, true)}</span>
+        {requestText && <span className={styles.requestInline}>{requestText}</span>}
+      </span>
+    </>;
+    return <div className={styles.statusLine} data-density="mobile">
+      <span className={styles.statusGlyph} data-state={status.state}><DebugIcon name={glyphs[status.state]} size={15} /></span>
+      {link
+        ? <button type="button" className={styles.statusWords} onClick={onHoldSelect} aria-label={status.title} title={status.title}>{words}</button>
+        : <div className={styles.statusWords}>{words}</div>}
+    </div>;
+  }
+
   return <div className={styles.statusLine} data-density={density}>
     <span className={styles.sceneChip}>{status.sceneName}</span>
     <span className={styles.videoTime}>{formatVideoTime(status.videoTime, true)}</span>
@@ -37,14 +58,8 @@ export function StatusLine({ status, density, holdComponentName, onHoldSelect }:
     <div className={styles.statusWords}>
       <span className={styles.statusTitle}>{status.title}</span>
       {status.sub && <span className={styles.statusSub}>{status.sub}</span>}
-      {density === "mobile" && <div className={styles.statusMeta}>
-        <span>{status.sceneName} · {formatVideoTime(status.videoTime, true)}</span>
-        {status.sub && <span>{status.sub}</span>}
-        {requestText && <span className={styles.requestInline}>{requestText}</span>}
-        {link}
-      </div>}
     </div>
-    {density === "desktop" && link}
-    {density === "desktop" && requestText && <span className={styles.requestCount}><span className={styles.spinner} aria-hidden="true" />{requestText}</span>}
+    {link}
+    {requestText && <span className={styles.requestCount}><span className={styles.spinner} aria-hidden="true" />{requestText}</span>}
   </div>;
 }

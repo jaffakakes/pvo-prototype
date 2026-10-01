@@ -140,7 +140,7 @@ try {
   assert.equal(requests[0].method, "POST");
   assert.deepEqual(JSON.parse(requests[0].body), { name: "Ada", email: "ada@example.com" });
 
-  await page.getByRole("button", { name: "Stop", exact: true }).click();
+  await page.getByRole("button", { name: "Stop trying", exact: true }).click();
   await setRequestPath("/missing");
   await submitForm();
   await waitForRequestCount(2);
@@ -151,7 +151,7 @@ try {
   assert.equal(requests.length, 2, "The missing endpoint should receive one request");
   assert.equal(requests[1].path, "/missing");
 
-  await page.getByRole("button", { name: "Stop", exact: true }).click();
+  await page.getByRole("button", { name: "Stop trying", exact: true }).click();
   await setRequestPath("/offline");
 
   await page.route(`http://127.0.0.1:${fixturePort}/offline`, route => route.abort("internetdisconnected"));

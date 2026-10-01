@@ -92,7 +92,7 @@ try {
   }
   assert.equal(await page.evaluate(() => window.debuggerFixture.debug.getState().run.id), originalRun,
     "Rotating/resizing must preserve the same trace");
-  await page.getByRole("button", { name: "Stop", exact: true }).click();
+  await page.getByRole("button", { name: "Stop trying", exact: true }).click();
   assert.equal(await page.evaluate(() => window.debuggerFixture.debug.getState().run.status), "stopped");
   await page.getByRole("button", { name: "Close Debug", exact: true }).click();
   await page.getByRole("button", { name: /^Last run/ }).click();

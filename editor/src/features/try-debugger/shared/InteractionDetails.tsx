@@ -19,14 +19,15 @@ type InteractionDetailsProps = {
   onLocate: (componentId: string) => void;
 };
 
-function FactList({ group, component, request }: {
+function FactList({ group, component, request, compact = false }: {
   group: DebugGroup;
   component?: DebugReadiness;
   request?: DebugRequestRow;
+  compact?: boolean;
 }) {
   const facts: Array<[string, string]> = [];
   if (component) {
-    facts.push(["Component", `${component.name} · ${component.type}`]);
+    if (!compact) facts.push(["Component", `${component.name} · ${component.type}`]);
     facts.push(["Status", `${component.status === "active" ? "Active now" : component.status === "unavailable" ? "Unavailable" : component.status === "ended" ? "Ended" : "Ready"} · shows ${formatVideoTime(component.at)}–${formatVideoTime(component.end)}`]);
     facts.push(["Interactive now", component.interactiveLabel]);
     facts.push(["Action", component.type === "tooltip" ? "Display-only Note" : !component.actionKnown ? "Checking action…" : component.hasAction ? `Assigned${component.dispatch === "layer_end" ? " · at layer end" : ""}` : "None assigned"]);
@@ -93,15 +94,27 @@ export function InteractionDetails({ group, run, readiness, requests, density, c
       {group.source?.revision && `Ran revision ${group.source.revision}.`}
     </p>}
     <div className={styles.detailBody}>
-      <StageList stages={group.stages} density={density} />
+      {density === "desktop" && <StageList stages={group.stages} density={density} />}
       <div className={styles.detailRight}>
         <WhyCard group={group} run={run} component={component} />
-        <FactList group={group} component={component} request={request} />
+        {density === "desktop" && <FactList group={group} component={component} request={request} />}
       </div>
       {density === "mobile" && editable && <div className={styles.mobileActions}>
-        <button type="button" className={styles.primaryButton} onClick={() => onEditComponent(group.componentId!, editTab)}>{run?.status === "running" ? "Stop and edit" : "Open component"} →</button>
-        <button type="button" className={styles.secondaryButton} onClick={() => onLocate(group.componentId!)}><DebugIcon name="locate" size={15} />Locate</button>
+        <button type="button" className={styles.primaryButton} aria-label={run?.status === "running" ? "Stop and edit" : "Open component"}
+          title={run?.status === "running" ? "Stop trying and edit this component" : "Open component"}
+          onClick={() => onEditComponent(group.componentId!, editTab)}><DebugIcon name="edit" size={16} />Edit</button>
+        <button type="button" className={styles.iconButton} aria-label="Locate" title="Locate in video" onClick={() => onLocate(group.componentId!)}><DebugIcon name="locate" size={18} /></button>
       </div>}
+      {density === "mobile" && <>
+        <details className={styles.detailDisclosure} key={`${group.id}:steps`}>
+          <summary>Steps <span>{group.stages.length}</span></summary>
+          <StageList stages={group.stages} density={density} />
+        </details>
+        <details className={styles.detailDisclosure} key={`${group.id}:facts`}>
+          <summary>Component details</summary>
+          <FactList group={group} component={component} request={request} compact />
+        </details>
+      </>}
     </div>
   </section>;
 }

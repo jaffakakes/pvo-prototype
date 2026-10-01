@@ -213,7 +213,7 @@ try {
   if (await pause.isVisible()) await pause.click();
   await component.waitFor({ state: "visible" });
   await pinch({ center: await centerOf(component), factor: 1.6 });
-  await page.locator(".editorHead").getByRole("button", { name: "Stop", exact: true }).click();
+  await page.locator(".editorHead").getByRole("button", { name: "Stop trying", exact: true }).click();
   await settle();
   await assertOverlaysUnchanged(expected, "Try mode must not perform authoring mutations");
   // Chrome, sheet, scrolling and Try interactions must not add authored history entries either.

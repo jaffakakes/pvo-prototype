@@ -46,7 +46,7 @@ export function RequestList({ requests, selectedId, density, failedOnly, onToggl
   };
   return <div className={styles.requestsList} ref={listRef} role="listbox" aria-label="Requests in this run" data-density={density} onKeyDown={onKeyDown}>
     {overflow > 0 && <div className={styles.omissionNote}>{overflow} older request{overflow === 1 ? "" : "s"} omitted from this bounded view.</div>}
-    {density === "mobile" && <div className={styles.requestFilterRow}>
+    {density === "mobile" && requests.length > 0 && <div className={styles.requestFilterRow}>
       <button type="button" className={styles.filterButton} data-active={failedOnly} aria-pressed={failedOnly} onClick={onToggleFailedOnly}><DebugIcon name="warn" size={12} />Failed only</button>
       <span>{requests.length} request{requests.length === 1 ? "" : "s"}</span>
     </div>}
