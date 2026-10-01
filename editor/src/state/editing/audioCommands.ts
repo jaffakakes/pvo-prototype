@@ -2,9 +2,9 @@ import {
   audioDuration,
   dragAudio,
   extractClipAudio,
-  sceneDuration,
   splitAudio,
 } from "../../domain/audio/editing";
+import { sceneDuration } from "../../domain/scenes/duration";
 import type { AudioClip } from "../../domain/audio/model";
 import { uid } from "../../infrastructure/ids";
 import { useCapture } from "../captureStore";

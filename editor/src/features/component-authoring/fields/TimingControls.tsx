@@ -11,7 +11,11 @@ export function TimingControls({ component }: { component: PvoComponent }) {
   const update = useCapture(state => state.updateComponent);
   const useNow = () => {
     const state = useCapture.getState();
-    const at = clampComponentStart(state.t, total(state.clips));
+    const at = clampComponentStart(
+      state.t,
+      component.dur,
+      total(state.clips),
+    );
     if (component.at !== at) update(component.id, { at });
   };
   return <section className={`${styles.section} componentTiming`} aria-label="Component timing">

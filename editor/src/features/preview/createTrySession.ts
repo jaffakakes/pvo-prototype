@@ -1,4 +1,4 @@
-import { sceneDuration } from "../../domain/audio/editing";
+import { sceneDuration } from "../../domain/scenes/duration";
 import { actionFor } from "../../domain/components/actions";
 import { fieldsShownFor } from "../../domain/components/fields";
 import {

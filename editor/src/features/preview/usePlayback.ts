@@ -1,4 +1,4 @@
-import { sceneDuration } from "../../domain/audio/editing";
+import { sceneDuration } from "../../domain/scenes/duration";
 import { useEffect, useRef } from "react";
 import { locate, total } from "../../domain/clips/timing";
 import { clamp } from "../../domain/project/numbers";
@@ -23,8 +23,8 @@ export function usePlayback(videoRef: React.RefObject<HTMLVideoElement>) {
   const pausedAt = useRef<number | null>(null);
   const state = useCapture();
   const { clips, t, playing, muted, trim } = state;
-  const audioTail = sceneDuration(state) > total(clips) && t >= total(clips);
-  const current = trim ? { c: clips[trim.i], lt: trim.lt } : audioTail ? null : locate(t, clips);
+  const sceneTail = sceneDuration(state) > total(clips) && t >= total(clips);
+  const current = trim ? { c: clips[trim.i], lt: trim.lt } : sceneTail ? null : locate(t, clips);
   const fromVideo = positionOrigin.current.get(state) === "video";
   const pausePositionUnchanged = pausedAt.current != null && Math.abs(t - pausedAt.current) < .0001;
   const justPausedAtVideoTime = !playing && pausedAt.current == null && fromVideo;

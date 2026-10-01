@@ -1,6 +1,6 @@
 import { useAudioPlayback } from "../sound/useAudioPlayback";
 import { total } from "../../domain/clips/timing";
-import { sceneDuration } from "../../domain/audio/editing";
+import { sceneDuration } from "../../domain/scenes/duration";
 import { useLayoutEffect,useRef,useState } from "react";
 import { dur,locate } from "../../domain/clips/timing";
 import { layerZ } from "../../domain/layers/order";
@@ -28,8 +28,9 @@ export function Preview({ desktop = false, safeZone = false, onAddMedia }: Props
   const gestures = useOverlayGestures(boxRef, desktop);
   const [area, setArea] = useState({ width: 0, height: 0 });
   const located = s.trim ? { c: s.clips[s.trim.i], i: s.trim.i } : locate(s.t, s.clips);
-  const audioTail = s.t >= total(s.clips) && sceneDuration(s) > total(s.clips);
-  const clip = audioTail ? undefined : located?.c;
+  const duration = sceneDuration(s);
+  const sceneTail = s.t >= total(s.clips) && duration > total(s.clips);
+  const clip = sceneTail ? undefined : located?.c;
   usePlayback(videoRef);
   useAudioPlayback();
   useLayoutEffect(() => {
@@ -58,7 +59,7 @@ export function Preview({ desktop = false, safeZone = false, onAddMedia }: Props
       }}>
     <div className={cx("videoLayer")} data-layer-id="video" style={{ zIndex: layerZ(s, "video") }}>
       {clip?.url ? <video ref={videoRef} className={cx("pvVideo")} playsInline style={{ objectFit: clip.fit, transform: `scale(${clip.mirror ? -clip.zoom : clip.zoom},${clip.zoom})` }} /> :
-        <div className={cx("pvFallback")} style={{ background: audioTail ? "#000" : `linear-gradient(160deg,${clip?.color ?? "#000"},#15151C)` }}>{!audioTail && <img src="restyle-mark.png" alt="" />}</div>}
+        <div className={cx("pvFallback")} style={{ background: sceneTail ? "#000" : `linear-gradient(160deg,${clip?.color ?? "#000"},#15151C)` }}>{!sceneTail && <img src="restyle-mark.png" alt="" />}</div>}
     </div>
     {s.texts.filter(x => s.t >= x.start && s.t < x.end).map(x => <TextLayer key={x.id} overlay={x} width={bw} height={bh} zIndex={layerZ(s, `text:${x.id}`)} selected={s.selText === x.id} trying={!!s.tryMode} />)}
     {s.components.filter(component => componentVisible(component, s.clips, s.t, s.tryMode?.holdingId ?? null)
@@ -77,7 +78,7 @@ export function Preview({ desktop = false, safeZone = false, onAddMedia }: Props
       {s.ratio === "9:16" && <div className={styles.socialGuides}><i /><i /><i /></div>}
     </div>}
     {desktop && s.tryMode && <span className={styles.tryBadge}><i />Trying</span>}
-    {desktop && !clip && !s.audioClips.length && <div className={styles.empty}>
+    {desktop && duration <= 0 && <div className={styles.empty}>
       <span><Icon name="edit" size={24} /></span>
       <strong>Nothing here yet</strong>
       <button type="button" onClick={onAddMedia}>Add clips from Media</button>

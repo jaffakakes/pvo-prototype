@@ -1,5 +1,7 @@
 import { total } from "../../domain/clips/timing";
 import { componentLength, dragComponentTiming, type ComponentTiming, type TimingDragMode } from "../../domain/components/timing";
+import { clamp } from "../../domain/project/numbers";
+import { sceneDuration } from "../../domain/scenes/duration";
 import { useCapture } from "../captureStore";
 import { projectSnapshot } from "../project/history";
 
@@ -9,8 +11,12 @@ export function beginComponentTimingDrag(id: string, mode: TimingDragMode) {
   const component = before.components.find(item => item.id === id);
   if (!component || before.tryMode || before.playheadPick) return null;
   const snapshot = projectSnapshot(before);
-  const sceneLength = total(before.clips);
-  const start = { at: component.at, length: componentLength(component, before.clips) };
+  const videoLength = total(before.clips);
+  const start = {
+    at: component.at,
+    dur: component.dur,
+    length: componentLength(component, before.clips),
+  };
   const original: ComponentTiming = { at: component.at, dur: component.dur };
   let current = original;
   let ended = false;
@@ -36,17 +42,20 @@ export function beginComponentTimingDrag(id: string, mode: TimingDragMode) {
       }, false);
       return;
     }
-    state.updateComponent(id, original, false);
+    state.updateComponent(id, original, false, { preservePlayhead: true });
   };
 
   return {
     value: () => current,
     update(delta: number) {
       if (!active()) return false;
-      const next = { ...current, ...dragComponentTiming(start, mode, delta, sceneLength) };
+      const next = {
+        ...current,
+        ...dragComponentTiming(start, mode, delta, videoLength),
+      };
       if (same(current, next)) return true;
       touched = true;
-      useCapture.getState().updateComponent(id, next, false);
+      useCapture.getState().updateComponent(id, next, false, { preservePlayhead: true });
       current = next;
       return true;
     },
@@ -55,7 +64,11 @@ export function beginComponentTimingDrag(id: string, mode: TimingDragMode) {
       if (!same(current, original)) {
         // Live frames were plain patches; the drop records the pre-drag project once.
         const state = useCapture.getState();
-        state.patch({ past: [...state.past, snapshot].slice(-40), future: [] });
+        state.patch({
+          t: clamp(state.t, 0, sceneDuration(state)),
+          past: [...state.past, snapshot].slice(-40),
+          future: [],
+        });
       } else restore();
       ended = true;
     },

@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useRef } from "react";
-import { total } from "../../domain/clips/timing";
+import { sceneDuration } from "../../domain/scenes/duration";
 import { sceneChildren } from "../../domain/scenes/rules";
 import { useCapture } from "../../state/captureStore";
 import { Icon } from "../../ui/Icon";
@@ -34,14 +34,14 @@ export const ScenesRow = forwardRef<HTMLButtonElement, Props>(function ScenesRow
         <span aria-hidden="true">↑</span> {parent.name}
       </button>}
       <span className={`sceneChip ${styles.chip}`} aria-current="true" data-on="true">
-        {current.name} <small>{fmt(total(current.clips))}</small>
+        {current.name} <small>{fmt(sceneDuration(current))}</small>
       </span>
       {children.length > 0 && <span className={styles.separator} aria-hidden="true">›</span>}
       {children.map(scene => {
         const branchCount = sceneChildren(scenes, scene.id).length;
         return <button key={scene.id} className={`sceneChip ${styles.chip}`}
           aria-label={`Open ${scene.name}`} onClick={() => useCapture.getState().switchScene(scene.id)}>
-          {scene.name} <small>{fmt(total(scene.clips))}</small>
+          {scene.name} <small>{fmt(sceneDuration(scene))}</small>
           {branchCount > 0 && <span className={styles.branchCount}
             aria-label={`${branchCount} ${branchCount === 1 ? "branch" : "branches"}`}>▸{branchCount}</span>}
         </button>;

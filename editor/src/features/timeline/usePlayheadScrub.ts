@@ -6,7 +6,7 @@ import {
   type PointerEvent,
   type RefObject,
 } from "react";
-import { sceneDuration } from "../../domain/audio/editing";
+import { sceneDuration } from "../../domain/scenes/duration";
 import { clamp } from "../../domain/project/numbers";
 import { useCapture } from "../../state/captureStore";
 import { scrubPlayback } from "../preview/playbackCommands";

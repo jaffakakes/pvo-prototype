@@ -25,7 +25,7 @@ export function componentLabel(component: PvoComponent) {
 /** A component shows for its layer, and stays while it waits at the layer end for a response. */
 export function componentVisible(component: PvoComponent, clips: Clip[], t: number, holdingId: string | null) {
   if (holdingId === component.id) return true;
-  return t >= component.at && t <= componentEnd(component, clips);
+  return t >= component.at && t < componentEnd(component, clips);
 }
 
 export function ComponentOverlay({ component, width, selected, trying, onResponse, zIndex, proposed = false, before = false }: {

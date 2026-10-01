@@ -1,4 +1,4 @@
-import { sceneDuration } from "../../domain/audio/editing";
+import { sceneDuration } from "../../domain/scenes/duration";
 import { createAudioLayerPlayer } from "../audio/audioLayerPlayer";
 import { drawText } from "../../../../packages/pvo-text-runtime/index.js";
 import { dur, total } from "../../domain/clips/timing";

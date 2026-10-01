@@ -1,5 +1,5 @@
 import { deleteSelectedAudio, splitSelectedAudio } from "../state/editing/audioCommands";
-import { sceneDuration } from "../domain/audio/editing";
+import { sceneDuration } from "../domain/scenes/duration";
 import { useEffect } from "react";
 import { clamp } from "../domain/project/numbers";
 import { startTry, stopTry } from "../features/preview/tryMode";
@@ -90,7 +90,10 @@ export function useEditorKeyboard(enabled = true) {
         s.patch({ t: clamp(s.t + (event.key === "ArrowRight" ? step : -step), 0, sceneDuration(s)), playing: false });
         return;
       }
-      if (s.screen !== "editor" || !s.scenes.some(scene => scene.clips.length || scene.audioClips?.length))
+      if (
+        s.screen !== "editor" ||
+        !s.scenes.some((scene) => sceneDuration(scene) > 0)
+      )
         return;
       if (event.key.toLowerCase() === "c" && !s.tryMode) {
         s.patch({ sheet: "components", playing: false, orb: false });

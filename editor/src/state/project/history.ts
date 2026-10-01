@@ -1,4 +1,4 @@
-import { sceneDuration } from "../../domain/audio/editing";
+import { sceneDuration } from "../../domain/scenes/duration";
 import { layerOrder } from "../../domain/layers/order";
 import type { ProjectSnapshot } from "../../domain/project/model";
 import { clamp } from "../../domain/project/numbers";
