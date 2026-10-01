@@ -1,6 +1,9 @@
 import { create } from "zustand";
+import type { PvoRequestFailure } from "../../../../packages/pvo-sdk/index.js";
 
-type Feedback = { operation: number; phase: "pending" | "failed" | "emptyScene" };
+type Feedback =
+  | { operation: number; phase: "pending" | "emptyScene" }
+  | { operation: number; phase: "failed"; failure?: PvoRequestFailure };
 export const useTryFeedback = create<{ components: Record<string, Feedback> }>(() => ({ components: {} }));
 let nextOperation = 0;
 
@@ -12,11 +15,11 @@ export function beginTryRequest(componentId: string): number {
   return operation;
 }
 
-export function finishTryRequest(componentId: string, operation: number, failed: boolean): void {
+export function finishTryRequest(componentId: string, operation: number, failed: boolean, failure?: PvoRequestFailure): void {
   useTryFeedback.setState(state => {
     if (state.components[componentId]?.operation !== operation) return state;
     const components = { ...state.components };
-    if (failed) components[componentId] = { operation, phase: "failed" };
+    if (failed) components[componentId] = { operation, phase: "failed", failure };
     else delete components[componentId];
     return { components };
   });

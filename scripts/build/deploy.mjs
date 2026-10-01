@@ -3,10 +3,14 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { retainEditorAssets } from "./retain-editor-assets.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const config = JSON.parse(await readFile(resolve(root, "wrangler.jsonc"), "utf8"));
 const { revision } = JSON.parse(await readFile(resolve(root, "dist/editor/release.json"), "utf8"));
+const origin = config.vars.PUBLIC_ORIGIN;
+const retained = await retainEditorAssets({ distRoot: resolve(root, "dist"), origin });
+console.log(`Release assets: ${retained.assets.length} immutable editor files preserved (${retained.downloaded} downloaded).`);
 const secretPath = resolve(root, ".wrangler/release-secrets.json");
 await mkdir(resolve(root, ".wrangler"), { recursive: true });
 let secret;
@@ -25,7 +29,6 @@ await new Promise((resolveDeploy, reject) => {
   child.once("exit", code => code === 0 ? resolveDeploy() : reject(new Error(`Deployment failed (${code}). No release announced.`)));
 });
 
-const origin = config.vars.PUBLIC_ORIGIN;
 const served = await fetch(new URL("/editor/release.json", origin), { cache: "no-store" });
 if (!served.ok || (await served.json()).revision !== revision)
   throw new Error("Deployment finished but the expected release is not served. No release announced.");

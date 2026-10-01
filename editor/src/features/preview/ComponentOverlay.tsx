@@ -8,6 +8,8 @@ import { ComponentFieldsView } from "./ComponentFieldsView";
 import { useComponentAuthoring } from "../../state/components/componentAuthoringStore";
 import { TryFeedback } from "./TryFeedback";
 import styles from "./ProposalOutline.module.css";
+import { useDebugLocate } from "../editor-layout/debugging/debugLocate";
+import debugStyles from "../editor-layout/debugging/DebugWorkspace.module.css";
 
 export function componentLabel(component: PvoComponent) {
   const structure = component.code?.custom ? component.code.pvoCompiled?.structure : null;
@@ -39,6 +41,7 @@ export function ComponentOverlay({ component, width, selected, trying, onRespons
   onResponse: (component: PvoComponent, response: ComponentResponse) => void;
 }) {
   const session = useComponentAuthoring();
+  const located = useDebugLocate(state => state.componentId === component.id);
   const u = width / 247;
   const { ref, size } = useComponentDimensions(component, width);
   const style = {
@@ -47,7 +50,7 @@ export function ComponentOverlay({ component, width, selected, trying, onRespons
     transform: `translate(-50%, -50%) scale(${size.width}, ${size.height})`,
   } as CSSProperties;
 
-  return <div ref={ref} className={`${cx("compOverlay")} ${proposed ? styles.proposed : ""}`} data-proposed={proposed} data-layer-id={`component:${component.id}`} data-sel={selected} data-trying={trying} style={style}>
+  return <div ref={ref} className={`${cx("compOverlay")} ${proposed ? styles.proposed : ""}`} data-proposed={proposed} data-preview-component={component.id} data-layer-id={`component:${component.id}`} data-sel={selected} data-trying={trying} style={style}>
     {(proposed || before) && <span className={styles.label} data-before={before}>{before ? "Before" : "Proposed"}</span>}
     {component.code?.custom ? component.code.pvo
       ? <PvoRuntimeOverlay component={component} width={width} trying={trying} isVisible={componentVisible}
@@ -56,5 +59,8 @@ export function ComponentOverlay({ component, width, selected, trying, onRespons
       : <ComponentFieldsView component={component} unit={u} trying={trying} onResponse={onResponse}
           selectedPart={selected && session.componentId === component.id && session.tab === "look" ? session.part : null} />}
     {trying && <TryFeedback componentId={component.id} />}
+    {located && <div className={debugStyles.locate} aria-hidden="true" data-debug-locate>
+      <span>{componentLabel(component)}</span>
+    </div>}
   </div>;
 }

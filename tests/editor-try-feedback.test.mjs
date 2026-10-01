@@ -14,9 +14,11 @@ test("Try request status belongs to its component and clears after success", () 
   const first = beginTryRequest("card");
   const second = beginTryRequest("form");
   finishTryRequest("card", first, false);
-  finishTryRequest("form", second, true);
+  const failure = { kind: "http", status: 404, message: "Request address not found (404)." };
+  finishTryRequest("form", second, true, failure);
   assert.equal(useTryFeedback.getState().components.card, undefined);
   assert.equal(useTryFeedback.getState().components.form.phase, "failed");
+  assert.deepEqual(useTryFeedback.getState().components.form.failure, failure);
 });
 
 test("an obsolete request cannot overwrite its retry or restore status after leaving Try", () => {

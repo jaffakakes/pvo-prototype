@@ -7,6 +7,7 @@ import { ClipPoster } from "../../../ui/media/ClipPoster";
 import { Icon } from "../../../ui/Icon";
 import { componentLabel } from "../../preview/ComponentOverlay";
 import { useTimingPointer } from "../../timeline/useTimingPointer";
+import { DebugLayerIssue } from "../../editor-layout/debugging/DebugLayerIssue";
 import styles from "./DesktopTimeline.module.css";
 import type { DesktopLayerLayout, DesktopLayerRow } from "./layerRows";
 
@@ -410,6 +411,7 @@ export function DesktopVisualLayerLanes({
               <span className={styles.blockHandle} data-edge="l" />
             )}
             <span>✦ {componentLabel(component)}</span>
+            <DebugLayerIssue componentId={component.id} />
             {state.selComp === component.id && (
               <span className={styles.blockHandle} data-edge="r" />
             )}

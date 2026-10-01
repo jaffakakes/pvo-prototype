@@ -1,4 +1,5 @@
 import { sceneDuration } from "../../domain/scenes/duration";
+import { describeRequestFailure, type PvoRequestFailure } from "../../../../packages/pvo-sdk/index.js";
 import { actionFor } from "../../domain/components/actions";
 import { fieldsShownFor } from "../../domain/components/fields";
 import {
@@ -21,10 +22,12 @@ import type {
 import { clamp } from "../../domain/project/numbers";
 import type { CaptureState, TryMode } from "../../state/types";
 import { createTryRuntimeBridge } from "./createTryRuntimeBridge";
+import { createTryDiagnostics, type TryDiagnosticSink } from "./createTryDiagnostics";
 
 type TrySessionState = Pick<
   CaptureState,
   | "currentSceneId"
+  | "localId"
   | "t"
   | "sel"
   | "selComp"
@@ -41,6 +44,7 @@ type TrySessionState = Pick<
   | "switchScene"
 >;
 type Host = {
+  diagnostics?: TryDiagnosticSink;
   getState(): TrySessionState;
   request: typeof fetch;
   publishRuntimeState(state: Record<string, unknown> | null): void;
@@ -51,7 +55,7 @@ type Host = {
   playbackFailed(): void;
   emptyScene(id: string): void;
   beginRequest(id: string): number;
-  finishRequest(id: string, operation: number, failed: boolean): void;
+  finishRequest(id: string, operation: number, failed: boolean, failure?: PvoRequestFailure): void;
 };
 
 const freshMode = (): TryMode => ({
@@ -68,6 +72,7 @@ const freshMode = (): TryMode => ({
  * routing remains an ordinary optional action independent from waiting.
  */
 export function createTrySession(host: Host) {
+  const diagnostics = createTryDiagnostics(host.getState, host.diagnostics);
   let trySessionEpoch = 0;
   const requestOperations = new Map<string, {
     controller: AbortController;
@@ -83,13 +88,18 @@ export function createTrySession(host: Host) {
     request: host.request,
     publishRuntimeState: host.publishRuntimeState,
     applyPlaybackOutcome: runPlaybackOutcome,
+    diagnosticObserver: diagnostics.observer,
+    diagnosticStateObserver: diagnostics.stateObserver,
+    captureDiagnosticBodies: diagnostics.capture,
   });
   function getTryRuntime() {
     return runtimeBridge.current();
   }
-  function cancelRequestOperations(exceptComponentId?: string) {
+  function cancelRequestOperations(exceptComponentId?: string, reason = "try_stopped") {
     requestOperations.forEach((operation, componentId) => {
       if (componentId !== exceptComponentId) {
+        const component = host.getState().components.find(item => item.id === componentId);
+        if (component) diagnostics.event(component, "action.cancelled", reason);
         operation.controller.abort();
         host.finishRequest(componentId, operation.feedbackOperation, false);
       }
@@ -101,6 +111,7 @@ export function createTrySession(host: Host) {
   function startTry() {
     const s = host.getState();
     if (s.tryMode || sceneDuration(s) <= 0) return;
+    diagnostics.start(s.t >= sceneDuration(s) ? 0 : s.t);
     try {
       const components = s.scenes.flatMap((scene) => scene.components);
       assertResponsePolicyContract(components);
@@ -114,6 +125,7 @@ export function createTrySession(host: Host) {
       host.clearNotice();
       runtimeBridge.start(s);
     } catch (error) {
+      diagnostics.stop("start_error", true);
       console.error("Could not start viewer preview:", error);
       host.startFailed();
       return;
@@ -138,6 +150,7 @@ export function createTrySession(host: Host) {
   function stopTry() {
     trySessionEpoch += 1;
     cancelRequestOperations();
+    diagnostics.stop();
     runtimeBridge.stop();
     host.clearFeedback();
     host.clearNotice();
@@ -154,38 +167,52 @@ export function createTrySession(host: Host) {
     });
   }
   function failTry(error: unknown) {
+    diagnostics.record({ type: "session.failed", reason: "playback_error" });
     console.error("Viewer preview stopped after a playback failure:", error);
     if (host.getState().tryMode) stopTry();
     host.playbackFailed();
   }
   /** A chosen scene is the rest of the video: nothing returns to the scene that routed there. */
-  function enterScene(component: PvoComponent, sceneId: string): boolean {
+  function enterScene(component: PvoComponent, sceneId: string, interactionId?: string): boolean {
     const s = host.getState();
     const target = s.scenes.find((scene) => scene.id === sceneId);
+    diagnostics.event(component, "playback.scene_requested", undefined, interactionId);
     if (!target || sceneDuration(target) <= 0) {
       host.emptyScene(component.id);
+      diagnostics.event(component, "playback.route_failed", "empty_scene", interactionId);
       return false;
     }
-    cancelRequestOperations(component.id);
+    cancelRequestOperations(component.id, "scene_changed");
     host.clearFeedback();
     s.switchScene(target.id, { undoable: false, preserveTry: true });
     host.getState().patch({ tryMode: freshMode(), t: 0, playing: true });
+    diagnostics.event(component, "playback.released", "scene_changed", interactionId);
     return true;
   }
   function runPlaybackOutcome(
     component: PvoComponent,
     outcome: PlaybackOutcome,
+    interactionId?: string,
   ): boolean {
     const s = host.getState();
     const mode = s.tryMode;
-    if (!mode) return false;
+    if (!mode) {
+      diagnostics.event(component, "action.cancelled", "try_stopped", interactionId);
+      return false;
+    }
     if (outcome.kind === "scene") {
-      return enterScene(component, outcome.sceneId);
+      return enterScene(component, outcome.sceneId, interactionId);
     }
     // Another component's plain continue cannot release a response waiting at its layer end.
-    if (outcome.kind === "continue" && mode.holdingId && mode.holdingId !== component.id) return true;
+    if (outcome.kind === "continue" && mode.holdingId && mode.holdingId !== component.id) {
+      diagnostics.event(component, "action.skipped", "other_component_holding", interactionId);
+      return true;
+    }
     const t = outcome.kind === "time" ? clamp(outcome.t, 0, sceneDuration(s)) : s.t;
-    if (outcome.kind === "time") cancelRequestOperations(component.id);
+    if (outcome.kind === "time") {
+      diagnostics.event(component, "playback.seek_requested", undefined, interactionId);
+      cancelRequestOperations(component.id, "seek");
+    }
     // Seeking behind a processed boundary lets that component accept a new response.
     const handled =
       t < s.t
@@ -207,6 +234,7 @@ export function createTrySession(host: Host) {
       tryMode: { ...mode, playing: true, holdingId: null, handled, capturedResponses, dispatched },
       playing: true,
     });
+    diagnostics.event(component, "playback.released", outcome.kind, interactionId);
     return true;
   }
 
@@ -217,13 +245,13 @@ export function createTrySession(host: Host) {
       runtime.setState("form", {
         ...(runtime.state.form as Record<string, unknown> | undefined),
         [component.id]: response.formValues,
-      });
+      }, { componentId: component.id, diagnostic: diagnostics.context(component, response) });
     }
     if (component.type === "choice") {
       runtime.setState("choices", {
         ...(runtime.state.choices as Record<string, unknown> | undefined),
         [component.id]: response.index,
-      });
+      }, { componentId: component.id, diagnostic: diagnostics.context(component, response) });
     }
   }
 
@@ -234,12 +262,15 @@ export function createTrySession(host: Host) {
   ): Promise<boolean> {
     const state = host.getState();
     const outcome = response.outcome;
+    const diagnosticContext = diagnostics.context(component, response);
     if (!state.tryMode) return false;
     if (
       outcome.kind === "request" &&
       host.feedback()[component.id]?.phase === "pending"
-    )
+    ) {
+      diagnostics.event(component, "interaction.ignored", "request_pending", diagnosticContext.interactionId);
       return false;
+    }
     writeResponseState(component, response);
     if (
       component.type === "form" &&
@@ -247,13 +278,14 @@ export function createTrySession(host: Host) {
       formSubmissionOutcome(component) === null
     ) {
       if (component.fields.failureOutcome)
-        return runPlaybackOutcome(component, component.fields.failureOutcome);
+        return runPlaybackOutcome(component, component.fields.failureOutcome, diagnosticContext.interactionId);
       const operation = host.beginRequest(component.id);
       host.finishRequest(component.id, operation, true);
+      diagnostics.event(component, "action.failed", "missing_destination", diagnosticContext.interactionId);
       return false;
     }
     if (outcome.kind !== "request") {
-      return runPlaybackOutcome(component, outcome);
+      return runPlaybackOutcome(component, outcome, diagnosticContext.interactionId);
     }
     const runtime = runtimeBridge.current();
     if (!runtime) return false;
@@ -265,6 +297,11 @@ export function createTrySession(host: Host) {
     requestOperations.set(component.id, requestOperation);
     const previewInteraction = { routeFailed: false };
     let actionReady = false;
+    let requestErrorSeen = false;
+    const unsubscribe = runtime.subscribe(event => {
+      if (event.type === "request_error" && event.componentId === component.id)
+        requestErrorSeen = true;
+    });
     try {
       const action = actionFor(outcome, component.id);
       actionReady = true;
@@ -273,6 +310,7 @@ export function createTrySession(host: Host) {
         throwOnRequestError: true,
         signal: requestOperation.controller.signal,
         previewInteraction,
+        diagnostic: diagnosticContext,
       });
       if (requestOperations.get(component.id) !== requestOperation) return false;
       host.finishRequest(component.id, operation, false);
@@ -282,6 +320,7 @@ export function createTrySession(host: Host) {
         return false;
       // No error route is deliberately a no-op: the component stays available to retry.
       console.warn("PVO request failed in Try mode:", error);
+      if (!requestErrorSeen) diagnostics.event(component, "action.failed", "invalid_action", diagnosticContext.interactionId);
       const latest = host.getState();
       if (
         runtimeBridge.isCurrent(runtime) &&
@@ -294,10 +333,12 @@ export function createTrySession(host: Host) {
           component.id,
           operation,
           !(actionReady && outcome.onError),
+          requestErrorSeen ? describeRequestFailure(error) : undefined,
         );
       }
       return !!(actionReady && outcome.onError && !previewInteraction.routeFailed);
     } finally {
+      unsubscribe();
       if (requestOperations.get(component.id) === requestOperation)
         requestOperations.delete(component.id);
     }
@@ -308,6 +349,7 @@ export function createTrySession(host: Host) {
     const mode = state.tryMode;
     const response = mode?.capturedResponses[component.id];
     if (!mode || !response || mode.dispatched.includes(component.id)) return;
+    diagnostics.event(component, "action.selected", undefined, diagnostics.context(component, response).interactionId);
     const epoch = trySessionEpoch;
     const runtime = runtimeBridge.current();
     state.patch({
@@ -340,14 +382,30 @@ export function createTrySession(host: Host) {
   async function runComponentResponse(
     component: PvoComponent,
     response: ComponentResponse,
+    interactionId?: string,
   ): Promise<void> {
     const state = host.getState();
     const mode = state.tryMode;
-    if (!mode || !acceptsResponse(component)) return;
+    const input = diagnostics.response(component, response, interactionId);
+    if (!mode || !acceptsResponse(component)) {
+      diagnostics.event(component, "interaction.ignored", "inactive_component", input);
+      return;
+    }
     const policy = responsePolicyFor(component);
     const atBoundary = mode.holdingId === component.id;
-    if (mode.dispatched.includes(component.id)) return;
-    if (!atBoundary && mode.handled.includes(component.id)) return;
+    if (mode.dispatched.includes(component.id)) {
+      diagnostics.event(component, "interaction.ignored", host.feedback()[component.id]?.phase === "pending" ? "request_pending" : "already_dispatched", input);
+      return;
+    }
+    if (!atBoundary && mode.handled.includes(component.id)) {
+      diagnostics.event(component, "interaction.ignored", "already_handled", input);
+      return;
+    }
+    diagnostics.accepted(component.id, input);
+    const previous = mode.capturedResponses[component.id];
+    if (previous && policy.dispatch === "layer_end" && !atBoundary && !mode.handled.includes(component.id))
+      diagnostics.event(component, "action.cancelled", "superseded", diagnostics.context(component, previous).interactionId);
+    diagnostics.event(component, "interaction.accepted", undefined, input, { target: diagnostics.target(component, response.index) });
     const capturedResponses = { ...mode.capturedResponses, [component.id]: response };
     const handled = atBoundary && !mode.handled.includes(component.id)
       ? [...mode.handled, component.id]
@@ -355,6 +413,7 @@ export function createTrySession(host: Host) {
     state.patch({ tryMode: { ...mode, capturedResponses, handled } });
     if (policy.dispatch === "interaction" || atBoundary)
       await dispatchCapturedResponse(component);
+    else diagnostics.event(component, "response.deferred", "layer_end", input, { waitUntil: componentEnd(component, state.clips) });
   }
 
   /** Form values stay in session state; only an explicit request sends them to a destination. */
@@ -365,8 +424,11 @@ export function createTrySession(host: Host) {
     if (
       !host.getState().tryMode ||
       host.feedback()[component.id]?.phase === "pending"
-    )
+    ) {
+      const input = diagnostics.begin(component, 0);
+      diagnostics.event(component, "interaction.ignored", host.getState().tryMode ? "request_pending" : "inactive_component", input);
       return;
+    }
     try {
       if (component.fields.formFields)
         validateFormFields(component.fields.formFields);
@@ -379,6 +441,7 @@ export function createTrySession(host: Host) {
       console.warn("Could not submit form in Try mode:", error);
       const operation = host.beginRequest(component.id);
       host.finishRequest(component.id, operation, true);
+      diagnostics.event(component, "action.failed", "invalid_form");
     }
   }
   /** Returns true when a response boundary or the end of the video consumed this playback frame. */
@@ -403,6 +466,7 @@ export function createTrySession(host: Host) {
       const response = mode.capturedResponses[ending.component.id];
       const policy = responsePolicyFor(ending.component);
       if (!response && policy.unanswered === "pause") {
+        diagnostics.event(ending.component, "playback.hold", "awaiting_answer");
         s.patch({
           t: ending.end,
           playing: false,
@@ -412,6 +476,7 @@ export function createTrySession(host: Host) {
       }
       const handled = [...mode.handled, ending.component.id];
       if (response && policy.dispatch === "layer_end") {
+        diagnostics.event(ending.component, "playback.hold", "layer_end");
         // A captured response is answered, but its outcome must be resolved at
         // this exact boundary before playback can safely continue or route.
         s.patch({
@@ -431,10 +496,15 @@ export function createTrySession(host: Host) {
     if (next < sceneDuration(s)) return false;
     if (requestOperations.size) {
       const end = sceneDuration(s);
+      // Keep the pending request's component visible at the final frame so an
+      // unhandled failure has a place to show its feedback and accept a retry.
+      const holdingId = requestOperations.keys().next().value ?? null;
+      const held = s.components.find(component => component.id === holdingId);
+      if (held) diagnostics.event(held, "playback.hold", "awaiting_request");
       s.patch({
         t: end,
         playing: false,
-        tryMode: { ...mode, playing: false, holdingId: null },
+        tryMode: { ...mode, playing: false, holdingId },
       });
       return true;
     }
@@ -444,6 +514,9 @@ export function createTrySession(host: Host) {
   }
 
   return {
+    beginComponentInteraction: diagnostics.begin,
+    recordTryDiagnostic: diagnostics.record,
+    observeTryDiagnostics: diagnostics.observer,
     getTryRuntime,
     startTry,
     stopTry,

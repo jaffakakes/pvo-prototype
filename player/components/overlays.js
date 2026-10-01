@@ -2,6 +2,7 @@ import { drawText } from "../../packages/pvo-text-runtime/index.js";
 import { mountCustomComponent } from "../../packages/pvo-code-runtime/index.js";
 import { canvasPixelSize, componentPixelTransform, componentSize, observeComponentSize } from "../../packages/pvo-component-runtime/index.js";
 import { componentWithRuntimeState } from "./state.js";
+import { observeDiagnostic } from "../../packages/pvo-sdk/index.js";
 
 export function createOverlayRenderer({ session, refs, adapters }) {
   const sizeObservers = new Set();
@@ -65,6 +66,13 @@ export function createOverlayRenderer({ session, refs, adapters }) {
           state: component.kind === "tooltip" ? session.actionRuntime?.state ?? {} : undefined,
           componentId: component.id,
           interactive: true,
+          ...(typeof session.onDiagnostic === "function" ? {
+            onDiagnostic: event => {
+              if (event.type.startsWith("component.")) observeDiagnostic(session.onDiagnostic, {
+                type: event.type, componentId: component.id, reason: event.reason,
+              });
+            },
+          } : {}),
           onAction: (action) => {
             if (position.isConnected && session.mountedCustom.get(component.id) === mounted) return adapters.handleCustomAction(component, action);
             return undefined;

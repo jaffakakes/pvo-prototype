@@ -91,8 +91,9 @@ try {
       const { runComponentResponse } = await import("/src/features/preview/tryMode.ts");
       await runComponentResponse(state.components[0], { index: 0, outcome: { kind: "scene", sceneId: "branch" } });
     });
-    await page.getByRole("heading", { name: "Trying · Branch", exact: true }).waitFor();
-    await page.getByRole("button", { name: "Stop", exact: true }).click();
+    await page.getByRole("heading", { name: "Trying", exact: true }).waitFor();
+    await page.getByText("Tap like a viewer · Branch", { exact: true }).waitFor();
+    await page.getByRole("button", { name: "Stop trying", exact: true }).click();
     await settle(page);
     assert(Math.abs((await geometry(page)).dock.height - expanded.dock.height) < 2, "Stop restores the sheet height after routing to another scene");
     assert.equal(await page.evaluate(async () => (await import("/src/store.ts")).useCapture.getState().sheet), "component");
@@ -100,7 +101,7 @@ try {
     await page.getByRole("tab", { name: "Content", exact: true }).click();
     await handle.focus();
     await page.keyboard.press("t");
-    await page.getByRole("button", { name: "Stop", exact: true }).waitFor();
+    await page.getByRole("button", { name: "Stop trying", exact: true }).waitFor();
     await settle(page);
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Try", exact: true }).waitFor();

@@ -24,6 +24,7 @@ scripts/
 | `npm run build:docs` | Build only the PVO documentation into `docs-dist/docs/`, separate from the application. |
 | `npm run dev:worker` | Serve the built application with the Cloudflare Worker locally. |
 | `npm run deploy` | Build, deploy with Wrangler, verify served assets, and broadcast the release to connected editors; requires Cloudflare authentication. See the [release channel setup](../docs/engineering/cloudflare-publishing.md#live-beta-release-notifications). |
+| `npm run deploy:built` | Preserve live immutable editor assets for open sessions, then deploy the already-built output, verify its release and announce it. |
 | `node scripts/build/editor-icons.mjs` | Regenerate the editor's Home Screen icons from its existing brand mark; needs installed Chrome. |
 | `npm run build:language` | Generate only `packages/pvo-language/pkg/` with wasm-pack. |
 | `npm run dev` | Full build, then serve `dist/` on port 4173 (`PVO_PORT` overrides it). |
@@ -55,6 +56,10 @@ The checks use `playwright-core` with an installed Chrome. Set `CHROME_PATH` whe
 | `npm run check:browser:player` | Built static player server and Chrome. |
 
 Choose focused checks with `npm run check:browser -- editor pvo-language pvo-export pvo-requests` or `npm run check:browser -- player playback actions`. Names match files in the suite, without `.mjs`.
+
+`npm run check:browser -- editor try-debugger` exercises a real sandboxed component and SDK request against a local HTTP fixture. It checks diagnostic correlation and 404 evidence, desktop/mobile panel geometry, retained last-run inspection, new-run reset and sanitized report output. It requires a fresh Vite server, generated WASM and Chrome. Restart Vite after source-module hot updates before running source-import fixtures, so the application and fixture share the same module instances. Run the existing desktop/editor workspace and request checks alongside it when changing shell integration or playback adapters.
+
+`npm run check:browser -- editor try-debugger-media` uses the public interactive sample to verify a real final-frame pause, desktop report visibility, retained diagnostics across desktop/mobile rotation, read-only Locate, and Stop and edit. It also runs against built beta output and requires no source-module imports.
 
 `npm run check:browser -- editor playhead-drag` checks direct mobile playhead dragging with touch input, preview seeking, release and cancellation, timeline swiping, bounds, keyboard access, viewport resizing, playback pausing and text timing selection. It uses public UI and also runs against built or deployed output through `EDITOR_URL`.
 

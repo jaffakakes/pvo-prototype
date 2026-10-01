@@ -26,6 +26,11 @@
 .iconButton:disabled, .tryButton:disabled { opacity: .4; cursor: default; }
 .tryButton { min-width: 44px; padding: 0 7px; background: var(--pale); color: var(--ink); border: 2px solid #000; font: 800 12px var(--f-ui); }
 .iconButton:focus-visible, .tryButton:focus-visible { outline: 3px solid #ff9fbc; outline-offset: -3px; }
+.stopTryButton { border: 1.5px solid var(--q14); border-radius: 11px; background: rgba(255, 255, 255, .03); color: #d8d5cb; }
+.stopTryButton:hover { border-color: var(--pale); color: var(--text); }
+.header[data-trying="true"] .title h1 { display: flex; align-items: center; gap: 7px; color: #d8d5cb; font: 600 16px/1.2 var(--f-ui); }
+.header[data-trying="true"] .title p { color: rgba(242, 240, 233, .55); font-size: 10.5px; }
+.tryDot { width: 6px; height: 6px; flex: none; border-radius: 50%; background: var(--violet); }
 .ratio, .guest { display: none; }
 .export { display: flex; flex: none; align-items: center; justify-content: center; gap: 8px; min-width: 44px; height: 44px; padding: 0 10px; background: var(--accent); border: 2px solid #000; border-radius: 12px; font-size: 13px; font-weight: 800; cursor: pointer; }
 .export:disabled { opacity: .4; }

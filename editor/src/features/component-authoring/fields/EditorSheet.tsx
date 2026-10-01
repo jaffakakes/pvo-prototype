@@ -5,7 +5,7 @@ import { componentLanguageSource } from "../../../domain/components/languageComp
 import type { PvoLanguageSource } from "../../../domain/components/languageSource";
 import { componentLook, lookPresetName } from "../../../domain/components/look";
 import { useCapture } from "../../../state/captureStore";
-import { setComponentAuthoringTab, useComponentAuthoring, type ComponentAuthoringTab } from "../../../state/components/componentAuthoringStore";
+import { selectComponentSourcePart, setComponentAuthoringTab, useComponentAuthoring, type ComponentAuthoringTab } from "../../../state/components/componentAuthoringStore";
 import { setAdvancedEditingEnabled, useEditorPreferences } from "../../../state/preferences/editorPreferences";
 import { fmt } from "../../../ui/formatTime";
 import { useSheetDock } from "../../../ui/sheets/SheetDockContext";
@@ -45,7 +45,6 @@ export function EditorSheet({ Frame = SheetFrame, lookPreviewScale }: {
     advanced && session.componentId === component?.id && session.tab === "advanced",
     feedback.state === "valid" && !dock?.assistantActive);
   const [resetId, setResetId] = useState<string | null>(null);
-  const [advancedPart, setAdvancedPart] = useState<keyof PvoLanguageSource>("structure");
   const editedCode = useRef(false);
   if (!component) return <Picker />;
   const blocked = isVisualEditingBlocked(component);
@@ -78,8 +77,8 @@ export function EditorSheet({ Frame = SheetFrame, lookPreviewScale }: {
   const canRestore = !!restoreLastValidPvo(component);
   const openAdvanced = (part: keyof PvoLanguageSource = "structure") => {
     if (!advanced) setAdvancedEditingEnabled(true);
-    setAdvancedPart(part);
-    selectTab("advanced");
+    editedCode.current = false;
+    selectComponentSourcePart(component.id, part);
   };
   const resetConfirm = resetId === component.id;
   return <Frame title={nameOf(component.type)}
@@ -129,7 +128,8 @@ export function EditorSheet({ Frame = SheetFrame, lookPreviewScale }: {
       {tab === "action" && <ActionTab key={component.id} component={component} onOpenAdvanced={() => openAdvanced("logic")} />}
       {tab === "advanced" && !legacy && <>
         <div className={styles.languageEditor} data-expanded={codeExpanded} onFocusCapture={() => { editedCode.current = false; }}>
-          <PvoLanguageRoute key={component.id} component={component} source={source} initialTab={advancedPart}
+          <PvoLanguageRoute key={component.id} component={component} source={source} tab={session.sourcePart}
+            onSelectTab={part => selectComponentSourcePart(component.id, part)}
             onEdit={editPvo} feedback={feedback} onRestore={canRestore ? restore : undefined}
             assistantActive={assistantActive} registerAssistantTarget={dock?.registerAssistantTarget}
             onSourceBlur={formatting.onBlur}
