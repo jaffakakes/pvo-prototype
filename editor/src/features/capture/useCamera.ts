@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useCapture } from "../../state/captureStore";
+import { whenLaunchSplashDismissed } from "../launch-splash/launchSplash";
 
 type CameraStatus = "starting" | "switching" | "ready" | "unavailable";
 type Facing = "user" | "environment";
@@ -199,8 +200,14 @@ export function useCamera() {
 
   useEffect(() => {
     // Deferring initial acquisition avoids StrictMode's setup/cleanup replay.
-    bootTimer.current = window.setTimeout(() => { void startCam(); }, 0);
+    let cancelled = false;
+    bootTimer.current = window.setTimeout(() => {
+      void whenLaunchSplashDismissed().then(() => {
+        if (!cancelled) void startCam();
+      });
+    }, 0);
     return () => {
+      cancelled = true;
       if (bootTimer.current != null) clearTimeout(bootTimer.current);
       bootTimer.current = null;
       requestId.current += 1;

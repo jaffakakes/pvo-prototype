@@ -4,10 +4,16 @@ import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { retainEditorAssets } from "./retain-editor-assets.mjs";
+import {
+  announceDeployedRelease,
+  validateEditorReleaseRevision,
+  waitForDeployedRelease,
+} from "./wait-for-deployed-release.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const config = JSON.parse(await readFile(resolve(root, "wrangler.jsonc"), "utf8"));
-const { revision } = JSON.parse(await readFile(resolve(root, "dist/editor/release.json"), "utf8"));
+const release = JSON.parse(await readFile(resolve(root, "dist/editor/release.json"), "utf8"));
+const revision = validateEditorReleaseRevision(release.revision);
 const origin = config.vars.PUBLIC_ORIGIN;
 const retained = await retainEditorAssets({ distRoot: resolve(root, "dist"), origin });
 console.log(`Release assets: ${retained.assets.length} immutable editor files preserved (${retained.downloaded} downloaded).`);
@@ -29,13 +35,6 @@ await new Promise((resolveDeploy, reject) => {
   child.once("exit", code => code === 0 ? resolveDeploy() : reject(new Error(`Deployment failed (${code}). No release announced.`)));
 });
 
-const served = await fetch(new URL("/editor/release.json", origin), { cache: "no-store" });
-if (!served.ok || (await served.json()).revision !== revision)
-  throw new Error("Deployment finished but the expected release is not served. No release announced.");
-const response = await fetch(new URL("/api/releases/announce", origin), {
-  method: "POST",
-  headers: { Authorization: `Bearer ${secret}`, "Content-Type": "application/json" },
-  body: JSON.stringify({ revision }),
-});
-if (!response.ok) throw new Error(`Deployment finished, but release announcement failed (${response.status}).`);
+await waitForDeployedRelease({ origin, revision });
+await announceDeployedRelease({ origin, revision, secret });
 console.log(`Release announced: ${revision}`);

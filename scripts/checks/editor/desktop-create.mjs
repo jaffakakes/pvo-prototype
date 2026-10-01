@@ -131,6 +131,7 @@ async function run(width) {
     home.search = "?home=1";
     await page.goto(home.href);
     await page.getByRole("heading", { name: "Start a new edit" }).waitFor();
+    await page.locator("#restyle-launch-splash").waitFor({ state: "detached" });
     assert.equal(await page.getByRole("button", { name: "Resume", exact: false }).count(), 0);
     assert.equal(await page.getByRole("button", { name: "Start editing", exact: true }).isDisabled(), true);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
