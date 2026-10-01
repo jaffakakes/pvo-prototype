@@ -4,9 +4,9 @@ import { validateAssistantContext } from "../../domain/assistant/context";
 import { assistantFailureNotification } from "../../domain/assistant/failure";
 import { assistantRequestContext } from "../../domain/assistant/requestContext";
 import { validateAssistantEditingMode } from "../../domain/assistant/editingMode";
-import { total } from "../../domain/clips/timing";
 import { collectRequestDomains } from "../../domain/components/actions";
 import { cloneComponent } from "../../domain/project/snapshot";
+import { sceneDuration } from "../../domain/scenes/duration";
 import { createAssistantService } from "../../infrastructure/assistant/service";
 import { resetAssistant, useAssistant } from "../../state/assistant/assistantStore";
 import { useCapture } from "../../state/captureStore";
@@ -117,7 +117,7 @@ export function useAssistantSession({ inspectorVisible = false }: { inspectorVis
     clearNotificationScope(notificationScope);
     useAssistant.setState({ phase: "working", draft: prompt, transcript: "", failureDetail: null, before: false });
     try {
-      const context = assistantRequestContext(sceneId, total(current.clips), current.scenes);
+      const context = assistantRequestContext(sceneId, sceneDuration(current), current.scenes);
       const proposal = await service.propose({ componentType: selected.type,
         editingMode: useEditorPreferences.getState().advancedEditingEnabled ? "advanced" : "no-code",
         source: assistantSource(prior.review?.proposed ?? selected), prompt,
@@ -128,7 +128,7 @@ export function useAssistantSession({ inspectorVisible = false }: { inspectorVis
         stale("request"); return;
       }
       validateAssistantContext(proposal.compiled, {
-        sceneIds: latest.scenes.filter(scene => scene.clips.length).map(scene => scene.id), duration: total(latest.clips),
+        sceneIds: latest.scenes.filter(scene => scene.clips.length).map(scene => scene.id), duration: sceneDuration(latest),
         requestDomains: collectRequestDomains(latest.scenes, latest.allowedDomains),
       });
       const review = createAssistantReview(original, proposal, originalRequest, tags, prior.review?.skipped);

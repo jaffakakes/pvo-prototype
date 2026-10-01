@@ -5,6 +5,7 @@ import { formSubmissionOutcome, toVisualFormFields } from "../../domain/componen
 import { clampComponentStart } from "../../domain/components/timing";
 import type { Outcome, OutcomeTarget } from "../../domain/project/model";
 import { clamp } from "../../domain/project/numbers";
+import { sceneDuration } from "../../domain/scenes/duration";
 import { useCapture } from "../../state/captureStore";
 import type { PlayheadPick } from "../../state/types";
 
@@ -22,7 +23,7 @@ type PickTarget = {
 };
 export function beginPlayheadPick(target: PickTarget) {
   const s = useCapture.getState();
-  if (s.playheadPick || s.screen !== "editor" || !s.clips.length)
+  if (s.playheadPick || s.screen !== "editor" || sceneDuration(s) <= 0)
     return;
   s.patch({
     playheadPick: { ...target, sceneId: s.currentSceneId, originalT: s.t },
@@ -59,12 +60,13 @@ export function acceptPlayheadPick() {
     cancelPlayheadPick();
     return;
   }
-  const length = total(s.clips);
+  const videoLength = total(s.clips);
+  const length = sceneDuration(s);
   const time = clamp(s.t, 0, length);
   if (pick.kind === "component-at") {
     const component = s.components.find(item => item.id === pick.componentId);
     if (component) {
-      const at = clampComponentStart(time, length);
+      const at = clampComponentStart(time, component.dur, videoLength);
       if (component.at !== at)
         s.updateComponent(component.id, { at }, true);
     }
@@ -72,8 +74,8 @@ export function acceptPlayheadPick() {
   else if (pick.kind === "text-start") {
     const text = s.texts.find(item => item.id === pick.textId);
     if (text) {
-      const span = Math.min(text.end - text.start, length);
-      const start = clamp(time, 0, Math.max(0, length - span));
+      const span = Math.max(0.1, text.end - text.start);
+      const start = Math.max(0, time);
       if (text.start !== start)
         s.updateText(text.id, { start, end: start + span }, true);
     }

@@ -64,8 +64,8 @@ editor/src/
   domain/
     project/                    Models, snapshots, ratios and numeric rules
     clips/                      Timing and pure split/delete rules
-    audio/                      Extracted audio, source ranges and scene duration
-    scenes/                     Naming and scene-reference rules
+    audio/                      Extracted audio and source ranges
+    scenes/                     Naming, scene references and total duration
     layers/                     Layer identity and ordering
     components/                 Defaults, Fields/PVO source mapping, outcomes and response timing policy
     assistant/                  Review, request context and proposal validation
@@ -134,7 +134,7 @@ Simple Action controls expose local playback routes. The Advanced switch reveals
 
 The [desktop editor](desktop-editor.md) uses the approved Library / Player / Inspector / Timeline layout at 1024px and above in landscape. It shares the project route, capture store, playback runtime, history and authoring commands with the existing narrow/portrait editor. Desktop library insertion and selection commands own atomic history boundaries; the Inspector adapts the existing component editor to a side panel. Unsupported transcript and video-processing capabilities remain explicitly unavailable rather than changing only the preview.
 
-Clip sound remains attached until the user selects **Extract audio**. `domain/audio/` owns independent source ranges, timeline positions and scene duration; `state/editing/audioCommands` commits extraction, timing gestures, split/delete and history. Optional `Scene.audioClips` preserves compatibility with older projects, while `Clip.audioDetached` prevents the source video from also playing its sound. Extracted layers retain their media reference when the video is edited or deleted. Checkpoints, history, scene duplication, ID recovery and export snapshots include these references. The shared audio bar serves both timelines. `infrastructure/audio/audioLayerPlayer` owns preview/export audio elements and cleanup; rendered video and PVO scene media include the mix, with black frames if audio extends beyond the video.
+Clip sound remains attached until the user selects **Extract audio**. `domain/audio/` owns independent source ranges and timeline positions; `domain/scenes/duration` determines the full authored duration from video, audio and explicit visual-layer ends. `state/editing/audioCommands` commits extraction, timing gestures, split/delete and history. Optional `Scene.audioClips` preserves compatibility with older projects, while `Clip.audioDetached` prevents the source video from also playing its sound. Extracted layers retain their media reference when the video is edited or deleted. Checkpoints, history, scene duplication, ID recovery and export snapshots include these references. The shared audio bar serves both timelines. `infrastructure/audio/audioLayerPlayer` owns preview/export audio elements and cleanup; rendered video and PVO scene media include the mix, with black frames when any authored layer extends beyond the video.
 
 ## Player and SDK organization
 

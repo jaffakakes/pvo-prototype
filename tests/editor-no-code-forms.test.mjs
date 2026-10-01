@@ -226,6 +226,18 @@ test("form branch timeline picks and scene deletion affect the chosen response r
   assert.deepEqual(clearDeletedComponentRoutes(component, new Set(["branch"])).fields.successOutcome, { kind: "continue" });
 });
 
+test("an overlay-only scene still allows a timeline timing pick", () => {
+  const component = start();
+  useCapture.getState().patch({ clips: [], t: 2.5, playheadPick: null });
+
+  beginPlayheadPick({ kind: "component-at", componentId: component.id });
+
+  assert.equal(useCapture.getState().playheadPick?.kind, "component-at");
+  acceptPlayheadPick();
+  assert.equal(useCapture.getState().components[0].at, 2.5);
+  assert.equal(useCapture.getState().playheadPick, null);
+});
+
 test("interactive packages retain form heading, numeric fields, labels, destination and response branches", async () => {
   start();
   update({ heading: "Reserve yours", formFields: [{ name: "Number of seats", type: "number" }, { name: "Updates?", type: "yesno" }],

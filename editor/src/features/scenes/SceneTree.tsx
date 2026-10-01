@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
-import { total } from "../../domain/clips/timing";
 import type { Scene } from "../../domain/project/model";
+import { sceneDuration } from "../../domain/scenes/duration";
 import { sceneChildren, sceneTree } from "../../domain/scenes/rules";
 import { Icon } from "../../ui/Icon";
 import { fmt } from "../../ui/formatTime";
@@ -40,11 +40,11 @@ export function SceneTree({ id, scenes, currentSceneId, onClose, onSelect }: Pro
         const current = scene.id === currentSceneId;
         return <button key={scene.id} className={styles.treeNode} data-scene-id={scene.id}
           style={{ paddingLeft: 14 + depth * 18 }} aria-current={current ? "true" : undefined}
-          aria-label={`Open ${scene.name}, level ${depth + 1}, ${fmt(total(scene.clips))}, ${branchCount} ${branchCount === 1 ? "branch" : "branches"}, ${componentCount} ${componentCount === 1 ? "component" : "components"}`}
+          aria-label={`Open ${scene.name}, level ${depth + 1}, ${fmt(sceneDuration(scene))}, ${branchCount} ${branchCount === 1 ? "branch" : "branches"}, ${componentCount} ${componentCount === 1 ? "component" : "components"}`}
           onClick={() => onSelect(scene.id)}>
           <span className={styles.tick} aria-hidden="true" />
           <span className={styles.nodeChip} data-on={current}>
-            {scene.name} <small>{fmt(total(scene.clips))}</small>
+            {scene.name} <small>{fmt(sceneDuration(scene))}</small>
           </span>
           <span className={styles.meta}>{branchCount} {branchCount === 1 ? "branch" : "branches"} · {componentCount} {componentCount === 1 ? "component" : "components"}</span>
         </button>;

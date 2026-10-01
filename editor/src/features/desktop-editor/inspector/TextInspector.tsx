@@ -1,5 +1,4 @@
 import { TEXT_FONTS, TEXT_PRESETS, textStyle, type TextStyle } from "../../../../../packages/pvo-text-runtime/index.js";
-import { total } from "../../../domain/clips/timing";
 import type { TextOverlay } from "../../../domain/project/model";
 import { dragTextTiming } from "../../../domain/text/timing";
 import { useCapture } from "../../../state/captureStore";
@@ -25,7 +24,7 @@ export function TextInspector({ text, tab }: { text: TextOverlay; tab: string })
         <span>Appears at</span>
         <div><strong>{fmt(text.start)}</strong><button type="button" onClick={() => {
           const state = useCapture.getState();
-          change(dragTextTiming(text, "move", state.t - text.start, total(state.clips)));
+          change(dragTextTiming(text, "move", state.t - text.start));
         }}>Use {fmt(t)}</button></div>
         <p className={styles.note}>Shows for {(text.end - text.start).toFixed(1)}s. Drag its edges on the timeline to trim.</p>
       </div>

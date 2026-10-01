@@ -23,7 +23,7 @@ export function TextEditor() {
   const [tab, setTab] = useState("Designs");
   const editKey = useRef<string | null>(null);
   const style = text ? textStyle(text) : draftStyle;
-  const length = total(s.clips);
+  const videoLength = total(s.clips);
   const update = (changes: Partial<TextOverlay>, key?: string) => {
     if (!text) return;
     s.updateText(text.id, changes, !key || editKey.current !== key);
@@ -307,7 +307,6 @@ export function TextEditor() {
                           text,
                           "start",
                           Number(e.target.value),
-                          length,
                         ),
                         "start",
                       )
@@ -320,7 +319,6 @@ export function TextEditor() {
                     aria-label="Text end"
                     type="number"
                     min={text.start + 0.1}
-                    max={length}
                     step={0.1}
                     value={Number(text.end.toFixed(2))}
                     onChange={(e) =>
@@ -329,7 +327,6 @@ export function TextEditor() {
                           text,
                           "end",
                           Number(e.target.value),
-                          length,
                         ),
                         "end",
                       )
@@ -347,7 +344,8 @@ export function TextEditor() {
               </button>
               <button
                 className={cx("textAction")}
-                onClick={() => update({ start: 0, end: length })}
+                disabled={videoLength <= 0}
+                onClick={() => update({ start: 0, end: videoLength })}
               >
                 Show for whole video
               </button>

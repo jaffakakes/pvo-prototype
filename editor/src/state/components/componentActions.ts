@@ -16,10 +16,13 @@ import {
   responsePolicyFor,
 } from "../../domain/components/responsePolicy";
 import type { PvoComponent } from "../../domain/project/model";
-import { clamp } from "../../domain/project/numbers";
 import { cloneComponent, cloneOutcome } from "../../domain/project/snapshot";
 import { uid } from "../../infrastructure/ids";
+import { playheadAfterSceneTimingChange } from "../project/playheadBounds";
 import type { CaptureState } from "../types";
+
+const has = (value: object, key: PropertyKey) =>
+  Object.prototype.hasOwnProperty.call(value, key);
 
 function releaseUnansweredHold(
   state: CaptureState,
@@ -60,7 +63,7 @@ export function createComponentActions(get: () => CaptureState): Pick<CaptureSta
       const id = `component-${uid()}`;
       const component: PvoComponent = {
         id, type, sceneId: state.currentSceneId,
-        at: clamp(state.t, 0, Math.max(0, sceneTotal - .5)),
+        at: clampComponentStart(state.t, 3, sceneTotal),
         dur: 3,
         x: 50, y: type === "tooltip" ? 28 : 60,
         fields: defaultFields(type),
@@ -73,7 +76,7 @@ export function createComponentActions(get: () => CaptureState): Pick<CaptureSta
       });
       return id;
     },
-    updateComponent: (id, changes, undoable = true) => {
+    updateComponent: (id, changes, undoable = true, options) => {
       const state = get();
       const scene = state.scenes.find(item => item.components.some(component => component.id === id));
       if (!scene)
@@ -97,6 +100,13 @@ export function createComponentActions(get: () => CaptureState): Pick<CaptureSta
           x: changes.x === undefined ? component.x : changes.x,
           y: changes.y === undefined ? component.y : changes.y,
         });
+        const timingChanged = has(changes, "at") || has(changes, "dur");
+        const requestedAt = has(changes, "at") && changes.at !== undefined
+          ? changes.at
+          : component.at;
+        const requestedDuration = has(changes, "dur") && changes.dur !== undefined
+          ? changes.dur
+          : component.dur;
         const next: PvoComponent = {
           ...component, ...changes, ...synchronized, ...appearance, id, sceneId: scene.id,
           ...position,
@@ -105,6 +115,10 @@ export function createComponentActions(get: () => CaptureState): Pick<CaptureSta
           ...(changes.scaleY === undefined ? {} : { scaleY: componentScale(changes.scaleY) }),
           ...("width" in changes ? { width: componentPixelDimension(changes.width) } : {}),
           ...("height" in changes ? { height: componentPixelDimension(changes.height) } : {}),
+          ...(timingChanged ? {
+            at: clampComponentStart(requestedAt, requestedDuration, total(scene.clips)),
+            dur: requestedDuration,
+          } : {}),
         };
         return Object.entries(next).every(([key, value]) => component[key as keyof PvoComponent] === value)
           ? component : next;
@@ -112,8 +126,14 @@ export function createComponentActions(get: () => CaptureState): Pick<CaptureSta
       if (components.every((component, index) => component === scene.components[index])) return;
       const updated = components.find(component => component.id === id)!;
       const release = releaseUnansweredHold(state, previous, updated);
-      const scenes = state.scenes.map(item => item.id === scene.id ? { ...item, components } : item);
-      const values = { scenes, ...(release ?? {}) };
+      const updatedScene = { ...scene, components };
+      const scenes = state.scenes.map(item => item.id === scene.id ? updatedScene : item);
+      const timing = playheadAfterSceneTimingChange(
+        state,
+        updatedScene,
+        options?.preservePlayhead,
+      );
+      const values = { scenes, ...(release ?? {}), ...timing };
       if (undoable)
         state.edit(values);
       else
@@ -151,8 +171,17 @@ export function createComponentActions(get: () => CaptureState): Pick<CaptureSta
       const scene = state.scenes.find(item => item.components.some(component => component.id === id));
       if (!scene)
         return;
-      state.updateScene(scene.id, { components: scene.components.filter(component => component.id !== id) });
-      get().patch({ selComp: state.selComp === id ? null : state.selComp, sheet: state.sheet === "component" ? null : state.sheet });
+      const updatedScene = {
+        ...scene,
+        components: scene.components.filter(component => component.id !== id),
+      };
+      const scenes = state.scenes.map(item => item.id === scene.id ? updatedScene : item);
+      state.edit({
+        scenes,
+        selComp: state.selComp === id ? null : state.selComp,
+        sheet: state.sheet === "component" ? null : state.sheet,
+        ...playheadAfterSceneTimingChange(state, updatedScene),
+      });
     },
     duplicateComponent: id => {
       const state = get();
@@ -163,7 +192,11 @@ export function createComponentActions(get: () => CaptureState): Pick<CaptureSta
       const newId = `component-${uid()}`;
       const copy = remapComponentReferences(cloneComponent(component), new Map([[component.id, newId]]));
       copy.id = newId;
-      copy.at = clampComponentStart(component.at + 1, total(scene.clips));
+      copy.at = clampComponentStart(
+        component.at + 1,
+        copy.dur,
+        total(scene.clips),
+      );
       state.updateScene(scene.id, { components: [...scene.components, copy] });
       get().patch({ currentSceneId: scene.id, sel: -1, selComp: newId, t: copy.at });
       return newId;

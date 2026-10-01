@@ -1,4 +1,4 @@
-import { sceneDuration } from "../../domain/audio/editing";
+import { sceneDuration } from "../../domain/scenes/duration";
 import type {
   KeyboardEvent as ReactKeyboardEvent,
   PointerEvent as ReactPointerEvent,
@@ -20,6 +20,7 @@ import { clamp } from "../../domain/project/numbers";
 import { useCapture } from "../../state/captureStore";
 import { beginComponentTimingDrag } from "../../state/components/componentTimingDrag";
 import {
+  finishTextTimingPreview,
   previewClipTrim,
   previewTextTiming,
 } from "../../state/editing/timelineEditingCommands";
@@ -36,7 +37,8 @@ type ComponentTimingTransaction = NonNullable<
 export function useTimelineGestures() {
   const s = useCapture();
   const timelineRef = useRef<HTMLDivElement>(null);
-  const playhead = usePlayheadScrub(timelineRef, !!(s.clips.length || s.audioClips.length));
+  const length = sceneDuration(s);
+  const playhead = usePlayheadScrub(timelineRef, length > 0);
   const layerDrag = useLayerDrag(timelineRef);
   const pointer = useRef<{
     x: number;
@@ -75,7 +77,6 @@ export function useTimelineGestures() {
     edgeTime: number | null;
     playhead: number;
   } | null>(null);
-  const length = sceneDuration(s);
   const trimShift = s.trim?.shift ?? 0;
   const ticks = Array.from({ length: Math.ceil(length) + 5 }, (_, i) => i);
   const layout = timelineRows(layerOrder(s));
@@ -274,7 +275,7 @@ export function useTimelineGestures() {
     const state = useCapture.getState();
     state.patch({
       trim: null,
-      t: clamp(state.t - shift / PPS, 0, total(state.clips)),
+      t: clamp(state.t - shift / PPS, 0, sceneDuration(state)),
     });
   };
 
@@ -405,7 +406,6 @@ export function useTimelineGestures() {
       drag,
       drag.mode,
       result.delta,
-      length,
       !drag.moved,
     );
     drag.moved = true;
@@ -414,6 +414,7 @@ export function useTimelineGestures() {
     layerDrag.end(event.type === "pointercancel");
     const drag = textDrag.current;
     textDrag.current = null;
+    if (drag?.moved) finishTextTimingPreview();
     if (drag?.selected && !drag.moved && event.type !== "pointercancel")
       s.patch({ sheet: "text" });
   };

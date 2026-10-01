@@ -46,7 +46,7 @@ export function Timeline() {
     textBarMove,
     textBarUp,
   } = useTimelineGestures();
-  if (!s.clips.length && !s.audioClips.length) return <EmptySceneTimeline />;
+  if (length <= 0) return <EmptySceneTimeline />;
 
   return (
     <div
