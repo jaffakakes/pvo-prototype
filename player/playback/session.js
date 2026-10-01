@@ -32,7 +32,7 @@ export function createPlaybackSession() {
     forcedHidden: new Set(),
     pendingComponents: new Set(),
     pendingRequestComponents: new Set(),
-    failedRequestComponents: new Set(),
+    failedRequestComponents: new Map(),
   };
 }
 

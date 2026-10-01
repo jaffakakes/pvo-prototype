@@ -2,6 +2,8 @@ import { validatePvo } from "../manifest/validate.js";
 import { writePath, readPath } from "./state-paths.js";
 import { evaluateWhen, resolveTemplates } from "./conditions.js";
 import { checkedRequestUrl } from "./request-policy.js";
+import { withRequestDeadline } from "./request-deadline.js";
+import { describeRequestFailure, RequestHttpError } from "./request-failure.js";
 
 function throwIfAborted(signal) {
   if (!signal?.aborted) return;
@@ -136,7 +138,6 @@ export class PvoRuntime {
         method,
         headers: { ...headers },
         redirect: "error",
-        ...(context.signal ? { signal: context.signal } : {}),
       };
       if (resolvedBody != null && method !== "GET" && method !== "HEAD") {
         if (typeof resolvedBody === "string") options.body = resolvedBody;
@@ -149,24 +150,30 @@ export class PvoRuntime {
       }
 
       this.emit("request_start", { url, method, componentId: context.componentId ?? null });
-      const response = this.handlers.request
-        ? await this.handlers.request({ url, ...options }, context)
-        : await fetch(url, options);
-      throwIfAborted(context.signal);
-      if (response && typeof response.json === "function") {
-        if (!response.ok) throw new Error(`Request failed with ${response.status}.`);
-        const type = response.headers?.get?.("content-type") || "";
-        data = type.includes("json") ? await response.json() : await response.text();
-      } else data = response;
+      data = await withRequestDeadline(async (signal) => {
+        const requestOptions = { ...options, signal };
+        // Hosts receive the same composed signal through both existing adapter shapes.
+        const response = this.handlers.request
+          ? await this.handlers.request({ url, ...requestOptions }, { ...context, signal })
+          : await fetch(url, requestOptions);
+        if (response && typeof response.json === "function") {
+          if (!response.ok) throw new RequestHttpError(response.status);
+          const type = response.headers?.get?.("content-type") || "";
+          return type.includes("json") ? response.json() : response.text();
+        }
+        return response;
+      }, context.signal);
       throwIfAborted(context.signal);
     } catch (error) {
       if (context.signal?.aborted) throw error;
       const message = error instanceof Error ? error.message : String(error);
+      const failure = describeRequestFailure(error);
       const errorContext = { ...context, state: this.state, response: { error: message } };
       this.emit("request_error", {
         url,
         method,
         error: message,
+        failure,
         handled: action.on_error !== undefined && action.on_error !== null,
         componentId: context.componentId ?? null,
       });

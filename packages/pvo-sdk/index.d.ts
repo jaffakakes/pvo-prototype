@@ -120,6 +120,11 @@ export interface PvoAsset { id: string; name: string; type: string; blob: Blob; 
 export interface PvoReadResult { manifest: PvoManifest; validation: ValidationResult; videoBlob: Blob; fileName: string; assets?: PvoAsset[]; container?: boolean }
 export interface PvoProjectReadResult { manifest: PvoManifest; validation: ValidationResult; assets: PvoAsset[]; container: true; fileName: string }
 export interface RuntimeContext { state: Record<string, unknown>; response?: unknown; [key: string]: unknown }
+export interface PvoRequestFailure {
+  kind: "http" | "network" | "timeout" | "policy" | "unknown";
+  status?: number;
+  message: string;
+}
 export interface RuntimeExecutionContext {
   /** Reject request failures after on_error; intended for imperative pvo.request() bridges. */
   throwOnRequestError?: boolean;
@@ -137,7 +142,7 @@ export interface RuntimeHandlers {
   custom?(name: string, payload: unknown, context: RuntimeContext): unknown | Promise<unknown>;
   onEvent?(event: RuntimeEvent): void;
 }
-export interface RuntimeEvent { type: string; state: Record<string, unknown>; visible: string[]; [key: string]: unknown }
+export interface RuntimeEvent { type: string; state: Record<string, unknown>; visible: string[]; failure?: PvoRequestFailure; [key: string]: unknown }
 
 export function inspectMp4(input: Uint8Array | ArrayBuffer): Mp4Box[];
 export function packPvo(media: BinaryInput, manifest: PvoManifest): Promise<Blob>;
@@ -159,6 +164,8 @@ export function evaluateWhen(condition: PvoCondition | PvoCondition[] | undefine
 export function resolveTemplates<T>(value: T, context?: Partial<RuntimeContext>): T;
 /** Resolve a display template to scalar text; missing, null, and structured values become empty text. */
 export function resolveTextTemplate(value: unknown, context?: Partial<RuntimeContext>): string;
+/** Classify a request failure without exposing exception text to viewers. */
+export function describeRequestFailure(error: unknown): PvoRequestFailure;
 
 export class PvoRuntime {
   constructor(manifest: PvoManifest, handlers?: RuntimeHandlers);

@@ -65,7 +65,6 @@ export function createActionRuntimeAdapter({ session, refs, adapters }) {
         // A redirect cannot silently escape the manifest's allowed_domains.
         return fetch(url, {
           ...options,
-          signal: context.signal,
           credentials: "omit",
           redirect: "error",
           referrerPolicy: "no-referrer",
@@ -80,16 +79,14 @@ export function createActionRuntimeAdapter({ session, refs, adapters }) {
         if (event.type === "request_start") {
           if (requestId) {
             session.pendingRequestComponents.add(requestId);
-            session.failedRequestComponents.delete(requestId);
           }
           updateRequestStatus(session, adapters.setStatus);
         } else if (event.type === "request_success" || event.type === "request_error") {
           if (requestId) session.pendingRequestComponents.delete(requestId);
-          if (requestId && event.type === "request_success") session.failedRequestComponents.delete(requestId);
-          if (requestId && event.type === "request_error") {
-            if (event.handled === true) session.failedRequestComponents.delete(requestId);
-            else session.failedRequestComponents.add(requestId);
-          }
+          // A later request in the same action cannot erase an earlier
+          // unhandled failure; the next viewer retry clears it instead.
+          if (requestId && event.type === "request_error" && event.handled !== true)
+            session.failedRequestComponents.set(requestId, event.failure);
           updateRequestStatus(session, adapters.setStatus);
         }
       },

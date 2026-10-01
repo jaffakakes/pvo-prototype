@@ -128,7 +128,7 @@ test("concurrent requests keep their component identity and preserve an unhandle
 
   const firstRun = harness.actions.answerComponent({ componentId: first.id, index: 0 });
   const secondRun = harness.actions.answerComponent({ componentId: second.id, index: 0 });
-  pending.get("https://example.test/first").reject(new Error("offline"));
+  pending.get("https://example.test/first").reject(new TypeError("offline"));
   await new Promise((resolve) => setImmediate(resolve));
   pending.get("https://example.test/second").resolve(new Response('{"ok":true}', {
     headers: { "Content-Type": "application/json" },
@@ -140,7 +140,7 @@ test("concurrent requests keep their component identity and preserve an unhandle
   assert.deepEqual(harness.session.actionRuntime.state.choices, { first: 0, second: 0 });
   assert.deepEqual(harness.session.actionRuntime.state.responses.second, { ok: true });
   assert.deepEqual(harness.applied.map((item) => item.component), [second.id]);
-  assert.equal(harness.statuses.at(-1).message, "Request unavailable");
+  assert.equal(harness.statuses.at(-1).message, "Could not reach the service.");
 
   await harness.actions.answerComponent({ componentId: first.id, index: 1 });
   assert.equal(harness.session.capturedResponses.get(first.id).status, "complete");
@@ -148,7 +148,7 @@ test("concurrent requests keep their component identity and preserve an unhandle
 });
 
 test("a handled request error runs its state action and defaults to Continue", async (t) => {
-  t.mock.method(globalThis, "fetch", async () => { throw new Error("offline"); });
+  t.mock.method(globalThis, "fetch", async () => { throw new TypeError("offline"); });
   const component = requestChoice("handled", request("https://example.test/handled", {
     onError: { type: "set", key: "request_error", value: true },
   }));
@@ -164,7 +164,7 @@ test("a handled request error runs its state action and defaults to Continue", a
 });
 
 test("one unhandled failure stays failed even if a later request error is handled", async (t) => {
-  t.mock.method(globalThis, "fetch", async () => { throw new Error("offline"); });
+  t.mock.method(globalThis, "fetch", async () => { throw new TypeError("offline"); });
   const component = requestChoice("ordered", [
     request("https://example.test/first"),
     request("https://example.test/second", { onError: { type: "set", key: "second_handled", value: true } }),
@@ -176,7 +176,29 @@ test("one unhandled failure stays failed even if a later request error is handle
   assert.equal(harness.session.actionRuntime.state.second_handled, true);
   assert.equal(harness.session.capturedResponses.get(component.id).status, "failed");
   assert.equal(harness.applied.length, 0);
-  assert.equal(harness.statuses.at(-1).message, "Request unavailable");
+  assert.equal(harness.statuses.at(-1).message, "Could not reach the service.");
+});
+
+test("player shows the HTTP cause without treating a 404 as an offline server", async (t) => {
+  t.mock.method(globalThis, "fetch", async () => new Response("Not found", { status: 404 }));
+  const component = requestChoice("missing-route", request("https://example.test/missing"));
+  const harness = playerHarness([component]);
+
+  await harness.actions.answerComponent({ componentId: component.id, index: 0 });
+
+  assert.equal(harness.session.capturedResponses.get(component.id).status, "failed");
+  assert.equal(harness.statuses.at(-1).message, "Request not found (404).");
+});
+
+test("player shows a service failure while keeping the answer retryable", async (t) => {
+  t.mock.method(globalThis, "fetch", async () => new Response("Unavailable", { status: 503 }));
+  const component = requestChoice("service-error", request("https://example.test/unavailable"));
+  const harness = playerHarness([component]);
+
+  await harness.actions.answerComponent({ componentId: component.id, index: 0 });
+
+  assert.equal(harness.session.capturedResponses.get(component.id).status, "failed");
+  assert.equal(harness.statuses.at(-1).message, "Service error (503). Try again.");
 });
 
 test("a failed success action still settles the completed network request", async (t) => {

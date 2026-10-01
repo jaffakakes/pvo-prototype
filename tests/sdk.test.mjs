@@ -6,6 +6,7 @@ import {
   PVO_CONTAINER_MIME,
   PVO_UUID,
   createPvoRuntime,
+  describeRequestFailure,
   evaluateWhen,
   inspectMp4,
   packPvo,
@@ -507,6 +508,154 @@ test("HTTP errors, offline failures, and redirects never take the success path o
   );
   assert.equal(offline.state.result, "Network unavailable"); // on_error ran before the rejection.
   assert.equal(attempts, 3);
+});
+
+test("request failures have shared, viewer-safe descriptions and preserve authored errors", async () => {
+  const events = [];
+  let response = new Response("missing", { status: 404 });
+  const runtime = createPvoRuntime(manifest(), {
+    request() { return response; },
+    onEvent(event) { if (event.type === "request_error") events.push(event); },
+  });
+  const action = {
+    type: "request", url: "https://creator.example/submit",
+    on_error: { type: "set", key: "last_error", value: "{response.error}" },
+  };
+
+  await runtime.execute(action);
+  assert.deepEqual(events.at(-1).failure, {
+    kind: "http", status: 404, message: "Request not found (404).",
+  });
+  assert.equal(events.at(-1).handled, true);
+  assert.equal(runtime.state.last_error, "Request failed with 404.");
+
+  for (const [status, message] of [
+    [401, "Access denied (401)."],
+    [403, "Access denied (403)."],
+    [408, "Service did not respond (408)."],
+    [429, "Too many requests (429). Try again later."],
+    [503, "Service error (503). Try again."],
+  ]) {
+    response = new Response("failed", { status });
+    await runtime.execute(action);
+    assert.deepEqual(events.at(-1).failure, { kind: "http", status, message });
+  }
+
+  const denied = createPvoRuntime({ ...manifest(), allowed_domains: [] }, {
+    onEvent(event) { if (event.type === "request_error") events.push(event); },
+  });
+  await denied.execute(action);
+  assert.deepEqual(events.at(-1).failure, {
+    kind: "policy", message: "This request is not allowed.",
+  });
+  assert.equal(events.at(-1).handled, true);
+
+  const network = createPvoRuntime(manifest(), {
+    request() { throw new TypeError("Failed to fetch https://private.example/token"); },
+    onEvent(event) { if (event.type === "request_error") events.push(event); },
+  });
+  await network.execute({ type: "request", url: "https://creator.example/submit" });
+  assert.deepEqual(events.at(-1).failure, {
+    kind: "network", message: "Could not reach the service.",
+  });
+  assert.equal(events.at(-1).handled, false);
+  assert.match(events.at(-1).error, /private\.example/);
+  assert.equal(describeRequestFailure(new Error("private detail")).kind, "unknown");
+  assert.ok(events.every((event) => event.failure.message.length <= 50));
+});
+
+test("request deadline includes response parsing and cancels its host signal", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let markParsing;
+  const parsing = new Promise((resolve) => { markParsing = resolve; });
+  let requestSignal;
+  let contextSignal;
+  const events = [];
+  const runtime = createPvoRuntime(manifest(), {
+    request(request, context) {
+      requestSignal = request.signal;
+      contextSignal = context.signal;
+      return {
+        ok: true,
+        headers: { get: () => "application/json" },
+        json() {
+          markParsing();
+          return new Promise(() => {});
+        },
+      };
+    },
+    onEvent(event) { if (event.type.startsWith("request_")) events.push(event); },
+  });
+  const pending = runtime.execute({
+    type: "request", url: "https://creator.example/submit",
+    into: "receipt",
+    on_success: { type: "set", key: "success", value: true },
+    on_error: { type: "set", key: "failed", value: true },
+  });
+  await parsing;
+  assert.equal(requestSignal, contextSignal);
+  assert.equal(requestSignal.aborted, false);
+  t.mock.timers.tick(15_000);
+  await pending;
+  assert.equal(requestSignal.aborted, true);
+  assert.equal(runtime.state.receipt, undefined);
+  assert.equal(runtime.state.success, undefined);
+  assert.equal(runtime.state.failed, true);
+  assert.deepEqual(events.map((event) => event.type), ["request_start", "request_error"]);
+  assert.deepEqual(events.at(-1).failure, {
+    kind: "timeout", message: "No response from the service. Try again.",
+  });
+});
+
+test("an abort-reactive host still reports the deadline as a timeout", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let markStarted;
+  const started = new Promise((resolve) => { markStarted = resolve; });
+  const events = [];
+  const runtime = createPvoRuntime(manifest(), {
+    request({ signal }) {
+      markStarted();
+      return new Promise((_, reject) => {
+        signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")), { once: true });
+      });
+    },
+    onEvent(event) { if (event.type === "request_error") events.push(event); },
+  });
+  const pending = runtime.execute({ type: "request", url: "https://creator.example/submit" });
+  await started;
+  t.mock.timers.tick(15_000);
+  await pending;
+  assert.deepEqual(events[0].failure, {
+    kind: "timeout", message: "No response from the service. Try again.",
+  });
+});
+
+test("caller cancellation is silent and clears the request deadline", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let markStarted;
+  const started = new Promise((resolve) => { markStarted = resolve; });
+  let hostSignal;
+  const events = [];
+  const runtime = createPvoRuntime(manifest(), {
+    request({ signal }) {
+      hostSignal = signal;
+      markStarted();
+      return new Promise(() => {});
+    },
+    onEvent(event) { if (event.type.startsWith("request_")) events.push(event.type); },
+  });
+  const caller = new AbortController();
+  const pending = runtime.execute({
+    type: "request", url: "https://creator.example/submit",
+    on_error: { type: "set", key: "failed", value: true },
+  }, { signal: caller.signal });
+  await started;
+  caller.abort();
+  await assert.rejects(pending, (error) => error?.name === "AbortError");
+  assert.equal(hostSignal.aborted, true);
+  t.mock.timers.tick(15_000);
+  assert.deepEqual(events, ["request_start"]);
+  assert.equal(runtime.state.failed, undefined);
 });
 
 test("imperative request bridges receive parsed data or a rejected Promise", async () => {

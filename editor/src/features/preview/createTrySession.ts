@@ -1,4 +1,5 @@
 import { sceneDuration } from "../../domain/scenes/duration";
+import { describeRequestFailure, type PvoRequestFailure } from "../../../../packages/pvo-sdk/index.js";
 import { actionFor } from "../../domain/components/actions";
 import { fieldsShownFor } from "../../domain/components/fields";
 import {
@@ -51,7 +52,7 @@ type Host = {
   playbackFailed(): void;
   emptyScene(id: string): void;
   beginRequest(id: string): number;
-  finishRequest(id: string, operation: number, failed: boolean): void;
+  finishRequest(id: string, operation: number, failed: boolean, failure?: PvoRequestFailure): void;
 };
 
 const freshMode = (): TryMode => ({
@@ -265,6 +266,11 @@ export function createTrySession(host: Host) {
     requestOperations.set(component.id, requestOperation);
     const previewInteraction = { routeFailed: false };
     let actionReady = false;
+    let requestErrorSeen = false;
+    const unsubscribe = runtime.subscribe(event => {
+      if (event.type === "request_error" && event.componentId === component.id)
+        requestErrorSeen = true;
+    });
     try {
       const action = actionFor(outcome, component.id);
       actionReady = true;
@@ -294,10 +300,12 @@ export function createTrySession(host: Host) {
           component.id,
           operation,
           !(actionReady && outcome.onError),
+          requestErrorSeen ? describeRequestFailure(error) : undefined,
         );
       }
       return !!(actionReady && outcome.onError && !previewInteraction.routeFailed);
     } finally {
+      unsubscribe();
       if (requestOperations.get(component.id) === requestOperation)
         requestOperations.delete(component.id);
     }
@@ -431,10 +439,13 @@ export function createTrySession(host: Host) {
     if (next < sceneDuration(s)) return false;
     if (requestOperations.size) {
       const end = sceneDuration(s);
+      // Keep the pending request's component visible at the final frame so an
+      // unhandled failure has a place to show its feedback and accept a retry.
+      const holdingId = requestOperations.keys().next().value ?? null;
       s.patch({
         t: end,
         playing: false,
-        tryMode: { ...mode, playing: false, holdingId: null },
+        tryMode: { ...mode, playing: false, holdingId },
       });
       return true;
     }

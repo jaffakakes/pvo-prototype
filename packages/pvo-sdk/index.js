@@ -8,3 +8,4 @@ export { readPvo, tryReadPvo } from "./container/read.js";
 export { validatePvo } from "./manifest/validate.js";
 export { evaluateWhen, resolveTemplates, resolveTextTemplate } from "./runtime/conditions.js";
 export { PvoRuntime, createPvoRuntime } from "./runtime/PvoRuntime.js";
+export { describeRequestFailure } from "./runtime/request-failure.js";

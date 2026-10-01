@@ -17,6 +17,10 @@ const fixture = createServer(async (request, response) => {
   for await (const chunk of request) chunks.push(chunk);
   requests.push({ path: request.url, method: request.method, body: Buffer.concat(chunks).toString() });
   response.setHeader("Content-Type", "application/json");
+  if (request.url === "/missing") {
+    response.writeHead(404).end(JSON.stringify({ error: "not found" }));
+    return;
+  }
   response.writeHead(200).end(JSON.stringify({ ok: true }));
 });
 await new Promise(resolve => fixture.listen(0, "127.0.0.1", resolve));
@@ -27,13 +31,37 @@ let page;
 const pageErrors = [];
 
 async function submitForm() {
-  await page.getByRole("button", { name: "Try viewer preview" }).click();
-  await page.locator(".holdTag").waitFor({ state: "visible", timeout: 5000 });
+  await page.getByRole("button", { name: "Try", exact: true }).click();
   const frame = page.locator('.compCustomRuntime iframe[sandbox="allow-same-origin"]').first().contentFrame();
-  await frame.locator('input[name="name_0"]').fill("Ada");
-  await frame.locator('input[name="email_1"]').fill("ada@example.com");
+  await frame.getByRole("textbox", { name: "Name" }).fill("Ada");
+  await frame.getByRole("textbox", { name: "Email" }).fill("ada@example.com");
   await page.waitForTimeout(400); // The renderer can paint before its action Worker is ready.
   await frame.getByRole("button", { name: "Send" }).click();
+}
+
+async function setRequestPath(path) {
+  await page.evaluate(() => window.__languageRequestStore.getState().patch({
+    selComp: window.__languageRequestId, sheet: "component", t: 0,
+  }));
+  const formSheet = page.getByRole("dialog", { name: "Form" });
+  await formSheet.getByRole("tab", { name: "Advanced", exact: true }).click();
+  await formSheet.getByRole("tab", { name: "Logic", exact: true }).click();
+  const logic = formSheet.getByRole("textbox", { name: "Logic source" });
+  await logic.fill((await logic.inputValue()).replace(/\/(ok|missing|offline)\b/, path));
+  await formSheet.getByText("✓ Valid · preview updated", { exact: true }).waitFor();
+  await page.waitForFunction(expectedPath => {
+    const state = window.__languageRequestStore.getState();
+    const component = state.components.find(item => item.id === window.__languageRequestId);
+    return component?.code?.pvoCompiled?.rules[0]?.action?.url?.endsWith(expectedPath);
+  }, path);
+  await formSheet.getByRole("button", { name: "Done", exact: true }).click();
+  await page.evaluate(() => window.__languageRequestStore.getState().patch({ t: 0, selComp: null }));
+}
+
+async function waitForRequestCount(count) {
+  for (let attempt = 0; attempt < 150 && requests.length < count; attempt += 1)
+    await new Promise(resolve => setTimeout(resolve, 100));
+  assert.equal(requests.length, count, `Expected ${count} submitted request${count === 1 ? "" : "s"}`);
 }
 
 try {
@@ -54,89 +82,101 @@ try {
     const { useCapture, mkClip } = await import("/src/store.ts");
     useCapture.getState().patch({ clips: [mkClip(4, null, 0)], screen: "editor", t: 0 });
     const id = useCapture.getState().addComponent("form");
-    useCapture.getState().updateComponent(id, { at: 0.15 });
+    const component = useCapture.getState().components.find(item => item.id === id);
+    useCapture.getState().updateComponent(id, {
+      at: 0.15,
+      responsePolicy: { dispatch: "layer_end", unanswered: "pause" },
+      fields: { ...component.fields, submitLabel: "Send" },
+    });
     window.__languageRequestStore = useCapture;
     window.__languageRequestId = id;
     return id;
   });
 
   const formSheet = page.getByRole("dialog", { name: "Form" });
-  await formSheet.getByRole("button", { name: "Close", exact: true }).click();
+  await formSheet.getByRole("button", { name: "Done", exact: true }).click();
   await page.getByRole("button", { name: "Collapse component tools" }).click();
-  await page.getByRole("button", { name: "More", exact: true }).click();
+  await page.locator(".toolBar").getByRole("button", { name: "More", exact: true }).click();
   const more = page.getByRole("dialog", { name: "More" });
   await more.getByRole("switch", { name: "Advanced editing", exact: true }).click();
   await more.getByRole("switch", { name: "Advanced editing", checked: true }).waitFor();
   await more.getByRole("button", { name: "Close", exact: true }).click();
-  await page.getByRole("button", { name: "Select component layer: form", exact: true }).click();
-  await page.locator(".tools").getByRole("button", { name: "Edit", exact: true }).click();
-  await formSheet.getByRole("button", { name: "Continue" }).click();
-  const outcomeSheet = page.getByRole("dialog", { name: /where\?/ });
-  await outcomeSheet.getByRole("button", { name: /Send request/ }).click();
-  await outcomeSheet.getByRole("textbox", { name: "Request URL" }).fill(`http://127.0.0.1:${fixturePort}/ok`);
-  await outcomeSheet.getByRole("button", { name: "POST" }).click();
-  await outcomeSheet.getByRole("textbox", { name: "Request JSON body" }).fill(JSON.stringify({
-    name: `{state.form.${componentId}.name_0}`,
-    email: `{state.form.${componentId}.email_1}`,
-  }));
-  await outcomeSheet.getByRole("button", { name: "Back", exact: true }).click();
-
-  await formSheet.getByRole("tab", { name: "Advanced" }).click();
-  await formSheet.getByRole("tab", { name: "Logic" }).click();
+  await page.evaluate(() => window.__languageRequestStore.getState().patch({ selComp: window.__languageRequestId, sheet: "component" }));
+  await formSheet.getByRole("tab", { name: "Advanced", exact: true }).click();
+  await formSheet.getByRole("tab", { name: "Logic", exact: true }).click();
   const logic = formSheet.getByRole("textbox", { name: "Logic source" });
+  const authoredRequest = {
+    url: `http://127.0.0.1:${fixturePort}/ok`, method: "POST",
+    body: JSON.stringify({
+      name: `{state.form.${componentId}.field_1}`,
+      email: `{state.form.${componentId}.field_2}`,
+    }),
+    onSuccess: { kind: "continue" }, onError: null,
+  };
+  await logic.fill(`on submit { request(${JSON.stringify(authoredRequest)}); }`);
+  await formSheet.getByText("✓ Valid · preview updated", { exact: true }).waitFor();
   assert.match(await logic.inputValue(), /on submit \{\s*request\(/);
   assert.match(await logic.inputValue(), /state\.form\./);
   assert.match(await logic.inputValue(), /onError/);
-  await formSheet.getByRole("tab", { name: "Style" }).click();
+  await formSheet.getByRole("tab", { name: "Style", exact: true }).click();
   await formSheet.getByRole("textbox", { name: "Style source" }).fill("form { color: #F2F0E9; }");
+  await formSheet.getByText("✓ Valid · preview updated", { exact: true }).waitFor();
   await page.waitForFunction(() => {
     const state = window.__languageRequestStore.getState();
     const component = state.components.find(item => item.id === window.__languageRequestId);
     return component?.code?.custom && component.code.pvoCompiled?.rules[0]?.action?.kind === "request";
   });
-  await formSheet.getByRole("button", { name: "Close" }).click();
+  await formSheet.getByRole("button", { name: "Done", exact: true }).click();
   await page.evaluate(() => window.__languageRequestStore.getState().patch({ t: 0, selComp: null }));
 
   await submitForm();
-  await page.locator(".holdTag").waitFor({ state: "hidden", timeout: 5000 });
+  await waitForRequestCount(1);
+  await page.waitForFunction(id => {
+    const mode = window.__languageRequestStore.getState().tryMode;
+    return !mode || mode.dispatched.includes(id) && mode.holdingId === null;
+  }, componentId, { timeout: 10000 });
   assert.equal(requests.length, 1, "Compiled Form did not send exactly one request");
   assert.equal(requests[0].path, "/ok");
   assert.equal(requests[0].method, "POST");
   assert.deepEqual(JSON.parse(requests[0].body), { name: "Ada", email: "ada@example.com" });
 
-  await page.getByRole("button", { name: "Stop viewer preview" }).click();
-  await page.evaluate(() => window.__languageRequestStore.getState().patch({
-    selComp: window.__languageRequestId, sheet: "component", t: 0,
-  }));
-  await formSheet.getByRole("tab", { name: "Advanced" }).click();
-  await formSheet.getByRole("tab", { name: "Logic" }).click();
-  await logic.fill((await logic.inputValue()).replace("/ok", "/offline"));
-  await page.waitForFunction(() => {
-    const state = window.__languageRequestStore.getState();
-    const component = state.components.find(item => item.id === window.__languageRequestId);
-    return component?.code?.pvoCompiled?.rules[0]?.action?.url?.endsWith("/offline");
-  });
-  await formSheet.getByRole("button", { name: "Close" }).click();
-  await page.evaluate(() => window.__languageRequestStore.getState().patch({ t: 0, selComp: null }));
+  await page.getByRole("button", { name: "Stop", exact: true }).click();
+  await setRequestPath("/missing");
+  await submitForm();
+  await waitForRequestCount(2);
+  await page.locator('[data-try-feedback="failed"]').waitFor({ timeout: 15000 });
+  assert.match(await page.locator('[data-try-feedback="failed"]').innerText(), /Request not found \(404\)\./);
+  assert.equal(await page.evaluate(() => window.__languageRequestStore.getState().tryMode?.holdingId), componentId,
+    "A missing endpoint must leave the Form held for retry");
+  assert.equal(requests.length, 2, "The missing endpoint should receive one request");
+  assert.equal(requests[1].path, "/missing");
+
+  await page.getByRole("button", { name: "Stop", exact: true }).click();
+  await setRequestPath("/offline");
 
   await page.route(`http://127.0.0.1:${fixturePort}/offline`, route => route.abort("internetdisconnected"));
   await submitForm();
-  await page.locator('[data-try-feedback="failed"]').waitFor({ timeout: 5000 });
+  await page.locator('[data-try-feedback="failed"]').waitFor({ timeout: 15000 });
+  assert.match(await page.locator('[data-try-feedback="failed"]').innerText(), /Could not reach the service\./);
   assert.equal(await page.locator('[data-notification-id="requestFailed"]').count(), 0,
     "Compiled component request feedback must not duplicate a global notification");
-  assert.equal(await page.locator(".holdTag").isVisible(), true,
+  assert.equal(await page.evaluate(() => window.__languageRequestStore.getState().tryMode?.holdingId), componentId,
     "Without an error route, an offline request must leave the Form held for retry");
-  assert.equal(requests.length, 1, "The simulated offline request must not reach the fixture");
+  assert.equal(requests.length, 2, "The simulated offline request must not reach the fixture");
 
   await page.unroute(`http://127.0.0.1:${fixturePort}/offline`);
   const retryFrame = page.locator('.compCustomRuntime iframe[sandbox="allow-same-origin"]').first().contentFrame();
   await retryFrame.getByRole("button", { name: "Send" }).click();
-  await page.locator(".holdTag").waitFor({ state: "hidden", timeout: 5000 });
-  assert.equal(requests.length, 2, "Retry after offline failure did not send a request");
-  assert.equal(requests[1].path, "/offline");
-  assert.deepEqual(JSON.parse(requests[1].body), { name: "Ada", email: "ada@example.com" });
+  await waitForRequestCount(3);
+  await page.waitForFunction(id => {
+    const mode = window.__languageRequestStore.getState().tryMode;
+    return !mode || mode.dispatched.includes(id) && mode.holdingId === null;
+  }, componentId, { timeout: 10000 });
+  assert.equal(requests.length, 3, "Retry after offline failure did not send a request");
+  assert.equal(requests[2].path, "/offline");
+  assert.deepEqual(JSON.parse(requests[2].body), { name: "Ada", email: "ada@example.com" });
   assert.deepEqual(pageErrors, []);
-  console.log("PVO language request passed: compiled Form POST with field values, offline hold, retry.");
+  console.log("PVO language request passed: compiled Form POST, visible 404/network feedback, hold, retry.");
 } catch (error) {
   console.error(`PVO language request failed: ${error.message}`);
   console.error(`Page errors: ${pageErrors.join("; ") || "none"}`);
