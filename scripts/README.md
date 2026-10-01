@@ -24,6 +24,7 @@ scripts/
 | `npm run build:docs` | Build only the PVO documentation into `docs-dist/docs/`, separate from the application. |
 | `npm run dev:worker` | Serve the built application with the Cloudflare Worker locally. |
 | `npm run deploy` | Build, deploy with Wrangler, verify served assets, and broadcast the release to connected editors; requires Cloudflare authentication. See the [release channel setup](../docs/engineering/cloudflare-publishing.md#live-beta-release-notifications). |
+| `npm run deploy:built` | Preserve live immutable editor assets for open sessions, then deploy the already-built output, verify its release and announce it. |
 | `node scripts/build/editor-icons.mjs` | Regenerate the editor's Home Screen icons from its existing brand mark; needs installed Chrome. |
 | `npm run build:language` | Generate only `packages/pvo-language/pkg/` with wasm-pack. |
 | `npm run dev` | Full build, then serve `dist/` on port 4173 (`PVO_PORT` overrides it). |
