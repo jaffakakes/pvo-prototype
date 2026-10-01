@@ -13,8 +13,15 @@ import { DesktopEditor } from "../features/desktop-editor/DesktopEditor";
 import { useWideLayout } from "../infrastructure/viewport";
 import { useComponentAuthoring } from "../state/components/componentAuthoringStore";
 import { useEditorPreferences } from "../state/preferences/editorPreferences";
+import { DebugSheet } from "../features/try-debugger/DebugSheet";
+import { setDebugOpen, useDebugUi } from "../features/try-debugger/uiStore";
+import { editDebugComponent } from "../features/editor-layout/debugging/debugCommands";
+import { locateDebugComponent } from "../features/editor-layout/debugging/debugLocate";
+import { useDebugLifecycle } from "../features/editor-layout/debugging/useDebugLifecycle";
 
 export function Editor() {
+  useDebugLifecycle();
+  const debugOpen = useDebugUi(state => state.open);
   const wide = useWideLayout();
   const scenes = useCapture(state => state.scenes);
   const sheetOpen = useCapture(state => state.sheet !== null && !state.playheadPick);
@@ -30,6 +37,8 @@ export function Editor() {
   if (wide) return <DesktopEditor />;
   return <>
     <EditorWorkspace open={sheetOpen} componentSheet={componentSheet} codeEditingId={codeEditingId} trying={trying}
+      debugOpen={debugOpen} onCloseDebug={() => setDebugOpen(false)}
+      debugPanel={<DebugSheet onClose={() => setDebugOpen(false)} onEditComponent={editDebugComponent} onLocate={locateDebugComponent} />}
       header={<EditorHeader />} preview={<Preview />} playback={<Transport />}
       timeline={<><SceneTimeline><Timeline /></SceneTimeline><ToolRow /></>} sheets={<Sheets />}
       assistant={(expanded, target) => <OrbAssistant placement={expanded ? "floating" : "workspace"} portalTarget={target} />}

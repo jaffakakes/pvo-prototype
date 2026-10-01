@@ -6,6 +6,7 @@ import { cx } from "../../styles";
 import { fmt } from "../../ui/formatTime";
 import { Icon } from "../../ui/Icon";
 import { componentLabel } from "../preview/ComponentOverlay";
+import { DebugLayerIssue } from "../editor-layout/debugging/DebugLayerIssue";
 import { SOUNDS } from "../sound/catalog";
 import { EmptySceneTimeline } from "./EmptySceneTimeline";
 import { MobilePlayhead } from "./MobilePlayhead";
@@ -252,6 +253,7 @@ export function Timeline() {
               <span className={cx("compContent")}>
                 <Icon name={component.type} size={11} />
                 <span>{componentLabel(component)}</span>
+                <DebugLayerIssue componentId={component.id} />
               </span>
               {s.selComp === component.id && (
                 <span className={cx("compHandle")} data-side="r" />

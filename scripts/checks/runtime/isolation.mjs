@@ -57,8 +57,13 @@ try {
     const { mountCustomComponent } = await import(`${origin}/runtime.js`);
     window.__actions = [];
     window.__errors = [];
+    window.__diagnostics = [];
     window.__handle = mountCustomComponent(document.getElementById("host"), {
       componentId: "test-component",
+      onDiagnostic(event) {
+        window.__diagnostics.push(event);
+        throw new Error("A broken observer must not affect component execution.");
+      },
       html: `<div class="safe">{{prompt}}</div><button onclick="onPick('street')">Street</button><form onsubmit="pvo.submit(fields)"><input name="alias" value="Ada"><button type="submit">Send</button></form><img src="${origin}/leak?img"><a href="${origin}/leak?nav">link</a><script>parent.__breached=true</script><iframe src="${origin}/leak?frame"></iframe>`,
       css: `.safe{color:#A78BFA;background-image:url(${origin}/leak?css)}`,
       js: `pvo.pick("startup"); fetch("${origin}/leak?fetch").catch(()=>{}); function onPick(value){ pvo.pick(value); }`,
@@ -114,6 +119,19 @@ try {
     { method: "pick", args: ["street"] },
     { method: "submit", args: [{ alias: "Ada" }] },
   ]);
+  const diagnostics = await page.evaluate(() => window.__diagnostics);
+  assert.ok(diagnostics.some(event => event.type === "component.ready"));
+  assert.equal(diagnostics.filter(event => event.type === "interaction.received").length, 2);
+  assert.doesNotMatch(JSON.stringify(diagnostics), /Ada/, "diagnostics must not retain form input");
+  await page.evaluate(() => {
+    window.__handle.setPending(true);
+    document.querySelector('iframe[sandbox="allow-same-origin"]').contentDocument
+      .querySelector("form").dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    window.__handle.setPending(false);
+  });
+  assert.ok((await page.evaluate(() => window.__diagnostics)).some(event =>
+    event.type === "interaction.ignored" && event.reason === "request_pending"));
+  assert.equal((await page.evaluate(() => window.__actions)).length, 2);
   assert.equal(await page.evaluate(() => window.__breached), undefined);
   assert.deepEqual(
     leaks,
@@ -247,6 +265,8 @@ try {
     "hung custom code must not freeze the host",
   );
   await page.evaluate(() => window.__handle.destroy());
+  assert.equal((await page.evaluate(() => window.__diagnostics.at(-1))).type, "component.inactive",
+    "normal disposal is not an unavailable-component failure");
   assert.equal(
     await page.locator("iframe").count(),
     0,

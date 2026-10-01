@@ -7,6 +7,7 @@ import {
 } from "./operations.js";
 import { responsePolicyFor } from "./response-policy.js";
 import { clearComponentRequestFailure, markComponentRequestFailure } from "./request-status.js";
+import { beginPlayerDiagnostic, reportPlayerDiagnostic } from "./diagnostics.js";
 
 /** Validate viewer commands, capture responses, and dispatch authored actions. */
 export function createComponentActions({ session, adapters }) {
@@ -59,15 +60,27 @@ export function createComponentActions({ session, adapters }) {
    * before then deliberately implements "latest response wins" without calling Logic.
    */
   function captureComponentResponse(component, index, fields) {
-    if (session.pendingComponents.has(component.id)) return;
+    const diagnostic = beginPlayerDiagnostic(session, component, component.kind === "form" ? "submit" : index);
+    const ignored = reason => reportPlayerDiagnostic(session, "interaction.ignored", diagnostic, { reason });
+    if (session.pendingComponents.has(component.id)) {
+      ignored("request_pending");
+      return;
+    }
     const policy = responsePolicyFor(component);
     const previous = session.capturedResponses.get(component.id);
-    if (policy.dispatch === "interaction" && previous?.status === "complete") return;
-    if (session.handledResponses.has(component.id) && session.awaitingComponent?.id !== component.id) return;
+    if (policy.dispatch === "interaction" && previous?.status === "complete") {
+      ignored("already_handled");
+      return;
+    }
+    if (session.handledResponses.has(component.id) && session.awaitingComponent?.id !== component.id) {
+      ignored("already_handled");
+      return;
+    }
     let normalizedFields;
     try {
       normalizedFields = normalizeFields(component, fields);
     } catch (error) {
+      ignored("invalid_fields");
       adapters.setStatus(String(error?.message || error), true);
       return;
     }
@@ -77,11 +90,18 @@ export function createComponentActions({ session, adapters }) {
       index,
       fields: normalizedFields,
       status: "captured",
+      ...(diagnostic ? { diagnostic } : {}),
     };
     session.capturedResponses.set(component.id, response);
     adapters.updateComponentResponse?.(component.id);
+    reportPlayerDiagnostic(session, "interaction.accepted", diagnostic);
 
-    if (policy.dispatch === "layer_end" && session.awaitingComponent?.id !== component.id) return;
+    if (policy.dispatch === "layer_end" && session.awaitingComponent?.id !== component.id) {
+      reportPlayerDiagnostic(session, "response.deferred", diagnostic, {
+        reason: "layer_end", waitUntil: component.presentation?.end,
+      });
+      return;
+    }
     return dispatchCapturedResponse(component.id);
   }
 
@@ -96,6 +116,7 @@ export function createComponentActions({ session, adapters }) {
   async function runComponentActions(component, index, fields, capturedResponse) {
     if (session.pendingComponents.has(component.id) || !session.actionRuntime) return;
     const runtime = session.actionRuntime;
+    const diagnostic = capturedResponse?.diagnostic;
     clearComponentRequestFailure(session, component.id, adapters.setStatus);
     const operation = beginActionOperation(session, component.id);
     const interaction = {
@@ -110,7 +131,7 @@ export function createComponentActions({ session, adapters }) {
     try {
       // Runtime state changes at dispatch, never while a layer-end response is merely captured.
       if (fields != null) {
-        runtime.setState("form", { ...(runtime.state.form || {}), [component.id]: fields });
+        runtime.setState("form", { ...(runtime.state.form || {}), [component.id]: fields }, { componentId: component.id, diagnostic });
       }
       const form = component.restyle_capture?.form;
       if (component.kind === "form" && form && form.submitMode !== "local" && !form.destination && !form.failureOutcome) {
@@ -120,7 +141,7 @@ export function createComponentActions({ session, adapters }) {
       }
       if (component.kind === "choice") {
         // Preserve the selected 2–4 option index; routing remains an explicit action.
-        runtime.setState("choices", { ...(runtime.state.choices || {}), [component.id]: index });
+        runtime.setState("choices", { ...(runtime.state.choices || {}), [component.id]: index }, { componentId: component.id, diagnostic });
       }
       unsubscribe = runtime.subscribe((event) => {
         if (event.type === "request_error" && event.componentId === component.id) {
@@ -128,12 +149,14 @@ export function createComponentActions({ session, adapters }) {
         }
       });
       const action = componentAction(component, index);
+      if (!action) reportPlayerDiagnostic(session, "action.skipped", diagnostic, { reason: "no_matching_rule" });
       await runtime.execute(action, {
         componentId: component.id,
         optionIndex: index,
         form: fields,
         playerInteraction: interaction,
         signal: operation.controller.signal,
+        diagnostic,
       });
       if (!actionOperationIsCurrent(session, operation)) return;
 
@@ -149,6 +172,7 @@ export function createComponentActions({ session, adapters }) {
     } catch (error) {
       if (!actionOperationIsCurrent(session, operation)) return;
       if (capturedResponse) capturedResponse.status = "failed";
+      reportPlayerDiagnostic(session, "action.failed", diagnostic, { reason: "action_error" });
       adapters.setStatus(String(error?.message || error), true);
     } finally {
       unsubscribe?.();
@@ -162,7 +186,11 @@ export function createComponentActions({ session, adapters }) {
   async function handleCustomAction(component, action) {
     // The renderer reports only the control used; compiled PVO Logic owns its outcome.
     if (!session.captureMode || session.finished || !session.mountedCustom.has(component.id)
-        || !adapters.visibleComponents().some((item) => item.id === component.id)) return;
+        || !adapters.visibleComponents().some((item) => item.id === component.id)) {
+      const diagnostic = beginPlayerDiagnostic(session, component, action?.method || "unknown");
+      reportPlayerDiagnostic(session, "interaction.ignored", diagnostic, { reason: "inactive_component" });
+      return;
+    }
     try {
       const method = action?.method;
       const args = Array.isArray(action?.args) ? action.args : [];

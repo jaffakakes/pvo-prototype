@@ -20,7 +20,7 @@ const { createTrySession, initial } = await import(
 function fixture(time, request = async () => new Response("{}"), component = {
   id: "card", type: "card", at: 5, dur: null,
   responsePolicy: { dispatch: "interaction", unanswered: "continue" }, fields: {},
-}, { allowStartFailure = false, allowPlaybackFailure = false } = {}) {
+}, { allowStartFailure = false, allowPlaybackFailure = false, diagnostics } = {}) {
   const state = initial();
   state.t = time;
   state.clips = [{ id: 1, in: 0, out: 10, srcDur: 10, speed: 1 }];
@@ -37,6 +37,7 @@ function fixture(time, request = async () => new Response("{}"), component = {
   let startFailures = 0;
   let playbackFailures = 0;
   const session = createTrySession({
+    diagnostics,
     getState: () => state,
     request,
     publishRuntimeState(value) {
@@ -62,9 +63,9 @@ function fixture(time, request = async () => new Response("{}"), component = {
       feedback[id] = { operation, phase: "pending" };
       return operation;
     },
-    finishRequest(id, operation, failed) {
+    finishRequest(id, operation, failed, failure) {
       if (feedback[id]?.operation !== operation) return;
-      if (failed) feedback[id].phase = "failed";
+      if (failed) feedback[id] = { operation, phase: "failed", failure };
       else delete feedback[id];
     },
   });
@@ -78,6 +79,98 @@ function fixture(time, request = async () => new Response("{}"), component = {
     playbackFailures: () => playbackFailures,
   };
 }
+
+function diagnosticFixture() {
+  const records = [];
+  return { records, sink: {
+    start: () => "run",
+    stop() {},
+    record: (_run, event) => records.push(event),
+    state() {},
+    capture: () => false,
+  } };
+}
+
+test("Try diagnostic trace distinguishes a captured answer from its deferred execution", async () => {
+  const trace = diagnosticFixture();
+  const component = { id: "question", type: "choice", sceneId: "main", at: 1, dur: 4,
+    responsePolicy: { dispatch: "layer_end", unanswered: "pause" },
+    fields: { prompt: "Question", options: [{ label: "A", outcome: { kind: "continue" } }] } };
+  const harness = fixture(2, undefined, component, { diagnostics: trace.sink });
+  harness.session.startTry();
+  await harness.session.runComponentResponse(component, { index: 0, outcome: { kind: "continue" } });
+  assert(trace.records.some(event => event.type === "response.deferred" && event.waitUntil === 5));
+  assert(!trace.records.some(event => event.type === "action.selected"));
+  harness.session.advanceTry(harness.state, 5);
+  await Promise.resolve();
+  const selected = trace.records.find(event => event.type === "action.selected");
+  assert(selected);
+  assert.equal(selected.interactionId, trace.records.find(event => event.type === "interaction.received").interactionId);
+  assert(trace.records.some(event => event.type === "playback.released"));
+});
+
+test("Try attaches SDK requests to their input and explains repeated pending presses", async () => {
+  let complete;
+  const pending = new Promise(resolve => { complete = resolve; });
+  const trace = diagnosticFixture();
+  const component = { id: "question", type: "choice", sceneId: "main", at: 1, dur: 4,
+    responsePolicy: { dispatch: "interaction", unanswered: "continue" }, fields: {} };
+  const harness = fixture(2, () => pending, component, { diagnostics: trace.sink });
+  harness.session.startTry();
+  const response = { index: 0, outcome: { kind: "request", url: "https://example.com/test", method: "GET", body: "", onSuccess: { kind: "continue" }, onError: null } };
+  const first = harness.session.runComponentResponse(component, response);
+  await harness.session.runComponentResponse(component, { ...response });
+  const request = trace.records.find(event => event.type === "request.started");
+  assert(request, "The observer must be connected to runtime handlers, not the manifest");
+  assert.equal(request.interactionId, trace.records.find(event => event.type === "interaction.received").interactionId);
+  assert(trace.records.some(event => event.type === "interaction.ignored" && event.reason === "request_pending"));
+  complete(new Response("{}"));
+  await first;
+  assert(trace.records.some(event => event.type === "request.completed" && event.requestId === request.requestId));
+});
+
+test("throwing diagnostic observers cannot prevent Try actions or cleanup", async () => {
+  const fail = () => { throw new Error("observer failed"); };
+  const component = { id: "question", type: "choice", sceneId: "main", at: 1, dur: 4,
+    responsePolicy: { dispatch: "interaction", unanswered: "continue" }, fields: {} };
+  const harness = fixture(2, undefined, component, { diagnostics: { start: fail, stop: fail, record: fail, state: fail, capture: fail } });
+  harness.session.startTry();
+  await harness.session.runComponentResponse(component, { index: 0, outcome: { kind: "time", t: 7 } });
+  assert.equal(harness.state.t, 7);
+  harness.session.stopTry();
+  assert.equal(harness.state.tryMode, null);
+});
+
+test("a Try started at the end records its actual restart position", () => {
+  let startingTime;
+  const trace = diagnosticFixture();
+  const harness = fixture(10, undefined, undefined, { diagnostics: { ...trace.sink, start(source) { startingTime = source.t; return "run"; } } });
+  harness.session.startTry();
+  assert.equal(harness.state.t, 0);
+  assert.equal(startingTime, 0);
+});
+
+test("only an unexecuted deferred response is reported as superseded", async t => {
+  t.mock.method(console, "warn", () => {});
+  const deferredTrace = diagnosticFixture();
+  const component = { id: "question", type: "choice", sceneId: "main", at: 1, dur: 4,
+    responsePolicy: { dispatch: "layer_end", unanswered: "pause" }, fields: {} };
+  const deferred = fixture(2, undefined, component, { diagnostics: deferredTrace.sink });
+  deferred.session.startTry();
+  await deferred.session.runComponentResponse(component, { index: 0, outcome: { kind: "continue" } });
+  await deferred.session.runComponentResponse(component, { index: 1, outcome: { kind: "continue" } });
+  assert.equal(deferredTrace.records.filter(record => record.reason === "superseded").length, 1);
+
+  const retryTrace = diagnosticFixture();
+  const immediate = { ...component, responsePolicy: { dispatch: "interaction", unanswered: "pause" } };
+  const retry = fixture(2, async () => new Response("", { status: 404 }), immediate, { diagnostics: retryTrace.sink });
+  retry.session.startTry();
+  const response = { index: 0, outcome: { kind: "request", method: "GET", url: "https://example.com/test", body: "", onSuccess: { kind: "continue" }, onError: null } };
+  await retry.session.runComponentResponse(immediate, response);
+  await retry.session.runComponentResponse(immediate, { ...response });
+  assert.equal(retryTrace.records.filter(record => record.type === "request.failed").length, 2);
+  assert(!retryTrace.records.some(record => record.reason === "superseded"));
+});
 
 test("Try rejects a buttonless pausing Message in any scene", () => {
   const active = {
@@ -336,6 +429,39 @@ test("a failed interaction still counts as answered for pause-if-nobody-responds
   assert.equal(harness.state.playing, true);
 });
 
+test("Try shows a 404 on the affected component and clears it after retry", async () => {
+  const component = {
+    id: "retry-request", type: "choice", sceneId: "main", at: 2, dur: 2,
+    responsePolicy: { dispatch: "interaction", unanswered: "pause" },
+    fields: { options: [
+      { label: "Send", outcome: { kind: "continue" } },
+      { label: "Skip", outcome: { kind: "continue" } },
+    ] },
+  };
+  let attempts = 0;
+  const harness = fixture(2.5, async () => {
+    attempts += 1;
+    return attempts === 1 ? new Response("Not found", { status: 404 })
+      : new Response("{}", { headers: { "Content-Type": "application/json" } });
+  }, component);
+  const response = {
+    index: 0,
+    outcome: {
+      kind: "request", method: "GET", url: "https://example.com/result", body: "",
+      onSuccess: { kind: "continue" }, onError: null,
+    },
+  };
+  harness.session.startTry();
+  await harness.session.runComponentResponse(component, response);
+  assert.equal(harness.feedback()[component.id]?.failure?.kind, "http");
+  assert.equal(harness.feedback()[component.id]?.failure?.status, 404);
+  assert.match(harness.feedback()[component.id]?.failure?.message, /404/);
+
+  await harness.session.runComponentResponse(component, response);
+  assert.equal(attempts, 2);
+  assert.equal(harness.feedback()[component.id], undefined);
+});
+
 test("a missing Form destination is captured first and fails only at its dispatch time", async () => {
   const form = {
     id: "deferred-form", type: "form", sceneId: "main", at: 2, dur: 2,
@@ -451,11 +577,60 @@ test("Try lets an interaction request finish at the final frame before ending", 
   assert.equal(harness.state.tryMode, null);
 });
 
-test("Try exits a terminal wait after an unhandled interaction request failure", async () => {
-  let reject;
-  const response = new Promise((_, fail) => { reject = fail; });
+test("Try keeps a final-frame request failure visible until a successful retry", async (t) => {
+  t.mock.method(console, "warn", () => {});
+  let respond;
+  const response = new Promise((resolve) => { respond = resolve; });
   const component = {
     id: "last-failure", type: "choice", sceneId: "main", at: 8, dur: 2,
+    responsePolicy: { dispatch: "interaction", unanswered: "continue" },
+    fields: { options: [
+      { label: "Send", outcome: { kind: "continue" } },
+      { label: "Skip", outcome: { kind: "continue" } },
+    ] },
+  };
+  let attempts = 0;
+  const harness = fixture(9.8, async () => {
+    attempts += 1;
+    return attempts === 1 ? response : new Response("{}", { status: 200 });
+  }, component);
+  harness.session.startTry();
+  const answer = {
+    index: 0,
+    outcome: {
+      kind: "request", method: "GET", url: "https://example.com/result", body: "",
+      onSuccess: { kind: "continue" }, onError: null,
+    },
+  };
+  const pending = harness.session.runComponentResponse(component, answer);
+  await new Promise((resolve) => setImmediate(resolve));
+  harness.session.advanceTry(harness.state, 10.1);
+  assert.equal(harness.state.tryMode.holdingId, component.id);
+  assert.equal(harness.feedback()[component.id].phase, "pending");
+
+  respond(new Response("missing", { status: 404 }));
+  await pending;
+
+  assert(harness.state.tryMode);
+  assert.equal(harness.state.tryMode.holdingId, component.id);
+  assert.equal(harness.state.playing, false);
+  assert.equal(harness.state.tryMode.dispatched.includes(component.id), false);
+  assert.deepEqual(harness.feedback()[component.id].failure, {
+    kind: "http", status: 404, message: "Request not found (404).",
+  });
+
+  await harness.session.runComponentResponse(component, answer);
+  assert.equal(attempts, 2);
+  assert.equal(harness.state.tryMode, null);
+  assert.deepEqual(harness.feedback(), {});
+});
+
+test("Try completes an authored final-frame error route without showing a failure", async (t) => {
+  t.mock.method(console, "warn", () => {});
+  let respond;
+  const response = new Promise((resolve) => { respond = resolve; });
+  const component = {
+    id: "routed-failure", type: "choice", sceneId: "main", at: 8, dur: 2,
     responsePolicy: { dispatch: "interaction", unanswered: "continue" },
     fields: { options: [
       { label: "Send", outcome: { kind: "continue" } },
@@ -468,13 +643,14 @@ test("Try exits a terminal wait after an unhandled interaction request failure",
     index: 0,
     outcome: {
       kind: "request", method: "GET", url: "https://example.com/result", body: "",
-      onSuccess: { kind: "continue" }, onError: null,
+      onSuccess: { kind: "continue" }, onError: { kind: "continue" },
     },
   });
   await new Promise((resolve) => setImmediate(resolve));
   harness.session.advanceTry(harness.state, 10.1);
-  reject(new Error("offline"));
+  respond(new Response("missing", { status: 404 }));
   await pending;
 
   assert.equal(harness.state.tryMode, null);
+  assert.deepEqual(harness.feedback(), {});
 });

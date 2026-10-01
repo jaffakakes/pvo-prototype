@@ -107,11 +107,20 @@ try {
   await context.setOffline(true);
   await choice.getByRole("button", { name: "Send" }).click();
   await page.locator("#status.error.is-visible").waitFor({ state: "visible" });
+  assert.equal(await page.locator("#status").textContent(), "Could not reach the service.");
   assert.equal(await page.locator("#video").getAttribute("data-asset-id"), "video");
   assert.equal(await page.locator("#video").evaluate((element) => element.paused), true,
     "An offline request without on_error must leave the Choice held.");
   assert.equal(received.length, 0, "Offline requests must not be queued or sent.");
   await context.setOffline(false);
+  const missingRoute = `http://${host}/choice`;
+  await page.route(missingRoute, (route) => route.request().method() === "POST"
+    ? route.fulfill({ status: 404, headers: { "Access-Control-Allow-Origin": new URL(playerUrl).origin }, body: "Not found" })
+    : route.continue());
+  await choice.getByRole("button", { name: "Send" }).click();
+  await page.locator("#status.error.is-visible").filter({ hasText: "Request not found (404)." }).waitFor();
+  assert.equal(received.length, 0, "A missing route must not count as a delivered answer.");
+  await page.unroute(missingRoute);
   await choice.getByRole("button", { name: "Send" }).click();
   const form = page.locator("pvo-component-view").filter({ hasText: "Name" });
   await form.getByRole("textbox", { name: "Name" }).waitFor({ state: "visible", timeout: 10000 });
@@ -135,7 +144,7 @@ try {
   assert.equal(await fourChoice.getByRole("button", { name: "Four", exact: true }).getAttribute("aria-pressed"), "true");
   assert.equal(await fourChoice.getByRole("button", { name: "One", exact: true }).getAttribute("aria-pressed"), "false");
   assert.deepEqual(browserErrors, []);
-  console.log("Player actions passed: Choice and Form requests, offline failure, form state, exact four-option index, no implicit branch.");
+  console.log("Player actions passed: Choice and Form requests, offline and 404 feedback, retries, form state, exact four-option index, no implicit branch.");
 } catch (error) {
   console.error(`Player actions failed: ${error.message}`);
   console.error(`Status: ${await page.locator("#status").textContent().catch(() => "unavailable")}`);

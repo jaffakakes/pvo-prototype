@@ -2,6 +2,7 @@ import {
   createPvoRuntime,
   PVO_SPEC_VERSION,
   type PvoRuntime,
+  type PvoDiagnosticEvent,
 } from "../../../../packages/pvo-sdk/index.js";
 import { collectRequestDomains } from "../../domain/components/actions";
 import type {
@@ -27,7 +28,11 @@ type Host = {
   applyPlaybackOutcome(
     component: PvoComponent,
     outcome: PlaybackOutcome,
+    interactionId?: string,
   ): boolean;
+  diagnosticObserver?(): (event: PvoDiagnosticEvent) => void;
+  diagnosticStateObserver?(): (state: Record<string, unknown>) => void;
+  captureDiagnosticBodies?(): boolean;
 };
 
 /** Owns the SDK runtime and translates its host effects into Try-session commands. */
@@ -78,6 +83,12 @@ export function createTryRuntimeBridge(host: Host) {
     if (runtime || unsubscribe) stop();
 
     let candidate: PvoRuntime | null = null;
+    const onDiagnostic = host.diagnosticObserver?.();
+    const onState = host.diagnosticStateObserver?.();
+    const interactionId = (context: Record<string, unknown>) => {
+      const diagnostic = context.diagnostic as { interactionId?: string } | undefined;
+      return diagnostic?.interactionId;
+    };
     try {
       const allowed_domains = collectRequestDomains(
         source.scenes,
@@ -92,6 +103,8 @@ export function createTryRuntimeBridge(host: Host) {
           allowed_domains,
         },
         {
+          onDiagnostic,
+          captureDiagnosticBodies: host.captureDiagnosticBodies,
           gotoScene: (sceneId, context) => {
             if (!active()) return;
             const component = componentFromContext(context);
@@ -101,7 +114,7 @@ export function createTryRuntimeBridge(host: Host) {
                 host.applyPlaybackOutcome(component, {
                   kind: "scene",
                   sceneId,
-                }),
+                }, interactionId(context)),
               );
           },
           seek: (time, context) => {
@@ -110,7 +123,7 @@ export function createTryRuntimeBridge(host: Host) {
             if (component)
               recordPlaybackResult(
                 context,
-                host.applyPlaybackOutcome(component, { kind: "time", t: time }),
+                host.applyPlaybackOutcome(component, { kind: "time", t: time }, interactionId(context)),
               );
           },
           custom: (name, _payload, context) => {
@@ -119,7 +132,7 @@ export function createTryRuntimeBridge(host: Host) {
             if (name === "restyle_continue" && component)
               recordPlaybackResult(
                 context,
-                host.applyPlaybackOutcome(component, { kind: "continue" }),
+                host.applyPlaybackOutcome(component, { kind: "continue" }, interactionId(context)),
               );
           },
           request: ({ url, ...options }) =>
@@ -137,10 +150,13 @@ export function createTryRuntimeBridge(host: Host) {
           (event.type === "state" || event.type === "reset") &&
           runtime === candidate &&
           host.getState().tryMode
-        )
+        ) {
           host.publishRuntimeState(event.state);
+          onState?.(event.state);
+        }
       });
       host.publishRuntimeState(structuredClone(candidate.state));
+      onState?.(candidate.state);
       return candidate;
     } catch (error) {
       if (runtime === candidate) clearConnection();

@@ -3,6 +3,16 @@ export type PvoCodeAction = {
   args: unknown[];
 };
 
+/** Bounded bridge facts; the host supplies run/scene identity and safe error presentation. */
+export type PvoCodeDiagnostic = {
+  type: "component.ready" | "component.failed" | "component.unavailable" | "component.inactive" | "interaction.received" | "interaction.ignored" | "action.started" | "action.completed";
+  componentId?: string;
+  eventId?: number;
+  reason?: string;
+  phase?: "renderer" | "worker" | "bridge";
+  target?: string;
+};
+
 export type PvoCodeOptions = {
   html: string;
   css: string;
@@ -21,8 +31,10 @@ export type PvoCodeOptions = {
   /** Host request status; temporarily disables form controls and shows its waiting label. */
   pending?: boolean;
   /** Host must validate actions against current PVO state. For request, return the parsed response or reject. */
-  onAction?: (action: PvoCodeAction) => unknown | Promise<unknown>;
+  onAction?: (action: PvoCodeAction, diagnostic?: { eventId: number }) => unknown | Promise<unknown>;
   onError?: (message: string) => void;
+  /** Optional observation only. Throwing cannot interrupt the component. */
+  onDiagnostic?: (event: PvoCodeDiagnostic) => void;
 };
 
 export type PvoCodeHandle = {

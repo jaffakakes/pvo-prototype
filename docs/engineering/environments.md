@@ -32,6 +32,8 @@ Protected branches require pull requests and the repository's `test` and `promot
 
 [`deploy-production.yml`](../../.github/workflows/deploy-production.yml) repeats the locked build and verification commands before running `npm run deploy:built`, the deployment half of `npm run deploy`. It publishes the verified `dist/`, checks the served editor release, and announces the new release to connected editors without rebuilding a second time.
 
+Before uploading, deployment preserves immutable `/editor/assets/` files needed by open editor sessions. It reads the live service worker's asset list and the retained-asset inventory, downloads missing files from the configured production origin, and publishes the union with the new build. It never replaces the fresh HTML, service worker or mutable player/package modules, and never adds old files to the new service worker's precache. A failed preservation request stops deployment before upload. The first inventory is bootstrapped from the live service worker and any assets already in the prepared output; subsequent releases carry the inventory forward.
+
 The workflow uses the GitHub `prod` environment and needs two environment secrets:
 
 ```text

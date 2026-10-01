@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { type PvoLanguageSource } from "../../../domain/components/languageSource";
 import type { PvoComponent } from "../../../domain/project/model";
 import type { LanguageFeedback } from "./usePvoCompilation";
@@ -28,7 +27,7 @@ function logicHelp(component: PvoComponent): string {
 }
 
 export function PvoLanguageRoute({ component, source, onEdit, feedback, expanded, onExpand, onRestore,
-  onSourceBlur, assistantActive = false, registerAssistantTarget, readOnly = false, initialTab = "structure" }: {
+  onSourceBlur, assistantActive = false, registerAssistantTarget, readOnly = false, tab, onSelectTab }: {
   component: PvoComponent;
   source: PvoLanguageSource;
   onEdit: (tab: LanguageTab, value: string) => void;
@@ -37,12 +36,12 @@ export function PvoLanguageRoute({ component, source, onEdit, feedback, expanded
   onExpand: () => void;
   readOnly?: boolean;
   onRestore?: () => void;
-  initialTab?: LanguageTab;
+  tab: LanguageTab;
+  onSelectTab: (tab: LanguageTab) => void;
   assistantActive?: boolean;
   registerAssistantTarget?: (target: HTMLDivElement | null) => void;
   onSourceBlur?: () => void;
 }) {
-  const [tab, setTab] = useState<LanguageTab>(initialTab);
   const value = source[tab];
 
   return <div className={styles.route}>
@@ -53,7 +52,7 @@ export function PvoLanguageRoute({ component, source, onEdit, feedback, expanded
         role="tab"
         aria-selected={tab === item.key}
         data-on={tab === item.key}
-        onClick={() => setTab(item.key)}
+        onClick={() => onSelectTab(item.key)}
       >{item.label}</button>)}
     </div>
     <p className={styles.help}>{tab === "logic" ? logicHelp(component) : HELP[tab]}</p>
@@ -74,7 +73,7 @@ export function PvoLanguageRoute({ component, source, onEdit, feedback, expanded
     {!readOnly && <div className={styles.status} data-state={feedback.state} role={feedback.state === "invalid" ? "alert" : "status"}
       {...(assistantActive ? { inert: "" } : {})}>
       <span>{feedback.state === "checking" ? "Checking…" : feedback.state === "valid" ? "✓ Valid · preview updated" : `✕ ${feedback.message}`}</span>
-      {feedback.state === "invalid" && feedback.part && <button type="button" onClick={() => setTab(feedback.part!)}>Open {feedback.part}</button>}
+      {feedback.state === "invalid" && feedback.part && <button type="button" onClick={() => onSelectTab(feedback.part!)}>Open {feedback.part}</button>}
       {feedback.state === "invalid" && onRestore && <button type="button" onClick={onRestore}>Restore previous version</button>}
     </div>}
   </div>;

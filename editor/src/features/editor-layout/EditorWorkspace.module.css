@@ -30,7 +30,7 @@
 .preview :global(.pvBox) { transition: none; }
 .playback { min-height: 0; }
 .dock { position: relative; min-height: 0; }
-.workspace[data-trying="true"] .dock { visibility: hidden; overflow: hidden; pointer-events: none; }
+.workspace[data-trying="true"][data-debug-open="false"] .dock { visibility: hidden; overflow: hidden; pointer-events: none; }
 .workspace[data-keyboard-open="true"] :global([data-component-tabs]) { display: none; }
 .workspace[data-keyboard-open="true"] :global([data-sheet-body]) {
   padding-bottom: calc(20px + var(--keyboard-height));
