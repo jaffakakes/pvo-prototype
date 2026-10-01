@@ -1,0 +1,378 @@
+@font-face {
+  font-family: "Peace Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../../fonts/peace-sans.woff2") format("woff2");
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #0b0b0f;
+}
+
+.launchSplashPending [data-launch-splash-hidden="true"] {
+  opacity: 0;
+}
+
+.launchSplash {
+  --launch-mark-size: 150px;
+  --launch-mark-height: 148.4px;
+  --launch-mark-half: 75px;
+  --launch-mark-top: -106.2px;
+  --launch-word-top: 66.2px;
+  --launch-word-size: 40px;
+  --launch-word-spacing: -0.8px;
+  --launch-left-lid-x: 44.68px;
+  --launch-left-lid-y: 57.68px;
+  --launch-left-lid-width: 31px;
+  --launch-left-lid-height: 36.93px;
+  --launch-right-lid-x: 77.96px;
+  --launch-right-lid-y: 56.99px;
+  --launch-right-lid-width: 34.2px;
+  --launch-right-lid-height: 39.21px;
+  --launch-eye-x: 50%;
+  --launch-eye-y: 50%;
+  --launch-shift-x: 0px;
+  --launch-shift-y: 0px;
+  --launch-scale: 48;
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  overflow: hidden;
+  background: transparent;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.launchSplash,
+.launchSplash * {
+  box-sizing: border-box;
+}
+
+.launchSplashGround,
+.launchSplashZoom {
+  position: absolute;
+  inset: 0;
+}
+
+.launchSplashGround {
+  z-index: 0;
+  background: #0b0b0f;
+}
+
+.launchSplashZoom {
+  z-index: 1;
+  transform-origin: var(--launch-eye-x) var(--launch-eye-y);
+}
+
+.launchSplashMarkIntro {
+  position: absolute;
+  left: calc(50% - var(--launch-mark-half));
+  top: calc(50% + var(--launch-mark-top));
+  width: var(--launch-mark-size);
+  height: var(--launch-mark-height);
+  animation: launchSplashPop 600ms ease-out both;
+}
+
+.launchSplashBob,
+.launchSplashArt {
+  position: absolute;
+  inset: 0;
+}
+
+.launchSplashBob {
+  animation: launchSplashBob 2100ms ease-in-out 600ms infinite both;
+}
+
+.launchSplashMark {
+  position: absolute;
+  inset: 0 auto auto 0;
+  display: block;
+  width: var(--launch-mark-size);
+  height: auto;
+  filter: invert(1);
+  pointer-events: none;
+}
+
+.launchSplashLid {
+  position: absolute;
+  border-radius: 50%;
+  background: #fff;
+  transform: scaleY(0);
+  transform-origin: 50% 0;
+  animation: launchSplashLid 2100ms linear 600ms infinite both;
+}
+
+.launchSplashLidLeft {
+  left: var(--launch-left-lid-x);
+  top: var(--launch-left-lid-y);
+  width: var(--launch-left-lid-width);
+  height: var(--launch-left-lid-height);
+}
+
+.launchSplashLidRight {
+  left: var(--launch-right-lid-x);
+  top: var(--launch-right-lid-y);
+  width: var(--launch-right-lid-width);
+  height: var(--launch-right-lid-height);
+}
+
+.launchSplashWord {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(50% + var(--launch-word-top));
+  color: #f2f0e9;
+  font: var(--launch-word-size) / 1 "Peace Sans", "Arial Black", sans-serif;
+  letter-spacing: var(--launch-word-spacing);
+  text-align: center;
+  animation: launchSplashWordIn 600ms ease-out both;
+}
+
+@keyframes launchSplashPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) rotate(-8deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.08) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes launchSplashWordIn {
+  0%,
+  40% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes launchSplashBob {
+  0% {
+    transform: translateY(0);
+  }
+  23.81% {
+    transform: translateY(-8px);
+  }
+  47.62% {
+    transform: translateY(0);
+  }
+  71.43% {
+    transform: translateY(-8px);
+  }
+  95.24%,
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes launchSplashLid {
+  0%,
+  28.57% {
+    transform: scaleY(0);
+  }
+  32.38% {
+    transform: scaleY(1);
+  }
+  37.14%,
+  66.67% {
+    transform: scaleY(0);
+  }
+  70.48% {
+    transform: scaleY(1);
+  }
+  75.24%,
+  100% {
+    transform: scaleY(0);
+  }
+}
+
+.launchSplash.is-revealing .launchSplashMarkIntro {
+  opacity: 1;
+  transform: scale(1) rotate(0);
+  animation: none;
+}
+
+.launchSplash.is-revealing .launchSplashBob {
+  transform: translateY(0);
+  animation: none;
+}
+
+.launchSplash.is-revealing .launchSplashLid {
+  transform: scaleY(0);
+  animation: none;
+}
+
+.launchSplash.is-revealing .launchSplashWord {
+  animation: launchSplashWordOut 200ms ease-out both;
+}
+
+.launchSplash.is-revealing .launchSplashGround {
+  animation: launchSplashGroundOut 800ms linear both;
+}
+
+.launchSplash.is-revealing .launchSplashZoom {
+  animation: launchSplashZoom 800ms linear both;
+}
+
+.launchSplash.is-revealing .launchSplashArt {
+  animation: launchSplashArtOut 800ms linear both;
+}
+
+#root.launchSplashRevealing {
+  will-change: clip-path;
+  animation: launchSplashAppClip 800ms linear both;
+}
+
+@keyframes launchSplashWordOut {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes launchSplashGroundOut {
+  0%,
+  12.5% {
+    opacity: 1;
+  }
+  25%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes launchSplashZoom {
+  0%,
+  25% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+    animation-timing-function: cubic-bezier(0.66, 0, 0.9, 0.36);
+  }
+  93.75% {
+    opacity: 1;
+    transform: translate(var(--launch-shift-x), var(--launch-shift-y)) scale(var(--launch-scale));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--launch-shift-x), var(--launch-shift-y)) scale(var(--launch-scale));
+  }
+}
+
+@keyframes launchSplashArtOut {
+  0%,
+  37.5% {
+    opacity: 1;
+  }
+  67.5%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes launchSplashAppClip {
+  0%,
+  25% {
+    clip-path: ellipse(
+      var(--launch-clip-radius-x) var(--launch-clip-radius-y)
+      at var(--launch-clip-x) var(--launch-clip-y)
+    );
+    animation-timing-function: cubic-bezier(0.66, 0, 0.9, 0.36);
+  }
+  93.75%,
+  100% {
+    clip-path: ellipse(
+      var(--launch-clip-end-x) var(--launch-clip-end-y)
+      at var(--launch-clip-centre-x) var(--launch-clip-centre-y)
+    );
+  }
+}
+
+html[data-reduce-motion="true"] .launchSplashMarkIntro,
+html[data-reduce-motion="true"] .launchSplashBob,
+html[data-reduce-motion="true"] .launchSplashLid,
+html[data-reduce-motion="true"] .launchSplashWord,
+.launchSplash[data-reduce-motion="true"] .launchSplashMarkIntro,
+.launchSplash[data-reduce-motion="true"] .launchSplashBob,
+.launchSplash[data-reduce-motion="true"] .launchSplashLid,
+.launchSplash[data-reduce-motion="true"] .launchSplashWord {
+  animation: none;
+}
+
+html[data-reduce-motion="true"] .launchSplashMarkIntro,
+html[data-reduce-motion="true"] .launchSplashWord,
+.launchSplash[data-reduce-motion="true"] .launchSplashMarkIntro,
+.launchSplash[data-reduce-motion="true"] .launchSplashWord {
+  opacity: 1;
+  transform: none;
+}
+
+html[data-reduce-motion="true"] .launchSplashBob,
+.launchSplash[data-reduce-motion="true"] .launchSplashBob {
+  transform: translateY(0);
+}
+
+html[data-reduce-motion="true"] .launchSplashLid,
+.launchSplash[data-reduce-motion="true"] .launchSplashLid {
+  transform: scaleY(0);
+}
+
+@media (min-width: 1024px) and (orientation: landscape) {
+  .launchSplash {
+    --launch-mark-size: 200px;
+    --launch-mark-height: 198px;
+    --launch-mark-half: 100px;
+    --launch-mark-top: -137px;
+    --launch-word-top: 87px;
+    --launch-word-size: 50px;
+    --launch-word-spacing: -1px;
+    --launch-left-lid-x: 59.57px;
+    --launch-left-lid-y: 76.9px;
+    --launch-left-lid-width: 41.34px;
+    --launch-left-lid-height: 49.24px;
+    --launch-right-lid-x: 103.95px;
+    --launch-right-lid-y: 75.99px;
+    --launch-right-lid-width: 45.59px;
+    --launch-right-lid-height: 52.28px;
+    --launch-scale: 64;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .launchSplashMarkIntro,
+  .launchSplashBob,
+  .launchSplashLid,
+  .launchSplashWord {
+    animation: none;
+  }
+
+  .launchSplashMarkIntro,
+  .launchSplashWord {
+    opacity: 1;
+    transform: none;
+  }
+
+  .launchSplashBob {
+    transform: translateY(0);
+  }
+
+  .launchSplashLid {
+    transform: scaleY(0);
+  }
+}
