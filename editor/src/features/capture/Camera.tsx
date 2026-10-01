@@ -165,11 +165,11 @@ export function Camera() {
                 role={cameraPending ? "status" : undefined}
                 aria-live={cameraPending ? "polite" : undefined}
               >
-                <span className={cx("fallbackIco")}>
+                <span className={cx("fallbackIco")} data-launch-splash-hidden="true">
                   <Icon name="camera" size={30} />
                 </span>
-                <h2>{fallbackTitle}</h2>
-                <p>
+                <h2 data-launch-splash-hidden="true">{fallbackTitle}</h2>
+                <p data-launch-splash-hidden="true">
                   {cameraPending
                     ? "Getting your camera ready."
                     : "Allow access to record, or tap the shutter to make demo clips."}
@@ -177,6 +177,7 @@ export function Camera() {
                 {!cameraPending && (
                   <button
                     className={cx("press")}
+                    data-launch-splash-hidden="true"
                     onClick={() => {
                       void startCam();
                     }}
