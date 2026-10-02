@@ -11,14 +11,14 @@ export function useOutsideSelection(workspace: RefObject<HTMLDivElement>, onDism
     const app = workspace.current?.closest(".app");
     if (!app) return;
     const document = app.ownerDocument;
-    let tap: { id: number; x: number; y: number } | null = null;
+    let tap: { id: number; x: number; y: number; dismiss(): void } | null = null;
     const cancel = () => { tap = null; };
     const down = (event: PointerEvent) => {
       const target = event.target;
       if (!event.isPrimary || event.button !== 0 || !(target instanceof Element)
         || !app.contains(target)) { cancel(); return; }
       tap = target.closest(controls) ? null
-        : { id: event.pointerId, x: event.clientX, y: event.clientY };
+        : { id: event.pointerId, x: event.clientX, y: event.clientY, dismiss: dismiss.current };
     };
     const move = (event: PointerEvent) => {
       if (tap && Math.hypot(event.clientX - tap.x, event.clientY - tap.y) > tapTolerance) cancel();
@@ -26,7 +26,8 @@ export function useOutsideSelection(workspace: RefObject<HTMLDivElement>, onDism
     const up = (event: PointerEvent) => {
       const start = tap;
       cancel();
-      if (start?.id === event.pointerId && Math.hypot(event.clientX - start.x, event.clientY - start.y) <= tapTolerance) dismiss.current();
+      // A surface may close on pointerdown; retain the interaction context that began this tap.
+      if (start?.id === event.pointerId && Math.hypot(event.clientX - start.x, event.clientY - start.y) <= tapTolerance) start.dismiss();
     };
     document.addEventListener("pointerdown", down, true);
     document.addEventListener("pointermove", move, true);

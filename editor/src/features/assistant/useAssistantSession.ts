@@ -14,6 +14,11 @@ import { keepAssistantReview } from "../../state/assistant/assistantCommands";
 import { useEditorPreferences } from "../../state/preferences/editorPreferences";
 import { clearNotificationScope, notify, type NotificationId } from "../../state/notifications/notificationStore";
 import type { VoiceFailure } from "./voice/browserRecognition";
+import { dismissAssistantThread } from "../../state/assistant/threadCommands";
+import {
+  applyAssistantExchange, finishAssistantExchange, proposeAssistantExchange, refineAssistantExchange,
+  setAssistantThreadDraft, setAssistantThreadOpen, startAssistantExchange, useAssistantThread,
+} from "../../state/assistant/threadStore";
 
 const service = createAssistantService();
 const voiceNotifications: Record<VoiceFailure["reason"], NotificationId> = {
@@ -29,23 +34,19 @@ export function useAssistantSession({ inspectorVisible = false }: { inspectorVis
   const sheetAllowsAssistant = (sheet: typeof capture.sheet) => !sheet || (inspectorVisible && sheet === "component");
   const available = !capture.tryMode && sheetAllowsAssistant(capture.sheet) && !capture.playheadPick;
   const request = useRef<AbortController | null>(null);
+  const exchange = useRef<string | null>(null);
   const operationCount = useRef(0);
   const voiceOrigin = useRef<"idle" | "typing">("idle");
-  const playback = useRef<{ sceneId: string; playing: boolean } | null>(null);
-  const targetKey = `${capture.currentSceneId}:${target?.id ?? ""}`;
+  const targetKey = `${capture.localId}:${capture.currentSceneId}:${target?.id ?? ""}`;
   const notificationScope = `assistant:${targetKey}`;
 
   const pausePlayback = () => {
     const current = useCapture.getState();
-    if (!playback.current) playback.current = { sceneId: current.currentSceneId, playing: current.playing };
     current.patch({ playing: false, orb: false, ratioMenu: false });
   };
-  const restorePlayback = () => {
-    const previous = playback.current;
-    playback.current = null;
-    const current = useCapture.getState();
-    if (previous?.playing && current.currentSceneId === previous.sceneId && current.screen === "editor"
-      && !current.tryMode && sheetAllowsAssistant(current.sheet) && !current.playheadPick) current.patch({ playing: true });
+  const cancelExchange = () => {
+    if (exchange.current) finishAssistantExchange(exchange.current, "cancelled", "No change kept.");
+    exchange.current = null;
   };
 
   useEffect(() => {
@@ -54,7 +55,8 @@ export function useAssistantSession({ inspectorVisible = false }: { inspectorVis
     return () => {
       request.current?.abort();
       clearNotificationScope(notificationScope);
-      restorePlayback();
+      cancelExchange();
+      setAssistantThreadOpen(false);
       resetAssistant();
     };
   }, [notificationScope, available]);
@@ -70,32 +72,36 @@ export function useAssistantSession({ inspectorVisible = false }: { inspectorVis
       request.current?.abort();
       const draft = state.phase === "working" ? `${assistantReviewRequest(state.review)}; ${state.draft}` : assistantReviewRequest(state.review);
       useAssistant.setState({ phase: "typing", draft, review: null, before: false });
+      cancelExchange();
+      setAssistantThreadDraft(draft);
+      setAssistantThreadOpen(true);
       report(assistantFailureNotification(error), "mode", "The pending proposal requires Advanced editing.");
     }
   }, [advanced, state.review]);
   const stillAvailable = (sceneId: string, componentId: string) => {
     const latest = useCapture.getState();
-    return latest.currentSceneId === sceneId && latest.selComp === componentId
+    return latest.localId === capture.localId && latest.currentSceneId === sceneId && latest.selComp === componentId
       && !latest.tryMode && sheetAllowsAssistant(latest.sheet) && !latest.playheadPick;
   };
   const stale = (operation: string) => {
+    cancelExchange();
+    setAssistantThreadDraft(useAssistant.getState().draft);
     useAssistant.setState({ phase: "typing", review: null, before: false });
+    setAssistantThreadOpen(true);
     report("assistantStale", operation, "The selected component changed before the proposal could be applied.");
   };
   const open = () => {
-    if (!available) return;
-    if (!target) { report("assistantNoTarget", "open", "Select a component before opening the assistant."); return; }
+    if (!available || useAssistant.getState().phase === "review") return;
     pausePlayback();
+    setAssistantThreadOpen(true);
+    if (useAssistant.getState().phase === "working") return;
     clearNotificationScope(notificationScope);
-    useAssistant.setState({ phase: "typing", failureDetail: null, transcript: "" });
+    useAssistant.setState({ phase: "typing", draft: useAssistantThread.getState().draft, failureDetail: null, transcript: "" });
   };
   const close = () => {
     const current = useAssistant.getState();
-    if (current.phase === "working" || current.phase === "review") return;
-    request.current?.abort();
-    clearNotificationScope(notificationScope);
-    useAssistant.setState({ phase: "idle", transcript: "", failureDetail: null, before: false });
-    restorePlayback();
+    if (current.phase !== "working" && current.phase !== "review") request.current?.abort();
+    dismissAssistantThread();
   };
   const submit = async (words: string) => {
     const prompt = words.trim();
@@ -113,6 +119,12 @@ export function useAssistantSession({ inspectorVisible = false }: { inspectorVis
     const sceneId = current.currentSceneId;
     const originalRequest = prior.review?.request ?? prompt;
     const tags = prior.review ? [...prior.review.tags, prompt] : [];
+    if (prior.review && exchange.current) refineAssistantExchange(exchange.current, [originalRequest, ...tags].join("; "));
+    else exchange.current = startAssistantExchange({ request: prompt, at: current.t,
+      target: { sceneId, componentId: selected.id } });
+    const exchangeId = exchange.current;
+    setAssistantThreadDraft("");
+    setAssistantThreadOpen(true);
     pausePlayback();
     clearNotificationScope(notificationScope);
     useAssistant.setState({ phase: "working", draft: prompt, transcript: "", failureDetail: null, before: false });
@@ -133,9 +145,20 @@ export function useAssistantSession({ inspectorVisible = false }: { inspectorVis
       });
       const review = createAssistantReview(original, proposal, originalRequest, tags, prior.review?.skipped);
       validateAssistantEditingMode(review, useEditorPreferences.getState().advancedEditingEnabled);
+      proposeAssistantExchange(exchangeId, review);
+      setAssistantThreadOpen(false);
       useAssistant.setState({ phase: "review", review, draft: assistantReviewRequest(review) });
     } catch (error) {
       if (controller.signal.aborted || !stillAvailable(sceneId, original.id)) return;
+      if (prior.review) {
+        proposeAssistantExchange(exchangeId, prior.review);
+        setAssistantThreadOpen(false);
+      } else {
+        finishAssistantExchange(exchangeId, "failed", "No change made.");
+        exchange.current = null;
+        setAssistantThreadDraft(prompt);
+        setAssistantThreadOpen(true);
+      }
       useAssistant.setState({ phase: prior.review ? "review" : "typing",
         draft: prior.review ? assistantReviewRequest(prior.review) : prompt });
       report(assistantFailureNotification(error),
@@ -152,8 +175,10 @@ export function useAssistantSession({ inspectorVisible = false }: { inspectorVis
         stale("keep"); return;
       }
       clearNotificationScope(notificationScope);
+      if (exchange.current) applyAssistantExchange(exchange.current, review);
+      exchange.current = null;
+      setAssistantThreadDraft("");
       resetAssistant();
-      restorePlayback();
     } catch (error) {
       report(assistantFailureNotification(error), "keep", error instanceof Error ? error.message : "The PVO change could not be saved.");
     }
@@ -162,6 +187,9 @@ export function useAssistantSession({ inspectorVisible = false }: { inspectorVis
     const review = useAssistant.getState().review;
     if (!review || useAssistant.getState().phase === "working") return;
     clearNotificationScope(notificationScope);
+    cancelExchange();
+    setAssistantThreadDraft(assistantReviewRequest(review));
+    setAssistantThreadOpen(true);
     useAssistant.setState({ phase: "typing", draft: assistantReviewRequest(review), review: null,
       before: false, failureDetail: null, transcript: "" });
   };
@@ -171,18 +199,18 @@ export function useAssistantSession({ inspectorVisible = false }: { inspectorVis
       if (target && stillAvailable(capture.currentSceneId, target.id))
         report(voiceNotifications[failure.reason], "voice", failure.detail);
     },
-    setDraft: (draft: string) => useAssistant.setState({ draft }),
+    setDraft: (draft: string) => { useAssistant.setState({ draft }); setAssistantThreadDraft(draft); },
     listen: (transcript: string) => {
       const phase = useAssistant.getState().phase;
       if (phase === "idle" || phase === "typing") voiceOrigin.current = phase;
       pausePlayback();
+      setAssistantThreadOpen(true);
       clearNotificationScope(notificationScope);
       useAssistant.setState({ phase: "listening", transcript, failureDetail: null });
     },
     cancelVoice: () => {
       if (useAssistant.getState().phase !== "listening") return;
-      useAssistant.setState({ phase: voiceOrigin.current, transcript: "" });
-      if (voiceOrigin.current === "idle") restorePlayback();
+      useAssistant.setState({ phase: useAssistantThread.getState().open ? "typing" : voiceOrigin.current, transcript: "" });
     },
     undo: editRequest,
     showBefore: (before: boolean) => useAssistant.setState({ before }),

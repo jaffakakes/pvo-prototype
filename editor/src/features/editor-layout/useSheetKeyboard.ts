@@ -25,7 +25,7 @@ export function useSheetKeyboard(workspaceRef: RefObject<HTMLDivElement>, enable
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         const focused = document.activeElement;
-        const hasField = textEntry(focused) && !!focused.closest("[data-sheet-body]");
+        const hasField = textEntry(focused) && !!focused.closest("[data-sheet-body], [data-thread-compose]");
         if (!hasField) viewportBaseline = window.innerHeight;
         const obscured = Math.max(0, viewportBaseline - viewport.height - viewport.offsetTop);
         const next = hasField && obscured > 100 ? obscured : 0;

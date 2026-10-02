@@ -6,7 +6,7 @@ import { useCapture } from "../captureStore";
 import { useEditorPreferences } from "../preferences/editorPreferences";
 import { validateAssistantEditingMode } from "../../domain/assistant/editingMode";
 
-/** The only assistant operation that writes the project or its history. */
+/** Commits an unkept proposal through normal component history. */
 export function keepAssistantReview(review: AssistantReview): boolean {
   const current = useCapture.getState();
   if (current.currentSceneId !== review.original.sceneId || current.selComp !== review.original.id

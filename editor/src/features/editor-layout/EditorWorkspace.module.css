@@ -1,4 +1,5 @@
 .workspace {
+  --thread-handle-height: 26px;
   position: relative;
   flex: 1;
   min-height: 0;
@@ -30,12 +31,28 @@
 .preview :global(.pvBox) { transition: none; }
 .playback { min-height: 0; }
 .dock { position: relative; min-height: 0; }
+.threadHandle {
+  position: absolute;
+  z-index: 46;
+  left: 0;
+  right: 84px;
+  bottom: calc(var(--dock-height) - var(--thread-handle-height));
+  height: var(--thread-handle-height);
+  pointer-events: auto;
+}
+.threadHandle .resizeHandle { align-items: flex-start; padding: 10px 0 0 84px; }
+.threadHandle .resizeHandle span { width: 46px; height: 6px; background: rgba(255, 255, 255, .22); }
 .workspace[data-trying="true"][data-debug-open="false"] .dock { visibility: hidden; overflow: hidden; pointer-events: none; }
 .workspace[data-keyboard-open="true"] :global([data-component-tabs]) { display: none; }
 .workspace[data-keyboard-open="true"] :global([data-sheet-body]) {
   padding-bottom: calc(20px + var(--keyboard-height));
   scroll-padding: 12px 0 24px;
 }
+.workspace[data-thread-open="true"][data-thread-compact="true"] :global([data-thread-header]) { padding: 0 14px; }
+.workspace[data-thread-open="true"][data-thread-compact="true"] :global([data-thread-header]) h2 { font-size: 18px; }
+.workspace[data-thread-open="true"][data-thread-compact="true"] :global([data-thread-session-note]),
+.workspace[data-thread-open="true"][data-thread-compact="true"] :global([data-thread-compose-hint]) { display: none; }
+.workspace[data-thread-open="true"][data-thread-compact="true"] :global([data-thread-compose]) { padding: 6px 14px; }
 
 .timelinePane, .sheetPane {
   position: absolute;
@@ -123,6 +140,7 @@
 :global(.app[data-reduce-motion="true"]) .resizeHandle span { transition: none; }
 
 @media (pointer: coarse) {
+  .workspace { --thread-handle-height: 44px; }
   .resizeHandle { height: 44px; flex-basis: 44px; }
 }
 

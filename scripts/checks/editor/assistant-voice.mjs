@@ -128,7 +128,7 @@ try {
   for (let step = 0; step < 8; step++) {
     await page.keyboard.press("Tab");
     const focused = await page.evaluate(() => ({
-      allowed: !!document.activeElement?.closest("[data-assistant-region], [data-notification-root]"),
+      allowed: !!document.activeElement?.closest("[data-assistant-region], [data-thread-resize], [data-notification-root]"),
       label: document.activeElement?.getAttribute("aria-label"),
     }));
     assert(focused.allowed, "Tab must not enter the inert editor behind the assistant");
@@ -146,7 +146,7 @@ try {
   await page.waitForFunction(() => voiceFixture.starts === 2);
   await phase("listening");
   await page.evaluate(() => voiceFixture.current.result("make it", false));
-  await assistant.getByText("make it", { exact: true }).waitFor();
+  await page.waitForFunction(() => document.querySelector('[aria-label="Describe a change"]')?.value === "make it");
   assert.equal(await page.evaluate(() => voiceFixture.stops), 1);
   await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
   await page.waitForFunction(() => voiceFixture.stops === 2);
@@ -231,8 +231,8 @@ try {
     "Opening the assistant must pause playback");
   await page.keyboard.press("Escape");
   await phase("idle");
-  assert.equal(await page.evaluate(async () => (await import("/src/store.ts")).useCapture.getState().playing), true,
-    "Closing the assistant must restore its previous playback state");
+  assert.equal(await page.evaluate(async () => (await import("/src/store.ts")).useCapture.getState().playing), false,
+    "Closing the thread leaves playback paused");
   await orb.click();
   await phase("typing");
   await field.fill("Bolder");
@@ -240,11 +240,11 @@ try {
   await phase("review");
   await page.getByRole("region", { name: "Review assistant change" }).getByRole("button", { name: "Keep", exact: true }).click();
   await phase("idle");
-  assert.equal(await page.evaluate(async () => (await import("/src/store.ts")).useCapture.getState().playing), true,
-    "Keeping a proposal must restore its previous playback state");
+  assert.equal(await page.evaluate(async () => (await import("/src/store.ts")).useCapture.getState().playing), false,
+    "Keeping a proposal leaves playback paused");
   await page.evaluate(async () => (await import("/src/store.ts")).useCapture.getState().patch({ playing: false }));
   assert.deepEqual(errors, []);
-  console.log("Assistant voice checks passed: 320ms tap/hold vocabulary, two-word minimum, speech lifecycle, typed notifications, preserved drafts, keyboard dismissal, playback restoration and scope cleanup.");
+  console.log("Assistant voice checks passed: 320ms tap/hold vocabulary, two-word minimum, speech lifecycle, typed notifications, preserved drafts, keyboard dismissal, paused playback and scope cleanup.");
 } catch (error) {
   console.error(error.stack);
   console.error(await page.evaluate(async () => {
