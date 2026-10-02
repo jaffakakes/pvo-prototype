@@ -34,7 +34,19 @@ async function run(viewport) {
   const context = await browser.newContext({ viewport, hasTouch: !desktop, reducedMotion: "reduce" });
   const pending = [];
   const verificationRequests = [];
+  let editingAvailable = true;
+  let providerRequests = 0;
+  await context.route("**/api/assistant/status", route => editingAvailable === null
+    ? route.fulfill({ json: { available: true } })
+    : route.fulfill({ json: {
+      provider: "open-source", available: editingAvailable, model: "fixture",
+      capabilities: { editing: editingAvailable, frames: editingAvailable, transcription: editingAvailable,
+        wordTiming: editingAvailable, objectTracking: editingAvailable },
+      chatgpt: { available: false, reason: "hosted_access_required", message: "Fixture",
+        documentationUrl: "https://developers.openai.com/siwc/token-sharing-open-source" },
+    } }));
   await context.route("**/api/assistant/turn", async route => {
+    providerRequests += 1;
     const request = parseNativeTurnRequest(route.request().postDataJSON());
     if (await finishAssistantVerification(route, request)) {
       verificationRequests.push(request);
@@ -127,6 +139,27 @@ async function run(viewport) {
     }
     await noOverflow();
     await screenshot("typing");
+
+    if (viewport.width === 1024) {
+      editingAvailable = false;
+      await field.fill("Do not send this request");
+      await page.getByRole("button", { name: "Send request", exact: true }).click();
+      const unavailable = page.locator('[data-notification-id="assistantUnavailable"]');
+      await unavailable.waitFor();
+      await phase("typing").waitFor();
+      assert.equal(providerRequests, 0, "An unavailable editing capability blocks the provider turn");
+      assert.equal(await field.inputValue(), "Do not send this request", "Capability preflight preserves the request for retry");
+      await unavailable.getByRole("button", { name: "Dismiss notification", exact: true }).click();
+      editingAvailable = null;
+      await field.fill("Do not send after malformed status");
+      await page.getByRole("button", { name: "Send request", exact: true }).click();
+      await unavailable.waitFor();
+      await phase("typing").waitFor();
+      assert.equal(providerRequests, 0, "A malformed status response also blocks the provider turn");
+      assert.equal(await field.inputValue(), "Do not send after malformed status");
+      editingAvailable = true;
+      await unavailable.getByRole("button", { name: "Dismiss notification", exact: true }).click();
+    }
 
     const composerBeforeRequest = await page.locator("[data-assistant-composer]").boundingBox();
     const releaseAnswer = queue({ message: answerText, operations: [], observations: [] });

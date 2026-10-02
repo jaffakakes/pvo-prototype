@@ -3,7 +3,7 @@ import { compilePvoComponent } from "../../../../packages/pvo-language/index.js"
 import { prepareNativeBatch, validateNativeBatchEditingMode, validateNativeBatchEffects } from "../../domain/assistant/native/batch";
 import { nativeProjectFingerprint } from "../../domain/assistant/native/context";
 import { assistantFailureNotification, AssistantServiceError } from "../../domain/assistant/failure";
-import { requestNativeTurn } from "../../infrastructure/assistant/nativeTransport";
+import { readNativeAvailability, requestNativeTurn } from "../../infrastructure/assistant/nativeTransport";
 import { runNativeTask } from "../../infrastructure/assistant/runNativeTask";
 import { assistantFailureReason, createAssistantTrace } from "../../infrastructure/assistant/taskDiagnostics";
 import { inspectAssistantFrames } from "../../infrastructure/assistant/media/frames";
@@ -95,7 +95,7 @@ export function useAssistantSession({ inspectorVisible = false }: { inspectorVis
   const submit = async (words: string) => {
     const prompt = words.trim();
     const prior = useAssistant.getState();
-    if (!prompt || !available || prior.phase === "working") return;
+    if (!prompt || !available || prior.phase === "working" || request.current) return;
     const live = useCapture.getState();
     const original = projectSnapshot(live);
     const originalFingerprint = nativeProjectFingerprint(original);
@@ -107,17 +107,23 @@ export function useAssistantSession({ inspectorVisible = false }: { inspectorVis
         throw new Error("The project changed while the assistant was working. Please ask again.");
     };
     try { assertCurrent(); } catch (error) { report(error, "request"); return; }
-    request.current?.abort();
     const pending = new AbortController();
     request.current = pending;
-    pause();
-    useAssistant.setState({ phase: "working", draft: prompt, transcript: "", progress: "", failureDetail: null });
-    clearNotificationScope("assistant");
     let message = "";
     const observations: string[] = [];
     const trace = createAssistantTrace();
     let applying = false;
     try {
+      let availability;
+      try { availability = await readNativeAvailability(pending.signal); }
+      catch {
+        pending.signal.throwIfAborted();
+        throw new AssistantServiceError(503);
+      }
+      if (!availability.available || !availability.capabilities.editing) throw new AssistantServiceError(503);
+      pause();
+      useAssistant.setState({ phase: "working", draft: prompt, transcript: "", progress: "", failureDetail: null });
+      clearNotificationScope("assistant");
       const result = await runNativeTask({ prompt, mode: "plan", history: prior.history, evidence: prior.evidence }, {
         trace,
         snapshot: () => original,

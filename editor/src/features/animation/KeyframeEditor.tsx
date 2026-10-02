@@ -49,7 +49,8 @@ export function KeyframeEditor({ target, groups }: { target: AnimationTarget; gr
     </section>
     <section className={styles.section} aria-label="Animation details">
       <header className={styles.heading}><h3>Animation</h3><span>{count} keyframes</span></header>
-      {!volumeOnly && following.tracking && <TrackingDetails target={target} tracking={following.tracking} disabled={blocked || following.phase !== "idle"} onRetrack={following.retrack} perform={perform} />}
+      {!volumeOnly && following.tracking && <TrackingDetails target={target} tracking={following.tracking} disabled={blocked || following.phase !== "idle"}
+        retrackDisabled={!following.available} onRetrack={following.retrack} perform={perform} />}
       {picked ? <div className={styles.card} data-selected-key-card>
         <div className={styles.cardHead}><i className={styles.diamond} /><strong>{GROUP_LABELS[picked.group]} · {formatKeyTime(picked.time - layer.start)}</strong>
           <span>{formatKeyValue(picked.group, picked.value)}</span>
@@ -59,7 +60,7 @@ export function KeyframeEditor({ target, groups }: { target: AnimationTarget; gr
         <p>To the next keyframe</p>
         <EasingChips value={picked.easing} compact disabled={blocked} onChange={easing => perform(() => setAuthoringEasing(target, picked.group, picked.time, easing))} />
       </div> : <p className={styles.note}>{outside ? "Move the playhead into this layer to animate it." : "Click a ◆ on the timeline to edit it. Move the playhead and drag the layer (or a slider) to add one there."}</p>}
-      {!volumeOnly && !following.tracking && following.phase === "idle" && <button type="button" className={styles.follow} disabled={blocked} onClick={() => void following.pick()}>✦ Follow something on the video…</button>}
+      {!volumeOnly && following.available && !following.tracking && following.phase === "idle" && <button type="button" className={styles.follow} disabled={blocked} onClick={() => void following.pick()}>✦ Follow something on the video…</button>}
       {following.phase !== "idle" && <p className={styles.note} role="status">{following.phase === "frame" ? "Reading the video…" : "Tracking the selected object…"} <button className={styles.follow} type="button" onClick={following.cancel}>Cancel</button></p>}
       {following.error && <p className={styles.error} role="alert">{following.error}</p>}
       {following.frame && <TrackingPointPicker frame={following.frame} onPick={following.choose} onCancel={following.cancel} />}

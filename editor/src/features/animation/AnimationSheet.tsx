@@ -47,13 +47,14 @@ function AnimateLayer({ target, close }: { target: AnimationTarget; close(): voi
     <header className={styles.header}>
       <span className={styles.icon}><Icon name="keyframe" size={20} /></span>
       <div className={styles.title}><h2>Animate</h2><p>{label} · {kind} · {following.tracking ? `following ${following.tracking.label}` : `${formatKeyTime(layer.start).replace(/\.0$/, "")}–${formatKeyTime(layer.end).replace(/\.0$/, "")}`}</p></div>
-      {!layer.audio && !following.tracking && <button className={styles.follow} type="button" disabled={blocked || following.phase !== "idle"} onClick={() => void following.pick()}>✦ Follow…</button>}
+      {!layer.audio && following.available && !following.tracking && <button className={styles.follow} type="button" disabled={blocked || following.phase !== "idle"} onClick={() => void following.pick()}>✦ Follow…</button>}
       <button className={styles.close} type="button" onClick={close} aria-label="Close Animate"><Icon name="close" size={17} /></button>
     </header>
     <div className={styles.body} data-sheet-body>
       <AnimationRibbon target={target} />
       <div className={styles.keyRow}>
-        {following.tracking ? <TrackingDetails target={target} tracking={following.tracking} compact disabled={blocked || following.phase !== "idle"} onRetrack={following.retrack} perform={perform} /> : <>
+        {following.tracking ? <TrackingDetails target={target} tracking={following.tracking} compact disabled={blocked || following.phase !== "idle"}
+          retrackDisabled={!following.available} onRetrack={following.retrack} perform={perform} /> : <>
         <div className={styles.keyDescription}><strong>{atPlayhead.length ? "◆ " : ""}{formatKeyTime(localTime)}</strong>
           <span>{atPlayhead.length ? layer.audio ? formatKeyValue("volume", volume!.value) : atPlayhead.map(row => GROUP_LABELS[row.group]).join(" · ")
             : layer.audio ? `between keyframes · volume ${formatKeyValue("volume", volume!.value)}` : "no keyframe here · drag the layer or a control to add one"}</span></div>

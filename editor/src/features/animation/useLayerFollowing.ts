@@ -4,6 +4,7 @@ import type { AnimationTarget } from "../../domain/animation/model";
 import { getLayerTracking, type TrackingStep } from "../../domain/animation/trackingMetadata";
 import { defaultTrackingRange, validateTrackingRange, type TrackingRange } from "../../domain/animation/trackingRange";
 import { nativeProjectFingerprint } from "../../domain/assistant/native/context";
+import { readNativeAvailability } from "../../infrastructure/assistant/nativeTransport";
 import { captureTrackingFrame } from "../../infrastructure/assistant/media/trackingFrames";
 import { trackAssistantObject } from "../../infrastructure/assistant/media/objectTracking";
 import { useCapture } from "../../state/captureStore";
@@ -21,10 +22,24 @@ export function useLayerFollowing(target: AnimationTarget) {
   const scene = useCapture(state => state.scenes.find(item => item.id === state.currentSceneId));
   const tracking = scene ? getLayerTracking(scene, target) : null;
   const job = useRef<AbortController | null>(null);
+  const trackingAvailable = useRef(false);
+  const [available, setAvailable] = useState(false);
   const [frame, setFrame] = useState<PickFrame | null>(null);
   const [phase, setPhase] = useState<"idle" | "frame" | "tracking">("idle");
   const [error, setError] = useState<string | null>(null);
-  useEffect(() => () => job.current?.abort(), []);
+  useEffect(() => {
+    const controller = new AbortController();
+    void readNativeAvailability(controller.signal).then(status => {
+      const enabled = status.available && status.capabilities.objectTracking;
+      trackingAvailable.current = enabled;
+      setAvailable(enabled);
+    }).catch(() => {
+      if (controller.signal.aborted) return;
+      trackingAvailable.current = false;
+      setAvailable(false);
+    });
+    return () => { controller.abort(); job.current?.abort(); };
+  }, []);
   const prepare = (range?: TrackingRange): Prepared => {
     if (!visualTarget) throw new Error("Choose a visual layer to follow an object.");
     const state = useCapture.getState();
@@ -38,7 +53,7 @@ export function useLayerFollowing(target: AnimationTarget) {
   };
   const cancel = () => { job.current?.abort(); job.current = null; setFrame(null); setPhase("idle"); };
   const pick = async () => {
-    if (job.current) return;
+    if (job.current || !trackingAvailable.current) return;
     const controller = new AbortController(); job.current = controller;
     setPhase("frame"); setError(null);
     try {
@@ -54,7 +69,7 @@ export function useLayerFollowing(target: AnimationTarget) {
     finally { if (job.current === controller) { job.current = null; setPhase("idle"); } }
   };
   const run = async (prepared: Prepared, requestTarget: NativeTrackingTarget, step: TrackingStep) => {
-    if (job.current || !visualTarget) return;
+    if (job.current || !visualTarget || !trackingAvailable.current) return;
     const controller = new AbortController(); job.current = controller;
     setFrame(null); setPhase("tracking"); setError(null);
     try {
@@ -74,10 +89,10 @@ export function useLayerFollowing(target: AnimationTarget) {
     } catch (failure) { if (!controller.signal.aborted) setError(failure instanceof Error ? failure.message : "Object tracking could not complete."); }
     finally { if (job.current === controller) { job.current = null; setPhase("idle"); } }
   };
-  return { tracking, frame, phase, error, pick, cancel,
+  return { tracking, available, frame, phase, error, pick, cancel,
     choose: (point: { x: number; y: number }) => { if (frame) void run(frame.prepared, { kind: "point", ...point }, 1); },
     retrack: () => {
-      if (!tracking) return;
+      if (!tracking || !trackingAvailable.current) return;
       try { void run(prepare(tracking.observation), tracking.requestTarget, tracking.step); }
       catch (failure) { setError(failure instanceof Error ? failure.message : "The track could not be refreshed."); }
     },

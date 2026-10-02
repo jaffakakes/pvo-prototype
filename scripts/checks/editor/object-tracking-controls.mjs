@@ -8,14 +8,17 @@ const video = await readFile(new URL("../../../share/assets/preview.mp4", import
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 960 }, serviceWorkers: "block" });
 const errors = [], requests = [];
-let pending = null, hold = false, available = true;
+let pending = null, hold = false, available = true, statusRequests = 0;
 page.on("pageerror", error => errors.push(error.message));
 page.setDefaultTimeout(15000);
 await page.route("**/tracking-fixture.mp4", route => route.fulfill({ body: video, contentType: "video/mp4" }));
-await page.route("**/api/assistant/status", route => route.fulfill({ json: {
+await page.route("**/api/assistant/status", route => {
+  statusRequests += 1;
+  return route.fulfill({ json: {
   provider: "open-source", available: true, model: "fixture", capabilities: { editing: true, frames: true, transcription: true, wordTiming: true, objectTracking: available },
   chatgpt: { available: false, reason: "hosted_access_required", message: "Fixture", documentationUrl: "https://developers.openai.com/siwc/token-sharing-open-source" },
-} }));
+} });
+});
 const reply = async (route, request) => route.fulfill({ json: { model: "sam3.1", width: request.width, height: request.height,
   frames: request.frames.map(frame => ({ time: frame.time, visible: true, x: .3 + .2 * (frame.time - request.start) / (request.end - request.start),
     y: .5, width: .2, height: .2, score: .9 })),
@@ -30,6 +33,11 @@ const waitPending = async () => {
   assert(pending, "The captured request reached the tracking endpoint");
 };
 const release = async () => { const response = pending; pending = null; await reply(response.route, response.request); };
+const waitStatusRequest = async previous => {
+  const deadline = Date.now() + 15000;
+  while (statusRequests <= previous && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 20));
+  assert(statusRequests > previous, "The remounted tracking controls checked current service capabilities");
+};
 const controls = () => page.locator("[data-keyframe-editor]").filter({ visible: true });
 const applied = () => page.evaluate(() => window.trackingControls.useCapture.getState().texts[0].animation);
 const history = () => page.evaluate(() => window.trackingControls.useCapture.getState().past.length);
@@ -109,12 +117,24 @@ try {
   const beforeUnmount = await history();
   hold = true;
   await page.getByRole("button", { name: "Re-track object", exact: true }).click(); await waitPending();
+  available = false;
+  const beforeUnavailableCheck = statusRequests;
   await page.evaluate(() => window.trackingControls.useCapture.getState().patch({ selText: null, sel: 0 }));
+  await waitStatusRequest(beforeUnavailableCheck);
   await release();
   assert.equal(await history(), beforeUnmount, "Switching selection cancels the owned job");
   assert.equal(await page.evaluate(() => window.trackingControls.useCapture.getState().clips[0].animation), undefined);
+  assert.equal(await page.getByRole("button", { name: "✦ Follow…", exact: true }).count(), 0,
+    "Follow stays hidden when status reports object tracking unavailable");
+  const beforeTrackedUnavailableCheck = statusRequests;
+  await page.evaluate(() => window.trackingControls.useCapture.getState().patch({ selText: 7, sel: -1 }));
+  await waitStatusRequest(beforeTrackedUnavailableCheck);
+  assert.equal(await page.getByRole("button", { name: "Re-track object", exact: true }).isDisabled(), true,
+    "Existing tracks cannot start a guaranteed-fail provider request");
+  assert.equal(await page.getByRole("button", { name: "A key every 0.5 seconds", exact: true }).isEnabled(), true,
+    "Local tracking edits remain available without the provider capability");
   assert.deepEqual(errors, []);
   console.log(JSON.stringify({ passed: true, requests: requests.length, actualFrames: requests[0].frames.length,
-    checks: ["desktop point picking", "real JPEG extraction", "readable key density", "cached refit", "detach/Undo", "stale result rejection", "cancellation", "mobile keyboard picking", "unmount cancellation"] }));
+    checks: ["desktop point picking", "real JPEG extraction", "readable key density", "cached refit", "detach/Undo", "stale result rejection", "cancellation", "mobile keyboard picking", "unmount cancellation", "unavailable capability gating"] }));
 } catch (error) { console.error({ errors, body: (await page.locator("body").innerText()).slice(0, 5000) }); throw error; }
 finally { if (pending) await release(); await browser.close(); }
