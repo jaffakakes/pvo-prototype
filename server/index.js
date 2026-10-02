@@ -6,13 +6,13 @@ import { authRoute } from "./auth/routes.js";
 import { publishingRoute } from "./publishing/routes.js";
 import { cleanupPublications } from "./publishing/cleanup.js";
 import { readMedia, viewPublication } from "./viewing/routes.js";
-import { assistantRoute } from "./assistant/routes.js";
+import { nativeAssistantRoute } from "./assistant/native/routes.js";
 
 export async function handleRequest(request, env) {
   const url = new URL(request.url);
   const config = configuration(env, url.origin);
   try {
-    if (url.pathname === "/api/assistant") return await assistantRoute(request, env, config);
+    if (url.pathname.startsWith("/api/assistant/")) return await nativeAssistantRoute(request, env, config);
     if (url.pathname.startsWith("/api/releases/")) return await releaseRoute(request, env);
     if (url.pathname.startsWith("/api/auth/")) return await authRoute(request, env, config);
     if (url.pathname === "/api/publishing" || url.pathname === "/api/publications" || url.pathname.startsWith("/api/publications/"))
