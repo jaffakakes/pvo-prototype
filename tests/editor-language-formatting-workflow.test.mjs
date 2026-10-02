@@ -9,7 +9,7 @@ const bundled = buildSync({
       export { projectSnapshot } from "./editor/src/state/project/history.ts";
       export { acceptComponentCompilation, acceptFormattedComponentSource } from "./editor/src/state/components/componentLanguageCommands.ts";
       export { beginPvoEdit } from "./editor/src/domain/components/codeOwnership.ts";
-      export { preparePvoFormatting } from "./editor/src/infrastructure/language/formatSource.ts";
+      export { preparePvoFormatting } from "./editor/src/domain/components/languageFormatPreparation.ts";
       export { formatPvoSource } from "./editor/src/domain/components/languageFormatting.ts";`,
     resolveDir: process.cwd(),
   },

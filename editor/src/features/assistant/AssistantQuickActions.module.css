@@ -1,0 +1,40 @@
+.root[data-has-target="false"][data-assistant-phase="typing"]:not([data-placement="toolbar"]) [data-assistant-composer] {
+  bottom: calc(var(--assistant-inset) + 62px);
+}
+
+.root[data-has-target="false"][data-assistant-phase="typing"]:not([data-placement="toolbar"]) [data-assistant-context] {
+  bottom: calc(var(--assistant-inset) + 112px);
+  background: var(--ground);
+}
+
+.quickActions {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: calc(var(--assistant-inset) + 12px);
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.quickActions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 6px 9px;
+  border: 2px solid #000;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 3px 3px 0 #000;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.quickActions button span { color: var(--violet); }
+.quickActions button:hover { border-color: var(--violet); }

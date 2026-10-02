@@ -1,7 +1,8 @@
+import { compilePvoComponent } from "../../../../../packages/pvo-language/index.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { componentLanguageSource } from "../../../domain/components/languageCompilation";
 import type { PvoComponent } from "../../../domain/project/model";
-import { preparePvoFormatting } from "../../../infrastructure/language/formatSource";
+import { preparePvoFormatting } from "../../../domain/components/languageFormatPreparation";
 import { useCapture } from "../../../state/captureStore";
 import { useAssistant } from "../../../state/assistant/assistantStore";
 import { acceptFormattedComponentSource } from "../../../state/components/componentLanguageCommands";
@@ -27,7 +28,7 @@ export function usePvoFormatting(component: PvoComponent | undefined, enabled: b
   const run = useCallback(async (input: PvoComponent, recordHistory: boolean) => {
     const token = ++operation.current;
     try {
-      const result = await preparePvoFormatting(input.type, componentLanguageSource(input));
+      const result = await preparePvoFormatting(input.type, componentLanguageSource(input), compilePvoComponent);
       if (!alive.current || token !== operation.current || useAssistant.getState().phase !== "idle") return;
       if (result) acceptFormattedComponentSource(input, result.source, result.compiled, recordHistory);
     } catch {

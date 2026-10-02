@@ -1,7 +1,21 @@
 import type { PvoLanguageRule, PvoLanguageStructure } from "../../../../packages/pvo-language/index.js";
-import type { AssistantDraft, AssistantRequest } from "./model";
+import type { AssistantContext, AssistantSource } from "../../../../packages/pvo-assistant/index.js";
+
 import { localContentChange, type LocalContent } from "./localContent";
 import { assistantHeading, localStyleRules } from "./localStyle";
+
+type LocalPreviewRequest = {
+  componentType: "tooltip" | "card" | "choice" | "form";
+  source: AssistantSource;
+  prompt: string;
+  context?: AssistantContext;
+};
+type LocalPreviewDraft = {
+  source: AssistantSource;
+  summary: string;
+  tags: string[];
+  followUps: [string, string, string];
+};
 
 export class UnsupportedLocalPreviewRequest extends Error {
   constructor() {
@@ -23,8 +37,8 @@ function clauses(prompt: string) {
   return result.map(value => value.trim()).filter(Boolean);
 }
 
-/** Deterministic phrases, with unmapped clauses kept visible in the review notes. */
-export function localPreviewDraft(request: AssistantRequest, structure: PvoLanguageStructure, rules: PvoLanguageRule[] = []): AssistantDraft & { skipped: string[] } {
+/** Deterministic test fixture for phrase mapping; never an inference fallback. */
+export function localPreviewDraft(request: LocalPreviewRequest, structure: PvoLanguageStructure, rules: PvoLanguageRule[] = []): LocalPreviewDraft & { skipped: string[] } {
   let current: LocalContent = { source: { ...request.source }, structure, rules };
   const skipped: string[] = [];
   let mapped = 0;

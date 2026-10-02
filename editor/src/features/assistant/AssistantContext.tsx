@@ -43,17 +43,20 @@ function thumbnailStyle(component: PvoComponent): CSSProperties {
   } as CSSProperties;
 }
 
-export function AssistantContext({ component }: {
-  component: PvoComponent;
+export function AssistantContext({ component, clipCount, duration }: {
+  component: PvoComponent | null;
+  clipCount: number;
+  duration: number;
 }) {
-  const name = component.type[0].toUpperCase() + component.type.slice(1);
+  const name = component ? component.type[0].toUpperCase() + component.type.slice(1) : "Whole edit";
   return <div className={styles.context} data-assistant-context>
-    <span className={styles.mini} style={thumbnailStyle(component)} data-assistant-context-preview aria-hidden="true">
+    {component && <span className={styles.mini} style={thumbnailStyle(component)} data-assistant-context-preview aria-hidden="true">
       <i /><i /><b />
-    </span>
+    </span>}
     <span className={styles.description}>
-      <strong>{name} · {fmt(component.at)}</strong>
-      <span>what you type changes this one</span>
+      <strong>{name}</strong>
+      {component ? ` · ${fmt(component.at)}` : ` · ${clipCount} ${clipCount === 1 ? "clip" : "clips"} · ${fmt(duration)}`}
     </span>
+    <span className={styles.voiceHint}>Hold the orb to speak</span>
   </div>;
 }
