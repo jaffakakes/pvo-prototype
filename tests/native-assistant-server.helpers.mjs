@@ -38,10 +38,11 @@ let modules;
 export async function nativeFixture({
   outputs = [{ response: nativeDraft() }], available = true, origin = NATIVE_ORIGIN,
   localDevelopment = false, provider = "cloudflare", runpodKey = "", transcriptionEndpoint = "",
-  alignment = false, tracking = false,
+  alignment = false, tracking = false, budget = true,
 } = {}) {
   modules ??= bundleWorkerModules({ stdin: { resolveDir: process.cwd(), contents: `
     import { handleRequest } from "./server/index.js";
+    export { AssistantBudget } from "./server/assistant/budget.js";
     export default { async fetch(request, env) {
       const AI = env.AI_AVAILABLE ? { async run(model, input, options) {
         const response = await env.MODEL.fetch(new Request("https://model.test/", { method: "POST",
@@ -81,9 +82,10 @@ export async function nativeFixture({
         return output instanceof Response ? output : Response.json(output);
       },
     },
+    ...(budget ? { durableObjects: { ASSISTANT_BUDGET: { className: "AssistantBudget", useSQLite: true } } } : {}),
   }));
   const fetch = (path, options = {}) => mf.dispatchFetch(`${origin}/api/assistant/${path}`, {
-    ...options, headers: { Origin: origin, ...options.headers },
+    ...options, headers: { Origin: origin, "CF-Connecting-IP": "192.0.2.4", ...options.headers },
   });
   return { calls, close: () => mf.dispose(), fetch,
     turn: (body = nativeInput(), options = {}) => fetch("turn", {

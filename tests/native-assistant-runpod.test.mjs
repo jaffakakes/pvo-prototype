@@ -29,7 +29,8 @@ test("Runpod selection requires its own server key and never falls back to a Clo
   assert.throws(() => nativeModels(missing), error => error.status === 503);
   assert.equal(nativeModelConfiguration({ AI: ai, ASSISTANT_PROVIDER: "typo" }).available, false);
   assert.throws(() => nativeModels({ AI: ai, ASSISTANT_PROVIDER: "typo" }), error => error.status === 503);
-  const ready = { ...missing, RUNPOD_API_KEY: "server-test-key", PUBLIC_ORIGIN: NATIVE_ORIGIN };
+  const ready = { ...missing, RUNPOD_API_KEY: "server-test-key", PUBLIC_ORIGIN: NATIVE_ORIGIN,
+    ASSISTANT_BUDGET: { getByName() {} } };
   const status = nativeAssistantStatus(ready, { origin: NATIVE_ORIGIN }, NATIVE_ORIGIN);
   assert.equal(status.available, true);
   assert.equal(status.model, RUNPOD_NATIVE_MODEL);

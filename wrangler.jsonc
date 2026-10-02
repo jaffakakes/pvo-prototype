@@ -6,13 +6,13 @@
   "ai": { "binding": "AI" },
   "durable_objects": {
     "bindings": [
-      { "name": "RELEASES", "class_name": "ReleaseChannel" }
+      { "name": "RELEASES", "class_name": "ReleaseChannel" },
+      { "name": "ASSISTANT_BUDGET", "class_name": "AssistantBudget" }
     ]
   },
   "migrations": [
     { "tag": "release-channel-v1", "new_sqlite_classes": ["ReleaseChannel"] },
-    { "tag": "assistant-budget-v1", "new_sqlite_classes": ["AssistantBudget"] },
-    { "tag": "assistant-budget-v2", "deleted_classes": ["AssistantBudget"] }
+    { "tag": "assistant-budget-v1", "new_sqlite_classes": ["AssistantBudget"] }
   ],
   "compatibility_date": "2026-09-27",
   "observability": { "enabled": true, "traces": { "enabled": true } },

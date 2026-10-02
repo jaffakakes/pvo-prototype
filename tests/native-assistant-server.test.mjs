@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { nativeDraft, nativeFixture, nativeInput, frameObservation, wavAudio } from "./native-assistant-server.helpers.mjs";
 
-test("native operations are model-generated, strict and anonymous without quota infrastructure", async t => {
+test("native operations are model-generated, strict and anonymously metered", async t => {
   const fixture = await nativeFixture();
   t.after(fixture.close);
   const response = await fixture.turn();
@@ -51,6 +51,12 @@ test("status reports hosted ChatGPT unavailable honestly without requiring login
   assert.equal(status.chatgpt.reason, "hosted_access_required");
   assert.equal((await fixture.turn()).status, 503);
   assert.equal((await fixture.fetch("../assistant", { method: "POST" })).status, 404);
+
+  const unmetered = await nativeFixture({ budget: false });
+  t.after(unmetered.close);
+  assert.equal((await (await unmetered.fetch("status")).json()).available, false,
+    "Production availability fails closed without the inference budget binding");
+  assert.equal((await unmetered.turn()).status, 503);
 });
 
 test("origin, unknown fields, context and observation bounds reject before model capacity", async t => {
@@ -198,17 +204,18 @@ test("HTTP development inference requires opt-in, exact loopback origin and same
 });
 
 
-test("anonymous inference continues beyond sixty calls without an app usage cap", async t => {
-  const fixture = await nativeFixture({ outputs: Array.from({ length: 65 }, () => ({ response: nativeDraft() })) });
+test("anonymous inference stops at the shared daily request cap", async t => {
+  const fixture = await nativeFixture({ outputs: Array.from({ length: 60 }, () => ({ response: nativeDraft() })) });
   t.after(fixture.close);
   const status = await (await fixture.fetch("status")).json();
-  assert.equal(status.available, true, "Only the AI binding and valid origin are required");
+  assert.equal(status.available, true, "Provider, valid origin and budget binding are required");
   assert.deepEqual(status.capabilities, { editing: true, frames: true, transcription: true, wordTiming: false, objectTracking: false });
-  const responses = await Promise.all(Array.from({ length: 65 }, async () => {
-    const response = await fixture.turn();
-    assert.equal(response.status, 200);
-    return response.json();
-  }));
-  assert.equal(fixture.calls.length, 65);
-  for (const response of responses) assert.deepEqual(response, nativeDraft());
+  const responses = await Promise.all(Array.from({ length: 65 }, (_, index) => fixture.turn(nativeInput(), {
+    headers: { "CF-Connecting-IP": `192.0.2.${index + 1}` },
+  })));
+  assert.equal(responses.filter(response => response.status === 200).length, 60);
+  assert.equal(responses.filter(response => response.status === 429).length, 5);
+  assert.equal(fixture.calls.length, 60);
+  for (const response of responses.filter(response => response.status === 200))
+    assert.deepEqual(await response.json(), nativeDraft());
 });

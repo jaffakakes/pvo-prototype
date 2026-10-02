@@ -17,7 +17,7 @@ export function nativeAssistantOrigin(env, config, requestOrigin) {
 
 export function nativeAssistantStatus(env, config, requestOrigin) {
   const model = nativeModelConfiguration(env);
-  const available = Boolean(nativeAssistantOrigin(env, config, requestOrigin) && model.available);
+  const available = Boolean(nativeAssistantOrigin(env, config, requestOrigin) && model.available && env.ASSISTANT_BUDGET);
   return {
     provider: "open-source", available, model: model.model,
     capabilities: { editing: available, frames: available, transcription: available && model.transcription,

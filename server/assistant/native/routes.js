@@ -13,6 +13,7 @@ import { alignmentConfigured, alignNativeAudio } from "./alignment.js";
 import { trackingConfigured, trackNativeObject } from "./tracking.js";
 import { readTrackingJson } from "./trackingBody.js";
 import { TRACKING_MAX_REQUEST_BYTES } from "../../../packages/pvo-assistant/native/index.js";
+import { reserveAssistantUsage } from "../quota.js";
 
 /** Only the known public provider classification crosses the HTTP boundary. */
 export async function nativeAssistantRoute(request, env, config) {
@@ -41,14 +42,18 @@ async function routeNativeAssistant(request, env, config) {
   if (url.pathname === "/api/assistant/track") {
     if (!status.capabilities.objectTracking) throw new HttpError(503, "Object tracking is not configured on this server.");
     const input = await withAssistantDeadline(signal => readTrackingJson(request, TRACKING_MAX_REQUEST_BYTES, signal), 30000, request.signal);
+    await reserveAssistantUsage(request, env);
     return json(await trackNativeObject(env, input, request.signal));
   }
   if (url.pathname === "/api/assistant/align") {
-    return json(await alignNativeAudio(env, await readJson(request, 3 * 1024 * 1024), request.signal));
+    const input = await readJson(request, 3 * 1024 * 1024);
+    await reserveAssistantUsage(request, env);
+    return json(await alignNativeAudio(env, input, request.signal));
   }
   if (url.pathname === "/api/assistant/transcribe") {
     if (!status.capabilities.transcription) throw new HttpError(503, "Audio transcription is not configured for this provider.");
     const { audio, duration } = await readTranscriptionAudio(request);
+    await reserveAssistantUsage(request, env);
     if (env.ASSISTANT_PROVIDER === "runpod")
       return json(await transcribeRunpodAudio(env, { audio, duration }, request.signal));
     return withAssistantDeadline(async signal => {
@@ -65,6 +70,7 @@ async function routeNativeAssistant(request, env, config) {
     if (error instanceof HttpError) throw error;
     throw new HttpError(400, "Send a valid project context and assistant request.");
   }
+  await reserveAssistantUsage(request, env);
   return json(await nativeAssistantTurn(input, { models: nativeModels(env), signal: request.signal,
     compile: compilePvoComponent,
     animation: request.headers.get("X-Assistant-Animation") === "1",
