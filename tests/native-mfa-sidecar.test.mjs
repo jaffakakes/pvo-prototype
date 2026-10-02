@@ -136,6 +136,19 @@ async function processFixture(t, script, timeoutMs = 1000) {
   return { root, jobs: path.join(root, "alignment-jobs"), run };
 }
 
+async function assertProcessExited(pid, timeoutMs = 1000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try { process.kill(pid, 0); }
+    catch (error) {
+      assert.equal(error.code, "ESRCH");
+      return;
+    }
+    await new Promise(resolve => setTimeout(resolve, 10));
+  }
+  assert.fail(`Process ${pid} remained alive after its process group was killed.`);
+}
+
 test("subprocess success validates result and removes private input directories", async (t) => {
   const f = await processFixture(t, `
     const value = flag => process.argv[process.argv.indexOf(flag) + 1];
@@ -159,7 +172,7 @@ test("deadline kills the whole subprocess group and removes temporary files", as
   `, 250);
   await assert.rejects(f.run(input(), new AbortController().signal), error => error.code === "alignment_timeout");
   const pid = Number(await readFile(path.join(f.root, "child-pid"), "utf8"));
-  assert.throws(() => process.kill(pid, 0), error => error.code === "ESRCH");
+  await assertProcessExited(pid);
   assert.deepEqual(await readdir(f.jobs), []);
 });
 
