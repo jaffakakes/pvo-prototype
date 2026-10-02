@@ -1,0 +1,8 @@
+.picker { position: fixed; z-index: 2147483646; isolation: isolate; box-sizing: border-box; }
+.canvasPick { display: block; position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; outline: 2px solid #ff9fbc; background: #000; cursor: crosshair; touch-action: none; }
+.canvasPick:focus-visible { outline: 2px solid #ff9fbc; outline-offset: 2px; }
+.canvasPick img { display: block; width: 100%; height: 100%; object-fit: fill; pointer-events: none; }
+.crosshair { position: absolute; transform: translate(-50%, -50%); color: #ff9fbc; text-shadow: 0 1px 3px #000; font: 400 30px/1 monospace; pointer-events: none; }
+.pickHint { position: absolute; left: 8px; right: 8px; bottom: 8px; padding: 7px; border-radius: 6px; color: #fff; background: #111e; font: 700 11px/1.4 var(--f-ui); pointer-events: none; }
+
+.cancelPick { position: absolute; top: 8px; right: 8px; min-height: 36px; padding: 6px 10px; border: 1px solid #ffffff60; border-radius: 8px; color: #fff; background: #111e; font: 700 11px/1.4 var(--f-ui); cursor: pointer; }
