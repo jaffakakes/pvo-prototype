@@ -3,7 +3,6 @@ import type { TextOverlay } from "../../../domain/project/model";
 import { dragTextTiming } from "../../../domain/text/timing";
 import { useCapture } from "../../../state/captureStore";
 import { fmt } from "../../../ui/formatTime";
-import { LayerPositionControls } from "../../overlay-position/LayerPositionControls";
 import { InspectorSections, type InspectorSection } from "./InspectorControls";
 import styles from "./Inspector.module.css";
 
@@ -53,9 +52,6 @@ export function TextInspector({ text, tab }: { text: TextOverlay; tab: string })
     { kind: "note", text: "Drag the text on the video to place it." },
   ] }];
   return <>
-    <section className={styles.section}>
-      <LayerPositionControls target={{ kind: "text", id: text.id }} x={text.x} y={text.y} />
-    </section>
     <InspectorSections sections={sections} />
   </>;
 }

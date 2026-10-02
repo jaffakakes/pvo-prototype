@@ -41,3 +41,8 @@
 @media (max-height: 800px) {
   .editor { --desktop-timeline: clamp(224px, 32vh, 272px); }
 }
+
+.editor:has([data-animation-expanded="true"]) { --desktop-timeline: 306px; }
+@media (max-height: 800px) {
+  .editor:has([data-animation-expanded="true"]) { --desktop-timeline: clamp(240px, 38vh, 306px); }
+}

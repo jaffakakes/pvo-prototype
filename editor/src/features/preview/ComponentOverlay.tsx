@@ -1,3 +1,4 @@
+import { evaluateAnimation, visualMotionVisible } from "../../../../packages/pvo-animation/index.js";
 import type { CSSProperties } from "react";
 import { componentEnd } from "../../domain/components/timing";
 import { useComponentDimensions } from "./useComponentDimensions";
@@ -7,7 +8,6 @@ import { PvoRuntimeOverlay } from "./PvoRuntimeOverlay";
 import { ComponentFieldsView } from "./ComponentFieldsView";
 import { useComponentAuthoring } from "../../state/components/componentAuthoringStore";
 import { TryFeedback } from "./TryFeedback";
-import styles from "./ProposalOutline.module.css";
 import { useDebugLocate } from "../editor-layout/debugging/debugLocate";
 import debugStyles from "../editor-layout/debugging/DebugWorkspace.module.css";
 
@@ -30,31 +30,30 @@ export function componentVisible(component: PvoComponent, clips: Clip[], t: numb
   return t >= component.at && t < componentEnd(component, clips);
 }
 
-export function ComponentOverlay({ component, width, selected, trying, onResponse, zIndex, proposed = false, before = false }: {
+export function ComponentOverlay({ component, width, selected, trying, onResponse, zIndex, time }: {
   component: PvoComponent;
   width: number;
   selected: boolean;
   trying: boolean;
   zIndex: number;
-  proposed?: boolean;
-  before?: boolean;
+  time: number;
   onResponse: (component: PvoComponent, response: ComponentResponse) => void;
 }) {
   const session = useComponentAuthoring();
   const located = useDebugLocate(state => state.componentId === component.id);
   const u = width / 247;
   const { ref, size } = useComponentDimensions(component, width);
+  const motion = evaluateAnimation(component.animation, time - component.at);
   const style = {
-    left: `${component.x}%`, top: `${component.y}%`, zIndex, "--u": `${u}px`,
-    width: "max-content",
-    transform: `translate(-50%, -50%) scale(${size.width}, ${size.height})`,
+    left: `${component.x + motion.x}%`, top: `${component.y + motion.y}%`, zIndex, "--u": `${u}px`,
+    width: "max-content", opacity: motion.opacity,
+    visibility: trying && !visualMotionVisible(motion) ? "hidden" : undefined,
+    transform: `translate(-50%, -50%) rotate(${motion.rotation}deg) scale(${size.width * motion.scaleX}, ${size.height * motion.scaleY})`,
   } as CSSProperties;
 
-  return <div ref={ref} className={`${cx("compOverlay")} ${proposed ? styles.proposed : ""}`} data-proposed={proposed} data-preview-component={component.id} data-layer-id={`component:${component.id}`} data-sel={selected} data-trying={trying} style={style}>
-    {(proposed || before) && <span className={styles.label} data-before={before}>{before ? "Before" : "Proposed"}</span>}
+  return <div ref={ref} className={cx("compOverlay")} data-preview-component={component.id} data-layer-id={`component:${component.id}`} data-sel={selected} data-trying={trying} style={style}>
     {component.code?.custom ? component.code.pvo
-      ? <PvoRuntimeOverlay component={component} width={width} trying={trying} isVisible={componentVisible}
-          immediatePreview={proposed || before} />
+      ? <PvoRuntimeOverlay component={component} width={width} trying={trying} isVisible={componentVisible} />
       : <div className={cx("compTooltip")}>Unsupported component code</div>
       : <ComponentFieldsView component={component} unit={u} trying={trying} onResponse={onResponse}
           selectedPart={selected && session.componentId === component.id && session.tab === "look" ? session.part : null} />}

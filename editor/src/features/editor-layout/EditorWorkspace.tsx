@@ -16,6 +16,7 @@ import styles from "./EditorWorkspace.module.css";
 type Props = {
   open: boolean;
   componentSheet?: boolean;
+  animationSheet?: boolean;
   codeEditingId?: string;
   trying?: boolean;
   debugPanel?: ReactNode;
@@ -32,7 +33,7 @@ type Props = {
   onDismiss(): void;
 };
 
-export function EditorWorkspace({ open, componentSheet = false, codeEditingId, trying = false, debugPanel, debugOpen = false, onCloseDebug, header, media, preview, playback, timeline, sheets, assistant, assistantActive, onDismiss }: Props) {
+export function EditorWorkspace({ open, componentSheet = false, animationSheet = false, codeEditingId, trying = false, debugPanel, debugOpen = false, onCloseDebug, header, media, preview, playback, timeline, sheets, assistant, assistantActive, onDismiss }: Props) {
   const measurements = useWorkspaceMeasurements();
   const [expandedCodeId, setExpandedCodeId] = useState<string | null>(null);
   const [assistantTarget, setAssistantTarget] = useState<HTMLDivElement | null>(null);
@@ -52,18 +53,24 @@ export function EditorWorkspace({ open, componentSheet = false, codeEditingId, t
   }, []);
   const available = Math.max(0, measurements.height - measurements.header - measurements.playback);
   const maximum = measurements.height;
-  const sheetMaximum = componentSheet ? componentPanelMaximum(measurements, measurements.width) : maximum;
+  const sheetMaximum = componentSheet || animationSheet ? componentPanelMaximum(measurements, measurements.width) : maximum;
   const timelineMinimum = Math.min(timelineMetrics.minimum, maximum);
   const initial = Math.min(maximum, Math.max(timelineMinimum, Math.min(timelineMetrics.naturalHeight,
     Math.max(0, available - (measurements.height - measurements.header < 420 ? 64 : 96)))));
   const dismiss = () => (dismissHandler.current ?? onDismiss)();
-  const sheetResize = usePanelResize({ maximum: sheetMaximum, initial, minimum: componentSheet ? 150 : 180, dismissBelow: componentSheet ? 120 : 96, dismiss });
+  const sheetResize = usePanelResize({ maximum: sheetMaximum, initial: animationSheet ? Math.min(372, sheetMaximum) : initial, minimum: componentSheet ? 150 : 180, dismissBelow: componentSheet ? 120 : 96, dismiss });
   const timelineResize = usePanelResize({ maximum, initial, minimum: timelineMinimum });
   const debugGeometry = mobileDebugPanelGeometry(available);
   const debugResize = usePanelResize({ ...debugGeometry, dismissBelow: 160, dismiss: onCloseDebug });
   useOutsideSelection(measurements.workspaceRef, () => {
     if (!assistantActive && !codeExpanded && !trying && !debugOpen) clearSelection(sheetResize.dismiss);
   });
+  const previousAnimationSheet = useRef(false);
+  useLayoutEffect(() => {
+    if (animationSheet && measurements.height === 0) return;
+    if (animationSheet && !previousAnimationSheet.current) sheetResize.setHeight(Math.min(372, sheetMaximum));
+    previousAnimationSheet.current = animationSheet;
+  }, [animationSheet, measurements.height, sheetMaximum, sheetResize.setHeight]);
   const previousComponentSheet = useRef(false);
   useLayoutEffect(() => {
     // Routed Try scenes clear their editing selection; Stop restores the original panel.
@@ -94,7 +101,7 @@ export function EditorWorkspace({ open, componentSheet = false, codeEditingId, t
   } as CSSProperties;
 
   return <div ref={measurements.workspaceRef} className={`editorWorkspace ${styles.workspace}`}
-    data-sheet-open={open} data-panel-fullscreen={!debugOpen && resize.expanded && !componentSheet} data-resizing={debugOpen ? debugResize.dragging : resize.dragging}
+    data-sheet-open={open} data-animation-open={animationSheet} data-panel-fullscreen={!debugOpen && resize.expanded && !componentSheet} data-resizing={debugOpen ? debugResize.dragging : resize.dragging}
     data-debug-open={debugOpen}
     data-trying={trying} data-keyboard-open={keyboardHeight > 0} data-code-expanded={codeExpanded}
     data-preview-visible={layout.previewVisible} data-playback-visible={layout.playbackVisible}

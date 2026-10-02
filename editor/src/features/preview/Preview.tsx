@@ -1,6 +1,9 @@
+import { evaluateAnimation } from "../../../../packages/pvo-animation/index.js";
 import { useAudioPlayback } from "../sound/useAudioPlayback";
+import { useMusicPlayback } from "../sound/useMusicPlayback";
 import { total } from "../../domain/clips/timing";
 import { sceneDuration } from "../../domain/scenes/duration";
+import { componentEnd } from "../../domain/components/timing";
 import { useLayoutEffect,useRef,useState } from "react";
 import { dur,locate } from "../../domain/clips/timing";
 import { layerZ } from "../../domain/layers/order";
@@ -16,12 +19,13 @@ import { runComponentResponse } from "./tryMode";
 import { usePlayback } from "./usePlayback";
 import { useOverlayGestures } from "./useOverlayGestures";
 import { Icon } from "../../ui/Icon";
+import { StageMotionPath } from "../animation/stage/StageMotionPath";
 
 type Props = { desktop?: boolean; safeZone?: boolean; onAddMedia?(): void };
 
 export function Preview({ desktop = false, safeZone = false, onAddMedia }: Props = {}) {
   const s = useCapture();
-  const assistant = useAssistant();
+  const assistantActive = useAssistant(state => state.phase !== "idle");
   const areaRef = useRef<HTMLDivElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -29,10 +33,13 @@ export function Preview({ desktop = false, safeZone = false, onAddMedia }: Props
   const [area, setArea] = useState({ width: 0, height: 0 });
   const located = s.trim ? { c: s.clips[s.trim.i], i: s.trim.i } : locate(s.t, s.clips);
   const duration = sceneDuration(s);
+  const sourceTime = s.trim?.lt ?? locate(s.t, s.clips)?.lt ?? 0;
   const sceneTail = s.t >= total(s.clips) && duration > total(s.clips);
   const clip = sceneTail ? undefined : located?.c;
+  const motion = evaluateAnimation(clip?.animation, sourceTime);
   usePlayback(videoRef);
   useAudioPlayback();
+  useMusicPlayback();
   useLayoutEffect(() => {
     const host = areaRef.current;
     if (!host) return;
@@ -46,6 +53,8 @@ export function Preview({ desktop = false, safeZone = false, onAddMedia }: Props
   }, []);
   const { width: bw, height: bh } = fitPreviewSize(area.width, area.height, projectRatio(s.ratio));
   const compact = bw < 180;
+  const selectedAuthoring = !s.tryMode && !s.playheadPick && !s.playing;
+  const endpointAuthoring = selectedAuthoring && (desktop || s.sheet === "animation");
 
   return <div ref={areaRef} className={`${cx("previewArea")} ${styles.area}`} data-desktop={desktop}>
     <div ref={boxRef} className={`${cx("pvBox")} ${styles.canvas}`} data-trying={!!s.tryMode}
@@ -57,21 +66,24 @@ export function Preview({ desktop = false, safeZone = false, onAddMedia }: Props
           s.patch({ sel: located?.i ?? -1, selComp: null, selText: null, sheet: null });
         }
       }}>
-    <div className={cx("videoLayer")} data-layer-id="video" style={{ zIndex: layerZ(s, "video") }}>
+    <div className={cx("videoLayer")} data-layer-id="video" data-animation-selected={!s.tryMode && s.sel >= 0 && s.clips[s.sel]?.id === clip?.id}
+      style={{ zIndex: layerZ(s, "video"), opacity: motion.opacity,
+      transform: `translate(${motion.x}%, ${motion.y}%) rotate(${motion.rotation}deg) scale(${motion.scaleX}, ${motion.scaleY})` }}>
       {clip?.url ? <video ref={videoRef} className={cx("pvVideo")} playsInline style={{ objectFit: clip.fit, transform: `scale(${clip.mirror ? -clip.zoom : clip.zoom},${clip.zoom})` }} /> :
         <div className={cx("pvFallback")} style={{ background: sceneTail ? "#000" : `linear-gradient(160deg,${clip?.color ?? "#000"},#15151C)` }}>{!sceneTail && <img src="restyle-mark.png" alt="" />}</div>}
     </div>
-    {s.texts.filter(x => s.t >= x.start && s.t < x.end).map(x => <TextLayer key={x.id} overlay={x} width={bw} height={bh} zIndex={layerZ(s, `text:${x.id}`)} selected={s.selText === x.id} trying={!!s.tryMode} />)}
+    {s.texts.filter(text => (s.t >= text.start && s.t < text.end)
+      || (endpointAuthoring && s.selText === text.id && Math.abs(s.t - text.end) < 1e-6))
+      .map(text => <TextLayer key={text.id} overlay={text} width={bw} height={bh}
+        zIndex={layerZ(s, `text:${text.id}`)} selected={s.selText === text.id}
+        trying={!!s.tryMode} time={Math.min(s.t, text.end)} />)}
     {s.components.filter(component => componentVisible(component, s.clips, s.t, s.tryMode?.holdingId ?? null)
-      || (!s.tryMode && !s.playheadPick && (desktop || s.sheet === "component" || assistant.phase !== "idle") && s.selComp === component.id))
-      .map(component => {
-        const reviewing = assistant.review?.original.id === component.id && !s.tryMode;
-        const proposed = reviewing && !assistant.before;
-        return <ComponentOverlay key={component.id}
-          component={proposed ? assistant.review!.proposed : component} proposed={proposed} before={reviewing && assistant.before}
-          width={bw} zIndex={layerZ(s, `component:${component.id}`)} selected={s.selComp === component.id}
-          trying={!!s.tryMode} onResponse={runComponentResponse} />;
-      })}
+      || (selectedAuthoring && s.selComp === component.id && (desktop || s.sheet === "component" || assistantActive
+        || (s.sheet === "animation" && Math.abs(s.t - componentEnd(component, s.clips)) < 1e-6))))
+      .map(component => <ComponentOverlay key={component.id} component={component}
+        width={bw} zIndex={layerZ(s, `component:${component.id}`)} selected={s.selComp === component.id}
+        trying={!!s.tryMode} time={s.t} onResponse={runComponentResponse} />)}
+    <StageMotionPath width={bw} height={bh} />
     {!compact && !s.tryMode && clip && <span className={cx("tag pvTag")}><i /><span>Clip {(located?.i ?? 0) + 1} · {dur(clip).toFixed(1)}s</span></span>}
     {desktop && safeZone && clip && <div className={styles.guides} data-portrait={s.ratio === "9:16"} aria-hidden="true">
       <div className={styles.safeBorder} />

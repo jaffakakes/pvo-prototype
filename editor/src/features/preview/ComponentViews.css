@@ -11,8 +11,8 @@
 }
 .compOverlay.compSelected,
 .compOverlay[data-sel="true"] {
-  outline: 2.5px solid var(--pale);
-  outline-offset: 6px;
+  outline: 2px dashed var(--pale);
+  outline-offset: 4px;
   border-radius: 10px;
 }
 .compOverlay[data-trying="true"] {
