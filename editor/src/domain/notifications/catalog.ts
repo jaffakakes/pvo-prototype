@@ -4,23 +4,28 @@ type Definition = {
   kind: NotificationKind;
   persistent?: boolean;
   oncePerScope?: boolean;
+  reportEachAttempt?: boolean;
   recovery?: string;
+  action?: "undoAssistantEdit";
 };
 
 /** Only reviewed events may use the global notification surface. */
 export const notificationCatalog = {
   splitUnavailable: { message: "Move the playhead inside a clip.", kind: "warning" },
   flashUnavailable: { message: "Flash unavailable.", kind: "info", oncePerScope: true },
-  assistantUnsupported: { message: "Request not supported.", kind: "error" },
-  assistantAdvancedRequired: { message: "Enable Advanced for this logic change.", kind: "info" },
+  assistantApplied: { message: "Changes applied.", kind: "success", action: "undoAssistantEdit" },
+  assistantUnsupported: { message: "Request not supported.", kind: "error", reportEachAttempt: true },
+  assistantAdvancedRequired: { message: "Enable Advanced for this logic change.", kind: "info", reportEachAttempt: true },
   assistantNoTarget: { message: "Select a component first.", kind: "info" },
-  assistantFailed: { message: "Couldn't prepare that change.", kind: "error" },
-  assistantInvalidRequest: { message: "Please rephrase that request.", kind: "warning" },
-  assistantTooLarge: { message: "Component or request is too large.", kind: "error" },
-  assistantBusy: { message: "Assistant limit reached. Try again later.", kind: "warning" },
-  assistantUnavailable: { message: "Assistant unavailable. Try again later.", kind: "error" },
-  assistantTimeout: { message: "Assistant timed out. Try again.", kind: "error" },
+  assistantFailed: { message: "Couldn't prepare that change.", kind: "error", reportEachAttempt: true },
+  assistantInvalidRequest: { message: "Please rephrase that request.", kind: "warning", reportEachAttempt: true },
+  assistantTooLarge: { message: "Project or request is too large.", kind: "error", reportEachAttempt: true },
+  assistantBusy: { message: "AI provider limit reached. Try later.", kind: "warning", reportEachAttempt: true },
+  assistantAllowanceExhausted: { message: "AI provider allowance used up.", kind: "warning", reportEachAttempt: true },
+  assistantUnavailable: { message: "Assistant unavailable. Try again later.", kind: "error", reportEachAttempt: true },
+  assistantTimeout: { message: "Assistant timed out. Try again.", kind: "error", reportEachAttempt: true },
   assistantStale: { message: "Component changed. Try again.", kind: "warning" },
+  assistantProjectChanged: { message: "Project changed. Review it and try again.", kind: "warning", reportEachAttempt: true },
   voiceHoldShort: { message: "Hold a little longer.", kind: "warning" },
   voiceUnavailable: { message: "Voice unavailable.", kind: "info" },
   voiceDenied: { message: "Microphone access denied.", kind: "error" },
@@ -39,7 +44,7 @@ export const notificationCatalog = {
   exportFailed: { message: "Export failed. Try again.", kind: "error" },
   tryFailed: { message: "Couldn't start preview.", kind: "error" },
   tryPlaybackFailed: { message: "Preview stopped. Try again.", kind: "error" },
-  audioPreviewFailed: { message: "Couldn't play extracted audio.", kind: "error" },
+  audioPreviewFailed: { message: "Couldn't play audio.", kind: "error" },
 } as const satisfies Record<string, Definition>;
 
 export type NotificationId = keyof typeof notificationCatalog;
