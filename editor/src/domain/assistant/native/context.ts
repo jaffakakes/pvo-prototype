@@ -106,6 +106,8 @@ export function nativeProjectContext(
           const axes = componentSize(component);
           const values = { id: component.id, at: component.at, duration: component.dur,
             ...(component.font ? { font: { id: component.font.id, family: component.font.family } } : {}),
+            ...(model.structure.type === "form"
+              ? { formFields: model.structure.fields.map(({ name, kind }) => ({ name, kind })) } : {}),
             x: component.x, y: component.y, label: fields.title || fields.prompt || fields.heading || fields.text || component.type,
             scale: componentScale(component.scale), scaleX: axes.width, scaleY: axes.height,
             proportionalScale: componentGestureScale(component),

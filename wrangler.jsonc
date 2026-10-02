@@ -23,6 +23,8 @@
     "not_found_handling": "none"
   },
   "vars": {
+    "ASSISTANT_PROVIDER": "runpod",
+    "RUNPOD_TRANSCRIPTION_ENDPOINT": "5uqruzvtb96kph",
     "PUBLISHING_ENABLED": "false",
     "PUBLIC_ORIGIN": "https://lingering-butterfly-9ba8.jaffakakes28.workers.dev",
     "MAX_UPLOAD_BYTES": "52428800",

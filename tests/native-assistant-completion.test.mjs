@@ -43,7 +43,9 @@ test("a reviewed genuine blocker keeps its explicit no-commit result", async () 
   const model = modelSequence([{ response: blocked }, { response: blocked }]);
   assert.deepEqual(await nativeAssistantTurn(input, model), blocked);
   assert.equal(model.calls.length, 2);
-  assert.deepEqual(model.calls[0].input.response_format.json_schema.anyOf[2].properties.blocked, { type: "boolean", const: true });
+  const blockedBranch = model.calls[0].input.response_format.json_schema.anyOf.find(branch => branch.properties.blocked);
+  assert.deepEqual(blockedBranch.properties.blocked, { type: "boolean", const: true });
+  assert.ok(blockedBranch.required.includes("blocked"));
 });
 
 test("blocked result metadata rejects false flags and combined editing or inspection work", () => {
@@ -300,13 +302,17 @@ test("provider generation cannot place answer alongside editing or observation r
   const model = modelSequence([{ response: nativeDraft() }]);
   await nativeAssistantTurn(nativeInput(), model);
   const { anyOf } = model.calls[0].input.response_format.json_schema;
-  assert.equal(anyOf.length, 3);
+  assert.equal(anyOf.length, 4);
   assert.ok(anyOf.every(branch => branch.additionalProperties === false));
   assert.ok(anyOf.every(branch => ["message", "operations", "observations"].every(key => branch.required.includes(key))));
   const terminalBranch = anyOf.find(branch => branch.properties.answer);
   assert.equal(terminalBranch.properties.operations.maxItems, 0);
   assert.equal(terminalBranch.properties.observations.maxItems, 0);
-  for (const branch of anyOf.filter(item => item !== terminalBranch)) {
+  const blockedBranch = anyOf.find(branch => branch.properties.blocked);
+  assert.equal(blockedBranch.properties.answer, undefined);
+  assert.equal(blockedBranch.properties.operations.maxItems, 0);
+  assert.equal(blockedBranch.properties.observations.maxItems, 0);
+  for (const branch of anyOf.filter(item => item !== terminalBranch && item !== blockedBranch)) {
     assert.equal(branch.properties.answer, undefined, "A generation branch with work cannot include answer");
     assert.equal(branch.properties.blocked, undefined, "A generation branch with work cannot claim a terminal blocker");
     assert.ok(branch.properties.operations.minItems === 1 || branch.properties.observations.minItems === 1);
@@ -333,7 +339,7 @@ test("completion reasserts actual component wording after a stale historical cla
   const actualLine = review.at(-1).content.split("\n").find(line => line.startsWith("Current component values from the candidate project"));
   const actual = JSON.parse(actualLine.slice(actualLine.indexOf(": ") + 2));
   assert.deepEqual(actual, [{ sceneId: "main", id: "actual-card", type: "card", at: 0, duration: 5,
-    label: "Original title", content: { title: "Original title", body: "Unchanged content" },
+    x: 50, y: 50, font: null, label: "Original title", content: { title: "Original title", body: "Unchanged content" },
     editableContentKeys: ["title", "body", "buttonLabels"],
     scale: 1, scaleX: 1, scaleY: 1, proportionalScale: 1, width: null, height: null, responsePolicy: { dispatch: "interaction", unanswered: "continue" } }]);
   assert.match(review.at(-1).content, /These actual values override earlier assistant claims and conversation history/);

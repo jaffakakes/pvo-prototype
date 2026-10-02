@@ -125,6 +125,8 @@ const projectSchema = object({
     components: array(object({ id, type: componentType, at: time, duration: nullable(time), x: position, y: position,
       scale: componentScale, scaleX: componentScale, scaleY: componentScale, proportionalScale: componentScale,
       width: componentPixels, height: componentPixels, label: string(), animation, font: fontSummarySchema,
+      formFields: array(object({ name: { ...string(64), pattern: "^[A-Za-z][A-Za-z0-9_-]*$" },
+        kind: enumeration(["name", "email", "phone", "short", "number", "yesno"]) }), 20),
       content: { type: "object", additionalProperties: string(), maxProperties: 20 }, source: sourceSchema, design: sourceSchema, responsePolicy: responsePolicySchema },
     ["id", "type", "at", "duration", "x", "y", "scale", "scaleX", "scaleY", "proportionalScale", "width", "height", "label", "content"]), 500),
   }, ["id", "name", "parent", "duration", "muted", "musicGain", "clipGain", "clips", "texts", "audioClips", "components"]), 100),

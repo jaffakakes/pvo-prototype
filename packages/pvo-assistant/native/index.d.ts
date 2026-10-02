@@ -87,6 +87,7 @@ export type NativeProjectContext = {
     audioClips: { id: number; name: string; start: number; end: number; sourceIn: number; sourceOut: number; sourceDuration: number; speed: number; muted: boolean; gain: number; animation?: LayerAnimation }[];
     components: ({ id: string; at: number; duration: number | null; x: number; y: number;
       scale: number; scaleX: number; scaleY: number; proportionalScale: number; width: number | null; height: number | null;
+      formFields?: { name: string; kind: "name" | "email" | "phone" | "short" | "number" | "yesno" }[];
       label: string; content: Record<string, string>; source?: AssistantSource; design?: AssistantSource; animation?: LayerAnimation; font?: FontSummary } & (
       { type: "tooltip"; responsePolicy?: never }
       | { type: "card" | "choice" | "form"; responsePolicy: NativeResponsePolicy }

@@ -5,45 +5,39 @@ import { nativeCompletionMessages, nativeMessages, nativeRepairMessages } from "
 import { validateNativeResult } from "./policy.js";
 import { inspectNativeFrames, nativeFrameEvidence } from "./vision.js";
 import { NativeAssistantError } from "./errors.js";
-
-// Keep the grammar small while making observation, editing and terminal output
-// mutually exclusive. The canonical parser still validates every operation.
-const messageSchema = { type: "string", maxLength: 8000 };
-const emptyItems = { type: "array", maxItems: 0, items: { type: "object" } };
-const envelope = properties => ({
-  type: "object", additionalProperties: false, required: ["message", "operations", "observations"],
-  properties: { message: messageSchema, ...properties },
-});
-const modelEnvelopeSchema = { anyOf: [
-  envelope({
-    operations: { type: "array", minItems: 1, maxItems: 24, items: { type: "object" } },
-    observations: emptyItems,
-  }),
-  envelope({
-    operations: emptyItems,
-    observations: { type: "array", minItems: 1, maxItems: 4, items: { type: "object" } },
-  }),
-  envelope({
-    operations: emptyItems, observations: emptyItems,
-    blocked: { type: "boolean", const: true },
-    answer: { type: "string", minLength: 1, maxLength: 8000 },
-  }),
-] };
+import { nativeGenerationSchema } from "./generationSchema.js";
+import { createNativeValidationTrace } from "./validationDiagnostics.js";
 
 /** Review a terminal answer once, sharing one schema repair across both stages. */
-export function nativeAssistantTurn(request, { models, signal, totalMs = 90000, attemptMs = models.textAttemptMs, compile, wordTiming = false, animation = false, objectTracking = false }) {
+export function nativeAssistantTurn(request, {
+  models, signal, totalMs = 90000, attemptMs = models.textAttemptMs, compile,
+  wordTiming = false, animation = false, objectTracking = false,
+  trace = createNativeValidationTrace(),
+}) {
   return withAssistantDeadline(async operationSignal => {
     const observations = await inspectNativeFrames(request, { models, signal: operationSignal });
     const evidence = nativeFrameEvidence(observations);
     const contextMessages = nativeMessages(request, observations, { wordTiming, animation, objectTracking });
+    const schema = nativeGenerationSchema({ mode: request.mode, wordTiming, animation, objectTracking });
     let messages = contextMessages;
     let reviewed = false;
     let repaired = false;
+    let phase = "initial";
     for (let attempt = 0; attempt < 3; attempt++) {
       operationSignal.throwIfAborted();
-      const result = await withAssistantDeadline(attemptSignal => models.generate({ messages, schema: modelEnvelopeSchema, temperature: 0.15, maxTokens: 3000 }, attemptSignal), attemptMs, operationSignal);
+      let result;
+      try {
+        result = await withAssistantDeadline(attemptSignal => models.generate({
+          messages, schema, temperature: 0.15, maxTokens: 3000,
+        }, attemptSignal), attemptMs, operationSignal);
+      } catch (error) {
+        operationSignal.throwIfAborted();
+        trace({ stage: "decode", phase, attempt: attempt + 1, error });
+        throw error;
+      }
       let response = result?.content;
       let failureCode = "model_output_invalid";
+      let stage = "decode";
       try {
         if (!result || typeof result !== "object" || Array.isArray(result)
           || (result.toolCalls !== undefined && (!Array.isArray(result.toolCalls) || result.toolCalls.length)))
@@ -56,8 +50,10 @@ export function nativeAssistantTurn(request, { models, signal, totalMs = 90000, 
           throw new Error("The response is too large.");
         if (response && typeof response === "object" && Object.hasOwn(response, "evidence"))
           throw new Error("Evidence is added by the server. Return only message, operations, observations and the optional blocked or answer fields.");
+        stage = "schema";
         const parsed = parseNativeTurnResult(response);
         failureCode = "edit_validation_failed";
+        stage = "policy";
         if (!animation && parsed.operations.some(item => item.kind.startsWith("animation.")))
           throw new Error("Layer animation is unavailable in this editor session. Use only available operations.");
         if ((!objectTracking || !animation) && (parsed.observations.some(item => item.kind === "object_tracking")
@@ -67,18 +63,25 @@ export function nativeAssistantTurn(request, { models, signal, totalMs = 90000, 
           throw new Error("Word timing is unavailable on this server. Use the available observations.");
         await validateNativeResult(request, parsed, compile);
         operationSignal.throwIfAborted();
+        if (phase !== "initial")
+          trace({ stage: phase, status: "completed", phase, attempt: attempt + 1, response: parsed, finishReason: result.finishReason });
         if (!reviewed && !parsed.operations.length && !parsed.observations.length) {
           reviewed = true;
+          phase = "review";
+          trace({ stage: "review", status: "started", phase, attempt: attempt + 1, response: parsed, finishReason: result.finishReason });
           messages = nativeCompletionMessages(contextMessages, parsed, request);
           continue;
         }
         return parseNativeTurnResult({ ...parsed, ...(evidence.length ? { evidence } : {}) });
       } catch (error) {
         operationSignal.throwIfAborted();
+        trace({ stage, phase, attempt: attempt + 1, error, response, finishReason: result?.finishReason, failureCode });
         if (error instanceof HttpError) throw error;
         if (repaired)
           throw new NativeAssistantError(failureCode);
         repaired = true;
+        phase = "repair";
+        trace({ stage: "repair", status: "started", phase, attempt: attempt + 1 });
         messages = nativeRepairMessages(messages, response ?? null, error, request);
       }
     }
