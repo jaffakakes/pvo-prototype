@@ -46,6 +46,8 @@ The application build excludes demo and documentation pages and demo media. To p
 
 The checks use `playwright-core` with an installed Chrome. Set `CHROME_PATH` when the browser is not at the Windows default path. This does not install a browser.
 
+`npm run check:browser -- editor playback-view-switch` checks that a paused preview retains its requested frame when metadata arrives after a render or desktop/mobile view change. It also checks decoded pictures and advancing playback across both layouts, stopped removed video elements and returning from a scene without media. It requires Vite and Chrome; the real MP4 fixture uses gated byte-range responses to exercise loading reliably. `playback-smooth` checks uninterrupted playback, deliberate scrubbing and split-clip transitions, including against built beta output.
+
 `npm run check:browser -- editor clip-adjustments` checks speed/playhead constraints, grouped crop undo, mirror, sound labels and text timing after the sheet/rule extraction. It requires Vite for its project fixture. The camera-startup suite explicitly uses a phone viewport so it exercises the camera rather than the desktop studio.
 
 | Command | Prerequisites |
