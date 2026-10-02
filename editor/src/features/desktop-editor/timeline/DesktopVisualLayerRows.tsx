@@ -1,4 +1,7 @@
-import { useState, type CSSProperties } from "react";
+import { useState, type CSSProperties, type PointerEvent } from "react";
+import type { Scene } from "../../../domain/project/model";
+import { PropertyLane, PropertyLaneLabel } from "../../animation/timeline/PropertyLane";
+import { TimelineKeyframes } from "../../animation/TimelineKeyframes";
 import { componentLength } from "../../../domain/components/timing";
 import { dur } from "../../../domain/clips/timing";
 import { clearTimelineSelection } from "../../../state/editing/selectionCommands";
@@ -24,7 +27,11 @@ type VisualLayerState = Pick<
 >;
 
 function rowTemplate(rows: DesktopLayerRow[]) {
-  return rows.map((row) => (row.kind === "video" ? "52px" : "28px")).join(" ");
+  return rows.map((row, index) => {
+    const height = row.kind === "video" ? 52 : row.kind === "animation" ? row.lane.single ? 20 : 18 : 24;
+    const gap = index === 0 ? 0 : row.kind === "animation" ? rows[index - 1].kind === "animation" ? 3 : 4 : row.kind === "video" ? 4 : 6;
+    return `${height + gap}px`;
+  }).join(" ");
 }
 
 function visualGridStyle(rows: DesktopLayerRow[]): CSSProperties {
@@ -32,15 +39,18 @@ function visualGridStyle(rows: DesktopLayerRow[]): CSSProperties {
 }
 
 export function DesktopVisualLayerLabels({
-  rows,
+  rows, scene,
 }: {
   rows: DesktopLayerRow[];
+  scene: Scene | undefined;
 }) {
   let overlayNumber = 0;
   return (
     <div className={styles.visualLabels} style={visualGridStyle(rows)}>
       {rows.map((row, rowIndex) => {
         const gridStyle = { gridRow: rowIndex + 1 };
+        if (row.kind === "animation") return scene
+          ? <PropertyLaneLabel key={row.id} scene={scene} lane={row.lane} style={gridStyle} /> : null;
         if (row.kind === "empty-components")
           return (
             <div
@@ -160,6 +170,7 @@ function VideoLane({
                   {dur(clip).toFixed(1)}s
                 </span>
                 <span className={styles.clipName}>Clip {index + 1}</span>
+                <TimelineKeyframes animation={clip.animation} color="#FF9FBC" start={clip.in} end={clip.out} />
                 {state.sel === index &&
                   (["l", "r"] as const).map((side) => (
                     <span
@@ -206,7 +217,11 @@ export function DesktopVisualLayerLanes({
   timing,
   onOpenLibrary,
   onSelect,
+  scene,
+  onScrub,
 }: {
+  scene: Scene | undefined;
+  onScrub: (event: PointerEvent<HTMLElement>) => void;
   layout: DesktopLayerLayout;
   state: VisualLayerState;
   zoom: number;
@@ -257,6 +272,9 @@ export function DesktopVisualLayerLanes({
       style={visualGridStyle(layout.rows)}
     >
       {layout.rows.map((row, rowIndex) => {
+        if (row.kind === "animation") return scene
+          ? <PropertyLane key={row.id} scene={scene} lane={row.lane} zoom={zoom} disabled={editingBlocked}
+              onScrub={onScrub} style={{ gridRow: rowIndex + 1 }} /> : null;
         if (row.kind === "empty-components")
           return (
             <div
@@ -360,6 +378,7 @@ export function DesktopVisualLayerLanes({
                 <span className={styles.blockHandle} data-edge="l" />
               )}
               <span>T {text.text}</span>
+              <TimelineKeyframes animation={text.animation} start={0} end={text.end - text.start} />
               {state.selText === text.id && (
                 <span className={styles.blockHandle} data-edge="r" />
               )}
@@ -411,6 +430,7 @@ export function DesktopVisualLayerLanes({
               <span className={styles.blockHandle} data-edge="l" />
             )}
             <span>✦ {componentLabel(component)}</span>
+            <TimelineKeyframes animation={component.animation} color="#A78BFA" start={0} end={componentLength(component, state.clips)} />
             <DebugLayerIssue componentId={component.id} />
             {state.selComp === component.id && (
               <span className={styles.blockHandle} data-edge="r" />

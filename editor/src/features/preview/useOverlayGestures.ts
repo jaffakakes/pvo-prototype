@@ -1,14 +1,16 @@
 import { useEffect, useRef, type PointerEvent, type RefObject } from "react";
-import type { OverlayTarget, OverlayTransform } from "../../domain/layers/transform";
+import type { OverlayTransform } from "../../domain/layers/transform";
 import { useCapture } from "../../state/captureStore";
 import { beginOverlayTransform } from "../../state/editing/overlayTransform";
+import { beginStageAnimationTransform, type StageAnimationTarget } from "../../state/animation/stageGesture";
+import { locate } from "../../domain/clips/timing";
 import { gestureGeometry, type GesturePoint } from "./gestureGeometry";
 import type { LookPart } from "../../domain/components/look";
 import { selectComponentLookPart } from "../../state/components/componentAuthoringStore";
 
 type Transaction = NonNullable<ReturnType<typeof beginOverlayTransform>>;
 type Session = {
-  target: OverlayTarget;
+  target: StageAnimationTarget;
   transaction: Transaction;
   points: Map<number, GesturePoint>;
   anchor: ReturnType<typeof gestureGeometry>;
@@ -17,12 +19,18 @@ type Session = {
   pinched: boolean;
   moved: boolean;
   part: LookPart | null;
+  autoKey: boolean;
 };
 
-function layerTarget(element: Element | null): OverlayTarget | null {
+function layerTarget(element: Element | null, animate: boolean): StageAnimationTarget | null {
   const id = element?.closest<HTMLElement>("[data-layer-id]")?.dataset.layerId;
   if (id?.startsWith("text:")) return { kind: "text", id: Number(id.slice(5)) };
   if (id?.startsWith("component:")) return { kind: "component", id: id.slice(10) };
+  if (id === "video" && animate) {
+    const state = useCapture.getState();
+    const clip = locate(state.t, state.clips)?.c;
+    if (clip && state.clips[state.sel]?.id === clip.id) return { kind: "clip", id: clip.id };
+  }
   return null;
 }
 
@@ -78,22 +86,28 @@ export function useOverlayGestures(boxRef: RefObject<HTMLDivElement>, directSele
     current.original = current.transaction.value();
   };
   const onPointerDownCapture = (event: PointerEvent<HTMLDivElement>) => {
-    if (trying || picking || event.button !== 0 || (event.target as Element).closest(".tryPill")) return;
+    if (trying || picking || event.button !== 0
+      || (event.target as Element).closest(".tryPill, [data-animation-path-key]")) return;
     let current = session.current;
     if (!current) {
-      const direct = layerTarget(event.target as Element);
       const state = useCapture.getState();
-      const selected: OverlayTarget | null = state.selText != null ? { kind: "text", id: state.selText }
-        : state.selComp ? { kind: "component", id: state.selComp } : null;
+      const autoKey = directSelectionOnly || state.sheet === "animation";
+      const direct = layerTarget(event.target as Element, autoKey);
+      const selected: StageAnimationTarget | null = state.selText != null ? { kind: "text", id: state.selText }
+        : state.selComp ? { kind: "component", id: state.selComp }
+          : autoKey && state.clips[state.sel] ? { kind: "clip", id: state.clips[state.sel].id } : null;
       const target = direct ?? (directSelectionOnly ? null : selected);
-      if (!target || !event.currentTarget.querySelector(`[data-layer-id="${target.kind}:${target.id}"]`)) return;
-      state.patch({ ...(target.kind === "text"
-        ? { selText: target.id, selComp: null } : { selComp: target.id, selText: null }),
-        sel: -1, playing: false, orb: false });
-      const transaction = beginOverlayTransform(target);
+      const layerId = target?.kind === "clip" ? "video" : target && `${target.kind}:${target.id}`;
+      if (!target || !event.currentTarget.querySelector(`[data-layer-id="${layerId}"]`)) return;
+      state.patch({ selText: target.kind === "text" ? target.id : null,
+        selComp: target.kind === "component" ? target.id : null,
+        sel: target.kind === "clip" ? state.clips.findIndex(clip => clip.id === target.id) : -1,
+        playing: false, orb: false });
+      const transaction = autoKey ? beginStageAnimationTransform(target, !directSelectionOnly)
+        : target.kind === "clip" ? null : beginOverlayTransform(target);
       if (!transaction) return;
       current = {
-        target, transaction, points: new Map(), anchor: { x: event.clientX, y: event.clientY, distance: 1 },
+        target, transaction, autoKey, points: new Map(), anchor: { x: event.clientX, y: event.clientY, distance: 1 },
         original: transaction.value(), movable: !!direct, pinched: false, moved: false,
         part: target.kind === "component" ? (event.target as Element).closest<HTMLElement>("[data-look-part]")?.dataset.lookPart as LookPart ?? null : null,
       };
@@ -120,9 +134,11 @@ export function useOverlayGestures(boxRef: RefObject<HTMLDivElement>, directSele
     current.moved = true;
     const box = event.currentTarget;
     if (!box.clientWidth || !box.clientHeight) { cancel(); return; }
+    const rect = box.getBoundingClientRect();
+    const followPointer = current.autoKey && !current.pinched;
     if (!current.transaction.update({
-      x: current.original.x + dx / box.clientWidth * 100,
-      y: current.original.y + dy / box.clientHeight * 100,
+      x: followPointer ? (geometry.x - rect.left) / rect.width * 100 : current.original.x + dx / box.clientWidth * 100,
+      y: followPointer ? (geometry.y - rect.top) / rect.height * 100 : current.original.y + dy / box.clientHeight * 100,
       size: current.original.size * ratio,
     })) cancel();
   };
@@ -136,7 +152,8 @@ export function useOverlayGestures(boxRef: RefObject<HTMLDivElement>, directSele
     current.transaction.commit();
     if (current.movable && !current.moved && !current.pinched) {
       if (current.target.kind === "component" && current.part) selectComponentLookPart(current.target.id, current.part);
-      useCapture.getState().patch({ sheet: current.target.kind === "text" ? "text" : "component" });
+      if (current.target.kind !== "clip" && useCapture.getState().sheet !== "animation")
+        useCapture.getState().patch({ sheet: current.target.kind === "text" ? "text" : "component" });
     }
   };
 

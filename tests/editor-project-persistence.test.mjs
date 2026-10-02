@@ -119,3 +119,66 @@ test("named local projects survive a checkpoint while old checkpoints remain rea
   validateCheckpoint(record);
   assert.equal(restoreCheckpoint(record, new Map()).localId, undefined);
 });
+
+function animatedState() {
+  const state = initial();
+  const curve = (property, first = 0, last = 1) => ({ tracks: {
+    [property]: [{ time: 0, value: first, easing: "ease-in-out" }, { time: 2, value: last, easing: "hold" }],
+  } });
+  const current = scene([{ ...clip(1, "blob:video"), animation: curve("x", 0, 20) }],
+    [{ ...choice(), animation: curve("rotation", 0, 90) }]);
+  current.texts = [{ id: 2, text: "Animated title", start: 0, end: 3, x: 50, y: 50, animation: curve("opacity") }];
+  current.audioClips = [{ id: 3, name: "Voice", url: "blob:audio", srcDur: 3, in: 0, out: 3,
+    start: 0, speed: 1, muted: false, gain: 1, animation: curve("gain") }];
+  current.sound = 1;
+  current.musicAnimation = curve("gain", 1, 0);
+  state.scenes = [current];
+  state.past = [{ scenes: structuredClone(state.scenes), currentSceneId: "main", ratio: "9:16", allowedDomains: [] }];
+  state.future = structuredClone(state.past);
+  return state;
+}
+
+test("all layer animation curves survive saved projects and undo history independently", () => {
+  const state = animatedState();
+  const draft = captureCheckpoint(state);
+  const record = storeCheckpoint(draft, new Map([["blob:video", "asset:video"], ["blob:audio", "asset:audio"]]), 123);
+  validateCheckpoint(JSON.parse(JSON.stringify(record)));
+  const restored = restoreCheckpoint(record, new Map([["asset:video", "blob:restored-video"], ["asset:audio", "blob:restored-audio"]]));
+  const project = restored.project.scenes[0];
+  const original = state.scenes[0];
+  for (const key of ["clips", "texts", "components", "audioClips"]) {
+    assert.deepEqual(project[key][0].animation, original[key][0].animation);
+    assert.notEqual(project[key][0].animation, original[key][0].animation);
+    original[key][0].animation.tracks[Object.keys(original[key][0].animation.tracks)[0]][0].value = .25;
+    assert.deepEqual(restored.past[0].scenes[0][key][0].animation, project[key][0].animation);
+    assert.deepEqual(restored.future[0].scenes[0][key][0].animation, project[key][0].animation);
+  }
+  assert.deepEqual(project.musicAnimation, original.musicAnimation);
+  assert.notEqual(project.musicAnimation, original.musicAnimation);
+});
+
+test("invalid animation in a saved project or its history is rejected before rendering", () => {
+  const record = storeCheckpoint(captureCheckpoint(animatedState()),
+    new Map([["blob:video", "asset:video"], ["blob:audio", "asset:audio"]]), 123);
+  for (const location of ["project", "past", "future"]) {
+    const invalid = structuredClone(record);
+    const project = location === "project" ? invalid.project : invalid[location][0];
+    project.scenes[0].audioClips[0].animation = { tracks: { rotation: [{ time: 0, value: 10, easing: "linear" }] } };
+    assert.throws(() => validateCheckpoint(invalid), /Scene main, audio 3: Animation property rotation is not supported/);
+  }
+  const unordered = structuredClone(record);
+  unordered.project.scenes[0].clips[0].animation.tracks.x[1].time = 0;
+  assert.throws(() => validateCheckpoint(unordered), /ordered and unique/);
+  const badValue = structuredClone(record);
+  badValue.project.scenes[0].musicAnimation.tracks.gain[0].value = 2;
+  assert.throws(() => validateCheckpoint(badValue), /Scene main, music: Invalid gain keyframe/);
+});
+
+test("capture and storage reject curves that cannot be restored", () => {
+  const invalid = animatedState();
+  invalid.scenes[0].texts[0].animation.tracks.opacity[0].easing = "bounce";
+  assert.throws(() => captureCheckpoint(invalid), /Invalid opacity keyframe/);
+  const draft = captureCheckpoint(animatedState());
+  draft.project.scenes[0].components[0].animation.tracks.rotation[0].value = NaN;
+  assert.throws(() => storeCheckpoint(draft, new Map(), 123), /Invalid rotation keyframe/);
+});

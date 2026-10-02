@@ -1,7 +1,7 @@
 import type { Scene } from "../../domain/project/model";
 import { duplicateSceneData } from "../../domain/scenes/duplicate";
-import { clearDeletedComponentRoutes } from "../../domain/scenes/references";
-import { canReparentScene, nextSceneName, sceneChildren, sceneSubtreeIds } from "../../domain/scenes/rules";
+import { removeSceneSubtree } from "../../domain/scenes/deletion";
+import { canReparentScene, nextSceneName, sceneChildren } from "../../domain/scenes/rules";
 import { uid } from "../../infrastructure/ids";
 import type { CaptureState } from "../types";
 
@@ -53,12 +53,7 @@ export function createSceneActions(get: () => CaptureState): Pick<CaptureState, 
       const state = get();
       if (id === "main" || !state.scenes.some(scene => scene.id === id))
         return;
-      const deleted = sceneSubtreeIds(state.scenes, id);
-      const scenes = state.scenes.filter(scene => !deleted.has(scene.id)).map(scene => ({
-        ...scene,
-        components: scene.components.map(component => clearDeletedComponentRoutes(component, deleted)),
-      }));
-      const parent = state.scenes.find(scene => scene.id === id)?.parent ?? "main";
+      const { scenes, deleted, parent } = removeSceneSubtree(state.scenes, id);
       const currentSceneId = deleted.has(state.currentSceneId) ? parent : state.currentSceneId;
       state.edit({ ...sceneSelection(currentSceneId), scenes });
     },

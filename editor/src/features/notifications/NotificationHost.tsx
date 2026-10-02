@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { notificationDefinition, type NotificationKind } from "../../domain/notifications/catalog";
 import { dismissNotification, useNotifications } from "../../state/notifications/notificationStore";
+import { performNotificationAction } from "../../state/assistant/nativeAppliedNotification";
 import { NotificationIssues } from "./NotificationIssues";
 import { useNotificationContext } from "./useNotificationContext";
 import { useNotificationTimeout } from "./useNotificationTimeout";
@@ -20,32 +22,46 @@ export function NotificationHost({ inlineRestore = false }: { inlineRestore?: bo
   const announcement = useNotifications(state => state.announcement);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [previewHost, setPreviewHost] = useState<Element | null>(null);
   const visibleCurrent = inlineRestore && current?.id === "restoreFailed" ? null : current;
   const visibleAnnouncement = inlineRestore && announcement?.id === "restoreFailed" ? null : announcement;
   const definition = visibleCurrent && notificationDefinition(visibleCurrent.id);
   const announced = visibleAnnouncement && notificationDefinition(visibleAnnouncement.id);
+  useLayoutEffect(() => {
+    const host = visibleCurrent?.id === "assistantApplied"
+      ? document.querySelector('[data-assistant-region]:has([data-placement="floating"])')
+        ?? document.querySelector(".previewArea")
+      : null;
+    // A requested answer can keep the workspace inert after an edit completes.
+    // Its Undo action must remain reachable through the normal notification host.
+    setPreviewHost(host?.closest("[inert]") ? null : host);
+  }, [visibleCurrent?.key]);
   useEffect(() => { setHovered(false); setFocused(false); }, [visibleCurrent?.key, visibleCurrent?.createdAt]);
   useNotificationContext();
   useNotificationTimeout(visibleCurrent, hovered || focused);
+  const notice = visibleCurrent && definition && <div key={`${visibleCurrent.key}:${visibleCurrent.createdAt}`} className={styles.notice}
+    data-notification-id={visibleCurrent.id} data-severity={definition.kind} role="group" aria-label={`${definition.kind} notification`}
+    onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+    onFocusCapture={() => setFocused(true)} onBlurCapture={event => {
+      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
+    }}>
+    <span className={styles.icon}>{visibleCurrent.id === "assistantApplied" ? "✦" : <NotificationIcon kind={definition.kind} />}</span>
+    <span className={styles.message}>{visibleCurrent.summary ?? definition.message}</span>
+    {visibleCurrent.action && <button className={styles.action} onClick={() => performNotificationAction()}>Undo</button>}
+    <button className={styles.dismiss} aria-label="Dismiss notification" onClick={() => {
+      setHovered(false); setFocused(false); dismissNotification();
+    }}>×</button>
+  </div>;
   return <div className={styles.host} data-notification-root>
     <div className={styles.srOnly} role="status" aria-live="polite" aria-atomic="true">
-      {announced && announced.kind !== "error" ? `${announced.kind}: ${announced.message}` : ""}
+      {announced && announced.kind !== "error" ? `${announced.kind}: ${visibleAnnouncement?.summary ?? announced.message}` : ""}
     </div>
     <div className={styles.srOnly} role="alert" aria-atomic="true">
       {announced?.kind === "error" ? `Error: ${announced.message}` : ""}
     </div>
-    {visibleCurrent && definition && <div key={`${visibleCurrent.key}:${visibleCurrent.createdAt}`} className={styles.notice}
-      data-notification-id={visibleCurrent.id} data-severity={definition.kind} role="group" aria-label={`${definition.kind} notification`}
-      onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-      onFocusCapture={() => setFocused(true)} onBlurCapture={event => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
-      }}>
-      <span className={styles.icon}><NotificationIcon kind={definition.kind} /></span>
-      <span className={styles.message}>{definition.message}</span>
-      <button className={styles.dismiss} aria-label="Dismiss notification" onClick={() => {
-        setHovered(false); setFocused(false); dismissNotification();
-      }}>×</button>
-    </div>}
+    {previewHost && visibleCurrent?.id === "assistantApplied"
+      ? createPortal(<div className={styles.appliedHost} data-notification-root>{notice}</div>, previewHost)
+      : notice}
     <NotificationIssues hideRestore={inlineRestore} />
   </div>;
 }

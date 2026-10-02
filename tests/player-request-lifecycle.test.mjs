@@ -92,6 +92,7 @@ function playerHarness(components, diagnostics = {}) {
     adapters: {
       setComponentPending() {}, updateComponentResponse() {}, renderOverlays() {},
       setStatus(message, error) { statuses.push({ message, error }); },
+      componentCanReceiveResponse: () => true,
       visibleComponents: () => components,
       captureOutcome: () => ({ kind: "continue" }),
       async applyActionOutcome(component, index, outcome) {
@@ -105,7 +106,7 @@ function playerHarness(components, diagnostics = {}) {
     refs: { video, endScreen },
     adapters: {
       elapsedTime: () => 10, localClipTime: () => 10, activeClip: () => main.clips[0],
-      componentsForClip: () => components, captureAboveVideo: () => true,
+      componentsForClip: () => components, componentCanReceiveResponse: () => true,
       renderOverlays() {}, updateProgress() {}, showControls() {},
       setStatus(message, error) { statuses.push({ message, error }); },
       replaceActionRuntime: (...args) => runtimeAdapter.replaceActionRuntime(...args),

@@ -15,7 +15,7 @@ export function useAppLocation() {
 /** Responsive views share this URL; viewport changes never navigate. */
 export function navigateProject(id: string | null, replace = false) {
   const url = new URL(location.href);
-  for (const key of ["home", "project", "template"]) url.searchParams.delete(key);
+  for (const key of ["home", "project", "template", "filter"]) url.searchParams.delete(key);
   if (id) url.searchParams.set("project", id);
   else url.searchParams.set("home", "1");
   if (replace) history.replaceState(null, "", url);

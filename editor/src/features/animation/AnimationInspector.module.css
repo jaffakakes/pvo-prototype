@@ -1,0 +1,32 @@
+.inspector { color: #f2f0e9; font-family: var(--f-ui); min-width: 0; }
+.section { display: flex; flex-direction: column; gap: 6px; padding: 8px 16px 10px; border-bottom: 1px solid #ffffff0f; }
+.heading { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.heading h3 { margin: 0; font: 800 12px var(--f-ui); }
+.heading span { color: #f2f0e973; font: 600 10px var(--f-ui); white-space: nowrap; }
+.rows { display: grid; gap: 7px; }
+.property { min-width: 0; }
+.propertyHead { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.toggle { flex: none; width: 22px; height: 22px; display: grid; place-items: center; padding: 0; background: transparent; border: 0; border-radius: 6px; cursor: pointer; }
+.toggle:hover { background: #ffffff14; }
+.toggle i { width: 10px; height: 10px; box-sizing: border-box; transform: rotate(45deg); border: 2px solid #a7a3b8; border-radius: 1px; }
+.toggle[data-animated="true"] i { border-color: #ff9fbc; }
+.toggle[aria-pressed="true"] i { border-color: #000; background: #ff2d78; }
+.propertyLabel { color: #d8d5cb; font: 600 12px var(--f-ui); margin-right: auto; }
+.navigation { display: flex; }
+.navigation button { width: 18px; height: 22px; padding: 0; background: transparent; border: 0; color: #d8d5cb; font: 800 15px var(--f-ui); cursor: pointer; }
+.navigation button:disabled { color: #f2f0e938; }
+.value { min-width: 54px; height: 26px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 0 7px; border: 2px solid #ffffff1a; border-radius: 8px; background: #1c1c24; font: 700 11.5px var(--f-ui); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.value[data-keyed="true"] { border-color: #ff2d78; }
+.slider { padding: 5px 8px 0 30px; }
+.card { background: #15151c; border: 2px solid #ffffff1a; border-radius: 14px; padding: 9px 10px; display: flex; flex-direction: column; gap: 7px; }
+.cardHead { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font: 800 11px var(--f-ui); }
+.cardHead strong { font: inherit; }
+.cardHead > span { flex: 1; color: #ff9fbc; font-variant-numeric: tabular-nums; }
+.diamond { width: 10px; height: 10px; flex: none; background: #ff2d78; border: 2px solid #000; box-sizing: border-box; transform: rotate(45deg); border-radius: 2px; }
+.card p { margin: 0; color: #f2f0e980; font: 700 11px var(--f-ui); }
+.delete { display: inline-flex; align-items: center; gap: 3px; border: 0; background: none; padding: 0; color: #ff5c5c; cursor: pointer; font: 800 11px var(--f-ui); }
+.note { margin: 0; color: #f2f0e980; font: 500 12px/1.5 var(--f-ui); }
+.follow { align-self: flex-start; color: #ff83a8; border: 0; padding: 3px 0; background: none; font: 800 12px var(--f-ui); cursor: pointer; }
+.error { margin: 0; color: #ff9fbc; font: 600 12px/1.4 var(--f-ui); }
+.inspector button:disabled { cursor: default; opacity: .45; }
+.inspector button:focus-visible { outline: 2px solid #ff9fbc; outline-offset: 3px; }

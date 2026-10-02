@@ -1,9 +1,11 @@
+import { addSelectedAuthoringKey, deleteSelectedAuthoringKey } from "../state/animation/commands";
+import { useAnimationSelection } from "../state/animation/selection";
 import { deleteSelectedAudio, splitSelectedAudio } from "../state/editing/audioCommands";
 import { sceneDuration } from "../domain/scenes/duration";
 import { useEffect } from "react";
 import { clamp } from "../domain/project/numbers";
 import { startTry, stopTry } from "../features/preview/tryMode";
-import { togglePlayback } from "../features/preview/playbackCommands";
+import { togglePlayback } from "../state/editing/playbackCommands";
 import { deleteSelectedClip, splitAtPlayhead } from "../features/timeline/clipCommands";
 import { acceptPlayheadPick, cancelPlayheadPick } from "../features/timeline/playheadPick";
 import { useCapture } from "../state/captureStore";
@@ -48,6 +50,8 @@ export function useEditorKeyboard(enabled = true) {
       if (event.key === "Escape") {
         if (s.tryMode)
           stopTry();
+        else if (useAnimationSelection.getState().selection)
+          useAnimationSelection.getState().clear();
         else if (desktop)
           clearTimelineSelection();
         else if (s.ratioMenu)
@@ -95,6 +99,15 @@ export function useEditorKeyboard(enabled = true) {
         !s.scenes.some((scene) => sceneDuration(scene) > 0)
       )
         return;
+      if (!s.tryMode && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        addSelectedAuthoringKey();
+        return;
+      }
+      if (!s.tryMode && ["Delete", "Backspace"].includes(event.key) && deleteSelectedAuthoringKey()) {
+        event.preventDefault();
+        return;
+      }
       if (event.key.toLowerCase() === "c" && !s.tryMode) {
         s.patch({ sheet: "components", playing: false, orb: false });
         return;

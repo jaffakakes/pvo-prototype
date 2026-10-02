@@ -1,5 +1,14 @@
+import { getLayerTracking } from "../../../domain/animation/trackingMetadata";
+import { getAuthoringLayer } from "../../../domain/animation/authoring";
+import {
+  addSelectedAuthoringKey,
+  deleteSelectedAuthoringKey,
+  selectedAuthoringTarget,
+} from "../../../state/animation/commands";
+import { useAnimationSelection } from "../../../state/animation/selection";
+import { formatKeyTime } from "../../animation/presentation";
 import { extractSelectedAudio } from "../../../state/editing/audioCommands";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { dur } from "../../../domain/clips/timing";
 import { useCapture } from "../../../state/captureStore";
 import { useAssistant } from "../../../state/assistant/assistantStore";
@@ -40,8 +49,10 @@ function Tool({
   path,
   disabled,
   onClick,
+  tone,
 }: {
   label: string;
+  tone?: "keyframe" | "delete";
   icon?: string;
   path?: string;
   disabled?: boolean;
@@ -51,6 +62,7 @@ function Tool({
     <button
       className={styles.tool}
       title={label}
+      data-tone={tone}
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
@@ -90,6 +102,13 @@ export function TimelineToolbar({
   const clip = state.clips[state.sel];
   const audio = state.sheet === "sound" && !!state.sound;
   const extracted = state.audioClips.find((item) => item.id === state.selAudio);
+  const keySelection = useAnimationSelection((value) => value.selection);
+  const animationTarget = selectedAuthoringTarget(state);
+  const scene = state.scenes.find((item) => item.id === state.currentSceneId);
+  const animationLayer =
+    scene && animationTarget ? getAuthoringLayer(scene, animationTarget) : null;
+  const tracking =
+    scene && animationTarget ? getLayerTracking(scene, animationTarget) : null;
   const selected = !!(component || text || clip || audio || extracted);
   const label = extracted
     ? extracted.name
@@ -155,12 +174,31 @@ export function TimelineToolbar({
           onClick={extractSelectedAudio}
         />
         <Tool
-          label="Delete selection · Backspace"
+          label={
+            keySelection
+              ? "Delete keyframe · Backspace"
+              : "Delete selection · Backspace"
+          }
+          tone={keySelection ? "delete" : undefined}
           icon="delete"
           disabled={blocked || !selected}
-          onClick={deleteTimelineSelection}
+          onClick={() => {
+            if (!deleteSelectedAuthoringKey()) deleteTimelineSelection();
+          }}
+        />
+        <Tool
+          label={`Add keyframe at ${formatKeyTime(state.t)} · K`}
+          path="M12 3l9 9-9 9-9-9z"
+          tone="keyframe"
+          disabled={blocked || !animationTarget}
+          onClick={() => {
+            addSelectedAuthoringKey();
+          }}
         />
         <span
+          style={
+            { "--selection-color": animationLayer?.color } as CSSProperties
+          }
           className={styles.selection}
           data-selected={selected}
           title={label}
@@ -218,6 +256,15 @@ export function TimelineToolbar({
         >
           +
         </button>
+        {tracking && (
+          <span
+            className={styles.following}
+            data-following-status
+            title={`Following ${tracking.label}`}
+          >
+            <i aria-hidden="true" />✦ Following {tracking.label}
+          </span>
+        )}
         {assistant && (
           <>
             <span className={styles.separator} />

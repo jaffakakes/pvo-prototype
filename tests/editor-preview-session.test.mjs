@@ -91,6 +91,53 @@ function diagnosticFixture() {
   } };
 }
 
+test("animated opacity, collapsed scale and off-canvas position cannot create an unanswered Try hold", () => {
+  for (const [property, value] of [["opacity", 0], ["scaleX", 0], ["scaleY", 0], ["x", 100]]) {
+    const component = { id: "hidden-choice", type: "choice", sceneId: "main", x: 50, y: 50,
+      at: 1, dur: 3, responsePolicy: { dispatch: "layer_end", unanswered: "pause" },
+      fields: { prompt: "Choose", options: [{ label: "A", outcome: { kind: "continue" } }, { label: "B", outcome: { kind: "continue" } }] },
+      animation: { tracks: { [property]: [{ time: 0, value: property === "x" ? 0 : 1, easing: "linear" }, { time: 3, value, easing: "linear" }] } } };
+    const harness = fixture(3.9, undefined, component);
+    harness.session.startTry();
+    assert.equal(harness.session.advanceTry(harness.state, 4.1), false, property);
+    assert.equal(harness.state.tryMode.holdingId, null, property);
+    assert.equal(harness.state.playing, true, property);
+    harness.session.stopTry();
+  }
+});
+
+test("a below-video component can pause once animated footage reveals its interaction center", () => {
+  for (const [property, value] of [["opacity", 0], ["x", 100], ["scaleX", 0]]) {
+    const component = { id: "revealed-choice", type: "choice", sceneId: "main", x: 50, y: 50,
+      at: 1, dur: 3, responsePolicy: { dispatch: "layer_end", unanswered: "pause" },
+      fields: { prompt: "Choose", options: [{ label: "A", outcome: { kind: "continue" } }, { label: "B", outcome: { kind: "continue" } }] } };
+    const harness = fixture(3.9, undefined, component);
+    harness.state.layers = ["component:revealed-choice", "video"];
+    harness.state.clips[0].animation = { tracks: { [property]: [{ time: 0, value: property === "x" ? 0 : 1, easing: "linear" }, { time: 4, value, easing: "linear" }] } };
+    harness.session.startTry();
+    assert.equal(harness.session.advanceTry(harness.state, 4.1), true, property);
+    assert.equal(harness.state.tryMode.holdingId, component.id, property);
+    assert.equal(harness.state.t, 4, "Visibility uses the exact boundary, not the previous or next frame");
+    harness.session.stopTry();
+  }
+});
+
+test("a failed deferred request retains its failure but releases a now-invisible retry hold", async () => {
+  const outcome = { kind: "request", url: "https://example.com/fail", method: "POST", body: "{}", onSuccess: { kind: "continue" }, onError: null };
+  const component = { id: "fade-card", sceneId: "main", type: "card", x: 50, y: 50, at: 1, dur: 3,
+    responsePolicy: { dispatch: "layer_end", unanswered: "pause" }, fields: { title: "Send", buttons: [{ label: "Send", outcome }] },
+    animation: { tracks: { opacity: [{ time: 0, value: 1, easing: "linear" }, { time: 3, value: 0, easing: "linear" }] } } };
+  const harness = fixture(3.9, async () => new Response("failure", { status: 503 }), component);
+  harness.session.startTry();
+  await harness.session.runComponentResponse(component, { index: 0, outcome });
+  harness.session.advanceTry(harness.state, 4.1);
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(harness.state.tryMode.holdingId, null);
+  assert.equal(harness.state.playing, true);
+  assert.equal(harness.feedback()[component.id].phase, "failed");
+  harness.session.stopTry();
+});
+
 test("Try diagnostic trace distinguishes a captured answer from its deferred execution", async () => {
   const trace = diagnosticFixture();
   const component = { id: "question", type: "choice", sceneId: "main", at: 1, dur: 4,

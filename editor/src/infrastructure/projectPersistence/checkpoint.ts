@@ -2,6 +2,8 @@ import type { ProjectSnapshot, Scene } from "../../domain/project/model";
 import { assertResponsePolicyContract } from "../../domain/components/responsePolicy";
 import { cloneScenes } from "../../domain/project/snapshot";
 import { normalizeSceneTree } from "../../domain/scenes/rules";
+import { assertSceneAnimation } from "../../domain/animation/validation";
+import { remapTrackingMediaReferences } from "../../domain/animation/trackingPersistence";
 
 export type RestoredProject = {
   localId?: string;
@@ -76,6 +78,7 @@ export function captureCheckpoint(state: PersistenceSnapshot): CheckpointDraft {
     },
   };
   assertCheckpointComponentContracts(draft);
+  assertCheckpointAnimations(draft);
   return draft;
 }
 
@@ -97,6 +100,11 @@ function assertCheckpointComponentContracts(checkpoint: CheckpointProjects): voi
   }
 }
 
+function assertCheckpointAnimations(checkpoint: CheckpointProjects): void {
+  for (const scenes of allScenes(checkpoint))
+    for (const scene of scenes) assertSceneAnimation(scene);
+}
+
 export function referencedMedia(checkpoint: CheckpointDraft): string[] {
   const urls = new Set<string>();
   for (const scenes of allScenes(checkpoint))
@@ -109,7 +117,7 @@ function remapProject(
   project: ProjectSnapshot,
   urlMap: Map<string, string>,
 ): ProjectSnapshot {
-  return {
+  return remapTrackingMediaReferences(project, {
     ...project,
     scenes: normalizeSceneTree(project.scenes).map((scene) => ({
       ...scene,
@@ -121,7 +129,7 @@ function remapProject(
         url: clip.url ? (urlMap.get(clip.url) ?? null) : null,
       })),
     })),
-  };
+  });
 }
 
 export function storeCheckpoint(
@@ -130,6 +138,7 @@ export function storeCheckpoint(
   savedAt: number,
 ): StoredCheckpoint {
   assertCheckpointComponentContracts(draft);
+  assertCheckpointAnimations(draft);
   const assetIds = referencedMedia(draft).map((url) => {
     const assetId = assetIdByUrl.get(url);
     if (!assetId) throw new Error("A video clip has no browser storage ID.");
@@ -212,6 +221,7 @@ export function validateCheckpoint(
         throw new Error("Saved audio layer data is invalid.");
     }
   }
+  assertCheckpointAnimations(value as StoredCheckpoint);
   const needed = referencedMedia(value as StoredCheckpoint);
   const available = new Set(value.assetIds);
   if (needed.some((url) => !available.has(url)))

@@ -9,7 +9,7 @@ import {
 import { sceneDuration } from "../../domain/scenes/duration";
 import { clamp } from "../../domain/project/numbers";
 import { useCapture } from "../../state/captureStore";
-import { scrubPlayback } from "../preview/playbackCommands";
+import { scrubPlayback } from "../../state/editing/playbackCommands";
 import { PLAYHEAD_X, PPS } from "./geometry";
 
 type Drag = {

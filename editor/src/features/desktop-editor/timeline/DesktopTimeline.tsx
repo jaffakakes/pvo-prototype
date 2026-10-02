@@ -1,4 +1,5 @@
 import {
+  Fragment,
   useEffect,
   useRef,
   useState,
@@ -12,6 +13,15 @@ import { useCapture } from "../../../state/captureStore";
 import { clearTimelineSelection } from "../../../state/editing/selectionCommands";
 import { fmt } from "../../../ui/formatTime";
 import { AudioClipBar } from "../../sound/AudioClipBar";
+import { selectedAuthoringTarget } from "../../../state/animation/commands";
+import { useAnimationSelection } from "../../../state/animation/selection";
+import { useAnimationSettings } from "../../../state/animation/settings";
+import { snapAuthoringTime } from "../../../domain/animation/authoring";
+import {
+  PropertyLane,
+  PropertyLaneLabel,
+} from "../../animation/timeline/PropertyLane";
+import { AudioEnvelope } from "../../animation/timeline/AudioEnvelope";
 import { SOUNDS } from "../../sound/catalog";
 import { useTimingPointer } from "../../timeline/useTimingPointer";
 import styles from "./DesktopTimeline.module.css";
@@ -22,6 +32,7 @@ import {
 } from "./DesktopVisualLayerRows";
 import { DEFAULT_ZOOM, snappedTime, timelineSnapPoints } from "./geometry";
 import { desktopLayerLayout } from "./layerRows";
+import { selectedAnimationLanes, withAnimationRows } from "./animationRows";
 import { TimelineTimePicker } from "./TimelineTimePicker";
 import { TimelineToolbar } from "./TimelineToolbar";
 
@@ -41,6 +52,16 @@ export function DesktopTimeline({
   const state = useCapture();
   const assistantActive = useAssistant((value) => value.phase !== "idle");
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
+  const laneMode = useAnimationSettings((value) => value.laneMode);
+  const scene = state.scenes.find((item) => item.id === state.currentSceneId);
+  const animationTarget = selectedAuthoringTarget(state);
+  const animationLanes = selectedAnimationLanes(
+    scene,
+    animationTarget,
+    laneMode === "single",
+  );
+  const audioAnimation =
+    animationTarget?.kind === "audio" || animationTarget?.kind === "music";
   const content = useRef<HTMLDivElement>(null);
   const scroll = useRef<HTMLDivElement>(null);
   const scrubbing = useRef<number | null>(null);
@@ -57,7 +78,10 @@ export function DesktopTimeline({
   const clipEnds = state.clips.map((clip) => (clipEnd += dur(clip)));
   const blocked = !!state.tryMode;
   const editingBlocked = blocked || !!state.playheadPick;
-  const layerLayout = desktopLayerLayout(state, zoom);
+  const layerLayout = withAnimationRows(
+    desktopLayerLayout(state, zoom),
+    animationLanes,
+  );
 
   useEffect(() => {
     const element = scroll.current;
@@ -71,8 +95,10 @@ export function DesktopTimeline({
 
   const select = (values: DesktopTimelineSelection) => {
     if (blocked || state.playheadPick) return;
+    useAnimationSelection.getState().clear();
     state.patch({
       sel: -1,
+      selAudio: null,
       selComp: null,
       selText: null,
       sheet: null,
@@ -87,14 +113,17 @@ export function DesktopTimeline({
     const rect = element.getBoundingClientRect();
     const scale = element.offsetWidth ? rect.width / element.offsetWidth : 1;
     const time = (event.clientX - rect.left) / scale / zoom;
+    useAnimationSelection.getState().clear();
     state.patch({
-      t: snappedTime(
-        time,
-        timelineSnapPoints(state.clips, state.components, state.texts),
-        zoom,
-        length,
-        snap,
-      ),
+      t: animationLanes.length
+        ? snapAuthoringTime(time, 0, length)
+        : snappedTime(
+            time,
+            timelineSnapPoints(state.clips, state.components, state.texts),
+            zoom,
+            length,
+            snap,
+          ),
       playing: false,
     });
   };
@@ -120,6 +149,7 @@ export function DesktopTimeline({
       className={styles.panel}
       aria-label="Timeline"
       data-desktop-timeline
+      data-animation-expanded={animationLanes.length > 0}
       data-time-pick={!!state.playheadPick}
     >
       {state.playheadPick ? (
@@ -139,15 +169,28 @@ export function DesktopTimeline({
       >
         <div className={styles.labels} aria-hidden="true">
           <div className={styles.currentTime}>{fmt(state.t)}</div>
-          <DesktopVisualLayerLabels rows={layerLayout.rows} />
+          <DesktopVisualLayerLabels rows={layerLayout.rows} scene={scene} />
           {state.audioClips.map((clip) => (
-            <div key={clip.id} className={styles.label} data-kind="audio">
-              <span>♪</span> {clip.name}
-            </div>
+            <Fragment key={clip.id}>
+              <div className={styles.label} data-kind="audio">
+                <span>♪</span> {clip.name}
+              </div>
+              {scene &&
+                animationTarget?.kind === "audio" &&
+                animationTarget.id === clip.id &&
+                animationLanes.map((lane, index) => (
+                  <PropertyLaneLabel key={index} scene={scene} lane={lane} />
+                ))}
+            </Fragment>
           ))}
           <div className={styles.label} data-kind="audio">
             <span>♪</span> Audio
           </div>
+          {scene &&
+            animationTarget?.kind === "music" &&
+            animationLanes.map((lane, index) => (
+              <PropertyLaneLabel key={index} scene={scene} lane={lane} />
+            ))}
         </div>
         <div ref={scroll} className={styles.scroll}>
           <div
@@ -161,8 +204,7 @@ export function DesktopTimeline({
               beginScrub(event);
             }}
             onPointerMove={(event) => {
-              if (state.playheadPick && scrubbing.current === event.pointerId)
-                scrub(event);
+              if (scrubbing.current === event.pointerId) scrub(event);
             }}
             onPointerUp={() => {
               scrubbing.current = null;
@@ -204,6 +246,8 @@ export function DesktopTimeline({
             </div>
             <DesktopVisualLayerLanes
               layout={layerLayout}
+              scene={scene}
+              onScrub={beginScrub}
               state={state}
               zoom={zoom}
               clipEnds={clipEnds}
@@ -214,13 +258,38 @@ export function DesktopTimeline({
               onSelect={select}
             />
             {state.audioClips.map((clip) => (
-              <div key={clip.id} className={styles.lane} data-kind="audio">
-                <AudioClipBar
-                  clip={clip}
-                  pixelsPerSecond={zoom}
-                  snap={{ enabled: snap, playhead: state.t }}
-                />
-              </div>
+              <Fragment key={clip.id}>
+                <div className={styles.lane} data-kind="audio">
+                  <AudioClipBar
+                    clip={clip}
+                    pixelsPerSecond={zoom}
+                    snap={{ enabled: snap, playhead: state.t }}
+                    style={{ height: 24 }}
+                  />
+                  {scene && (
+                    <AudioEnvelope
+                      scene={scene}
+                      target={{ kind: "audio", id: clip.id }}
+                      zoom={zoom}
+                      offset
+                    />
+                  )}
+                </div>
+                {scene &&
+                  audioAnimation &&
+                  animationTarget?.kind === "audio" &&
+                  animationTarget.id === clip.id &&
+                  animationLanes.map((lane, index) => (
+                    <PropertyLane
+                      key={index}
+                      scene={scene}
+                      lane={lane}
+                      zoom={zoom}
+                      disabled={editingBlocked}
+                      onScrub={beginScrub}
+                    />
+                  ))}
+              </Fragment>
             ))}
             <div
               className={styles.lane}
@@ -238,12 +307,33 @@ export function DesktopTimeline({
                   disabled={editingBlocked}
                   onClick={() => select({ sheet: "sound" })}
                 >
-                  ♪ {SOUNDS[state.sound]?.name ?? "Music"}
+                  <span className={styles.audioTitle}>
+                    ♪ {SOUNDS[state.sound]?.name ?? "Music"}
+                  </span>
+                  {scene && (
+                    <AudioEnvelope
+                      scene={scene}
+                      target={{ kind: "music" }}
+                      zoom={zoom}
+                    />
+                  )}
                 </button>
               ) : (
                 emptyAudioLane
               )}
             </div>
+            {scene &&
+              animationTarget?.kind === "music" &&
+              animationLanes.map((lane, index) => (
+                <PropertyLane
+                  key={index}
+                  scene={scene}
+                  lane={lane}
+                  zoom={zoom}
+                  disabled={editingBlocked}
+                  onScrub={beginScrub}
+                />
+              ))}
             <div
               data-desktop-playhead
               data-time={state.t}

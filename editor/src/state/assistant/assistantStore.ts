@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import type { AssistantReview } from "../../domain/assistant/review";
+
+import type { AssistantAnswer, AssistantEvidence, AssistantMessage } from "../../domain/assistant/model";
 
 export type AssistantPhase = "idle" | "typing" | "listening" | "working" | "review";
 type AssistantState = {
@@ -7,13 +8,18 @@ type AssistantState = {
   draft: string;
   transcript: string;
   failureDetail: { operation: string; detail: string } | null;
-  review: AssistantReview | null;
-  before: boolean;
+  answer: AssistantAnswer | null;
+  progress: string;
+  history: AssistantMessage[];
+  evidence: AssistantEvidence[];
 };
 const empty: AssistantState = {
-  phase: "idle", draft: "", transcript: "", failureDetail: null, review: null, before: false,
+  phase: "idle", draft: "", transcript: "", failureDetail: null,
+  answer: null, progress: "", history: [], evidence: [],
 };
 
-// Session-only proposals are deliberately excluded from project persistence/history.
+// Answers and conversation are session-only; edits use the project history.
 export const useAssistant = create<AssistantState>(() => ({ ...empty }));
-export const resetAssistant = () => useAssistant.setState({ ...empty });
+export const resetAssistant = ({ preserveConversation = false }: { preserveConversation?: boolean } = {}) =>
+  useAssistant.setState(current => ({ ...empty,
+    ...(preserveConversation ? { history: current.history, evidence: current.evidence } : {}) }));

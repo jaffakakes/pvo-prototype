@@ -224,22 +224,25 @@ async function run(testCase) {
     await composer.waitFor();
     await composer.fill("Make it blue");
     await button("Send request").click();
-    const review = page.getByRole("region", { name: "Review assistant change", exact: true });
-    await review.waitFor();
-    await settle(page);
-    await page.keyboard.press("Escape");
-    assert(await review.isVisible(), `${label}: Escape cannot discard an uncommitted review`);
-    assert(await expansion.isVisible(), `${label}: Escape keeps the IDE expanded during review`);
+    await page.waitForFunction(() => window.capture.getState().components[0]?.code?.pvo?.style.includes("#60A5FA"));
+    await page.locator('[data-assistant-phase="idle"]').waitFor();
+    const applied = page.locator('[data-notification-id="assistantApplied"]');
+    await applied.hover();
     assert.equal(provider.requests.length, 1);
-    assert.equal(provider.requests[0].editingMode, "advanced");
-    assert.equal(await style.inputValue(), originalStyle, `${label}: previewing a proposal leaves source uncommitted`);
-    inside(await review.boundingBox(), expandedBounds, `${label}: the full AI review stays inside the IDE`);
-    await review.getByRole("button", { name: "Keep", exact: true }).click();
+    assert.equal(provider.requests[0].mode, "plan", "Native operations are prepared as a complete batch before immediate apply");
+    assert(await expansion.isVisible(), `${label}: applying an edit keeps the IDE expanded`);
+    assert.match(await style.inputValue(), /#60A5FA/, `${label}: the AI edit immediately updates visible PVO source`);
+    await applied.getByRole("button", { name: "Undo", exact: true }).click();
+    await page.waitForFunction(expected => document.querySelector('[aria-label="Style source"]')?.value === expected, originalStyle);
+    assert.equal(await style.inputValue(), originalStyle, `${label}: toast Undo restores the previous authored source`);
+    await orb.click();
+    await composer.fill("Make it blue");
+    await button("Send request").click();
     await page.waitForFunction(() => window.capture.getState().components[0]?.code?.pvo?.style.includes("#60A5FA"));
     await page.locator('[data-assistant-phase="idle"]').waitFor();
     await page.getByRole("status").filter({ hasText: "Valid · preview updated" }).waitFor();
+    await page.locator('[data-notification-id="assistantApplied"]').getByRole("button", { name: "Dismiss notification" }).click();
     await settle(page);
-    assert.match(await style.inputValue(), /#60A5FA/, `${label}: keeping the AI edit updates visible PVO source`);
     const currentBounds = await panel.boundingBox();
     assert.deepEqual(currentBounds, expandedBounds, `${label}: assistant phases leave IDE geometry stable`);
     await assertCodeSurface(currentBounds);
@@ -300,7 +303,7 @@ async function run(testCase) {
 
 try {
   for (const testCase of cases.filter(testCase => !selectedWidths || selectedWidths.includes(testCase.width))) await run(testCase);
-  console.log("Advanced workspace passed: 80% IDE, hidden playback, full-height code with floating AI inside, retained draft/caret/layout, review/Keep, safe areas and keyboard fitting.");
+  console.log("Advanced workspace passed: 80% IDE, hidden playback, full-height code with floating AI inside, retained draft/caret/layout, immediate apply/Undo, safe areas and keyboard fitting.");
 } finally {
   await browser.close();
 }

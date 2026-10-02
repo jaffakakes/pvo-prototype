@@ -1,3 +1,4 @@
+import { AnimateEntry } from "../animation/AnimateEntry";
 import { useRef } from "react";
 import { useCapture } from "../../state/captureStore";
 import { adjustSelectedClip } from "../../state/editing/clipAdjustmentCommands";
@@ -14,7 +15,7 @@ export function CropSheet() {
       hasSnapshot.current = true;
   };
   return (
-    <Shell title="Crop" sub={`Clip ${state.sel + 1} · zoom and mirror`}>
+    <Shell title="Crop" sub={`Clip ${state.sel + 1} · zoom and mirror`} actions={<AnimateEntry />}>
       <div className={cx("zoomLabel")}>
         <span>Zoom</span>
         <strong>{Math.round((clip?.zoom ?? 1) * 100)}%</strong>

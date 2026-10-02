@@ -1,0 +1,20 @@
+.ribbon { padding: 0 18px; min-width: 0; }
+.ticks { position: relative; height: 18px; color: #f2f0e973; font: 500 10px var(--f-ui); font-variant-numeric: tabular-nums; }
+.ticks span { position: absolute; top: 0; white-space: nowrap; }
+.ticks .end { right: 0; }
+.well { position: relative; height: 44px; box-sizing: border-box; border: 2px solid #ffffff1f; border-radius: 12px; background: #0b0b0f; cursor: ew-resize; touch-action: none; }
+.well[data-audio="true"] { height: 64px; background: #1f3d33 repeating-linear-gradient(90deg, #2ec4b680 0 2px, transparent 2px 5px) 0 50% / auto 55% repeat-x; }
+.envelope { position: absolute; inset: 0; height: 100%; width: 100%; color: #5cf0c0; pointer-events: none; }
+.segment { position: absolute; top: 19px; border-top: 2px solid color-mix(in srgb, var(--track-color) 50%, transparent); pointer-events: none; }
+.segment[data-hold="true"] { border-top-style: dashed; }
+.pill { position: absolute; transform: translate(-50%, -50%); width: 22px; height: 16px; padding: 0; display: flex; align-items: center; justify-content: center; box-sizing: border-box; color: var(--track-color); background: #0b0b0f; border: 1.5px solid #ffffff33; border-radius: 4px; cursor: pointer; z-index: 2; }
+.pill::before { content: ''; position: absolute; inset: -6px -3px; }
+.key { position: absolute; width: 24px; height: 26px; transform: translate(-50%, -50%); padding: 0; display: grid; place-items: center; background: none; border: 0; cursor: grab; touch-action: none; z-index: 3; }
+.key i { width: 14px; height: 14px; border: 2px solid #000; box-sizing: border-box; border-radius: 3px; transform: rotate(45deg); background: var(--track-color); pointer-events: none; }
+.key[aria-pressed="true"] { z-index: 5; }
+.key[aria-pressed="true"] i { background: #ff2d78; transform: rotate(45deg) scale(1.15); box-shadow: 0 0 0 3px #ff2d784d; }
+.key:focus-visible, .pill:focus-visible { outline: 2px solid #ff9fbc; outline-offset: 3px; }
+.playhead { position: absolute; top: 0; bottom: 0; width: 2.5px; transform: translateX(-50%); background: #f2f0e9; box-shadow: 0 0 0 1px #000; z-index: 6; pointer-events: none; }
+.playhead b { position: absolute; width: 14px; height: 12px; top: -8px; left: 50%; transform: translateX(-50%); border: 2px solid #000; border-radius: 5px; background: #ff2d78; box-sizing: border-box; }
+
+.trackedBand { position: absolute; top: 0; bottom: 0; box-sizing: border-box; background: repeating-linear-gradient(135deg, #ff9fbc2e 0 6px, transparent 6px 12px); border: 1.5px solid #ff9fbc8c; border-radius: 5px; pointer-events: none; }

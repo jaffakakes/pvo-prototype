@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
-import { parseAssistantRequest, parseAssistantResponse } from "../../../packages/pvo-assistant/index.js";
+import { parseNativeTurnRequest } from "../../../packages/pvo-assistant/native/index.js";
+import { componentSourceResult, finishAssistantVerification, installAssistantAvailabilityFixture } from "./assistant-fixture.mjs";
 
 // Vite serves the real editor state and WASM compiler. Only AI HTTP responses are fixtures.
 const root = fileURLToPath(new URL("../../../", import.meta.url)).replaceAll("\\", "/");
@@ -81,6 +82,7 @@ async function seed(page, type, source) {
   await page.evaluate(async ({ root, type, source }) => {
     const { useCapture, mkClip } = await import("/src/store.ts");
     const { fieldsFromCompiled } = await import("/src/domain/components/fields.ts");
+    const { DEFAULT_RESPONSE_POLICY } = await import("/src/domain/components/responsePolicy.ts");
     const { setAdvancedEditingEnabled } = await import("/src/state/preferences/editorPreferences.ts");
     const { setComponentAuthoringTab } = await import("/src/state/components/componentAuthoringStore.ts");
     const { compilePvoComponent } = await import(`/@fs/${root}packages/pvo-language/index.js`);
@@ -88,6 +90,7 @@ async function seed(page, type, source) {
     const compiled = await compilePvoComponent(type, source);
     const id = `format-${type}`;
     const component = { id, type, sceneId: "main", at: 0, dur: 20, x: 50, y: 55,
+      responsePolicy: { ...DEFAULT_RESPONSE_POLICY },
       fields: fieldsFromCompiled(compiled), code: { custom: true, pvoLiteral: true, pvoTouched: false,
         pvo: source, pvoLastValid: { ...source }, pvoCompiled: { structure: compiled.structure, rules: compiled.rules } } };
     const clips = [mkClip(20, null, 0)];
@@ -164,7 +167,7 @@ async function blurFormatting(page) {
   assert.deepEqual((await component(page)).code.pvo, formatted.code.pvo);
 }
 
-async function compactAssistant(page, requests) {
+async function compactAssistant(page, requests, verifications) {
   await tab(page, "Structure").click();
   const before = await component(page);
   const beforeHistory = await historyLength(page);
@@ -172,20 +175,14 @@ async function compactAssistant(page, requests) {
   await page.locator('[data-placement="floating"] [data-assistant-orb]').click();
   await page.getByRole("textbox", { name: "Describe a change", exact: true }).fill("Make this blue and update the wording");
   await button(page, "Send request").click();
-  const review = page.getByRole("region", { name: "Review assistant change", exact: true });
-  await review.waitFor();
+  await page.locator('[data-notification-id="assistantApplied"]').waitFor();
   assert.equal(requests.length, 1);
-  assert.equal(requests[0].editingMode, "advanced");
-  assert.equal(await historyLength(page), beforeHistory, "Preparing a formatted AI proposal creates no history");
-  assert.deepEqual(await component(page), before, "AI review does not commit formatting or content");
-  const proposal = await page.evaluate(() => window.assistant.getState().review?.proposal.source);
-  assertReadable(proposal, "Compact AI output is formatted before review");
-  assert.deepEqual(await compile(page, "card", proposal), await compile(page, "card", aiSource));
-  await review.getByRole("button", { name: "Keep", exact: true }).click();
+  assert.equal(verifications.length, 1, "Formatted source is verified before the complete workflow applies");
+  assert.equal(requests[0].mode, "plan");
   await valid(page);
   await settled(page);
   const kept = await component(page);
-  assertReadable(kept.code.pvo, "Keep saves readable AI source");
+  assertReadable(kept.code.pvo, "Immediate apply saves readable AI source");
   await assertAutomaticOnly(page);
   assert.equal(await historyLength(page), beforeHistory + 1, "AI content and formatting commit together in one history entry");
   assert.deepEqual(await compile(page, "card", kept.code.pvo), await compile(page, "card", aiSource));
@@ -196,8 +193,8 @@ async function compactAssistant(page, requests) {
     });
     await page.screenshot({ path: process.env.PVO_FORMATTING_SCREENSHOT });
   }
+  await page.locator('[data-notification-id="assistantApplied"]').getByRole("button", { name: "Undo", exact: true }).click();
   await button(page, "Collapse language editor").click();
-  await button(page, "Undo").click();
   await page.waitForTimeout(500);
   assert.deepEqual(await component(page), before, "One Undo restores the component from before the AI change");
   assert.equal(await historyLength(page), beforeHistory);
@@ -234,16 +231,20 @@ async function invalidStyle(page) {
 try {
   for (const [type, compact] of [["card", card], ["form", form]]) {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
+    await installAssistantAvailabilityFixture(context);
     const page = await context.newPage();
     page.setDefaultTimeout(15000);
-    const errors = [], requests = [], externalRequests = [];
+    const errors = [], requests = [], verifications = [], externalRequests = [];
     page.on("pageerror", error => errors.push(error.message));
     page.on("request", value => { if (value.url().startsWith("https://example.com/")) externalRequests.push(value.url()); });
-    await context.route("**/api/assistant", async route => {
-      requests.push(parseAssistantRequest(route.request().postDataJSON()));
-      await route.fulfill({ json: parseAssistantResponse({ source: aiSource,
-        summary: "Updated the wording and appearance.", tags: ["Structure", "Style"],
-        followUps: ["Softer colours", "Larger heading", "Bolder"] }) });
+    await context.route("**/api/assistant/turn", async route => {
+      const request = parseNativeTurnRequest(route.request().postDataJSON());
+      if (await finishAssistantVerification(route, request)) {
+        verifications.push(request);
+        return;
+      }
+      requests.push(request);
+      await route.fulfill({ json: componentSourceResult(request, aiSource, "Updated the wording and appearance.") });
     });
     try {
       const { compiledBefore } = await openingRoundTrip(page, type, compact);
@@ -251,7 +252,7 @@ try {
         assert.equal(compiledBefore.structure.title, 'Say "yes" & go');
         assert.equal(compiledBefore.structure.body, "Keep  two spaces, {braces}; café 😀");
         await blurFormatting(page);
-        await compactAssistant(page, requests);
+        await compactAssistant(page, requests, verifications);
       } else {
         assert.equal(compiledBefore.structure.heading, 'Say "ready" & go');
         assert.equal(compiledBefore.structure.fields[0].label, 'Your "number"');
@@ -269,7 +270,7 @@ try {
       await context.close();
     }
   }
-  console.log("PVO formatting passed: automatic saved-source/blur formatting, exact compiler equivalence, one-edit undo, untouched drafts and atomic readable AI Keep.");
+  console.log("PVO formatting passed: automatic saved-source/blur formatting, exact compiler equivalence, one-edit undo, untouched drafts and atomic readable AI apply and Undo.");
 } finally {
   await browser.close();
 }

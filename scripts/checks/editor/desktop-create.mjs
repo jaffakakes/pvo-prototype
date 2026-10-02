@@ -18,6 +18,111 @@ const errors = [];
 const desktop = page => page.locator("[data-desktop-editor]");
 const clips = page => page.locator("[data-desktop-timeline]").getByRole("button", { name: /^Clip \d+,/ });
 
+const templateIds = ["talking-head", "product-drop", "choose-your-path", "travel-recap", "podcast-clip", "tutorial"];
+const templateMeta = [
+  "2 scenes · 0:30",
+  "Message actions · 3 scenes",
+  "Choice branching · 3 scenes",
+  "Scene routing · 5 scenes",
+  "Timeline jump · 1 scene",
+  "Local form · 3 scenes",
+];
+const templateColours = ["#4A2A3E", "#1F3D33", "#2B2347", "#4A3B23", "#23404A", "#3A2A1F"];
+
+async function gridTracks(gallery) {
+  return gallery.locator('[role="tabpanel"]').evaluate(element => getComputedStyle(element).gridTemplateColumns.split(" ").length);
+}
+
+async function waitForCards(gallery, count) {
+  await gallery.page().waitForFunction(({ selector, count: expected }) =>
+    document.querySelector(selector)?.querySelectorAll("[data-template-card]").length === expected,
+  { selector: "[data-template-gallery]", count });
+}
+
+async function assertTemplateGallery(page, width) {
+  const gallery = page.locator("[data-template-gallery]");
+  const previews = gallery.locator("[data-template-preview]");
+  assert.equal(await previews.count(), 6);
+  assert.equal(await gallery.locator("video, img").count(), 0, "Template hints must not borrow still or moving media");
+  assert.equal(await gallery.getByText("PVO sample", { exact: false }).count(), 0);
+  assert.equal(await gallery.locator("[data-template-card]").count(), 6);
+  assert.deepEqual(await gallery.locator("[data-template-card]").evaluateAll(cards => cards.map(card => card.getAttribute("data-template-card"))), templateIds);
+  assert.deepEqual(await gallery.locator("[data-template-card] [id$='-meta']").allTextContents(), templateMeta);
+  assert.deepEqual(await gallery.locator("[data-template-poster]").evaluateAll(posters => posters.map(poster =>
+    getComputedStyle(poster).getPropertyValue("--poster").trim().toUpperCase())), templateColours);
+  assert.equal(await gallery.locator("[data-template-poster]").first().evaluate(poster =>
+    getComputedStyle(poster, "::before").backgroundImage.startsWith("repeating-linear-gradient")), true);
+  assert.equal(await gallery.locator("[data-template-preview]").evaluateAll(nodes => nodes.every(node =>
+    getComputedStyle(node).backgroundImage === "none"
+      && [node, ...node.querySelectorAll("*")].every(element => getComputedStyle(element).filter === "none"))), true,
+  "Ghost frames must stay free of scenic gradients, blur and glow effects");
+
+  const dimensions = await previews.evaluateAll(nodes => nodes.map(node => {
+    const box = node.getBoundingClientRect();
+    return [node.getAttribute("data-ratio"), Math.round(box.width), Math.round(box.height)];
+  }));
+  assert.deepEqual(dimensions, [
+    ["9:16", 64, 114], ["9:16", 64, 114], ["9:16", 64, 114],
+    ["9:16", 64, 114], ["1:1", 92, 92], ["16:9", 132, 74],
+  ]);
+  assert.equal(await previews.evaluateAll(nodes => nodes.every(node => {
+    const animations = node.getAnimations({ subtree: true });
+    return animations.length > 0 && animations.every(animation => {
+      const timing = animation.effect?.getTiming();
+      const target = animation.effect?.target;
+      const style = target instanceof Element ? getComputedStyle(target) : null;
+      return animation.playState === "running" && timing?.duration === 3600
+        && timing.iterations === Infinity && timing.delay === 0
+        && style?.animationDuration === "3.6s" && style.animationTimingFunction === "ease-in-out"
+        && style.animationIterationCount === "infinite" && style.animationDelay === "0s";
+    });
+  })), true, "Every ghost hint should run only its 3.6 second loop");
+
+  assert.equal(await gallery.locator("h2").evaluate(heading => getComputedStyle(heading.parentElement).alignItems), "baseline");
+  const tablist = gallery.getByRole("tablist", { name: "Filter templates" });
+  await tablist.waitFor();
+  assert.deepEqual(await tablist.getByRole("tab").allTextContents(), ["All templates", "Portrait", "Square", "Landscape", "Interactive"]);
+  assert.equal(await tablist.getByRole("tab", { name: "All templates" }).getAttribute("aria-selected"), "true");
+  assert.equal(await gallery.getByText("6 templates", { exact: true }).count(), 1);
+  assert.equal(await gallery.getByRole("button", { name: "Browse all", exact: true }).count(), 1);
+  assert.equal(await tablist.getByRole("tab").first().evaluate(tab => Math.round(tab.getBoundingClientRect().height)), 36);
+  assert.match(await tablist.getByRole("tab").first().evaluate(tab => getComputedStyle(tab).boxShadow), /rgb\(255, 45, 120\)/);
+  assert.equal(await gridTracks(gallery), width < 1200 ? 4 : 6);
+
+  if (width < 1200) {
+    await tablist.getByRole("tab", { name: "Square" }).click();
+    await waitForCards(gallery, 1);
+    assert.equal(await gridTracks(gallery), 4);
+    await tablist.getByRole("tab", { name: "All templates" }).click();
+    await waitForCards(gallery, 6);
+  }
+
+  if (width >= 1200 && width < 1400) {
+    await tablist.getByRole("tab", { name: "Interactive" }).click();
+    await waitForCards(gallery, 5);
+    assert.equal(new URL(page.url()).searchParams.get("filter"), "interactive");
+    assert.equal(new URL(page.url()).searchParams.get("home"), "1");
+    assert.equal(await gallery.getByText("5 templates", { exact: true }).count(), 1);
+    assert.equal(await gridTracks(gallery), 5);
+    assert.deepEqual(await gallery.locator("[data-template-card]").evaluateAll(cards => cards.map(card => card.getAttribute("data-template-card"))), templateIds.slice(1));
+
+    await tablist.getByRole("tab", { name: "Square" }).click();
+    await waitForCards(gallery, 1);
+    assert.equal(await gallery.getByText("1 template", { exact: true }).count(), 1);
+    assert.equal(await gridTracks(gallery), 5);
+    assert.deepEqual(await gallery.locator("[data-template-card]").evaluateAll(cards => cards.map(card => card.getAttribute("data-template-card"))), ["podcast-clip"]);
+
+    await gallery.getByRole("button", { name: "Close filters" }).click();
+    await waitForCards(gallery, 6);
+    assert.equal(new URL(page.url()).searchParams.has("filter"), false);
+    assert.equal(new URL(page.url()).searchParams.get("home"), "1");
+    assert.equal(await gallery.getByRole("tablist", { name: "Filter templates" }).count(), 0);
+    assert.equal(await gallery.getByRole("button", { name: "Show filters" }).count(), 1);
+    await gallery.getByRole("button", { name: "Show filters" }).click();
+    assert.equal(await gallery.getByRole("tab", { name: "All templates" }).getAttribute("aria-selected"), "true");
+  }
+}
+
 async function saved(page, id) {
   const deadline = Date.now() + 15000;
   while (Date.now() < deadline) {
@@ -120,7 +225,7 @@ async function inspectProjectStorage(page, checkpointKeys, mediaKeys) {
 
 async function run(width) {
   const height = width === 1024 ? 768 : 900;
-  const context = await browser.newContext({ viewport: { width, height }, hasTouch: width === 1024 });
+  const context = await browser.newContext({ viewport: { width, height }, hasTouch: width === 1024, reducedMotion: "no-preference" });
   const page = await context.newPage();
   page.setDefaultTimeout(15000);
   page.on("pageerror", error => errors.push(error.message));
@@ -132,6 +237,7 @@ async function run(width) {
     await page.goto(home.href);
     await page.getByRole("heading", { name: "Start a new edit" }).waitFor();
     await page.locator("#restyle-launch-splash").waitFor({ state: "detached" });
+    await assertTemplateGallery(page, width);
     assert.equal(await page.getByRole("button", { name: "Resume", exact: false }).count(), 0);
     assert.equal(await page.getByRole("button", { name: "Start editing", exact: true }).isDisabled(), true);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
@@ -181,9 +287,18 @@ async function run(width) {
     await page.getByRole("heading", { name: "My first edit", exact: true }).waitFor();
     assert.equal(await clips(page).count(), 1, "New projects must not delete older footage");
     await page.getByRole("button", { name: "Back to projects" }).click();
+    await page.getByRole("tab", { name: "Interactive", exact: true }).click();
+    await waitForCards(page.locator("[data-template-gallery]"), 5);
     await page.getByRole("button", { name: "Use Choose your path template" }).click();
     await page.getByRole("heading", { name: "Choose your path", exact: true }).waitFor();
+    assert.equal(new URL(page.url()).searchParams.has("filter"), false, "Project routes must not retain gallery filters");
+    assert.equal(await page.evaluate(() => localStorage.getItem("restyle.editor.advancedEditing")), "true");
     assert.equal(await clips(page).count(), 1);
+    await page.getByRole("button", { name: "choice: Choose your path", exact: true }).click();
+    await page.getByRole("tab", { name: "Advanced", exact: true }).click();
+    assert.match(await page.getByLabel("Structure source").inputValue(), /<choice>/);
+    await page.getByRole("tab", { name: "Logic", exact: true }).click();
+    assert.match(await page.getByLabel("Logic source").inputValue(), /go_to_scene/);
     await page.getByRole("tab", { name: "Components", exact: true }).waitFor();
     await page.screenshot({ path: join(screenshots, `editor-${width}.png`) });
   } catch (error) {
@@ -417,8 +532,45 @@ async function mobileTargetedRecoveryImport() {
   await context.close();
 }
 
+async function directTemplateFilter() {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: "no-preference" });
+  const page = await context.newPage();
+  page.on("pageerror", error => errors.push(error.message));
+  await page.route("**/api/publishing", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ available: false, authenticated: false, maxBytes: 0 }) }));
+  const url = new URL(editorUrl);
+  url.search = "?home=1&filter=interactive";
+  await page.goto(url.href);
+  await page.getByRole("heading", { name: "Start a new edit" }).waitFor();
+  await page.locator("#restyle-launch-splash").waitFor({ state: "detached" });
+  const gallery = page.locator("[data-template-gallery]");
+  await waitForCards(gallery, 5);
+  assert.equal(await gallery.getByRole("tab", { name: "Interactive" }).getAttribute("aria-selected"), "true");
+  assert.equal(await gallery.getByText("5 templates", { exact: true }).count(), 1);
+  assert.equal(await gridTracks(gallery), 5);
+  await context.close();
+}
+
+async function reducedMotionTemplates() {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: "reduce" });
+  const page = await context.newPage();
+  page.on("pageerror", error => errors.push(error.message));
+  await page.route("**/api/publishing", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ available: false, authenticated: false, maxBytes: 0 }) }));
+  const url = new URL(editorUrl);
+  url.search = "?home=1";
+  await page.goto(url.href);
+  await page.getByRole("heading", { name: "Start a new edit" }).waitFor();
+  await page.locator("#restyle-launch-splash").waitFor({ state: "detached" });
+  const previews = page.locator("[data-template-preview]");
+  assert.equal(await previews.count(), 6);
+  assert.equal(await previews.evaluateAll(nodes => nodes.every(node => node.getAnimations({ subtree: true }).length === 0)), true,
+    "Reduced motion should freeze every template hint");
+  await context.close();
+}
+
 try {
   for (const width of [1024, 1280, 1440]) await run(width);
+  await directTemplateFilter();
+  await reducedMotionTemplates();
   await dropVariant();
   await stagedResize();
   await recoveryDiscard();

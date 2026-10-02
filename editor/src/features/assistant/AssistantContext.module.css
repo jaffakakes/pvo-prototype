@@ -6,35 +6,35 @@
   height: 34px;
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   animation: rise 300ms ease-out both;
 }
 
 .mini {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 3px;
+  gap: 2px;
   width: 22px;
   height: 32px;
   flex: none;
-  padding: 4px 3px;
-  border: 1px solid;
+  padding: 3px;
+  border: 1.5px solid;
   box-sizing: border-box;
 }
 
-.mini i { height: 2px; background: currentColor; opacity: .7; }
-.mini i:nth-child(2) { width: 70%; }
-.mini b { height: 5px; margin-top: 2px; border-radius: 2px; background: var(--mini-button); }
-.description { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 3px; font-size: 9px; line-height: 1.2; color: var(--muted); }
-.description strong { color: var(--text); font-size: 11px; }
+.mini i { height: 3px; width: 70%; background: currentColor; }
+.mini i:nth-child(2) { height: 2px; width: 90%; opacity: .5; }
+.mini b { height: 5px; margin-top: auto; border: 1px solid #000; border-radius: 1px; background: var(--mini-button); }
+.description { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 700; line-height: 1.2; color: var(--muted); }
+.description strong { color: var(--text); }
+.voiceHint { flex: none; color: var(--violet); font-size: 10.5px; font-weight: 800; white-space: nowrap; }
 
 :global([data-placement="toolbar"]) .context { left: 14px; right: 0; }
 
 @container (max-width: 350px) {
   .context { gap: 5px; }
-  .description { font-size: 8px; }
-  .description strong { font-size: 10px; }
+  .description { font-size: 10px; }
+  .voiceHint { max-width: 68px; white-space: normal; text-align: right; font-size: 9px; line-height: 1.2; }
 }
 
 @keyframes rise {

@@ -27,7 +27,9 @@ test("verified sessions, CSRF and ownership protect publication operations", asy
     const created = await reserve(f, tinyMp4());
     assert.equal(created.response.status, 201, JSON.stringify(created.body));
     const id = created.body.id;
-    assert.equal((await upload(f, id, tinyMp4(), { session: f.otherCookie })).status, 404);
+    assert.equal((await f.request(`/api/publications/${id}/content`, {
+      method: "PUT", session: f.otherCookie,
+    })).status, 404);
     assert.equal((await f.request(`/api/publications/${id}`, { method: "DELETE", session: f.otherCookie })).status, 404);
     assert.equal((await f.request(`/player/${id}`, { session: null })).status, 404);
     assert.equal((await f.request(`/media/${id}`, { session: null })).status, 404);

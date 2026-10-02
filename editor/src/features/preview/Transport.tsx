@@ -3,7 +3,7 @@ import { useCapture } from "../../state/captureStore";
 import { cx } from "../../styles";
 import { Icon } from "../../ui/Icon";
 import { fmt,pickTime } from "../../ui/formatTime";
-import { togglePlayback } from "./playbackCommands";
+import { togglePlayback } from "../../state/editing/playbackCommands";
 import styles from "./Transport.module.css";
 
 export function Transport() {
