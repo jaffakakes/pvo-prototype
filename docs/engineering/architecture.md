@@ -19,6 +19,7 @@ pvo-prototype/
     pvo-language/               Native Rust compiler and browser WASM facade
     pvo-code-runtime/           Isolated generated renderer and host bridge
     pvo-text-runtime/           Shared text styles and painter
+    pvo-animation/              Shared numeric layer curves and visibility geometry
     pvo-component-runtime/      Shared no-code presets and bounded appearance values
   scripts/
     build/                      WASM, static site and sample/demo preparation
@@ -67,6 +68,7 @@ editor/src/
     audio/                      Extracted audio and source ranges
     scenes/                     Naming, scene references and total duration
     layers/                     Layer identity and ordering
+    animation/                  Keyframe clocks, layer edits and tracked motion rules
     components/                 Defaults, Fields/PVO source mapping, outcomes and response timing policy
     assistant/                  Review, request context and proposal validation
     notifications/              Approved events, short copy, priority and repetition rules
@@ -88,6 +90,7 @@ editor/src/
     desktop-editor/             Landscape Library, Player, Inspector and Timeline presentation
     timeline/                   Tracks, geometry, dragging and clip commands
     preview/                    Video, overlays and Try-mode host integration
+    animation/                  Shared manual keyframes and tracking controls
     assistant/                  Orb presentation, session orchestration and browser voice
     notifications/              Top notices, retained issues and accessible dismissal
     scenes/                     Scene selection UI

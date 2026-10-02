@@ -48,6 +48,8 @@ More contains component Duplicate, Reset appearance and Delete when one is selec
 
 Run `npm run dev:editor` from the repository root for the Vite development server, or `npm run build` for the static site under `dist/editor/`. `npm run check:editor` type-checks the editor.
 
+All current layer kinds support keyframes. Select a layer and use **Animation** in the desktop inspector or **Animate** on mobile; Sound provides the music controls. Video, text and components animate position offsets, scale, rotation and opacity; video sound, extracted audio and music animate volume. Add values at different playhead times, adjust easing, move/delete diamonds and use normal Undo. Manual and assistant edits share these curves. See [layer animation](../docs/engineering/layer-animation.md) for clocks and export behavior.
+
 ## Install on a phone
 
 The production `/editor/` build is an installable web app. Open it on a stable HTTPS address, then use Safari's **Share → Add to Home Screen** on iPhone or Chrome's **Install app** on Android. Mobile home and new installed-app launches select the camera after restoring saved footage; the Open editor action continues the restored project. Ordinary editor reloads resume the workspace. The production build precaches only the editor shell and its local JavaScript, styles, fonts, WASM and icons so the interface can reopen offline. It does not put camera media, imported clips, exports or API responses in the service-worker cache. Project autosave separately retains drafts and footage in this origin's IndexedDB.
