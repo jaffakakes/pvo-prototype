@@ -77,6 +77,7 @@ function actionHarness(component, controlled = controlledRuntime()) {
         await video.play();
       },
       setStatus() {},
+      componentCanReceiveResponse: () => true,
       visibleComponents: () => [component],
       renderOverlays() {},
     },
@@ -95,7 +96,7 @@ function transitionHarness(component, actionState) {
       elapsedTime: () => elapsed,
       localClipTime: () => elapsed,
       componentsForClip: () => [component],
-      captureAboveVideo: () => true,
+      componentCanReceiveResponse: () => true,
       renderOverlays() {},
       updateProgress() {},
       setStatus(message) { statuses.push(message); },
@@ -257,7 +258,7 @@ test("forward seek dispatches crossed deferred work and rewind re-arms its bound
         session.capturedResponses.get(id).status = "complete";
         session.awaitingComponent = null;
       },
-      captureAboveVideo: () => true,
+      componentCanReceiveResponse: () => true,
     },
   });
 
@@ -278,7 +279,7 @@ test("forward seek dispatches crossed deferred work and rewind re-arms its bound
     adapters: {
       ...timeline,
       componentsForClip: () => [component],
-      captureAboveVideo: () => true,
+      componentCanReceiveResponse: () => true,
       renderOverlays() {}, updateProgress() {}, setStatus() {}, showControls() {},
       dispatchCapturedResponse() {}, replaceActionRuntime() {}, async loadClip() {},
     },

@@ -1,0 +1,18 @@
+export type AnimationProperty = "x" | "y" | "scaleX" | "scaleY" | "rotation" | "opacity" | "gain";
+export type AnimationEasing = "linear" | "hold" | "ease-in" | "ease-out" | "ease-in-out";
+export type AnimationKeyframe = { time: number; value: number; easing: AnimationEasing };
+export type LayerAnimation = { tracks: Partial<Record<AnimationProperty, AnimationKeyframe[]>> };
+export type AnimationValues = Record<AnimationProperty, number>;
+export const ANIMATION_DEFAULTS: Readonly<AnimationValues>;
+export const ANIMATION_LIMITS: Readonly<Record<AnimationProperty, readonly [number, number]>>;
+export const ANIMATION_PROPERTIES: readonly AnimationProperty[];
+export const VISUAL_ANIMATION_PROPERTIES: readonly AnimationProperty[];
+export const ANIMATION_EASINGS: readonly AnimationEasing[];
+export const MAX_KEYFRAMES_PER_TRACK: number;
+export const MAX_KEYFRAMES_PER_LAYER: number;
+export function parseAnimation(value: unknown, allowedProperties?: readonly AnimationProperty[]): LayerAnimation;
+export function cloneAnimation(animation: LayerAnimation | undefined): LayerAnimation | undefined;
+export function evaluateAnimation(animation: LayerAnimation | undefined, time: number): AnimationValues;
+export function visualMotionVisible(motion: AnimationValues): boolean;
+export function animatedCenterVisible(motion: AnimationValues, center: { x: number; y: number }): boolean;
+export function videoCoversPoint(motion: AnimationValues, point: { x: number; y: number }, aspectRatio?: number): boolean;

@@ -62,6 +62,10 @@ export function createComponentActions({ session, adapters }) {
   function captureComponentResponse(component, index, fields) {
     const diagnostic = beginPlayerDiagnostic(session, component, component.kind === "form" ? "submit" : index);
     const ignored = reason => reportPlayerDiagnostic(session, "interaction.ignored", diagnostic, { reason });
+    if (!adapters.componentCanReceiveResponse(component)) {
+      ignored("inactive_component");
+      return;
+    }
     if (session.pendingComponents.has(component.id)) {
       ignored("request_pending");
       return;
@@ -110,7 +114,9 @@ export function createComponentActions({ session, adapters }) {
     const response = session.capturedResponses.get(componentId);
     const component = session.manifest?.components?.find((item) => item.id === componentId);
     if (!response || !component || response.status === "pending" || response.status === "complete") return;
-    return runComponentActions(component, response.index, response.fields, response);
+    await runComponentActions(component, response.index, response.fields, response);
+    if (response.status === "failed" && session.awaitingComponent?.id === component.id
+      && !adapters.componentCanReceiveResponse(component)) adapters.releaseUnavailableResponse(component);
   }
 
   async function runComponentActions(component, index, fields, capturedResponse) {

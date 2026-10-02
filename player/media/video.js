@@ -64,7 +64,8 @@ export function createVideoController({ session, refs, adapters }) {
     const crossedBoundaries = reconcileResponseProgress(session, currentElapsed, target.elapsed, {
       responseBoundaries: options.responseBoundaries,
       isBoundaryEligible: (component) => !session.forcedHidden.has(component.id)
-        && adapters.captureAboveVideo(component),
+        && (session.capturedResponses.has(component.id)
+          || adapters.componentCanReceiveResponse(component, Number(component.presentation?.end || 0))),
     });
     if (crossedBoundaries.length) {
       const crossing = crossedBoundaries[0];

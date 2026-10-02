@@ -1,0 +1,14 @@
+{
+  "name": "@pvo/pvo-animation",
+  "version": "0.1.0",
+  "description": "Validated numeric layer animation for PVO editors and players.",
+  "type": "module",
+  "exports": {
+    ".": { "types": "./index.d.ts", "import": "./index.js" }
+  },
+  "types": "./index.d.ts",
+  "sideEffects": false,
+  "engines": { "node": ">=18" },
+  "license": "Apache-2.0",
+  "files": ["*.js", "*.d.ts", "README.md"]
+}

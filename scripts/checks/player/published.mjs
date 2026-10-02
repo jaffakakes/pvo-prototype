@@ -16,7 +16,7 @@ const files = [
 ];
 const assets = new Map(await Promise.all(files.map(async ([path, source, type]) =>
   [path, { body: await readFile(new URL(`../../../${source}`, import.meta.url)), type }])));
-for (const directory of ["player", "packages/pvo-sdk", "packages/pvo-code-runtime", "packages/pvo-component-runtime", "packages/pvo-text-runtime", "packages/pvo-language"]) {
+for (const directory of ["player", "packages/pvo-animation", "packages/pvo-sdk", "packages/pvo-code-runtime", "packages/pvo-component-runtime", "packages/pvo-text-runtime", "packages/pvo-language"]) {
   for (const [path, asset] of await sourceModules(new URL(`../../../${directory}/`, import.meta.url), `/${directory}`)) assets.set(path, asset);
 }
 const template = await readFile(new URL("../../../player/published.html", import.meta.url), "utf8");

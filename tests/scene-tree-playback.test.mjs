@@ -203,7 +203,7 @@ function playerFor(manifest, { currentTime = 0 } = {}) {
   const adapters = {
     ...timeline,
     componentsForClip: () => manifest.components.filter(component => component.presentation.scene === timeline.activeClip()?.scene),
-    captureAboveVideo: () => true,
+    componentCanReceiveResponse: () => true,
     renderOverlays() {}, updateProgress() {}, setStatus() {}, showControls() {},
     async loadClip(index) { session.currentClipIndex = index; video.currentTime = 0; },
     async seekToElapsed(time) { video.currentTime = time; },

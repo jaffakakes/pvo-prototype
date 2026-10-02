@@ -30,7 +30,7 @@ try {
     route,
     { body: await readFile(new URL(path, import.meta.url)), type },
   ])));
-  for (const directory of ["player", "packages/pvo-sdk", "packages/pvo-code-runtime", "packages/pvo-component-runtime", "packages/pvo-text-runtime"]) {
+  for (const directory of ["player", "packages/pvo-animation", "packages/pvo-sdk", "packages/pvo-code-runtime", "packages/pvo-component-runtime", "packages/pvo-text-runtime"]) {
     const modules = await sourceModules(new URL(`../../../${directory}/`, import.meta.url), `/${directory}`);
     modules.forEach(([route, asset]) => servedAssets.set(route, asset));
   }

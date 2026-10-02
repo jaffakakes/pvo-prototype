@@ -113,6 +113,7 @@ export function createActionRuntimeAdapter({ session, refs, adapters }) {
     if (visible) next.visible = visible;
     session.actionRuntime = next;
     session.runtimeStateRevision += 1;
+    if (!preserveState) session.overlayResetRevision = (session.overlayResetRevision ?? 0) + 1;
     session.renderedOverlayKey = "";
     return next;
   }
