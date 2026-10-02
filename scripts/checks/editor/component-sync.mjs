@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
-import { parseAssistantRequest, parseAssistantResponse } from "../../../packages/pvo-assistant/index.js";
+import { parseNativeTurnRequest } from "../../../packages/pvo-assistant/native/index.js";
+import { componentSourceResult, finishAssistantVerification, selectedAssistantComponent } from "./assistant-fixture.mjs";
 import { readPvoProject } from "../../../packages/pvo-sdk/index.js";
 
 // Vite supplies the real store and WASM compiler. Only the AI HTTP response is a fixture.
@@ -30,7 +31,9 @@ const completed = [];
 let activePage;
 
 async function seed(page, type) {
-  await page.goto(editorUrl, { waitUntil: "networkidle" });
+  // The landing sample keeps a media range request open after the app is ready.
+  await page.goto(editorUrl, { waitUntil: "domcontentloaded" });
+  await page.locator("#create-title, .camWrap").first().waitFor();
   await page.evaluate(async type => {
     window.capture = (await import("/src/store.ts")).useCapture;
     const { advanceUidPast } = await import("/src/infrastructure/ids.ts");
@@ -124,29 +127,35 @@ async function exercise(item) {
   page.setDefaultTimeout(15000);
   page.on("pageerror", error => errors.push(error.message));
   let requests = 0;
-  const source = { structure: item.structure, logic: item.logic,
+  let verifications = 0;
+  let source = { structure: item.structure, logic: item.logic,
     style: `${item.type} { background: #123456; color: #ffffff; border-radius: 11px; }\n${item.tag} { font-size: 23px; }${item.target ? `\n#${item.target} { color: #abcdef; }` : ""}` };
-  await context.route("**/api/assistant", async route => {
-    const request = parseAssistantRequest(route.request().postDataJSON());
-    assert.equal(request.componentType, item.type);
+  await context.route("**/api/assistant/turn", async route => {
+    const request = parseNativeTurnRequest(route.request().postDataJSON());
+    assert.equal(selectedAssistantComponent(request).component.type, item.type);
+    if (await finishAssistantVerification(route, request)) {
+      verifications++;
+      return;
+    }
     requests++;
-    await route.fulfill({ json: parseAssistantResponse({ source,
-      summary: "Updated the wording and appearance.", tags: ["Content", "Look"],
-      followUps: ["Larger heading", "Softer colours", "Bolder"],
-    }) });
+    await route.fulfill({ json: componentSourceResult(request, source, "Updated the wording and appearance.") });
   });
   await seed(page, item.type);
+  // Exact-source synchronization uses a readable provider fixture; pvo-formatting covers compact replies.
+  source = await page.evaluate(async source => {
+    const { formatPvoSource } = await import("/src/domain/components/languageFormatting.ts");
+    return formatPvoSource(source);
+  }, source);
   const before = await component(page);
   const historyBefore = await page.evaluate(() => window.capture.getState().past.length);
   await page.locator("[data-assistant-orb]").click();
   await field(page, "Describe a change").fill("Rewrite the wording and give it a dark blue background");
   await page.getByRole("button", { name: "Send request", exact: true }).click();
-  await page.locator('[data-assistant-phase="review"]').waitFor();
-  await page.getByRole("region", { name: "Review assistant change" }).getByRole("button", { name: "Keep", exact: true }).click();
   await page.locator('[data-assistant-phase="idle"]').waitFor();
   assert.equal(requests, 1);
+  assert.equal(verifications, 1, "The provider verifies the compiled working copy before automatic apply");
   const kept = await component(page);
-  assert.deepEqual(kept.code.pvo, source, "Keep retains the exact validated provider source");
+  assert.deepEqual(kept.code.pvo, source, "Automatic apply retains the exact validated provider source");
   assert.deepEqual(kept.code.pvoLastValid, source);
   assert.equal(kept.code.pvoTouched, false);
   assert.equal(await page.evaluate(() => window.capture.getState().past.length), historyBefore + 1);
@@ -249,7 +258,7 @@ async function exercise(item) {
   completed.push(final);
   await context.close();
   activePage = undefined;
-  console.log(`Component sync: ${item.type} AI Keep, visual/source edits, undo/redo and reload passed.`);
+  console.log(`Component sync: ${item.type} AI apply, visual/source edits, undo/redo and reload passed.`);
 }
 
 async function verifyExport() {
