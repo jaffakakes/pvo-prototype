@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { chromium } from "playwright-core";
 import { parseNativeTurnRequest } from "../../../packages/pvo-assistant/native/index.js";
-import { finishAssistantVerification, preparedAssistantBatches } from "./assistant-fixture.mjs";
+import { finishAssistantVerification, preparedAssistantReceipts } from "./assistant-fixture.mjs";
 
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true });
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -19,7 +19,7 @@ await context.route("**/api/assistant/turn", async route => {
   const request = parseNativeTurnRequest(route.request().postDataJSON());
   calls.push(request);
   assert.equal(request.mode, "plan", "Every request uses automatic routing and validated editing");
-  const key = `${request.prompt}:${preparedAssistantBatches(request).length}:${request.observations.length}`;
+  const key = `${request.prompt}:${preparedAssistantReceipts(request).length}:${request.observations.length}`;
   const fixture = controlled.get(key);
   if (fixture) {
     controlled.delete(key);
@@ -89,7 +89,7 @@ async function checkMultiStepChoice() {
   const choice = created.find(component => !original.scene.components.some(before => before.id === component.id));
   assert(choice && choice.type === "choice" && choice.source, "A new choice exposes its actual ID and compiled default source");
   generatedId = choice.id;
-  assert.equal(preparedAssistantBatches(createdRequest)[0][0].kind, "component.add");
+  assert.equal(preparedAssistantReceipts(createdRequest)[0].operation, "component.add");
   assert.deepEqual(await snapshot(), original, "Preparing a default choice cannot mutate the live project or history");
   assert.equal(await phase("working").count(), 1);
   assert.equal(await page.locator('[data-notification-id="assistantApplied"]').count(), 0);
@@ -100,7 +100,7 @@ async function checkMultiStepChoice() {
   assert.equal(personalized.content.prompt, "Where next?");
   assert.equal(personalized.content.option0, "Mountain");
   assert.equal(personalized.content.option1, "Beach");
-  assert.equal(preparedAssistantBatches(completedRequest)[1][0].componentId, generatedId);
+  assert.equal(preparedAssistantReceipts(completedRequest)[1].target?.id, generatedId);
   assert.deepEqual(await snapshot(), original, "The full candidate remains private until the model finishes the request");
   assert.equal(await phase("working").count(), 1);
   finish.release();

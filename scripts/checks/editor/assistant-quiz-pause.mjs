@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 import { parseNativeTurnRequest, parseNativeTurnResult } from "../../../packages/pvo-assistant/native/index.js";
-import { preparedAssistantBatches } from "./assistant-fixture.mjs";
+import { preparedAssistantReceipts } from "./assistant-fixture.mjs";
 
 // Only inference replies are fixtures. This uses the real compiler, native batch,
 // media clock, Try hold and viewer button rather than calling runtime commands.
@@ -32,16 +32,16 @@ await page.route("**/api/assistant/turn", async route => {
   try {
     const request = parseNativeTurnRequest(route.request().postDataJSON());
     calls.push(request);
-    const batches = preparedAssistantBatches(request);
+    const receipts = preparedAssistantReceipts(request);
     const scene = request.project.scenes[0];
     let operations = [];
-    if (!batches.length) {
+    if (!receipts.length) {
       operations = scenario === "create"
         ? [{ kind: "component.add", sceneId: scene.id, componentType: "choice", at: 0, duration: 2,
           responsePolicy: { dispatch: "layer_end", unanswered: "pause" } }]
         : [{ kind: "component.update", sceneId: scene.id, componentId: scene.components[0].id,
           changes: { at: 1.5, duration: 0.5, responsePolicy: { dispatch: "interaction", unanswered: "pause" } } }];
-    } else if (scenario === "create" && batches.length === 1) {
+    } else if (scenario === "create" && receipts.length === 1) {
       assert.deepEqual(scene.components[0].responsePolicy, { dispatch: "layer_end", unanswered: "pause" },
         "The next model turn sees the actual prepared hold policy");
       operations = [{ kind: "component.content", sceneId: scene.id, componentId: scene.components[0].id,

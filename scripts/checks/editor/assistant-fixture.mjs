@@ -1,22 +1,16 @@
 import assert from "node:assert/strict";
 import { parseNativeTurnRequest, parseNativeTurnResult } from "../../../packages/pvo-assistant/native/index.js";
 
-const preparedPrefix = "Editor prepared these validated operations on a working copy: ";
-const preparedSuffix = ". These changes are not committed yet. Inspect the current project, finish the remaining request, or return a final answer when it is complete. Do not repeat prepared operations.";
-
-export function preparedAssistantBatches(request) {
-  return request.history.filter(item => item.role === "assistant" && item.content.startsWith(preparedPrefix))
-    .map(item => {
-      assert(item.content.endsWith(preparedSuffix), "Prepared-operation evidence must use the workflow receipt");
-      return JSON.parse(item.content.slice(preparedPrefix.length, -preparedSuffix.length));
-    });
+export function preparedAssistantReceipts(request) {
+  assert(!request.history.some(item => /Editor prepared these validated operations|These changes are not committed yet/.test(item.content)),
+    "Current-request execution facts must stay outside retained conversation history");
+  return request.execution?.receipts ?? [];
 }
 
 /** Single-step fixtures finish after seeing the real validated working copy. */
 export async function finishAssistantVerification(route, request) {
-  const batches = preparedAssistantBatches(request);
-  if (!batches.length) return false;
-  assert.equal(batches.length, 1, "This fixture prepares exactly one batch before confirming completion");
+  const receipts = preparedAssistantReceipts(request);
+  if (!receipts.length) return false;
   await route.fulfill({ json: parseNativeTurnResult({
     message: "The requested changes are complete.", operations: [], observations: [],
   }) });

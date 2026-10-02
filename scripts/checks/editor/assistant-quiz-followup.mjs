@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { chromium } from "playwright-core";
 import { parseNativeTurnRequest, parseNativeTurnResult } from "../../../packages/pvo-assistant/native/index.js";
-import { preparedAssistantBatches } from "./assistant-fixture.mjs";
+import { preparedAssistantReceipts } from "./assistant-fixture.mjs";
 
 // Explicit provider replies isolate the client workflow. Compilation, candidate
 // preparation, conversation retention, application and Undo remain real.
@@ -36,7 +36,7 @@ await context.route("**/api/assistant/turn", async route => {
   try {
     const request = parseNativeTurnRequest(route.request().postDataJSON());
     calls.push(request);
-    const steps = preparedAssistantBatches(request);
+    const receipts = preparedAssistantReceipts(request);
     const scene = request.project.scenes[0];
     assert.equal(scene.duration, 74);
     assert.equal(scene.clips.length, 1, "Model context retains the complete original footage");
@@ -44,12 +44,13 @@ await context.route("**/api/assistant/turn", async route => {
     assert.equal(request.mode, "plan");
     let reply;
     if (request.prompt === firstPrompt) {
-      if (steps.length === 0) {
+      if (receipts.length === 0) {
         reply = response("Create the quiz and opening text.", [
           { kind: "component.add", sceneId: "main", componentType: "choice", at: 0, duration: 74 },
           { kind: "text.add", sceneId: "main", text: punchline, start: 0, end: 5 },
         ]);
-      } else if (steps.length === 1) {
+      } else if (scene.components[0]?.content.prompt !== "Guess the punchline") {
+        assert.equal(receipts.length, 2, "Creation and opening text have authoritative execution receipts");
         choiceId = scene.components[0].id;
         spoilerId = scene.texts[0].id;
         reply = response("Fill in the quiz choices.", [{
@@ -57,7 +58,7 @@ await context.route("**/api/assistant/turn", async route => {
           changes: { prompt: "Guess the punchline", optionLabels: [punchline, "Because he was very tall."] },
         }]);
       } else {
-        assert.equal(steps.length, 2);
+        assert.equal(receipts.length, 3, "Quiz content adds one further authoritative receipt");
         reply = response("The quiz is ready.");
       }
     } else {
@@ -69,14 +70,15 @@ await context.route("**/api/assistant/turn", async route => {
         "An earlier request's in-progress messages cannot masquerade as the latest task");
       const choice = scene.components.find(item => item.id === choiceId);
       assert(choice?.source, "Follow-up context includes the existing quiz's actual editable source");
-      if (steps.length === 0) {
+      if (receipts.length === 0) {
         assert.equal(choice.duration, 74);
         assert.equal(scene.texts[0].id, spoilerId);
         reply = response("Remove the spoiler and shorten the quiz.", [
           { kind: "text.delete", sceneId: "main", textId: spoilerId },
           { kind: "component.update", sceneId: "main", componentId: choiceId, changes: { at: 0, duration: 5 } },
         ]);
-      } else if (steps.length === 1) {
+      } else if (choice.duration === 5 && scene.texts.length === 0) {
+        assert.equal(receipts.length, 2, "Spoiler removal and quiz timing have authoritative receipts");
         assert.equal(choice.duration, 5, "The model sees the changed component timing on its next turn");
         assert.equal(scene.texts.length, 0, "Deleted spoiler is absent from the next candidate context");
         reply = response("Improve the question and add the final reveal.", [
@@ -85,7 +87,7 @@ await context.route("**/api/assistant/turn", async route => {
           { kind: "text.add", sceneId: "main", text: punchline, start: 69, end: 74 },
         ]);
       } else {
-        assert.equal(steps.length, 2);
+        assert.equal(receipts.length, 4, "Follow-up content and final reveal add two further receipts");
         assert.equal(choice.content.prompt, "Why did the scarecrow win an award?");
         assert.equal(choice.duration, 5);
         assert.equal(scene.texts.length, 1);
