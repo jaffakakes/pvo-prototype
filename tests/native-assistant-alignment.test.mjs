@@ -93,8 +93,9 @@ test("alignment HTTP route requires local configuration, same origin and a valid
   const options = () => ({ method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input()) });
   try {
     assert.equal((await fixture.fetch("status")).status, 200);
-    const rejected = await fixture.fetch("align", { ...options(),
-      headers: { "Content-Type": "application/json", Origin: "https://foreign.example" } });
+    const rejected = await fixture.fetch("align", {
+      method: "POST", headers: { Origin: "https://foreign.example" },
+    });
     assert.equal(rejected.status, 403);
     assert.equal(fixture.calls.length, 0);
     const response = await fixture.fetch("align", options());
