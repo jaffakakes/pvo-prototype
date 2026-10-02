@@ -6,6 +6,7 @@ import { templateProject, type ProjectTemplate } from "../../domain/project/temp
 import { mainScene } from "../../domain/scenes/rules";
 import { uid } from "../../infrastructure/ids";
 import { useCapture } from "../../state/captureStore";
+import { setAdvancedEditingEnabled } from "../../state/preferences/editorPreferences";
 
 type NewProject = { name: string; ratio: Ratio; clips: Clip[]; template?: ProjectTemplate };
 let starting = false;
@@ -25,6 +26,7 @@ export async function createProject(input: NewProject, onCreated: () => void = (
       ...project, localId: id, projectName: projectName(input.name), screen: "editor",
       clips: project.scenes[0].clips, texts: project.scenes[0].texts, components: project.scenes[0].components,
     });
+    if (input.template) setAdvancedEditingEnabled(true);
     onCreated();
     try { await saveProjectBeforeUpdate(); }
     catch (error) {

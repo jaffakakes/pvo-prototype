@@ -1,0 +1,346 @@
+.ghost {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  box-sizing: border-box;
+  flex-direction: column;
+  gap: 5px;
+  border: 2px solid rgba(255, 255, 255, .3);
+  border-radius: 10px;
+}
+
+.ghost i,
+.ghost b,
+.ghost em,
+.ghost span {
+  box-sizing: border-box;
+}
+
+.ghost i,
+.ghost b,
+.ghost em {
+  display: block;
+  font-style: normal;
+}
+
+.ghost[data-ratio="9:16"] {
+  width: 64px;
+  height: 114px;
+  padding: 0 7px 12px;
+}
+
+.ghost[data-ratio="9:16"][data-hint="card"],
+.ghost[data-ratio="9:16"][data-hint="jump"] {
+  padding: 10px 7px 8px;
+  justify-content: center;
+}
+
+.ghost[data-ratio="9:16"][data-hint="choice"],
+.ghost[data-ratio="9:16"][data-hint="route"] {
+  justify-content: center;
+}
+
+.ghost[data-ratio="1:1"] {
+  width: 92px;
+  height: 92px;
+  padding: 10px 7px 8px;
+}
+
+.ghost[data-ratio="16:9"] {
+  width: 132px;
+  height: 74px;
+  padding: 0 7px 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.caption {
+  display: flex;
+  width: 100%;
+  margin-top: auto;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.caption i {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(242, 240, 233, .45);
+  animation: rsCapA 3.6s ease-in-out infinite;
+}
+
+.caption i + i {
+  background: rgba(242, 240, 233, .28);
+  animation-name: rsCapB;
+}
+
+.cardHint {
+  display: flex;
+  width: 100%;
+  padding: 5px;
+  flex-direction: column;
+  gap: 4px;
+  border: 1.5px solid #000;
+  border-radius: 6px;
+  background: #15151C;
+  box-shadow: 2px 2px 0 #000;
+}
+
+.cardTitle {
+  width: 62%;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(242, 240, 233, .85);
+}
+
+.cardBody {
+  width: 86%;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(242, 240, 233, .35);
+}
+
+.cardActions {
+  display: flex;
+  gap: 3px;
+}
+
+.cardActions b {
+  width: 50%;
+  height: 9px;
+  border: 1.5px solid #000;
+  border-radius: 4px;
+  background: #FF2D78;
+  animation: rsPressBtn 3.6s ease-in-out infinite;
+}
+
+.cardActions b + b {
+  border-color: rgba(242, 240, 233, .25);
+  background: transparent;
+  animation: none;
+}
+
+.choice {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+}
+
+.choicePrompt {
+  width: 72%;
+  height: 10px;
+  border: 1.5px solid #000;
+  border-radius: 5px;
+  background: #A78BFA;
+  box-shadow: 1.5px 1.5px 0 #000;
+}
+
+.choiceOptions {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.choiceOptions b {
+  width: 100%;
+  height: 11px;
+  border: 1.5px solid #000;
+  border-radius: 5px;
+  background: #F2F0E9;
+}
+
+.choiceOptions b:first-child {
+  animation: rsPick 3.6s ease-in-out infinite;
+}
+
+.route {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.routeCurrent {
+  width: 46%;
+  height: 10px;
+  border: 1.5px solid #000;
+  border-radius: 5px;
+  background: #FF2D78;
+  box-shadow: 1.5px 1.5px 0 #000;
+}
+
+.routeBranch {
+  position: relative;
+  display: flex;
+  width: 74%;
+  height: 14px;
+  align-items: center;
+  padding: 0 4px;
+  gap: 3px;
+  border: 1.5px solid rgba(255, 255, 255, .25);
+  border-radius: 5px;
+  background: #15151C;
+  animation: rsRouteA 3.6s ease-in-out infinite;
+}
+
+.routeBranch + .routeBranch {
+  width: 62%;
+  animation-name: rsRouteB;
+}
+
+.routeBranch b {
+  width: 4px;
+  height: 4px;
+  flex: none;
+  border-radius: 50%;
+  background: #A78BFA;
+}
+
+.routeBranch i {
+  width: 100%;
+  height: 2px;
+  border-radius: 1px;
+  background: rgba(242, 240, 233, .4);
+}
+
+.jump {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.jumpTip {
+  display: flex;
+  height: 12px;
+  padding: 0 4px;
+  align-items: center;
+  gap: 3px;
+  border: 1.5px solid #000;
+  border-radius: 6px;
+  background: #F2F0E9;
+  box-shadow: 1.5px 1.5px 0 #000;
+  animation: rsJumpTip 3.6s ease-in-out infinite;
+}
+
+.jumpTip b {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #A78BFA;
+}
+
+.jumpTip i {
+  width: 20px;
+  height: 2px;
+  border-radius: 1px;
+  background: #15151C;
+}
+
+.jumpTrack {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(242, 240, 233, .22);
+}
+
+.jumpTrack > i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 38%;
+  border-radius: inherit;
+  background: #FF9FBC;
+  animation: rsJumpFill 3.6s ease-in-out infinite;
+}
+
+.jumpTrack > b {
+  position: absolute;
+  top: 50%;
+  left: 38%;
+  width: 8px;
+  height: 10px;
+  border: 1.5px solid #000;
+  border-radius: 3px;
+  background: #F2F0E9;
+  transform: translate(-50%, -50%);
+  animation: rsJumpHead 3.6s ease-in-out infinite;
+}
+
+.jumpTrack > em {
+  position: absolute;
+  top: -2px;
+  left: 78%;
+  width: 3px;
+  height: 8px;
+  border-radius: 2px;
+  background: #A78BFA;
+}
+
+.formHint {
+  display: flex;
+  width: 58%;
+  padding: 5px;
+  flex-direction: column;
+  gap: 4px;
+  border: 1.5px solid #000;
+  border-radius: 6px;
+  background: #15151C;
+  box-shadow: 2px 2px 0 #000;
+}
+
+.formHint > span {
+  display: block;
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  border: 1.5px solid rgba(255, 255, 255, .16);
+  border-radius: 4px;
+  background: #1C1C24;
+}
+
+.formHint > span i {
+  width: 0;
+  height: 100%;
+  background: rgba(242, 240, 233, .45);
+  animation: rsFillA 3.6s ease-in-out infinite;
+}
+
+.formHint > span + span i {
+  animation-name: rsFillB;
+}
+
+.formHint > b {
+  width: 100%;
+  height: 9px;
+  border: 1.5px solid #000;
+  border-radius: 4px;
+  background: #FF2D78;
+  animation: rsPressLate 3.6s ease-in-out infinite;
+}
+
+@keyframes rsCapA{0%,8%{width:0;opacity:0}30%,88%{width:70%;opacity:1}100%{width:70%;opacity:0}}
+@keyframes rsCapB{0%,30%{width:0;opacity:0}52%,88%{width:45%;opacity:1}100%{width:45%;opacity:0}}
+@keyframes rsPressBtn{0%,48%{transform:none}54%,64%{transform:translate(1px,1px) scale(.97)}72%,100%{transform:none}}
+@keyframes rsPick{0%,50%{background:#F2F0E9;transform:none}58%,86%{background:#A78BFA;transform:translate(1px,1px)}100%{background:#F2F0E9;transform:none}}
+@keyframes rsRouteA{0%,30%{border-color:rgba(255,255,255,.25);background:#15151C}36%,60%{border-color:#FF9FBC;background:#1C1C24}66%,100%{border-color:rgba(255,255,255,.25);background:#15151C}}
+@keyframes rsRouteB{0%,60%{border-color:rgba(255,255,255,.25);background:#15151C}66%,90%{border-color:#FF9FBC;background:#1C1C24}96%,100%{border-color:rgba(255,255,255,.25);background:#15151C}}
+@keyframes rsJumpHead{0%,40%{left:38%}50%,92%{left:78%}100%{left:38%}}
+@keyframes rsJumpFill{0%,40%{width:38%}50%,92%{width:78%}100%{width:38%}}
+@keyframes rsJumpTip{0%,30%{opacity:0;transform:translateY(3px)}38%,82%{opacity:1;transform:translateY(0)}92%,100%{opacity:0;transform:translateY(3px)}}
+@keyframes rsFillA{0%,12%{width:0}42%,100%{width:72%}}
+@keyframes rsFillB{0%,40%{width:0}68%,100%{width:55%}}
+@keyframes rsPressLate{0%,76%{transform:none}82%,90%{transform:translate(1px,1px) scale(.97)}96%,100%{transform:none}}
+
+@media (prefers-reduced-motion: reduce) {
+  .ghost * { animation: none !important; }
+}
