@@ -7,6 +7,8 @@ import type {
 import type { LayerId } from "../../../domain/layers/model";
 import { layerOrder } from "../../../domain/layers/order";
 
+import type { AnimationLane } from "../../animation/timeline/model";
+
 type OverlayLayerId = Exclude<LayerId, "video">;
 type OverlaySide = "front" | "back";
 
@@ -22,6 +24,7 @@ type TimedOverlay = {
 };
 
 export type DesktopLayerRow =
+  | { id: `animation:${number}`; kind: "animation"; layerIds: []; lane: AnimationLane }
   | { id: "add:components"; kind: "empty-components"; layerIds: [] }
   | { id: "add:text"; kind: "empty-text"; layerIds: [] }
   | { id: "video"; kind: "video"; layerIds: ["video"] }

@@ -1,0 +1,15 @@
+# Direct dependencies of the tested Python 3.12 / CUDA 13 GPU runtime.
+# Install SAM itself from the exact Git commit documented in README.md.
+torch==2.14.1
+torchvision==0.29.1
+triton==3.8.0
+numpy==1.26.4
+Pillow==12.3.0
+huggingface-hub==2.1.1
+opencv-python-headless==4.11.0.86
+decord==0.6.0
+einops==0.8.1
+scipy==1.16.2
+matplotlib==3.10.6
+timm==1.0.30
+pycocotools==2.0.10

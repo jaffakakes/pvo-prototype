@@ -8,7 +8,7 @@ import { join, resolve, sep } from "node:path";
 import { reserveAssistantUsage } from "../server/assistant/quota.js";
 
 test("assistant quota fails closed and stores daily address digests only", async () => {
-  const request = new Request("https://example.test/api/assistant", { headers: { "CF-Connecting-IP": "192.0.2.4" } });
+  const request = new Request("https://example.test/api/assistant/turn", { headers: { "CF-Connecting-IP": "192.0.2.4" } });
   await assert.rejects(reserveAssistantUsage(request, {}), error => error.status === 503);
   let scope;
   let digest;

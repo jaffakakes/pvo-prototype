@@ -1,4 +1,5 @@
 import { CropSheet } from "../features/clip-adjustments/CropSheet";
+import { AnimationSheet } from "../features/animation/AnimationSheet";
 import { SpeedSheet } from "../features/clip-adjustments/SpeedSheet";
 import { ComponentsSheets } from "../features/component-authoring/ComponentsSheets";
 import { DiscardSheet } from "../features/create-project/DiscardSheet";
@@ -33,6 +34,8 @@ export function Sheets() {
       return <CropSheet />;
     case "sound":
       return <SoundSheet />;
+    case "animation":
+      return <AnimationSheet />;
     case "discard":
       return <DiscardSheet />;
   }

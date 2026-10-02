@@ -1,0 +1,187 @@
+.row {
+  position: relative;
+  height: 18px;
+  min-height: 18px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.label {
+  height: 18px;
+  min-height: 18px;
+  margin-left: 10px;
+  width: 94px;
+  padding: 0 7px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #f2f0e9;
+  background: color-mix(in srgb, var(--key-color) 8%, transparent);
+  border: 2px solid color-mix(in srgb, var(--key-color) 25%, transparent);
+  box-sizing: border-box;
+}
+
+.label span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.label i {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  transform: rotate(45deg);
+  background: var(--key-color);
+  border: 1.5px solid #000;
+  box-sizing: border-box;
+  border-radius: 1px;
+}
+
+.well {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: color-mix(in srgb, var(--key-color) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--key-color) 25%, transparent);
+  border-radius: 5px;
+  box-sizing: border-box;
+}
+
+.segment {
+  position: absolute;
+  top: calc(50% - 1px);
+  height: 0;
+  border-top: 2px solid color-mix(in srgb, var(--key-color) 50%, transparent);
+  pointer-events: none;
+}
+
+.segment[data-hold="true"] {
+  border-top-style: dashed;
+}
+
+.easing {
+  position: absolute;
+  top: -8px;
+  left: calc(50% - 10px);
+  width: 20px;
+  height: 14px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0b0b0f;
+  border: 1.5px solid #ffffff33;
+  border-radius: 4px;
+  color: var(--key-color);
+  z-index: 2;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.easing svg {
+  width: 11px;
+  height: 11px;
+}
+
+.key {
+  position: absolute;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  transform: translate(-50%, -50%);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  z-index: 4;
+  cursor: grab;
+  touch-action: none;
+}
+
+.key i {
+  width: 11px;
+  height: 11px;
+  box-sizing: border-box;
+  border-radius: 2px;
+  transform: rotate(45deg);
+  background: var(--key-color);
+  border: 2px solid #000;
+  pointer-events: none;
+}
+
+.key[aria-pressed="true"] {
+  z-index: 5;
+}
+
+.key[aria-pressed="true"] i {
+  background: #ff2d78;
+  transform: rotate(45deg) scale(1.25);
+  box-shadow: 0 0 0 3px #ff2d784d;
+}
+
+.key:active {
+  cursor: grabbing;
+}
+
+.key:focus-visible {
+  outline: none;
+}
+
+.key:focus-visible i {
+  outline: 2px solid #f2f0e9;
+  outline-offset: 3px;
+}
+
+.value {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 1px 6px;
+  border-radius: 5px;
+  color: #ff9fbc;
+  background: #000d;
+  font-size: 9.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.error {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  z-index: 8;
+  font-size: 11px;
+  color: #ff9fbc;
+  background: #15151c;
+  padding: 4px 8px;
+  border: 1px solid #ff9fbc;
+  border-radius: 5px;
+}
+
+.row[data-single="true"],
+.label[data-single="true"] {
+  height: 20px;
+  min-height: 20px;
+}
+
+.trackedBand {
+  position: absolute;
+  top: -1.5px;
+  bottom: -1.5px;
+  pointer-events: none;
+  border: 1.5px solid rgba(255, 159, 188, 0.55);
+  border-radius: 5px;
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(255, 159, 188, 0.18) 0 6px,
+    transparent 6px 12px
+  );
+  border-color: rgba(255, 159, 188, 0.55);
+}

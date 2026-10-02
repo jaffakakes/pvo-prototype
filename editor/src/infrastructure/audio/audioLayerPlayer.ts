@@ -1,4 +1,6 @@
+import { evaluateAnimation } from "../../../../packages/pvo-animation/index.js";
 import { audioDuration } from "../../domain/audio/editing";
+import { audioGain } from "../../domain/audio/gain";
 import type { AudioClip } from "../../domain/audio/model";
 
 type Entry = {
@@ -96,6 +98,8 @@ export function createAudioLayerPlayer(
         time >= clip.start &&
         time < clip.start + audioDuration(clip);
       media.muted = clip.muted;
+      media.volume = audioGain(audioGain(clip.gain) * evaluateAnimation(clip.animation,
+        clip.in + Math.max(0, time - clip.start) * clip.speed).gain);
       media.playbackRate = clip.speed;
       if (!audible) media.pause();
       if (media.readyState < HTMLMediaElement.HAVE_METADATA || entry.error)

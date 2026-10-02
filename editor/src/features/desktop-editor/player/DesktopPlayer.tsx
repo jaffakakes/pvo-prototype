@@ -3,7 +3,7 @@ import { useCapture } from "../../../state/captureStore";
 import { Icon } from "../../../ui/Icon";
 import { pickTime } from "../../../ui/formatTime";
 import { Preview } from "../../preview/Preview";
-import { togglePlayback } from "../../preview/playbackCommands";
+import { togglePlayback } from "../../../state/editing/playbackCommands";
 import { startTry, stopTry } from "../../preview/tryMode";
 import { DesktopSceneBar } from "./DesktopSceneBar";
 import { DebugEntry } from "../../editor-layout/debugging/DebugEntry";

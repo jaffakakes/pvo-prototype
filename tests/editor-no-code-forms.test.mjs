@@ -333,6 +333,7 @@ test("player validates native form messages, retains typed values, and clears pe
   const pending = [];
   const routes = [];
   const actions = createComponentActions({ session, adapters: {
+    componentCanReceiveResponse: () => true,
     setComponentPending: (...args) => pending.push(args), setStatus() {},
     captureOutcome: () => ({ kind: "continue" }), applyActionOutcome: (...args) => routes.push(args),
   } });
@@ -396,6 +397,7 @@ test("native packages and player execute every local form route while retaining 
     const routes = [];
     const statuses = [];
     const actions = createComponentActions({ session, adapters: {
+      componentCanReceiveResponse: () => true,
       setStatus: (...args) => statuses.push(args),
       captureOutcome: () => ({ kind: "continue" }),
       applyActionOutcome: (_component, _index, route) => routes.push(route),

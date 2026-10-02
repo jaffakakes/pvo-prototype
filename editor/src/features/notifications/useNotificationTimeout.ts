@@ -9,7 +9,7 @@ export function useNotificationTimeout(notification: Notification | null, paused
     if (!notification || notificationDefinition(notification.id).persistent) return;
     const { key, createdAt } = notification;
     if (clock.current.key !== key || clock.current.createdAt !== createdAt)
-      clock.current = { key, createdAt, remaining: BRIEF_NOTIFICATION_MS };
+      clock.current = { key, createdAt, remaining: notification.id === "assistantApplied" ? 2400 : BRIEF_NOTIFICATION_MS };
     if (paused) return;
     const start = performance.now();
     const timer = window.setTimeout(() => {

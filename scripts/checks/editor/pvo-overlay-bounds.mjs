@@ -15,7 +15,16 @@ const errors = [];
 page.setDefaultTimeout(10000);
 page.on("pageerror", error => errors.push(error.message));
 const overlay = page.locator(".compOverlay");
-const review = page.getByRole("region", { name: "Review assistant change" });
+
+async function applyRequest(prompt) {
+  await page.locator("[data-assistant-orb]").click();
+  await page.getByRole("textbox", { name: "Describe a change" }).fill(prompt);
+  await page.getByRole("button", { name: "Send request", exact: true }).click();
+  await page.locator('[data-assistant-phase="idle"]').waitFor();
+  const applied = page.locator('[data-notification-id="assistantApplied"]');
+  await applied.hover();
+  return applied;
+}
 
 async function settle() {
   await page.locator(".editorWorkspace").evaluate(async element => {
@@ -101,23 +110,14 @@ try {
   await page.getByRole("dialog", { name: "Message", exact: true }).getByRole("button", { name: "Done", exact: true }).click();
   await settle();
   const original = await bounds();
-  await page.locator("[data-assistant-orb]").click();
-  await page.getByRole("textbox", { name: "Describe a change" }).fill("Softer colours");
-  await page.getByRole("button", { name: "Send request", exact: true }).click();
-  await review.waitFor();
+  const firstApplied = await applyRequest("Softer colours");
   await assertFitted(original.center);
-
-  await page.getByRole("button", { name: "Larger heading", exact: true }).click();
-  await review.waitFor();
+  await firstApplied.getByRole("button", { name: "Undo", exact: true }).click();
+  await page.waitForFunction(() => !document.querySelector(".compCustomRuntime"));
+  assert.equal(await page.locator(".compCustomRuntime").count(), 0, "Undo restores the original Fields component");
+  await applyRequest("Softer colours");
   await assertFitted(original.center);
-  const before = review.getByRole("button", { name: "Hold to view before" });
-  await before.focus();
-  await page.keyboard.down("Space");
-  assert.equal(await page.locator(".compCustomRuntime").count(), 0);
-  await page.keyboard.up("Space");
-  await assertFitted(original.center);
-  await review.getByRole("button", { name: "Keep", exact: true }).click();
-  await page.locator('[data-assistant-phase="idle"]').waitFor();
+  await applyRequest("Larger heading");
   const kept = await assertFitted(original.center);
 
   const center = { x: kept.outer.left + kept.outer.width / 2, y: kept.outer.top + kept.outer.height / 2 };
@@ -129,24 +129,15 @@ try {
   await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
   const enlarged = await assertFitted(original.center);
   assert(enlarged.outer.width > kept.outer.width * 1.3, "Custom PVO components must retain pinch scaling");
-  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await page.locator('button[aria-label="Undo"]').click();
   const restored = await assertFitted(original.center);
   assert(Math.abs(restored.outer.width - kept.outer.width) < 1, "One Undo must restore the original component scale");
 
-  // The original now uses PVO too: compare actual pixels, not just the Before badge.
+  // The previous edit already uses PVO: verify actual pixels before and after Undo.
   await assertCardColour("rgb(242, 240, 233)");
-  await page.locator("[data-assistant-orb]").click();
-  await page.getByRole("textbox", { name: "Describe a change" }).fill("Make it blue");
-  await page.getByRole("button", { name: "Send request", exact: true }).click();
-  await review.waitFor();
+  const blueApplied = await applyRequest("Make it blue");
   await assertCardColour("rgb(96, 165, 250)");
-  await before.focus();
-  await page.keyboard.down("Space");
-  await assertCardColour("rgb(242, 240, 233)", 200);
-  await page.keyboard.up("Space");
-  await assertCardColour("rgb(96, 165, 250)", 200);
-  await review.getByRole("button", { name: "Undo", exact: true }).click();
-  await page.getByRole("textbox", { name: "Describe a change" }).press("Escape");
+  await blueApplied.getByRole("button", { name: "Undo", exact: true }).click();
   await page.locator('[data-assistant-phase="idle"]').waitFor();
   await assertCardColour("rgb(242, 240, 233)");
 
@@ -155,7 +146,7 @@ try {
     await assertFitted(original.center);
   }
   assert.deepEqual(errors, []);
-  console.log("PVO overlay bounds passed: Card center, fitted outline, source replacement, immediate code-owned Before comparison, Keep, pinch/Undo and responsive scaling.");
+  console.log("PVO overlay bounds passed: Card center, fitted outline, source replacement, immediate code-owned apply/Undo, pinch/Undo and responsive scaling.");
 } finally {
   await context.close();
   await browser.close();

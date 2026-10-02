@@ -1,5 +1,7 @@
 import { layerOrder } from "../layers/order";
 import { cloneLook } from "../components/look";
+import { cloneAnimation } from "../../../../packages/pvo-animation/index.js";
+import { cloneLayerTracking } from "../animation/trackingMetadata";
 import type { Outcome, PvoComponent, Scene } from "./model";
 
 export const cloneOutcome = (outcome: Outcome): Outcome => outcome.kind === "request"
@@ -7,6 +9,8 @@ export const cloneOutcome = (outcome: Outcome): Outcome => outcome.kind === "req
   : { ...outcome };
 export const cloneComponent = (component: PvoComponent): PvoComponent => ({
   ...component,
+  ...(component.animation ? { animation: cloneAnimation(component.animation) } : {}),
+  ...(component.animationTracking ? { animationTracking: cloneLayerTracking(component.animationTracking) } : {}),
   archivedCode: component.archivedCode && structuredClone(component.archivedCode),
   ...(component.look ? { look: cloneLook(component.look) } : {}),
   fields: {
@@ -28,9 +32,12 @@ export const cloneComponent = (component: PvoComponent): PvoComponent => ({
 });
 export const cloneScenes = (scenes: Scene[]): Scene[] => scenes.map(scene => ({
   ...scene,
-  clips: scene.clips.map(clip => ({ ...clip })),
-  ...(scene.audioClips ? { audioClips: scene.audioClips.map(clip => ({ ...clip })) } : {}),
-  texts: scene.texts.map(text => ({ ...text, style: text.style && { ...text.style } })),
+  ...(scene.musicAnimation ? { musicAnimation: cloneAnimation(scene.musicAnimation) } : {}),
+  clips: scene.clips.map(clip => ({ ...clip, ...(clip.animation ? { animation: cloneAnimation(clip.animation) } : {}),
+    ...(clip.animationTracking ? { animationTracking: cloneLayerTracking(clip.animationTracking) } : {}) })),
+  ...(scene.audioClips ? { audioClips: scene.audioClips.map(clip => ({ ...clip, ...(clip.animation ? { animation: cloneAnimation(clip.animation) } : {}) })) } : {}),
+  texts: scene.texts.map(text => ({ ...text, style: text.style && { ...text.style }, ...(text.animation ? { animation: cloneAnimation(text.animation) } : {}),
+    ...(text.animationTracking ? { animationTracking: cloneLayerTracking(text.animationTracking) } : {}) })),
   layers: layerOrder(scene),
   components: scene.components.map(cloneComponent),
 }));

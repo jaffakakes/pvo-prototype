@@ -86,6 +86,7 @@ export function ToolRow() {
     else if (["textCollapse", "compCollapse", "collapse"].includes(name))
       clearSelection();
     else if (name === "textEdit") s.patch({ sheet: "text", playing: false });
+    else if (name === "animation") s.patch({ sheet: "animation", playing: false, orb: false });
     else if (name === "textDuplicate" && selectedText)
       s.duplicateText(selectedText.id);
     else if (name === "textDelete" && selectedText)
@@ -129,6 +130,7 @@ export function ToolRow() {
     ? [
         ["down", componentName, "compCollapse"],
         ["edit", "Edit", "compEdit"],
+        ["keyframe", "Animate", "animation"],
         ["plus", "Duplicate", "compDuplicate"],
         ["delete", "Delete", "compDelete"],
       ]
@@ -140,6 +142,7 @@ export function ToolRow() {
           ["delete", "Delete", "delete"],
           ["speed", "Speed", "speed"],
           ["crop", "Crop", "crop"],
+          ["keyframe", "Animate", "animation"],
           ...(!selected.audioDetached && selected.url
             ? [["music", "Extract audio", "extractAudio"]]
             : []),
@@ -156,6 +159,7 @@ export function ToolRow() {
         ["down", "", "collapse"],
         ["split", "Split", "audioSplit"],
         ["plus", "Duplicate", "audioDuplicate"],
+        ["keyframe", "Animate", "animation"],
         [
           selectedAudio.muted ? "muted" : "music",
           selectedAudio.muted ? "Unmute" : "Mute",
@@ -167,6 +171,7 @@ export function ToolRow() {
       ? [
           ["down", "", "textCollapse"],
           ["edit", "Edit text", "textEdit"],
+          ["keyframe", "Animate", "animation"],
           ["plus", "Duplicate", "textDuplicate"],
           ["delete", "Delete", "textDelete"],
         ]

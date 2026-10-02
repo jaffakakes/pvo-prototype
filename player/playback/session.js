@@ -28,6 +28,7 @@ export function createPlaybackSession({ onDiagnostic, captureDiagnosticBodies } 
     interactionOperations: new Map(),
     renderedOverlayKey: "",
     runtimeStateRevision: 0,
+    overlayResetRevision: 0,
     controlsTimer: null,
     resumeAfterScrub: false,
     captureMode: false,

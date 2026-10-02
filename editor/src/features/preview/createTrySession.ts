@@ -13,7 +13,8 @@ import {
   validateFormFields,
 } from "../../domain/components/forms";
 import { componentEnd } from "../../domain/components/timing";
-import { layerZ } from "../../domain/layers/order";
+import { componentInteractionAvailable } from "../../domain/animation/interaction";
+import { projectRatio } from "../../domain/project/ratio";
 import type {
   ComponentResponse,
   PlaybackOutcome,
@@ -38,6 +39,7 @@ type TrySessionState = Pick<
   | "components"
   | "texts"
   | "layers"
+  | "ratio"
   | "allowedDomains"
   | "tryMode"
   | "patch"
@@ -83,6 +85,10 @@ export function createTrySession(host: Host) {
     "currentSceneId" | "t" | "sel" | "selComp" | "selText" | "sheet"
   >;
   let editingLocation: EditingLocation | null = null;
+  function interactionAvailable(state: TrySessionState, component: PvoComponent, time: number) {
+    const ratio = projectRatio(state.ratio);
+    return componentInteractionAvailable(state, component, time, ratio[0] / ratio[1]);
+  }
   const runtimeBridge = createTryRuntimeBridge({
     getState: host.getState,
     request: host.request,
@@ -370,6 +376,11 @@ export function createTrySession(host: Host) {
     if (succeeded || epoch !== trySessionEpoch || !runtimeBridge.isCurrent(runtime) || !latestMode
         || latest.currentSceneId !== component.sceneId
         || latestMode.capturedResponses[component.id] !== response) return;
+    if (latestMode.holdingId === component.id && !interactionAvailable(latest, component, latest.t)) {
+      // Keep the failed-request feedback, but never require a retry on an invisible control.
+      latest.patch({ playing: true, tryMode: { ...latestMode, playing: true, holdingId: null } });
+      return;
+    }
     latest.patch({
       tryMode: {
         ...latestMode,
@@ -387,7 +398,7 @@ export function createTrySession(host: Host) {
     const state = host.getState();
     const mode = state.tryMode;
     const input = diagnostics.response(component, response, interactionId);
-    if (!mode || !acceptsResponse(component)) {
+    if (!mode || !acceptsResponse(component) || !interactionAvailable(state, component, state.t)) {
       diagnostics.event(component, "interaction.ignored", "inactive_component", input);
       return;
     }
@@ -448,14 +459,14 @@ export function createTrySession(host: Host) {
   function advanceTry(s: TrySessionState, next: number) {
     const mode = s.tryMode;
     if (!mode) return false;
-    // A component covered by the opaque video cannot wait for a response nobody can provide.
+    // Visibility is evaluated at the actual boundary, including motion between playback frames.
     const ending = s.components
       .filter(
         (component) => {
           if (!acceptsResponse(component)) return false;
           const policy = responsePolicyFor(component);
           return (policy.dispatch === "layer_end" || policy.unanswered === "pause") &&
-          layerZ(s, `component:${component.id}`) > layerZ(s, "video") &&
+          (mode.capturedResponses[component.id] || interactionAvailable(s, component, componentEnd(component, s.clips))) &&
           !mode.handled.includes(component.id);
         },
       )

@@ -1,8 +1,0 @@
-.proposed::after { content: ""; position: absolute; inset: -7px; border: 2px dashed var(--violet, #a78bfa); border-radius: 10px; pointer-events: none; }
-.label {
-  position: absolute; bottom: calc(100% + 7px); left: 0; z-index: 1;
-  padding: 3px 7px; border-radius: 5px; background: #a78bfa; color: #15151c;
-  font: 800 10px var(--f-ui); pointer-events: none;
-  text-transform: uppercase;
-}
-.label[data-before="true"] { background: var(--pale); }

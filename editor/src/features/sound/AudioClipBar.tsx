@@ -5,6 +5,7 @@ import { useCapture } from "../../state/captureStore";
 import { useTimingPointer } from "../timeline/useTimingPointer";
 import type { TimingSnapSettings } from "../timeline/timingSnap";
 import styles from "./AudioClipBar.module.css";
+import { TimelineKeyframes } from "../animation/TimelineKeyframes";
 
 export function AudioClipBar({
   clip,
@@ -82,6 +83,7 @@ export function AudioClipBar({
         {clip.muted ? " · muted" : ""}
       </span>
       {selected && <span className={styles.handle} data-edge="r" />}
+      <TimelineKeyframes animation={clip.animation} color="#5CF0C0" start={clip.in} end={clip.out} />
     </button>
   );
 }

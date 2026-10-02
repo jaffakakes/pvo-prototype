@@ -32,11 +32,10 @@ function submittedFields(input: unknown, names: { name: string; kind: string; la
   }));
 }
 
-export function PvoRuntimeOverlay({ component, width, trying, isVisible, immediatePreview = false }: {
+export function PvoRuntimeOverlay({ component, width, trying, isVisible }: {
   component: PvoComponent;
   width: number;
   trying: boolean;
-  immediatePreview?: boolean;
   isVisible: (component: PvoComponent, clips: Clip[], t: number, holdingId: string | null) => boolean;
 }) {
   const host = useRef<HTMLDivElement>(null);
@@ -146,12 +145,9 @@ export function PvoRuntimeOverlay({ component, width, trying, isVisible, immedia
         if (!cancelled) reportRuntimeError(error);
       }
     };
-    // Review sources are already validated; a hold-to-compare must not wait for
-    // the debounce that protects the compiler while editing source text.
-    const timer = immediatePreview ? undefined : window.setTimeout(() => { void render(); }, 250);
-    if (immediatePreview) void render();
+    const timer = window.setTimeout(() => { void render(); }, 250);
     return () => { cancelled = true; window.clearTimeout(timer); };
-  }, [component.id, component.type, component.fields, component.code?.custom, component.code?.pvoLiteral, source, trying, isVisible, immediatePreview]);
+  }, [component.id, component.type, component.fields, component.code?.custom, component.code?.pvoLiteral, source, trying, isVisible]);
 
   useEffect(() => { runtime.current?.setInteractive(trying); }, [trying]);
   useEffect(() => { runtime.current?.setPending(pending); }, [pending]);

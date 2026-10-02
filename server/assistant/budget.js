@@ -1,7 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 
-// One object coordinates a single UTC day's small beta inference budget.
-// No prompts, component source, or raw addresses are stored here.
+// One object coordinates a single UTC day's bounded beta inference allowance.
+// No prompts, project data, provider payloads, or raw addresses are stored here.
 export class AssistantBudget extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);

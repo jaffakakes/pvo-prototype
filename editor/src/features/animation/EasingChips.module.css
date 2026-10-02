@@ -1,0 +1,8 @@
+.chips { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.chips button { display: inline-flex; flex: 1; justify-content: center; align-items: center; gap: 4px; height: 34px; min-width: 0; padding: 0 4px; background: #15151c; border: 2px solid #ffffff1f; border-radius: 9px; color: #a7a3b8; font: 600 11.5px var(--f-ui); white-space: nowrap; cursor: pointer; }
+.chips button[aria-pressed="true"] { background: #1c1c24; border-color: #000; box-shadow: 2px 2px 0 #ff2d78; color: #f2f0e9; font-weight: 700; }
+.chips button:disabled { opacity: .45; cursor: default; }
+.chips button:focus-visible { outline: 2px solid #ff9fbc; outline-offset: 2px; }
+.chips svg { flex: none; }
+.chips[data-compact="true"] { gap: 4px; }
+.chips[data-compact="true"] button { height: 32px; font-size: 10px; gap: 3px; padding: 0 2px; }

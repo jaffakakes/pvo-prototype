@@ -52,7 +52,7 @@ function seekHarness(components, { currentTime = 2, dispatch } = {}) {
       setStatus(message) { statuses.push(message); },
       showControls() {},
       replaceActionRuntime() {},
-      captureAboveVideo: () => true,
+      componentCanReceiveResponse: () => true,
       async dispatchCapturedResponse(id) {
         dispatched.push(id);
         if (dispatch) return dispatch(id);
@@ -144,7 +144,7 @@ test("restart invalidates a crossed response before its late completion can rest
     adapters: {
       ...harness.timeline,
       componentsForClip: () => [component],
-      captureAboveVideo: () => true,
+      componentCanReceiveResponse: () => true,
       renderOverlays() {}, updateProgress() {}, setStatus() {}, showControls() {},
       replaceActionRuntime() {},
       timelineById: () => harness.session.currentTimeline,
@@ -201,7 +201,7 @@ test("a newer scrub wins when an older cross-clip seek finishes loading later", 
       clipAtElapsedTime,
       activeClip: () => session.currentTimeline.clips[session.currentClipIndex],
       updateTimelineLabel() {}, renderOverlays() {}, updateProgress() {}, setStatus() {}, showControls() {},
-      finishExperience() {}, replaceActionRuntime() {}, captureAboveVideo: () => true,
+      finishExperience() {}, replaceActionRuntime() {}, componentCanReceiveResponse: () => true,
       dispatchCapturedResponse() {},
     },
   });

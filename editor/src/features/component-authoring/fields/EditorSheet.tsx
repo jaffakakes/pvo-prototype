@@ -10,6 +10,7 @@ import { setAdvancedEditingEnabled, useEditorPreferences } from "../../../state/
 import { fmt } from "../../../ui/formatTime";
 import { useSheetDock } from "../../../ui/sheets/SheetDockContext";
 import { LayerPositionControls } from "../../overlay-position/LayerPositionControls";
+import { KeyframeEditor } from "../../animation/KeyframeEditor";
 import positionStyles from "../../overlay-position/LayerPositionControls.module.css";
 import { nameOf } from "../catalog";
 import { PvoLanguageRoute } from "../language/PvoLanguageRoute";
@@ -118,12 +119,14 @@ export function EditorSheet({ Frame = SheetFrame, lookPreviewScale }: {
         <TimingControls component={component} />
       </>}
       {tab === "look" && <>
-        <section className={positionStyles.section}>
+        {!wide && <section className={positionStyles.section}>
           <LayerPositionControls key={component.id} target={{ kind: "component", id: component.id }}
             x={component.x} y={component.y} />
-        </section>
+        </section>}
         {wide && <ComponentSizeControls key={component.id} component={component} />}
         <LookTab component={component} disabled={blocked} previewScale={lookPreviewScale} />
+        {wide ? <KeyframeEditor key={`component:${component.id}`} target={{ kind: "component", id: component.id }} />
+          : <button type="button" className={styles.inlineActions} onClick={() => useCapture.getState().patch({ sheet: "animation", playing: false })}>◆ Animate</button>}
       </>}
       {tab === "action" && <ActionTab key={component.id} component={component} onOpenAdvanced={() => openAdvanced("logic")} />}
       {tab === "advanced" && !legacy && <>

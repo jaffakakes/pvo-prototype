@@ -35,8 +35,13 @@
   touch-action: none;
 }
 .textLayer .textOverlay[data-sel="true"] {
-  outline: 1.5px solid var(--pale);
+  outline: 2px dashed var(--pale);
   outline-offset: 4px;
+}
+.videoLayer[data-animation-selected="true"] {
+  outline: 2px dashed var(--pale);
+  outline-offset: -4px;
+  cursor: grab;
 }
 .pvBox .pvTag,
 .pvBox .tryPill {

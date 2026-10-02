@@ -1,0 +1,5 @@
+.actions { display: flex; gap: 6px; margin-top: 17px; }
+.actions button { height: 34px; flex: 1; min-width: 0; padding: 0 5px; background: #15151c; border: 2px solid #ffffff24; border-radius: 9px; color: #d8d5cb; font: 600 11px var(--f-ui); cursor: pointer; white-space: nowrap; }
+.actions .duck { color: #ff9fbc; border-color: #ff9fbc73; flex: 1.4; }
+.actions button:disabled { opacity: .45; cursor: default; }
+.status { color: #ff9fbc; font: 600 11px/1.4 var(--f-ui); margin: 8px 0 0; }

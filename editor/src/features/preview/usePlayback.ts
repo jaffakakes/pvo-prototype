@@ -1,3 +1,4 @@
+import { evaluateAnimation } from "../../../../packages/pvo-animation/index.js";
 import { sceneDuration } from "../../domain/scenes/duration";
 import { useEffect, useRef } from "react";
 import { locate, total } from "../../domain/clips/timing";
@@ -7,6 +8,7 @@ import type { CaptureState } from "../../state/types";
 import { runPlaybackFrame } from "./playbackFrame";
 import { advanceTry, failTry, observeTryDiagnostics } from "./tryMode";
 import { useTryMediaDiagnostics } from "./useTryMediaDiagnostics";
+import { audioGain } from "../../domain/audio/gain";
 
 const UPDATE_MS = 1000 / 30;
 const SEEK_TOLERANCE = .015;
@@ -21,13 +23,16 @@ export function usePlayback(videoRef: React.RefObject<HTMLVideoElement>) {
   const publishingVideoTime = useRef(false);
   const positionOrigin = useRef(new WeakMap<CaptureState, "video" | "external">());
   const loadedClip = useRef<LoadedClip | null>(null);
+  const pendingSeek = useRef<{ element: HTMLVideoElement; url: string; time: number } | null>(null);
   const syntheticClockReported = useRef(false);
   const pausedAt = useRef<number | null>(null);
   const state = useCapture();
   const { clips, t, playing, muted, trim } = state;
+  const clipGain = audioGain(state.scenes.find(scene => scene.id === state.currentSceneId)?.clipGain);
   const trying = !!state.tryMode;
   const sceneTail = sceneDuration(state) > total(clips) && t >= total(clips);
   const current = trim ? { c: clips[trim.i], lt: trim.lt } : sceneTail ? null : locate(t, clips);
+  const animatedGain = clipGain * evaluateAnimation(current?.c.animation, current?.lt ?? 0).gain;
   const hasMedia = !!current?.c.url;
   useTryMediaDiagnostics(videoRef, trying, hasMedia);
   const fromVideo = positionOrigin.current.get(state) === "video";
@@ -56,8 +61,10 @@ export function usePlayback(videoRef: React.RefObject<HTMLVideoElement>) {
     const video = videoRef.current;
     const clip = current?.c;
     if (!video || !clip?.url) {
+      loadedClip.current?.element.pause();
       video?.pause();
       loadedClip.current = null;
+      pendingSeek.current = null;
       return;
     }
 
@@ -69,6 +76,7 @@ export function usePlayback(videoRef: React.RefObject<HTMLVideoElement>) {
     pausedAt.current = playing ? null : t;
     // Store updates published by this video are observations, not seek requests.
     const shouldSeek = clipChanged || explicitSeekTime != null;
+    if (shouldSeek) pendingSeek.current = { element: video, url: clip.url, time: localTime };
     let disposed = false;
 
     const resume = () => {
@@ -83,6 +91,7 @@ export function usePlayback(videoRef: React.RefObject<HTMLVideoElement>) {
     const sync = () => {
       if (video.muted !== (muted || !!clip.audioDetached))
         video.muted = muted || !!clip.audioDetached;
+      video.volume = audioGain(animatedGain);
       const speed = clamp(clip.speed, .25, 4);
       if (video.playbackRate !== speed)
         video.playbackRate = speed;
@@ -91,8 +100,14 @@ export function usePlayback(videoRef: React.RefObject<HTMLVideoElement>) {
       if (video.readyState < HTMLMediaElement.HAVE_METADATA)
         return;
 
-      if (shouldSeek && Math.abs(video.currentTime - localTime) > SEEK_TOLERANCE)
-        video.currentTime = localTime;
+      // View measurements can rerender while metadata loads. Keep the requested
+      // frame across effect replacements until this source can accept the seek.
+      const seek = pendingSeek.current;
+      if (seek?.element === video && seek.url === clip.url) {
+        if (Math.abs(video.currentTime - seek.time) > SEEK_TOLERANCE)
+          video.currentTime = seek.time;
+        pendingSeek.current = null;
+      }
       if (playing) {
         // On iPhone a source or in-point seek can finish asynchronously. Do not
         // briefly play the old frame before the requested frame is available.
@@ -115,7 +130,7 @@ export function usePlayback(videoRef: React.RefObject<HTMLVideoElement>) {
       video.removeEventListener("loadedmetadata", sync);
       video.removeEventListener("seeked", resume);
     };
-  }, [videoRef, current?.c?.id, current?.c?.url, current?.c?.in, current?.c?.speed, current?.c?.audioDetached, explicitSeekTime, playing, muted]);
+  }, [videoRef, current?.c?.id, current?.c?.url, current?.c?.in, current?.c?.speed, current?.c?.audioDetached, explicitSeekTime, playing, muted, animatedGain]);
 
   useEffect(() => {
     if (!playing) {

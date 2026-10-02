@@ -12,7 +12,7 @@ const browser = await chromium.launch({
 const context = await browser.newContext({ viewport: { width: 430, height: 932 }, hasTouch: true, isMobile: true });
 await installAssistantFixture(context);
 
-// Replace only the browser capability. App gesture, view, compiler and review paths remain real.
+// Replace only the browser capability. App gestures, compiler, application and history remain real.
 await context.addInitScript(() => {
   const state = { starts: 0, stops: 0, aborts: 0, autoStart: true, current: null };
   class FakeRecognition {
@@ -66,7 +66,8 @@ async function snapshot() {
   return page.evaluate(async () => {
     const { useCapture } = await import("/src/store.ts");
     const state = useCapture.getState();
-    return { scenes: state.scenes, past: state.past, future: state.future };
+    // History cloning can materialize absent optional keys as undefined; compare saved values.
+    return JSON.parse(JSON.stringify({ scenes: state.scenes, past: state.past, future: state.future }));
   });
 }
 
@@ -99,7 +100,7 @@ try {
   await page.locator(".componentTypeTile").filter({ hasText: "Add a note" }).click();
   await page.getByRole("dialog", { name: "Note", exact: true }).getByRole("button", { name: "Done", exact: true }).click();
   await phase("idle");
-  const original = await snapshot();
+  let original = await snapshot();
   await resetNoticeScenario();
 
   await orb.click();
@@ -155,11 +156,23 @@ try {
     voiceFixture.current.result("Softer colours", true);
     voiceFixture.current.onend?.();
   });
-  await phase("review");
-  assert.deepEqual(await snapshot(), original, "Voice proposals must not mutate project data or history before Keep");
+  await phase("idle");
+  const applied = await snapshot();
+  assert.equal(applied.past.length, original.past.length + 1, "Final voice words apply as one undoable edit");
+  assert.notDeepEqual(applied.scenes, original.scenes);
+  const appliedNotice = page.locator('[data-notification-id="assistantApplied"]');
+  await appliedNotice.waitFor();
+  await appliedNotice.hover();
   await page.waitForTimeout(250);
-  assert.equal(await assistant.getAttribute("data-assistant-phase"), "review", "Trailing events must not send another request");
-  await page.getByRole("region", { name: "Review assistant change" }).getByRole("button", { name: "Undo", exact: true }).click();
+  assert.equal(await assistant.getAttribute("data-assistant-phase"), "idle", "Trailing events must not send another request");
+  assert.deepEqual(await snapshot(), applied, "Trailing speech events must not apply a second edit");
+  await appliedNotice.getByRole("button", { name: "Undo", exact: true }).click();
+  const undone = await snapshot();
+  assert.deepEqual(undone.scenes, original.scenes, "Toast Undo restores all component source and fields");
+  assert.deepEqual(undone.past, original.past);
+  assert.equal(undone.future.length, original.future.length + 1);
+  original = undone;
+  await orb.click();
   await phase("typing");
 
   // Keyboard hold uses the same threshold and can be cancelled without a request.
@@ -237,11 +250,10 @@ try {
   await phase("typing");
   await field.fill("Bolder");
   await field.press("Enter");
-  await phase("review");
-  await page.getByRole("region", { name: "Review assistant change" }).getByRole("button", { name: "Keep", exact: true }).click();
+  await page.locator('[data-notification-id="assistantApplied"]').waitFor();
   await phase("idle");
   assert.equal(await page.evaluate(async () => (await import("/src/store.ts")).useCapture.getState().playing), true,
-    "Keeping a proposal must restore its previous playback state");
+    "Applying an edit must restore its previous playback state");
   await page.evaluate(async () => (await import("/src/store.ts")).useCapture.getState().patch({ playing: false }));
   assert.deepEqual(errors, []);
   console.log("Assistant voice checks passed: 320ms tap/hold vocabulary, two-word minimum, speech lifecycle, typed notifications, preserved drafts, keyboard dismissal, playback restoration and scope cleanup.");

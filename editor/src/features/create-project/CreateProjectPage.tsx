@@ -14,7 +14,7 @@ import { MediaInput } from "./MediaInput";
 import { DropReadyPanel } from "./DropReadyPanel";
 import { ProjectRecoveryNotice } from "./ProjectRecoveryNotice";
 import { RatioPicker } from "./RatioPicker";
-import { TemplateGallery } from "./TemplateGallery";
+import { TemplateRow } from "./templates/TemplateRow";
 import { createProject, resumeProject } from "./projectCommands";
 import { usePageDrop } from "./usePageDrop";
 import { useProjectMedia, type PreparedMedia } from "./useProjectMedia";
@@ -128,7 +128,7 @@ export function CreateProjectPage({ hero = "studio", templateId, active = true, 
       />}
       {!staged.error && !failure && storage.phase === "starting"
         && <p className={styles.storagePending} role="status">Checking saved edits…</p>}
-      <TemplateGallery disabled={busy || unavailable} onSelect={selected => { void useTemplate(selected); }} />
+      <TemplateRow disabled={busy || unavailable} onSelect={selected => { void useTemplate(selected); }} />
     </main>
     {dragging && <div className={styles.dropOverlay}><Icon name="export" size={40} /><strong>Drop your clips anywhere</strong><span>Let's start your next edit.</span></div>}
   </div>;

@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { verifyAssistantDeployment } from "./assistant-deployment-preflight.mjs";
 import { retainEditorAssets } from "./retain-editor-assets.mjs";
 import {
   announceDeployedRelease,
@@ -36,5 +37,11 @@ await new Promise((resolveDeploy, reject) => {
 });
 
 await waitForDeployedRelease({ origin, revision });
+try {
+  const { status } = await verifyAssistantDeployment({ origin });
+  console.log(`Assistant preflight passed: ${status.model} provides editing, frames and transcription.`);
+} catch (error) {
+  throw new Error(`Deployment finished but assistant preflight failed: ${error.message} No release announced.`, { cause: error });
+}
 await announceDeployedRelease({ origin, revision, secret });
 console.log(`Release announced: ${revision}`);

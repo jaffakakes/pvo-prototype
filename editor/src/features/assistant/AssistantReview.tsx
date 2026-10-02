@@ -1,84 +1,54 @@
 import type { CSSProperties } from "react";
 import { Icon } from "../../ui/Icon";
-import type { AssistantProposal } from "./OrbAssistantView";
+import type { AssistantAnswer } from "../../domain/assistant/model";
 import styles from "./AssistantReview.module.css";
 
 interface AssistantReviewProps {
-  proposal: AssistantProposal;
-  before: boolean;
+  answer: AssistantAnswer;
+  suggestions: string[];
   disabled: boolean;
-  modeLabel: string;
-  onKeep(): void;
-  onUndo(): void;
+  onDone(): void;
   onEditRequest(): void;
-  onBefore(active: boolean): void;
   onSuggestion(suggestion: string): void;
 }
 
+function FollowUpGlyph({ suggestion }: { suggestion: string }) {
+  const path = suggestion === "Softer colours" ? "M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"
+    : suggestion === "Larger heading" ? "M4 20 10 4l6 16M6 14h8M19 4v8M16 7l3-3 3 3"
+    : suggestion === "Bolder" ? "M7 4h6a4 4 0 0 1 0 8H7zM7 12h7a4 4 0 0 1 0 8H7z"
+    : "m12 3 2.2 6.8L21 12l-6.8 2.2L12 21l-2.2-6.8L3 12l6.8-2.2z";
+  return <svg className={styles.glyph} width="13" height="13" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d={path} />
+  </svg>;
+}
+
 export function AssistantReview({
-  proposal, before, disabled, modeLabel, onKeep, onUndo, onEditRequest, onBefore, onSuggestion,
+  answer, suggestions, disabled, onDone, onEditRequest, onSuggestion,
 }: AssistantReviewProps) {
   return <>
-    <section className={styles.review} aria-label="Review assistant change" data-before={before}>
-      <div className={styles.reviewBody} tabIndex={0} role="region" aria-label="Request and changes">
+    <section className={styles.review} aria-label="Assistant answer" data-assistant-review>
+      <div className={styles.reviewBody} tabIndex={0} role="region" aria-label="Request and answer">
         <button type="button" className={styles.request} aria-label="Edit request" onClick={onEditRequest} disabled={disabled}>
           <span className={styles.spark} aria-hidden="true">✦</span>
-          <span>{proposal.request}</span>
+          <span className={styles.requestContent}>
+            <span>{answer.request}</span>
+
+          </span>
           <Icon name="pencil" size={14} />
         </button>
-        {proposal.tags.length > 0 && <ul className={styles.tags} aria-label="Requested changes">
-          {proposal.tags.map((tag, index) => <li key={`${tag}-${index}`}>+ {tag}</li>)}
-        </ul>}
-        <p className={styles.summary} role="status">{proposal.summary}</p>
-        {proposal.skipped.length > 0 && <p className={styles.skipped}>{proposal.skipped.join(" · ")}</p>}
-        <span className={styles.mode}>{modeLabel}</span>
+        <p className={styles.summary} role="status">{answer.message}</p>
+        {answer.observations.length > 0 && <p className={styles.skipped}>{answer.observations.join(" · ")}</p>}
       </div>
       <div className={styles.reviewActions}>
-        <button type="button" className={styles.keep} disabled={disabled} onClick={onKeep}>
-          <Icon name="check" size={17} /> Keep
+        <button type="button" className={styles.keep} disabled={disabled} onClick={onDone}>
+          <Icon name="check" size={15} /> Done
         </button>
-        <button
-          type="button"
-          className={styles.before}
-          aria-label="Hold to view before"
-          title="Hold to compare with the original"
-          aria-pressed={before}
-          disabled={disabled}
-          onPointerDown={event => {
-            if (event.button !== 0) return;
-            event.preventDefault();
-            event.currentTarget.setPointerCapture(event.pointerId);
-            onBefore(true);
-          }}
-          onPointerUp={event => {
-            if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-              event.currentTarget.releasePointerCapture(event.pointerId);
-            }
-            onBefore(false);
-          }}
-          onPointerCancel={() => onBefore(false)}
-          onLostPointerCapture={() => onBefore(false)}
-          onBlur={() => onBefore(false)}
-          onKeyDown={event => {
-            if (event.key !== " " && event.key !== "Enter") return;
-            event.preventDefault();
-            if (!event.repeat) onBefore(true);
-          }}
-          onKeyUp={event => {
-            if (event.key !== " " && event.key !== "Enter") return;
-            event.preventDefault();
-            onBefore(false);
-          }}
-        >
-          <span>Before</span><small>hold</small>
-        </button>
-        <button type="button" className={styles.undo} disabled={disabled} onClick={onUndo}>
-          <Icon name="undo" size={16} /> Undo
-        </button>
+
       </div>
     </section>
-    <div className={styles.followUps} aria-label="Try another change">
-      {proposal.followUps.slice(0, 3).map((suggestion, index) => <button
+    <div className={styles.followUps} aria-label="Try another change" data-assistant-follow-ups>
+      {suggestions.slice(0, 3).map((suggestion, index) => <button
         type="button"
         className={styles.followUp}
         key={`${suggestion}-${index}`}
@@ -86,7 +56,7 @@ export function AssistantReview({
         onClick={() => onSuggestion(suggestion)}
         style={{ "--chip-order": index } as CSSProperties}
       >
-        <span className={styles.glyph} aria-hidden="true">{["✦", "↗", "◆"][index]}</span><span>{suggestion}</span>
+        <FollowUpGlyph suggestion={suggestion} /><span>{suggestion}</span>
       </button>)}
     </div>
   </>;
