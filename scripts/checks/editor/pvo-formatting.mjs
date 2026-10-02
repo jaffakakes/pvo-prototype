@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 import { parseNativeTurnRequest } from "../../../packages/pvo-assistant/native/index.js";
-import { componentSourceResult, finishAssistantVerification } from "./assistant-fixture.mjs";
+import { componentSourceResult, finishAssistantVerification, installAssistantAvailabilityFixture } from "./assistant-fixture.mjs";
 
 // Vite serves the real editor state and WASM compiler. Only AI HTTP responses are fixtures.
 const root = fileURLToPath(new URL("../../../", import.meta.url)).replaceAll("\\", "/");
@@ -231,6 +231,7 @@ async function invalidStyle(page) {
 try {
   for (const [type, compact] of [["card", card], ["form", form]]) {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
+    await installAssistantAvailabilityFixture(context);
     const page = await context.newPage();
     page.setDefaultTimeout(15000);
     const errors = [], requests = [], verifications = [], externalRequests = [];

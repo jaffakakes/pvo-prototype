@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright-core";
 import { parseNativeTurnRequest, parseNativeTurnResult } from "../../../packages/pvo-assistant/native/index.js";
+import { installAssistantAvailabilityFixture } from "./assistant-fixture.mjs";
 import { loadStudyMedia } from "./assistant-tool-study/mediaFixture.mjs";
 
 // The planner is a fixture. The first alignment is real; identical payloads reuse
@@ -38,6 +39,7 @@ if (capturePath) {
 }
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true });
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, serviceWorkers: "block" });
+await installAssistantAvailabilityFixture(context);
 const page = await context.newPage();
 page.setDefaultTimeout(15000);
 let failureMode = null, scenario = null, phase = 0, original = null, measuredBoundary = null;

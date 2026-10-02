@@ -2,11 +2,12 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 import { parseNativeTurnRequest } from "../../../packages/pvo-assistant/native/index.js";
-import { componentSourceResult, finishAssistantVerification, selectedAssistantComponent } from "./assistant-fixture.mjs";
+import { componentSourceResult, finishAssistantVerification, installAssistantAvailabilityFixture, selectedAssistantComponent } from "./assistant-fixture.mjs";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url)).replaceAll("\\", "/");
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe", headless: true });
 const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+await installAssistantAvailabilityFixture(page);
 page.setDefaultTimeout(12000);
 const errors = [], requests = [], verificationRequests = [];
 let releaseResponse;

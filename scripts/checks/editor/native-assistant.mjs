@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { chromium } from "playwright-core";
 import { parseNativeTurnRequest } from "../../../packages/pvo-assistant/native/index.js";
-import { finishAssistantVerification, preparedAssistantReceipts } from "./assistant-fixture.mjs";
+import { finishAssistantVerification, installAssistantAvailabilityFixture, preparedAssistantReceipts } from "./assistant-fixture.mjs";
 
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true });
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+await installAssistantAvailabilityFixture(context);
 const calls = [];
 const controlled = new Map();
 function holdResponse(prompt, body, status = 200, preparedSteps = 0, observations = 0) {

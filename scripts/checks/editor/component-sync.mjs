@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 import { parseNativeTurnRequest } from "../../../packages/pvo-assistant/native/index.js";
-import { componentSourceResult, finishAssistantVerification, selectedAssistantComponent } from "./assistant-fixture.mjs";
+import { componentSourceResult, finishAssistantVerification, installAssistantAvailabilityFixture, selectedAssistantComponent } from "./assistant-fixture.mjs";
 import { readPvoProject } from "../../../packages/pvo-sdk/index.js";
 
 // Vite supplies the real store and WASM compiler. Only the AI HTTP response is a fixture.
@@ -122,6 +122,7 @@ async function formFields(page) {
 
 async function exercise(item) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, reducedMotion: "reduce" });
+  await installAssistantAvailabilityFixture(context);
   const page = await context.newPage();
   activePage = page;
   page.setDefaultTimeout(15000);

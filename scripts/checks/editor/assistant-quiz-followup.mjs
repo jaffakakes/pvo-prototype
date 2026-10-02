@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { chromium } from "playwright-core";
 import { parseNativeTurnRequest, parseNativeTurnResult } from "../../../packages/pvo-assistant/native/index.js";
-import { preparedAssistantReceipts } from "./assistant-fixture.mjs";
+import { installAssistantAvailabilityFixture, preparedAssistantReceipts } from "./assistant-fixture.mjs";
 
 // Explicit provider replies isolate the client workflow. Compilation, candidate
 // preparation, conversation retention, application and Undo remain real.
@@ -10,6 +10,7 @@ const browser = await chromium.launch({
   headless: true,
 });
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+await installAssistantAvailabilityFixture(context);
 const page = await context.newPage();
 page.setDefaultTimeout(15000);
 const errors = [];

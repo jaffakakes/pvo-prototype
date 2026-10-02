@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 import { parseNativeTurnRequest, parseNativeTurnResult } from "../../../packages/pvo-assistant/native/index.js";
-import { preparedAssistantReceipts } from "./assistant-fixture.mjs";
+import { installAssistantAvailabilityFixture, preparedAssistantReceipts } from "./assistant-fixture.mjs";
 
 // Only inference replies are fixtures. This uses the real compiler, native batch,
 // media clock, Try hold and viewer button rather than calling runtime commands.
@@ -16,6 +16,7 @@ const browser = await chromium.launch({
   headless: true,
 });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+await installAssistantAvailabilityFixture(page);
 page.setDefaultTimeout(15000);
 const errors = [];
 const calls = [];

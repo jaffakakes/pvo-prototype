@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 import { parseNativeTurnRequest } from "../../../packages/pvo-assistant/native/index.js";
-import { finishAssistantVerification } from "./assistant-fixture.mjs";
+import { finishAssistantVerification, installAssistantAvailabilityFixture } from "./assistant-fixture.mjs";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url)).replaceAll("\\", "/");
 const browser = await chromium.launch({
@@ -10,6 +10,7 @@ const browser = await chromium.launch({
   headless: true,
 });
 const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+await installAssistantAvailabilityFixture(page);
 page.setDefaultTimeout(15000);
 const errors = [];
 const requests = [], verifications = [];

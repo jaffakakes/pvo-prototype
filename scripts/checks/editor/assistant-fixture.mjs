@@ -32,11 +32,21 @@ export function componentSourceResult(request, source, message = "Updated the co
   }] });
 }
 
+export async function installAssistantAvailabilityFixture(context) {
+  await context.route("**/api/assistant/status", route => route.fulfill({ json: {
+    provider: "open-source", available: true, model: "fixture",
+    capabilities: { editing: true, frames: true, transcription: true, wordTiming: true, objectTracking: true },
+    chatgpt: { available: false, reason: "hosted_access_required", message: "Fixture",
+      documentationUrl: "https://developers.openai.com/siwc/token-sharing-open-source" },
+  } }));
+}
+
 /** Only the HTTP provider is mocked; compilation and atomic workflow application stay real. */
 export async function installAssistantFixture(context) {
   const requests = [];
   const verificationRequests = [];
   const failures = [];
+  await installAssistantAvailabilityFixture(context);
   await context.route("**/api/assistant/turn", async route => {
     const http = route.request();
     assert.equal(http.method(), "POST");
