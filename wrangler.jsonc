@@ -10,7 +10,9 @@
     ]
   },
   "migrations": [
-    { "tag": "release-channel-v1", "new_sqlite_classes": ["ReleaseChannel"] }
+    { "tag": "release-channel-v1", "new_sqlite_classes": ["ReleaseChannel"] },
+    { "tag": "assistant-budget-v1", "new_sqlite_classes": ["AssistantBudget"] },
+    { "tag": "assistant-budget-v2", "deleted_classes": ["AssistantBudget"] }
   ],
   "compatibility_date": "2026-09-27",
   "observability": { "enabled": true, "traces": { "enabled": true } },
