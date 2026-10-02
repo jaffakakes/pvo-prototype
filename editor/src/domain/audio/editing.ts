@@ -2,6 +2,7 @@ import { total } from "../clips/timing";
 import { clamp } from "../project/numbers";
 import type { Clip } from "../project/model";
 import type { AudioClip } from "./model";
+import { audioGain } from "./gain";
 
 export const audioDuration = (clip: AudioClip) =>
   (clip.out - clip.in) / clip.speed;
@@ -10,6 +11,7 @@ export function extractClipAudio(
   index: number,
   id: number,
   muted: boolean,
+  gain = 1,
 ) {
   const clip = clips[index];
   if (!clip?.url || clip.audioDetached) return null;
@@ -23,6 +25,8 @@ export function extractClipAudio(
     speed: clip.speed,
     start: total(clips.slice(0, index)),
     muted,
+    gain: audioGain(gain),
+    ...(clip.animation?.tracks.gain ? { animation: { tracks: { gain: clip.animation.tracks.gain.map(frame => ({ ...frame })) } } } : {}),
   };
   return {
     audio,

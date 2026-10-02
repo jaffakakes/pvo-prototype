@@ -25,7 +25,8 @@ const blocked = () => {
 export function extractSelectedAudio() {
   const state = useCapture.getState();
   if (blocked()) return;
-  const result = extractClipAudio(state.clips, state.sel, uid(), state.muted);
+  const scene = state.scenes.find(item => item.id === state.currentSceneId);
+  const result = extractClipAudio(state.clips, state.sel, uid(), state.muted, scene?.clipGain);
   if (!result) return;
   state.edit({
     clips: result.clips,

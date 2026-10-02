@@ -1,3 +1,5 @@
+import { audioGain } from "../../domain/audio/gain";
+
 // Small, deterministic instrumental loops for the prototype's named sound catalogue.
 // The generated PCM is mixed into export, not merely represented by a selected row.
 const NOTES = [
@@ -28,12 +30,15 @@ export function soundBuffer(context: AudioContext, track: number) {
   }
   return buffer;
 }
-export function startSound(context: AudioContext, track: number, destination: AudioNode) {
+export function startSound(context: AudioContext, track: number, destination: AudioNode, volume = 1, offset = 0) {
   const source = context.createBufferSource();
   source.buffer = soundBuffer(context, track);
   source.loop = true;
-  source.connect(destination);
-  source.start();
+  const gain = context.createGain();
+  gain.gain.value = audioGain(volume);
+  source.connect(gain).connect(destination);
+  source.onended = () => { source.disconnect(); gain.disconnect(); };
+  source.start(0, offset % source.buffer.duration);
   return source;
 }
 export function previewSound(track: number) {
