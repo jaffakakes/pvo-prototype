@@ -19,6 +19,23 @@
       },
       "additionalProperties": true
     },
+    "restyle_capture": {
+      "type": "object",
+      "properties": {
+        "scene_layers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "texts": { "type": "array", "items": { "type": "object", "properties": { "animation": { "$ref": "#/$defs/visualAnimation" } } } },
+              "clips": { "type": "array", "items": { "$ref": "#/$defs/mediaAnimation" } },
+              "audioClips": { "type": "array", "items": { "allOf": [{ "$ref": "#/$defs/mediaAnimation" }, { "properties": { "animation": { "$ref": "#/$defs/audioAnimation" } } }] } },
+              "musicAnimation": { "$ref": "#/$defs/audioAnimation" }
+            }
+          }
+        }
+      }
+    },
     "allowed_domains": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
     "state": { "type": "object", "properties": { "initial": { "type": "object" } }, "additionalProperties": true },
     "media": {
@@ -118,6 +135,7 @@
           },
           "options": { "type": "array", "minItems": 2, "maxItems": 4, "items": { "$ref": "#/$defs/choiceOption" } },
           "fields": { "type": "array", "items": { "$ref": "#/$defs/formField" } },
+          "restyle_capture": { "type": "object", "properties": { "animation": { "$ref": "#/$defs/visualAnimation" } } },
           "on_submit": { "$ref": "#/$defs/actionList" },
           "actions": { "type": "array", "items": { "$ref": "#/$defs/cardButton" } }
         },
@@ -171,6 +189,42 @@
     }
   },
   "$defs": {
+    "animation": {
+      "type": "object", "required": ["tracks"], "additionalProperties": false,
+      "properties": {
+        "tracks": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "x": { "$ref": "#/$defs/positionTrack" }, "y": { "$ref": "#/$defs/positionTrack" },
+            "scaleX": { "$ref": "#/$defs/scaleTrack" }, "scaleY": { "$ref": "#/$defs/scaleTrack" },
+            "rotation": { "$ref": "#/$defs/rotationTrack" },
+            "opacity": { "$ref": "#/$defs/unitTrack" }, "gain": { "$ref": "#/$defs/unitTrack" }
+          }
+        }
+      }
+    },
+    "visualAnimation": { "allOf": [{ "$ref": "#/$defs/animation" }, { "properties": { "tracks": { "not": { "required": ["gain"] } } } }] },
+    "audioAnimation": { "allOf": [{ "$ref": "#/$defs/animation" }, { "properties": { "tracks": { "propertyNames": { "const": "gain" } } } }] },
+    "keyframe": {
+      "type": "object", "required": ["time", "value", "easing"], "additionalProperties": false,
+      "properties": {
+        "time": { "type": "number", "minimum": 0, "maximum": 86400 },
+        "value": { "type": "number" },
+        "easing": { "enum": ["linear", "hold", "ease-in", "ease-out", "ease-in-out"] }
+      }
+    },
+    "positionTrack": { "type": "array", "minItems": 1, "maxItems": 4096, "items": { "allOf": [{ "$ref": "#/$defs/keyframe" }, { "properties": { "value": { "minimum": -1000, "maximum": 1000 } } }] } },
+    "scaleTrack": { "type": "array", "minItems": 1, "maxItems": 4096, "items": { "allOf": [{ "$ref": "#/$defs/keyframe" }, { "properties": { "value": { "minimum": 0, "maximum": 10 } } }] } },
+    "rotationTrack": { "type": "array", "minItems": 1, "maxItems": 4096, "items": { "allOf": [{ "$ref": "#/$defs/keyframe" }, { "properties": { "value": { "minimum": -36000, "maximum": 36000 } } }] } },
+    "unitTrack": { "type": "array", "minItems": 1, "maxItems": 4096, "items": { "allOf": [{ "$ref": "#/$defs/keyframe" }, { "properties": { "value": { "minimum": 0, "maximum": 1 } } }] } },
+    "mediaAnimation": {
+      "type": "object", "required": ["id", "start", "in", "out", "speed", "animation"],
+      "properties": {
+        "id": { "type": "number" }, "start": { "type": "number", "minimum": 0 },
+        "in": { "type": "number", "minimum": 0 }, "out": { "type": "number", "exclusiveMinimum": 0 },
+        "speed": { "type": "number", "exclusiveMinimum": 0 }, "animation": { "$ref": "#/$defs/animation" }
+      }, "additionalProperties": false
+    },
     "unit": { "type": "number", "minimum": 0, "maximum": 1 },
     "condition": {
       "type": "object",

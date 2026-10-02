@@ -1,4 +1,5 @@
 import { AudioClipBar } from "../sound/AudioClipBar";
+import { TimelineKeyframes } from "../animation/TimelineKeyframes";
 import { textStyle } from "../../../../packages/pvo-text-runtime/index.js";
 import { dur } from "../../domain/clips/timing";
 import { componentLength } from "../../domain/components/timing";
@@ -143,6 +144,7 @@ export function Timeline() {
                     />
                   </>
                 )}
+                <TimelineKeyframes color="#FF9FBC" animation={clip.animation} start={clip.in} end={clip.out} />
               </button>
             ))}
             <button
@@ -165,6 +167,7 @@ export function Timeline() {
               }}
             >
               <span>♪ {SOUNDS[s.sound]?.name ?? "Music"}</span>
+              <TimelineKeyframes color="#5CF0C0" animation={s.scenes.find(scene => scene.id === s.currentSceneId)?.musicAnimation} start={0} end={length} />
             </div>
           )}
           {s.audioClips.map((clip, index) => (
@@ -214,6 +217,7 @@ export function Timeline() {
                 <span className={cx("compHandle")} data-side="l" />
               )}
               <span>{x.text}</span>
+              <TimelineKeyframes animation={x.animation} start={0} end={x.end - x.start} />
               {s.selText === x.id && (
                 <span className={cx("compHandle")} data-side="r" />
               )}
@@ -247,6 +251,7 @@ export function Timeline() {
               disabled={!!s.tryMode}
               aria-label={`${component.type}: ${componentLabel(component)}`}
             >
+              <TimelineKeyframes color="#A78BFA" animation={component.animation} start={0} end={componentLength(component, s.clips)} />
               {s.selComp === component.id && (
                 <span className={cx("compHandle")} data-side="l" />
               )}

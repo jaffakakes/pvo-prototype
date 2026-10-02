@@ -31,9 +31,7 @@ export function ClipInspector({ clip, tab, onOpenLibrary }: { clip: Clip; tab: s
       sections = [{ title: "Mask", controls: [{ kind: "note", text: "Masks aren’t available in this beta yet." }] }];
       break;
     default:
-      sections = [{ title: "Transform", controls: [
-        { kind: "slider", label: "Scale", value: clip.zoom * 100, min: 50, max: 200, step: 1, unit: "%",
-          onChange: (value, undoable) => { adjustSelectedClip({ zoom: value / 100 }, undoable); } },
+      sections = [{ title: "Video fit", controls: [
         { kind: "toggle", label: "Mirror", on: clip.mirror, onToggle: () => { adjustSelectedClip({ mirror: !clip.mirror }); } },
         { kind: "chips", label: "Fit", options: ["Fill", "Fit"], value: clip.fit === "contain" ? "Fit" : "Fill",
           onPick: value => { adjustSelectedClip({ fit: value === "Fit" ? "contain" : "cover" }); } },

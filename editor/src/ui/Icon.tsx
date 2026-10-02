@@ -5,6 +5,7 @@ const paths: Record<string, React.ReactNode> = {
   back: <path d="M15 18l-6-6 6-6" />,
   arrow: <path d="M5 12h14M13 6l6 6-6 6" />,
   plus: <path d="M12 5v14M5 12h14" />,
+  keyframe: <path d="m12 3 9 9-9 9-9-9z" />,
   down: <path d="M6 9l6 6 6-6" />,
   camera: <><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></>,
   music: <><path d="M9 18V6l12-2v12" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></>,

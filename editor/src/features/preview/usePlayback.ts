@@ -1,3 +1,4 @@
+import { evaluateAnimation } from "../../../../packages/pvo-animation/index.js";
 import { sceneDuration } from "../../domain/scenes/duration";
 import { useEffect, useRef } from "react";
 import { locate, total } from "../../domain/clips/timing";
@@ -7,6 +8,7 @@ import type { CaptureState } from "../../state/types";
 import { runPlaybackFrame } from "./playbackFrame";
 import { advanceTry, failTry, observeTryDiagnostics } from "./tryMode";
 import { useTryMediaDiagnostics } from "./useTryMediaDiagnostics";
+import { audioGain } from "../../domain/audio/gain";
 
 const UPDATE_MS = 1000 / 30;
 const SEEK_TOLERANCE = .015;
@@ -26,9 +28,11 @@ export function usePlayback(videoRef: React.RefObject<HTMLVideoElement>) {
   const pausedAt = useRef<number | null>(null);
   const state = useCapture();
   const { clips, t, playing, muted, trim } = state;
+  const clipGain = audioGain(state.scenes.find(scene => scene.id === state.currentSceneId)?.clipGain);
   const trying = !!state.tryMode;
   const sceneTail = sceneDuration(state) > total(clips) && t >= total(clips);
   const current = trim ? { c: clips[trim.i], lt: trim.lt } : sceneTail ? null : locate(t, clips);
+  const animatedGain = clipGain * evaluateAnimation(current?.c.animation, current?.lt ?? 0).gain;
   const hasMedia = !!current?.c.url;
   useTryMediaDiagnostics(videoRef, trying, hasMedia);
   const fromVideo = positionOrigin.current.get(state) === "video";
@@ -87,6 +91,7 @@ export function usePlayback(videoRef: React.RefObject<HTMLVideoElement>) {
     const sync = () => {
       if (video.muted !== (muted || !!clip.audioDetached))
         video.muted = muted || !!clip.audioDetached;
+      video.volume = audioGain(animatedGain);
       const speed = clamp(clip.speed, .25, 4);
       if (video.playbackRate !== speed)
         video.playbackRate = speed;
@@ -125,7 +130,7 @@ export function usePlayback(videoRef: React.RefObject<HTMLVideoElement>) {
       video.removeEventListener("loadedmetadata", sync);
       video.removeEventListener("seeked", resume);
     };
-  }, [videoRef, current?.c?.id, current?.c?.url, current?.c?.in, current?.c?.speed, current?.c?.audioDetached, explicitSeekTime, playing, muted]);
+  }, [videoRef, current?.c?.id, current?.c?.url, current?.c?.in, current?.c?.speed, current?.c?.audioDetached, explicitSeekTime, playing, muted, animatedGain]);
 
   useEffect(() => {
     if (!playing) {

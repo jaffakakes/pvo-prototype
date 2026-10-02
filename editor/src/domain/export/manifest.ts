@@ -1,3 +1,5 @@
+import { cloneAnimation } from "../../../../packages/pvo-animation/index.js";
+import { manifestMediaAnimations } from "./mediaAnimation";
 import { sceneDuration } from "../scenes/duration";
 import { type CompiledPvoComponent, type PvoLanguageSource } from "../../../../packages/pvo-language/index.js";
 import type { PvoComponent as ManifestComponent, PvoManifest } from "../../../../packages/pvo-sdk/index.js";
@@ -150,6 +152,7 @@ function manifestComponent(component: PvoComponent, scene: Scene, available: Set
   outcomes.forEach((outcome) => assertOutcome(outcome, scene, available));
   result.restyle_capture = {
     version: 1,
+    ...(component.animation ? { animation: cloneAnimation(component.animation) } : {}),
     at,
     dur: component.dur,
     x: component.x,
@@ -207,7 +210,8 @@ export function buildPvoManifest(state: ProjectSnapshot, rendered: Array<{
     initial_scene: entry.id,
     allowed_domains: [...allowedDomains],
     canvas: { ratio: state.ratio, width, height },
-    restyle_capture: { version: 1, scene_layers: Object.fromEntries(rendered.map(({ scene }) => [scene.id, { order: layerOrder(scene), texts: scene.texts }])) },
+    restyle_capture: { version: 1, scene_layers: Object.fromEntries(rendered.map(({ scene }) => [scene.id, { order: layerOrder(scene),
+      texts: scene.texts.map(({ animationTracking: _tracking, ...text }) => text), ...manifestMediaAnimations(scene) }])) },
     media: rendered.map(({ scene, assetId, name, type }) => ({ id: `media-${scene.id}`, asset_id: assetId, name, type })),
     scenes: rendered.map(({ scene, assetId }) => ({
       id: scene.id,

@@ -1,9 +1,13 @@
+import { bindAnimationClock } from "../playback/animation-clock.js";
 import { updateRequestStatus } from "../actions/request-status.js";
 import { reportPlayerDiagnostic } from "../actions/diagnostics.js";
 
 /** Translate shell and media events into the application's named commands. */
 export function bindPlayerEvents({ session, refs, adapters }) {
   const diagnosticListeners = [];
+  const stopAnimationClock = bindAnimationClock(refs.video, () => {
+    if (session.manifest && !session.switchingClip) adapters.renderOverlays();
+  });
   if (typeof session.onDiagnostic === "function") {
     for (const [eventName, type] of [
       ["playing", "media.playing"], ["pause", "media.paused"],
@@ -146,6 +150,7 @@ export function bindPlayerEvents({ session, refs, adapters }) {
   refs.dropZone?.addEventListener("drop", (event) => { void adapters.openPvo(event.dataTransfer.files[0], { autoplay: true }); });
 
   window.addEventListener("beforeunload", () => {
+    stopAnimationClock();
     diagnosticListeners.forEach(([eventName, listener]) => refs.video.removeEventListener(eventName, listener));
     adapters.destroyCustomOverlays();
     adapters.revokeAssetUrls();

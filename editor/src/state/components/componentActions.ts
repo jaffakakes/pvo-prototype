@@ -1,18 +1,11 @@
+import { changeComponent, createDefaultComponent } from "../../domain/components/editing";
 import { total } from "../../domain/clips/timing";
-import { defaultFields } from "../../domain/components/defaults";
 import { fieldsShownFor } from "../../domain/components/fields";
-import { editComponentFields } from "../../domain/components/languageEditing";
 import { editComponentAction } from "../../domain/components/languageActionEditing";
-import { editComponentLook } from "../../domain/components/languageLook";
-import { componentScale } from "../../domain/components/scale";
-import { componentPixelDimension } from "../../../../packages/pvo-component-runtime/index.js";
 import { clampComponentStart } from "../../domain/components/timing";
-import { createLook } from "../../domain/components/look";
 import { remapComponentReferences } from "../../domain/components/requestReferences";
-import { constrainOverlayPosition } from "../../domain/layers/transform";
 import {
   acceptsResponse,
-  DEFAULT_RESPONSE_POLICY,
   responsePolicyFor,
 } from "../../domain/components/responsePolicy";
 import type { PvoComponent } from "../../domain/project/model";
@@ -20,9 +13,6 @@ import { cloneComponent, cloneOutcome } from "../../domain/project/snapshot";
 import { uid } from "../../infrastructure/ids";
 import { playheadAfterSceneTimingChange } from "../project/playheadBounds";
 import type { CaptureState } from "../types";
-
-const has = (value: object, key: PropertyKey) =>
-  Object.prototype.hasOwnProperty.call(value, key);
 
 function releaseUnansweredHold(
   state: CaptureState,
@@ -59,17 +49,9 @@ export function createComponentActions(get: () => CaptureState): Pick<CaptureSta
   return {
     addComponent: type => {
       const state = get();
-      const sceneTotal = total(state.clips);
       const id = `component-${uid()}`;
-      const component: PvoComponent = {
-        id, type, sceneId: state.currentSceneId,
-        at: clampComponentStart(state.t, 3, sceneTotal),
-        dur: 3,
-        x: 50, y: type === "tooltip" ? 28 : 60,
-        fields: defaultFields(type),
-        ...(type === "tooltip" ? {} : { responsePolicy: { ...DEFAULT_RESPONSE_POLICY } }),
-        look: createLook("bold", type === "choice" ? 2 : type === "tooltip" ? 0 : 1),
-      };
+      const scene = state.scenes.find(item => item.id === state.currentSceneId)!;
+      const component = createDefaultComponent(id, type, scene, state.t);
       state.edit({
         components: [...state.components, component], sel: -1, selComp: id,
         playing: false, orb: false, sheet: "component",
@@ -84,44 +66,7 @@ export function createComponentActions(get: () => CaptureState): Pick<CaptureSta
       const previous = scene.components.find(component => component.id === id)!;
       const components = scene.components.map(component => {
         if (component.id !== id) return component;
-        const fields = component.type === "choice" && changes.fields ? {
-          ...changes.fields,
-          options: [0, 1].map(index => changes.fields?.options?.[index] ?? component.fields.options?.[index] ?? {
-            label: `Option ${String.fromCharCode(65 + index)}`, outcome: { kind: "continue" as const },
-          }),
-        } : changes.fields;
-        const synchronized = fields && !("code" in changes)
-          ? editComponentFields(component, fields)
-          : { fields: fields ?? component.fields };
-        const appearance = changes.look && !("code" in changes)
-          ? editComponentLook({ ...component, ...synchronized }, changes.look)
-          : {};
-        const position = constrainOverlayPosition({
-          x: changes.x === undefined ? component.x : changes.x,
-          y: changes.y === undefined ? component.y : changes.y,
-        });
-        const timingChanged = has(changes, "at") || has(changes, "dur");
-        const requestedAt = has(changes, "at") && changes.at !== undefined
-          ? changes.at
-          : component.at;
-        const requestedDuration = has(changes, "dur") && changes.dur !== undefined
-          ? changes.dur
-          : component.dur;
-        const next: PvoComponent = {
-          ...component, ...changes, ...synchronized, ...appearance, id, sceneId: scene.id,
-          ...position,
-          ...(changes.scale === undefined ? {} : { scale: componentScale(changes.scale) }),
-          ...(changes.scaleX === undefined ? {} : { scaleX: componentScale(changes.scaleX) }),
-          ...(changes.scaleY === undefined ? {} : { scaleY: componentScale(changes.scaleY) }),
-          ...("width" in changes ? { width: componentPixelDimension(changes.width) } : {}),
-          ...("height" in changes ? { height: componentPixelDimension(changes.height) } : {}),
-          ...(timingChanged ? {
-            at: clampComponentStart(requestedAt, requestedDuration, total(scene.clips)),
-            dur: requestedDuration,
-          } : {}),
-        };
-        return Object.entries(next).every(([key, value]) => component[key as keyof PvoComponent] === value)
-          ? component : next;
+        return changeComponent(component, changes, scene);
       });
       if (components.every((component, index) => component === scene.components[index])) return;
       const updated = components.find(component => component.id === id)!;

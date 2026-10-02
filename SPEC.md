@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-A Playable Video Object (PVO) is a self-contained package containing original video assets plus a declarative interaction manifest. A PVO-aware player follows its main timeline, displays timed UI, evaluates choices, and plays only the selected branch.
+A Playable Video Object (PVO) is a self-contained package containing media assets plus a declarative interaction manifest. A PVO-aware player follows its main timeline, displays timed UI, evaluates choices, and plays only the selected branch.
 
 This prototype is creator-authored. It intentionally excludes signatures, viewer layers, and multiplayer.
 
@@ -39,6 +39,7 @@ The top-level object contains:
 - `triggers`: actions that fire at declared absolute video times.
 - `state.initial`: optional initial key-value state.
 - `allowed_domains`: optional allow-list for `request` actions.
+- `restyle_capture`: optional editor presentation metadata, including per-scene layer order and animation.
 
 Coordinates are relative to the actual video content, not to any letterbox area added by a player.
 
@@ -74,6 +75,52 @@ Restyle components keep their center in `restyle_capture.x` and `.y` (canvas per
 
 Optional `restyle_capture.width` and `.height` set explicit canvas-pixel dimensions (1–16384 px) before uniform `scale`. Authoring pixels use a fixed 1080px short edge: portrait 9:16 is 1080 × 1920, landscape 16:9 is 1920 × 1080. Each explicit dimension overrides that axis's legacy scale factor. The reference hosts measure untransformed content and scale it to these dimensions, retaining the authored size across viewport and content changes. Absent pixel dimensions retain the original scale-based behavior. This coordinate system is independent of preview zoom and export quality.
 
+### Layer animation
+
+Restyle presentation metadata has `version: 1` and `scene_layers`, an object keyed by existing scene IDs. Each scene entry carries `order` (back-to-front layer keys such as `video`, `text:7` and `component:choice-1`) and `texts`. Optional `clips` and `audioClips` record animated media layers, and `musicAnimation` records scene music automation. A media entry is exactly `{ id, start, in, out, speed, animation }`: `start` is its scene placement, `in`/`out` are original source seconds, `out > in >= 0`, and `speed > 0`. These entries describe animation clocks; they do not add playback clips or select assets.
+
+Components store curves at `components[].restyle_capture.animation`; text and media entries store their own `animation`. All use one shape:
+
+```json
+{
+  "tracks": {
+    "x": [
+      { "time": 0, "value": 0, "easing": "linear" },
+      { "time": 2, "value": 20, "easing": "ease-out" }
+    ],
+    "opacity": [
+      { "time": 0, "value": 0, "easing": "linear" },
+      { "time": 1, "value": 1, "easing": "linear" }
+    ]
+  }
+}
+```
+
+| Property | Meaning | Neutral value | Bounds |
+| --- | --- | --- | --- |
+| `x`, `y` | Offsets from the authored center, in canvas width/height percentage points | 0 | −1000 to 1000 |
+| `scaleX`, `scaleY` | Multipliers of authored dimensions, around the center | 1 | 0 to 10 |
+| `rotation` | Additional clockwise degrees around the center | 0 | −36000 to 36000 |
+| `opacity` | Multiplier of authored opacity | 1 | 0 to 1 |
+| `gain` | Multiplier of authored volume | 1 | 0 to 1 |
+
+Video supports every property. Text and components support visual properties only; audio and music support only `gain`. Missing curves use neutral values. Curve arrays contain 1–4096 keys, with at most 16384 keys per layer. Every key has exactly `time`, `value` and `easing`; unknown properties are invalid. Times must be finite, strictly increasing, unique and within 0–86400 seconds, and values must be finite and within their property's bounds.
+
+Easing belongs to the outgoing interval. For normalized interval progress `u`, `linear` uses `u`, `ease-in` uses `u²`, `ease-out` uses `1 − (1 − u)²`, and `ease-in-out` uses `2u²` before the midpoint and `1 − (−2u + 2)² / 2` afterward. `hold` keeps the left key's value until the next key's timestamp. Evaluation holds endpoint values outside a curve's range; a single key therefore holds its value throughout the layer. Curves do not extend a layer's authored lifetime.
+
+| Layer | Curve clock at scene time `t` |
+| --- | --- |
+| Video / independent audio | `in + (t - start) * speed` in original source seconds |
+| Text | `t - text.start` |
+| Component | `t - component.restyle_capture.at` |
+| Music | `t` |
+
+Source-clock keys may lie outside the current trim; preserving them keeps motion aligned after trimming, splitting or changing speed. Moving text or a component moves its local curve with it. The authoring API accepts scene times and converts them to this stored clock once. See the [shared runtime contract](packages/pvo-animation/README.md) and [manifest schema](packages/pvo-sdk/pvo-manifest.schema.json).
+
+Editor checkpoints may additionally retain validated `animationTracking` provenance on a visual layer: the actual measured observation, requested subject, density, source fingerprint, generated key identities and original camera/visibility curves needed for a safe refit. This authoring-only metadata is excluded from exported `restyle_capture` and from model project context. The numeric `animation` curves above remain the only runtime motion contract.
+
+Restyle PVO export renders each scene's static crop, zoom, mirror and audio mix into its packaged media. Video, text and component visual animation remains live in the player, so an animated video can reveal layers beneath it. Exported gain curves describe the authored mix and must not be applied again to that already mixed scene audio. Flat video export instead bakes video/text animation into Main's media and excludes interactive components.
+
 ### Actions
 
 | Type | Effect |
@@ -102,7 +149,11 @@ For a component with `response_policy`, the player dispatches its authored actio
 
 Restart clears captured responses and runtime state, then returns to the first clip of the main timeline.
 
-Restyle packages carry `restyle_capture` for layout only: canvas positions, sizes, looks, text layers and each scene's layer order. They declare no playback rules of their own. Restyle exports response timing and unanswered behavior through the standard `response_policy`; routes remain explicit actions. A component behind the opaque video in the layer order cannot wait for a tap, so the reference player does not pause for it.
+Restyle packages carry `restyle_capture` for presentation: canvas positions, sizes, looks, animation, text layers and each scene's layer order. They declare no playback actions of their own. Restyle exports response timing and unanswered behavior through the standard `response_policy`; routes remain explicit actions.
+
+At a component's layer end, the reference editor and player require its animated center to be on canvas and its animation opacity and both scale factors to exceed `0.000001` before pausing for an unanswered response. A component below video is eligible when the video has faded or its transformed opaque rectangle no longer covers that center. Coverage accounts for translation, scaling, rotation and canvas aspect ratio. This is a conservative center test, not pixel-level testing of every button, transparent region or other overlay. Motion updates retain component DOM and sandbox state. Zero-opacity or collapsed components cannot receive input.
+
+These availability rules prevent an invisible component from trapping playback; they do not rewrite its response policy. A response captured before the boundary still dispatches its authored action at `layer_end`, even if the component has become invisible. A failed deferred response releases an invisible retry hold while retaining its failure feedback.
 
 ## 5. Network boundary
 
@@ -113,7 +164,7 @@ A player must send requests only to exact hosts declared in `allowed_domains`, e
 ## 6. Security
 
 - Manifests are data, never executable code.
-- Presentation HTML and CSS, including generated presentation, are untrusted data. Players must sanitize them again, block scripts and network-loading CSS, and isolate rendered UI from the host page. Restyle PVO Logic is declarative, not JavaScript; its grammar and host checks are described in the [PVO language guide](docs/engineering/pvo-language.md).
+- Presentation HTML and CSS, including generated presentation, are untrusted data. Players must sanitize them again, block scripts and network-loading CSS, and isolate rendered UI from the host page. Restyle PVO Logic is declarative, not JavaScript; its grammar and host checks are described in the [PVO language guide](docs/language/README.md).
 - `open_url` requires viewer confirmation.
 - Manifest size is capped at 2 MiB and the package header at 4 MiB in this prototype.
 - Player implementations should validate all references, scene ranges, and normalized coordinates before playback.

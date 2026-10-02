@@ -139,3 +139,7 @@
   .dock { grid-column: 1 / -1; grid-row: 4; }
   .preview :global(.previewArea) { padding: 20px 40px; }
 }
+
+.workspace[data-animation-open="true"] .sheetPane { border-radius: 26px 26px 0 0; border-top: 3px solid #000; box-shadow: 0 -6px 0 #ff9fbc59; background: #111117; }
+.workspace[data-animation-open="true"] .sheetPane .resizeHandle { height: 20px; flex-basis: 20px; }
+.workspace[data-animation-open="true"] .sheetPane .resizeHandle span { width: 46px; height: 6px; }

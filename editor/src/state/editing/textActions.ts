@@ -1,4 +1,5 @@
 import { DEFAULT_TEXT_STYLE } from "../../../../packages/pvo-text-runtime/index.js";
+import { createTextOverlay, updateTextOverlay } from "../../domain/text/editing";
 import { constrainOverlayPosition } from "../../domain/layers/transform";
 import { uid } from "../../infrastructure/ids";
 import { playheadAfterSceneTimingChange } from "../project/playheadBounds";
@@ -9,19 +10,14 @@ export function createTextActions(get: () => CaptureState): Pick<CaptureState, "
     addText: (text, style = DEFAULT_TEXT_STYLE) => {
       const state = get(), id = uid();
       const start = Math.max(0, state.t);
-      state.edit({ texts: [...state.texts, { id, text, style: { ...style }, color: 2, start, end: start + 3, x: 50, y: 45 }], selText: id, playing: false });
+      state.edit({ texts: [...state.texts, createTextOverlay(id, text, start, style)], selText: id, playing: false });
       return id;
     },
     updateText: (id, changes, undoable = true, options) => {
       const state = get();
       const texts = state.texts.map(text => {
         if (text.id !== id) return text;
-        const next = { ...text, ...changes, id };
-        if (!("x" in changes) && !("y" in changes)) return next;
-        return { ...next, ...constrainOverlayPosition({
-          x: changes.x ?? text.x,
-          y: changes.y ?? text.y,
-        }) };
+        return updateTextOverlay(text, changes);
       });
       const scene = state.scenes.find(item => item.id === state.currentSceneId);
       const timing = scene

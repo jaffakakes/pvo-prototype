@@ -25,6 +25,7 @@ export function Editor() {
   const wide = useWideLayout();
   const scenes = useCapture(state => state.scenes);
   const sheetOpen = useCapture(state => state.sheet !== null && !state.playheadPick);
+  const animationSheet = useCapture(state => state.sheet === "animation");
   const componentSheet = useCapture(state => state.sheet === "component" || state.sheet === "components");
   const selectedComponent = useCapture(state => state.sheet === "component" ? state.selComp : null);
   const authoring = useComponentAuthoring();
@@ -36,7 +37,7 @@ export function Editor() {
   if (!scenes.length) return null;
   if (wide) return <DesktopEditor />;
   return <>
-    <EditorWorkspace open={sheetOpen} componentSheet={componentSheet} codeEditingId={codeEditingId} trying={trying}
+    <EditorWorkspace open={sheetOpen} animationSheet={animationSheet} componentSheet={componentSheet} codeEditingId={codeEditingId} trying={trying}
       debugOpen={debugOpen} onCloseDebug={() => setDebugOpen(false)}
       debugPanel={<DebugSheet onClose={() => setDebugOpen(false)} onEditComponent={editDebugComponent} onLocate={locateDebugComponent} />}
       header={<EditorHeader />} preview={<Preview />} playback={<Transport />}

@@ -5,25 +5,35 @@ import { useAssistantSession } from "./useAssistantSession";
 import { useAssistantPlacement } from "./useAssistantPlacement";
 import { useOrbVoice } from "./voice/useOrbVoice";
 import { clearSelection } from "../../state/editing/clearSelection";
+import { useCapture } from "../../state/captureStore";
+import { total } from "../../domain/clips/timing";
 import styles from "./AssistantHost.module.css";
 
 export function OrbAssistant({ placement: position = "workspace", portalTarget }: {
   placement?: AssistantPlacement; portalTarget?: HTMLElement | null;
 } = {}) {
   const session = useAssistantSession({ inspectorVisible: position !== "workspace" });
+  const scenes = useCapture(state => state.scenes);
+  const ratio = useCapture(state => state.ratio);
+  const clips = scenes.flatMap(scene => scene.clips);
   const host = useRef<HTMLDivElement>(null);
   const orb = useRef<HTMLButtonElement>(null);
   const placement = useAssistantPlacement(host, position, portalTarget);
   const active = session.available && session.phase !== "idle";
   const voice = useOrbVoice({
-    enabled: session.available && !!session.target && session.phase !== "working" && session.phase !== "review",
+    enabled: session.available && session.phase !== "working" && session.phase !== "review",
     onTap: () => {
       session.open();
       host.current?.querySelector("input")?.focus({ preventScroll: true });
     }, onListening: session.listen, onSend: words => { void session.submit(words); },
     onCancel: session.cancelVoice, onFailure: session.reportVoiceFailure,
   });
-  const close = () => { voice.cancel(); session.close(); orb.current?.focus({ preventScroll: true }); };
+  const close = () => {
+    voice.cancel();
+    if (session.phase === "review") session.acknowledge();
+    else session.close();
+    orb.current?.focus({ preventScroll: true });
+  };
   const dismissOutside = () => {
     close();
     if (position === "workspace") clearSelection();
@@ -35,7 +45,7 @@ export function OrbAssistant({ placement: position = "workspace", portalTarget }
       if (event.key === "Escape") {
         event.preventDefault();
         event.stopPropagation();
-        if (session.phase !== "review" && session.phase !== "working") close();
+        close();
       }
       if (event.key !== "Tab") return;
       const selector = 'button:not(:disabled),input:not(:disabled),textarea:not(:disabled),[tabindex="0"]';
@@ -60,19 +70,14 @@ export function OrbAssistant({ placement: position = "workspace", portalTarget }
     data-assistant-region data-active={active}>
     {session.available && <>
       <OrbAssistantView phase={session.phase} target={session.target}
+        clipCount={clips.length} duration={total(clips)} ratio={ratio} voiceSide={session.voiceSide}
         draft={session.draft} onDraftChange={session.setDraft}
-        transcript={session.transcript} proposal={session.review && {
-          request: session.review.request,
-          tags: session.review.tags,
-          summary: `Changed ${session.review.changes.style} style · ${session.review.changes.structure} structure · ${session.review.changes.logic} logic`,
-          skipped: session.review.skipped,
-          followUps: session.review.proposal.followUps,
-        }} modeLabel={session.modeLabel}
+        transcript={session.transcript} progress={session.progress} answer={session.answer} suggestions={session.suggestions}
         onSubmit={() => { void session.submit(session.draft); }} onClose={dismissOutside}
-        onKeep={() => { session.keep(); orb.current?.focus({ preventScroll: true }); }}
-        onUndo={session.undo} onEditRequest={session.editRequest} onBefore={session.showBefore} before={session.before}
+        onDone={() => { session.acknowledge(); orb.current?.focus({ preventScroll: true }); }}
+        onEditRequest={session.editRequest}
         onSuggestion={words => { void session.submit(words); }}
-        orbHandlers={session.target ? voice.handlers : { onClick: session.open }}
+        orbHandlers={session.phase === "working" ? { onClick: session.stop } : voice.handlers}
         orbRef={orb} toolbarHeight={placement.toolbarHeight}
         placement={position} availableHeight={placement.availableHeight} />
     </>}

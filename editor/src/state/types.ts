@@ -30,7 +30,7 @@ export type PlayheadPick = ({
   originalT: number;
   error?: string;
 };
-export type SheetName = null | "speed" | "crop" | "text" | "sound" | "more" | "export" | "discard" | "components" | "component";
+export type SheetName = null | "speed" | "crop" | "text" | "sound" | "more" | "export" | "discard" | "components" | "component" | "animation";
 export type OverlayUpdateOptions = {
   /** A reversible drag preview keeps its magnetic playhead fixed until commit. */
   preservePlayhead?: boolean;

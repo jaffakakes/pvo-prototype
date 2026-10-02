@@ -19,6 +19,7 @@ pvo-prototype/
     pvo-language/               Native Rust compiler and browser WASM facade
     pvo-code-runtime/           Isolated generated renderer and host bridge
     pvo-text-runtime/           Shared text styles and painter
+    pvo-animation/              Shared numeric layer curves and visibility geometry
     pvo-component-runtime/      Shared no-code presets and bounded appearance values
   scripts/
     build/                      WASM, static site and sample/demo preparation
@@ -32,7 +33,7 @@ pvo-prototype/
 
 The product home `/` opens the camera/editor application under `/editor/`; mobile home selects the existing camera after recovering the local draft, while landscape tablet/desktop home (1024px and above) shows the create-project studio. `/player/` opens local files and `/player/{id}` opens a published export through the Worker. Demo and documentation pages are excluded from product output. The documentation website uses its own HTML, CSS, and JavaScript in `docs/site/`, with a separate `npm run build:docs` output. Engineering and language Markdown are repository guides, not automatically rendered website pages.
 
-`server/` owns Cloudflare routing, creator authentication, publication rules and D1/R2 adapters. Its entry point delegates to focused route modules; uploaded media is stored in R2 and ownership/lifecycle records in D1. Editor and player consume the same HTTP publication boundary without importing server internals. The independent `server/assistant/` service uses Workers AI and the shared PVO compiler to propose component source through `/api/assistant`. A Durable Object per UTC day reserves a bounded inference budget, including repair attempts, without storing prompts or source. Assistant availability does not depend on publication sign-in. See [publishing setup](cloudflare-publishing.md), the [product flow](publishing-plan.md), and the [orb assistant](orb-assistant.md).
+`server/` owns Cloudflare routing, creator authentication, publication rules and D1/R2 adapters. Its entry point delegates to focused route modules; uploaded media is stored in R2 and ownership/lifecycle records in D1. Editor and player consume the same HTTP publication boundary without importing server internals. The independent `server/assistant/` service uses Workers AI and the shared PVO compiler to propose native project operations through `/api/assistant/turn`, with bounded media observation and transcription. Every provider-backed request first reserves capacity from the application-owned `AssistantBudget`; status fails closed when that binding is unavailable. The current beta allowance is 60 requests per UTC day across the service, 20 per client per day and four per client per minute. Each request also retains bounded media inspection, deadlines and one repair attempt, while the configured provider's account allowance remains an independent limit. Assistant availability does not depend on publication sign-in. See [publishing setup](cloudflare-publishing.md), the [product flow](publishing-plan.md), and the [orb assistant](orb-assistant.md).
 
 ## Dependency direction
 
@@ -67,8 +68,9 @@ editor/src/
     audio/                      Extracted audio and source ranges
     scenes/                     Naming, scene references and total duration
     layers/                     Layer identity and ordering
+    animation/                  Keyframe clocks, layer edits and tracked motion rules
     components/                 Defaults, Fields/PVO source mapping, outcomes and response timing policy
-    assistant/                  Review, request context and proposal validation
+    assistant/                  Answers, bounded context and atomic batch validation
     notifications/              Approved events, short copy, priority and repetition rules
     export/                     Pure project-to-manifest construction
   state/
@@ -77,7 +79,7 @@ editor/src/
     components/                 Component commands, authoring state and measurements
     scenes/                     Scene commands and outcome routing
     editing/                    Clip, text, layer and overlay editing commands
-    assistant/                  Proposal session state and Keep command
+    assistant/                  Request session, batch commit and guarded Undo receipt
     auth/                       Sign-in and export gate state
     export/                     Completed export and publication attempt state
     notifications/              Ephemeral notices and retained issues
@@ -88,6 +90,7 @@ editor/src/
     desktop-editor/             Landscape Library, Player, Inspector and Timeline presentation
     timeline/                   Tracks, geometry, dragging and clip commands
     preview/                    Video, overlays and Try-mode host integration
+    animation/                  Shared manual keyframes and tracking controls
     assistant/                  Orb presentation, session orchestration and browser voice
     notifications/              Top notices, retained issues and accessible dismissal
     scenes/                     Scene selection UI
@@ -120,7 +123,7 @@ The workspace owns top and side system safe-area padding outside its resizable g
 
 Desktop and tablet Look tools expose Width and Height in canvas pixels through `features/component-authoring/size`. The fixed authoring canvas has a 1080px short edge, independent of window size and export quality. Explicit component `width`/`height` persist through history, checkpoints and export. `domain/components/pixelSize` retains the other axis when committing a dimension through the component command. `state/components/componentMeasurements` holds only transient natural bounds reported by the preview; they never enter project history. A shared runtime observer reads untransformed layout bounds so editor and player can fit both visual and code-owned content to the requested pixels. Each renderer disconnects its observers on removal.
 
-The [orb assistant](orb-assistant.md) keeps uncommitted proposals in a session store, outside project persistence and history. `features/assistant/` coordinates its views and voice adapter; `domain/assistant/` owns review and project-context rules; `infrastructure/assistant/` calls same-origin `/api/assistant` or an explicit HTTP override and compiles the exact returned PVO. `packages/pvo-assistant/` shares bounded JSON parsing and compiled proposal policy with the server. There is no local preset fallback. Only `state/assistant/assistantCommands.ts` commits a kept proposal through normal component history.
+The [orb assistant](orb-assistant.md) uses one composer for questions and whole-project edits. Validated user-requested edits apply immediately as one undo step on both mobile and desktop; a typed 2.4-second completion notice offers a guarded Undo action. Questions open an answer card. The session store contains request and answer data outside persistence and history; there is no staged proposal preview. `features/assistant/` coordinates views, voice, application and answers. `domain/assistant/native/` projects private project data into bounded context, prepares typed operations against an isolated snapshot and validates compiled component changes. `infrastructure/assistant/` owns same-origin `/api/assistant/turn` transport and the bounded observation loop; its media adapters sample real frames and extract bounded audio without moving the editor playhead. `packages/pvo-assistant/native/` shares strict operation and observation contracts with `server/assistant/native/`. The server runs hosted text, vision and transcription models with origin checks, size limits and deadlines; there is no local preset fallback. `state/assistant/nativeCommands.ts` commits the complete validated batch atomically through normal history, checking the original project fingerprint and current editing preference. `state/assistant/applyChanges.ts` then executes requested playback or export effects; `nativeAppliedNotification.ts` owns the temporary Undo receipt and prevents an old action from undoing a newer edit.
 
 Keep new feature code in its owning folder rather than expanding the compatibility `store.ts` facade. Crop/speed, sound and discard sheets have feature owners; `app/Sheets.tsx` only selects the view. Timeline pointer wiring calls pure clip/text timing rules through state commands. Component timing keeps its existing transaction command. Export sessions and camera controls have dedicated hooks, and each Try session owns its runtime through explicit host adapters. Persistence accepts a project/history/resume snapshot rather than the complete capture store.
 
@@ -142,7 +145,7 @@ Simple Action controls expose local playback routes. The Advanced switch reveals
 
 `pvo-component-runtime` contains pure, validated appearance values used by the editor and standalone player. Visual component exports retain native manifest controls plus `restyle_capture` appearance/form metadata; code-owned components use the isolated PVO renderer. Both routes keep request destinations and playback outcomes under the existing checked host adapters. Form submission status follows the actual response.
 
-The [desktop editor](desktop-editor.md) uses the approved Library / Player / Inspector / Timeline layout at 1024px and above in landscape. It shares the project route, capture store, playback runtime, history and authoring commands with the existing narrow/portrait editor. Desktop library insertion and selection commands own atomic history boundaries; the Inspector adapts the existing component editor to a side panel. Unsupported transcript and video-processing capabilities remain explicitly unavailable rather than changing only the preview.
+The [desktop editor](desktop-editor.md) uses the approved Library / Player / Inspector / Timeline layout at 1024px and above in landscape. It shares the project route, capture store, playback runtime, history and authoring commands with the existing narrow/portrait editor. Desktop library insertion and selection commands own atomic history boundaries; the Inspector adapts the existing component editor to a side panel. Desktop tool actions without implemented adapters remain explicitly unavailable. Assistant transcription uses the bounded audio-inspection route described above.
 
 Clip sound remains attached until the user selects **Extract audio**. `domain/audio/` owns independent source ranges and timeline positions; `domain/scenes/duration` determines the full authored duration from video, audio and explicit visual-layer ends. `state/editing/audioCommands` commits extraction, timing gestures, split/delete and history. Optional `Scene.audioClips` preserves compatibility with older projects, while `Clip.audioDetached` prevents the source video from also playing its sound. Extracted layers retain their media reference when the video is edited or deleted. Checkpoints, history, scene duplication, ID recovery and export snapshots include these references. The shared audio bar serves both timelines. `infrastructure/audio/audioLayerPlayer` owns preview/export audio elements and cleanup; rendered video and PVO scene media include the mix, with black frames when any authored layer extends beyond the video.
 

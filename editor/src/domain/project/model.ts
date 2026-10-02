@@ -4,6 +4,8 @@ import { type PvoLanguageSource } from "../components/languageSource";
 import { type LayerId } from "../layers/model";
 import type { ComponentLook } from "../components/look";
 import type { AudioClip } from "../audio/model";
+import type { LayerAnimation } from "../animation/model";
+import type { LayerTracking } from "../animation/trackingMetadata";
 
 export type Clip = {
   id: number;
@@ -19,6 +21,9 @@ export type Clip = {
   height: number;
   fit: "cover" | "contain";
   audioDetached?: boolean;
+  /** Media animation uses original-source seconds, preserving motion through trim/split/speed edits. */
+  animation?: LayerAnimation;
+  animationTracking?: LayerTracking;
 };
 export type TextOverlay = {
   id: number;
@@ -29,6 +34,9 @@ export type TextOverlay = {
   x: number;
   y: number;
   style?: TextStyle;
+  /** Animation seconds are relative to this layer's start. */
+  animation?: LayerAnimation;
+  animationTracking?: LayerTracking;
 };
 export type Ratio = "9:16" | "1:1" | "4:5" | "16:9";
 export type ComponentType = "tooltip" | "card" | "choice" | "form";
@@ -104,6 +112,9 @@ export type PvoComponent = {
   width?: number;
   height?: number;
   look?: ComponentLook;
+  /** Animation seconds are relative to this layer's at time. */
+  animation?: LayerAnimation;
+  animationTracking?: LayerTracking;
   fields: ComponentFields;
   /** Last code-owned version kept when returning to visual editing. */
   archivedCode?: PvoComponent["code"];
@@ -128,6 +139,10 @@ export type Scene = {
   components: PvoComponent[];
   muted: boolean;
   sound: number;
+  musicGain?: number;
+  clipGain?: number;
+  /** Background music gain curves use scene seconds. */
+  musicAnimation?: LayerAnimation;
   layers?: LayerId[];
 };
 export type OutcomeTarget = {

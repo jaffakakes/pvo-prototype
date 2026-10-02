@@ -4,6 +4,7 @@ import { cx } from "../../styles";
 import { Icon } from "../../ui/Icon";
 import { Shell } from "../../ui/SheetShell";
 import { SOUNDS } from "./catalog";
+import { AnimateEntry } from "../animation/AnimateEntry";
 
 function selectSound(index: number) {
   const state = useCapture.getState();
@@ -14,7 +15,7 @@ function selectSound(index: number) {
 export function SoundSheet() {
   const soundIndex = useCapture((state) => state.sound);
   return (
-    <Shell title="Sound" sub="Pick a track for this video">
+    <Shell title="Sound" sub="Pick a track for this video" actions={soundIndex > 0 ? <AnimateEntry music /> : undefined}>
       <div className={cx("soundList")}>
         {SOUNDS.map((sound, index) => (
           <button

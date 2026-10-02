@@ -3,19 +3,25 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { initSync } from "../packages/pvo-language/pkg/pvo_language.js";
 import { compilePvoComponent, PvoLanguageError } from "../packages/pvo-language/index.js";
-import { compileAssistantOriginal, validateAssistantProposal, AssistantPolicyError } from "../server/assistant/policy.js";
-import { validateCompiledAssistantProposal } from "../packages/pvo-assistant/policy.js";
+import { AssistantPolicyError, validateCompiledAssistantOriginal, validateCompiledAssistantProposal } from "../packages/pvo-assistant/policy.js";
 
 initSync({ module: new WebAssembly.Module(await readFile(new URL("../packages/pvo-language/pkg/pvo_language_bg.wasm", import.meta.url))) });
 
 const context = { currentSceneId: "main", duration: 6, scenes: [{ id: "main", name: "Main" }, { id: "branch", name: "Branch" }] };
 const source = { structure: '<card><title>Ready</title><button id="next">Continue</button></card>', style: "", logic: "on press(next) { continue(); }" };
 const input = (overrides = {}) => ({ componentType: "card", source, prompt: "Make it blue", context, editingMode: "advanced", ...overrides });
-const draft = value => ({ source: value, summary: "Updated", tags: [], followUps: ["Softer", "Bolder", "Larger"] });
+
+async function compileOriginal(request) {
+  const compiled = await compilePvoComponent(request.componentType, request.source);
+  validateCompiledAssistantOriginal(compiled, request.context);
+  return compiled;
+}
 
 async function propose(request, next) {
-  const original = await compileAssistantOriginal(request, compilePvoComponent);
-  return validateAssistantProposal(request, original, draft(next), compilePvoComponent);
+  const original = await compileOriginal(request);
+  const proposed = await compilePvoComponent(request.componentType, next);
+  validateCompiledAssistantProposal(original, proposed, request.context);
+  return proposed;
 }
 
 function policyCode(code) {
@@ -48,7 +54,7 @@ test("raw HTML, arbitrary CSS and programming code are rejected rather than sani
     { ...source, logic: "on press(missing) { continue(); }" },
     { ...source, logic: "" },
   ];
-  for (const candidate of invalid) await assert.rejects(propose(input(), candidate), policyCode("invalid_source"));
+  for (const candidate of invalid) await assert.rejects(propose(input(), candidate), error => error instanceof PvoLanguageError);
 });
 
 test("project context rejects absent scenes, out-of-range times and new routes without context", async () => {
@@ -121,13 +127,13 @@ test("copy edits cannot switch request-bound yes/no values between strings and b
 });
 
 test("invalid original source/context fails before proposal work and diagnostics are preserved", async () => {
-  await assert.rejects(compileAssistantOriginal(input({ source: { ...source, style: "card { width: 90px; }" } }), compilePvoComponent), error => {
+  await assert.rejects(compileOriginal(input({ source: { ...source, style: "card { width: 90px; }" } })), error => {
     assert.equal(error.part, "style");
     assert.equal(error.diagnostic.code, "invalid_style");
     assert.ok(error.diagnostic.line > 0 && error.diagnostic.column > 0);
-    return policyCode("invalid_source")(error);
+    return error instanceof PvoLanguageError;
   });
-  await assert.rejects(compileAssistantOriginal(input({ source: formSource(), componentType: "form", context: { ...context, scenes: [context.scenes[0]] } }), compilePvoComponent), policyCode("invalid_route"));
+  await assert.rejects(compileOriginal(input({ source: formSource(), componentType: "form", context: { ...context, scenes: [context.scenes[0]] } })), policyCode("invalid_route"));
   await assert.rejects(compilePvoComponent("card", { ...source, style: "card { width: 1px; }" }), PvoLanguageError);
 });
 

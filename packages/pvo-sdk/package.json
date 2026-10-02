@@ -12,6 +12,7 @@
   },
   "types": "./index.d.ts",
   "sideEffects": false,
+  "dependencies": { "@pvo/pvo-animation": "0.1.0" },
   "engines": {
     "node": ">=18"
   },
