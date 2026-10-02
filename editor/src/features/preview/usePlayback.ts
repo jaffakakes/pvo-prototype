@@ -21,6 +21,7 @@ export function usePlayback(videoRef: React.RefObject<HTMLVideoElement>) {
   const publishingVideoTime = useRef(false);
   const positionOrigin = useRef(new WeakMap<CaptureState, "video" | "external">());
   const loadedClip = useRef<LoadedClip | null>(null);
+  const pendingSeek = useRef<{ element: HTMLVideoElement; url: string; time: number } | null>(null);
   const syntheticClockReported = useRef(false);
   const pausedAt = useRef<number | null>(null);
   const state = useCapture();
@@ -56,8 +57,10 @@ export function usePlayback(videoRef: React.RefObject<HTMLVideoElement>) {
     const video = videoRef.current;
     const clip = current?.c;
     if (!video || !clip?.url) {
+      loadedClip.current?.element.pause();
       video?.pause();
       loadedClip.current = null;
+      pendingSeek.current = null;
       return;
     }
 
@@ -69,6 +72,7 @@ export function usePlayback(videoRef: React.RefObject<HTMLVideoElement>) {
     pausedAt.current = playing ? null : t;
     // Store updates published by this video are observations, not seek requests.
     const shouldSeek = clipChanged || explicitSeekTime != null;
+    if (shouldSeek) pendingSeek.current = { element: video, url: clip.url, time: localTime };
     let disposed = false;
 
     const resume = () => {
@@ -91,8 +95,14 @@ export function usePlayback(videoRef: React.RefObject<HTMLVideoElement>) {
       if (video.readyState < HTMLMediaElement.HAVE_METADATA)
         return;
 
-      if (shouldSeek && Math.abs(video.currentTime - localTime) > SEEK_TOLERANCE)
-        video.currentTime = localTime;
+      // View measurements can rerender while metadata loads. Keep the requested
+      // frame across effect replacements until this source can accept the seek.
+      const seek = pendingSeek.current;
+      if (seek?.element === video && seek.url === clip.url) {
+        if (Math.abs(video.currentTime - seek.time) > SEEK_TOLERANCE)
+          video.currentTime = seek.time;
+        pendingSeek.current = null;
+      }
       if (playing) {
         // On iPhone a source or in-point seek can finish asynchronously. Do not
         // briefly play the old frame before the requested frame is available.
