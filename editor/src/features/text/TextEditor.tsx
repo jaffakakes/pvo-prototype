@@ -13,6 +13,7 @@ import { useCapture } from "../../state/captureStore";
 import { cx } from "../../styles";
 import { LayerPositionControls } from "../overlay-position/LayerPositionControls";
 import { beginPlayheadPick } from "../timeline/playheadPick";
+import { FontPicker } from "../fonts/FontPicker";
 
 export function TextEditor() {
   const s = useCapture();
@@ -120,7 +121,7 @@ export function TextEditor() {
                 <button
                   key={preset.id}
                   aria-label={`Apply ${preset.name} design`}
-                  onClick={() => changeStyle(preset.style)}
+                  onClick={() => changeStyle({ ...preset.style, fontAsset: undefined })}
                 >
                   <span
                     style={{
@@ -150,6 +151,8 @@ export function TextEditor() {
         )}
         {tab === "Style" && (
           <div className={cx("textStyleControls")}>
+            <FontPicker key={text?.id ?? "draft"} value={style.fontAsset}
+              onChange={fontAsset => changeStyle({ fontAsset })} />
             {text && <div className={cx("textPosition")}>
               <LayerPositionControls key={text.id} target={{ kind: "text", id: text.id }} x={text.x} y={text.y} />
             </div>}
@@ -159,7 +162,7 @@ export function TextEditor() {
                 aria-label="Text font"
                 value={style.font}
                 onChange={(e) =>
-                  changeStyle({ font: e.target.value as TextStyle["font"] })
+                  changeStyle({ font: e.target.value as TextStyle["font"], fontAsset: undefined })
                 }
               >
                 {Object.entries({

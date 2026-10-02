@@ -18,6 +18,7 @@ pvo-prototype/
     pvo-sdk/                    Format containers, validation and action runtime
     pvo-language/               Native Rust compiler and browser WASM facade
     pvo-code-runtime/           Isolated generated renderer and host bridge
+    pvo-fonts/                  Validated font assets, browser scopes and portable packaging
     pvo-text-runtime/           Shared text styles and painter
     pvo-animation/              Shared numeric layer curves and visibility geometry
     pvo-component-runtime/      Shared no-code presets and bounded appearance values
@@ -193,7 +194,7 @@ packages/pvo-language/
 
 See the [package ownership guide](../../packages/pvo-language/README.md) for internal roles and the [language guide](../language/README.md) for authoring syntax. Compiler validation, runtime host enforcement, and rendered component events are distinct responsibilities. Do not move DOM, network, or editor state into the Rust rules.
 
-`pvo-code-runtime/index.js` preserves the public API. Source limits/protocol constants, token substitution, handler parsing, sanitization, runtime-document generation and rendering each have an internal owner. `session.js` coordinates the frames, event queue, request replies, watchdog and disposal. Browser isolation checks cover this boundary. Keep the focused text painter intact unless a real second responsibility emerges.
+`pvo-code-runtime/index.js` preserves the public API. Source limits/protocol constants, token substitution, handler parsing, sanitization, runtime-document generation and rendering each have an internal owner. `session.js` coordinates the frames, event queue, request replies, watchdog and disposal. Browser isolation checks cover this boundary. Keep the focused text painter intact unless a real second responsibility emerges. `pvo-fonts` owns immutable font assets and font scopes; application layers keep font bytes in history while interactive exports deduplicate them into packaged assets. The sandbox host installs binary font faces without granting authored CSS or runtime code font-network access.
 
 ## Build and verification
 

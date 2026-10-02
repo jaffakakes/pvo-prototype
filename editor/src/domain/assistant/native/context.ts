@@ -80,9 +80,13 @@ export function nativeProjectContext(
             fit: clip.fit, hasMedia: Boolean(clip.url), audioDetached: clip.audioDetached ?? false,
             ...(clip.animation ? { animation: cloneAnimation(clip.animation) } : {}) };
         }),
-        texts: scene.texts.map(text => ({ id: text.id, text: text.text, start: text.start, end: text.end,
-          x: text.x, y: text.y, ...(text.style ? { style: { ...text.style } } : {}),
-          ...(text.animation ? { animation: cloneAnimation(text.animation) } : {}) })),
+        texts: scene.texts.map(text => {
+          const { fontAsset, ...style } = text.style ?? {};
+          return { id: text.id, text: text.text, start: text.start, end: text.end,
+            x: text.x, y: text.y, ...(text.style ? { style } : {}),
+            ...(fontAsset ? { font: { id: fontAsset.id, family: fontAsset.family } } : {}),
+            ...(text.animation ? { animation: cloneAnimation(text.animation) } : {}) };
+        }),
         audioClips: (scene.audioClips ?? []).map(clip => ({ id: clip.id, name: clip.name,
           start: clip.start, end: clip.start + audioDuration(clip), sourceIn: clip.in, sourceOut: clip.out,
           sourceDuration: clip.srcDur, speed: clip.speed, muted: clip.muted, gain: clip.gain ?? 1,
@@ -101,6 +105,7 @@ export function nativeProjectContext(
           const design = componentLanguageSource(component);
           const axes = componentSize(component);
           const values = { id: component.id, at: component.at, duration: component.dur,
+            ...(component.font ? { font: { id: component.font.id, family: component.font.family } } : {}),
             x: component.x, y: component.y, label: fields.title || fields.prompt || fields.heading || fields.text || component.type,
             scale: componentScale(component.scale), scaleX: axes.width, scaleY: axes.height,
             proportionalScale: componentGestureScale(component),

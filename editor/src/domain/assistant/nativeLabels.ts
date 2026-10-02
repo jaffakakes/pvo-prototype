@@ -1,6 +1,7 @@
 import type { NativeOperation, NativeObservationRequest } from "../../../../packages/pvo-assistant/native/index.js";
 
 const labels: Record<NativeOperation["kind"], string> = {
+  "font.apply": "Apply font",
   "animation.set": "Animate layer", "animation.remove": "Remove keyframe", "animation.clear": "Clear animation",
   "animation.follow": "Follow tracked object",
   "text.add": "Add text", "text.update": "Update text", "text.delete": "Remove text",
@@ -26,6 +27,11 @@ export function nativeOperationLabel(operation: NativeOperation): string {
 }
 
 export function nativeObservationLabel(observation: NativeObservationRequest) {
+  if (observation.kind === "web_search") return "Searching the web…";
+  if (observation.kind === "web_read") return "Reading web reference…";
+  if (observation.kind === "font_catalogue") return "Searching Google Fonts…";
+  if (observation.kind === "saved_fonts") return "Checking saved fonts…";
+  if (observation.kind === "font_import") return "Downloading and saving font…";
   const action = { frames: "Inspecting video", transcript: "Transcribing audio", word_timing: "Aligning speech", object_tracking: "Tracking object" };
   return `${action[observation.kind]} · ${observation.start}s–${observation.end}s`;
 }

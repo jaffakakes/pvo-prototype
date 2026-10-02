@@ -1,6 +1,7 @@
 import type { NativeOperation } from "../../../../packages/pvo-assistant/native/index.js";
 
 const labels: Record<NativeOperation["kind"], string> = {
+  "font.apply": "Font updated",
   "animation.set": "Layer animated", "animation.remove": "Keyframe removed", "animation.clear": "Animation cleared",
   "animation.follow": "Object tracking applied",
   "text.add": "Text added", "text.update": "Text updated", "text.delete": "Text removed",

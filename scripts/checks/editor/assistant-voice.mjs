@@ -17,7 +17,11 @@ await context.addInitScript(() => {
   const state = { starts: 0, stops: 0, aborts: 0, autoStart: true, current: null };
   class FakeRecognition {
     constructor() { state.current = this; }
-    start() { state.starts++; if (state.autoStart) queueMicrotask(() => this.onstart?.()); }
+    start() {
+      state.starts++;
+      state.userActivation = navigator.userActivation.isActive;
+      if (state.autoStart) queueMicrotask(() => this.onstart?.());
+    }
     stop() { state.stops++; }
     abort() { state.aborts++; }
     result(text, isFinal) {
@@ -26,6 +30,7 @@ await context.addInitScript(() => {
   }
   Object.defineProperty(window, "SpeechRecognition", { configurable: true, writable: true, value: FakeRecognition });
   Object.defineProperty(window, "webkitSpeechRecognition", { configurable: true, writable: true, value: undefined });
+  state.Recognition = FakeRecognition;
   window.voiceFixture = state;
 });
 
@@ -227,11 +232,11 @@ try {
   await field.fill("Build a dashboard for me");
   await page.getByRole("button", { name: "Send request", exact: true }).click();
   await phase("typing");
-  await assertNotice("assistantUnsupported", "Request not supported.", "error");
+  await assertNotice("assistantResponseInvalid", "AI response was invalid. Try again.", "error");
   assert.equal(await field.inputValue(), "Build a dashboard for me");
   await page.keyboard.press("Escape");
   await phase("idle");
-  assert.equal(await page.locator('[data-notification-id="assistantUnsupported"]').count(), 0,
+  assert.equal(await page.locator('[data-notification-id="assistantResponseInvalid"]').count(), 0,
     "Closing the workflow clears its notification scope");
   assert.deepEqual(await snapshot(), original);
   await page.evaluate(async () => {
@@ -255,8 +260,110 @@ try {
   assert.equal(await page.evaluate(async () => (await import("/src/store.ts")).useCapture.getState().playing), true,
     "Applying an edit must restore its previous playback state");
   await page.evaluate(async () => (await import("/src/store.ts")).useCapture.getState().patch({ playing: false }));
+
+  // Safari's prefixed API and a first permission dialog: a tap stays pending
+  // without a held mouse, and natural recognition end is not Send permission.
+  await page.evaluate(() => {
+    window.webkitSpeechRecognition = voiceFixture.Recognition;
+    voiceFixture.autoStart = false;
+  });
+  await orb.click();
+  await phase("typing");
+  await field.fill("Keep the typed draft");
+  original = await snapshot();
+  await page.getByRole("button", { name: "Start voice input", exact: true }).click();
+  await phase("listening");
+  await page.getByText("Starting microphone…", { exact: true }).waitFor();
+  assert.equal(await orb.evaluate(button => button === document.activeElement), true,
+    "Starting with the microphone keeps keyboard focus on Cancel and Send");
+  assert.equal(await page.evaluate(() => voiceFixture.userActivation), true,
+    "Tapped voice must call recognition.start directly within user activation");
+  const beforePermission = await page.evaluate(() => voiceFixture.aborts);
+  await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+  assert.equal(await page.evaluate(() => voiceFixture.aborts), beforePermission,
+    "A first permission dialog taking focus must not abort tapped microphone startup");
+  await page.getByRole("button", { name: "Cancel voice input", exact: true }).waitFor();
+  await page.evaluate(() => voiceFixture.current.onstart?.());
+  await page.locator('[data-voice-phase="listening"]').waitFor();
+  assert.match(await page.locator("[data-assistant-live-heading]").textContent(), /^Listening/);
+  await page.evaluate(() => {
+    voiceFixture.current.result("Larger", true);
+    voiceFixture.current.onend?.();
+  });
+  await page.getByText("Ready to send", { exact: true }).waitFor();
+  assert.deepEqual(await snapshot(), original, "Captured speech must wait for explicit Send");
+  await page.getByRole("button", { name: "Send voice request", exact: true }).click();
+  await phase("idle");
+  assert.equal((await snapshot()).past.length, original.past.length + 1,
+    "An explicitly sent one-word voice request applies one undoable change");
+
+  await orb.click();
+  await phase("typing");
+  await field.fill("Preserve on cancellation");
+  await page.getByRole("button", { name: "Start voice input", exact: true }).click();
+  await page.getByRole("button", { name: "Cancel voice input", exact: true }).click();
+  await phase("typing");
+  assert.equal(await field.inputValue(), "Preserve on cancellation");
+  const cancelledAborts = await page.evaluate(() => voiceFixture.aborts);
+  await page.evaluate(() => voiceFixture.current.onstart?.());
+  assert.equal(await page.evaluate(() => voiceFixture.aborts), cancelledAborts + 1,
+    "Cancel still aborts microphone access that completes later");
+  await page.evaluate(() => voiceFixture.current.onend?.());
+  original = await snapshot();
+  await page.getByRole("button", { name: "Start voice input", exact: true }).click();
+  await page.getByRole("button", { name: "Cancel voice input", exact: true }).waitFor();
+  await mouseDown();
+  await page.evaluate(() => {
+    voiceFixture.current.onstart?.();
+    voiceFixture.current.result("Do not submit", true);
+  });
+  await page.getByRole("button", { name: "Send voice request", exact: true }).waitFor();
+  await page.mouse.up();
+  await phase("typing");
+  await page.evaluate(() => voiceFixture.current.onend?.());
+  assert.deepEqual(await snapshot(), original,
+    "Pressing Cancel before permission completes must not turn into Send when the label changes");
+  await resetNoticeScenario();
+  await page.getByRole("button", { name: "Start voice input", exact: true }).click();
+  await page.evaluate(() => voiceFixture.current.onerror?.({ error: "not-allowed" }));
+  await phase("typing");
+  await assertNotice("voiceDenied", "Microphone access denied.", "error");
+  assert.deepEqual(await page.evaluate(async () =>
+    (await import("/src/state/assistant/assistantStore.ts")).useAssistant.getState().failureDetail),
+  { operation: "voice", detail: "not-allowed" }, "Voice diagnostics retain the browser failure reason");
+  await page.getByRole("button", { name: "Start voice input", exact: true }).click();
+  await page.evaluate(() => window.dispatchEvent(new Event("pagehide")));
+  await phase("typing");
+  const hiddenAborts = await page.evaluate(() => voiceFixture.aborts);
+  await page.evaluate(() => voiceFixture.current.onstart?.());
+  assert.equal(await page.evaluate(() => voiceFixture.aborts), hiddenAborts + 1,
+    "Leaving the page cancels even a pending tapped permission request");
+  await page.evaluate(() => voiceFixture.current.onend?.());
+  await page.getByRole("button", { name: "Start voice input", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await phase("idle");
+
+  for (const viewport of [{ width: 320, height: 740 }, { width: 1024, height: 768 }, { width: 1440, height: 900 }]) {
+    await page.setViewportSize(viewport);
+    await orb.click();
+    await phase("typing");
+    const controls = await page.locator("[data-assistant-composer]").evaluate(form => {
+      const input = form.querySelector("input").getBoundingClientRect();
+      const buttons = [...form.querySelectorAll("button")].map(button => {
+        const rect = button.getBoundingClientRect();
+        return { left: rect.left, right: rect.right, width: rect.width };
+      });
+      return { input: { width: input.width, right: input.right }, buttons };
+    });
+    assert(controls.input.width >= 60, `The ${viewport.width}px composer retains a readable input`);
+    assert(controls.input.right <= controls.buttons[0].left, "The microphone clears the typed input");
+    assert(controls.buttons[0].right <= controls.buttons[1].left, "Microphone and Send controls do not overlap");
+    assert(controls.buttons[1].right <= viewport.width, "All composer controls stay within the viewport");
+    await page.keyboard.press("Escape");
+    await phase("idle");
+  }
   assert.deepEqual(errors, []);
-  console.log("Assistant voice checks passed: 320ms tap/hold vocabulary, two-word minimum, speech lifecycle, typed notifications, preserved drafts, keyboard dismissal, playback restoration and scope cleanup.");
+  console.log("Assistant voice checks passed: hold/release, tapped permission startup, truthful listening state, explicit Send, cancellation cleanup, preserved drafts, voice diagnostics and playback restoration.");
 } catch (error) {
   console.error(error.stack);
   console.error(await page.evaluate(async () => {

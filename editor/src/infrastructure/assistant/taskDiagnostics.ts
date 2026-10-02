@@ -3,7 +3,7 @@ import { AssistantTaskError, type AssistantTaskTrace } from "../../domain/assist
 
 export function assistantFailureReason(error: unknown): string {
   if (error instanceof AssistantTaskError) return error.reason;
-  if (error instanceof AssistantServiceError) return `http_${error.status}`;
+  if (error instanceof AssistantServiceError) return error.code ?? `http_${error.status}`;
   if (error instanceof Error && error.name === "AbortError") return "cancelled";
   return "validation_or_execution_failed";
 }

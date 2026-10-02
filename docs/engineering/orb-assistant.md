@@ -1,6 +1,6 @@
 # Orb assistant
 
-The editor's existing orb accepts questions and editing requests for the whole project. Selection supplies context but is not required. It can edit text, clips, scenes, audio and components, inspect sampled footage, transcribe a bounded audio range, and open the existing export flow. A single composer routes requests automatically; there are no mode tabs or separate assistant panel. Requested edits apply immediately after validation on both phone and desktop, as one undoable project edit. Questions open an answer card with **Done** and follow-up actions.
+The editor's existing orb accepts questions and editing requests for the whole project. Selection supplies context but is not required. It can edit text, clips, scenes, audio and components, inspect sampled footage, transcribe a bounded audio range, and open the existing export flow. It also supports [public web research and font import](web-search.md), with saved fonts shared across projects in this browser. A single composer accepts typed requests, microphone input with explicit **Send**, or hold-to-speak input from the orb; there are no mode tabs or separate assistant panel. Requested edits apply immediately after validation on both phone and desktop, as one undoable project edit. Questions open an answer card with **Done** and follow-up actions.
 
 The assistant is available outside Try mode and timeline pickers, including the desktop component inspector and expanded Advanced IDE. Normal phone component sheets hide it. Selecting a component adds a violet ring. Opening the assistant pauses playback without moving the playhead or resizing the workspace. Closing it or completing an edit restores the previous playback state in the same editing scene unless the request deliberately changes playback.
 
@@ -13,7 +13,7 @@ On phones the toolbar remains 100 px tall, plus the bottom safe inset. Its norma
 | Area | Responsibility |
 | --- | --- |
 | `editor/src/features/assistant/` | Prop-driven views, placement, focus and session orchestration. `useAssistantSession` coordinates requests, application, answers and project-staleness checks. |
-| `features/assistant/voice/` | Orb tap/hold events and one cancellable browser recognition session. |
+| `features/assistant/voice/` | Microphone start/Send/Cancel, orb tap/hold events and one cancellable browser recognition session. |
 | `packages/pvo-assistant/` | Common PVO source types and compiled component policy. `native/` owns strict native operations, observations and project context. |
 | `editor/src/domain/assistant/` | Answer data, bounded context, isolated batch preparation, completion summaries and failure classification. No React or store dependencies. |
 | `editor/src/infrastructure/assistant/` | Same-origin HTTP transport, bounded planning workflow and browser-owned frame/audio inspection. |
@@ -135,7 +135,7 @@ Production requires an exact HTTPS `PUBLIC_ORIGIN`. A local HTTP Worker may opt 
 
 A beta Worker replacing a static server must keep the same origin to preserve browser storage and editing sessions. Copy built hashed assets before HTML and the service worker, preserve prior assets, and copy `editor/release.json` last. The Worker's release channel is not a file watcher: announce that revision through the authenticated `/api/releases/announce` route after verifying the served assets. Store its announcement secret in an ignored local `.dev.vars` file and never send it to the editor. See [release setup](cloudflare-publishing.md).
 
-HTTP 400, 413, 422, 429, 503 and 504 map respectively to rephrasing, input size, unsupported request, provider usage limit, unavailable service and timeout notifications from the approved catalogue. A usage-limit response means that request was rejected; it does not indicate that the assistant is still working. Provider error bodies are never shown.
+HTTP 400, 413, 429, 503 and 504 map respectively to invalid input, input size, provider usage limit, unavailable service and timeout notifications from the approved catalogue. HTTP 422 carries a fixed classification: `model_output_invalid`, `model_output_truncated` or `edit_validation_failed`. These produce distinct short failure notifications and safe diagnostic detail, preserving the request and applying no partial edit. An unclassified 422 is an invalid-response failure, never proof that the user requested an unsupported feature. Actual capability limits remain reviewed `blocked` answers explaining the limit; they do not produce a duplicate failure toast. A usage-limit response means that request was rejected; it does not indicate that the assistant is still working. Provider error bodies are never shown.
 
 ## Component validation boundary
 
@@ -147,7 +147,9 @@ New assistant actions are limited to continue, jump to time and go to scene. Exi
 
 ## Voice input
 
-A tap shorter than 320 ms opens typing or focuses the current input. Holding for at least 320 ms starts the available `SpeechRecognition` or `webkitSpeechRecognition` browser capability. Interim words appear live while held; release sends finalized recognition text through the same validation and immediate-application workflow as typing. Fewer than two words returns to the previous phase with the approved brief gesture warning. Cancellation, loss of the active pointer, page hiding and unmounting stop the attempt. Permission denial, unavailable microphones, no speech and recognition failures provide a typing fallback.
+Tap the composer's microphone button to start the available `SpeechRecognition` or `webkitSpeechRecognition` capability directly from a click. **Starting microphone…** remains visible while waiting for permission, for up to 30 seconds; a permission dialog taking window focus does not cancel this startup. **Listening** appears only after the browser confirms it has started. The user explicitly taps **Send** to submit finalized speech, including a one-word request. A browser ending recognition alone never sends, and interim-only speech cannot be submitted. **Cancel** stops startup; its action stays Cancel if recognition starts between pressing and releasing the button.
+
+A tap on the orb shorter than 320 ms opens typing or focuses the current input. Holding for at least 320 ms starts recognition; interim words appear live and release submits finalized text. This gesture requires at least two words, with the approved brief hold warning for shorter input. Releasing before microphone startup cancels and prevents permission completion from starting a later recording. Escape, page hiding, closing the assistant and unmounting discard either voice mode; loss of the held pointer also cancels hold input. Failures preserve the typed draft and return to typing where applicable. Browser failure details remain in assistant diagnostic state, with one concise notification.
 
 The browser controls recognition availability, microphone permission and its recognition service. Voice dictation uses the browser recognition service; footage transcription separately uses the bounded Whisper route. Dictation does not guarantee offline input or identical behaviour across browsers. Typing remains available when recognition is unsupported.
 

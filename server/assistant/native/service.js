@@ -4,6 +4,7 @@ import { withAssistantDeadline } from "../deadline.js";
 import { nativeCompletionMessages, nativeMessages, nativeRepairMessages } from "./prompt.js";
 import { validateNativeResult } from "./policy.js";
 import { inspectNativeFrames, nativeFrameEvidence } from "./vision.js";
+import { NativeAssistantError } from "./errors.js";
 
 // Keep the grammar small while making observation, editing and terminal output
 // mutually exclusive. The canonical parser still validates every operation.
@@ -42,6 +43,7 @@ export function nativeAssistantTurn(request, { models, signal, totalMs = 90000, 
       operationSignal.throwIfAborted();
       const result = await withAssistantDeadline(attemptSignal => models.generate({ messages, schema: modelEnvelopeSchema, temperature: 0.15, maxTokens: 3000 }, attemptSignal), attemptMs, operationSignal);
       let response = result?.content;
+      let failureCode = "model_output_invalid";
       try {
         if (!result || typeof result !== "object" || Array.isArray(result)
           || (result.toolCalls !== undefined && (!Array.isArray(result.toolCalls) || result.toolCalls.length)))
@@ -55,6 +57,7 @@ export function nativeAssistantTurn(request, { models, signal, totalMs = 90000, 
         if (response && typeof response === "object" && Object.hasOwn(response, "evidence"))
           throw new Error("Evidence is added by the server. Return only message, operations, observations and the optional blocked or answer fields.");
         const parsed = parseNativeTurnResult(response);
+        failureCode = "edit_validation_failed";
         if (!animation && parsed.operations.some(item => item.kind.startsWith("animation.")))
           throw new Error("Layer animation is unavailable in this editor session. Use only available operations.");
         if ((!objectTracking || !animation) && (parsed.observations.some(item => item.kind === "object_tracking")
@@ -74,11 +77,11 @@ export function nativeAssistantTurn(request, { models, signal, totalMs = 90000, 
         operationSignal.throwIfAborted();
         if (error instanceof HttpError) throw error;
         if (repaired)
-          throw new HttpError(422, "The assistant could not produce valid editor actions. Try a more specific request.");
+          throw new NativeAssistantError(failureCode);
         repaired = true;
         messages = nativeRepairMessages(messages, response ?? null, error, request);
       }
     }
-    throw new HttpError(422, "The assistant could not produce valid editor actions. Try a more specific request.");
+    throw new NativeAssistantError("edit_validation_failed");
   }, totalMs, signal);
 }

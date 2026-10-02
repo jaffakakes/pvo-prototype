@@ -131,7 +131,7 @@ async function executeNativeTask(
     for (const description of response.evidence ?? []) remember(description, "project");
     observations = [];
     if (response.observations.length && response.operations.length)
-      throw new AssistantTaskError("mixed_tools", "The assistant must inspect the requested media before preparing edits.");
+      throw new AssistantTaskError("mixed_tools", "The assistant must finish its research before preparing edits.");
     if (response.observations.length) {
       for (const request of response.observations) {
         const scope = request.kind === "transcript" || request.kind === "word_timing" ? "audio" : "project";
@@ -140,16 +140,16 @@ async function executeNativeTask(
         const signature = toolSignature([sourceFingerprint, request]);
         const previous = inspected.get(signature);
         if (previous) {
-          if (previous.kind === "unavailable" || repeatedInspections++ > 0)
-            throw new AssistantTaskError("repeated_inspection", "The assistant repeated a media inspection. Ask about a shorter or different section.");
+          if (previous.kind === "unavailable" || previous.kind === "web_unavailable" || repeatedInspections++ > 0)
+            throw new AssistantTaskError("repeated_inspection", "The assistant repeated a tool request. Try a different source or a smaller request.");
           // Give a recoverable tool result once, without decoding or billing the same media again.
-          history.push({ role: "assistant", content: "Editor reused the already completed media inspection. Use this evidence to complete the current request, or inspect a genuinely different range when needed. Do not request the same inspection again." });
+          history.push({ role: "assistant", content: "Editor reused the already completed tool result. Use this evidence to complete the current request, or use a different source when needed. Do not repeat the same tool request." });
           observations.push(previous);
           adapters.trace?.({ stage: "observation", status: "completed", round, tools: [request.kind], reason: "reused" });
           continue;
         }
         if (++observationCount > 6)
-          throw new AssistantTaskError("inspection_limit", "This task needs too much media inspection. Ask about a shorter section.");
+          throw new AssistantTaskError("inspection_limit", "This task needs too many tool requests. Try one part at a time.");
         adapters.progress(nativeObservationLabel(request));
         adapters.trace?.({ stage: "observation", status: "started", round, tools: [request.kind] });
         const observation = await adapters.observe(project, request, signal);

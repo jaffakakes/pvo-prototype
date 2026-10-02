@@ -429,6 +429,7 @@ export function mountCustomComponent(container, initial) {
       if (disposed) return;
       diagnostic("component.inactive", { reason: "disposed" });
       disposed = true;
+      renderer.dispose();
       clearTimeout(startTimer);
       for (const entry of pending.values()) clearTimeout(entry.timer);
       pending.clear();

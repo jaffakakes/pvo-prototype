@@ -1,11 +1,12 @@
 import { AssistantServiceError, type AssistantServiceErrorCode } from "../../domain/assistant/failure";
+import { assistantServiceErrorDefinition } from "../../../../packages/pvo-assistant/service-errors.js";
 
 /** Bound response decoding too; release the reader immediately on cancellation. */
 export async function readAssistantJson(response: Response, signal: AbortSignal, maximumBytes = 96 * 1024): Promise<unknown> {
   if (response.headers.get("Content-Type")?.split(";", 1)[0].trim() !== "application/json")
-    throw new Error("The assistant did not return a JSON result.");
+    throw new AssistantServiceError(422, undefined, "model_output_invalid");
   const reader = response.body?.getReader();
-  if (!reader) throw new Error("The assistant returned an empty result.");
+  if (!reader) throw new AssistantServiceError(422, undefined, "model_output_invalid");
   const cancel = () => { void reader.cancel(signal.reason).catch(() => {}); };
   signal.addEventListener("abort", cancel, { once: true });
   const chunks: Uint8Array[] = [];
@@ -19,14 +20,15 @@ export async function readAssistantJson(response: Response, signal: AbortSignal,
       size += value.byteLength;
       if (size > maximumBytes) {
         await reader.cancel();
-        throw new Error("The assistant result is too large.");
+        throw new AssistantServiceError(422, undefined, "model_output_invalid");
       }
       chunks.push(value);
     }
     const bytes = new Uint8Array(size);
     let offset = 0;
     for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
-    return JSON.parse(new TextDecoder().decode(bytes)) as unknown;
+    try { return JSON.parse(new TextDecoder().decode(bytes)) as unknown; }
+    catch { throw new AssistantServiceError(422, undefined, "model_output_invalid"); }
   } finally {
     signal.removeEventListener("abort", cancel);
     reader.releaseLock();
@@ -37,15 +39,15 @@ export async function readAssistantJson(response: Response, signal: AbortSignal,
 export async function assistantServiceFailure(response: Response, signal: AbortSignal): Promise<AssistantServiceError> {
   let code: AssistantServiceErrorCode | undefined;
   try {
-    if (response.status === 429) {
+    if (response.status === 429 || response.status === 422) {
       const result = await readAssistantJson(response, signal, 4096);
-      if (result && typeof result === "object" && "code" in result && result.code === "provider_allowance_exhausted")
-        code = result.code;
+      if (result && typeof result === "object" && "code" in result)
+        code = assistantServiceErrorDefinition(result.code, response.status)?.code;
     }
   } catch {
     signal.throwIfAborted();
   } finally {
     await response.body?.cancel().catch(() => {});
   }
-  return new AssistantServiceError(response.status, code ? "The AI provider's allowance has been used up." : undefined, code);
+  return new AssistantServiceError(response.status, undefined, code);
 }

@@ -1,4 +1,5 @@
 import { ANIMATION_EASINGS, ANIMATION_LIMITS, ANIMATION_PROPERTIES } from "../../pvo-animation/index.js";
+import { webObservationRequests, webObservations, fontSummarySchema } from "./webSchema.js";
 
 const number = (minimum = 0, maximum = 86400) => ({ type: "number", minimum, maximum });
 const string = (maxLength = 2000) => ({ type: "string", maxLength });
@@ -58,6 +59,9 @@ const trackingTarget = { anyOf: [
 ] };
 const operation = (kind, properties, required) => object({ kind: { const: kind }, ...properties }, ["kind", ...(required ?? Object.keys(properties))]);
 export const operationSchemas = [
+  operation("font.apply", { ...scene, target: { anyOf: [
+    object({ kind: { const: "component" }, id }), object({ kind: { const: "text" }, id: numericId }),
+  ] }, fontId: nullable(id) }),
   operation("animation.follow", { ...scene, target: visualAnimationTarget, observationId: id,
     anchor: enumeration(["center", "top"]), offsetX: number(-100, 100), offsetY: number(-100, 100) }),
   operation("animation.set", { ...scene, target: animationTarget, tracks: animationTracks }),
@@ -92,6 +96,7 @@ export const operationSchemas = [
   operation("export.prepare", { format: enumeration(["video", "pvo"]) }),
 ];
 export const observationRequestSchema = { anyOf: [
+  ...webObservationRequests,
   operation("object_tracking", { ...scene, clipId: numericId, start: time, end: time, target: trackingTarget }),
   operation("frames", { ...scene, start: time, end: time, count: { type: "integer", minimum: 1, maximum: 6 } }),
   operation("transcript", { ...scene, start: time, end: time }),
@@ -115,11 +120,11 @@ const projectSchema = object({
       id: numericId, start: time, end: time, sourceIn: time, sourceOut: time, sourceDuration: time,
       speed: number(0.25, 4), zoom: number(0.5, 2), mirror: boolean, fit: enumeration(["cover", "contain"]), hasMedia: boolean, audioDetached: boolean, animation,
     }, ["id", "start", "end", "sourceIn", "sourceOut", "sourceDuration", "speed", "zoom", "mirror", "fit", "hasMedia", "audioDetached"]), 1000),
-    texts: array(object({ id: numericId, ...textChanges, animation }, ["id", "text", "start", "end", "x", "y"]), 500),
+    texts: array(object({ id: numericId, ...textChanges, font: fontSummarySchema, animation }, ["id", "text", "start", "end", "x", "y"]), 500),
     audioClips: array(object({ id: numericId, name: string(120), start: time, end: time, sourceIn: time, sourceOut: time, sourceDuration: time, speed: number(0.25, 4), muted: boolean, gain, animation }, ["id", "name", "start", "end", "sourceIn", "sourceOut", "sourceDuration", "speed", "muted", "gain"]), 500),
     components: array(object({ id, type: componentType, at: time, duration: nullable(time), x: position, y: position,
       scale: componentScale, scaleX: componentScale, scaleY: componentScale, proportionalScale: componentScale,
-      width: componentPixels, height: componentPixels, label: string(), animation,
+      width: componentPixels, height: componentPixels, label: string(), animation, font: fontSummarySchema,
       content: { type: "object", additionalProperties: string(), maxProperties: 20 }, source: sourceSchema, design: sourceSchema, responsePolicy: responsePolicySchema },
     ["id", "type", "at", "duration", "x", "y", "scale", "scaleX", "scaleY", "proportionalScale", "width", "height", "label", "content"]), 500),
   }, ["id", "name", "parent", "duration", "muted", "musicGain", "clipGain", "clips", "texts", "audioClips", "components"]), 100),
@@ -160,6 +165,7 @@ const executionSchema = object({
   receipts: array(receiptSchema, 144),
 });
 const observationSchema = { anyOf: [
+  ...webObservations,
   operation("object_tracking", { id, ...scene, clipId: numericId, start: time, end: time, model: { const: "sam3.1" },
     frameCount: { type: "integer", minimum: 1, maximum: 151 },
     samples: array(object({ time, visible: boolean, x: gain, y: gain, width: gain, height: gain, score: gain }), 151) }),

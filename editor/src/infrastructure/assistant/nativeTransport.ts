@@ -35,7 +35,9 @@ async function nativeRequest(path: string, body: unknown, signal: AbortSignal) {
 }
 
 export async function requestNativeTurn(request: NativeTurnRequest, signal: AbortSignal) {
-  return parseNativeTurnResult(await nativeRequest("/api/assistant/turn", request, signal));
+  const response = await nativeRequest("/api/assistant/turn", request, signal);
+  try { return parseNativeTurnResult(response); }
+  catch { throw new AssistantServiceError(422, undefined, "model_output_invalid"); }
 }
 
 export async function readNativeAvailability(signal: AbortSignal): Promise<NativeAvailability> {

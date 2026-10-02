@@ -1,3 +1,5 @@
+import { fontFamily } from "../../../../packages/pvo-fonts/index.js";
+import { useAppliedFont } from "./useAppliedFont";
 import { evaluateAnimation, visualMotionVisible } from "../../../../packages/pvo-animation/index.js";
 import type { CSSProperties } from "react";
 import { componentEnd } from "../../domain/components/timing";
@@ -39,6 +41,7 @@ export function ComponentOverlay({ component, width, selected, trying, onRespons
   time: number;
   onResponse: (component: PvoComponent, response: ComponentResponse) => void;
 }) {
+  useAppliedFont(component.code?.custom ? undefined : component.font);
   const session = useComponentAuthoring();
   const located = useDebugLocate(state => state.componentId === component.id);
   const u = width / 247;
@@ -47,11 +50,12 @@ export function ComponentOverlay({ component, width, selected, trying, onRespons
   const style = {
     left: `${component.x + motion.x}%`, top: `${component.y + motion.y}%`, zIndex, "--u": `${u}px`,
     width: "max-content", opacity: motion.opacity,
+    ...(component.font ? { "--component-font": `"${fontFamily(component.font)}"` } : {}),
     visibility: trying && !visualMotionVisible(motion) ? "hidden" : undefined,
     transform: `translate(-50%, -50%) rotate(${motion.rotation}deg) scale(${size.width * motion.scaleX}, ${size.height * motion.scaleY})`,
   } as CSSProperties;
 
-  return <div ref={ref} className={cx("compOverlay")} data-preview-component={component.id} data-layer-id={`component:${component.id}`} data-sel={selected} data-trying={trying} style={style}>
+  return <div ref={ref} className={cx("compOverlay")} data-preview-component={component.id} data-font={component.font ? "applied" : undefined} data-layer-id={`component:${component.id}`} data-sel={selected} data-trying={trying} style={style}>
     {component.code?.custom ? component.code.pvo
       ? <PvoRuntimeOverlay component={component} width={width} trying={trying} isVisible={componentVisible} />
       : <div className={cx("compTooltip")}>Unsupported component code</div>

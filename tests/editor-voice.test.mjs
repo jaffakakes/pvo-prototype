@@ -9,7 +9,7 @@ const bundled = buildSync({
 const { createRecognitionSession } = await import(
   `data:text/javascript;base64,${Buffer.from(bundled.outputFiles[0].text).toString("base64")}`);
 
-function fixture(t, { prefixed = false } = {}) {
+function fixture(t, { prefixed = false, startupTimeoutMs, minimumWords } = {}) {
   const priorWindow = globalThis.window;
   const events = { phases: [], transcripts: [], sent: [], failures: [], cancelled: 0 };
   let recognition;
@@ -36,7 +36,7 @@ function fixture(t, { prefixed = false } = {}) {
     onSend: value => events.sent.push(value),
     onCancel: () => events.cancelled++,
     onFailure: value => events.failures.push(value),
-  }, "en-GB");
+  }, "en-GB", { startupTimeoutMs, minimumWords });
   assert(session);
   return { session, events, recognition, tick: ms => t.mock.timers.tick(ms) };
 }
@@ -159,6 +159,76 @@ test("microphone startup has a bounded wait and a late-start abort guard", t => 
   assert.match(events.failures[0].detail, /timed out/);
   assert.equal(recognition.abortCount, 1);
   recognition.end();
+});
+
+test("tap startup allows time for permission and never sends when the browser ends alone", t => {
+  const { session, events, recognition, tick } = fixture(t, { prefixed: true, startupTimeoutMs: 30000 });
+  session.start();
+  tick(15000);
+  assert.equal(events.phases.at(-1), "starting");
+  assert.equal(events.cancelled, 0);
+  recognition.begin();
+  assert.equal(events.phases.at(-1), "listening");
+  recognition.result([["make this blue", true]]);
+  recognition.end();
+  tick(40000);
+  assert.equal(events.phases.at(-1), "ready");
+  assert.deepEqual(events.sent, []);
+  session.release();
+  tick(150);
+  assert.deepEqual(events.sent, ["make this blue"]);
+});
+
+test("tap permission timeout cancels and still guards against a late microphone start", t => {
+  const { session, events, recognition, tick } = fixture(t, { startupTimeoutMs: 30000 });
+  session.start();
+  tick(29999);
+  assert.equal(events.cancelled, 0);
+  tick(1);
+  assert.equal(events.cancelled, 1);
+  assert.equal(events.failures[0].reason, "failed");
+  recognition.begin();
+  assert.equal(recognition.abortCount, 2);
+  recognition.end();
+  assert.equal(recognition.onstart, null);
+  assert.deepEqual(events.sent, []);
+});
+
+test("a browser ending before microphone startup reports failure instead of appearing ready", t => {
+  const { session, events, recognition, tick } = fixture(t);
+  session.start();
+  recognition.end();
+  tick(30000);
+  assert.equal(events.cancelled, 1);
+  assert.equal(events.phases.at(-1), "idle");
+  assert.equal(events.failures[0].reason, "failed");
+  assert.match(events.failures[0].detail, /ended before microphone startup/);
+  assert.deepEqual(events.sent, []);
+});
+
+test("explicit tapped Send accepts a one-word request while still requiring final speech", t => {
+  const { session, events, recognition, tick } = fixture(t, { minimumWords: 1 });
+  session.start();
+  recognition.begin();
+  recognition.result([["Bolder", true]]);
+  assert.deepEqual(events.sent, []);
+  session.release();
+  recognition.end();
+  tick(150);
+  assert.deepEqual(events.sent, ["Bolder"]);
+  assert.deepEqual(events.failures, []);
+});
+
+test("tapped Send with only interim speech gives no-speech feedback, not a hold instruction", t => {
+  const { session, events, recognition, tick } = fixture(t, { minimumWords: 1 });
+  session.start();
+  recognition.begin();
+  recognition.result([["unfinished speech", false]]);
+  session.release();
+  recognition.end();
+  tick(150);
+  assert.deepEqual(events.sent, []);
+  assert.equal(events.failures[0].reason, "noSpeech");
 });
 
 test("missing end events have a bounded wait before submitting final words and aborting", t => {

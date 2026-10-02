@@ -1,6 +1,6 @@
 import { recognitionConstructor, recognitionFailure, type VoiceFailure } from "./browserRecognition";
 
-export type VoicePhase = "idle" | "starting" | "listening" | "finishing";
+export type VoicePhase = "idle" | "starting" | "listening" | "ready" | "finishing";
 type Callbacks = {
   onPhase(phase: VoicePhase): void;
   onTranscript(text: string): void;
@@ -14,7 +14,8 @@ const FINAL_TIMEOUT_MS = 5000;
 const FINAL_RESULT_GRACE_MS = 150;
 
 /** Owns one browser recognition attempt; only release can authorize sending. */
-export function createRecognitionSession(callbacks: Callbacks, language: string) {
+export function createRecognitionSession(callbacks: Callbacks, language: string,
+  { startupTimeoutMs = START_TIMEOUT_MS, minimumWords = 2 }: { startupTimeoutMs?: number; minimumWords?: 1 | 2 } = {}) {
   const Recognition = recognitionConstructor();
   if (!Recognition) return null;
   const recognition = new Recognition();
@@ -64,8 +65,10 @@ export function createRecognitionSession(callbacks: Callbacks, language: string)
   };
   const finish = () => {
     if (settled || !released) return;
-    if (finalText.trim().split(/\s+/).filter(Boolean).length < 2) {
-      cancel({ reason: "holdShort", detail: "The hold ended before two words were captured." });
+    if (finalText.trim().split(/\s+/).filter(Boolean).length < minimumWords) {
+      cancel(minimumWords === 1
+        ? { reason: "noSpeech", detail: "No finalized speech was captured before Send." }
+        : { reason: "holdShort", detail: "The hold ended before two words were captured." });
       return;
     }
     settled = true;
@@ -96,8 +99,12 @@ export function createRecognitionSession(callbacks: Callbacks, language: string)
     if (settled) return;
     ended = true;
     clearTimeout(startTimer);
+    if (!started) {
+      cancel({ reason: "failed", detail: "Speech recognition ended before microphone startup completed." });
+      return;
+    }
     if (released) finishAfterResults();
-    else callbacks.onPhase("finishing");
+    else callbacks.onPhase("ready");
   };
 
   return {
@@ -105,7 +112,7 @@ export function createRecognitionSession(callbacks: Callbacks, language: string)
       if (settled) return;
       callbacks.onPhase("starting");
       callbacks.onTranscript("");
-      startTimer = setTimeout(() => cancel({ reason: "failed", detail: "Microphone startup timed out." }), START_TIMEOUT_MS);
+      startTimer = setTimeout(() => cancel({ reason: "failed", detail: "Microphone startup timed out." }), startupTimeoutMs);
       try { recognition.start(); }
       catch (error) { cancel(recognitionFailure(error instanceof Error ? error.name : "")); }
     },

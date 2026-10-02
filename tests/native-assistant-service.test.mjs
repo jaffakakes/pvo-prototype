@@ -109,7 +109,7 @@ test("native model envelopes reject code, malformed JSON and oversized provider 
     let calls = 0;
     await assert.rejects(nativeAssistantTurn(nativeInput(), {
       ai: { run: async () => { calls++; return output; } }, signal: new AbortController().signal,
-    }), error => error.status === 422);
+    }), error => error.status === 422 && error.code === "model_output_invalid");
     assert.equal(calls, 2, "Only one schema repair is allowed");
   }
   const stringResult = await nativeAssistantTurn(nativeInput(), {

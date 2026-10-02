@@ -1,3 +1,4 @@
+import { packageManifestFonts } from "../../../../packages/pvo-fonts/portable.js";
 import { sceneDuration as sceneLength } from "../../domain/scenes/duration";
 import type { PvoAssetInput } from "../../../../packages/pvo-sdk/index.js";
 import { packPvoProject } from "../../../../packages/pvo-sdk/index.js";
@@ -67,7 +68,8 @@ export async function exportPvo(state: ExportSnapshot, onPct: (progress: number)
         assets.push({ id: path, name: path, type: "text/plain", blob: new Blob([part || " "], { type: "text/plain" }) });
       }
     }
-  const blob = await packPvoProject({ manifest, assets });
+  const packaged = packageManifestFonts(manifest);
+  const blob = await packPvoProject({ manifest: packaged.manifest, assets: [...assets, ...packaged.assets] });
   onPct(1);
   return { blob, url: URL.createObjectURL(blob), name: "restyle-video.pvo" };
 }

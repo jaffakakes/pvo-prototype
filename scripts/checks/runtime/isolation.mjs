@@ -11,6 +11,7 @@ const runtimeAssets = new Map(
   ),
 );
 runtimeAssets.set("/runtime.js", runtimeAssets.get("/index.js"));
+for (const [path, asset] of await sourceModules(new URL("../../../packages/pvo-fonts/", import.meta.url), "/pvo-fonts")) runtimeAssets.set(path, asset);
 const leaks = [];
 const hostRequests = [];
 const server = createServer((request, response) => {

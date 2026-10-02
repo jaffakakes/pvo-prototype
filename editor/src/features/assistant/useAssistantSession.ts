@@ -19,6 +19,9 @@ import { projectSnapshot } from "../../state/project/history";
 import { useEditorPreferences } from "../../state/preferences/editorPreferences";
 import { clearNotificationScope, notify, type NotificationId } from "../../state/notifications/notificationStore";
 import type { VoiceFailure } from "./voice/browserRecognition";
+import { inspectWebTool, isWebObservationRequest, prepareAssistantFonts } from "../../infrastructure/assistant/webTools";
+import { readSavedFonts } from "../../infrastructure/fonts/library";
+import { obtainLibraryFont, saveLibraryFont } from "../../state/fonts/fontLibraryStore";
 
 const voiceNotifications: Record<VoiceFailure["reason"], NotificationId> = {
   holdShort: "voiceHoldShort", unavailable: "voiceUnavailable", denied: "voiceDenied",
@@ -137,6 +140,11 @@ export function useAssistantSession({ inspectorVisible = false }: { inspectorVis
           return response;
         },
         observe: async (project, observation, signal) => {
+          if (isWebObservationRequest(observation)) {
+            const result = await inspectWebTool(observation, signal, { list: readSavedFonts, save: saveLibraryFont });
+            assertCurrent();
+            return result;
+          }
           let result;
           try {
             switch (observation.kind) {
@@ -155,7 +163,8 @@ export function useAssistantSession({ inspectorVisible = false }: { inspectorVis
           assertCurrent();
           return result;
         },
-        prepare: (project, operations, signal, trackingEvidence) => prepareNativeBatch(project, operations, {
+        prepare: async (project, operations, signal, trackingEvidence) => prepareNativeBatch(project, operations, {
+          fonts: await prepareAssistantFonts(operations, signal, obtainLibraryFont),
           createId: uid, compile: compilePvoComponent, signal,
           advancedEditingEnabled: useEditorPreferences.getState().advancedEditingEnabled,
           trackingEvidence,
@@ -226,8 +235,11 @@ export function useAssistantSession({ inspectorVisible = false }: { inspectorVis
       useAssistant.setState({ phase: voiceOrigin.current, transcript: "" });
       if (voiceOrigin.current === "idle") restorePlayback();
     },
-    reportVoiceFailure: (failure: VoiceFailure) => notify(voiceNotifications[failure.reason], {
-      scope: "assistant", operation: `voice:${++operation.current}`, currentAttempt: true,
-    }),
+    reportVoiceFailure: (failure: VoiceFailure) => {
+      useAssistant.setState({ failureDetail: { operation: "voice", detail: failure.detail } });
+      notify(voiceNotifications[failure.reason], {
+        scope: "assistant", operation: `voice:${++operation.current}`, currentAttempt: true,
+      });
+    },
   };
 }

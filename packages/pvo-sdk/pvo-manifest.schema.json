@@ -27,7 +27,7 @@
           "additionalProperties": {
             "type": "object",
             "properties": {
-              "texts": { "type": "array", "items": { "type": "object", "properties": { "animation": { "$ref": "#/$defs/visualAnimation" } } } },
+              "texts": { "type": "array", "items": { "type": "object", "properties": { "animation": { "$ref": "#/$defs/visualAnimation" }, "style": { "type": "object", "properties": { "fontAsset": { "$ref": "#/$defs/fontReference" } } } } } },
               "clips": { "type": "array", "items": { "$ref": "#/$defs/mediaAnimation" } },
               "audioClips": { "type": "array", "items": { "allOf": [{ "$ref": "#/$defs/mediaAnimation" }, { "properties": { "animation": { "$ref": "#/$defs/audioAnimation" } } }] } },
               "musicAnimation": { "$ref": "#/$defs/audioAnimation" }
@@ -135,7 +135,7 @@
           },
           "options": { "type": "array", "minItems": 2, "maxItems": 4, "items": { "$ref": "#/$defs/choiceOption" } },
           "fields": { "type": "array", "items": { "$ref": "#/$defs/formField" } },
-          "restyle_capture": { "type": "object", "properties": { "animation": { "$ref": "#/$defs/visualAnimation" } } },
+          "restyle_capture": { "type": "object", "properties": { "animation": { "$ref": "#/$defs/visualAnimation" }, "font": { "$ref": "#/$defs/fontReference" } } },
           "on_submit": { "$ref": "#/$defs/actionList" },
           "actions": { "type": "array", "items": { "$ref": "#/$defs/cardButton" } }
         },
@@ -189,6 +189,12 @@
     }
   },
   "$defs": {
+    "fontReference": {
+      "type": "object",
+      "required": ["asset_id"],
+      "properties": { "asset_id": { "type": "string", "pattern": "^fonts/pvo-[a-z0-9-]+\\.json$" } },
+      "additionalProperties": false
+    },
     "animation": {
       "type": "object", "required": ["tracks"], "additionalProperties": false,
       "properties": {
