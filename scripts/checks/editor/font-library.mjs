@@ -51,12 +51,14 @@ const state = () => page.evaluate(() => ({
 }));
 async function projectFixture(projectId) {
   await page.evaluate(async projectId => {
+    const { navigateProject } = await import("/src/app/navigation.ts");
     window.fontLibraryCapture = (await import("/src/store.ts")).useCapture;
     const clip = { id: 1, url: null, color: "#4d4257", srcDur: 20, in: 0, out: 20, speed: 1, zoom: 1, mirror: false, width: 720, height: 1280, fit: "cover" };
     const scene = { id: "main", name: "Main", parent: null, clips: [clip], texts: [], components: [], muted: true, sound: -1, layers: ["video"] };
     const capture = window.fontLibraryCapture.getState();
     capture.patch({ localId: projectId, scenes: [scene], currentSceneId: "main", clips: [clip], texts: [], components: [], layers: ["video"], screen: "editor", sheet: null, selComp: null, t: 4, past: [], future: [] });
     window.fontLibraryCapture.getState().addComponent("tooltip");
+    navigateProject(projectId, true);
     await document.fonts.ready;
   }, projectId);
   await page.getByRole("tab", { name: "Look", exact: true }).click();

@@ -41,6 +41,7 @@ export function mountCustomComponent(container, initial) {
   let sources = boundedSource(options);
   let disposed = false;
   let renderLoaded = false;
+  let renderSucceeded = false;
   let runtimeReady = false;
   let workerReady = false;
   let handlers = new Map();
@@ -51,11 +52,20 @@ export function mountCustomComponent(container, initial) {
   const channel = channelId();
   const nonce = channelId();
 
-  const report = (error) => {
-    if (!disposed)
+  function diagnostic(type, detail = {}) {
+    if (disposed || typeof options.onDiagnostic !== "function") return;
+    try {
+      const result = options.onDiagnostic({ type, componentId: options.componentId, ...detail });
+      if (result && typeof result.catch === "function") result.catch(() => {});
+    } catch { /* An observer cannot change sandbox execution. */ }
+  }
+  const report = (error, reason = "runtime_error") => {
+    if (!disposed) {
+      diagnostic("component.failed", { reason });
       options.onError?.(
         typeof error === "string" ? error : String(error?.message || error),
       );
+    }
   };
   const renderFrame = document.createElement("iframe");
   const renderShell = document.createElement("div");
@@ -79,7 +89,10 @@ export function mountCustomComponent(container, initial) {
     "position:absolute;width:0;height:0;border:0;opacity:0;pointer-events:none;";
   runtimeFrame.srcdoc = runtimeDocument(channel, nonce);
 
-  const renderer = createRenderer(renderFrame, renderShell, report, (next) => {
+  const renderer = createRenderer(renderFrame, renderShell, error => {
+    renderSucceeded = false;
+    report(error, "render_error");
+  }, (next) => {
     handlers = next;
   });
   function fitRenderer() {
@@ -87,6 +100,7 @@ export function mountCustomComponent(container, initial) {
   }
   function applyRender() {
     if (!renderLoaded || disposed) return;
+    renderSucceeded = true;
     renderer.render(sources, options);
   }
 
@@ -96,7 +110,7 @@ export function mountCustomComponent(container, initial) {
     clearTimeout(entry.timer);
     entry.timer = setTimeout(() => {
       if (!pending.has(eventId)) return;
-      report("Component function timed out and was restarted.");
+      report("Component function timed out and was restarted.", "function_timeout");
       restartWorker();
     }, delay);
   }
@@ -110,22 +124,26 @@ export function mountCustomComponent(container, initial) {
       !invokeQueue.length
     )
       return;
-    const { handler, fields } = invokeQueue.shift();
-    const eventId = ++eventSerial;
+    const { handler, fields, eventId } = invokeQueue.shift();
     pending.set(eventId, { timer: null, requests: new Set() });
     armEventTimer(eventId, EVENT_TIMEOUT_MS);
+    diagnostic("action.started", { eventId, phase: "bridge" });
     runtimeFrame.contentWindow?.postMessage(
       { channel, kind: "invoke", eventId, ...handler, fields },
       "*",
     );
   }
 
-  function invoke(handler, fields) {
-    if (!runtimeReady || !workerReady || disposed)
+  function invoke(handler, fields, eventId) {
+    if (!runtimeReady || !workerReady || disposed) {
+      diagnostic("interaction.ignored", { eventId, reason: "not_ready" });
       return report("Component Functions are not ready.");
-    if (invokeQueue.length >= 20)
+    }
+    if (invokeQueue.length >= 20) {
+      diagnostic("interaction.ignored", { eventId, reason: "queue_full" });
       return report("Component action queue is full.");
-    invokeQueue.push({ handler, fields });
+    }
+    invokeQueue.push({ handler, fields, eventId });
     dispatchNext();
   }
 
@@ -164,12 +182,16 @@ export function mountCustomComponent(container, initial) {
     const element = event.target?.closest?.("[data-pvo-click]");
     if (element) {
       event.preventDefault();
+      const eventId = ++eventSerial;
+      diagnostic("interaction.received", { eventId, target: element.getAttribute("data-pvo-id")?.slice(0, 80) });
       const handler = handlers.get(element.getAttribute("data-pvo-click"));
       if (handler)
         invoke(
           handler,
           element.closest("form") ? formFields(element.closest("form")) : {},
+          eventId,
         );
+      else diagnostic("interaction.ignored", { eventId, reason: "no_matching_rule" });
       return;
     }
     // The scriptless renderer deliberately has neither allow-forms nor a
@@ -188,13 +210,20 @@ export function mountCustomComponent(container, initial) {
   }
 
   function submitForm(form) {
-    if (options.pending) return;
+    const eventId = ++eventSerial;
+    diagnostic("interaction.received", { eventId, target: "submit" });
+    if (options.pending) {
+      diagnostic("interaction.ignored", { eventId, reason: "request_pending" });
+      return;
+    }
     if (!form?.checkValidity?.()) {
+      diagnostic("interaction.ignored", { eventId, reason: "invalid_fields" });
       form?.reportValidity?.();
       return;
     }
     const handler = handlers.get(form.getAttribute("data-pvo-submit"));
-    if (handler) invoke(handler, formFields(form));
+    if (handler) invoke(handler, formFields(form), eventId);
+    else diagnostic("interaction.ignored", { eventId, reason: "no_matching_rule" });
   }
 
   function onRendererKeyDown(event) {
@@ -224,12 +253,12 @@ export function mountCustomComponent(container, initial) {
     startTimer = setTimeout(() => {
       if (workerReady || disposed) return;
       runtimeFrame.contentWindow?.postMessage({ channel, kind: "stop" }, "*");
-      report("Component Functions did not start and were stopped.");
+      report("Component Functions did not start and were stopped.", "start_timeout");
     }, START_TIMEOUT_MS);
   }
 
   let startTimer = setTimeout(() => {
-    if (!runtimeReady) report("Component sandbox did not start.");
+    if (!runtimeReady) report("Component sandbox did not start.", "sandbox_timeout");
   }, START_TIMEOUT_MS);
   function onRuntimeMessage(event) {
     if (
@@ -247,6 +276,7 @@ export function mountCustomComponent(container, initial) {
     if (data.kind === "ready") {
       workerReady = true;
       clearTimeout(startTimer);
+      if (renderSucceeded) diagnostic("component.ready");
       dispatchNext();
       return;
     }
@@ -256,6 +286,7 @@ export function mountCustomComponent(container, initial) {
       return;
     }
     if (data.kind === "done") {
+      diagnostic("action.completed", { eventId: data.eventId, phase: "bridge" });
       if (Number.isInteger(data.eventId)) finishEvent(data.eventId);
       return;
     }
@@ -281,6 +312,7 @@ export function mountCustomComponent(container, initial) {
       size = Infinity;
     }
     if (size > MAX_ACTION_BYTES) {
+      diagnostic("interaction.ignored", { eventId: data.eventId, reason: "action_too_large" });
       if (isRequest)
         finishRequest(data, false, "Component request is too large.");
       else report("Component action is too large.");
@@ -289,6 +321,7 @@ export function mountCustomComponent(container, initial) {
     const now = performance.now();
     actionTimes = actionTimes.filter((time) => now - time < 1_000);
     if (actionTimes.length >= MAX_ACTIONS_PER_SECOND) {
+      diagnostic("interaction.ignored", { eventId: data.eventId, reason: "rate_limit" });
       if (isRequest)
         finishRequest(data, false, "Component action rate limit reached.");
       else report("Component action rate limit reached.");
@@ -298,7 +331,7 @@ export function mountCustomComponent(container, initial) {
     if (!isRequest) {
       Promise.resolve()
         .then(() =>
-          options.onAction?.({ method: data.method, args: data.args }),
+          options.onAction?.({ method: data.method, args: data.args }, { eventId: data.eventId }),
         )
         .catch(report);
       return;
@@ -309,6 +342,7 @@ export function mountCustomComponent(container, initial) {
       typeof data.args[0] !== "object" ||
       Array.isArray(data.args[0])
     ) {
+      diagnostic("interaction.ignored", { eventId: data.eventId, reason: "invalid_request" });
       finishRequest(
         data,
         false,
@@ -321,7 +355,7 @@ export function mountCustomComponent(container, initial) {
       .then(() => {
         if (!options.onAction)
           throw new Error("Requests are unavailable in this PVO host.");
-        return options.onAction({ method: "request", args: data.args });
+        return options.onAction({ method: "request", args: data.args }, { eventId: data.eventId });
       })
       .then(
         (value) => {
@@ -350,6 +384,7 @@ export function mountCustomComponent(container, initial) {
     doc.addEventListener("submit", onRendererSubmit, true);
     doc.addEventListener("keydown", onRendererKeyDown, true);
     applyRender();
+    if (workerReady && renderSucceeded) diagnostic("component.ready");
   }
 
   renderFrame.addEventListener("load", onRenderLoad);
@@ -392,7 +427,9 @@ export function mountCustomComponent(container, initial) {
     },
     destroy() {
       if (disposed) return;
+      diagnostic("component.inactive", { reason: "disposed" });
       disposed = true;
+      renderer.dispose();
       clearTimeout(startTimer);
       for (const entry of pending.values()) clearTimeout(entry.timer);
       pending.clear();

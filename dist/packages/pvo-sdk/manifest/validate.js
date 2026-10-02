@@ -1,3 +1,4 @@
+import { validateManifestAnimation } from "./animation.js";
 import { PVO_SPEC_VERSION } from "./constants.js";
 import { validateActions } from "./actions.js";
 import { validateSceneTree } from "./scene-tree.js";
@@ -229,6 +230,7 @@ export function validatePvo(manifest) {
     }
     validateActions(trigger.actions, `triggers[${index}].actions`, errors, warnings, ids);
   }
+  validateManifestAnimation(manifest, errors);
   if ((manifest.hotspots || []).length === 0) warnings.push("This manifest has no hotspots.");
   return { valid: errors.length === 0, errors, warnings };
 }

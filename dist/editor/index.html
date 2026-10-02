@@ -7,14 +7,37 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Restyle" />
+    <script>
+      try {
+        if (localStorage.getItem("restyle.editor.reduceMotion") === "true")
+          document.documentElement.dataset.reduceMotion = "true";
+      } catch {}
+    </script>
+    <link rel="preload" href="./assets/peace-sans-EIq_JFAO.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="./restyle-mark.png" as="image" />
     <link rel="manifest" href="./manifest.json" />
     <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
     <title>Restyle Capture</title>
-    <script type="module" crossorigin src="./assets/index-DjSM93gm.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-l4agI5Ox.css">
+    <script type="module" crossorigin src="./assets/index-BqF4CKRX.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BeO67WZm.css">
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root" class="launchSplashPending" aria-busy="true" inert></div>
+    <div id="restyle-launch-splash" class="launchSplash" aria-hidden="true">
+      <div class="launchSplashGround"></div>
+      <div class="launchSplashZoom">
+        <div class="launchSplashMarkIntro">
+          <div class="launchSplashBob">
+            <div class="launchSplashArt">
+              <img class="launchSplashMark" src="./restyle-mark.png" alt="" draggable="false" />
+              <span class="launchSplashLid launchSplashLidLeft"></span>
+              <span class="launchSplashLid launchSplashLidRight"></span>
+            </div>
+          </div>
+        </div>
+        <div class="launchSplashWord">restyle</div>
+      </div>
+    </div>
   </body>
 </html>
