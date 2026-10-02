@@ -1,0 +1,2 @@
+.entry { flex: none; height: 30px; min-height: 30px !important; min-width: 0 !important; padding: 0 9px; border: 2px solid #ffffff24; border-radius: 16px; background: #15151c; color: #ff9fbc; font: 700 11.5px var(--f-ui); white-space: nowrap; cursor: pointer; }
+.entry:disabled { opacity: .45; cursor: default; }
