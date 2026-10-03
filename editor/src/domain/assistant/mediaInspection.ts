@@ -21,7 +21,7 @@ export type AudioSample = {
   gain: number;
 };
 
-export function inspectionScene(project: InspectionProject, request: NativeObservationRequest): Scene {
+export function inspectionScene(project: InspectionProject, request: Extract<NativeObservationRequest, { sceneId: string }>): Scene {
   const scene = project.scenes.find(item => item.id === request.sceneId);
   if (!scene) throw new Error("The scene to inspect no longer exists.");
   if (!Number.isFinite(request.start) || !Number.isFinite(request.end) || request.start < 0

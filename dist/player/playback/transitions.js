@@ -5,12 +5,24 @@ import {
 } from "../actions/operations.js";
 import { updateRequestStatus } from "../actions/request-status.js";
 import { needsResponseBoundary, responseBoundaryWork } from "../actions/response-policy.js";
+import { reportPlayerDiagnostic } from "../actions/diagnostics.js";
 
 export function createPlaybackTransitions({ session, refs, adapters }) {
+  function releaseUnavailableResponse(component) {
+    if (session.awaitingComponent?.id !== component.id || adapters.componentCanReceiveResponse(component)) return;
+    session.awaitingComponent = null;
+    adapters.renderOverlays(true);
+    // The existing request failure remains in status; this releases only its invisible retry hold.
+    void refs.video.play().catch(() => adapters.showControls());
+  }
   function holdAtBoundary(component, message) {
     if (session.awaitingComponent?.id === component.id) return;
     session.awaitingComponent = component;
     refs.video.pause();
+    reportPlayerDiagnostic(session, "playback.hold", session.capturedResponses.get(component.id)?.diagnostic, {
+      componentId: component.id,
+      reason: session.capturedResponses.has(component.id) ? "applying_response" : "awaiting_answer",
+    });
     const clip = adapters.activeClip();
     refs.video.currentTime = Math.min(clip.end, clip.start + Number(component.presentation?.end || 0));
     adapters.renderOverlays(true);
@@ -35,11 +47,12 @@ export function createPlaybackTransitions({ session, refs, adapters }) {
       .filter((component) => local >= Number(component.presentation?.end || 0) - 0.04);
 
     for (const component of ending) {
-      if (session.forcedHidden.has(component.id) || !adapters.captureAboveVideo(component)) {
+      const response = session.capturedResponses.get(component.id);
+      if (session.forcedHidden.has(component.id) || !response
+        && !adapters.componentCanReceiveResponse(component, Number(component.presentation?.end || 0))) {
         session.handledResponses.add(component.id);
         continue;
       }
-      const response = session.capturedResponses.get(component.id);
       session.handledResponses.add(component.id);
       const work = responseBoundaryWork(component, response);
       if (work === "wait") {
@@ -96,5 +109,5 @@ export function createPlaybackTransitions({ session, refs, adapters }) {
     await adapters.loadClip(0, autoplay);
   }
 
-  return { finishExperience, restartExperience, handleResponseBoundary, advanceAtClipEnd };
+  return { finishExperience, restartExperience, handleResponseBoundary, advanceAtClipEnd, releaseUnavailableResponse };
 }

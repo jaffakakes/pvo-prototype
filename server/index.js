@@ -2,20 +2,25 @@ import { configuration } from "./config.js";
 import { releaseRoute } from "./releases/routes.js";
 import { HttpError, json, notFound } from "./http.js";
 import { validPublicationId } from "./identity.js";
-import { authRoute } from "./auth/routes.js";
 import { publishingRoute } from "./publishing/routes.js";
 import { cleanupPublications } from "./publishing/cleanup.js";
 import { readMedia, viewPublication } from "./viewing/routes.js";
 import { nativeAssistantRoute } from "./assistant/native/routes.js";
+import { fontsRoute } from "./fonts/routes.js";
+import { webRoute } from "./web/routes.js";
+import { imessageRoute } from "./imessage/routes.js";
 
 export async function handleRequest(request, env) {
   const url = new URL(request.url);
   const config = configuration(env, url.origin);
   try {
+    if (url.pathname.startsWith("/api/web/")) return await webRoute(request);
+    if (url.pathname.startsWith("/api/imessage/")) return await imessageRoute(request, env);
+    if (url.pathname.startsWith("/api/fonts/")) return await fontsRoute(request);
     if (url.pathname.startsWith("/api/assistant/")) return await nativeAssistantRoute(request, env, config);
     if (url.pathname.startsWith("/api/releases/")) return await releaseRoute(request, env);
-    if (url.pathname.startsWith("/api/auth/")) return await authRoute(request, env, config);
-    if (url.pathname === "/api/publishing" || url.pathname === "/api/publications" || url.pathname.startsWith("/api/publications/"))
+    if (url.pathname === "/api/publishing" || url.pathname === "/api/publishing/session"
+      || url.pathname === "/api/publications" || url.pathname.startsWith("/api/publications/"))
       return await publishingRoute(request, env, config);
     if (url.pathname === "/api" || url.pathname.startsWith("/api/")) return notFound();
     if (request.method !== "GET" && request.method !== "HEAD") throw new HttpError(405, "This operation is not supported.");

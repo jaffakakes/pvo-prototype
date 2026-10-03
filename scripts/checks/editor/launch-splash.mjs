@@ -181,12 +181,92 @@ async function runReducedMotion(appPreference) {
   }
 }
 
+async function runStalledReveal(stage) {
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    reducedMotion: "reduce",
+  });
+  const page = await context.newPage();
+  page.setDefaultTimeout(12000);
+  const errors = [];
+  page.on("pageerror", error => errors.push(error.message));
+  await page.addInitScript(stage => {
+    window.__launchStallObserved = false;
+    window.__launchLate = [];
+    if (stage === "fonts") {
+      const pending = new Promise(resolve => window.__launchLate.push(resolve));
+      Object.defineProperty(document.fonts, "ready", { get() {
+        window.__launchStallObserved = true;
+        return pending;
+      } });
+    } else if (stage === "images") {
+      const decode = HTMLImageElement.prototype.decode;
+      HTMLImageElement.prototype.decode = function () {
+        if (!this.closest("#root")) return decode.call(this);
+        window.__launchStallObserved = true;
+        return new Promise(resolve => window.__launchLate.push(resolve));
+      };
+    } else if (stage === "paint") {
+      let nextId = 1;
+      window.__launchPendingFrames = new Map();
+      window.requestAnimationFrame = callback => {
+        window.__launchStallObserved = true;
+        const id = nextId++;
+        window.__launchPendingFrames.set(id, callback);
+        return id;
+      };
+      window.cancelAnimationFrame = id => window.__launchPendingFrames.delete(id);
+    } else if (stage === "animation") {
+      const animate = Element.prototype.animate;
+      Element.prototype.animate = function (...args) {
+        const animation = animate.apply(this, args);
+        if (this.id === "restyle-launch-splash") {
+          window.__launchStallObserved = true;
+          animation.pause();
+          window.__launchPausedAnimation = animation;
+        }
+        return animation;
+      };
+    }
+  }, stage);
+  try {
+    await page.goto(editorUrl, { waitUntil: "domcontentloaded" });
+    await page.locator("#create-title").waitFor({ state: "attached" });
+    await page.waitForFunction(() => window.__launchStallObserved, null, { polling: 100 });
+    assert.equal(await page.locator("#root").getAttribute("inert"), "");
+    await page.waitForFunction(() => !document.querySelector("#restyle-launch-splash"), null, { polling: 100 });
+    const released = await page.evaluate(() => {
+      const root = document.querySelector("#root");
+      const key = new KeyboardEvent("keydown", { key: "a", bubbles: true, cancelable: true });
+      return { busy: root.hasAttribute("aria-busy"), inert: root.hasAttribute("inert"),
+        pending: root.classList.contains("launchSplashPending"), revealing: root.classList.contains("launchSplashRevealing"),
+        keysReleased: window.dispatchEvent(key), remainingFrames: window.__launchPendingFrames?.size,
+        animationState: window.__launchPausedAnimation?.playState };
+    });
+    assert.deepEqual([released.busy, released.inert, released.pending, released.revealing], [false, false, false, false], `${stage}: timeout must release the real mounted editor`);
+    assert.equal(released.keysReleased, true);
+    if (stage === "paint") assert.equal(released.remainingFrames, 0, "Timed-out paint callbacks are cancelled");
+    if (stage === "animation") assert.equal(released.animationState, "idle", "Timed-out fade animation is cancelled");
+    await page.evaluate(async () => {
+      window.__launchLate.forEach(resolve => resolve());
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    assert.equal(await page.locator("#restyle-launch-splash").count(), 0, "Late asset readiness cannot restart the reveal");
+    assert.equal(await page.locator("#root").getAttribute("inert"), null);
+    assert.deepEqual(errors, []);
+  } finally {
+    await context.close();
+  }
+}
+
 try {
   await runFullMotion({ width: 430, height: 932, mobile: true });
   await runFullMotion({ width: 1440, height: 900, mobile: false });
   await runReducedMotion(false);
   await runReducedMotion(true);
-  console.log("Launch splash passed: responsive geometry, blink reveal, input/camera gate and reduced motion.");
+  await Promise.all(["fonts", "images", "paint", "animation"].map(runStalledReveal));
+  console.log("Launch splash passed: responsive reveal, input/camera gate, reduced motion, bounded stalled assets/paint/animation and late-completion cleanup.");
 } finally {
   await browser.close();
 }

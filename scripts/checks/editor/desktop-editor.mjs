@@ -160,7 +160,7 @@ async function checkVisualLayerStack() {
 
 try {
   await page.route("**/api/publishing", route => route.fulfill({ contentType: "application/json",
-    body: JSON.stringify({ available: false, authenticated: false, maxBytes: 0 }) }));
+    body: JSON.stringify({ available: false, hasSession: false, maxBytes: 0 }) }));
   const home = new URL(url);
   home.search = "?home=1";
   await page.goto(home.href);
@@ -272,7 +272,6 @@ try {
   await player.getByRole("button", { name: "Stop trying", exact: true }).click();
   assert.equal(await page.locator("[data-desktop-inspector]").evaluate(element => !!element.closest("[inert]")), false);
   await page.getByRole("button", { name: "Export", exact: true }).click();
-  await page.getByRole("button", { name: "Export to device", exact: true }).click();
   await page.getByRole("dialog", { name: "Export", exact: true }).waitFor();
   await page.getByRole("button", { name: /Interactive/ }).waitFor();
   await page.keyboard.press("Escape");

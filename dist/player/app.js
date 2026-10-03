@@ -61,7 +61,7 @@ const media = createVideoController({
     activeClip: (...args) => timeline.activeClip(...args),
     replaceActionRuntime: (...args) => runtime.replaceActionRuntime(...args),
     dispatchCapturedResponse: (...args) => actions.dispatchCapturedResponse(...args),
-    captureAboveVideo: (...args) => visibility.captureAboveVideo(...args),
+    componentCanReceiveResponse: (...args) => visibility.componentCanReceiveResponse(...args),
   },
 });
 
@@ -116,6 +116,8 @@ const runtime = createActionRuntimeAdapter({
 const actions = createComponentActions({
   session,
   adapters: {
+    componentCanReceiveResponse: (...args) => visibility.componentCanReceiveResponse(...args),
+    releaseUnavailableResponse: (...args) => playback.releaseUnavailableResponse(...args),
     setComponentPending: (...args) => overlays.setComponentPending(...args),
     captureOutcome: (...args) => outcomes.captureOutcome(...args),
     applyActionOutcome: (...args) => outcomes.applyActionOutcome(...args),
@@ -146,7 +148,7 @@ const playback = createPlaybackTransitions({
   adapters: {
     elapsedTime: (...args) => timeline.elapsedTime(...args),
     componentsForClip: (...args) => visibility.componentsForClip(...args),
-    captureAboveVideo: (...args) => visibility.captureAboveVideo(...args),
+    componentCanReceiveResponse: (...args) => visibility.componentCanReceiveResponse(...args),
     renderOverlays: (...args) => overlays.renderOverlays(...args),
     updateProgress: (...args) => controls.updateProgress(...args),
     setStatus: (...args) => controls.setStatus(...args),

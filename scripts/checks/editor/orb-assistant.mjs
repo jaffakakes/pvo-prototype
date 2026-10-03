@@ -239,7 +239,12 @@ async function run(viewport) {
       assert.match(await page.locator("[data-assistant-context]").innerText(), /Card.*0:0\d/s);
       inside(await field.boundingBox(), await toolbar.boundingBox(), "Selected-component input stays in the toolbar");
       const beforeFailure = await snapshot();
-      for (const [status, prompt, id] of [[422, "Build a dashboard", "assistantUnsupported"], [503, "Make it blue", "assistantUnavailable"]]) {
+      for (const [status, prompt, id, code] of [
+        [422, "Build a dashboard", "assistantResponseInvalid"],
+        [422, "Add a phone form", "assistantResponseIncomplete", "model_output_truncated"],
+        [422, "Move the form right", "assistantValidationFailed", "edit_validation_failed"],
+        [503, "Make it blue", "assistantUnavailable"],
+      ]) {
         // These independent provider failures do not exercise the global notification rate limiter.
         await page.evaluate(async () => {
           const { resetNotifications, setNotificationsBusy, useNotifications } = await import("/src/state/notifications/notificationStore.ts");
@@ -247,7 +252,8 @@ async function run(viewport) {
           resetNotifications();
           setNotificationsBusy(busy);
         });
-        const releaseFailure = queue({ error: { message: "Untrusted provider detail must stay hidden." } }, status);
+        const releaseFailure = queue({ error: { message: "Untrusted provider detail must stay hidden." },
+          ...(code ? { code } : {}) }, status);
         await submit(prompt);
         releaseFailure();
         await phase("typing").waitFor();

@@ -1,0 +1,10 @@
+export type FontFaceAsset = Readonly<{ dataUrl: string; weight: string; style: "normal" | "italic"; unicodeRange?: string }>;
+export type AppliedFont = Readonly<{ id: string; family: string; sourceUrl: string; licenseUrl: string; licenseText: string; faces: readonly FontFaceAsset[] }>;
+export const MAX_FONT_BYTES: number;
+export const MAX_FONT_FACES: number;
+export function validateFontAsset(input: unknown): AppliedFont;
+export function fontFamily(font: AppliedFont): string;
+export function fontFaceCss(font: AppliedFont): string;
+export type FontScope = { load(font: AppliedFont): Promise<void>; dispose(): void };
+export function createFontScope(document?: Document): FontScope;
+export function loadFontAsset(font: AppliedFont, document?: Document): Promise<void>;

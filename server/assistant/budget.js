@@ -17,7 +17,9 @@ export class AssistantBudget extends DurableObject {
       const global = sql.exec("SELECT total FROM counts WHERE key = 'global'").toArray()[0];
       const client = sql.exec("SELECT total, minute, burst FROM counts WHERE key = ?", key).toArray()[0];
       const burst = client?.minute === minute ? client.burst : 0;
-      if ((global?.total ?? 0) >= 60 || (client?.total ?? 0) >= 20 || burst >= 4) return false;
+      // One supported task can make six model turns plus six metered observations.
+      // Let that task finish within a minute without increasing either daily cap.
+      if ((global?.total ?? 0) >= 60 || (client?.total ?? 0) >= 20 || burst >= 12) return false;
       sql.exec("INSERT OR REPLACE INTO counts (key, total, minute, burst) VALUES ('global', ?, ?, 0)", (global?.total ?? 0) + 1, minute);
       sql.exec("INSERT OR REPLACE INTO counts (key, total, minute, burst) VALUES (?, ?, ?, ?)", key, (client?.total ?? 0) + 1, minute, burst + 1);
       return true;

@@ -2,6 +2,7 @@ import type { NativeOperation, NativePreparationReceipt } from "../../../../../p
 import type { CompiledPvoComponent, PvoLanguageSource } from "../../../../../packages/pvo-language/index.js";
 import type { ComponentType, ProjectSnapshot } from "../../project/model";
 import type { NativeTrackingEvidence } from "../../animation/trackingEvidence";
+import type { AppliedFont } from "../../../../../packages/pvo-fonts/index.js";
 
 export type NativePlaybackOperation = Extract<NativeOperation, { kind: "playback.seek" | "playback.play" | "playback.pause" }>;
 export type NativeBatch = {
@@ -14,6 +15,7 @@ export type NativeBatch = {
   advancedEditingEnabled: boolean;
 };
 export type NativePreparation = {
+  fonts?: ReadonlyMap<string, AppliedFont>;
   createId: () => number;
   compile: (type: ComponentType, source: PvoLanguageSource) => Promise<CompiledPvoComponent>;
   advancedEditingEnabled: boolean;

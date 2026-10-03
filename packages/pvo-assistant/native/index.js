@@ -4,12 +4,36 @@ import { validateTrackingObservation } from "./trackingValidation.js";
 export { nativeTurnSchema } from "./schema.js";
 export { normalizedAlignmentWords, parseWordAlignment } from "./wordAlignment.js";
 
+const observationRequests = nativeTurnSchema.properties.observations.items.anyOf;
+const operationKinds = operationSchemas.map(schema => schema.properties.kind.const);
+const observationKinds = observationRequests.map(schema => schema.properties.kind.const);
+
+/** Repair guidance uses only the contract's vocabulary, never an unknown model value. */
+function rejectToolKind(value, alternatives, path) {
+  const operation = alternatives === operationSchemas;
+  if ((!operation && alternatives !== observationRequests) || !value || typeof value !== "object" || Array.isArray(value)) return;
+  let reason = "is unsupported";
+  if (!("kind" in value)) reason = "is required";
+  else if (typeof value.kind !== "string") reason = "must be string";
+  const kinds = operation ? operationKinds : observationKinds;
+  const otherKinds = operation ? observationKinds : operationKinds;
+  let guidance = "";
+  if (otherKinds.includes(value.kind)) {
+    guidance = operation
+      ? `${value.kind} is an observation request. Put it in observations with operations:[]; make the edits in a later response after its result.`
+      : `${value.kind} is an editing operation. Put it in operations with observations:[]; finish any research first.`;
+  }
+  throw new Error([`${path}.kind ${reason}.`, guidance,
+    `Allowed ${operation ? "operation" : "observation request"} kinds: ${kinds.join(", ")}.`].filter(Boolean).join("\n"));
+}
+
 /** Validate at both the network and editor boundaries; no unrecognized fields survive. */
 function validate(value, schema, path) {
   if (schema.anyOf) {
     const alternatives = schema.anyOf;
     const tagged = alternatives.find(item => typeof item.properties?.kind?.const === "string" && item.properties.kind.const === value?.kind);
     if (tagged) return validate(value, tagged, path);
+    rejectToolKind(value, alternatives, path);
     for (const alternative of alternatives) {
       try { validate(value, alternative, path); return; } catch { /* Try the remaining explicit shapes. */ }
     }

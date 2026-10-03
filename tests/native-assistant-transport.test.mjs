@@ -22,14 +22,14 @@ test("native transport accepts strict JSON and keeps credentials on the same ori
 test("native transport bounds decoding and does not surface provider error bodies", async t => {
   let response = new Response("x".repeat(100000), { headers: { "Content-Type": "application/json" } });
   t.mock.method(globalThis, "fetch", async () => response);
-  await assert.rejects(requestNativeTurn({}, new AbortController().signal), /too large/);
+  await assert.rejects(requestNativeTurn({}, new AbortController().signal), error => error.code === "model_output_invalid");
   response = new Response("private provider detail", { status: 503 });
   await assert.rejects(requestNativeTurn({}, new AbortController().signal), error => error.status === 503 && !error.message.includes("private provider"));
   response = Response.json({ ...result, javascript: "bad()" });
-  await assert.rejects(requestNativeTurn({}, new AbortController().signal), /unsupported/);
+  await assert.rejects(requestNativeTurn({}, new AbortController().signal), error => error.code === "model_output_invalid");
 });
 
-test("native transport distinguishes only the approved provider allowance code and bounds error decoding", async t => {
+test("native transport accepts only approved status/code pairs and bounds error decoding", async t => {
   let response;
   t.mock.method(globalThis, "fetch", async () => response);
   const check = async (value, status, expectedCode) => {
@@ -43,6 +43,10 @@ test("native transport distinguishes only the approved provider allowance code a
     assert.equal(response.body.locked, false);
   };
   await check({ code: "provider_allowance_exhausted", error: "private provider message" }, 429, "provider_allowance_exhausted");
+  for (const code of ["model_output_invalid", "model_output_truncated", "edit_validation_failed"]) {
+    await check({ code, error: "private rejected output", diagnostic: "private source" }, 422, code);
+    await check({ code, error: "private rejected output" }, 503, undefined);
+  }
   await check({ code: "untrusted_provider_code", error: "private provider message" }, 429, undefined);
   await check({ code: "provider_allowance_exhausted", error: "private provider message" }, 503, undefined);
   await check({ code: "provider_allowance_exhausted", error: "private".repeat(1000) }, 429, undefined);
@@ -93,7 +97,18 @@ test("transport retains bounded server evidence and rejects oversized evidence",
   t.mock.method(globalThis, "fetch", async () => Response.json(response));
   assert.deepEqual(await requestNativeTurn({}, new AbortController().signal), response);
   response = { ...result, evidence: Array.from({ length: 5 }, () => "x".repeat(2000)) };
-  await assert.rejects(requestNativeTurn({}, new AbortController().signal), /evidence.*limit/);
+  await assert.rejects(requestNativeTurn({}, new AbortController().signal), error => error.code === "model_output_invalid");
   response = { ...result, evidence: [" "] };
-  await assert.rejects(requestNativeTurn({}, new AbortController().signal), /evidence.*blank/);
+  await assert.rejects(requestNativeTurn({}, new AbortController().signal), error => error.code === "model_output_invalid");
+});
+
+test("malformed successful JSON cannot expose an excerpt of model output", async t => {
+  t.mock.method(globalThis, "fetch", async () => new Response("private unfinished JSON", {
+    headers: { "Content-Type": "application/json" },
+  }));
+  await assert.rejects(requestNativeTurn({}, new AbortController().signal), error => {
+    assert.equal(error.code, "model_output_invalid");
+    assert.doesNotMatch(error.message, /private|unfinished JSON/);
+    return true;
+  });
 });

@@ -1,5 +1,6 @@
+import type { AppliedFont } from "../pvo-fonts/index.js";
 import type { LayerAnimation } from "../pvo-animation/index.js";
-export type TextStyle = { font: "sans" | "display" | "serif" | "mono" | "condensed"; size: number; bold: boolean; italic: boolean; underline: boolean; fill: string; background: string; stroke: string; strokeWidth: number; shadow: boolean; align: "left" | "center" | "right"; spacing: number; lineHeight: number; opacity: number; rotation: number; box: boolean };
+export type TextStyle = { fontAsset?: AppliedFont; font: "sans" | "display" | "serif" | "mono" | "condensed"; size: number; bold: boolean; italic: boolean; underline: boolean; fill: string; background: string; stroke: string; strokeWidth: number; shadow: boolean; align: "left" | "center" | "right"; spacing: number; lineHeight: number; opacity: number; rotation: number; box: boolean };
 type Overlay = { animation?: LayerAnimation; text: string; x: number; y: number; color?: number; style?: Partial<TextStyle> };
 export const TEXT_FONTS: Record<TextStyle["font"], string>;
 export const DEFAULT_TEXT_STYLE: TextStyle;

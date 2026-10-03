@@ -1,43 +1,71 @@
 import { drawText } from "../../packages/pvo-text-runtime/index.js";
 import { mountCustomComponent } from "../../packages/pvo-code-runtime/index.js";
-import { canvasPixelSize, componentPixelTransform, componentSize, observeComponentSize } from "../../packages/pvo-component-runtime/index.js";
+import { applyVideoMotion } from "./video-motion.js";
+import { createComponentMotion } from "./motion.js";
 import { componentWithRuntimeState } from "./state.js";
+import { observeDiagnostic } from "../../packages/pvo-sdk/index.js";
 
 export function createOverlayRenderer({ session, refs, adapters }) {
-  const sizeObservers = new Set();
+  const entries = new Map();
+  const textEntries = new Map();
+  let sceneKey = null;
   function destroyCustomOverlays() {
-    sizeObservers.forEach(disconnect => disconnect());
-    sizeObservers.clear();
+    entries.forEach(entry => { entry.motion?.dispose(); entry.position.remove(); });
+    entries.clear();
+    textEntries.forEach(canvas => canvas.remove());
+    textEntries.clear();
+    sceneKey = null;
     session.mountedCustom.forEach((mounted) => mounted.destroy());
     session.mountedCustom.clear();
   }
 
-  function renderOverlays(force = false) {
+  function renderOverlays() {
     const visible = session.finished ? [] : adapters.visibleComponents();
     const sceneLayers = session.captureMode ? session.manifest.restyle_capture?.scene_layers?.[adapters.activeClip()?.scene] : null;
     const order = Array.isArray(sceneLayers?.order) ? sceneLayers.order : [];
     const texts = session.finished ? [] : (sceneLayers?.texts || []).filter(text => adapters.elapsedTime() >= text.start && adapters.elapsedTime() < text.end);
-    const key = visible.map((component) => component.id).join("|")
-      + `:${session.currentTimeline?.id}:${texts.map(text => text.id).join(",")}:${refs.frame.clientWidth}:${session.runtimeStateRevision}`;
-    if (!force && key === session.renderedOverlayKey) return;
-    session.renderedOverlayKey = key;
-    destroyCustomOverlays();
-    refs.overlay.innerHTML = "";
+    const nextScene = `${session.currentTimeline?.id}:${adapters.activeClip()?.scene}:${session.overlayResetRevision ?? 0}`;
+    if (sceneKey !== nextScene) {
+      destroyCustomOverlays();
+      refs.overlay.innerHTML = "";
+      sceneKey = nextScene;
+    }
+    const activeIds = new Set(visible.map(component => component.id));
+    for (const [id, entry] of entries) {
+      if (activeIds.has(id)) continue;
+      entry.motion?.dispose();
+      session.mountedCustom.get(id)?.destroy();
+      session.mountedCustom.delete(id);
+      entry.position.remove();
+      entries.delete(id);
+    }
+    const textIds = new Set(texts.map(text => text.id));
+    for (const [id, canvas] of textEntries) {
+      if (!textIds.has(id)) { canvas.remove(); textEntries.delete(id); }
+    }
+    applyVideoMotion(refs.video, sceneLayers?.clips, adapters.elapsedTime(),
+      adapters.activeClip()?.end - adapters.activeClip()?.start);
     refs.overlay.style.zIndex = sceneLayers ? "auto" : "2";
     refs.video.style.position = sceneLayers ? "relative" : "";
     refs.video.style.zIndex = sceneLayers ? String(Math.max(0, order.indexOf("video")) + 1) : "";
     for (const text of texts) {
-      const canvas = document.createElement("canvas");
+      let canvas = textEntries.get(text.id);
+      if (!canvas) {
+        canvas = document.createElement("canvas");
+        textEntries.set(text.id, canvas);
+        refs.overlay.append(canvas);
+      }
       canvas.className = "capture-text";
       canvas.dataset.layerId = `text:${text.id}`;
       canvas.style.cssText = `position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:${order.indexOf(`text:${text.id}`) + 1}`;
       const width = refs.frame.clientWidth, height = refs.frame.clientHeight;
       canvas.width = width * 2; canvas.height = height * 2;
       const context = canvas.getContext("2d");
-      if (context) { context.scale(2, 2); drawText(context, width, height, text); }
-      refs.overlay.append(canvas);
+      if (context) { context.scale(2, 2); drawText(context, width, height, text, adapters.elapsedTime() - text.start); }
     }
     visible.forEach((component) => {
+      const retained = entries.get(component.id);
+      if (retained) { retained.motion?.apply(); return; }
       const presentation = component.presentation || {};
       const position = document.createElement("div");
       const custom = session.captureMode && session.pvoLanguageSources.has(component.id);
@@ -47,10 +75,6 @@ export function createOverlayRenderer({ session, refs, adapters }) {
       if (session.captureMode) {
         if (sceneLayers) position.style.zIndex = String(order.indexOf(`component:${component.id}`) + 1);
         position.dataset.layerId = `component:${component.id}`;
-        position.style.left = `${Number(component.restyle_capture?.x ?? ((presentation.x ?? 0) + (presentation.width ?? 1) / 2) * 100)}%`;
-        position.style.top = `${Number(component.restyle_capture?.y ?? ((presentation.y ?? 0) + (presentation.height ?? 1) / 2) * 100)}%`;
-        const size = componentSize(component.restyle_capture);
-        position.style.transform = `translate(-50%, -50%) scale(${size.width}, ${size.height})`;
       } else {
         position.style.left = `${Number(presentation.x || 0) * 100}%`;
         position.style.top = `${Number(presentation.y || 0) * 100}%`;
@@ -64,7 +88,15 @@ export function createOverlayRenderer({ session, refs, adapters }) {
           ...source,
           state: component.kind === "tooltip" ? session.actionRuntime?.state ?? {} : undefined,
           componentId: component.id,
+          font: component.restyle_capture?.font,
           interactive: true,
+          ...(typeof session.onDiagnostic === "function" ? {
+            onDiagnostic: event => {
+              if (event.type.startsWith("component.")) observeDiagnostic(session.onDiagnostic, {
+                type: event.type, componentId: component.id, reason: event.reason,
+              });
+            },
+          } : {}),
           onAction: (action) => {
             if (position.isConnected && session.mountedCustom.get(component.id) === mounted) return adapters.handleCustomAction(component, action);
             return undefined;
@@ -83,14 +115,10 @@ export function createOverlayRenderer({ session, refs, adapters }) {
         view.setPending?.(session.pendingComponents.has(component.id));
         position.append(view);
       }
-      if (session.captureMode && (component.restyle_capture?.width !== undefined || component.restyle_capture?.height !== undefined)) {
-        const canvas = canvasPixelSize(session.manifest.canvas?.width, session.manifest.canvas?.height);
-        sizeObservers.add(observeComponentSize(position, natural => {
-          const unit = canvas.width / refs.frame.clientWidth;
-          const scale = componentPixelTransform(component.restyle_capture, { width: natural.width * unit, height: natural.height * unit });
-          position.style.transform = `translate(-50%, -50%) scale(${scale.width}, ${scale.height})`;
-        }));
-      }
+      const motion = session.captureMode ? createComponentMotion(position, component, {
+        frame: refs.frame, manifest: session.manifest, elapsedTime: adapters.elapsedTime, custom,
+      }) : null;
+      entries.set(component.id, { position, motion });
     });
   }
 

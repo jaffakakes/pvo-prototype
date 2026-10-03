@@ -230,7 +230,7 @@ async function run(width) {
   page.setDefaultTimeout(15000);
   page.on("pageerror", error => errors.push(error.message));
   page.on("console", message => { if (message.type() === "error") console.error(message.text()); });
-  await page.route("**/api/publishing", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ available: false, authenticated: false, maxBytes: 0 }) }));
+  await page.route("**/api/publishing", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ available: false, hasSession: false, maxBytes: 0 }) }));
   try {
     const home = new URL(editorUrl);
     home.search = "?home=1";
@@ -252,9 +252,12 @@ async function run(width) {
     assert.ok(firstId);
     assert.equal(await clips(page).count(), 1);
     await saved(page, firstId);
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await page.getByRole("dialog", { name: "Sign in to Restyle", exact: true }).waitFor();
+    await page.getByText("You can edit, export and create links without signing in.", { exact: true }).waitFor();
+    await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Export", exact: true }).click();
-    await page.getByRole("dialog").waitFor();
-    await page.getByRole("button", { name: "Export to device" }).waitFor();
+    await page.getByRole("dialog", { name: "Export", exact: true }).waitFor();
     await page.keyboard.press("Escape");
     assert.equal(await page.getByRole("dialog").count(), 0);
     assert.equal(page.url(), firstUrl);
@@ -371,7 +374,7 @@ async function recoveryDiscard() {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
   page.setDefaultTimeout(15000);
-  await page.route("**/api/publishing", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ available: false, authenticated: false, maxBytes: 0 }) }));
+  await page.route("**/api/publishing", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ available: false, hasSession: false, maxBytes: 0 }) }));
   const legacy = checkpoint("legacy-project", [oldChoice], ["asset:legacy", "asset:shared"]);
   await seedProjectStorage(page, [
     ["current", legacy],
@@ -536,7 +539,7 @@ async function directTemplateFilter() {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: "no-preference" });
   const page = await context.newPage();
   page.on("pageerror", error => errors.push(error.message));
-  await page.route("**/api/publishing", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ available: false, authenticated: false, maxBytes: 0 }) }));
+  await page.route("**/api/publishing", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ available: false, hasSession: false, maxBytes: 0 }) }));
   const url = new URL(editorUrl);
   url.search = "?home=1&filter=interactive";
   await page.goto(url.href);
@@ -554,7 +557,7 @@ async function reducedMotionTemplates() {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: "reduce" });
   const page = await context.newPage();
   page.on("pageerror", error => errors.push(error.message));
-  await page.route("**/api/publishing", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ available: false, authenticated: false, maxBytes: 0 }) }));
+  await page.route("**/api/publishing", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ available: false, hasSession: false, maxBytes: 0 }) }));
   const url = new URL(editorUrl);
   url.search = "?home=1";
   await page.goto(url.href);
@@ -578,5 +581,5 @@ try {
   await malformedRetainedCheckpoint();
   await mobileTargetedRecoveryImport();
   assert.deepEqual(errors, []);
-  console.log(`Responsive create passed: 1024/1280/1440 landscape plus existing phone/portrait editor, upload, ratio, auth dismissal, stable routes, saved media, targeted recovery discard, multiple projects, templates and page-wide drop-ready strip. Screenshots: ${screenshots}`);
+  console.log(`Responsive create passed: 1024/1280/1440 landscape plus existing phone/portrait editor, upload, ratio, account placeholder dismissal, direct guest export, stable routes, saved media, targeted recovery discard, multiple projects, templates and page-wide drop-ready strip. Screenshots: ${screenshots}`);
 } finally { await browser.close(); }

@@ -94,6 +94,7 @@ export function PvoRuntimeOverlay({ component, width, trying, isVisible }: {
           fields: {},
           state: templateStateRef.current,
           componentId: component.id,
+          font: component.font,
           maxWidth: 247,
           maxHeight: 285,
           interactive: trying,
@@ -147,7 +148,7 @@ export function PvoRuntimeOverlay({ component, width, trying, isVisible }: {
     };
     const timer = window.setTimeout(() => { void render(); }, 250);
     return () => { cancelled = true; window.clearTimeout(timer); };
-  }, [component.id, component.type, component.fields, component.code?.custom, component.code?.pvoLiteral, source, trying, isVisible]);
+  }, [component.id, component.type, component.fields, component.code?.custom, component.code?.pvoLiteral, component.font, source, trying, isVisible]);
 
   useEffect(() => { runtime.current?.setInteractive(trying); }, [trying]);
   useEffect(() => { runtime.current?.setPending(pending); }, [pending]);

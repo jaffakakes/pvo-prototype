@@ -1,3 +1,4 @@
+import { validateFontAsset } from "../../../../packages/pvo-fonts/index.js";
 import { cloneAnimation } from "../../../../packages/pvo-animation/index.js";
 import { manifestMediaAnimations } from "./mediaAnimation";
 import { sceneDuration } from "../scenes/duration";
@@ -163,6 +164,7 @@ function manifestComponent(component: PvoComponent, scene: Scene, available: Set
     ...(component.scaleX === undefined ? {} : { scaleX: size.width }),
     ...(component.scaleY === undefined ? {} : { scaleY: size.height }),
     ...(component.look ? { look: cloneLook(component.look) } : {}),
+    ...(component.font ? { font: validateFontAsset(component.font) } : {}),
     outcomes,
     ...(visualForm ? { form: {
       ...(fields.formSubmitMode ? { submitMode: fields.formSubmitMode } : {}),

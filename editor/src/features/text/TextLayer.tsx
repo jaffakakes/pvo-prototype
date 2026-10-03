@@ -1,3 +1,4 @@
+import { useAppliedFont } from "../preview/useAppliedFont";
 import { useLayoutEffect,useRef,useState } from "react";
 import { drawText,layoutText } from "../../../../packages/pvo-text-runtime/index.js";
 import type { TextOverlay } from "../../domain/project/model";
@@ -6,6 +7,7 @@ import { cx } from "../../styles";
 export function TextLayer({ overlay, width, height, zIndex, selected, trying, time }: {
   overlay: TextOverlay; width: number; height: number; zIndex: number; selected: boolean; trying: boolean; time: number;
 }) {
+  const fontRevision = useAppliedFont(overlay.style?.fontAsset);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [box, setBox] = useState<ReturnType<typeof layoutText> | null>(null);
   useLayoutEffect(() => {
@@ -18,7 +20,7 @@ export function TextLayer({ overlay, width, height, zIndex, selected, trying, ti
     };
     paint(); void document.fonts.ready.then(paint);
     return () => { live = false; };
-  }, [overlay, width, height, time]);
+  }, [overlay, width, height, time, fontRevision]);
   return <div className={cx("textLayer")} data-layer-id={`text:${overlay.id}`} style={{ zIndex }}>
     <canvas ref={canvas} width={Math.round(width * 2)} height={Math.round(height * 2)} style={{ width, height }} />
     {box && !trying && <button className={cx("textOverlay")} data-sel={selected} aria-label={`Edit text: ${overlay.text}`} style={{ left: box.x, top: box.y, width: box.width, height: box.height, transform: `rotate(${box.style.rotation}deg) scale(${box.scaleX}, ${box.scaleY})` }} />}

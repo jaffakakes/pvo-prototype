@@ -1,3 +1,4 @@
+import type { AppliedFont } from "../pvo-fonts/index.js";
 export type PvoCodeAction = {
   method: "pick" | "goToScene" | "jumpTo" | "resume" | "track" | "submit" | "request";
   args: unknown[];
@@ -21,6 +22,8 @@ export type PvoCodeOptions = {
   /** Runtime state for escaped `{state.path}` presentation templates. Omit to show authored tokens literally. */
   state?: Record<string, unknown>;
   componentId?: string;
+  /** Host-validated embedded font data, independent of authored Style. */
+  font?: AppliedFont;
   /** Maximum CSS-pixel dimensions of the sandboxed renderer. Defaults to 247×600. */
   maxWidth?: number;
   maxHeight?: number;

@@ -23,9 +23,13 @@ const page = await context.newPage();
 page.setDefaultTimeout(12000);
 const errors = [];
 page.on("pageerror", error => errors.push(error.message));
-const requests = { reservations: [], uploads: [] };
+const requests = { sessions: 0, reservations: [], uploads: [] };
 let uploadMode = "fail";
+let reserveMode = "ready";
 let releaseUpload;
+let releaseSession;
+let sessionMode = "ready";
+let hasSession = false;
 let available = true;
 const publication = { id: "acceptance_video_1", url: `${origin}/player/acceptance_video_1`, status: "pending" };
 
@@ -52,15 +56,31 @@ await page.route(`${origin}/api/**`, async route => {
   const pathname = new URL(request.url()).pathname;
   const respond = (body, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
   if (pathname === "/api/publishing" && request.method() === "GET") {
-    return respond({ available, authenticated: true, maxBytes: 50 * 1024 * 1024 });
+    return respond({ available, hasSession, maxBytes: 50 * 1024 * 1024 });
+  }
+  if (pathname === "/api/publishing/session" && request.method() === "POST") {
+    requests.sessions++;
+    if (sessionMode === "fail") return respond({ error: "Session unavailable" }, 500);
+    if (sessionMode === "hold") await new Promise(resolve => { releaseSession = resolve; });
+    hasSession = true;
+    return respond({ available, hasSession, maxBytes: 50 * 1024 * 1024 }).catch(() => {});
   }
   if (pathname === "/api/publications" && request.method() === "POST") {
+    assert(hasSession, "The browser must establish a session before reserving a publication");
     requests.reservations.push(request.postDataJSON());
+    if (reserveMode === "expired") return respond({ error: "Reservation expired" }, 410);
     return respond(publication);
   }
   if (pathname === `/api/publications/${publication.id}/content` && request.method() === "PUT") {
     requests.uploads.push({ bytes: request.postDataBuffer(), type: request.headers()["content-type"] });
-    if (uploadMode === "fail") return respond({ error: "Temporary upload failure" }, 500);
+    if (uploadMode === "fail") {
+      hasSession = false;
+      return respond({ error: "Temporary upload failure" }, 500);
+    }
+    if (uploadMode === "expired") {
+      hasSession = false;
+      return respond({ error: "Session expired during upload" }, 401);
+    }
     if (uploadMode === "hold") await new Promise(resolve => { releaseUpload = resolve; });
     return respond({ ...publication, status: "ready" }).catch(() => {});
   }
@@ -102,6 +122,7 @@ try {
   assert(exported.length > 10000, "The real media export must contain video bytes");
   await share.getByLabel("Video title", { exact: true }).waitFor();
   assert.equal(await page.evaluate(() => window.exportObservation.renders), 1);
+  assert.equal(requests.sessions, 0, "Opening Share must not create a browser session");
   assert.equal(requests.reservations.length, 0, "Opening Share must not start an upload");
   assert.equal(requests.uploads.length, 0);
 
@@ -127,6 +148,30 @@ try {
   await downloadAgain(exported);
   await share.getByLabel("Video title", { exact: true }).fill("Acceptance video");
 
+  assert.equal(await share.getByText(/No sign-in needed/).count(), 1);
+  sessionMode = "hold";
+  await share.locator("[data-create-publication]").click();
+  await share.getByRole("progressbar", { name: "Preparing online sharing" }).waitFor();
+  await share.getByRole("button", { name: "Cancel", exact: true }).click();
+  await page.waitForFunction(() => !document.querySelector("[data-create-publication]")?.disabled);
+  releaseSession();
+  assert.equal(requests.reservations.length, 0, "Cancelling session preparation must not start an upload");
+  assert.equal(await share.getByRole("alert").count(), 0);
+  sessionMode = "fail";
+  await share.locator("[data-create-publication]").click();
+  await share.getByRole("alert").waitFor();
+  assert.equal(requests.reservations.length, 0, "Failed session preparation must leave the export local");
+  await downloadAgain(exported);
+  sessionMode = "ready";
+  reserveMode = "expired";
+  await share.locator("[data-create-publication]").click();
+  await share.getByRole("alert").waitFor();
+  assert.match(await share.getByRole("alert").innerText(), /no longer available/);
+  assert.equal(requests.reservations.length, 1, "An expired reservation must wait for an explicit retry");
+  assert.equal(requests.uploads.length, 0);
+  assert.equal(await share.getByLabel("Video title", { exact: true }).inputValue(), "Acceptance video");
+  await downloadAgain(exported);
+  reserveMode = "ready";
   await share.locator("[data-create-publication]").click();
   await share.getByRole("alert").waitFor();
   assert.match(await share.getByRole("alert").innerText(), /Link sharing failed/);
@@ -134,6 +179,13 @@ try {
   assert.equal(requests.uploads.length, 1);
   assert.deepEqual(requests.uploads[0].bytes, exported, "Uploading after edits must still send the completed export");
   assert.equal(requests.uploads[0].type, nativeFile.type);
+
+  uploadMode = "expired";
+  await share.locator("[data-create-publication]").click();
+  await share.getByRole("alert").waitFor();
+  assert.match(await share.getByRole("alert").innerText(), /session expired/);
+  assert.equal(await share.getByText("Shared videos", { exact: true }).count(), 0);
+  await downloadAgain(exported);
 
   uploadMode = "hold";
   await share.locator("[data-create-publication]").click();
@@ -155,8 +207,11 @@ try {
   await share.getByRole("button", { name: "Share link", exact: true }).click();
   assert.deepEqual(await page.evaluate(() => window.exportObservation.links), [publication.url]);
   assert.equal(await page.evaluate(() => window.exportObservation.renders), 1, "Retrying, sharing, and later edits must not trigger a second render");
-  assert.equal(requests.reservations.length, 3);
-  assert.equal(new Set(requests.reservations.map(item => item.idempotencyKey)).size, 1, "Upload retries must reuse the export identity");
+  assert.equal(requests.sessions, 7, "Each explicit attempt must refresh the browser session, including a stale displayed session");
+  assert.equal(context.pages().length, 1, "Guest publishing must not open a sign-in popup");
+  assert.equal(requests.reservations.length, 5);
+  assert.notEqual(requests.reservations[0].idempotencyKey, requests.reservations[1].idempotencyKey, "Expired reservations must get a fresh identity on explicit retry");
+  assert.equal(new Set(requests.reservations.slice(1).map(item => item.idempotencyKey)).size, 1, "Other upload retries must reuse the export identity");
   for (const input of requests.reservations) {
     assert.equal(input.title, "Acceptance video");
     assert.equal(input.filename, download.suggestedFilename());
@@ -173,7 +228,7 @@ try {
   assert(await page.getByRole("button", { name: "Export again", exact: true }).isEnabled(), "A completed result must still allow exporting later edits explicitly");
   await page.locator("[data-export-share]").click();
   await share.getByLabel("Published video link").waitFor();
-  assert.equal(requests.uploads.length, 3, "Reopening a published export must not upload it again");
+  assert.equal(requests.uploads.length, 4, "Reopening a published export must not upload it again");
   available = false;
   await share.getByRole("button", { name: "Close", exact: true }).click();
   await page.evaluate(() => Object.defineProperty(navigator, "canShare", { configurable: true, value: () => false }));
@@ -183,12 +238,13 @@ try {
   assert.equal(await share.locator("[data-share-file]").count(), 0, "Unsupported file sharing must not be offered");
   await downloadAgain(exported);
   assert.deepEqual(errors, []);
-  console.log(`Export/share passed: real render/download, exact File and upload bytes, no automatic upload, retained result after edits/failure/cancel, idempotent retries, canonical link. Screenshot: ${join(screenshots, "share-ready-mobile.png")}`);
+  console.log(`Export/share passed: real render/download, exact File and upload bytes, no automatic upload, retained result after edits/failure/cancel, guest-session cancellation/recovery, idempotent retries, canonical link. Screenshot: ${join(screenshots, "share-ready-mobile.png")}`);
 } catch (error) {
   await page.screenshot({ path: join(screenshots, "failure.png"), fullPage: true }).catch(() => {});
   console.error(`Export/share UI: ${(await page.locator("body").innerText().catch(() => "")).slice(0, 1600)}\nScreenshots: ${screenshots}`);
   throw error;
 } finally {
   releaseUpload?.();
+  releaseSession?.();
   await browser.close();
 }

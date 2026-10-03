@@ -1,6 +1,7 @@
 import { HttpError } from "../../http.js";
+import { NativeAssistantError } from "./errors.js";
 
-const invalidResponse = () => new HttpError(422, "The assistant provider returned an invalid result. Try again.");
+const invalidResponse = () => new NativeAssistantError("model_output_invalid");
 
 /** Bound provider output while preserving caller cancellation through body decoding. */
 async function readRunpodJson(response, signal, maxBytes) {

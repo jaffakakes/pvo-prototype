@@ -176,3 +176,8 @@
 .compOverlay:not([data-trying="true"]) .compCustomRuntime {
   pointer-events: none;
 }
+
+/* Downloaded typography is a layer property across native component text and controls. */
+.compOverlay[data-font="applied"] * {
+  font-family: var(--component-font) !important;
+}
