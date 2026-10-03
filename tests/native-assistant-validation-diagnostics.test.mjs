@@ -77,6 +77,21 @@ test("attempted operation and observation names come only from the current contr
   clean(diagnostic);
 });
 
+test("misplaced canonical tools remain identifiable while unknown kinds and repair advice stay private", () => {
+  const result = response([{ kind: "font_catalogue", query: "Private font query" }]);
+  const diagnostic = event({ response: result, error: validationError(result) });
+  assert.equal(diagnostic.schemaPath, "$.operations[].kind");
+  assert.equal(diagnostic.rule, "unsupported_value_or_field");
+  assert.deepEqual(diagnostic.operationKinds, ["font_catalogue"]);
+  assert.doesNotMatch(JSON.stringify(diagnostic), /Allowed|Put it|font query/);
+  clean(diagnostic);
+  const invented = response([{ kind: "Private secret kind" }]);
+  const unknown = event({ response: invented, error: validationError(invented) });
+  assert.equal(unknown.schemaPath, "$.operations[].kind");
+  assert.deepEqual(unknown.operationKinds, ["unknown"]);
+  clean(unknown);
+});
+
 test("attempt lists and counts are capped even before strict response validation", () => {
   const kinds = nativeTurnSchema.properties.operations.items.anyOf.map(item => item.properties.kind.const);
   const diagnostic = event({ response: {

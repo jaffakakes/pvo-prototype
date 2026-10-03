@@ -9,6 +9,7 @@ const POLICY_CODES = new Set(["executable_code", "invalid_component", "invalid_r
 const schemaPaths = new Set();
 const operationKinds = new Set(nativeTurnSchema.properties.operations.items.anyOf.map(item => item.properties.kind.const));
 const observationKinds = new Set(nativeTurnSchema.properties.observations.items.anyOf.map(item => item.properties.kind.const));
+const toolKinds = new Set([...operationKinds, ...observationKinds]);
 
 function collectPaths(schema, path = "$") {
   schemaPaths.add(path);
@@ -107,7 +108,9 @@ function validationFailure(error) {
   if (POLICY_CODES.has(code)) return { schemaPath: null, rule: `policy_${code}` };
   const message = ownValue(error, "message");
   if (typeof message === "string" && message.length <= 1024) {
-    const schema = schemaFailure(message);
+    // Additional repair advice may follow the canonical diagnostic. Its text
+    // never enters logs; only the validated first-line path and rule survive.
+    const schema = schemaFailure(message.split("\n", 1)[0]);
     if (schema) return schema;
     if (validationRules.has(message)) return { schemaPath: null, rule: validationRules.get(message) };
   }
@@ -122,8 +125,10 @@ export function nativeValidationDiagnostic(input) {
   if (!STATUSES.has(status)) return null;
   const error = ownValue(input, "error");
   const response = ownValue(input, "response");
-  const operations = attemptedKinds(response, "operations", operationKinds, 24);
-  const observations = attemptedKinds(response, "observations", observationKinds, 4);
+  // A recognized tool in the wrong array is useful evidence of the mismatch.
+  // Unknown strings remain masked even when they resemble a tool name.
+  const operations = attemptedKinds(response, "operations", toolKinds, 24);
+  const observations = attemptedKinds(response, "observations", toolKinds, 4);
   const phase = ownValue(input, "phase");
   const reason = ownValue(input, "finishReason");
   const classification = assistantServiceErrorDefinition(ownValue(input, "failureCode"))
