@@ -2,6 +2,7 @@ import { wordTimingInstructions } from "./wordTimingPrompt.js";
 import { animationInstructions } from "./animationPrompt.js";
 import { trackingInstructions } from "./trackingPrompt.js";
 import { webInstructions } from "./webPrompt.js";
+import { authoredComponentBounds } from "./componentBounds.js";
 
 const instructions = `You are the native assistant inside the Restyle/PVO video editor. Help the creator understand footage and complete editing workflows using ONLY the available typed operations. Return {"message":string,"operations":[],"observations":[]} as strict JSON, without Markdown fences. Optional model fields are "blocked":true for a genuine blocker and "answer":string for a requested substantive answer accompanying completed edits. Use explicit IDs from the current project. Never invent IDs, media, transcripts or tool results. The browser prepares validated operations in an isolated working copy and applies the completed task atomically with undo. A prepared operation is not yet a committed edit. Only editor-reported prepared-operation results and the current project are evidence that a change exists; earlier assistant promises are not execution results. Do not claim an edit has completed before the browser reports it in execution receipts.
 
@@ -88,12 +89,14 @@ function currentComponentValues(request) {
   for (const scene of scenes) for (const component of scene.components) {
     const editableContentKeys = { tooltip: ["text"], card: ["title", "body", "buttonLabels"],
       choice: ["prompt", "optionLabels"], form: ["heading", "submitLabel"] }[component.type];
+    const authoredBounds = authoredComponentBounds(component, request.project.canvas);
     const value = { sceneId: scene.id, id: component.id, type: component.type,
       at: component.at, duration: component.duration, x: component.x, y: component.y,
       label: component.label, content: component.content, editableContentKeys, font: component.font ?? null,
       ...(component.formFields ? { formFields: component.formFields } : {}),
       scale: component.scale, scaleX: component.scaleX, scaleY: component.scaleY,
       proportionalScale: component.proportionalScale, width: component.width, height: component.height,
+      ...(authoredBounds ? { authoredBounds } : {}),
       ...(component.responsePolicy ? { responsePolicy: component.responsePolicy } : {}) };
     const length = JSON.stringify(value).length + 1;
     if (size + length > 8000) { omitted = true; continue; }
@@ -101,6 +104,7 @@ function currentComponentValues(request) {
     size += length;
   }
   return `Current component values from the candidate project (authoritative data): ${JSON.stringify(values)}
+authoredBounds, when present, is the computed static unrotated rectangle in canvas pixels, including uniform scale. Its signed margins are distances inside each canvas edge; a negative margin and outsideEdges identify overflow. For requested on-canvas corner placement, fitsCanvas:false means the geometry still needs correction before completion. These facts do not measure rendered content, text readability, visibility or font decoding. Bounds are omitted for intrinsic dimensions or position/scale/rotation animation; never infer that those components fit from the absence of bounds.
 These actual values override earlier assistant claims and conversation history. All exposed content keys are included: button0/button1 and option0/option1 are current labels, edited through buttonLabels/optionLabels arrays with the same count. submitLabel belongs only to forms, not cards. formFields describes field names/kinds, never entered values. A font is applied only when its actual id/family appears here; a downloaded font alone is not applied. A summary omitted for size is not evidence that any field is empty; consult the full project payload. If these values differ from the requested wording, field kinds, position, size, font, timing or response policy, the requested edit is still missing. Return its operation; do not claim it was already prepared.${omitted ? " Additional components are in the full project payload above." : ""}`;
 }
 
