@@ -11,6 +11,7 @@ const runtimeAssets = new Map(
   ),
 );
 runtimeAssets.set("/runtime.js", runtimeAssets.get("/index.js"));
+for (const [path, asset] of await sourceModules(new URL("../../../packages/pvo-fonts/", import.meta.url), "/pvo-fonts")) runtimeAssets.set(path, asset);
 const leaks = [];
 const hostRequests = [];
 const server = createServer((request, response) => {
@@ -272,6 +273,29 @@ try {
     0,
     "destroy should remove both sandboxes",
   );
+
+  // Exercise the host-owned control path used when WebKit blocks listeners in a scriptless iframe.
+  await page.evaluate(async origin => {
+    Object.defineProperty(navigator, "vendor", { configurable: true, value: "Apple Computer, Inc." });
+    const { mountCustomComponent } = await import(`${origin}/runtime.js`);
+    window.__actions = [];
+    window.__handle = mountCustomComponent(document.getElementById("host"), {
+      componentId: "webkit-form", interactive: true,
+      html: '<form onsubmit="pvo.submit(fields)"><input name="phone" value="123"><button type="submit">Send test</button></form>',
+      css: "", js: "", onAction: action => window.__actions.push(action),
+    });
+  }, origin);
+  const proxy = page.locator("[data-pvo-control-proxy]");
+  await proxy.waitFor();
+  assert.equal(await page.locator('iframe[sandbox="allow-same-origin"]').getAttribute("sandbox"), "allow-same-origin");
+  await proxy.click();
+  await page.waitForFunction(() => window.__actions.length === 1);
+  assert.deepEqual((await page.evaluate(() => window.__actions))[0], { method: "submit", args: [{ phone: "123" }] });
+  await page.evaluate(() => window.__handle.setInteractive(false));
+  assert.equal(await proxy.isVisible(), false, "authoring must hide the host control");
+  await page.evaluate(() => window.__handle.setInteractive(true));
+  assert.equal(await proxy.isVisible(), true);
+  await page.evaluate(() => window.__handle.destroy());
   assert.deepEqual(leaks, []);
   assert.deepEqual(failures, []);
   console.log(

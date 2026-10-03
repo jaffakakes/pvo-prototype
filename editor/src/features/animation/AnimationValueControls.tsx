@@ -62,7 +62,7 @@ export function PositionPad({ target, time, value, disabled }: { target: Animati
     }}>
       <i className={styles.crossX} /><i className={styles.crossY} />
       <b style={{ left: `${value.x}%`, top: `${value.y}%` }} />
-      <button className={styles.padKeyboard} type="button" disabled={disabled} aria-label={`Position: ${formatKeyValue("position", value)}. Use arrow keys to move.`}
+      <button className={styles.padKeyboard} type="button" disabled={disabled} data-keyframe-control aria-label={`Position: ${formatKeyValue("position", value)}. Use arrow keys to move.`}
         onKeyDown={event => {
           if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
           event.preventDefault(); event.stopPropagation();

@@ -1,0 +1,9 @@
+{
+  "name": "@pvo/pvo-fonts",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": { ".": { "types": "./index.d.ts", "import": "./index.js" }, "./portable": { "types": "./portable.d.ts", "import": "./portable.js" } },
+  "files": ["index.js", "index.d.ts", "validation.js", "browser.js", "portable.js", "portable.d.ts"],
+  "sideEffects": false,
+  "license": "Apache-2.0"
+}

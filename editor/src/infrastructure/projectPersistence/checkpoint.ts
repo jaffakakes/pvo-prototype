@@ -1,3 +1,4 @@
+import { validateFontAsset } from "../../../../packages/pvo-fonts/index.js";
 import type { ProjectSnapshot, Scene } from "../../domain/project/model";
 import { assertResponsePolicyContract } from "../../domain/components/responsePolicy";
 import { cloneScenes } from "../../domain/project/snapshot";
@@ -78,6 +79,7 @@ export function captureCheckpoint(state: PersistenceSnapshot): CheckpointDraft {
     },
   };
   assertCheckpointComponentContracts(draft);
+  assertCheckpointFonts(draft);
   assertCheckpointAnimations(draft);
   return draft;
 }
@@ -96,6 +98,15 @@ function assertCheckpointComponentContracts(checkpoint: CheckpointProjects): voi
       if (!Array.isArray(scene.components))
         throw new Error("Project component data is invalid.");
       assertResponsePolicyContract(scene.components);
+    }
+  }
+}
+
+function assertCheckpointFonts(checkpoint: CheckpointProjects): void {
+  for (const scenes of allScenes(checkpoint)) {
+    for (const scene of scenes) {
+      for (const component of scene.components) if (component.font !== undefined) validateFontAsset(component.font);
+      for (const text of scene.texts) if (text.style?.fontAsset !== undefined) validateFontAsset(text.style.fontAsset);
     }
   }
 }
@@ -138,6 +149,7 @@ export function storeCheckpoint(
   savedAt: number,
 ): StoredCheckpoint {
   assertCheckpointComponentContracts(draft);
+  assertCheckpointFonts(draft);
   assertCheckpointAnimations(draft);
   const assetIds = referencedMedia(draft).map((url) => {
     const assetId = assetIdByUrl.get(url);
@@ -209,6 +221,12 @@ export function validateCheckpoint(
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     throw new Error(`Saved component response policy is not supported: ${detail}`);
+  }
+  try {
+    assertCheckpointFonts(value as StoredCheckpoint);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`Saved font data is invalid: ${detail}`);
   }
   for (const scenes of allScenes(value as StoredCheckpoint)) {
     for (const scene of scenes) {

@@ -17,7 +17,7 @@ export function EasingChips({ value, onChange, disabled = false, compact = false
   value: AnimationEasing | null; onChange(value: AnimationEasing): void; disabled?: boolean; compact?: boolean;
 }) {
   return <div className={styles.chips} data-compact={compact} role="group" aria-label="Easing to next keyframe">
-    {CHOICES.map(choice => <button type="button" key={choice.value} title={choice.title}
+    {CHOICES.map(choice => <button type="button" key={choice.value} title={choice.title} data-keyframe-control
       aria-pressed={value === choice.value} disabled={disabled} onClick={() => onChange(choice.value)}>
       <EasingGlyph easing={choice.value} /><span>{choice.label}</span>
     </button>)}

@@ -1,4 +1,5 @@
 import { setRenderedFormPending } from "./form-feedback.js";
+import { createControlProxies } from "./control-proxies.js";
 import {
   boundedSource,
   METHODS,
@@ -89,12 +90,13 @@ export function mountCustomComponent(container, initial) {
     "position:absolute;width:0;height:0;border:0;opacity:0;pointer-events:none;";
   runtimeFrame.srcdoc = runtimeDocument(channel, nonce);
 
+  let controlProxies;
   const renderer = createRenderer(renderFrame, renderShell, error => {
     renderSucceeded = false;
     report(error, "render_error");
   }, (next) => {
     handlers = next;
-  });
+  }, scale => controlProxies?.sync(scale));
   function fitRenderer() {
     renderer.fit(options);
   }
@@ -178,10 +180,9 @@ export function mountCustomComponent(container, initial) {
     );
   }
 
-  function onRendererClick(event) {
-    const element = event.target?.closest?.("[data-pvo-click]");
+  function activateRendererControl(control) {
+    const element = control?.closest?.("[data-pvo-click]");
     if (element) {
-      event.preventDefault();
       const eventId = ++eventSerial;
       diagnostic("interaction.received", { eventId, target: element.getAttribute("data-pvo-id")?.slice(0, 80) });
       const handler = handlers.get(element.getAttribute("data-pvo-click"));
@@ -194,14 +195,16 @@ export function mountCustomComponent(container, initial) {
       else diagnostic("interaction.ignored", { eventId, reason: "no_matching_rule" });
       return;
     }
-    // The scriptless renderer deliberately has neither allow-forms nor a
-    // form-action permission. Browser-native submit events are suppressed in
-    // that sandbox, so bridge an explicit submit-button activation instead.
-    const button = event.target?.closest?.('button[type="submit"]');
+    const button = control?.closest?.('button[type="submit"]');
     const form = button?.closest("form");
     if (!form) return;
-    event.preventDefault();
     submitForm(form);
+  }
+
+  function onRendererClick(event) {
+    if (!event.target?.closest?.('[data-pvo-click],button[type="submit"]')) return;
+    event.preventDefault();
+    activateRendererControl(event.target);
   }
 
   function onRendererSubmit(event) {
@@ -390,6 +393,7 @@ export function mountCustomComponent(container, initial) {
   renderFrame.addEventListener("load", onRenderLoad);
   window.addEventListener("message", onRuntimeMessage);
   renderShell.append(renderFrame);
+  controlProxies = createControlProxies(renderFrame, renderShell, activateRendererControl, options.interactive !== false);
   container.append(renderShell, runtimeFrame);
 
   return {
@@ -408,6 +412,7 @@ export function mountCustomComponent(container, initial) {
       sources = updated;
       renderFrame.style.pointerEvents =
         options.interactive === false ? "none" : "auto";
+      controlProxies.setInteractive(options.interactive !== false);
       applyRender();
       if (sources.js !== previousJs) restartWorker();
     },
@@ -415,6 +420,7 @@ export function mountCustomComponent(container, initial) {
       if (disposed) return;
       options.interactive = Boolean(value);
       renderFrame.style.pointerEvents = options.interactive ? "auto" : "none";
+      controlProxies.setInteractive(options.interactive);
     },
     setPending(value) {
       if (disposed) return;
@@ -429,6 +435,8 @@ export function mountCustomComponent(container, initial) {
       if (disposed) return;
       diagnostic("component.inactive", { reason: "disposed" });
       disposed = true;
+      renderer.dispose();
+      controlProxies.destroy();
       clearTimeout(startTimer);
       for (const entry of pending.values()) clearTimeout(entry.timer);
       pending.clear();

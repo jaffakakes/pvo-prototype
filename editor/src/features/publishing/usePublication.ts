@@ -3,10 +3,9 @@ import type { CompletedExport, PublishingStatus } from "../../domain/publishing/
 import { publicationInput } from "../../domain/publishing/exportSnapshot";
 import { createPublishingClient, PublishingHttpError } from "../../infrastructure/publishing/client";
 import { cancelledShare } from "../../infrastructure/publishing/nativeShare";
-import { signInWithPopup } from "../../infrastructure/publishing/signIn";
-import { beginPublicationAttempt, setExportPublication, useExportArtifact } from "../../state/export/exportArtifactStore";
+import { beginPublicationAttempt, expirePublicationAttempt, setExportPublication, useExportArtifact } from "../../state/export/exportArtifactStore";
 
-type Stage = "idle" | "checking" | "signing-in" | "reserving" | "uploading";
+type Stage = "idle" | "checking" | "preparing" | "reserving" | "uploading";
 
 export function usePublication(artifact: CompletedExport) {
   const [client] = useState(() => createPublishingClient());
@@ -43,18 +42,16 @@ export function usePublication(artifact: CompletedExport) {
     const controller = new AbortController();
     active.current = controller;
     setFailure(null);
+    let attemptedKey: string | null = null;
     try {
-      let authenticated = status;
-      if (!authenticated.authenticated) {
-        if (!authenticated.authUrl) throw new Error("Sign-in isn’t available yet.");
-        setStage("signing-in");
-        await signInWithPopup(authenticated.authUrl, controller.signal);
-        authenticated = await client.status(controller.signal);
-        if (mounted.current) setStatus(authenticated);
-      }
+      setStage("preparing");
+      // Refresh on each explicit attempt, including when the displayed session has expired.
+      const session = await client.session(controller.signal);
       controller.signal.throwIfAborted();
+      if (mounted.current) setStatus(session);
       const saved = useExportArtifact.getState();
-      const input = publicationInput(artifact, saved.publicationTitle ?? requestedTitle, authenticated, saved.publicationKey);
+      const input = publicationInput(artifact, saved.publicationTitle ?? requestedTitle, session, saved.publicationKey);
+      attemptedKey = input.idempotencyKey;
       beginPublicationAttempt(artifact.snapshotId, input.title);
       setStage("reserving");
       let reserved = await client.reserve(input, controller.signal);
@@ -69,9 +66,11 @@ export function usePublication(artifact: CompletedExport) {
       }
     } catch (error) {
       if (!controller.signal.aborted && !cancelledShare(error) && mounted.current) {
-        // Sessions can expire while Share stays open. Reauthentication belongs to the next explicit click.
+        // A session lost during upload is renewed on the next explicit attempt.
         if (error instanceof PublishingHttpError && error.status === 401)
-          setStatus(current => current && { ...current, authenticated: false });
+          setStatus(current => current && { ...current, hasSession: false });
+        if (error instanceof PublishingHttpError && error.status === 410 && attemptedKey !== null)
+          expirePublicationAttempt(artifact.snapshotId, attemptedKey, crypto.randomUUID());
         setFailure(error instanceof Error ? error.message : "Link sharing failed. Try again.");
       }
     } finally {

@@ -3,6 +3,7 @@ import {
   invalidateActionOperations,
   invalidatePlaybackNavigation,
 } from "./operations.js";
+import { reportPlayerDiagnostic } from "./diagnostics.js";
 
 export function createOutcomeRouter({ session, refs, adapters }) {
   function reopenFinishedExperience() {
@@ -24,10 +25,15 @@ export function createOutcomeRouter({ session, refs, adapters }) {
 
   /** Apply the explicit authored playback result after its response is dispatched. */
   async function applyActionOutcome(component, _index, outcome) {
+    const diagnostic = session.capturedResponses.get(component.id)?.diagnostic;
     if (outcome?.kind === "scene") {
+      reportPlayerDiagnostic(session, "playback.scene_requested", diagnostic, { target: outcome.sceneId });
       invalidatePlaybackNavigation(session);
       const target = adapters.captureTimelineForScene(outcome.sceneId);
-      if (!target) throw new Error("That scene is not available in this PVO.");
+      if (!target) {
+        reportPlayerDiagnostic(session, "playback.route_failed", diagnostic, { reason: "missing_scene" });
+        throw new Error("That scene is not available in this PVO.");
+      }
       reopenFinishedExperience();
       if (invalidateActionOperations(session)) {
         adapters.replaceActionRuntime(true);
@@ -40,14 +46,21 @@ export function createOutcomeRouter({ session, refs, adapters }) {
       return;
     }
     if (outcome?.kind === "time") {
+      reportPlayerDiagnostic(session, "playback.seek_requested", diagnostic, { waitUntil: outcome.t });
       invalidatePlaybackNavigation(session);
       session.awaitingComponent = null;
       reopenFinishedExperience();
       await adapters.seekToElapsed(outcome.t, true, { responseBoundaries: "skip" });
       return;
     }
-    if (session.awaitingComponent && session.awaitingComponent.id !== component.id) return;
+    if (session.awaitingComponent && session.awaitingComponent.id !== component.id) {
+      reportPlayerDiagnostic(session, "playback.hold", diagnostic, {
+        componentId: session.awaitingComponent.id, reason: "another_component",
+      });
+      return;
+    }
     session.awaitingComponent = null;
+    reportPlayerDiagnostic(session, "playback.released", diagnostic);
     if (session.finished) {
       adapters.renderOverlays(true);
       return;
@@ -56,7 +69,11 @@ export function createOutcomeRouter({ session, refs, adapters }) {
       adapters.renderOverlays(true);
       return;
     }
-    await refs.video.play().catch(() => adapters.showControls());
+    reportPlayerDiagnostic(session, "media.play_requested", diagnostic);
+    await refs.video.play().catch(() => {
+      reportPlayerDiagnostic(session, "media.play_rejected", diagnostic);
+      adapters.showControls();
+    });
     adapters.renderOverlays(true);
   }
 

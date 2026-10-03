@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import { Icon } from "../../ui/Icon";
 import type { AssistantAnswer } from "../../domain/assistant/model";
 import styles from "./AssistantReview.module.css";
+import { AssistantAnswerText } from "./AssistantAnswerText";
 
 interface AssistantReviewProps {
   answer: AssistantAnswer;
@@ -37,7 +38,7 @@ export function AssistantReview({
           </span>
           <Icon name="pencil" size={14} />
         </button>
-        <p className={styles.summary} role="status">{answer.message}</p>
+        <p className={styles.summary} role="status"><AssistantAnswerText text={answer.message} /></p>
         {answer.observations.length > 0 && <p className={styles.skipped}>{answer.observations.join(" · ")}</p>}
       </div>
       <div className={styles.reviewActions}>

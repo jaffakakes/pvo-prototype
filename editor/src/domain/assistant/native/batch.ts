@@ -15,6 +15,7 @@ import { createTextOverlay, updateTextOverlay } from "../../text/editing";
 import { applyComponentOperation, validateNativeComponentRoutes } from "./componentOperations";
 import { applyMediaOperation } from "./mediaOperations";
 import { nativePreparationReceipt, nativeReceiptValues } from "./receipts";
+import { applyFontOperation } from "./fontOperations";
 import type { NativeBatch, NativePlaybackOperation, NativePreparation } from "./types";
 export type { NativeBatch, NativePreparation, NativePlaybackOperation } from "./types";
 export { validateNativeBatchEditingMode } from "./componentOperations";
@@ -112,7 +113,9 @@ export async function prepareNativeBatch(before: ProjectSnapshot, input: readonl
         continue;
       }
       let updated = scene;
-      if (operation.kind === "animation.follow") {
+      if (operation.kind === "font.apply") {
+        updated = applyFontOperation(scene, operation, options.fonts);
+      } else if (operation.kind === "animation.follow") {
         const evidence = options.trackingEvidence?.find(item => item.observation.id === operation.observationId);
         if (!evidence || evidence.fingerprint !== nativeTrackingFingerprint(project, evidence.observation.sceneId, evidence.observation.clipId))
           throw new Error("Follow requires a completed, current object-tracking observation from this request.");

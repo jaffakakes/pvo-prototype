@@ -3,10 +3,11 @@ import assert from "node:assert/strict";
 import { buildSync } from "esbuild";
 
 const bundle = buildSync({
-  stdin: { contents: "export { runNativeTask } from './editor/src/infrastructure/assistant/runNativeTask.ts';", resolveDir: process.cwd() },
+  stdin: { contents: `export { runNativeTask } from './editor/src/infrastructure/assistant/runNativeTask.ts';
+    export { AssistantServiceError } from './editor/src/domain/assistant/failure.ts';`, resolveDir: process.cwd() },
   bundle: true, write: false, format: "esm", platform: "browser",
 });
-const { runNativeTask } = await import("data:text/javascript;base64," + Buffer.from(bundle.outputFiles[0].text).toString("base64"));
+const { runNativeTask, AssistantServiceError } = await import("data:text/javascript;base64," + Buffer.from(bundle.outputFiles[0].text).toString("base64"));
 
 function fixture(trace) {
   const project = { currentSceneId: "main", ratio: "9:16", allowedDomains: [], scenes: [
@@ -40,4 +41,13 @@ test("a failing diagnostic observer cannot reject a completed editor request", a
   const result = await runNativeTask(input, fixture(() => { throw new Error("Observer is unavailable"); }), new AbortController().signal);
   assert.equal(result.message, "Private answer");
   assert.equal(result.batch, null);
+});
+
+test("safe model failure classifications survive task tracing without private messages", async () => {
+  const trace = [];
+  const adapters = fixture(event => trace.push(event));
+  adapters.turn = async () => { throw new AssistantServiceError(422, "Private output", "model_output_truncated"); };
+  await assert.rejects(runNativeTask(input, adapters, new AbortController().signal), error => error.code === "model_output_truncated");
+  assert.deepEqual(trace.at(-1), { stage: "request", status: "failed", reason: "model_output_truncated" });
+  assert.doesNotMatch(JSON.stringify(trace), /Private/);
 });

@@ -1,3 +1,4 @@
+import { createFontScope } from "../../../../packages/pvo-fonts/index.js";
 import { evaluateAnimation } from "../../../../packages/pvo-animation/index.js";
 import { drawSceneFrame } from "./drawSceneFrame";
 import { sceneDuration } from "../../domain/scenes/duration";
@@ -43,6 +44,16 @@ function frames(step: () => boolean) {
   });
 }
 export async function exportVideo(state: VideoExportSource, onPct: (progress: number) => void): Promise<ExportResult> {
+  const fonts = createFontScope();
+  try {
+    if (state.includeText !== false) await Promise.all(state.texts.map(text => text.style?.fontAsset ? fonts.load(text.style.fontAsset) : undefined));
+    return await renderVideo(state, onPct);
+  } finally {
+    fonts.dispose();
+  }
+}
+
+async function renderVideo(state: VideoExportSource, onPct: (progress: number) => void): Promise<ExportResult> {
   await document.fonts.ready;
   const layers = layerOrder(state);
   const draw = (context: CanvasRenderingContext2D, width: number, height: number, clip: Clip,

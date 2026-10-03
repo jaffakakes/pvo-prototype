@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { buildSync } from "esbuild";
@@ -181,4 +182,29 @@ test("capture and storage reject curves that cannot be restored", () => {
   const draft = captureCheckpoint(animatedState());
   draft.project.scenes[0].components[0].animation.tracks.rotation[0].value = NaN;
   assert.throws(() => storeCheckpoint(draft, new Map(), 123), /Invalid rotation keyframe/);
+});
+
+
+test("downloaded fonts retain their bytes and licence across project saves and undo history", async () => {
+  const bytes = await readFile(new URL("../editor/src/fonts/peace-sans.woff2", import.meta.url));
+  const font = { id: "web-fixture", family: "Portable Font", sourceUrl: "https://example.com/font", licenseUrl: "https://example.com/license",
+    licenseText: "Fixture licence", faces: [{ dataUrl: `data:font/woff2;base64,${bytes.toString("base64")}`, weight: "400", style: "normal" }] };
+  const state = initial();
+  const current = scene([], [{ ...choice(), font }]);
+  current.texts = [{ id: 1, text: "Title", start: 0, end: 2, x: 50, y: 50, style: { fontAsset: font } }];
+  state.scenes = [current];
+  state.past = [{ scenes: structuredClone(state.scenes), currentSceneId: "main", ratio: "9:16", allowedDomains: [] }];
+  state.future = structuredClone(state.past);
+  const draft = captureCheckpoint(state);
+  font.faces[0].weight = "700";
+  assert.equal(draft.project.scenes[0].components[0].font.faces[0].weight, "400");
+  const saved = JSON.parse(JSON.stringify(storeCheckpoint(draft, new Map(), 123)));
+  validateCheckpoint(saved);
+  const restored = restoreCheckpoint(saved, new Map());
+  for (const snapshot of [restored.project, ...restored.past, ...restored.future]) {
+    assert.equal(snapshot.scenes[0].components[0].font.faces[0].dataUrl, font.faces[0].dataUrl);
+    assert.equal(snapshot.scenes[0].texts[0].style.fontAsset.licenseText, "Fixture licence");
+  }
+  saved.project.scenes[0].texts[0].style.fontAsset.faces[0].dataUrl = "https://example.com/font.woff2";
+  assert.throws(() => validateCheckpoint(saved), /Saved font data is invalid/);
 });

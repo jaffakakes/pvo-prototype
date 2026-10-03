@@ -7,7 +7,8 @@ import styles from "./EditorHeader.module.css";
 import { useSyncExternalStore } from "react";
 import { getProjectStorageStatus, subscribeProjectStorage } from "../../app/projectAutosave";
 import { showCreateProject } from "../create-project/projectCommands";
-import { openSignIn, requestExport, useAuthGate } from "../../state/auth/authGateStore";
+import { openSignIn } from "../../state/auth/authGateStore";
+import { requestExport } from "../../state/export/exportCommands";
 
 export function DesktopEditorHeader() {
   const scenes = useCapture(state => state.scenes);
@@ -19,7 +20,6 @@ export function DesktopEditorHeader() {
   const projectName = useCapture(state => state.projectName);
   const ratio = useCapture(state => state.ratio);
   const busy = useCapture(state => state.importing || state.ex === "running");
-  const account = useAuthGate(state => state.status?.authenticated);
   const storage = useSyncExternalStore(subscribeProjectStorage, getProjectStorageStatus);
   const saveLabel = storage.phase !== "ready" || storage.storage.phase === "error" ? "Save needs attention"
     : storage.storage.dirty ? "Saving in this browser…" : "Saved in this browser";
@@ -44,7 +44,7 @@ export function DesktopEditorHeader() {
     <button className={styles.iconButton} onClick={() => useCapture.getState().redo()} disabled={!canRedo} aria-label="Redo"><Icon name="redo" size={17} /></button>
     <button className={styles.tryButton} onClick={startTry} disabled={!clips.length}>Try</button>
     <span className={styles.ratio}>{ratio}</span>
-    <button className={styles.guest} onClick={openSignIn}><i />{account ? "Account" : "Guest"}<span>{account ? "Signed in" : "Sign in"}</span></button>
+    <button className={styles.guest} onClick={openSignIn}><i />Guest<span>Sign in</span></button>
     <button className={styles.export} onClick={() => requestExport()} disabled={!clips.length || busy} aria-label="Export"><Icon name="export" size={17} /><span>Export</span></button>
     <button className={styles.iconButton} onClick={() => useCapture.getState().patch({ sheet: "more", ratioMenu: false, playing: false, orb: false })} aria-label="More"><Icon name="more" size={20} /></button>
   </header>;

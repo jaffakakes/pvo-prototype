@@ -88,6 +88,7 @@ export function createOverlayRenderer({ session, refs, adapters }) {
           ...source,
           state: component.kind === "tooltip" ? session.actionRuntime?.state ?? {} : undefined,
           componentId: component.id,
+          font: component.restyle_capture?.font,
           interactive: true,
           ...(typeof session.onDiagnostic === "function" ? {
             onDiagnostic: event => {

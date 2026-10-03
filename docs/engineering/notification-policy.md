@@ -16,7 +16,7 @@ Use one notification per event, not an inline message plus a banner. Keep the ex
 
 | Type | Colour and icon | Example |
 | --- | --- | --- |
-| Error | Red, error icon | “Request not supported.” |
+| Error | Red, error icon | “AI response was invalid. Try again.” |
 | Success | Green, check | “Export ready.” |
 | Warning | Amber, warning icon | “Hold a little longer.” |
 | Information | Blue, info icon | “Voice unavailable.” |
@@ -85,10 +85,11 @@ Rows group repeated toolbar, keyboard and sheet entry points for the same operat
 | Ordinary orb shortcuts: “Paced up”, “Title added”; old assistant “PVO change kept” | Ordinary shortcut toasts remain removed. The current assistant-applied flow uses the explicit bounded Undo exception above. | [Tool row](../../editor/src/features/timeline/ToolRow.tsx), [assistant session](../../editor/src/features/assistant/useAssistantSession.ts) |
 | No clip available for a component, or an empty scene destination | Explain in the component picker / Try status with the affected scene. Do not emit a global toast every time. | [Picker](../../editor/src/features/component-authoring/Picker.tsx), [Try mode](../../editor/src/features/preview/tryMode.ts) |
 | Unsupported AI request, provider/compile/context failure, stale target | One short top notification with ×. Keep the request for refinement where applicable. Do not repeat the error beside the input or notify for a stale response in an unrelated screen. | [Assistant session](../../editor/src/features/assistant/useAssistantSession.ts) |
+| AI output is invalid, incomplete or fails editor validation | “AI response was invalid. Try again.”, “AI response cut short. Try a smaller change.” or “AI edit failed checks. Try a smaller change.” — one typed notification for the current attempt, with the draft preserved. Fixed safe details remain in assistant diagnostics; raw model output, source and prompts are excluded. | [Assistant failure mapping](../../editor/src/domain/assistant/failure.ts) |
 | Provider explicitly reports exhausted allowance | “AI provider allowance used up.” — one warning for the current attempt, including a transcription failure. Do not retry another model within the same request or show raw provider text. Generic rate-limit responses retain their separate brief message. | [Assistant failure mapping](../../editor/src/domain/assistant/failure.ts) |
 | AI logic needs Advanced while the switch is off | “Enable Advanced for this logic change.” — one short information notification for the attempted change. Preserve request text, project and history. Appearance edits do not trigger this event. | [Assistant component operations](../../editor/src/domain/assistant/native/componentOperations.ts) |
 | “Hold a little longer” | Short amber top notification, with × and the repeat limit above. | [Orb gestures](../../editor/src/features/assistant/voice/useOrbVoice.ts) |
-| Speech unavailable, permission denied, no speech, network/startup failure | One short coloured top notification. No duplicate input message. Cancellation itself is silent. | [Recognition session](../../editor/src/features/assistant/voice/recognitionSession.ts), [voice errors](../../editor/src/features/assistant/voice/browserRecognition.ts) |
+| Microphone unavailable, permission denied, no speech, recording/transcription failure | One short coloured top notification. No duplicate input message. Cancellation itself is silent. | [Voice session](../../editor/src/features/assistant/voice/voiceSession.ts), [voice errors](../../editor/src/features/assistant/voice/voiceFailure.ts) |
 | Import pending / “Couldn't read that file” | Local import progress; one persistent result listing failed files and any successful imports. Successful clips appear silently. Do not overwrite one file's failure with the next. | [Camera import](../../editor/src/features/capture/Camera.tsx) |
 | “Couldn't save the footage — blank clip added” | Persistent recording/clip failure, identifying the affected clip and explaining that it needs recording again. Do not present the placeholder as successful footage. | [Recorder](../../editor/src/features/capture/useRecorder.ts) |
 | “Couldn't save project”, “Couldn't restore saved project” | Persistent project status with recovery controls. Healthy autosaves do not produce toasts. | [Autosave](../../editor/src/app/projectAutosave.ts) |
@@ -100,7 +101,7 @@ Rows group repeated toolbar, keyboard and sheet entry points for the same operat
 
 **Before:** the same long unsupported-request explanation appeared as a wide toast and beside the assistant input.
 
-**Now:** a compact red notification slides down from the top: **“Request not supported.” ×** There is no duplicate message beside the assistant input. Keep the request editable and use “PVO assistant” as the mode label. Supported examples belong in help/suggestions, not a long error banner.
+**Current failure copy:** a compact red notification slides down from the top: **“AI response was invalid. Try again.” ×** There is no duplicate message beside the assistant input. Keep the request editable. Invalid model output is not proof that the request is unsupported. A reviewed capability limitation stays in the assistant answer, without a duplicate toast. Supported examples belong in help/suggestions, not a long error banner.
 
 Other copy examples:
 

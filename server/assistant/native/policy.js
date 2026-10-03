@@ -43,6 +43,7 @@ export function validateNativeInput(request) {
   let count = 0;
   let imageBytes = 0;
   for (const observation of request.observations) {
+    if (!["frames", "transcript", "word_timing", "object_tracking", "unavailable"].includes(observation.kind)) continue;
     const scene = sceneIn(project, observation.sceneId);
     if (observation.kind === "unavailable") continue;
     validRange(observation.start, observation.end, scene.duration);
@@ -99,6 +100,7 @@ export async function validateNativeResult(request, result, compile) {
     throw new Error("Inspect footage before returning operations; do not combine both in one turn.");
   let frames = 0;
   for (const observation of result.observations) {
+    if (!["frames", "transcript", "word_timing", "object_tracking"].includes(observation.kind)) continue;
     const scene = sceneIn(request.project, observation.sceneId);
     validRange(observation.start, observation.end, scene.duration);
     if (observation.end <= observation.start) throw new Error("Choose a nonempty observation range.");
@@ -122,6 +124,11 @@ export async function validateNativeResult(request, result, compile) {
   for (const operation of result.operations) {
     if (operation.kind === "export.prepare" || operation.kind === "project.ratio" || operation.kind === "playback.play" || operation.kind === "playback.pause") continue;
     const scene = sceneIn(request.project, operation.kind === "scene.add" ? operation.parentId : operation.sceneId);
+    if (operation.kind === "font.apply") {
+      const target = operation.target.kind === "component" ? scene.components : scene.texts;
+      if (!target.some(item => item.id === operation.target.id)) throw missingObject(operation.target.kind, result);
+      continue;
+    }
     if (operation.kind.startsWith("animation.")) {
       validateNativeAnimation(scene, operation);
       if (operation.kind === "animation.follow") validateTrackingFollow(request, scene, operation);

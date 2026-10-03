@@ -12,7 +12,7 @@ export function captureExportSnapshot(source: ProjectSnapshot & { quality: Expor
 
 export function publicationInput(artifact: CompletedExport, title: string, status: PublishingStatus, idempotencyKey: string): PublicationInput {
   if (!status.available) throw new Error("Link sharing isn’t available yet.");
-  if (!status.authenticated) throw new Error("Sign in to create a link.");
+  if (!status.hasSession) throw new Error("Couldn't prepare link sharing. Try again.");
   if (!artifact.blob.size || artifact.blob.size > status.maxBytes) throw new Error("This file exceeds the online size limit.");
   const cleaned = title.trim();
   if (!cleaned || cleaned.length > 120) throw new Error("Use a title of 1–120 characters.");

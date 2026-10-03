@@ -45,7 +45,7 @@ Create the API token in Cloudflare with only the permissions required to deploy 
 
 After the secret is configured, run **Deploy production** manually once if the initial `prod` branch creation occurred before the secret existed. Every later merge into `prod` deploys automatically.
 
-Publishing links remain disabled while `PUBLISHING_ENABLED=false`; this does not prevent deployment of the editor, player, Worker routes, Workers AI binding, or release channel.
+Create link is enabled with `PUBLISHING_ENABLED=true`, the private `MEDIA` R2 bucket, `DB` D1 database, exact HTTPS `PUBLIC_ORIGIN` and Worker `SESSION_SECRET`. It creates a browser-owned publishing session without login. These resources and the session secret must exist before deployment; the publishing secret is independent of the two workflow secrets above. See the [publishing setup](cloudflare-publishing.md) for the provisioned resources, initial schema and browser-session limits. Disabling publishing does not prevent deployment of the editor, player, Worker routes, Workers AI binding, or release channel.
 
 ## Rollback
 
