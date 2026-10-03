@@ -52,6 +52,16 @@ test("catalogue search combines family/category terms, ranks results and caps th
   assert.deepEqual(await searchFontCatalogue("not-in-catalogue", source), []);
 });
 
+test("catalogue adapter resolves descriptive sans queries while preserving a missing named family", async () => {
+  const source = fixture({ items: [family("Inter", 4), family("Open Sans", 1),
+    { ...family("Playfair Display", 2), category: "Serif" }] });
+  const result = await searchFontCatalogue("clean sans readable", source);
+  assert.deepEqual(result.map(item => item.family), ["Open Sans", "Inter"]);
+  assert.deepEqual(await searchFontCatalogue("Acme Sans", source), []);
+  assert.deepEqual((await searchFontCatalogue("Playfair Display", source)).map(item => item.family), ["Playfair Display"]);
+  assert.deepEqual(Object.keys(result[0]).sort(), ["category", "family", "id"]);
+});
+
 test("Google stylesheets accept only bounded gstatic WOFF2 descriptors", () => {
   const descriptors = parseFontStylesheet(face());
   assert.deepEqual(descriptors, [{ url: "https://fonts.gstatic.com/s/example/v1/regular.woff2",

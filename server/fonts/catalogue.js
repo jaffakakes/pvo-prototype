@@ -1,5 +1,6 @@
 import { HttpError } from "../http.js";
 import { fontText } from "./upstream.js";
+import { matchFontCatalogue } from "./catalogueSearch.js";
 
 const CATALOGUE_URL = "https://fonts.google.com/metadata/fonts";
 let cached;
@@ -34,9 +35,6 @@ export async function fontCatalogue(options = {}) {
 }
 
 export async function searchFontCatalogue(query, options = {}) {
-  const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  return (await fontCatalogue(options)).filter(item => words.every(word =>
-    `${item.family} ${item.category}`.toLowerCase().includes(word)))
-    .sort((a, b) => a.popularity - b.popularity).slice(0, 24)
+  return matchFontCatalogue(await fontCatalogue(options), query)
     .map(({ id, family, category }) => ({ id, family, category }));
 }
