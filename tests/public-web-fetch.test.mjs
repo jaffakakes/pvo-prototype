@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { setTimeout as delay } from "node:timers/promises";
 import { publicHttpsUrl, isPublicAddress } from "../server/web/publicAddress.js";
 import { readPublicResource } from "../server/web/publicFetch.js";
 
@@ -94,7 +95,12 @@ test("resource size limits cancel owned streams and cancellation cannot return p
 
 test("deadline and upstream failures use safe errors without private network diagnostics", async () => {
   await assert.rejects(readPublicResource("https://example.com", { timeoutMs: 10, resolveHost: publicHost,
-    fetch: async (_url, { signal }) => new Promise((_resolve, reject) => signal.addEventListener("abort", () => reject(signal.reason))),
+    fetch: async (_url, { signal }) => {
+      // Native timeout signals do not keep Node alive; model an owned request
+      // handle that stays pending until the deadline aborts and releases it.
+      await delay(1000, undefined, { signal });
+      throw new Error("The stalled test request was not aborted.");
+    },
   }), error => error.status === 504);
   await assert.rejects(readPublicResource("https://example.com", { resolveHost: publicHost,
     fetch: async () => { throw new Error("private network detail"); },
