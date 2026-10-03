@@ -5,7 +5,7 @@ import { chromium } from "playwright-core";
 const editorUrl = process.env.EDITOR_URL || process.env.RESTYLE_EDITOR_URL || "http://127.0.0.1:5173/";
 const compilerPath = fileURLToPath(new URL("../../../packages/pvo-language/index.js", import.meta.url));
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe", headless: true });
-const context = await browser.newContext({ viewport: { width: 1440, height: 960 }, reducedMotion: "reduce" });
+const context = await browser.newContext({ viewport: { width: 1440, height: 960 }, reducedMotion: "no-preference" });
 const page = await context.newPage();
 page.setDefaultTimeout(15000);
 const errors = [];
@@ -17,6 +17,17 @@ page.on("pageerror", error => errors.push(error.message));
 await context.addInitScript(() => {
   if (!new URL(location.href).searchParams.has("stalled-preview")) return;
   Object.defineProperty(document.fonts, "ready", { get: () => new Promise(() => {}) });
+  // A suspended background animation timeline must not freeze layout at 0px
+  // even when React has already supplied the correct measured dimensions.
+  new MutationObserver(() => {
+    const canvas = document.querySelector(".pvBox");
+    for (const animation of canvas?.getAnimations() || []) {
+      if (["width", "height"].includes(animation.transitionProperty)) {
+        animation.pause();
+        animation.currentTime = 0;
+      }
+    }
+  }).observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ["style"] });
   const NativeObserver = ResizeObserver;
   const hiddenDuringLaunch = new URL(location.href).searchParams.has("hidden-preview");
   if (hiddenDuringLaunch) document.addEventListener("DOMContentLoaded", () => {
@@ -71,6 +82,8 @@ async function measure() {
       return { x, y, width, height };
     };
     return { area: bounds(area), canvas: bounds(canvas), inline: { width: canvas.style.width, height: canvas.style.height },
+      computed: { width: getComputedStyle(canvas).width, height: getComputedStyle(canvas).height },
+      animations: canvas.getAnimations().map(animation => ({ property: animation.transitionProperty, state: animation.playState, time: animation.currentTime })),
       suppressed: window.__previewSuppressed, observers: window.__previewObservers,
       clip: bounds(document.querySelector(".pvFallback")), form: bounds(document.querySelector("[data-preview-component]")) };
   });
@@ -124,6 +137,9 @@ try {
     assert.ok(afterLaunch.area.width > 200 && afterLaunch.area.height > 200, "The restored player has actual available space");
     assert.ok(afterLaunch.canvas.width > 150 && afterLaunch.canvas.height > 250,
       `A missed startup measurement must not collapse the video and form to a border dot: ${JSON.stringify(afterLaunch)}`);
+    assert.ok(Math.abs(parseFloat(afterLaunch.computed.width) - parseFloat(afterLaunch.inline.width)) < 1
+      && Math.abs(parseFloat(afterLaunch.computed.height) - parseFloat(afterLaunch.inline.height)) < 1,
+    "The measured dimensions apply immediately even when browser animation timelines are suspended");
     assert.ok(afterLaunch.clip.width > 150 && afterLaunch.form.width > 100);
     await page.frameLocator('iframe[sandbox="allow-same-origin"]').locator('input[type="tel"]').waitFor({ state: "visible" });
     if (!hiddenDuringLaunch) await page.screenshot({ path: "/tmp/restyle-preview-startup-visible.png" });
