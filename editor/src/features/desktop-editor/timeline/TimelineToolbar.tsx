@@ -50,9 +50,11 @@ function Tool({
   disabled,
   onClick,
   tone,
+  keyframeControl = false,
 }: {
   label: string;
   tone?: "keyframe" | "delete";
+  keyframeControl?: boolean;
   icon?: string;
   path?: string;
   disabled?: boolean;
@@ -63,6 +65,7 @@ function Tool({
       className={styles.tool}
       title={label}
       data-tone={tone}
+      data-keyframe-control={keyframeControl || undefined}
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
@@ -180,6 +183,7 @@ export function TimelineToolbar({
               : "Delete selection · Backspace"
           }
           tone={keySelection ? "delete" : undefined}
+          keyframeControl={!!keySelection}
           icon="delete"
           disabled={blocked || !selected}
           onClick={() => {
@@ -190,6 +194,7 @@ export function TimelineToolbar({
           label={`Add keyframe at ${formatKeyTime(state.t)} · K`}
           path="M12 3l9 9-9 9-9-9z"
           tone="keyframe"
+          keyframeControl
           disabled={blocked || !animationTarget}
           onClick={() => {
             addSelectedAuthoringKey();

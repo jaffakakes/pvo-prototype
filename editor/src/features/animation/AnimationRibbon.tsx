@@ -66,7 +66,7 @@ export function AnimationRibbon({ target }: { target: AnimationTarget }) {
         const span = percent(next) - percent(time);
         return <span key={`segment:${time}`}>
           {!layer.audio && <i className={styles.segment} data-hold={key.easing === "hold"} style={{ left: `${percent(time)}%`, width: `${span}%` }} />}
-          {span / 100 * width > 34 && <button type="button" className={styles.pill} disabled={blocked}
+          {span / 100 * width > 34 && <button type="button" className={styles.pill} disabled={blocked} data-keyframe-control
             style={{ left: `${percent(time) + span / 2}%`, top: (yAt(time) + yAt(next)) / 2 }}
             aria-label={`Edit easing from ${formatKeyTime(time - layer.start)}`} onPointerDown={event => { event.stopPropagation(); }}
             onClick={() => select(time)}><EasingGlyph easing={key.easing} /></button>}
@@ -75,7 +75,7 @@ export function AnimationRibbon({ target }: { target: AnimationTarget }) {
       {times.map(time => {
         const key = keyAt(time)!;
         const active = !!selected && Math.abs(selected.time - time) < .001;
-        return <button type="button" key={time} className={styles.key} disabled={blocked} aria-pressed={active}
+        return <button type="button" key={time} className={styles.key} disabled={blocked} aria-pressed={active} data-keyframe-control
           aria-label={`Keyframe at ${formatKeyTime(time - layer.start)}`} title={`${GROUP_LABELS[key.group]} · ${formatKeyValue(key.group, key.value)}`}
           style={{ left: `${percent(time)}%`, top: yAt(time) }} onClick={() => { if (!dragged.current) select(time); dragged.current = false; }}
           onPointerDown={event => {
