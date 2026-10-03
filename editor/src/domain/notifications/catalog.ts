@@ -34,7 +34,7 @@ export const notificationCatalog = {
   voiceNoMicrophone: { message: "No microphone available.", kind: "error" },
   voiceNoSpeech: { message: "Didn't catch that. Try again.", kind: "warning" },
   voiceNetwork: { message: "Voice connection failed.", kind: "error" },
-  voiceFailed: { message: "Couldn't start voice.", kind: "error" },
+  voiceFailed: { message: "Voice input failed. Try again.", kind: "error" },
   importFailed: { message: "Some clips couldn't be imported.", kind: "error", persistent: true,
     recovery: "Review the import result in Camera and retry the failed files." },
   recordingFailed: { message: "Recording couldn't be saved.", kind: "error", persistent: true,

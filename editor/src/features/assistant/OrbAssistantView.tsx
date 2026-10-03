@@ -5,7 +5,7 @@ import { Icon } from "../../ui/Icon";
 import { fmt } from "../../ui/formatTime";
 import { AssistantContext } from "./AssistantContext";
 import { AssistantReview } from "./AssistantReview";
-import type { VoicePhase } from "./voice/recognitionSession";
+import type { VoicePhase } from "./voice/voiceSession";
 import type { VoiceMode } from "./voice/useOrbVoice";
 import styles from "./OrbAssistant.module.css";
 import quickStyles from "./AssistantQuickActions.module.css";
@@ -59,15 +59,18 @@ export function OrbAssistantView({
   const targetLabel = target ? `${target.type} ${fmt(target.at)}` : "project";
   const workingLabel = progress || "Reading your project…";
   const startingVoice = phase === "listening" && voicePhase === "starting";
+  const transcribingVoice = phase === "listening" && voicePhase === "transcribing";
+  const cancellableVoice = startingVoice || transcribingVoice;
   const tapVoice = phase === "listening" && voiceMode === "tap";
   const voiceLabels: Record<VoicePhase, string> = {
     idle: "Sending…",
     starting: "Starting microphone…",
     listening: placement === "toolbar" ? "Listening…" : `Listening · ${targetLabel}`,
     ready: "Ready to send",
-    finishing: "Finishing…",
+    transcribing: "Transcribing…",
   };
-  const voiceHint = startingVoice ? "Allow microphone and speech recognition when asked."
+  const voiceHint = startingVoice ? "Allow microphone access when asked."
+    : transcribingVoice ? "Turning your recording into words · Esc to cancel"
     : tapVoice ? "Tap Send when you're done · Esc to cancel"
       : "Let go to send · you can undo changes";
   let orbLabel = "Restyle assistant — tap to type, hold to speak, let go to send";
@@ -75,8 +78,8 @@ export function OrbAssistantView({
   if (phase === "working") {
     orbLabel = "Stop request";
     orbTitle = "Stop request and return to your message";
-  } else if (tapVoice) {
-    orbLabel = startingVoice ? "Cancel voice input" : "Send voice request";
+  } else if (tapVoice || transcribingVoice) {
+    orbLabel = cancellableVoice ? "Cancel voice input" : "Send voice request";
     orbTitle = voiceHint;
   }
   const rootStyle = {
@@ -124,7 +127,7 @@ export function OrbAssistantView({
       </div>
       <p role={phase === "listening" ? "status" : undefined}
         aria-live={phase === "listening" ? "polite" : undefined} data-assistant-live-content>
-        {phase === "listening" ? transcript || (startingVoice ? "" : "What would you like to change?") : draft}
+        {phase === "listening" ? transcript || (cancellableVoice ? "" : "What would you like to change?") : draft}
         {phase === "listening" && voicePhase === "listening" && <span className={styles.cursor} aria-hidden="true" />}
       </p>
       <span className={styles.status} data-assistant-live-status>
@@ -140,11 +143,11 @@ export function OrbAssistantView({
     <button {...orbHandlers} ref={orbRef} type="button" className={styles.orb}
       aria-label={orbLabel} title={orbTitle}
       aria-disabled={phase === "review" || undefined} aria-expanded={active}
-      aria-busy={phase === "working" || startingVoice} disabled={disabled} data-assistant-orb>
+      aria-busy={phase === "working" || cancellableVoice} disabled={disabled} data-assistant-orb>
       {phase === "working" ? <span className={styles.stopLabel} aria-hidden="true" data-assistant-stop>
         <span className={styles.stopIcon} />Stop
-      </span> : tapVoice ? <span className={styles.stopLabel} aria-hidden="true">
-        <Icon name={startingVoice ? "close" : "arrow"} size={16} />{startingVoice ? "Cancel" : "Send"}
+      </span> : tapVoice || transcribingVoice ? <span className={styles.stopLabel} aria-hidden="true">
+        <Icon name={cancellableVoice ? "close" : "arrow"} size={16} />{cancellableVoice ? "Cancel" : "Send"}
       </span> : <img src="restyle-mark.png" alt="" draggable={false} />}
       <span className={styles.orbRing} aria-hidden="true" data-assistant-orb-ring />
     </button>

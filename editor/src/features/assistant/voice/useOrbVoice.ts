@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
-import { recognitionConstructor, type VoiceFailure } from "./browserRecognition";
-import { createRecognitionSession, type RecognitionSession, type VoicePhase } from "./recognitionSession";
+import { microphoneSupported } from "../../../infrastructure/assistant/microphoneCapture";
+import type { VoiceFailure } from "./voiceFailure";
+import { createVoiceSession, type VoiceSession, type VoicePhase } from "./voiceSession";
 
 type Options = {
   enabled?: boolean;
+  contextKey: string;
   onTap(): void;
   onListening(transcript: string): void;
   onSend(text: string): void;
@@ -28,7 +30,7 @@ export function useOrbVoice(options: Options) {
   current.current = options;
   const mounted = useRef(false);
   const press = useRef<Press | null>(null);
-  const session = useRef<RecognitionSession | null>(null);
+  const session = useRef<VoiceSession | null>(null);
   const sessionMode = useRef<VoiceMode>("hold");
   const sessionPhase = useRef<VoicePhase>("idle");
   const tapAction = useRef<"cancel" | "send" | null>(null);
@@ -59,9 +61,10 @@ export function useOrbVoice(options: Options) {
     if (current.current.enabled === false || session.current) return;
     tapAction.current = null;
     sessionMode.current = mode;
-    let voice: RecognitionSession | null;
+    const contextKey = current.current.contextKey;
+    let voice: VoiceSession;
     try {
-      voice = createRecognitionSession({
+      voice = createVoiceSession({
         onPhase: value => {
           sessionPhase.current = value;
           if (mounted.current) setPhase(value);
@@ -69,26 +72,22 @@ export function useOrbVoice(options: Options) {
         onTranscript: text => { if (mounted.current) current.current.onListening(text); },
         onSend: text => {
           session.current = null;
-          if (mounted.current) current.current.onSend(text);
+          if (mounted.current && current.current.enabled !== false && current.current.contextKey === contextKey)
+            current.current.onSend(text);
+          else if (mounted.current) current.current.onCancel();
         },
         onCancel: () => {
           session.current = null;
           if (mounted.current) current.current.onCancel();
         },
         onFailure: failure => { if (mounted.current) current.current.onFailure(failure); },
-      }, navigator.language || "en", {
+      }, {
         startupTimeoutMs: mode === "tap" ? 30000 : 10000,
         minimumWords: mode === "tap" ? 1 : 2,
       });
     } catch {
       current.current.onCancel();
-      current.current.onFailure({ reason: "failed", detail: "Browser recognition could not be constructed." });
-      return;
-    }
-    if (!voice) {
-      current.current.onCancel();
-      current.current.onTap();
-      current.current.onFailure({ reason: "unavailable", detail: "The browser has no speech recognition API." });
+      current.current.onFailure({ reason: "failed", detail: "Microphone recording could not be started." });
       return;
     }
     session.current = voice;
@@ -103,10 +102,12 @@ export function useOrbVoice(options: Options) {
   const start = () => {
     if (!press.current) startVoice("tap");
   };
-  const currentTapAction = () => sessionPhase.current === "starting" ? "cancel" : "send";
+  const currentTapAction = () => ["starting", "transcribing"].includes(sessionPhase.current) ? "cancel" : "send";
   const finishTap = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    // Permission can finish between pressing Cancel and releasing it. Preserve
+    // Release changes the held flower into Cancel while its trailing click is pending.
+    if (event.detail > 0 && performance.now() < suppressClickUntil.current) return;
+    // Microphone permission can finish between pressing Cancel and releasing it. Preserve
     // the action the user chose before the button changes to Send.
     const action = tapAction.current ?? currentTapAction();
     tapAction.current = null;
@@ -152,6 +153,7 @@ export function useOrbVoice(options: Options) {
     };
   }, [cancel]);
   useEffect(() => { if (options.enabled === false) cancel(); }, [options.enabled, cancel]);
+  useEffect(() => { cancel(); }, [options.contextKey, cancel]);
 
   const onPointerDown = (event: PointerEvent<HTMLButtonElement>) => {
     if (!event.isPrimary || event.button !== 0 || current.current.enabled === false) return;
@@ -183,7 +185,7 @@ export function useOrbVoice(options: Options) {
 
   return {
     phase, mode: sessionMode.current, voiceActive: phase !== "idle", isPressed,
-    supported: recognitionConstructor() !== null,
+    supported: microphoneSupported(),
     cancel, start,
     tapHandlers: {
       onPointerDown: (event: PointerEvent<HTMLButtonElement>) => {
@@ -191,7 +193,13 @@ export function useOrbVoice(options: Options) {
       },
       onPointerCancel: () => { tapAction.current = null; },
       onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => {
-        if ([" ", "Enter"].includes(event.key) && !event.repeat) tapAction.current = currentTapAction();
+        if (![" ", "Enter"].includes(event.key)) return;
+        if (event.repeat) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+        tapAction.current = currentTapAction();
       },
       onBlur: () => { tapAction.current = null; },
       onClick: finishTap,

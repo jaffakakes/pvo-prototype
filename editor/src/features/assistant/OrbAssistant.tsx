@@ -21,6 +21,7 @@ export function OrbAssistant({ placement: position = "workspace", portalTarget }
   const placement = useAssistantPlacement(host, position, portalTarget);
   const active = session.available && session.phase !== "idle";
   const voice = useOrbVoice({
+    contextKey: session.voiceContext,
     enabled: session.available && session.phase !== "working" && session.phase !== "review",
     onTap: () => {
       session.open();
@@ -43,7 +44,7 @@ export function OrbAssistant({ placement: position = "workspace", portalTarget }
     orb.current?.focus({ preventScroll: true });
   };
   const orbHandlers = session.phase === "working" ? { onClick: session.stop }
-    : voice.voiceActive && voice.mode === "tap" ? voice.tapHandlers : voice.handlers;
+    : voice.voiceActive && (voice.mode === "tap" || voice.phase === "transcribing") ? voice.tapHandlers : voice.handlers;
 
   useEffect(() => {
     if (!active) return;
