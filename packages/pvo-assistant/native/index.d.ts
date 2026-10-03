@@ -14,7 +14,10 @@ export type NativeObjectTrackingObservation = { kind: "object_tracking"; id: str
 export type NativeMode = "ask" | "plan" | "edit";
 export type NativeResponsePolicy = { dispatch: "interaction" | "layer_end"; unanswered: "continue" | "pause" };
 export type NativeTextChanges = { text?: string; start?: number; end?: number; x?: number; y?: number; style?: Partial<TextStyle> };
+import type { FontSummary, WebObservationRequest, WebObservation } from "./webTypes.js";
+export type { FontSummary, WebObservationRequest, WebObservation } from "./webTypes.js";
 export type NativeOperation =
+  | { kind: "font.apply"; sceneId: string; target: { kind: "component"; id: string } | { kind: "text"; id: number }; fontId: string | null }
   | { kind: "animation.follow"; sceneId: string; target: NativeVisualAnimationTarget; observationId: string; anchor: "center" | "top"; offsetX: number; offsetY: number }
   | { kind: "animation.set"; sceneId: string; target: NativeAnimationTarget; tracks: LayerAnimation["tracks"] }
   | { kind: "animation.remove"; sceneId: string; target: NativeAnimationTarget; property: AnimationProperty; time: number }
@@ -47,6 +50,7 @@ export type NativeOperation =
   | { kind: "playback.pause" }
   | { kind: "export.prepare"; format: "video" | "pvo" };
 export type NativeObservationRequest =
+  | WebObservationRequest
   | { kind: "object_tracking"; sceneId: string; clipId: number; start: number; end: number; target: NativeTrackingTarget }
   | { kind: "frames"; sceneId: string; start: number; end: number; count: number }
   | { kind: "transcript"; sceneId: string; start: number; end: number }
@@ -60,6 +64,7 @@ export type WordAlignment = { text: string; words: { text: string; start: number
 export function normalizedAlignmentWords(text: string): string[];
 export function parseWordAlignment(value: unknown, options: { text: string; duration: number }): WordAlignment;
 export type NativeObservation =
+  | WebObservation
   | NativeObjectTrackingObservation
   | { kind: "frames"; sceneId: string; start: number; end: number; frames: { sceneTime: number; clipId: number | null; sourceTime: number | null; dataUrl: string; width: number; height: number }[]; coverage: "video-and-text"; note: string }
   | { kind: "transcript"; sceneId: string; start: number; end: number; text: string; segments?: { start: number; end: number; text: string }[] }
@@ -78,11 +83,12 @@ export type NativeProjectContext = {
   scenes: {
     id: string; name: string; parent: string | null; duration: number; muted: boolean; musicGain: number; clipGain: number; musicAnimation?: LayerAnimation;
     clips: { id: number; start: number; end: number; sourceIn: number; sourceOut: number; sourceDuration: number; speed: number; zoom: number; mirror: boolean; fit: "cover" | "contain"; hasMedia: boolean; audioDetached: boolean; animation?: LayerAnimation }[];
-    texts: ({ id: number; text: string; start: number; end: number; x: number; y: number; style?: Partial<TextStyle>; animation?: LayerAnimation })[];
+    texts: ({ id: number; text: string; start: number; end: number; x: number; y: number; style?: Partial<Omit<TextStyle, "fontAsset">>; font?: FontSummary; animation?: LayerAnimation })[];
     audioClips: { id: number; name: string; start: number; end: number; sourceIn: number; sourceOut: number; sourceDuration: number; speed: number; muted: boolean; gain: number; animation?: LayerAnimation }[];
     components: ({ id: string; at: number; duration: number | null; x: number; y: number;
       scale: number; scaleX: number; scaleY: number; proportionalScale: number; width: number | null; height: number | null;
-      label: string; content: Record<string, string>; source?: AssistantSource; design?: AssistantSource; animation?: LayerAnimation } & (
+      formFields?: { name: string; kind: "name" | "email" | "phone" | "short" | "number" | "yesno" }[];
+      label: string; content: Record<string, string>; source?: AssistantSource; design?: AssistantSource; animation?: LayerAnimation; font?: FontSummary } & (
       { type: "tooltip"; responsePolicy?: never }
       | { type: "card" | "choice" | "form"; responsePolicy: NativeResponsePolicy }
     ))[];

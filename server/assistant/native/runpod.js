@@ -1,9 +1,10 @@
 import { HttpError } from "../../http.js";
 import { requestRunpodJson } from "./runpodHttp.js";
+import { NativeAssistantError } from "./errors.js";
 
 export const RUNPOD_NATIVE_MODEL = "kimi-k2.6";
 const ENDPOINT_PATH = "/v2/moonshot-kimi/openai/v1/chat/completions";
-const invalidResponse = () => new HttpError(422, "The assistant provider returned an invalid result. Try again.");
+const invalidResponse = () => new NativeAssistantError("model_output_invalid");
 
 /** Runpod-specific OpenAI wire adapter. Only final content reaches the native loop. */
 export function runpodNativeModels(apiKey, { fetch: send = globalThis.fetch } = {}) {
@@ -14,6 +15,7 @@ export function runpodNativeModels(apiKey, { fetch: send = globalThis.fetch } = 
       apiKey, signal, { fetch: send });
     signal.throwIfAborted();
     const choice = result?.choices?.[0];
+    if (choice?.finish_reason === "length") throw new NativeAssistantError("model_output_truncated");
     if (!Array.isArray(result?.choices) || result.choices.length !== 1 || choice?.finish_reason !== "stop"
       || choice.message?.role !== "assistant" || typeof choice.message.content !== "string"
       || !choice.message.content.trim() || choice.message.refusal

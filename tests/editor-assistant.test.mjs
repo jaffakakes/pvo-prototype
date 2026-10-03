@@ -76,7 +76,7 @@ test("assistant request proposals preserve fixed hosts and the supplied project 
 });
 test("native service failures map to one curated notification", () => {
   for (const [status, notification] of Object.entries({
-    400: "assistantInvalidRequest", 413: "assistantTooLarge", 422: "assistantUnsupported",
+    400: "assistantInvalidRequest", 413: "assistantTooLarge", 422: "assistantResponseInvalid",
     429: "assistantBusy", 503: "assistantUnavailable", 504: "assistantTimeout", 500: "assistantFailed",
   })) assert.equal(assistantFailureNotification(new AssistantServiceError(Number(status))), notification);
 });

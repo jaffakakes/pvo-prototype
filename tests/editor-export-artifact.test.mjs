@@ -5,10 +5,10 @@ import { buildSync } from "esbuild";
 const bundled = buildSync({ stdin: { contents: `
   export { captureExportSnapshot, publicationInput } from "./editor/src/domain/publishing/exportSnapshot.ts";
   export { renderCompletedExport } from "./editor/src/features/export/exportWorkflow.ts";
-  export { useExportArtifact, beginExportAttempt, finishExportAttempt, setExportPublication, beginPublicationAttempt, forgetExportPublication, resetExportArtifact } from "./editor/src/state/export/exportArtifactStore.ts";
+  export { useExportArtifact, beginExportAttempt, finishExportAttempt, setExportPublication, beginPublicationAttempt, expirePublicationAttempt, forgetExportPublication, resetExportArtifact } from "./editor/src/state/export/exportArtifactStore.ts";
 `, resolveDir: process.cwd() }, bundle: true, write: false, format: "esm", platform: "browser" });
 const { captureExportSnapshot, publicationInput, renderCompletedExport, useExportArtifact,
-  beginExportAttempt, finishExportAttempt, setExportPublication, beginPublicationAttempt, forgetExportPublication, resetExportArtifact } =
+  beginExportAttempt, finishExportAttempt, setExportPublication, beginPublicationAttempt, expirePublicationAttempt, forgetExportPublication, resetExportArtifact } =
   await import(`data:text/javascript;base64,${Buffer.from(bundled.outputFiles[0].text).toString("base64")}`);
 
 function project() {
@@ -108,14 +108,14 @@ test("replacement and reset revoke URLs while an upload can retain the immutable
   assert.deepEqual(revoked, ["blob:one", "blob:stale"]);
 });
 
-test("publishing validates authentication and size without changing the completed artifact", () => {
+test("publishing validates a browser session and size without changing the completed artifact", () => {
   const artifact = { snapshotId: "one", blob: new Blob(["file"]), filename: "video.webm", contentType: "video/webm", format: "video", createdAt: "now" };
-  const status = { available: true, authenticated: true, maxBytes: 10 };
+  const status = { available: true, hasSession: true, maxBytes: 10 };
   assert.deepEqual(publicationInput(artifact, "  My video  ", status, "same-key"), {
     title: "My video", filename: "video.webm", contentType: "video/webm", format: "video", size: 4, idempotencyKey: "same-key",
   });
   assert.throws(() => publicationInput(artifact, "Title", { ...status, available: false }, "key"), /isn’t available/);
-  assert.throws(() => publicationInput(artifact, "Title", { ...status, authenticated: false }, "key"), /Sign in/);
+  assert.throws(() => publicationInput(artifact, "Title", { ...status, hasSession: false }, "key"), /prepare link sharing/);
   assert.throws(() => publicationInput(artifact, "Title", { ...status, maxBytes: 3 }, "key"), /size limit/);
   assert.throws(() => publicationInput(artifact, " ", status, "key"), /title/);
 });
@@ -138,4 +138,29 @@ test("confirmed deletion forgets readiness before a response and cannot be undon
   assert.equal(afterConfirmation.url, "blob:deleting");
   setExportPublication(artifact.snapshotId, ready, "deleting");
   assert.equal(useExportArtifact.getState().publication, null, "An old upload response cannot restore the deleted link");
+});
+
+test("expired reservations renew their attempt identity while retaining the exact export and title", t => {
+  t.after(resetExportArtifact);
+  for (const knownReservation of [false, true]) {
+    resetExportArtifact();
+    const artifact = { snapshotId: "expired", blob: new Blob(["exact bytes"]), filename: "video.webm", contentType: "video/webm", format: "video", createdAt: "now" };
+    beginExportAttempt(artifact.snapshotId);
+    finishExportAttempt(artifact, "blob:expired");
+    beginPublicationAttempt(artifact.snapshotId, "My retained title");
+    if (knownReservation)
+      setExportPublication(artifact.snapshotId, { id: "gone", url: "https://app.example/player/gone", status: "pending" });
+    expirePublicationAttempt(artifact.snapshotId, "expired", "new-attempt");
+    const renewed = useExportArtifact.getState();
+    assert.equal(renewed.publicationKey, "new-attempt", "Recovery must also work after a lost reservation response with no known ID");
+    assert.equal(renewed.publication, null);
+    assert.equal(renewed.publicationTitle, "My retained title");
+    assert.equal(renewed.artifact, artifact);
+    assert.equal(renewed.url, "blob:expired");
+    setExportPublication(artifact.snapshotId, { id: "new", url: "https://app.example/player/new", status: "ready" }, "new-attempt");
+    expirePublicationAttempt(artifact.snapshotId, "expired", "late-expiry");
+    expirePublicationAttempt("other-snapshot", "new-attempt", "wrong-snapshot");
+    assert.equal(useExportArtifact.getState().publicationKey, "new-attempt");
+    assert.equal(useExportArtifact.getState().publication.id, "new", "A late expiry cannot clear a different attempt");
+  }
 });

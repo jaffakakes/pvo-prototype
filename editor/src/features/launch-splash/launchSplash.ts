@@ -8,6 +8,7 @@ const SPLASH_ID = "restyle-launch-splash";
 const ROOT_PENDING_CLASS = "launchSplashPending";
 const ROOT_REVEAL_CLASS = "launchSplashRevealing";
 const REDUCE_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+const MAX_REVEAL_WAIT_MS = 8000;
 
 let dismissal: Promise<void> | null = null;
 let resolveDismissal: (() => void) | null = null;
@@ -21,8 +22,30 @@ function appRoot(): HTMLElement | null {
   return document.getElementById("root");
 }
 
-function wait(milliseconds: number): Promise<void> {
-  return new Promise(resolve => window.setTimeout(resolve, milliseconds));
+function untilAborted<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const abort = () => reject(signal.reason);
+    promise.then(value => {
+      signal.removeEventListener("abort", abort);
+      resolve(value);
+    }, error => {
+      signal.removeEventListener("abort", abort);
+      reject(error);
+    });
+    if (signal.aborted) abort();
+    else signal.addEventListener("abort", abort, { once: true });
+  });
+}
+
+async function wait(milliseconds: number, signal: AbortSignal): Promise<void> {
+  let timer: number | undefined;
+  try {
+    await untilAborted(new Promise<void>(resolve => {
+      timer = window.setTimeout(resolve, milliseconds);
+    }), signal);
+  } finally {
+    window.clearTimeout(timer);
+  }
 }
 
 function dismissalPromise(): Promise<void> {
@@ -71,30 +94,41 @@ async function waitForImages(root: HTMLElement): Promise<void> {
   );
 }
 
-async function waitForRootContent(root: HTMLElement): Promise<void> {
+async function waitForRootContent(root: HTMLElement, signal: AbortSignal): Promise<void> {
   if (root.firstElementChild) return;
-  await new Promise<void>(resolve => {
-    const observer = new MutationObserver(() => {
-      if (!root.firstElementChild) return;
-      observer.disconnect();
-      resolve();
-    });
-    observer.observe(root, { childList: true });
-  });
+  let observer: MutationObserver | undefined;
+  try {
+    await untilAborted(new Promise<void>(resolve => {
+      observer = new MutationObserver(() => {
+        if (root.firstElementChild) resolve();
+      });
+      observer.observe(root, { childList: true });
+    }), signal);
+  } finally {
+    observer?.disconnect();
+  }
 }
 
-async function waitForPaint(): Promise<void> {
-  await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
-  await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+async function waitForPaint(signal: AbortSignal): Promise<void> {
+  for (let frame = 0; frame < 2; frame++) {
+    let pending: number | undefined;
+    try {
+      await untilAborted(new Promise<void>(resolve => {
+        pending = requestAnimationFrame(() => resolve());
+      }), signal);
+    } finally {
+      if (pending !== undefined) cancelAnimationFrame(pending);
+    }
+  }
 }
 
-async function waitForFirstScreen(): Promise<void> {
+async function waitForFirstScreen(signal: AbortSignal): Promise<void> {
   const root = appRoot();
   if (!root) return;
-  await waitForRootContent(root);
-  await waitForPaint();
-  await Promise.all([document.fonts.ready, waitForImages(root)]);
-  await waitForPaint();
+  await waitForRootContent(root, signal);
+  await waitForPaint(signal);
+  await untilAborted(Promise.all([document.fonts.ready, waitForImages(root)]), signal);
+  await waitForPaint(signal);
 }
 
 function updateRevealGeometry(splash: HTMLElement, root: HTMLElement): void {
@@ -143,7 +177,7 @@ function finishSplash(splash: HTMLElement, root: HTMLElement | null): void {
 
 async function revealWithReducedMotion(
   splash: HTMLElement,
-  root: HTMLElement | null,
+  signal: AbortSignal,
 ): Promise<void> {
   splash.dataset.reduceMotion = "true";
   const fade = splash.animate(
@@ -154,22 +188,28 @@ async function revealWithReducedMotion(
       fill: "forwards",
     },
   );
-  await fade.finished.catch(() => {});
-  finishSplash(splash, root);
+  try {
+    await untilAborted(fade.finished, signal);
+  } finally {
+    fade.cancel();
+  }
 }
 
 async function revealWithBlink(
   splash: HTMLElement,
   root: HTMLElement,
+  signal: AbortSignal,
 ): Promise<void> {
   const resize = () => updateRevealGeometry(splash, root);
   resize();
   window.addEventListener("resize", resize);
   splash.classList.add("is-revealing");
   root.classList.add(ROOT_REVEAL_CLASS);
-  await wait(LAUNCH_SPLASH_REVEAL_MS);
-  window.removeEventListener("resize", resize);
-  finishSplash(splash, root);
+  try {
+    await wait(LAUNCH_SPLASH_REVEAL_MS, signal);
+  } finally {
+    window.removeEventListener("resize", resize);
+  }
 }
 
 /** Keep camera and app input gated until the cold-start overlay has been removed. */
@@ -208,21 +248,31 @@ export async function revealLaunchSplashWhenReady(
     return;
   }
 
-  await waitForFirstScreen();
-  if (reducedMotionRequested(appReduceMotion)) {
-    await revealWithReducedMotion(splash, root);
-    return;
-  }
+  // Asset decoding and animation promises can remain pending in a suspended tab.
+  // A decorative transition must not indefinitely hide the recovered editor.
+  const controller = new AbortController();
+  const deadline = window.setTimeout(() => {
+    controller.abort(new Error("Launch splash readiness timed out."));
+  }, MAX_REVEAL_WAIT_MS);
+  try {
+    await waitForFirstScreen(controller.signal);
+    if (reducedMotionRequested(appReduceMotion)) {
+      await revealWithReducedMotion(splash, controller.signal);
+      return;
+    }
 
-  const elapsed = animationElapsed(splash);
-  await wait(Math.max(0, nextLaunchSplashBeatBoundary(elapsed) - elapsed));
-  if (reducedMotionRequested(appReduceMotion)) {
-    await revealWithReducedMotion(splash, root);
-    return;
+    const elapsed = animationElapsed(splash);
+    await wait(Math.max(0, nextLaunchSplashBeatBoundary(elapsed) - elapsed), controller.signal);
+    if (reducedMotionRequested(appReduceMotion)) {
+      await revealWithReducedMotion(splash, controller.signal);
+      return;
+    }
+    if (root) await revealWithBlink(splash, root, controller.signal);
+  } catch (error) {
+    console.warn("Restyle launch reveal did not finish; releasing the editor:", error);
+  } finally {
+    window.clearTimeout(deadline);
+    controller.abort();
+    finishSplash(splash, root);
   }
-  if (!root) {
-    finishSplash(splash, null);
-    return;
-  }
-  await revealWithBlink(splash, root);
 }

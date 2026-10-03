@@ -13,10 +13,8 @@ export type CompletedExport = {
 
 export type PublishingStatus = {
   available: boolean;
-  authenticated: boolean;
+  hasSession: boolean;
   maxBytes: number;
-  authUrl?: string;
-  user?: { name?: string; email?: string };
 };
 export type PublicationReservation = { id: string; url: string; status: "pending" | "ready" };
 export type Publication = {

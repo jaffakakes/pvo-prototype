@@ -83,20 +83,21 @@ test("native validation repairs malformed Runpod JSON using the same request and
 });
 
 test("Runpod failures and malformed envelopes never expose private bodies or switch providers", async () => {
-  for (const [output, status] of [
+  for (const [output, status, code] of [
     [new Response("private provider reason", { status: 429 }), 429],
     [new Response("private credential detail", { status: 401 }), 503],
     [new Error("private network address"), 503],
     [new Response("private HTML response", { headers: { "Content-Type": "text/html" } }), 422],
     [{ choices: [] }, 422],
     [{ choices: [null] }, 422],
-    [{ choices: [{ finish_reason: "length", message: { role: "assistant", content: "partial" } }] }, 422],
+    [{ choices: [{ finish_reason: "length", message: { role: "assistant", content: "private partial" } }] }, 422, "model_output_truncated"],
     [{ choices: [{ finish_reason: "stop", message: { role: "assistant", content: "text", tool_calls: [{ id: "private-tool" }] } }] }, 422],
     [{ choices: [{ finish_reason: "stop", message: { role: "assistant", content: "text", refusal: "private-refusal" } }] }, 422],
   ]) {
     const http = transport([output]);
     await assert.rejects(runpodNativeModels("server-test-key", http).generate(generation, signal()), error => {
       assert.equal(error.status, status);
+      assert.equal(error.code, code ?? (status === 422 ? "model_output_invalid" : undefined));
       assert.doesNotMatch(error.message, /private|server-test-key/);
       return true;
     });

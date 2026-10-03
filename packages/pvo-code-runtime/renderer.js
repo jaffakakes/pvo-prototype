@@ -1,7 +1,12 @@
+import { createFontScope, fontFamily } from "../pvo-fonts/index.js";
 import { sanitizeMarkup, sanitizeCss } from "./sanitize.js";
 import { setRenderedFormPending } from "./form-feedback.js";
 
-export function createRenderer(renderFrame, renderShell, report, setHandlers) {
+export function createRenderer(renderFrame, renderShell, report, setHandlers, onFit) {
+  let fontScope = null;
+  let activeFont = null;
+  let disposed = false;
+
   function fit(options) {
     const doc = renderFrame.contentDocument;
     const root = doc?.getElementById("pvo-root");
@@ -31,6 +36,7 @@ export function createRenderer(renderFrame, renderShell, report, setHandlers) {
     renderFrame.style.transform = `scale(${scale})`;
     renderShell.style.width = `${width * scale}px`;
     renderShell.style.height = `${height * scale}px`;
+    onFit?.(scale);
   }
 
   function render(sources, options) {
@@ -48,6 +54,22 @@ export function createRenderer(renderFrame, renderShell, report, setHandlers) {
         doc.head.append(style);
       }
       style.textContent = sanitizeCss(sources.css);
+      let fontStyle = doc.getElementById("pvo-host-font");
+      if (!fontStyle) {
+        fontStyle = doc.createElement("style");
+        fontStyle.id = "pvo-host-font";
+        doc.head.append(fontStyle);
+      }
+      if (activeFont !== options.font) {
+        fontScope?.dispose();
+        fontScope = options.font ? createFontScope(doc) : null;
+        activeFont = options.font;
+        fontStyle.textContent = activeFont ? `#pvo-root,#pvo-root *{font-family:"${fontFamily(activeFont)}"!important}` : "";
+        const loading = fontScope;
+        if (loading) void loading.load(activeFont).then(() => {
+          if (!disposed && loading === fontScope) fit(options);
+        }).catch(error => { if (!disposed && loading === fontScope) report(error); });
+      }
       setRenderedFormPending(root, options.pending);
       fit(options);
     } catch (error) {
@@ -55,5 +77,5 @@ export function createRenderer(renderFrame, renderShell, report, setHandlers) {
     }
   }
 
-  return { fit, render };
+  return { fit, render, dispose() { disposed = true; fontScope?.dispose(); fontScope = null; } };
 }

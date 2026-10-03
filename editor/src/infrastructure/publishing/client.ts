@@ -11,14 +11,15 @@ export class PublishingHttpError extends Error {
 }
 
 function responseFailure(status: number) {
-  if (status === 401) return new PublishingHttpError(status, "Sign in to create a link.");
+  if (status === 401) return new PublishingHttpError(status, "Your sharing session expired. Try creating the link again.");
+  if (status === 410) return new PublishingHttpError(status, "This link is no longer available. Try creating it again.");
   if (status === 413) return new PublishingHttpError(status, "This file exceeds the online size limit.");
   if (status === 429) return new PublishingHttpError(status, "Sharing is busy. Try again shortly.");
   if (status === 404 || status === 503) return new PublishingHttpError(status, "Link sharing isn’t available yet.");
   return new PublishingHttpError(status, "Link sharing failed. Try again.");
 }
 
-/** Same-origin authenticated operations; a static deployment reports unavailable without blocking local files. */
+/** Same-origin browser-owned publications; static deployments keep local files available. */
 export function createPublishingClient(options: Options = {}) {
   const origin = options.origin ?? location.origin;
   const send = options.fetch ?? fetch;
@@ -50,7 +51,10 @@ export function createPublishingClient(options: Options = {}) {
   };
   return {
     async status(signal?: AbortSignal) {
-      return publishingStatus(await json("/api/publishing", { method: "GET" }, signal, true), origin);
+      return publishingStatus(await json("/api/publishing", { method: "GET" }, signal, true));
+    },
+    async session(signal?: AbortSignal) {
+      return publishingStatus(await json("/api/publishing/session", { method: "POST" }, signal));
     },
     async reserve(input: PublicationInput, signal?: AbortSignal) {
       return publicationReservation(await json("/api/publications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) }, signal), origin);

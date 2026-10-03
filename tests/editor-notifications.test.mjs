@@ -43,8 +43,8 @@ test("brief events use a global ten-second cooldown and never queue dropped mess
 test("busy work suppresses unrelated messages but an actual failed attempt can notify", () => {
   const busy = { ...initialNotifications(), busy: true };
   assert.equal(receiveNotification(busy, "exportFailed", {}, 0), busy);
-  const attempted = receiveNotification(busy, "assistantUnsupported", { currentAttempt: true }, 0);
-  assert.equal(attempted.current.id, "assistantUnsupported");
+  const attempted = receiveNotification(busy, "assistantResponseInvalid", { currentAttempt: true }, 0);
+  assert.equal(attempted.current.id, "assistantResponseInvalid");
   const risk = receiveNotification(busy, "recordingFailed", { scope: "recording:12" }, 0);
   assert.equal(risk.current.id, "recordingFailed");
 });
@@ -73,6 +73,8 @@ test("every current assistant request failure is visible without broadening othe
   const failures = [400, 409, 413, 422, 429, 503, 504, 500]
     .map(status => assistantFailureNotification(new AssistantServiceError(status)));
   failures.push("assistantProjectChanged", assistantFailureNotification(new AssistantServiceError(429, undefined, "provider_allowance_exhausted")));
+  for (const code of ["model_output_invalid", "model_output_truncated", "edit_validation_failed"])
+    failures.push(assistantFailureNotification(new AssistantServiceError(422, undefined, code)));
   for (const id of failures) {
     const recent = removeNotificationScope(receiveNotification(initialNotifications(), "voiceHoldShort", {
       scope: "assistant", operation: "voice:1", currentAttempt: true,
@@ -102,6 +104,22 @@ test("exhausted provider allowance has distinct bounded copy and never reports p
   assert.equal(notificationCatalog[id].kind, "warning");
   assert.equal(assistantFailureNotification(new AssistantServiceError(429)), "assistantBusy");
   assert.equal(assistantFailureNotification(new AssistantServiceError(503, undefined, "provider_allowance_exhausted")), "assistantUnavailable");
+});
+
+test("AI response failures distinguish malformed, truncated and rejected edits without blaming the request", () => {
+  for (const [code, notification] of [
+    ["model_output_invalid", "assistantResponseInvalid"],
+    ["model_output_truncated", "assistantResponseIncomplete"],
+    ["edit_validation_failed", "assistantValidationFailed"],
+  ]) {
+    const error = new AssistantServiceError(422, "private rejected source", code);
+    assert.equal(assistantFailureNotification(error), notification);
+    assert.match(error.message, /No changes were applied/);
+    assert.doesNotMatch(error.message, /private/);
+    assert.ok(notificationCatalog[notification].message.length <= 50);
+    assert.doesNotMatch(notificationCatalog[notification].message, /not supported|rephrase/i);
+  }
+  assert.equal(assistantFailureNotification(new AssistantServiceError(422)), "assistantResponseInvalid");
 });
 
 test("event, scope, and operation identify duplicates while a new operation remains distinct", () => {

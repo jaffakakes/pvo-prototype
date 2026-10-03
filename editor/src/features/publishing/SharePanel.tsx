@@ -75,12 +75,12 @@ export function SharePanel({ artifact, url, downloadIssue, onDone }: { artifact:
               disabled={busy || publish.title !== null} onChange={event => setTitle(event.target.value)} /></label>
             <small className={styles.limit}>Online limit: {formatFileSize(publish.status.maxBytes)}. Your local export stays available.</small>
             {tooLarge && <p className={styles.unavailable}>This file is too large for a link. You can still share or download the file.</p>}
-            {!publish.status.authenticated && !busy && <small className={styles.limit}>You'll sign in before uploading.</small>}
+            <small className={styles.limit}>No sign-in needed. Manage and delete your links in this browser.</small>
           </>}
           <button type="button" className={styles.primary} data-create-publication
             disabled={!publish.status?.available || busy || tooLarge || !(publish.title ?? title).trim()}
             onClick={() => { clearFailure(); void publish.createLink(title); }}>
-            {publish.stage === "signing-in" ? "Waiting for sign-in…" : publish.stage === "uploading" ? "Uploading…" : publish.stage === "reserving" ? "Preparing link…" : "Create link"}
+            {publish.stage === "uploading" ? "Uploading…" : publish.stage === "preparing" || publish.stage === "reserving" ? "Preparing link…" : "Create link"}
           </button>
           {busy && publish.stage !== "checking" && <div className={styles.progress} role="status">
             <progress aria-label={publish.stage === "uploading" ? "Uploading exported file" : "Preparing online sharing"} />
@@ -89,7 +89,7 @@ export function SharePanel({ artifact, url, downloadIssue, onDone }: { artifact:
         </>}
       </section>
       {failure && <p className={styles.error} role="alert">{failure}</p>}
-      {publish.status?.authenticated && <details className={styles.manage} onToggle={event => setShowLibrary(event.currentTarget.open)}>
+      {publish.status?.hasSession && <details className={styles.manage} onToggle={event => setShowLibrary(event.currentTarget.open)}>
         <summary>Shared videos</summary>
         {showLibrary && <SharedVideos client={publish.client} />}
       </details>}

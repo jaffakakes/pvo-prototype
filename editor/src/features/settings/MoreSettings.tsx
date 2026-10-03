@@ -11,7 +11,7 @@ import { AdvancedSettings } from "./AdvancedSettings";
 import { ProjectStorageStatus } from "./ProjectStorageStatus";
 import { CaptureRecovery } from "../capture/CaptureRecovery";
 import styles from "./MoreSettings.module.css";
-import { requestExport } from "../../state/auth/authGateStore";
+import { requestExport } from "../../state/export/exportCommands";
 
 const ratios = Object.keys(RATIOS) as Ratio[];
 

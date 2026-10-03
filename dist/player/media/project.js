@@ -1,3 +1,5 @@
+import { createFontScope } from "../../packages/pvo-fonts/index.js";
+import { restoreManifestFonts } from "../../packages/pvo-fonts/portable.js";
 import { readPvo, validatePvo } from "../../packages/pvo-sdk/index.js";
 import { readPvoLanguage } from "../components/language.js";
 import {
@@ -8,7 +10,10 @@ import {
 import { clearRequestStatus, updateRequestStatus } from "../actions/request-status.js";
 
 export function createProjectLoader({ session, refs, adapters }) {
+  let fontScope = null;
   function revokeAssetUrls() {
+    fontScope?.dispose();
+    fontScope = null;
     session.assetUrls.forEach((url) => URL.revokeObjectURL(url));
     session.assetUrls = new Map();
   }
@@ -36,6 +41,8 @@ export function createProjectLoader({ session, refs, adapters }) {
 
   async function loadPvo(file, { autoplay = false } = {}, operation) {
     adapters.setStatus("Loading…", false, true);
+    const nextFonts = createFontScope();
+    let adoptedFonts = false;
     try {
       const decoded = await readPvo(file);
       if (!projectLoadIsCurrent(operation)) return;
@@ -43,12 +50,18 @@ export function createProjectLoader({ session, refs, adapters }) {
         throw new Error("Choose a self-contained .pvo file exported by this editor.");
       }
       if (!decoded.validation.valid) throw new Error(decoded.validation.errors[0] || "The PVO manifest is invalid.");
+      const fonts = await restoreManifestFonts(decoded);
+      if (!projectLoadIsCurrent(operation)) return;
+      await Promise.all(fonts.map(font => nextFonts.load(font)));
+      if (!projectLoadIsCurrent(operation)) return;
       const nextLanguageSources = await readPvoLanguage(decoded);
       if (!projectLoadIsCurrent(operation)) return;
       const languageValidation = validatePvo(decoded.manifest);
       if (!languageValidation.valid) throw new Error(languageValidation.errors[0] || "PVO language produced an invalid component.");
       adapters.destroyCustomOverlays();
       revokeAssetUrls();
+      fontScope = nextFonts;
+      adoptedFonts = true;
       session.manifest = decoded.manifest;
       session.actionRuntime = adapters.makeActionRuntime(session.manifest);
       session.pvoLanguageSources = nextLanguageSources;
@@ -71,6 +84,8 @@ export function createProjectLoader({ session, refs, adapters }) {
       if (!projectLoadIsCurrent(operation)) return;
       adapters.setStatus(`Could not open PVO · ${error.message}`, true);
       refs.empty.hidden = false;
+    } finally {
+      if (!adoptedFonts) nextFonts.dispose();
     }
   }
 

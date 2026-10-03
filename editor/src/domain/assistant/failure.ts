@@ -1,11 +1,12 @@
 import type { NotificationId } from "../notifications/catalog";
 import { AssistantPolicyError } from "../../../../packages/pvo-assistant/policy.js";
+import { assistantServiceErrorDefinition, type AssistantServiceErrorCode } from "../../../../packages/pvo-assistant/service-errors.js";
 
-export type AssistantServiceErrorCode = "provider_allowance_exhausted";
+export type { AssistantServiceErrorCode } from "../../../../packages/pvo-assistant/service-errors.js";
 
 export class AssistantServiceError extends Error {
   constructor(readonly status: number, message = `The assistant request failed (${status}).`, readonly code?: AssistantServiceErrorCode) {
-    super(message);
+    super(assistantServiceErrorDefinition(code, status)?.message ?? message);
     this.name = "AssistantServiceError";
   }
 }
@@ -18,7 +19,10 @@ export function assistantFailureNotification(error: unknown): NotificationId {
     case 409: return "assistantAdvancedRequired";
     case 400: return "assistantInvalidRequest";
     case 413: return "assistantTooLarge";
-    case 422: return "assistantUnsupported";
+    case 422:
+      if (error.code === "model_output_truncated") return "assistantResponseIncomplete";
+      if (error.code === "edit_validation_failed") return "assistantValidationFailed";
+      return "assistantResponseInvalid";
     case 429: return error.code === "provider_allowance_exhausted" ? "assistantAllowanceExhausted" : "assistantBusy";
     case 503: return "assistantUnavailable";
     case 504: return "assistantTimeout";

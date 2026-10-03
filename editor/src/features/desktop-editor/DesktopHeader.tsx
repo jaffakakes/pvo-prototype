@@ -2,7 +2,8 @@ import { sceneDuration } from "../../domain/scenes/duration";
 import { useSyncExternalStore } from "react";
 import { getProjectStorageStatus, subscribeProjectStorage } from "../../app/projectAutosave";
 import { useCapture } from "../../state/captureStore";
-import { openSignIn, requestExport, useAuthGate } from "../../state/auth/authGateStore";
+import { openSignIn } from "../../state/auth/authGateStore";
+import { requestExport } from "../../state/export/exportCommands";
 import { Icon } from "../../ui/Icon";
 import { fmt } from "../../ui/formatTime";
 import { showCreateProject } from "../create-project/projectCommands";
@@ -16,7 +17,6 @@ export function DesktopHeader({ onOpenProject }: { onOpenProject(): void }) {
   const ratio = useCapture(state => state.ratio);
   const busy = useCapture(state => state.importing || state.ex === "running");
   const trying = useCapture(state => !!state.tryMode);
-  const account = useAuthGate(state => state.status?.authenticated);
   const storage = useSyncExternalStore(subscribeProjectStorage, getProjectStorageStatus);
   const saveLabel = storage.phase !== "ready" || storage.storage.phase === "error"
     ? "Save needs attention"
@@ -32,8 +32,8 @@ export function DesktopHeader({ onOpenProject }: { onOpenProject(): void }) {
       <p>{saveLabel} · {scene?.name ?? "Main"} · {fmt(duration)}</p>
     </div>
     <div className={styles.actions}>
-      <span className={styles.guest}><i />{account ? "Account" : "Guest"}
-        <button type="button" onClick={openSignIn}>{account ? "Signed in" : "Sign in"}</button>
+      <span className={styles.guest}><i />Guest
+        <button type="button" onClick={openSignIn}>Sign in</button>
       </span>
       <button type="button" className={styles.target} onClick={onOpenProject}
         aria-label="Project settings" disabled={trying}>{RATIO_LABELS[ratio]} · {ratio}</button>

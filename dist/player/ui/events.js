@@ -1,7 +1,26 @@
+import { bindAnimationClock } from "../playback/animation-clock.js";
 import { updateRequestStatus } from "../actions/request-status.js";
+import { reportPlayerDiagnostic } from "../actions/diagnostics.js";
 
 /** Translate shell and media events into the application's named commands. */
 export function bindPlayerEvents({ session, refs, adapters }) {
+  const diagnosticListeners = [];
+  const stopAnimationClock = bindAnimationClock(refs.video, () => {
+    if (session.manifest && !session.switchingClip) adapters.renderOverlays();
+  });
+  if (typeof session.onDiagnostic === "function") {
+    for (const [eventName, type] of [
+      ["playing", "media.playing"], ["pause", "media.paused"],
+      ["waiting", "media.waiting"], ["seeking", "media.seeking"],
+      ["ended", "media.ended"], ["error", "media.error"],
+    ]) {
+      const listener = () => reportPlayerDiagnostic(session, type, {
+        sceneId: session.currentTimeline?.clips?.[session.currentClipIndex]?.scene,
+      }, eventName === "error" ? { reason: `media_error_${refs.video.error?.code ?? "unknown"}` } : {});
+      refs.video.addEventListener(eventName, listener);
+      diagnosticListeners.push([eventName, listener]);
+    }
+  }
   function handleInput(event) {
     const [file] = event.target.files;
     void adapters.openPvo(file, { autoplay: true });
@@ -131,6 +150,8 @@ export function bindPlayerEvents({ session, refs, adapters }) {
   refs.dropZone?.addEventListener("drop", (event) => { void adapters.openPvo(event.dataTransfer.files[0], { autoplay: true }); });
 
   window.addEventListener("beforeunload", () => {
+    stopAnimationClock();
+    diagnosticListeners.forEach(([eventName, listener]) => refs.video.removeEventListener(eventName, listener));
     adapters.destroyCustomOverlays();
     adapters.revokeAssetUrls();
     adapters.destroyControls();

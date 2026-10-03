@@ -1,3 +1,4 @@
+import { fontFamily } from "../pvo-fonts/index.js";
 import { evaluateAnimation } from "../pvo-animation/index.js";
 
 export const TEXT_FONTS = {
@@ -25,7 +26,7 @@ export function textStyle(overlay) {
 }
 
 function setFont(ctx, style, unit) {
-  ctx.font = `${style.italic ? "italic " : ""}${style.bold ? "700 " : "400 "}${style.size * unit}px ${TEXT_FONTS[style.font] || TEXT_FONTS.sans}`;
+  ctx.font = `${style.italic ? "italic " : ""}${style.bold ? "700 " : "400 "}${style.size * unit}px ${style.fontAsset ? `"${fontFamily(style.fontAsset)}"` : TEXT_FONTS[style.font] || TEXT_FONTS.sans}`;
   ctx.letterSpacing = `${style.spacing * unit}px`;
 }
 

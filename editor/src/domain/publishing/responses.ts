@@ -18,15 +18,14 @@ function safeUrl(value: unknown, origin: string, path: string): string {
   if (url.origin !== origin || url.username || url.password || !url.pathname.startsWith(path)) throw new Error("Invalid publishing destination.");
   return url.href;
 }
-export const unavailablePublishing: PublishingStatus = { available: false, authenticated: false, maxBytes: 50 * 1024 * 1024 };
+export const unavailablePublishing: PublishingStatus = { available: false, hasSession: false, maxBytes: 50 * 1024 * 1024 };
 
-export function publishingStatus(value: unknown, origin: string): PublishingStatus {
+export function publishingStatus(value: unknown): PublishingStatus {
   const input = object(value);
-  if (typeof input.available !== "boolean" || typeof input.authenticated !== "boolean"
+  if (typeof input.available !== "boolean" || typeof input.hasSession !== "boolean"
     || typeof input.maxBytes !== "number" || !Number.isSafeInteger(input.maxBytes) || input.maxBytes < 0)
     throw new Error("Invalid publishing status.");
-  return { available: input.available, authenticated: input.authenticated, maxBytes: input.maxBytes,
-    ...(input.authUrl ? { authUrl: safeUrl(input.authUrl, origin, "/api/") } : {}) };
+  return { available: input.available, hasSession: input.hasSession, maxBytes: input.maxBytes };
 }
 
 export function publicationReservation(value: unknown, origin: string): PublicationReservation {

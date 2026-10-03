@@ -65,6 +65,8 @@ for (const [route, asset] of await sourceModules(
 ))
   assets.set(route, asset);
 
+for (const [path, asset] of await sourceModules(new URL("../../../packages/pvo-fonts/", import.meta.url), "/pvo-fonts")) assets.set(path, asset);
+
 const server = createServer((request, response) => {
   const route = new URL(request.url ?? "/", "http://localhost").pathname;
   const asset = assets.get(route);

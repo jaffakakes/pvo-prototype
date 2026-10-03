@@ -2,7 +2,7 @@
 
 The product deploys from `dist/` through [wrangler.jsonc](../../wrangler.jsonc) and [server/index.js](../../server/index.js). The editor remains at `/editor/`; `/` opens its camera home. The separate PVO documentation and demo are excluded from product output. Static assets are served directly; API/media requests and unpublished-page templates go through explicit Worker routes. A missing `/player/{id}` asset falls through to the Worker and is resolved from D1, without a general SPA fallback.
 
-The checked-in configuration leaves `PUBLISHING_ENABLED=false`. The user has deferred login and sign-up decisions; the Google adapter below is provisional and must not be treated as an approved final account experience. Local recording, export, download and native file sharing remain usable. `/api/publishing` reports `available:false` until publishing is enabled, R2 and D1 are bound, the exact HTTPS `PUBLIC_ORIGIN` matches the request, and the current adapter's Google credentials plus a session secret are configured. No development login or password bypass is deployed.
+Create link publishes the completed export without a login or account. The browser receives a signed session cookie only when the creator explicitly chooses Create link. Local recording, export, download and native file sharing remain usable independently. `GET /api/publishing` returns `{available, hasSession, maxBytes}` and creates no session. Availability requires `PUBLISHING_ENABLED=true`, the R2 and D1 bindings, an exact HTTPS `PUBLIC_ORIGIN` matching the request, and `SESSION_SECRET`. No OAuth credentials are required.
 
 ## Live beta release notifications
 
@@ -18,37 +18,33 @@ The local beta server uses `scripts/dev/releases.mjs` to provide the same protoc
 
 ## Resources and launch configuration
 
-Use one private R2 Standard bucket and one D1 database in the account that owns the Worker. Bind them as `MEDIA` and `DB`. Do not expose the bucket through `r2.dev`. Add the real resource values to Wrangler after provisioning:
+The production Worker uses the private R2 Standard bucket `pvo-publications-media` and D1 database `pvo-publications`, bound as `MEDIA` and `DB`. The resources are provisioned in the Worker's account and recorded in Wrangler. Keep public bucket access through `r2.dev` disabled:
 
 ```jsonc
 "r2_buckets": [
-  { "binding": "MEDIA", "bucket_name": "YOUR_PRIVATE_BUCKET" }
+  { "binding": "MEDIA", "bucket_name": "pvo-publications-media" }
 ],
 "d1_databases": [
   {
     "binding": "DB",
-    "database_name": "YOUR_DATABASE",
-    "database_id": "YOUR_DATABASE_ID",
+    "database_name": "pvo-publications",
+    "database_id": "068e7e39-9730-4a2d-827c-97c9b2e227f3",
     "migrations_dir": "migrations"
   }
 ]
 ```
 
-Apply `migrations/0001_publishing.sql` with `npx wrangler d1 migrations apply DB --remote` before enabling uploads. The configuration contains no invented resource IDs. Resource provisioning, subscription activation and a real authentication callback are deployment setup, not actions performed by a build or the tests.
+Apply the current initial schema, `migrations/0001_publishing.sql`, with `npx wrangler d1 migrations apply DB --remote` before enabling uploads. It stores browser owners and sessions; it does not store an external identity provider or require an account callback. Resource provisioning and remote schema application are deployment setup, not actions performed by a build or the tests.
 
-Create a Google OAuth **Web application** client. Register this exact redirect URI for the configured production origin:
+Store `SESSION_SECRET` with `npx wrangler secret put SESSION_SECRET`. Generate a random secret with at least 32 bytes of entropy. Never place it in Vite variables, the repository, a static ZIP, or a chat message. Keep `PUBLIC_ORIGIN` equal to the canonical HTTPS origin without a path, set `PUBLISHING_ENABLED=true`, and deploy.
 
-```text
-https://lingering-butterfly-9ba8.jaffakakes28.workers.dev/api/auth/callback
-```
+`POST /api/publishing/session` creates a random browser owner and a 180-day session or reuses a valid existing session. The server signs the HttpOnly, Secure, SameSite cookie and records its session in D1; the browser cannot choose its owner ID. Session creation and publication writes require the exact configured Origin. Reading availability or opening the editor does not create an owner or session. The same browser can list and delete its published exports without a sign-in popup.
 
-Configure the consent screen and its allowed test users while the Google app is in testing. Set `GOOGLE_CLIENT_ID` as a Worker variable, and store `GOOGLE_CLIENT_SECRET` and `SESSION_SECRET` with `npx wrangler secret put NAME`. Generate a random session secret with at least 32 bytes of entropy; do not reuse a provider secret. Never place these secrets in Vite variables, the repository, a static ZIP, or a chat message. Keep `PUBLIC_ORIGIN` equal to the canonical HTTPS origin without a path. Finally set `PUBLISHING_ENABLED=true` and deploy.
-
-Sign-in opens `/api/auth/login` in a separate window. It uses a short-lived signed HttpOnly state cookie, PKCE and an OIDC nonce; the callback exchanges the authorization code server-side and verifies Google's RS256 signature, issuer, audience, expiry, authorized party and nonce using `jose`. Identity uses Google's stable `sub`, not a browser-provided owner ID or an unverified email. The callback posts `{type:"restyle-auth",ok:true}` only to the exact editor origin and closes; its return link is a fallback. The existing editor tab retains the prepared export. Sessions use revocable D1 records and Secure/HttpOnly/SameSite cookies; authenticated writes also require an exact Origin match. See [Google's server flow](https://developers.google.com/identity/openid-connect/openid-connect).
+Ownership belongs to that browser session, not a cross-device account. Clearing cookies or reaching the session expiry loses access to its management and deletion controls. Existing public links continue working; a new session cannot recover the previous owner's publications. Per-owner quotas therefore limit one browser owner, not a verified person; the total storage quota remains a separate deployment-wide limit.
 
 ## Stored exports and limits
 
-`POST /api/publications` reserves storage in one D1 statement with a per-owner idempotency key. Defaults are 50 MiB per export, 500 MiB reserved/stored per creator, 5 GiB total, and 20 newly created links per creator per rolling day. Server configuration may reduce these limits; the individual upload maximum never exceeds 50 MiB. Pending and deleting records count toward quota until their storage is removed.
+`POST /api/publications` reserves storage in one D1 statement with a per-owner idempotency key. Defaults are 50 MiB per export, 500 MiB reserved/stored per browser owner, 5 GiB total, and 20 newly created links per browser owner per rolling day. Server configuration may reduce these limits; the individual upload maximum never exceeds 50 MiB. Pending and deleting records count toward quota until their storage is removed.
 
 `PUT /api/publications/{id}/content` holds an upload lease, writes a new random object key, and enforces the exact reserved size while streaming through a `FixedLengthStream`. Both sides of the stream settle before failed storage is cleaned up. Verification reads bounded metadata from R2: exported MP4/WebM containers, or a PVO header/manifest/asset index of at most 256 KiB and 512 assets. Container inspection is not codec transcoding or full video decoding. PVO metadata validation uses the SDK's public `inspectPvoProject` API; media is never copied into Worker memory. Existing local PVO compatibility and its larger format limits are unchanged.
 
@@ -60,8 +56,8 @@ Owner-scoped listing returns ready links only. Deletion makes new viewer/media r
 
 ## Verification and rollout
 
-Run `node --test tests/publishing-server*.test.mjs` for Google signature/session checks, bounded SDK inspection, and integration tests using real local Miniflare D1/R2/Worker execution. Tests use an isolated HTTPS test origin and test-only sessions, never a deployed login or remote storage. `npm run check` also discovers these tests. The shared SDK suite checks legacy MP4/MOV and current PVO compatibility.
+Run `node --test tests/publishing-server*.test.mjs` for signed browser-session and origin checks, bounded SDK inspection, and integration tests using real local Miniflare D1/R2/Worker execution. Tests use an isolated HTTPS test origin and local storage, not remote publishing resources. `npm run check` also discovers these tests. The shared SDK suite checks legacy MP4/MOV and current PVO compatibility.
 
-Run `npm run build`, then a Wrangler dry run, before deploying. A static dashboard ZIP cannot provide the publishing API. After the real identity/resources are configured, verify sign-in from the retained export dialog, both video/PVO uploads, a viewer in a separate unauthenticated browser, seeking, idempotent retry, owner isolation and deletion against the deployed hostname. Local tests do not establish that the production Google client, callback or storage bindings work.
+Run `npm run build`, then a Wrangler dry run, before deploying. A static dashboard ZIP cannot provide the publishing API. After configuring the resources and secret, verify Create link from the retained export dialog without sign-in, both video/PVO uploads, a viewer in a separate browser without a publishing session, seeking, idempotent retry, owner isolation and deletion against the deployed hostname. Verify that availability reads create no session and explicit link creation does. Local tests do not establish that production storage bindings or the deployed session configuration work.
 
 R2 storage/operations, D1 and dynamic Worker requests have separate allowances. Static files bypass Worker execution where possible. Monitor usage and retain quotas; this is bounded hosting, not unlimited free video storage. See [Worker limits](https://developers.cloudflare.com/workers/platform/limits/) and [R2 bindings](https://developers.cloudflare.com/r2/api/workers/workers-api-reference/).

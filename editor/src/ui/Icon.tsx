@@ -9,6 +9,7 @@ const paths: Record<string, React.ReactNode> = {
   down: <path d="M6 9l6 6 6-6" />,
   camera: <><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></>,
   music: <><path d="M9 18V6l12-2v12" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></>,
+  microphone: <><rect x="9" y="2" width="6" height="12" rx="3" /><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8" /></>,
   flip: <><path d="M20 12a8 8 0 0 1-14.9 4M4 12a8 8 0 0 1 14.9-4M4 20v-4h4M20 4v4h-4" /></>,
   flash: <path d="M13 2 4 14h7l-1 8 9-12h-7z" />,
   timer: <><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2.5 2M10 2h4" /></>,

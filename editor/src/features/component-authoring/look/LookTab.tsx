@@ -7,6 +7,7 @@ import { selectComponentLookPart, useComponentAuthoring } from "../../../state/c
 import { ColourControl } from "./ColourControl";
 import { LookPreview } from "./LookPreview";
 import styles from "./LookTab.module.css";
+import { FontPicker } from "../../fonts/FontPicker";
 
 function Choices<T extends string | number>({ label, value, customValue, options, onChange }: {
   label: string; value: T; customValue?: string;
@@ -104,6 +105,8 @@ export function LookTab({ component, disabled = false, previewScale }: { compone
   return <fieldset className={styles.tab} disabled={disabled} data-component-look>
     <legend className={styles.srOnly}>Component appearance</legend>
     {error && <p className={styles.error} role="alert">{error}</p>}
+    <FontPicker key={component.id} value={component.font} disabled={disabled}
+      onChange={font => useCapture.getState().updateComponent(component.id, { font })} />
     <div className={styles.control}>
       <h3>Looks</h3>
       <div className={styles.presets} data-look-presets>

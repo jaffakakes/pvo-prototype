@@ -1,3 +1,4 @@
+import { fontFamily } from "../../packages/pvo-fonts/index.js";
 import { applyComponentAppearance } from "./appearance.js";
 
 function sanitizeHtml(html) {
@@ -186,6 +187,11 @@ class PvoComponentView extends HTMLElement {
       root.append(form);
     }
     applyComponentAppearance(root, component, this.visualUnit);
+    if (component.restyle_capture?.font) {
+      const style = document.createElement("style");
+      style.textContent = `:host,*{font-family:"${fontFamily(component.restyle_capture.font)}"!important}`;
+      root.append(style);
+    }
   }
 
   setPending(pending) {

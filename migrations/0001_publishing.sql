@@ -1,7 +1,5 @@
 CREATE TABLE creators (
   id TEXT PRIMARY KEY,
-  google_subject TEXT NOT NULL UNIQUE,
-  display_name TEXT NOT NULL,
   created_at INTEGER NOT NULL
 );
 CREATE TABLE sessions (

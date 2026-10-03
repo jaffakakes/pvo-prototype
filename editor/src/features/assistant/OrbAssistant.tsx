@@ -21,6 +21,7 @@ export function OrbAssistant({ placement: position = "workspace", portalTarget }
   const placement = useAssistantPlacement(host, position, portalTarget);
   const active = session.available && session.phase !== "idle";
   const voice = useOrbVoice({
+    contextKey: session.voiceContext,
     enabled: session.available && session.phase !== "working" && session.phase !== "review",
     onTap: () => {
       session.open();
@@ -38,6 +39,12 @@ export function OrbAssistant({ placement: position = "workspace", portalTarget }
     close();
     if (position === "workspace") clearSelection();
   };
+  const startVoice = () => {
+    voice.start();
+    orb.current?.focus({ preventScroll: true });
+  };
+  const orbHandlers = session.phase === "working" ? { onClick: session.stop }
+    : voice.voiceActive && (voice.mode === "tap" || voice.phase === "transcribing") ? voice.tapHandlers : voice.handlers;
 
   useEffect(() => {
     if (!active) return;
@@ -71,13 +78,14 @@ export function OrbAssistant({ placement: position = "workspace", portalTarget }
     {session.available && <>
       <OrbAssistantView phase={session.phase} target={session.target}
         clipCount={clips.length} duration={total(clips)} ratio={ratio} voiceSide={session.voiceSide}
+        voicePhase={voice.phase} voiceMode={voice.mode} onStartVoice={startVoice}
         draft={session.draft} onDraftChange={session.setDraft}
         transcript={session.transcript} progress={session.progress} answer={session.answer} suggestions={session.suggestions}
         onSubmit={() => { void session.submit(session.draft); }} onClose={dismissOutside}
         onDone={() => { session.acknowledge(); orb.current?.focus({ preventScroll: true }); }}
         onEditRequest={session.editRequest}
         onSuggestion={words => { void session.submit(words); }}
-        orbHandlers={session.phase === "working" ? { onClick: session.stop } : voice.handlers}
+        orbHandlers={orbHandlers}
         orbRef={orb} toolbarHeight={placement.toolbarHeight}
         placement={position} availableHeight={placement.availableHeight} />
     </>}
