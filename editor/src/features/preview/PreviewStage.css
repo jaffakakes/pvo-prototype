@@ -29,9 +29,6 @@
   border: 2.5px solid #000;
   border-radius: 16px;
   box-shadow: 4px 4px 0 #000;
-  transition:
-    width 0.25s,
-    height 0.25s;
 }
 .pvVideo {
   position: absolute;

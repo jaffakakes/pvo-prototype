@@ -71,6 +71,9 @@ export interface PvoPresentation {
   width: number;
   height: number;
 }
+/** Embedded fonts are deduplicated package assets, never remote download URLs. */
+export interface PvoFontReference { asset_id: string }
+
 export interface PvoComponentBase {
   id: string;
   title?: string;

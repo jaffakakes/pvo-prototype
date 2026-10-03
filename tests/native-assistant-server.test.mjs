@@ -96,8 +96,30 @@ test("invalid IDs cannot reach the browser after the single permitted repair", a
   const invalid = { ...nativeDraft(), operations: [{ kind: "clip.delete", sceneId: "main", clipId: 999 }] };
   const fixture = await nativeFixture({ outputs: [{ response: invalid }, { response: invalid }] });
   t.after(fixture.close);
-  assert.equal((await fixture.turn()).status, 422);
+  const response = await fixture.turn();
+  assert.equal(response.status, 422);
+  const failure = await response.json();
+  assert.equal(failure.code, "edit_validation_failed");
+  assert.match(failure.error, /No changes were applied/);
+  assert.doesNotMatch(failure.error, /999|clip\.delete/);
   assert.equal(fixture.calls.length, 2);
+});
+
+test("invalid model responses and truncated provider output retain their distinct public codes", async t => {
+  const invalid = await nativeFixture({ outputs: [{ response: "private invalid JSON" }, { response: "private invalid JSON" }] });
+  const truncated = await nativeFixture({ provider: "runpod", runpodKey: "server-test-key", outputs: [
+    { choices: [{ finish_reason: "length", message: { role: "assistant", content: "private partial response" } }] },
+  ] });
+  t.after(async () => { await invalid.close(); await truncated.close(); });
+  for (const [fixture, code] of [[invalid, "model_output_invalid"], [truncated, "model_output_truncated"]]) {
+    const response = await fixture.turn();
+    assert.equal(response.status, 422);
+    const result = await response.json();
+    assert.equal(result.code, code);
+    assert.doesNotMatch(JSON.stringify(result), /private|server-test-key/);
+  }
+  assert.equal(invalid.calls.length, 2);
+  assert.equal(truncated.calls.length, 1);
 });
 
 test("timestamped frames go to vision and only actual descriptions enter text inference", async t => {

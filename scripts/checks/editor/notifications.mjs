@@ -27,11 +27,11 @@ try {
     window.notificationCapture = (await import("/src/store.ts")).useCapture;
   });
   await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets: { top: 59, bottom: 34, left: 0, right: 0 } });
-  await show("assistantUnsupported", { scope: "fixture", currentAttempt: true });
+  await show("assistantResponseInvalid", { scope: "fixture", currentAttempt: true });
   await notice.waitFor();
   await page.waitForTimeout(300);
   assert.equal(await notice.getAttribute("data-severity"), "error");
-  assert((await notice.innerText()).includes("Request not supported."));
+  assert((await notice.innerText()).includes("AI response was invalid. Try again."));
   const bounds = await notice.boundingBox();
   assert(bounds && bounds.y >= 59 && bounds.x >= 16 && bounds.x + bounds.width <= 304,
     `Banner must fit below safe area with phone margins: ${JSON.stringify(bounds)}`);
@@ -46,7 +46,7 @@ try {
   assert.equal(await notice.count(), 1, "Hover pauses dismissal");
   await page.mouse.move(2, 400);
   await notice.waitFor({ state: "hidden", timeout: 4500 });
-  await show("assistantUnsupported", { scope: "fixture", currentAttempt: true });
+  await show("assistantResponseInvalid", { scope: "fixture", currentAttempt: true });
   assert.equal(await notice.count(), 0, "Repeated event must not restart the banner inside the cooldown");
 
   for (const [id, kind] of [["voiceHoldShort", "warning"], ["voiceUnavailable", "info"]]) {

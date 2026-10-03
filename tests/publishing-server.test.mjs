@@ -3,11 +3,12 @@ import assert from "node:assert/strict";
 import { workerFixture, ORIGIN, reserve, upload, tinyMp4, tinyWebm, tinyPvo } from "./publishing-server.helpers.mjs";
 import { cleanupPublications } from "../server/publishing/cleanup.js";
 
-test("publishing is explicitly disabled until bindings and identity are configured", async () => {
-  const f = await workerFixture({ PUBLISHING_ENABLED: "false" });
+test("publishing is explicitly disabled until its storage and session secret are configured", async () => {
+  const f = await workerFixture({ PUBLISHING_ENABLED: "false" }, { createSessions: false });
   try {
     const status = await (await f.request("/api/publishing")).json();
-    assert.deepEqual(status, { available: false, authenticated: false, maxBytes: 52428800 });
+    assert.deepEqual(status, { available: false, hasSession: false, maxBytes: 52428800 });
+    assert.equal((await f.request("/api/publishing/session", { method: "POST" })).status, 503);
     assert.equal((await reserve(f, tinyMp4())).response.status, 503);
     assert.equal((await f.request("/docs/")).status, 404);
     assert.equal((await f.request("/demo/")).status, 404);
@@ -18,10 +19,11 @@ test("publishing is explicitly disabled until bindings and identity are configur
   } finally { await f.close(); }
 });
 
-test("verified sessions, CSRF and ownership protect publication operations", async () => {
+test("browser sessions, CSRF and ownership protect publication operations", async () => {
   const f = await workerFixture();
   try {
-    assert.equal((await (await f.request("/api/publishing")).json()).user.name, "Alice");
+    assert.deepEqual(await (await f.request("/api/publishing")).json(),
+      { available: true, hasSession: true, maxBytes: 52428800 });
     assert.equal((await reserve(f, tinyMp4(), {}, { session: null })).response.status, 401);
     assert.equal((await reserve(f, tinyMp4(), {}, { headers: { Origin: "https://attacker.example", "Content-Type": "application/json" } })).response.status, 403);
     const created = await reserve(f, tinyMp4());
@@ -33,10 +35,6 @@ test("verified sessions, CSRF and ownership protect publication operations", asy
     assert.equal((await f.request(`/api/publications/${id}`, { method: "DELETE", session: f.otherCookie })).status, 404);
     assert.equal((await f.request(`/player/${id}`, { session: null })).status, 404);
     assert.equal((await f.request(`/media/${id}`, { session: null })).status, 404);
-    assert.equal((await f.request("/api/auth/callback?code=bad&state=bad")).status, 400);
-    const signedOut = await f.request("/api/auth/logout", { method: "POST" });
-    assert.equal(signedOut.status, 200);
-    assert.equal((await (await f.request("/api/publishing")).json()).authenticated, false);
   } finally { await f.close(); }
 });
 

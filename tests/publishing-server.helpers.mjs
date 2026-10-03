@@ -1,21 +1,19 @@
 import { bundleWorkerModules } from "./worker-bundle.helpers.mjs";
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
 import { readFile } from "node:fs/promises";
-import { createSession } from "../server/auth/sessions.js";
 import { packPvoProject } from "../packages/pvo-sdk/index.js";
 
 export const ORIGIN = "https://restyle.example";
 export const SECRET = "integration-test-session-secret-not-used-in-production";
 let bundle;
 
-export async function workerFixture(overrides = {}) {
+export async function workerFixture(overrides = {}, { createSessions = true } = {}) {
   bundle ??= bundleWorkerModules({ entryPoints: ["server/index.js"] });
   const template = await readFile("player/published.html", "utf8");
   const mf = new Miniflare(convertV4MiniflareOptions({ name: "publishing-test",
     modules: await bundle, compatibilityDate: "2026-09-27",
     d1Databases: ["DB"], r2Buckets: ["MEDIA"],
-    bindings: { PUBLISHING_ENABLED: "true", PUBLIC_ORIGIN: ORIGIN, SESSION_SECRET: SECRET,
-      GOOGLE_CLIENT_ID: "test-client", GOOGLE_CLIENT_SECRET: "test-only-provider-secret", ...overrides },
+    bindings: { PUBLISHING_ENABLED: "true", PUBLIC_ORIGIN: ORIGIN, SESSION_SECRET: SECRET, ...overrides },
     serviceBindings: { ASSETS: request => new Response(new URL(request.url).pathname === "/player/published"
       ? template : "static asset", { headers: { "Content-Type": "text/html" } }) },
   }));
@@ -23,11 +21,18 @@ export async function workerFixture(overrides = {}) {
   const bucket = await mf.getR2Bucket("MEDIA");
   const statements = (await readFile("migrations/0001_publishing.sql", "utf8")).split(";").map(sql => sql.trim()).filter(Boolean);
   await db.batch(statements.map(sql => db.prepare(sql)));
-  const cookie = (await createSession({ sub: "alice-google", name: "Alice" }, { DB: db, SESSION_SECRET: SECRET })).split(";", 1)[0];
-  const otherCookie = (await createSession({ sub: "bob-google", name: "Bob" }, { DB: db, SESSION_SECRET: SECRET })).split(";", 1)[0];
+  let cookie = null;
+  let otherCookie = null;
   async function request(path, { method = "GET", body, headers = {}, session = cookie, ...rest } = {}) {
     return mf.dispatchFetch(`${ORIGIN}${path}`, { method, body,
       headers: { Origin: ORIGIN, ...(session ? { Cookie: session } : {}), ...headers }, ...rest });
+  }
+  if (createSessions) {
+    const first = await request("/api/publishing/session", { method: "POST", session: null });
+    const second = await request("/api/publishing/session", { method: "POST", session: null });
+    if (!first.ok || !second.ok) throw new Error("Publishing fixture could not create browser sessions.");
+    cookie = first.headers.get("Set-Cookie").split(";", 1)[0];
+    otherCookie = second.headers.get("Set-Cookie").split(";", 1)[0];
   }
   return { mf, db, bucket, cookie, otherCookie, request, close: () => mf.dispose() };
 }

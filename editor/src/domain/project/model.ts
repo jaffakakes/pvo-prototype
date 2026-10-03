@@ -1,3 +1,4 @@
+import type { AppliedFont } from "../../../../packages/pvo-fonts/index.js";
 import type { CompiledPvoComponent } from "../../../../packages/pvo-language/index.js";
 import { type TextStyle } from "../../../../packages/pvo-text-runtime/index.js";
 import { type PvoLanguageSource } from "../components/languageSource";
@@ -112,6 +113,8 @@ export type PvoComponent = {
   width?: number;
   height?: number;
   look?: ComponentLook;
+  /** Downloaded font bytes travel with this layer and its project history. */
+  font?: AppliedFont;
   /** Animation seconds are relative to this layer's at time. */
   animation?: LayerAnimation;
   animationTracking?: LayerTracking;

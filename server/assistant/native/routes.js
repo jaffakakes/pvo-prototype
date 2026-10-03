@@ -3,7 +3,8 @@ import { parseNativeTurnRequest } from "../../../packages/pvo-assistant/native/i
 import { checkOrigin, HttpError, json, readJson } from "../../http.js";
 import { withAssistantDeadline } from "../deadline.js";
 import { nativeAssistantOrigin, nativeAssistantStatus } from "./provider.js";
-import { NATIVE_TRANSCRIPTION_MODEL, NativeProviderAllowanceError, runNativeModel } from "./cloudflare.js";
+import { NATIVE_TRANSCRIPTION_MODEL, runNativeModel } from "./cloudflare.js";
+import { NativeAssistantError } from "./errors.js";
 import { nativeModels } from "./models.js";
 import { validateNativeInput } from "./policy.js";
 import { nativeAssistantTurn } from "./service.js";
@@ -15,13 +16,13 @@ import { readTrackingJson } from "./trackingBody.js";
 import { TRACKING_MAX_REQUEST_BYTES } from "../../../packages/pvo-assistant/native/index.js";
 import { reserveAssistantUsage } from "../quota.js";
 
-/** Only the known public provider classification crosses the HTTP boundary. */
+/** Only curated public classifications cross the HTTP boundary. */
 export async function nativeAssistantRoute(request, env, config) {
   try {
     return await routeNativeAssistant(request, env, config);
   } catch (error) {
-    if (!(error instanceof NativeProviderAllowanceError)) throw error;
-    return json({ error: error.message, code: "provider_allowance_exhausted" }, error.status);
+    if (!(error instanceof NativeAssistantError)) throw error;
+    return json({ error: error.message, code: error.code }, error.status);
   }
 }
 

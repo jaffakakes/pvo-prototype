@@ -1,14 +1,14 @@
 import { HttpError } from "../../http.js";
+import { NativeAssistantError } from "./errors.js";
 
 export const NATIVE_TEXT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 export const NATIVE_VISION_MODEL = "@cf/moondream/moondream3.1-9B-A2B";
 export const NATIVE_TRANSCRIPTION_MODEL = "@cf/openai/whisper-large-v3-turbo";
 
 /** A fixed public classification; raw provider diagnostics never enter the UI. */
-export class NativeProviderAllowanceError extends HttpError {
+export class NativeProviderAllowanceError extends NativeAssistantError {
   constructor() {
-    super(429, "The AI provider's daily allowance is exhausted. Try after it resets.");
-    this.code = "provider_allowance_exhausted";
+    super("provider_allowance_exhausted");
   }
 }
 

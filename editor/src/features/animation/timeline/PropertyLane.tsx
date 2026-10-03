@@ -128,6 +128,7 @@ export function PropertyLane({
                 <button
                   type="button"
                   className={styles.easing}
+                  data-keyframe-control
                   disabled={disabled}
                   aria-label={`Edit easing after ${GROUP_LABELS[segmentTrack.group]} keyframe at ${formatKeyTime(key.time)}`}
                   title="Easing · click to edit"
@@ -148,6 +149,7 @@ export function PropertyLane({
             type="button"
             key={`${key.group}:${key.index}`}
             className={styles.key}
+            data-keyframe-control
             style={{ left: left(key.time) }}
             disabled={disabled}
             aria-pressed={key === selected}

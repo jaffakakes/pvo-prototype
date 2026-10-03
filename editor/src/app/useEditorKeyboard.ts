@@ -121,7 +121,9 @@ export function useEditorKeyboard(enabled = true) {
         return;
       }
       if (event.code === "Space") {
-        if (target instanceof HTMLButtonElement) return;
+        // Keyframe edits leave focus on their control. Space should resume the
+        // preview there; Enter still activates the focused keyframe control.
+        if (target instanceof HTMLButtonElement && !target.closest("[data-keyframe-control]")) return;
         event.preventDefault();
         togglePlayback();
       }

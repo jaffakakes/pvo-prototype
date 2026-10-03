@@ -14,7 +14,7 @@ await cp(resolve(root, "editor/deployment"), dist, { recursive: true });
 // Copy module trees so new relative imports also exist in static output.
 await cp(resolve(root, "player"), resolve(dist, "player"), { recursive: true });
 const browserFiles = source => !/\.(?:md|ts)$/.test(source) && !source.endsWith("package.json");
-for (const name of ["pvo-animation", "pvo-sdk", "pvo-code-runtime", "pvo-text-runtime", "pvo-component-runtime"]) {
+for (const name of ["pvo-fonts", "pvo-animation", "pvo-sdk", "pvo-code-runtime", "pvo-text-runtime", "pvo-component-runtime"]) {
   await cp(resolve(root, "packages", name), resolve(dist, "packages", name), {
     recursive: true, filter: browserFiles,
   });

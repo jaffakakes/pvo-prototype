@@ -4,7 +4,7 @@ import { useMusicPlayback } from "../sound/useMusicPlayback";
 import { total } from "../../domain/clips/timing";
 import { sceneDuration } from "../../domain/scenes/duration";
 import { componentEnd } from "../../domain/components/timing";
-import { useLayoutEffect,useRef,useState } from "react";
+import { useRef } from "react";
 import { dur,locate } from "../../domain/clips/timing";
 import { layerZ } from "../../domain/layers/order";
 import { projectRatio } from "../../domain/project/ratio";
@@ -18,6 +18,7 @@ import styles from "./Preview.module.css";
 import { runComponentResponse } from "./tryMode";
 import { usePlayback } from "./usePlayback";
 import { useOverlayGestures } from "./useOverlayGestures";
+import { usePreviewAreaSize } from "./usePreviewAreaSize";
 import { Icon } from "../../ui/Icon";
 import { StageMotionPath } from "../animation/stage/StageMotionPath";
 
@@ -26,11 +27,10 @@ type Props = { desktop?: boolean; safeZone?: boolean; onAddMedia?(): void };
 export function Preview({ desktop = false, safeZone = false, onAddMedia }: Props = {}) {
   const s = useCapture();
   const assistantActive = useAssistant(state => state.phase !== "idle");
-  const areaRef = useRef<HTMLDivElement>(null);
+  const { areaRef, area } = usePreviewAreaSize();
   const boxRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const gestures = useOverlayGestures(boxRef, desktop);
-  const [area, setArea] = useState({ width: 0, height: 0 });
   const located = s.trim ? { c: s.clips[s.trim.i], i: s.trim.i } : locate(s.t, s.clips);
   const duration = sceneDuration(s);
   const sourceTime = s.trim?.lt ?? locate(s.t, s.clips)?.lt ?? 0;
@@ -40,17 +40,6 @@ export function Preview({ desktop = false, safeZone = false, onAddMedia }: Props
   usePlayback(videoRef);
   useAudioPlayback();
   useMusicPlayback();
-  useLayoutEffect(() => {
-    const host = areaRef.current;
-    if (!host) return;
-    const observer = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect;
-      setArea(previous => previous.width === width && previous.height === height
-        ? previous : { width, height });
-    });
-    observer.observe(host);
-    return () => observer.disconnect();
-  }, []);
   const { width: bw, height: bh } = fitPreviewSize(area.width, area.height, projectRatio(s.ratio));
   const compact = bw < 180;
   const selectedAuthoring = !s.tryMode && !s.playheadPick && !s.playing;

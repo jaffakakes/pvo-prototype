@@ -32,6 +32,11 @@ export function beginPublicationAttempt(snapshotId: string, title: string) {
   const current = useExportArtifact.getState();
   if (current.artifact?.snapshotId === snapshotId && current.publicationTitle === null) useExportArtifact.setState({ publicationTitle: title });
 }
+export function expirePublicationAttempt(snapshotId: string, publicationKey: string, nextKey: string) {
+  const current = useExportArtifact.getState();
+  if (current.artifact?.snapshotId === snapshotId && current.publicationKey === publicationKey)
+    useExportArtifact.setState({ publication: null, publicationKey: nextKey });
+}
 export function forgetExportPublication(id: string, nextKey: string) {
   if (useExportArtifact.getState().publication?.id === id) useExportArtifact.setState({ publication: null, publicationKey: nextKey, publicationTitle: null });
 }

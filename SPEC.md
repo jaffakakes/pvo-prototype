@@ -170,3 +170,11 @@ A player must send requests only to exact hosts declared in `allowed_domains`, e
 - Player implementations should validate all references, scene ranges, and normalized coordinates before playback.
 
 Cryptographic signing and a creator trust model are future format work, not implied by this prototype.
+
+### Downloaded fonts
+
+The editor keeps a downloaded font with its authored component (`font`) or text style (`fontAsset`). A font contains a stable ID, display family, HTTPS source and licence URLs, the original licence and copyright text (up to 30,000 characters), and up to 32 embedded WOFF2, WOFF, TTF or OTF faces with weight, normal/italic style and optional Unicode ranges. Total decoded bytes are limited to 1 MiB per family. Project snapshots and history retain those bytes independently of the browser font library.
+
+Interactive exports replace each applied font with `{ "asset_id": "fonts/pvo-…json" }` in `restyle_capture.font` or the scene text's `style.fontAsset`. Each unique font is stored once as an `application/vnd.pvo.font+json` package asset. Font bytes never inflate the bounded manifest. The player validates and restores these assets before playback; no font download is required to view an export. Flat video export waits for the fonts before drawing text.
+
+Downloaded fonts are host data, separate from PVO Style. Native text and controls use the applied family; isolated renderers receive validated binary `FontFace` objects from the host. Existing generated CSS restrictions and `font-src 'none'` remain in force.

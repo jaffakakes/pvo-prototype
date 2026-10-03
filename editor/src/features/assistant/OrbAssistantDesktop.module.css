@@ -141,6 +141,16 @@
   text-overflow: ellipsis;
 }
 
+.root[data-placement="toolbar"][data-voice-phase="starting"] [data-assistant-live-heading] {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.root[data-placement="toolbar"][data-voice-phase="starting"] [data-assistant-live-content] {
+  display: none;
+}
+
 .root[data-placement="toolbar"] [data-assistant-live-content] {
   flex: 1;
   min-width: 0;

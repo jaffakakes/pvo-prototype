@@ -1,3 +1,4 @@
+import { validateFontAsset } from "../../../../packages/pvo-fonts/index.js";
 import { layerOrder } from "../layers/order";
 import { cloneLook } from "../components/look";
 import { cloneAnimation } from "../../../../packages/pvo-animation/index.js";
@@ -9,6 +10,7 @@ export const cloneOutcome = (outcome: Outcome): Outcome => outcome.kind === "req
   : { ...outcome };
 export const cloneComponent = (component: PvoComponent): PvoComponent => ({
   ...component,
+  ...(component.font ? { font: validateFontAsset(component.font) } : {}),
   ...(component.animation ? { animation: cloneAnimation(component.animation) } : {}),
   ...(component.animationTracking ? { animationTracking: cloneLayerTracking(component.animationTracking) } : {}),
   archivedCode: component.archivedCode && structuredClone(component.archivedCode),
@@ -36,7 +38,7 @@ export const cloneScenes = (scenes: Scene[]): Scene[] => scenes.map(scene => ({
   clips: scene.clips.map(clip => ({ ...clip, ...(clip.animation ? { animation: cloneAnimation(clip.animation) } : {}),
     ...(clip.animationTracking ? { animationTracking: cloneLayerTracking(clip.animationTracking) } : {}) })),
   ...(scene.audioClips ? { audioClips: scene.audioClips.map(clip => ({ ...clip, ...(clip.animation ? { animation: cloneAnimation(clip.animation) } : {}) })) } : {}),
-  texts: scene.texts.map(text => ({ ...text, style: text.style && { ...text.style }, ...(text.animation ? { animation: cloneAnimation(text.animation) } : {}),
+  texts: scene.texts.map(text => ({ ...text, style: text.style && { ...text.style, ...(text.style.fontAsset ? { fontAsset: validateFontAsset(text.style.fontAsset) } : {}) }, ...(text.animation ? { animation: cloneAnimation(text.animation) } : {}),
     ...(text.animationTracking ? { animationTracking: cloneLayerTracking(text.animationTracking) } : {}) })),
   layers: layerOrder(scene),
   components: scene.components.map(cloneComponent),

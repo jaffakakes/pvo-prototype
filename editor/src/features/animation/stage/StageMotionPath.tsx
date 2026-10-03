@@ -58,7 +58,7 @@ export function StageMotionPath({ width, height, pathDots = true }: { width: num
         && (selection.group === "position" || state.sheet === "animation")
         && Math.abs(selection.time - key.time) < .000001;
       return <button type="button" key={key.time} className={styles.handle}
-        data-animation-path-key aria-label={`Position keyframe at ${Number(key.time.toFixed(3))} seconds`}
+        data-animation-path-key data-keyframe-control aria-label={`Position keyframe at ${Number(key.time.toFixed(3))} seconds`}
         title={`Position · ${key.time.toFixed(2)}s`} aria-pressed={selected}
         style={{ left: key.x, top: key.y, zIndex: handleZ }}
         onPointerDown={event => { event.preventDefault(); event.stopPropagation(); }}

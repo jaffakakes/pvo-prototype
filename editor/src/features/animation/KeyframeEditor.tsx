@@ -30,14 +30,14 @@ export function KeyframeEditor({ target, groups }: { target: AnimationTarget; gr
         const select = (time: number) => useAnimationSelection.getState().select({ sceneId: scene.id, target, group: row.group, time });
         return <div className={styles.property} key={row.group} data-animation-property={row.group}>
           <div className={styles.propertyHead}>
-            <button className={styles.toggle} type="button" disabled={disabled} data-animated={row.keys.length > 0} aria-pressed={!!here}
+            <button className={styles.toggle} type="button" disabled={disabled} data-animated={row.keys.length > 0} aria-pressed={!!here} data-keyframe-control
               aria-label={here ? `Remove ${GROUP_LABELS[row.group]} keyframe` : `Add ${GROUP_LABELS[row.group]} keyframe`}
               title={here ? "Remove this keyframe" : row.keys.length ? `Add a keyframe at ${formatKeyTime(state.t - layer.start)}` : `Animate ${GROUP_LABELS[row.group].toLowerCase()}`}
               onClick={() => perform(() => here ? removeAuthoringKey(target, state.t, { group: row.group }) : addAuthoringKey(target, state.t, { group: row.group }))}><i /></button>
             <span className={styles.propertyLabel}>{GROUP_LABELS[row.group]}</span>
             {row.keys.length > 0 && <span className={styles.navigation}>
-              <button type="button" aria-label={`Previous ${GROUP_LABELS[row.group]} keyframe`} disabled={blocked || !previous} onClick={() => previous && select(previous.time)}>‹</button>
-              <button type="button" aria-label={`Next ${GROUP_LABELS[row.group]} keyframe`} disabled={blocked || !next} onClick={() => next && select(next.time)}>›</button>
+              <button type="button" data-keyframe-control aria-label={`Previous ${GROUP_LABELS[row.group]} keyframe`} disabled={blocked || !previous} onClick={() => previous && select(previous.time)}>‹</button>
+              <button type="button" data-keyframe-control aria-label={`Next ${GROUP_LABELS[row.group]} keyframe`} disabled={blocked || !next} onClick={() => next && select(next.time)}>›</button>
             </span>}
             <output className={styles.value} data-keyed={!!here}>{formatKeyValue(row.group, row.value)}</output>
           </div>
@@ -54,7 +54,7 @@ export function KeyframeEditor({ target, groups }: { target: AnimationTarget; gr
       {picked ? <div className={styles.card} data-selected-key-card>
         <div className={styles.cardHead}><i className={styles.diamond} /><strong>{GROUP_LABELS[picked.group]} · {formatKeyTime(picked.time - layer.start)}</strong>
           <span>{formatKeyValue(picked.group, picked.value)}</span>
-          <button type="button" className={styles.delete} disabled={blocked} title="Delete keyframe · ⌫" onClick={() => perform(() => removeAuthoringKey(target, picked.time, { group: picked.group }))}>
+          <button type="button" className={styles.delete} disabled={blocked} data-keyframe-control title="Delete keyframe · ⌫" onClick={() => perform(() => removeAuthoringKey(target, picked.time, { group: picked.group }))}>
             <Icon name="trash" size={12} />Delete</button>
         </div>
         <p>To the next keyframe</p>

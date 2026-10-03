@@ -1,3 +1,6 @@
+import { fontFamily } from "../pvo-fonts/index.js";
+import { evaluateAnimation } from "../pvo-animation/index.js";
+
 export const TEXT_FONTS = {
   sans: '"Open Sauce Sans", Arial, sans-serif',
   display: '"Peace Sans", "Arial Black", sans-serif',
@@ -23,12 +26,15 @@ export function textStyle(overlay) {
 }
 
 function setFont(ctx, style, unit) {
-  ctx.font = `${style.italic ? "italic " : ""}${style.bold ? "700 " : "400 "}${style.size * unit}px ${TEXT_FONTS[style.font] || TEXT_FONTS.sans}`;
+  ctx.font = `${style.italic ? "italic " : ""}${style.bold ? "700 " : "400 "}${style.size * unit}px ${style.fontAsset ? `"${fontFamily(style.fontAsset)}"` : TEXT_FONTS[style.font] || TEXT_FONTS.sans}`;
   ctx.letterSpacing = `${style.spacing * unit}px`;
 }
 
-export function layoutText(ctx, width, height, overlay) {
-  const style = textStyle(overlay), unit = width / 247;
+export function layoutText(ctx, width, height, overlay, time = 0) {
+  const motion = evaluateAnimation(overlay.animation, time);
+  const authored = textStyle(overlay);
+  const style = { ...authored, rotation: authored.rotation + motion.rotation, opacity: authored.opacity * motion.opacity };
+  const unit = width / 247;
   setFont(ctx, style, unit);
   const padX = style.background !== "transparent" ? style.size * unit * .55 : style.strokeWidth * unit + 2 * unit;
   const padY = style.background !== "transparent" ? style.size * unit * .2 : style.strokeWidth * unit + 2 * unit;
@@ -47,16 +53,17 @@ export function layoutText(ctx, width, height, overlay) {
   }
   const w = Math.max(style.size * unit, ...lines.map(line => ctx.measureText(line).width)) + padX * 2;
   const h = lines.length * style.size * unit * style.lineHeight + padY * 2;
-  return { style, unit, lines, width: w, height: h, x: width * overlay.x / 100 - w / 2, y: height * overlay.y / 100 - h / 2, padX, padY };
+  return { style, unit, lines, width: w, height: h, x: width * (overlay.x + motion.x) / 100 - w / 2, y: height * (overlay.y + motion.y) / 100 - h / 2, padX, padY, scaleX: motion.scaleX, scaleY: motion.scaleY };
 }
 
 /** Shared painter: the editor, flat export and interactive player use identical text. */
-export function drawText(ctx, width, height, overlay) {
+export function drawText(ctx, width, height, overlay, time = 0) {
   ctx.save();
-  const box = layoutText(ctx, width, height, overlay);
+  const box = layoutText(ctx, width, height, overlay, time);
   const { style: s, unit: u, lines, width: w, height: h, padX, padY } = box;
   ctx.translate(box.x + w / 2, box.y + h / 2);
   ctx.rotate(s.rotation * Math.PI / 180);
+  ctx.scale(box.scaleX, box.scaleY);
   ctx.globalAlpha = s.opacity;
   if (s.background !== "transparent") {
     ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, w, h, (s.box ? 10 : 3) * u);

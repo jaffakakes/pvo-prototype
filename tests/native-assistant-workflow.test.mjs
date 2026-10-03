@@ -313,7 +313,7 @@ test("unavailable observations cannot cause repeated inference or media work", a
     inspections++;
     return { kind: "unavailable", sceneId: "main", requestedKind: "frames", message: "No media" };
   };
-  await assert.rejects(run(f, "plan"), /repeated.*inspection/i);
+  await assert.rejects(run(f, "plan"), /repeated a tool request/i);
   assert.equal(inspections, 1);
   assert.equal(f.requests.length, 2);
   assert.equal(f.commits.length, 0);

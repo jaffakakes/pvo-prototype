@@ -44,6 +44,7 @@ export function SharedVideos({ client }: { client: PublishingClient }) {
   };
   return <section className={styles.library} aria-label="Shared videos">
     <div className={styles.sectionHeading}><h3>Shared videos</h3><button type="button" disabled={busy} onClick={() => { void load(); }}>Refresh</button></div>
+    <p>Links created in this browser. Clearing browser data removes your access to manage them.</p>
     {busy && <p role="status">Loading…</p>}
     {failure && <p className={styles.error} role="alert">{failure}</p>}
     {!busy && !items.length && !failure && <p>No shared videos yet.</p>}
