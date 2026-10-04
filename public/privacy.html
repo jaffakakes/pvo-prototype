@@ -23,12 +23,13 @@
       <p class="eyebrow">Restyle</p>
       <h1>Privacy policy</h1>
       <p class="policy-date">Last updated 4 October 2026</p>
-      <p class="lead">This policy explains what Restyle handles when you use the editor, sign in with Google, ask its assistant for help, or create a viewing link. Questions or deletion requests can be sent to <a href="mailto:support@getrestyle.app">support@getrestyle.app</a>.</p>
+      <p class="lead">This policy explains what Restyle handles when you use the editor, sign in with Google or email, ask its assistant for help, or create a viewing link. Questions or deletion requests can be sent to <a href="mailto:support@getrestyle.app">support@getrestyle.app</a>.</p>
 
       <section>
-        <h2>Google sign-in and your account</h2>
+        <h2>Sign-in and your account</h2>
         <p>Google sign-in lets us identify your account so you can export and manage links you create. We request only the <code>openid</code> and <code>profile</code> scopes. Google may return profile details such as your picture; we use your account's stable identifier and display name to create a Restyle account record. We do not request your email address, Google Drive files, contacts, or access to your Google content.</p>
-        <p>Google's authorization tokens are used to complete sign-in and are not saved in your Restyle account. A signed, HttpOnly session cookie keeps you signed in for up to seven days; a temporary cookie protects the sign-in flow and expires after ten minutes. Signing out ends the current Restyle session. Your account record and published links remain until they are deleted.</p>
+        <p>For email and password sign-in, Clerk handles account creation, password checks, email verification, recovery, and its own authentication session. Your browser sends your email address and password to Clerk through its sign-in component. Restyle does not save your email password or password hash in Cloudflare D1. Our account database stores a Restyle user ID, a display label, and Clerk's stable account identifier so exports and viewing links belong to the right person. Email accounts initially use a generic display label. We do not merge a Google account and an email account just because their addresses match; connecting them requires a separate, authenticated action.</p>
+        <p>Google's authorization tokens are used to complete sign-in and are not saved in your Restyle account. A signed, HttpOnly Restyle session cookie lasts up to seven days after Google sign-in or up to fifteen minutes after Clerk sign-in. A temporary cookie protects the Google sign-in flow and expires after ten minutes. Signing out ends the current Restyle session. Your account record and published links remain until they are deleted.</p>
       </section>
 
       <section>
@@ -52,8 +53,8 @@
 
       <section>
         <h2>Service providers and retention</h2>
-        <p>Cloudflare hosts the app, account database, published exports, and server requests. Google handles sign-in. Runpod processes assistant requests when you use that feature. Web search uses DuckDuckGo, and the optional iMessage test uses Apple's Messages service. These providers process data as needed to deliver those services and may handle operational information under their own policies.</p>
-        <p>Local projects remain until you or your browser remove them. Restyle sessions expire after seven days, while account information stays available for future sign-in. Published exports normally remain available until you delete their links, ask us to remove them, or we remove them under the Terms. We may retain limited operational records needed to run and protect the service. To request deletion of your account or other data we hold, contact <a href="mailto:support@getrestyle.app">support@getrestyle.app</a>.</p>
+        <p>Cloudflare hosts the app, account database, published exports, and server requests. Google handles Google sign-in. Clerk handles email account credentials, verification and recovery messages, and its authentication session. Runpod processes assistant requests when you use that feature. Web search uses DuckDuckGo, and the optional iMessage test uses Apple's Messages service. These providers process data as needed to deliver those services and may handle operational information under their own policies.</p>
+        <p>Local projects remain until you or your browser remove them. Restyle sessions expire after seven days for Google sign-in or fifteen minutes for email sign-in; an active Clerk browser session may let you renew the Restyle session. Account information stays available for future sign-in. Published exports normally remain available until you delete their links, ask us to remove them, or we remove them under the Terms. We may retain limited operational records needed to run and protect the service. To request deletion of your account or other data we hold, contact <a href="mailto:support@getrestyle.app">support@getrestyle.app</a>.</p>
       </section>
 
       <section>

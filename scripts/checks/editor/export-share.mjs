@@ -56,7 +56,9 @@ await context.route(`${origin}/api/**`, async route => {
   const pathname = new URL(request.url()).pathname;
   const respond = (body, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
   if (pathname === "/api/auth/session" && request.method() === "GET")
-    return respond({ available: true, user: signedIn ? { id: "editor-test", name: "Editor tester" } : null });
+    return respond({ available: true, clerkAvailable: false, clerkPublishableKey: null,
+      canLinkEmail: false, emailLinked: false,
+      user: signedIn ? { id: "editor-test", name: "Editor tester" } : null });
   if (pathname === "/api/auth/google/start" && request.method() === "GET") {
     signedIn = true;
     return route.fulfill({ status: 200, contentType: "text/html",
@@ -92,7 +94,7 @@ const share = page.getByRole("dialog", { name: "Share", exact: true });
 async function openExport() {
   await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
   await page.getByRole("button", { name: "Flat video", exact: true }).click();
-  const auth = page.getByRole("dialog", { name: "Sign in to Restyle" });
+  const auth = page.getByRole("dialog", { name: "Create a free account" });
   if (!signedIn) {
     await auth.waitFor();
     const popup = page.waitForEvent("popup");
@@ -149,7 +151,7 @@ try {
 
   signedIn = false;
   await share.locator("[data-share-file]").click();
-  const expiredSession = page.getByRole("dialog", { name: "Sign in to Restyle" });
+  const expiredSession = page.getByRole("dialog", { name: "Create a free account" });
   await expiredSession.waitFor();
   assert.equal(await page.evaluate(() => window.exportObservation.files.length), 1,
     "An expired account session must block native file sharing");

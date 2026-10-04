@@ -63,7 +63,14 @@ await context.route(`${origin}/api/auth/**`, route => {
   const path = new URL(request.url()).pathname;
   if (path === "/api/auth/session" && request.method() === "GET") {
     return route.fulfill({ status: 200, contentType: "application/json",
-      body: JSON.stringify({ available: true, user: activeUser }) });
+      body: JSON.stringify({
+        available: true,
+        clerkAvailable: false,
+        clerkPublishableKey: null,
+        canLinkEmail: false,
+        emailLinked: false,
+        user: activeUser,
+      }) });
   }
   if (path === "/api/auth/logout" && request.method() === "POST") {
     logoutCalls++;
