@@ -5,7 +5,7 @@ import { componentLanguageSource } from "../../../domain/components/languageComp
 import type { PvoLanguageSource } from "../../../domain/components/languageSource";
 import { componentLook, lookPresetName } from "../../../domain/components/look";
 import { useCapture } from "../../../state/captureStore";
-import { selectComponentSourcePart, setComponentAuthoringTab, useComponentAuthoring, type ComponentAuthoringTab } from "../../../state/components/componentAuthoringStore";
+import { selectComponentSourcePart, setCodePreviewFocus, setComponentAuthoringTab, useComponentAuthoring, type ComponentAuthoringTab } from "../../../state/components/componentAuthoringStore";
 import { setAdvancedEditingEnabled, useEditorPreferences } from "../../../state/preferences/editorPreferences";
 import { fmt } from "../../../ui/formatTime";
 import { useSheetDock } from "../../../ui/sheets/SheetDockContext";
@@ -130,7 +130,10 @@ export function EditorSheet({ Frame = SheetFrame, lookPreviewScale }: {
       </>}
       {tab === "action" && <ActionTab key={component.id} component={component} onOpenAdvanced={() => openAdvanced("logic")} />}
       {tab === "advanced" && !legacy && <>
-        <div className={styles.languageEditor} data-expanded={codeExpanded} onFocusCapture={() => { editedCode.current = false; }}>
+        <div className={styles.languageEditor} data-expanded={codeExpanded} onFocusCapture={() => {
+          editedCode.current = false;
+          setCodePreviewFocus(true);
+        }}>
           <PvoLanguageRoute key={component.id} component={component} source={source} tab={session.sourcePart}
             onSelectTab={part => selectComponentSourcePart(component.id, part)}
             onEdit={editPvo} feedback={feedback} onRestore={canRestore ? restore : undefined}

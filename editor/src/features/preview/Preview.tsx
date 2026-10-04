@@ -4,12 +4,14 @@ import { useMusicPlayback } from "../sound/useMusicPlayback";
 import { total } from "../../domain/clips/timing";
 import { sceneDuration } from "../../domain/scenes/duration";
 import { componentEnd } from "../../domain/components/timing";
-import { useRef } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { dur,locate } from "../../domain/clips/timing";
-import { layerZ } from "../../domain/layers/order";
+import { layerOrder, layerZ } from "../../domain/layers/order";
 import { projectRatio } from "../../domain/project/ratio";
 import { useCapture } from "../../state/captureStore";
 import { useAssistant } from "../../state/assistant/assistantStore";
+import { setCodePreviewFocus, useComponentAuthoring } from "../../state/components/componentAuthoringStore";
+import { useEditorPreferences } from "../../state/preferences/editorPreferences";
 import { cx } from "../../styles";
 import { TextLayer } from "../text/TextLayer";
 import { ComponentOverlay,componentVisible } from "./ComponentOverlay";
@@ -27,6 +29,8 @@ type Props = { desktop?: boolean; onAddMedia?(): void };
 export function Preview({ desktop = false, onAddMedia }: Props = {}) {
   const s = useCapture();
   const assistantActive = useAssistant(state => state.phase !== "idle");
+  const authoring = useComponentAuthoring();
+  const advanced = useEditorPreferences(state => state.advancedEditingEnabled);
   const { areaRef, area } = usePreviewAreaSize();
   const boxRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -44,11 +48,41 @@ export function Preview({ desktop = false, onAddMedia }: Props = {}) {
   const compact = bw < 180;
   const selectedAuthoring = !s.tryMode && !s.playheadPick && !s.playing;
   const endpointAuthoring = selectedAuthoring && (desktop || s.sheet === "animation");
+  const visibleComponents = s.components.filter(component => componentVisible(component, s.clips, s.t, s.tryMode?.holdingId ?? null)
+    || (selectedAuthoring && s.selComp === component.id && (desktop || s.sheet === "component" || assistantActive
+      || (s.sheet === "animation" && Math.abs(s.t - componentEnd(component, s.clips)) < 1e-6))));
+  const codeEditing = advanced && authoring.codePreviewFocus && authoring.tab === "advanced"
+    && authoring.componentId === s.selComp && s.sheet !== "animation"
+    && (desktop || s.sheet === "component");
+  const focusCandidate = codeEditing && selectedAuthoring && !assistantActive
+    ? visibleComponents.find(component => component.id === s.selComp) : undefined;
+  const [focusAnchor, setFocusAnchor] = useState<{ id: string; x: number; y: number } | null>(null);
+  useLayoutEffect(() => {
+    // Freeze the rendered entrance point while this source editing session stays focused.
+    setFocusAnchor(previous => {
+      if (!focusCandidate) return null;
+      if (previous?.id === focusCandidate.id) return previous;
+      const motion = evaluateAnimation(focusCandidate.animation, s.t - focusCandidate.at);
+      return { id: focusCandidate.id, x: focusCandidate.x + motion.x, y: focusCandidate.y + motion.y };
+    });
+  }, [focusCandidate, s.t]);
+  const focused = focusCandidate?.id === focusAnchor?.id ? focusAnchor : null;
+  const dimmerZ = layerOrder(s).length + 1;
 
   return <div ref={areaRef} className={`${cx("previewArea")} ${styles.area}`} data-desktop={desktop}>
     <div ref={boxRef} className={`${cx("pvBox")} ${styles.canvas}`} data-trying={!!s.tryMode}
       data-compact={compact} data-desktop={desktop} style={{ width: bw, height: bh }} {...gestures}
       onPointerDownCapture={event => {
+        if (focused) {
+          const focusedTarget = (event.target as Element).closest<HTMLElement>('[data-component-focused="true"]');
+          setCodePreviewFocus(false);
+          if (focusedTarget) {
+            // The lift is presentation only. Return to the authored position before a placement gesture.
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+          }
+        }
         gestures.onPointerDownCapture(event);
         if (desktop && !event.defaultPrevented && !s.tryMode && !s.playheadPick && clip
           && !(event.target as Element).closest("button")) {
@@ -66,13 +100,17 @@ export function Preview({ desktop = false, onAddMedia }: Props = {}) {
       .map(text => <TextLayer key={text.id} overlay={text} width={bw} height={bh}
         zIndex={layerZ(s, `text:${text.id}`)} selected={s.selText === text.id}
         trying={!!s.tryMode} time={Math.min(s.t, text.end)} />)}
-    {s.components.filter(component => componentVisible(component, s.clips, s.t, s.tryMode?.holdingId ?? null)
-      || (selectedAuthoring && s.selComp === component.id && (desktop || s.sheet === "component" || assistantActive
-        || (s.sheet === "animation" && Math.abs(s.t - componentEnd(component, s.clips)) < 1e-6))))
-      .map(component => <ComponentOverlay key={component.id} component={component}
+    {focused && <div className={styles.componentDimmer} data-component-focus-dimmer
+      aria-hidden="true" style={{ zIndex: dimmerZ }} />}
+    {visibleComponents.map(component => <ComponentOverlay key={component.id} component={component}
         width={bw} zIndex={layerZ(s, `component:${component.id}`)} selected={s.selComp === component.id}
+        focus={focused?.id === component.id ? {
+          x: (50 - focused.x) / 100 * bw,
+          y: (50 - focused.y) / 100 * bh,
+          zIndex: dimmerZ + 1,
+        } : null}
         trying={!!s.tryMode} time={s.t} onResponse={runComponentResponse} />)}
-    <StageMotionPath width={bw} height={bh} />
+    {!focused && <StageMotionPath width={bw} height={bh} />}
     {!compact && !s.tryMode && clip && <span className={cx("tag pvTag")}><i /><span>Clip {(located?.i ?? 0) + 1} · {dur(clip).toFixed(1)}s</span></span>}
     {desktop && s.tryMode && <span className={styles.tryBadge}><i />Trying</span>}
     {desktop && duration <= 0 && <div className={styles.empty}>

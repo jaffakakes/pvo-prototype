@@ -32,13 +32,14 @@ export function componentVisible(component: PvoComponent, clips: Clip[], t: numb
   return t >= component.at && t < componentEnd(component, clips);
 }
 
-export function ComponentOverlay({ component, width, selected, trying, onResponse, zIndex, time }: {
+export function ComponentOverlay({ component, width, selected, trying, onResponse, zIndex, time, focus = null }: {
   component: PvoComponent;
   width: number;
   selected: boolean;
   trying: boolean;
   zIndex: number;
   time: number;
+  focus?: { x: number; y: number; zIndex: number } | null;
   onResponse: (component: PvoComponent, response: ComponentResponse) => void;
 }) {
   useAppliedFont(component.code?.custom ? undefined : component.font);
@@ -48,14 +49,15 @@ export function ComponentOverlay({ component, width, selected, trying, onRespons
   const { ref, size } = useComponentDimensions(component, width);
   const motion = evaluateAnimation(component.animation, time - component.at);
   const style = {
-    left: `${component.x + motion.x}%`, top: `${component.y + motion.y}%`, zIndex, "--u": `${u}px`,
-    width: "max-content", opacity: motion.opacity,
+    left: `${component.x + motion.x}%`, top: `${component.y + motion.y}%`, zIndex: focus?.zIndex ?? zIndex, "--u": `${u}px`,
+    width: "max-content", opacity: focus ? 1 : motion.opacity,
+    ...(focus ? { "--focus-origin-x": `${-focus.x}px`, "--focus-origin-y": `${-focus.y}px` } : {}),
     ...(component.font ? { "--component-font": `"${fontFamily(component.font)}"` } : {}),
     visibility: trying && !visualMotionVisible(motion) ? "hidden" : undefined,
-    transform: `translate(-50%, -50%) rotate(${motion.rotation}deg) scale(${size.width * motion.scaleX}, ${size.height * motion.scaleY})`,
+    transform: `translate(calc(-50% + ${focus?.x ?? 0}px), calc(-50% + ${focus?.y ?? 0}px)) rotate(${motion.rotation}deg) scale(${size.width * motion.scaleX}, ${size.height * motion.scaleY})`,
   } as CSSProperties;
 
-  return <div ref={ref} className={cx("compOverlay")} data-preview-component={component.id} data-font={component.font ? "applied" : undefined} data-layer-id={`component:${component.id}`} data-sel={selected} data-trying={trying} style={style}>
+  return <div ref={ref} className={cx("compOverlay")} data-preview-component={component.id} data-font={component.font ? "applied" : undefined} data-layer-id={`component:${component.id}`} data-sel={selected} data-trying={trying} data-component-focused={!!focus} style={style}>
     {component.code?.custom ? component.code.pvo
       ? <PvoRuntimeOverlay component={component} width={width} trying={trying} isVisible={componentVisible} />
       : <div className={cx("compTooltip")}>Unsupported component code</div>
