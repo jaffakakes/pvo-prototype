@@ -3,6 +3,7 @@ import { TimelineKeyframes } from "../animation/TimelineKeyframes";
 import { textStyle } from "../../../../packages/pvo-text-runtime/index.js";
 import { dur } from "../../domain/clips/timing";
 import { componentLength } from "../../domain/components/timing";
+import { setCodePreviewFocus } from "../../state/components/componentAuthoringStore";
 import { cx } from "../../styles";
 import { fmt } from "../../ui/formatTime";
 import { Icon } from "../../ui/Icon";
@@ -59,6 +60,8 @@ export function Timeline() {
       data-reordering={!!layerDrag.active}
       style={{ height: timelineHeight }}
       onKeyDown={layerKeyDown}
+      onPointerDownCapture={() => setCodePreviewFocus(false)}
+      onFocusCapture={() => setCodePreviewFocus(false)}
       onPointerDown={scrubDown}
       onPointerMove={scrubMove}
       onPointerUp={scrubUp}

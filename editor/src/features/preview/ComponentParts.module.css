@@ -1,8 +1,3 @@
-.part[data-part-selected=true] {
-  outline: 2.5px solid #FF9FBC;
-  outline-offset: 3px;
-}
-
 .fields {
   display: grid;
   gap: calc(6 * var(--u));
@@ -34,4 +29,3 @@
 .part:disabled {
   opacity: 1;
 }
-
