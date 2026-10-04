@@ -82,7 +82,8 @@ export async function createLocalAuthApi({ directory, origin, clientId, clientSe
       return error(response, 400, "This sign-in address is invalid.");
     if (pathname === "/api/auth/session") {
       if (request.method !== "GET") return error(response, 405, "This sign-in operation is not supported.");
-      return json(response, 200, { available, user: await userFor(request) });
+      return json(response, 200, { available, clerkAvailable: false, clerkPublishableKey: null,
+        canLinkEmail: false, emailLinked: false, user: await userFor(request) });
     }
     if (pathname === "/api/auth/google/start") {
       if (request.method !== "GET") return error(response, 405, "This sign-in operation is not supported.");

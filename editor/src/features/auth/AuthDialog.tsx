@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { googleSignInUrl } from "../../infrastructure/auth/client";
 import {
   closeAuthGate,
   refreshAccountSession,
-  setAuthConnecting,
   setAuthError,
   signOutAccount,
   useAuthGate,
 } from "../../state/auth/authGateStore";
+import { signOutClerk } from "../../infrastructure/auth/clerk";
 import { Icon } from "../../ui/Icon";
+import { ClerkEmailSignIn } from "./ClerkEmailSignIn";
+import { useGoogleSignIn } from "./useGoogleSignIn";
 import styles from "./AuthDialog.module.css";
 
 export function AuthDialog() {
@@ -24,66 +25,56 @@ export function AuthDialog() {
 
 function OpenAuthDialog() {
   const dialog = useRef<HTMLDialogElement>(null);
-  const popup = useRef<Window | null>(null);
-  const { source, phase, available, user, error, connecting } = useAuthGate();
+  const { source, phase, available, clerkAvailable, clerkPublishableKey, canLinkEmail, emailLinked,
+    user, error, connecting } = useAuthGate();
   const [signingOut, setSigningOut] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [linkTargetId, setLinkTargetId] = useState<string | null>(null);
+  const [linkedNotice, setLinkedNotice] = useState(false);
+  const googleLinkTarget = useRef<string | null>(null);
+  const beginGoogle = useGoogleSignIn(session => {
+    const targetId = googleLinkTarget.current;
+    googleLinkTarget.current = null;
+    if (!targetId) { closeAuthGate(); return; }
+    if (session.user?.id !== targetId) {
+      setAuthError("You signed in with a different Google account. Return to the original account and try again.");
+      return;
+    }
+    setLinkTargetId(targetId);
+    setEmailOpen(true);
+  });
   useEffect(() => {
     const focus = document.activeElement;
     dialog.current?.showModal();
     return () => {
       if (dialog.current?.open) dialog.current.close();
-      if (popup.current && !popup.current.closed) popup.current.close();
       if (focus instanceof HTMLElement && focus.isConnected) focus.focus();
     };
   }, []);
-
-  useEffect(() => {
-    const onMessage = (event: MessageEvent) => {
-      if (event.origin !== location.origin || event.source !== popup.current) return;
-      const data = event.data;
-      if (!data || typeof data !== "object" || data.type !== "pvo:auth:complete") return;
-      popup.current = null;
-      if (data.ok !== true) {
-        setAuthError("Google sign-in didn't finish. Try again.");
-        return;
-      }
-      void refreshAccountSession().then(session => {
-        if (session.user) closeAuthGate();
-        else setAuthError("Google sign-in didn't finish. Try again.");
-      }).catch(() => {});
-    };
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, []);
-
-  useEffect(() => {
-    if (!connecting) return;
-    const timer = window.setInterval(() => {
-      if (!popup.current || !popup.current.closed) return;
-      popup.current = null;
-      window.clearInterval(timer);
-      void refreshAccountSession().then(session => {
-        if (session.user) closeAuthGate();
-        else setAuthError("Google sign-in was closed. Try again.");
-      }).catch(() => {});
-    }, 500);
-    return () => window.clearInterval(timer);
-  }, [connecting]);
-
-  const beginGoogle = () => {
-    const opened = window.open(googleSignInUrl(), "restyle-google-sign-in", "popup,width=520,height=680");
-    if (!opened) {
-      setAuthError("Allow pop-ups for this site, then try Google sign-in again.");
-      return;
-    }
-    popup.current = opened;
-    setAuthConnecting(true);
-    opened.focus();
-  };
   const signOut = () => {
+    googleLinkTarget.current = null;
     setSigningOut(true);
-    void signOutAccount().catch(() => setAuthError("Couldn't sign out. Try again.")).finally(() => setSigningOut(false));
+    void signOutAccount().then(async () => {
+      if (!clerkPublishableKey) return;
+      try { await signOutClerk(clerkPublishableKey); }
+      catch { setAuthError("Restyle signed out, but the email session could not be cleared. Try again later."); }
+    }).catch(() => setAuthError("Couldn't sign out. Try again.")).finally(() => setSigningOut(false));
   };
+  const startEmailLink = () => {
+    if (!user || !canLinkEmail) return;
+    googleLinkTarget.current = user.id;
+    setLinkedNotice(false);
+    beginGoogle("link");
+  };
+  const backFromEmail = () => {
+    setEmailOpen(false);
+    setLinkTargetId(null);
+  };
+  useEffect(() => {
+    if (!emailOpen || !linkTargetId || user?.id === linkTargetId) return;
+    backFromEmail();
+    setAuthError("Your Restyle account changed. Sign in with the original Google account and try again.");
+  }, [emailOpen, linkTargetId, user?.id]);
   const description = source === "export" ? "Sign in to export this project. Your edit and export settings will stay here."
     : source === "download" ? "Sign in to download this export. Your finished file will stay here."
       : source === "share" ? "Sign in to share this export. Your finished file will stay here."
@@ -99,18 +90,42 @@ function OpenAuthDialog() {
       </div>
       {user ? <p id="auth-description" className={styles.availability}>Signed in as <strong>{user.name}</strong>. Your current edit is saved in this browser.</p>
         : <p id="auth-description">{description}</p>}
+      {user && emailLinked && !emailOpen && <p className={styles.availability}>
+        {linkedNotice ? "Email sign-in connected. You can now use Google or this email for this Restyle account."
+          : "Email sign-in is connected to this Restyle account."}</p>}
+      {user && canLinkEmail && !emailOpen && <p className={styles.availability}>
+        Connect a verified email and password to this Google account to keep the same published links.</p>}
+      {user && emailOpen && <p className={styles.availability}>
+        Review the exact email account before connecting it. Your Google sign-in was refreshed for this step.</p>}
       {!user && phase === "checking" && <p role="status">Checking your account…</p>}
-      {!user && phase === "ready" && !available && <p className={styles.availability}>Google sign-in isn't configured for this beta yet. Editing remains available.</p>}
-      {error && <p className={styles.error} role="alert">{error}</p>}
-      {!user && <p className={styles.disclosure}>Google shares your name and account identifier with Restyle for sign-in and exports. Read our <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a> and <a href="/terms.html" target="_blank" rel="noopener noreferrer">Terms of Service</a>.</p>}
+      {!user && phase === "ready" && !available && !clerkAvailable && <p className={styles.availability}>Sign-in isn't configured here yet. Editing remains available.</p>}
+      {!user && phase === "ready" && available && !clerkAvailable && <p className={styles.availability}>Email sign-in isn't configured here yet.</p>}
+      {!user && <p className={styles.disclosure}>Google shares your name and account identifier with Restyle. Clerk handles email addresses, passwords, and verification; Restyle receives a Clerk account identifier. If you already use Google, connect email from Your account first to keep your published links together. Read our <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a> and <a href="/terms.html" target="_blank" rel="noopener noreferrer">Terms of Service</a>.</p>}
+      {!user && emailOpen && !linkTargetId && clerkPublishableKey && <ClerkEmailSignIn publishableKey={clerkPublishableKey}
+        mode="signin" onBack={backFromEmail} />}
+      {user && emailOpen && linkTargetId && clerkPublishableKey && <ClerkEmailSignIn
+        publishableKey={clerkPublishableKey} mode="link" expectedUserId={linkTargetId}
+        onBack={backFromEmail} onLinked={() => {
+          backFromEmail();
+          setLinkedNotice(true);
+        }} />}
+      {error && !emailOpen && <p className={styles.error} role="alert">{error}</p>}
     </div>
     <footer className={styles.footer}>
-      {user ? <button type="button" disabled={signingOut} onClick={signOut}>{signingOut ? "Signing out…" : "Sign out"}</button>
+      {user ? <>
+          {canLinkEmail && !emailOpen && <button type="button" className={styles.email}
+            disabled={connecting || signingOut} onClick={startEmailLink}>
+            {connecting ? "Waiting for Google…" : "Connect email sign-in"}
+          </button>}
+          {!emailOpen && <button type="button" disabled={signingOut} onClick={signOut}>{signingOut ? "Signing out…" : "Sign out"}</button>}
+        </>
         : <>
           {phase === "error" && <button type="button" onClick={() => { void refreshAccountSession().catch(() => {}); }}>Retry</button>}
-          <button type="button" className={styles.google} disabled={!available || connecting || phase === "checking"} onClick={beginGoogle}>
+          {!emailOpen && <><button type="button" className={styles.google} disabled={!available || connecting || phase === "checking"} onClick={() => beginGoogle()}>
             {connecting ? "Waiting for Google…" : "Continue with Google"}
           </button>
+          <button type="button" className={styles.email} disabled={!clerkAvailable || !clerkPublishableKey || connecting || phase === "checking"}
+            onClick={() => setEmailOpen(true)}>Continue with email</button></>}
         </>}
       <button type="button" onClick={closeAuthGate}>{user ? "Done" : "Keep editing"}</button>
     </footer>

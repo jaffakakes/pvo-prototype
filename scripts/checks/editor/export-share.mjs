@@ -56,7 +56,9 @@ await context.route(`${origin}/api/**`, async route => {
   const pathname = new URL(request.url()).pathname;
   const respond = (body, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
   if (pathname === "/api/auth/session" && request.method() === "GET")
-    return respond({ available: true, user: signedIn ? { id: "editor-test", name: "Editor tester" } : null });
+    return respond({ available: true, clerkAvailable: false, clerkPublishableKey: null,
+      canLinkEmail: false, emailLinked: false,
+      user: signedIn ? { id: "editor-test", name: "Editor tester" } : null });
   if (pathname === "/api/auth/google/start" && request.method() === "GET") {
     signedIn = true;
     return route.fulfill({ status: 200, contentType: "text/html",

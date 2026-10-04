@@ -12,5 +12,6 @@
 .footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 12px; padding: 20px 26px; background: #08080c; border-top: 2px solid var(--q08); }
 .footer button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 14px; border: 2px solid #000; border-radius: 12px; background: var(--surface); box-shadow: 3px 3px 0 #000; font-size: 12px; font-weight: 800; cursor: pointer; }
 .footer .google { background: #fff; color: #181818; }
+.footer .email { background: #ffd23e; color: #181818; }
 .footer button:disabled { opacity: .55; cursor: not-allowed; }
 @media (max-width: 430px) { .content { padding: 22px 18px; } .heading h2 { font-size: 23px; } .footer { padding: 18px; } }

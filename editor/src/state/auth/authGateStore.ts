@@ -7,6 +7,10 @@ type AuthGateState = {
   source: AuthSource | null;
   phase: "idle" | "checking" | "ready" | "error";
   available: boolean;
+  clerkAvailable: boolean;
+  clerkPublishableKey: string | null;
+  canLinkEmail: boolean;
+  emailLinked: boolean;
   user: AccountUser | null;
   error: string | null;
   connecting: boolean;
@@ -16,6 +20,10 @@ export const useAuthGate = create<AuthGateState>(() => ({
   source: null,
   phase: "idle",
   available: false,
+  clerkAvailable: false,
+  clerkPublishableKey: null,
+  canLinkEmail: false,
+  emailLinked: false,
   user: null,
   error: null,
   connecting: false,
@@ -27,8 +35,9 @@ let signOutRequest: Promise<void> | null = null;
 let pendingAccount: { promise: Promise<boolean>; resolve(value: boolean): void } | null = null;
 
 function currentSession(): AccountSession {
-  const { available, user } = useAuthGate.getState();
-  return { available, user: signOutRequest ? null : user };
+  const { available, user, clerkAvailable, clerkPublishableKey, canLinkEmail, emailLinked } = useAuthGate.getState();
+  return { available, user: signOutRequest ? null : user, clerkAvailable, clerkPublishableKey,
+    canLinkEmail: signOutRequest ? false : canLinkEmail, emailLinked: signOutRequest ? false : emailLinked };
 }
 
 function resolvePendingAccount(signedIn: boolean) {
@@ -65,6 +74,10 @@ export function refreshAccountSession(): Promise<AccountSession> {
     useAuthGate.setState(state => ({
       phase: "ready",
       available: session.available,
+      clerkAvailable: session.clerkAvailable,
+      clerkPublishableKey: session.clerkPublishableKey,
+      canLinkEmail: session.canLinkEmail,
+      emailLinked: session.emailLinked,
       user: session.user,
       error: null,
       connecting: session.user ? false : state.connecting,
@@ -80,6 +93,8 @@ export function refreshAccountSession(): Promise<AccountSession> {
     useAuthGate.setState({
       phase: "error",
       user: null,
+      canLinkEmail: false,
+      emailLinked: false,
       error: error instanceof Error ? error.message : "Couldn't check your account. Try again.",
       connecting: false,
     });
@@ -87,6 +102,13 @@ export function refreshAccountSession(): Promise<AccountSession> {
   }).finally(() => { if (sessionRequest === request) sessionRequest = null; });
   sessionRequest = request;
   return sessionRequest;
+}
+
+/** A completed provider exchange invalidates checks started before its cookie existed. */
+export function refreshAccountSessionAfterSignIn(): Promise<AccountSession> {
+  sessionEpoch++;
+  sessionRequest = null;
+  return refreshAccountSession();
 }
 
 /** Check the live session before every protected action; wait without losing the editor when signed out. */
@@ -124,7 +146,8 @@ async function performSignOut(): Promise<void> {
     throw error;
   }
   clearAccountPublication();
-  useAuthGate.setState({ user: null, error: null, connecting: false, phase: "ready" });
+  useAuthGate.setState({ user: null, canLinkEmail: false, emailLinked: false,
+    error: null, connecting: false, phase: "ready" });
 }
 
 export function signOutAccount(): Promise<void> {

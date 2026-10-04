@@ -25,7 +25,9 @@ async function checkAccountGate(phone) {
     if (path === "/api/auth/session" && request.method() === "GET") {
       checks++;
       return route.fulfill({ status: 200, contentType: "application/json",
-        body: JSON.stringify({ available: true, user: signedIn ? { id: "editor-1", name: "Editor tester" } : null }) });
+        body: JSON.stringify({ available: true, clerkAvailable: true, clerkPublishableKey: "pk_test_invalid",
+          canLinkEmail: signedIn, emailLinked: false,
+          user: signedIn ? { id: "editor-1", name: "Editor tester" } : null }) });
     }
     if (path === "/api/auth/google/start" && request.method() === "GET") {
       signedIn = true;
@@ -63,6 +65,11 @@ async function checkAccountGate(phone) {
     await beginExport();
     await auth.waitFor();
     assert.equal(await exportSheet.count(), 0, "A guest must not reach export settings from the toolbar");
+    await auth.getByRole("button", { name: "Continue with email" }).click();
+    await auth.locator("[data-clerk-email-sign-in]").waitFor();
+    await auth.getByRole("button", { name: "Back to sign-in options" }).click();
+    assert.equal(await auth.locator("[data-clerk-email-sign-in]").count(), 0,
+      "Returning from email sign-in keeps the original account gate open");
     await auth.getByRole("button", { name: "Keep editing" }).click();
     assert.equal(await exportSheet.count(), 0, "Dismissing sign-in cancels the queued export");
 
