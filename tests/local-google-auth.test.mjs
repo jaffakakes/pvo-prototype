@@ -46,7 +46,7 @@ test("loopback auth reports unavailable without Google credentials", async t => 
   t.after(() => app.close());
   const session = await app.request("/api/auth/session");
   assert.equal(session.status, 200);
-  assert.deepEqual(await session.json(), { available: false, user: null });
+  assert.deepEqual(await session.json(), { available: false, clerkAvailable: false, clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: null });
   assert.equal((await app.request("/api/auth/google/start")).status, 503);
 });
 
@@ -78,7 +78,7 @@ test("loopback Google sign-in verifies identity, persists a private account, and
   };
   let app = await beta(directory, { clientId: "test-client", clientSecret: "test-secret", fetcher });
   t.after(async () => { await app?.close(); });
-  assert.deepEqual(await (await app.request("/api/auth/session")).json(), { available: true, user: null });
+  assert.deepEqual(await (await app.request("/api/auth/session")).json(), { available: true, clerkAvailable: false, clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: null });
 
   const start = await app.request("/api/auth/google/start");
   assert.equal(start.status, 302);
@@ -127,7 +127,7 @@ test("loopback Google sign-in verifies identity, persists a private account, and
     headers: { Origin: "https://other.example" } })).status, 403);
   assert.equal((await app.request("/api/auth/logout", { method: "POST", cookie: sessionCookie })).status, 200);
   assert.deepEqual(await (await app.request("/api/auth/session", { cookie: sessionCookie })).json(),
-    { available: true, user: null });
+    { available: true, clerkAvailable: false, clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: null });
 });
 
 test("loopback Google client file must be private and valid", async t => {
@@ -140,5 +140,5 @@ test("loopback Google client file must be private and valid", async t => {
   await writeFile(path, JSON.stringify({ clientId: "file-client", clientSecret: "file-secret" }), { mode: 0o600 });
   const app = await beta(directory);
   t.after(() => app.close());
-  assert.deepEqual(await (await app.request("/api/auth/session")).json(), { available: true, user: null });
+  assert.deepEqual(await (await app.request("/api/auth/session")).json(), { available: true, clerkAvailable: false, clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: null });
 });

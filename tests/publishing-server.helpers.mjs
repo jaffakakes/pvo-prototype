@@ -21,7 +21,9 @@ export async function workerFixture(overrides = {}, { createSessions = true, out
   }));
   const db = await mf.getD1Database("DB");
   const bucket = await mf.getR2Bucket("MEDIA");
-  const statements = (await readFile("migrations/0001_publishing.sql", "utf8")).split(";").map(sql => sql.trim()).filter(Boolean);
+  const schema = await Promise.all(["0001_publishing.sql", "0003_reply_boxes.sql"]
+    .map(name => readFile(`migrations/${name}`, "utf8")));
+  const statements = schema.flatMap(source => source.split(";").map(sql => sql.trim()).filter(Boolean));
   await db.batch(statements.map(sql => db.prepare(sql)));
   let cookie = null;
   let otherCookie = null;
@@ -56,11 +58,15 @@ export function tinyWebm() {
     0x18, 0x53, 0x80, 0x67, 0xff, 0x16, 0x54, 0xae, 0x6b, 0x81, 0, 0x1f, 0x43, 0xb6, 0x75, 0x81, 0])], { type: "video/webm" });
 }
 
-export async function tinyPvo() {
+export async function tinyPvo(poster = null) {
   const manifest = { spec_version: "0.1-prototype", scenes: [{ id: "main", start: 0, end: 1 }], components: [],
     media: [{ id: "video", asset_id: "video", type: "video/mp4" }],
     playback: { initial_timeline: "main", timelines: [{ id: "main", clips: [{ id: "clip", asset_id: "video", scene: "main", start: 0, end: 1 }] }] } };
-  return packPvoProject({ manifest, assets: [{ id: "video", blob: tinyMp4() }] });
+  if (poster) manifest.poster = { asset_id: "poster", at: .5, type: "image/webp" };
+  return packPvoProject({ manifest, assets: [
+    { id: "video", blob: tinyMp4() },
+    ...(poster ? [{ id: "poster", blob: poster }] : []),
+  ] });
 }
 
 export async function reserve(fixture, file, overrides = {}, options = {}) {

@@ -1,6 +1,7 @@
 import { escapeHtml, HttpError, notFound } from "../http.js";
 import { validPublicationId } from "../identity.js";
 import { byteRange } from "./range.js";
+import { posterKey } from "../publishing/poster.js";
 
 export async function readyPublication(env, id) {
   if (!env.DB || !env.MEDIA || !validPublicationId(id)) return null;
@@ -15,13 +16,29 @@ export async function viewPublication(request, env, id) {
   // URL so template loading receives HTML rather than a redirect response.
   const asset = await env.ASSETS.fetch(new Request(`${origin}/player/published`));
   if (!asset.ok) throw new HttpError(503, "The video player is temporarily unavailable.");
+  const hasPoster = Boolean(await env.MEDIA.head(posterKey(id)));
   const values = { TITLE: publication.title, PUBLICATION_ID: id, CANONICAL_URL: `${origin}/player/${id}`,
-    MEDIA_URL: `${origin}/media/${id}`, FORMAT: publication.format, CONTENT_TYPE: publication.content_type };
-  const html = (await asset.text()).replace(/\{\{(TITLE|PUBLICATION_ID|CANONICAL_URL|MEDIA_URL|FORMAT|CONTENT_TYPE)\}\}/g,
+    MEDIA_URL: `${origin}/media/${id}`, POSTER_URL: hasPoster ? `${origin}/poster/${id}` : "",
+    FORMAT: publication.format, CONTENT_TYPE: publication.content_type };
+  const posterMeta = hasPoster ? `<meta property="og:image" content="${escapeHtml(`${origin}/poster/${id}`)}" />\n    <meta name="twitter:card" content="summary_large_image" />` : "";
+  const html = (await asset.text()).replace("{{POSTER_META}}", posterMeta)
+    .replace(/\{\{(TITLE|PUBLICATION_ID|CANONICAL_URL|MEDIA_URL|POSTER_URL|FORMAT|CONTENT_TYPE)\}\}/g,
     (_, name) => escapeHtml(values[name]));
   return new Response(request.method === "HEAD" ? null : html, { headers: {
     "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow",
     "Referrer-Policy": "same-origin",
+  } });
+}
+
+export async function readPoster(request, env, id) {
+  const publication = await readyPublication(env, id);
+  if (!publication) return notFound();
+  const object = request.method === "HEAD" ? await env.MEDIA.head(posterKey(id))
+    : await env.MEDIA.get(posterKey(id));
+  if (!object) return notFound();
+  return new Response(request.method === "HEAD" ? null : object.body, { headers: {
+    "Content-Type": "image/webp", "Content-Length": String(object.size),
+    "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff",
   } });
 }
 

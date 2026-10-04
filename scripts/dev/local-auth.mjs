@@ -4,6 +4,7 @@ import { exchangeGoogleCode } from "../../server/auth/google.js";
 import { randomId, digest } from "../../server/identity.js";
 import { escapeHtml } from "../../server/http.js";
 import { createLocalAuthStore } from "./local-auth-store.mjs";
+import { loadLocalClerk, verifyLocalClerkSession } from "./local-clerk.mjs";
 
 const STATE_SECONDS = 10 * 60;
 
@@ -63,17 +64,21 @@ function complete(response, origin, store, ok, sessionCookie) {
   response.end(html);
 }
 
-/** Google account routes for the HTTP loopback beta; no D1 or Worker bindings. */
-export async function createLocalAuthApi({ directory, origin, clientId, clientSecret, fetcher = fetch }) {
+/** Account routes for the HTTP loopback beta; no D1 or Worker bindings. */
+export async function createLocalAuthApi({ directory, origin, clientId, clientSecret,
+  clerkPublishableKey, clerkIssuer, fetcher = fetch }) {
   const base = new URL(origin);
   if (base.origin !== origin || base.protocol !== "http:" || base.hostname !== "127.0.0.1")
     throw new Error("Local Google sign-in requires a canonical http://127.0.0.1 origin.");
   const client = await loadClient(directory, clientId, clientSecret);
+  const clerk = await loadLocalClerk(directory, clerkPublishableKey, clerkIssuer, fetcher);
   const store = await createLocalAuthStore(directory);
-  const available = Boolean(client);
+  const googleAvailable = Boolean(client);
+  const clerkAvailable = Boolean(clerk);
+  const available = googleAvailable;
 
   async function userFor(request) {
-    return available ? store.userFor(request) : null;
+    return (googleAvailable || clerkAvailable) ? store.userFor(request) : null;
   }
 
   async function handle(request, response, pathname) {
@@ -82,11 +87,32 @@ export async function createLocalAuthApi({ directory, origin, clientId, clientSe
       return error(response, 400, "This sign-in address is invalid.");
     if (pathname === "/api/auth/session") {
       if (request.method !== "GET") return error(response, 405, "This sign-in operation is not supported.");
-      return json(response, 200, { available, user: await userFor(request) });
+      return json(response, 200, { available, clerkAvailable,
+        clerkPublishableKey: clerk?.publishableKey ?? null, canLinkEmail: false, emailLinked: false,
+        user: await userFor(request) });
+    }
+    if (pathname === "/api/auth/clerk/exchange") {
+      if (request.method !== "POST") return error(response, 405, "This sign-in operation is not supported.");
+      if (!clerkAvailable) return error(response, 503, "Email sign-in is not configured here yet.");
+      if (request.headers.origin !== origin
+        || (request.headers["sec-fetch-site"] && !["same-origin", "none"].includes(request.headers["sec-fetch-site"])))
+        return error(response, 403, "This operation must start from the editor.");
+      const authorization = request.headers.authorization;
+      const token = typeof authorization === "string" && /^Bearer ([A-Za-z0-9._-]+)$/.exec(authorization)?.[1];
+      if (!token || token.length > 16384) return error(response, 401, "Email sign-in could not be verified.");
+      try {
+        const identity = await verifyLocalClerkSession(token, clerk, origin);
+        const sessionCookie = await store.startClerkSession(identity);
+        return json(response, 200, { user: await store.userFor({ headers: { cookie: sessionCookie } }) },
+          { "Set-Cookie": sessionCookie });
+      } catch (cause) {
+        console.error("Local Clerk sign-in exchange failed:", cause?.name);
+        return error(response, 401, "Email sign-in could not be verified.");
+      }
     }
     if (pathname === "/api/auth/google/start") {
       if (request.method !== "GET") return error(response, 405, "This sign-in operation is not supported.");
-      if (!available) return error(response, 503, "Google sign-in is not configured here yet.");
+      if (!googleAvailable) return error(response, 503, "Google sign-in is not configured here yet.");
       const state = randomId(32);
       const nonce = randomId(32);
       const verifier = randomId(32);
@@ -101,7 +127,7 @@ export async function createLocalAuthApi({ directory, origin, clientId, clientSe
     }
     if (pathname === "/api/auth/google/callback") {
       if (request.method !== "GET") return error(response, 405, "This sign-in operation is not supported.");
-      if (!available) return error(response, 503, "Google sign-in is not configured here yet.");
+      if (!googleAvailable) return error(response, 503, "Google sign-in is not configured here yet.");
       try {
         const url = new URL(request.url, origin);
         const state = await store.verifyOAuth(request);
