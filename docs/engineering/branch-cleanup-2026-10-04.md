@@ -1,5 +1,15 @@
 # Branch cleanup — 4 October 2026
 
+## Subsequent release reconciliation
+
+The theme release subsequently reached production at `cde6f0c` ([successful deployment](https://github.com/jaffakakes/pvo-prototype/actions/runs/37223954938)). [PR #62](https://github.com/jaffakakes/pvo-prototype/pull/62) reconciles email/password sign-in with those themes and configures the verified Clerk domain. [PR #67](https://github.com/jaffakakes/pvo-prototype/pull/67) repairs criss-cross promotion ancestry without changing the source tree.
+
+The pending source was frozen before reconciliation in `.git/audit-backups/pending-release-2026-10-04T182748Z/`. [PR #68](https://github.com/jaffakakes/pvo-prototype/pull/68) groups it into capture/recovery, player, publishing/replies, authentication, and export changes, preserving the newer production native assistant, animations, fonts, Google sign-in and themes. Cloudflare server rendering stays disabled until the account's Container and Queue prerequisites are met; browser export remains available.
+
+A separate read-only comparison of 66 source paths in `fonts-voice-errors` and 10 in `request-error-feedback` found no further unreleased product intent. Their pending hunks are released improvements or superseded implementations, including the former anonymous publishing session, old iMessage copy and earlier splash logic. Source archives and the classification are retained in `.git/audit-backups/other-pending-source-20261004T183740Z/`; these old copies must not be reapplied over the current account or animation contracts.
+
+The quiz branches are explicitly local-only, and `codex/package-public-pvo-modules` is separate package-publication work. They are outside this app release. Final branch removal is recorded in local recovery manifests only after the promoted production deployment and live release are verified. The sections below preserve the two earlier cleanup snapshots.
+
 ## Follow-up cleanup and release queue
 
 On the follow-up review, removed four more local branches: `codex/release-readiness`, `codex/stacked-timeline-layers`, `codex/splash-screen-production` and `codex/try-debugger`. The last three also had remote branches, which were removed. Their commits were already in the successfully deployed production release; their pending files were generated output or a dependency symlink, not unreleased source changes.
