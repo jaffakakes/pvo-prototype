@@ -56,6 +56,26 @@
 .stopLabel { display: grid; justify-items: center; gap: 3px; font-size: 10px; font-weight: 800; line-height: 1; }
 .stopIcon { width: 10px; height: 10px; border-radius: 2px; background: currentColor; }
 .orbRing { position: absolute; inset: -6px; border-radius: 50%; pointer-events: none; }
+.threadCount {
+  position: absolute;
+  left: calc(100% - 36px);
+  bottom: calc(var(--assistant-orb-bottom) + 42px);
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 3px;
+  border: 2px solid #000;
+  border-radius: 12px;
+  background: var(--violet);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  pointer-events: auto;
+}
+.root[data-placement="toolbar"] .threadCount { right: -9px; bottom: 34px; left: auto; }
+.root[data-placement="floating"] .threadCount { bottom: 55px; }
 .root[data-assistant-phase="idle"][data-has-target="true"] .orbRing { border: 3px solid var(--violet); }
 .root:not([data-assistant-phase="idle"]) .orb {
   bottom: calc(var(--assistant-orb-bottom) + 8px);
@@ -169,3 +189,8 @@
 .root[data-placement="floating"][data-assistant-phase="idle"] .orb { bottom: 14px; }
 .root[data-placement="floating"] .dismissArea { height: 100%; }
 .root[data-placement="floating"] .composer input { font-size: 16px; }
+
+.root[data-thread-open="true"] .orb { background: var(--accent); }
+.root[data-placement="workspace"][data-thread-open="true"] .orb {
+  bottom: calc(var(--dock-height) - 28px);
+}
