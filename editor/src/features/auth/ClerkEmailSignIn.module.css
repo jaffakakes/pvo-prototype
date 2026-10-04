@@ -13,3 +13,186 @@
 .retry p { margin: 0; color: #ff7b7b; font: 600 12px/1.45 var(--f-ui); }
 .retry button { justify-self: start; min-height: 40px; padding: 0 12px; border: 2px solid #4a4852; border-radius: 10px; background: #1c1b22; color: #e6e3dc; font: 700 12px var(--f-ui); cursor: pointer; }
 .email button:focus-visible { outline: 3px solid #ffd23e; outline-offset: 2px; }
+
+.standalone {
+  --email-field-height: 50px;
+  color: #e6e3dc;
+}
+
+.standalone :global(.cl-cardBox),
+.standalone :global(.cl-card) {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.standalone :global(.cl-cardBox) {
+  overflow: visible;
+}
+
+.standalone :global(.cl-card),
+.standalone :global(.cl-main),
+.standalone :global(.cl-form) {
+  gap: 18px;
+}
+
+/* The dialog supplies only the start headings. Clerk still explains later steps. */
+.standalone :global(.cl-signIn-start) :global(.cl-header),
+.standalone :global(.cl-signUp-start) :global(.cl-header),
+.standalone :global(.cl-footerAction__signIn),
+.standalone :global(.cl-footerAction__signUp) {
+  display: none;
+}
+
+.standalone :global(.cl-headerTitle) {
+  color: #e6e3dc;
+  font: 400 22px/1.15 var(--f-display);
+}
+
+.standalone :global(.cl-headerSubtitle) {
+  color: rgba(230, 227, 220, .62);
+  font: 500 13px/1.5 var(--f-ui);
+}
+
+.standalone :global(.cl-formFieldRow) {
+  gap: 14px;
+}
+
+.standalone :global(.cl-formField) {
+  gap: 6px;
+}
+
+.standalone :global(.cl-formFieldLabel) {
+  color: #e6e3dc;
+  font: 700 12px/1.4 var(--f-ui);
+}
+
+.standalone :global(.cl-formFieldInput),
+.standalone :global(.cl-otpCodeFieldInput) {
+  box-sizing: border-box;
+  min-height: var(--email-field-height);
+  border: 2px solid rgba(230, 227, 220, .18);
+  border-radius: 12px;
+  background: #141118;
+  color: #e6e3dc;
+  box-shadow: none;
+  font: 600 14px/1.4 var(--f-ui);
+}
+
+.standalone :global(.cl-formFieldInput) {
+  padding: 0 14px;
+}
+
+.standalone :global(.cl-formFieldInput)[type="password"],
+.standalone :global(.cl-formFieldInput__password),
+.standalone :global(.cl-formFieldInput__newPassword),
+.standalone :global(.cl-formFieldInput__confirmPassword) {
+  padding-right: 44px;
+}
+
+.standalone :global(.cl-formFieldInput)::placeholder {
+  color: rgba(230, 227, 220, .62);
+}
+
+.standalone :global(.cl-formFieldInput):focus,
+.standalone :global(.cl-otpCodeFieldInput):focus {
+  outline: none;
+  border-color: #e6e3dc;
+  box-shadow: 0 0 0 3px rgba(230, 227, 220, .18);
+}
+
+.standalone :global(.cl-formFieldInput)[aria-invalid="true"],
+.standalone :global(.cl-formFieldInput):global(.cl-error) {
+  border-color: #ff7b7b;
+}
+
+.standalone :global(.cl-formFieldErrorText),
+.standalone :global(.cl-otpCodeFieldErrorText) {
+  color: #ff7b7b;
+  font: 600 12px/1.45 var(--f-ui);
+}
+
+.standalone :global(.cl-formFieldInputShowPasswordButton) {
+  min-width: 40px;
+  min-height: 40px;
+  color: rgba(230, 227, 220, .7);
+}
+
+.standalone :global(.cl-formButtonPrimary),
+.standalone .review button:first-of-type {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 52px;
+  padding: 10px 16px;
+  border: 2px solid #4a4852;
+  border-radius: 14px;
+  background: var(--auth-accent, #ff8a00);
+  color: var(--auth-accent-text, #141118);
+  box-shadow: 3px 3px 0 #4a4852;
+  font: 800 15px/1.3 var(--f-ui);
+  text-transform: none;
+}
+
+.standalone :global(.cl-formButtonPrimary):hover,
+.standalone .review button:first-of-type:hover {
+  background: var(--auth-accent, #ff8a00);
+  filter: brightness(1.06);
+}
+
+.standalone :global(.cl-formFieldAction),
+.standalone :global(.cl-footerActionLink),
+.standalone :global(.cl-footerPagesLink),
+.standalone :global(.cl-formResendCodeLink) {
+  color: #e6e3dc;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+.standalone :global(.cl-formFieldCheckboxInput) {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #141118;
+  border-radius: 6px;
+  accent-color: var(--auth-accent, #ff8a00);
+}
+
+/* Keep provider branding, legal links, and development notices in the real form. */
+.standalone :global(.cl-footer) {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.standalone :global(.cl-footer) > :global(.cl-footerItem) {
+  padding: 10px 0 0;
+  border: 0;
+}
+
+.standalone button:focus-visible,
+.standalone a:focus-visible {
+  outline: 3px solid #e6e3dc;
+  outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+  .standalone {
+    --email-field-height: 48px;
+  }
+
+  .standalone :global(.cl-card),
+  .standalone :global(.cl-main),
+  .standalone :global(.cl-form) {
+    gap: 14px;
+  }
+
+  .standalone :global(.cl-formFieldRow) {
+    gap: 12px;
+  }
+}

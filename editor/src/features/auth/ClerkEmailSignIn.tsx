@@ -12,11 +12,31 @@ type Props = {
   mode: "signin" | "link";
   expectedUserId?: string;
   onLinked?(): void;
+  initialStep?: "signin" | "signup";
+  standalone?: boolean;
 };
 type Review = { email: string; clerkUserId: string };
 
+const standaloneAppearance = {
+  variables: {
+    colorPrimary: "var(--auth-accent, #ff8a00)",
+    colorPrimaryForeground: "var(--auth-accent-text, #141118)",
+    colorForeground: "#e6e3dc",
+    colorMutedForeground: "rgba(230, 227, 220, .62)",
+    colorBackground: "#1c1b22",
+    colorInput: "#141118",
+    colorInputForeground: "#e6e3dc",
+    colorNeutral: "#e6e3dc",
+    colorDanger: "#ff7b7b",
+    colorBorder: "#4a4852",
+    fontFamily: "var(--f-ui)",
+    borderRadius: "12px",
+  },
+};
+
 /** The prebuilt Clerk form owns passwords, verification, and recovery. Linking requires a separate account review. */
-export function ClerkEmailSignIn({ publishableKey, onBack, mode, expectedUserId, onLinked }: Props) {
+export function ClerkEmailSignIn({ publishableKey, onBack, mode, expectedUserId, onLinked,
+  initialStep = "signin", standalone = false }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const clerkRef = useRef<Clerk | null>(null);
   const pendingSession = useRef<ClerkSession | null>(null);
@@ -32,10 +52,12 @@ export function ClerkEmailSignIn({ publishableKey, onBack, mode, expectedUserId,
   useEffect(() => {
     active.current = true;
     let effectActive = true;
-    let mounted = false;
+    let mountedClerk: Clerk | null = null;
     let exchanging = false;
     let unsubscribe: (() => void) | null = null;
-    const redirectUrl = location.href;
+    const element = host.current;
+    const entryUrl = new URL(location.href);
+    const redirectUrl = entryUrl.href;
 
     const signIn = async (session: ClerkSession) => {
       if (!effectActive || exchanging) return;
@@ -73,7 +95,7 @@ export function ClerkEmailSignIn({ publishableKey, onBack, mode, expectedUserId,
     };
 
     void getClerk(publishableKey).then(clerk => {
-      if (!effectActive || !host.current) return;
+      if (!effectActive || !element) return;
       clerkRef.current = clerk;
       existingSessionRequiresConfirmation.current = Boolean(clerk.session);
       unsubscribe = clerk.addListener(({ session, user }) => {
@@ -86,12 +108,14 @@ export function ClerkEmailSignIn({ publishableKey, onBack, mode, expectedUserId,
         presentAccount(clerk.session, clerk.user);
         return;
       }
-      clerk.mountSignIn(host.current, {
-        routing: "hash",
+      const formProps = {
+        routing: "hash" as const,
         forceRedirectUrl: redirectUrl,
-        signUpForceRedirectUrl: redirectUrl,
-      });
-      mounted = true;
+        ...(standalone ? { appearance: standaloneAppearance } : {}),
+      };
+      if (initialStep === "signup") clerk.mountSignUp(element, formProps);
+      else clerk.mountSignIn(element, { ...formProps, signUpForceRedirectUrl: redirectUrl });
+      mountedClerk = clerk;
       setStatus("form");
     }).catch(() => {
       if (!effectActive) return;
@@ -102,12 +126,20 @@ export function ClerkEmailSignIn({ publishableKey, onBack, mode, expectedUserId,
       effectActive = false;
       active.current = false;
       unsubscribe?.();
-      if (mounted && host.current && clerkRef.current) clerkRef.current.unmountSignIn(host.current);
+      if (mountedClerk && element) {
+        if (initialStep === "signup") mountedClerk.unmountSignUp(element);
+        else mountedClerk.unmountSignIn(element);
+      }
+      // A new dialog step starts at its own form, not a previous recovery hash route.
+      if (standalone && location.pathname === entryUrl.pathname && location.search === entryUrl.search
+        && location.hash !== entryUrl.hash) {
+        history.replaceState(history.state, "", `${entryUrl.pathname}${entryUrl.search}${entryUrl.hash}`);
+      }
       clerkRef.current = null;
       pendingSession.current = null;
       completeSignIn.current = null;
     };
-  }, [publishableKey, attempt, mode]);
+  }, [publishableKey, attempt, mode, initialStep, standalone]);
 
   const confirmAccount = async () => {
     const candidate = pendingSession.current;
@@ -173,10 +205,10 @@ export function ClerkEmailSignIn({ publishableKey, onBack, mode, expectedUserId,
     setAttempt(value => value + 1);
   };
 
-  return <div className={styles.email} data-clerk-email-sign-in>
-    <button type="button" className={styles.back} onClick={onBack}>
+  return <div className={`${styles.email} ${standalone ? styles.standalone : ""}`} data-clerk-email-sign-in>
+    {!standalone && <button type="button" className={styles.back} onClick={onBack}>
       {mode === "link" ? "← Back to your account" : "← Back to sign-in options"}
-    </button>
+    </button>}
     {(status === "loading" || status === "exchange") && <p role="status" className={styles.status}>
       {status === "loading" ? "Opening email sign-in…" : mode === "link" ? "Connecting email sign-in…" : "Finishing sign-in…"}</p>}
     {status === "review" && review && <div className={styles.review} data-clerk-account-review>
@@ -193,6 +225,6 @@ export function ClerkEmailSignIn({ publishableKey, onBack, mode, expectedUserId,
       {clerkRef.current?.session && <button type="button" className={styles.secondary}
         onClick={() => { void useAnotherEmail(); }}>Use another email</button>}
     </div>}
-    <div ref={host} className={styles.form} data-visible={status === "form"} />
+    <div className={styles.form} data-visible={status === "form"}><div ref={host} /></div>
   </div>;
 }

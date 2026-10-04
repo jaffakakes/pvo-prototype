@@ -94,7 +94,7 @@ const share = page.getByRole("dialog", { name: "Share", exact: true });
 async function openExport() {
   await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
   await page.getByRole("button", { name: "Flat video", exact: true }).click();
-  const auth = page.getByRole("dialog", { name: "Sign in to Restyle" });
+  const auth = page.getByRole("dialog", { name: "Create a free account" });
   if (!signedIn) {
     await auth.waitFor();
     const popup = page.waitForEvent("popup");
@@ -151,7 +151,7 @@ try {
 
   signedIn = false;
   await share.locator("[data-share-file]").click();
-  const expiredSession = page.getByRole("dialog", { name: "Sign in to Restyle" });
+  const expiredSession = page.getByRole("dialog", { name: "Create a free account" });
   await expiredSession.waitFor();
   assert.equal(await page.evaluate(() => window.exportObservation.files.length), 1,
     "An expired account session must block native file sharing");

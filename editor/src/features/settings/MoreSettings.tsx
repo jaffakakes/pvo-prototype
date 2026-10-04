@@ -12,10 +12,12 @@ import { ProjectStorageStatus } from "./ProjectStorageStatus";
 import { CaptureRecovery } from "../capture/CaptureRecovery";
 import styles from "./MoreSettings.module.css";
 import { requestExport } from "../../state/export/exportCommands";
+import { openSignIn, useAuthGate } from "../../state/auth/authGateStore";
 
 const ratios = Object.keys(RATIOS) as Ratio[];
 
 export function MoreSettings() {
+  const user = useAuthGate(state => state.user);
   const ratio = useCapture(state => state.ratio);
   const edit = useCapture(state => state.edit);
   const advancedEditingEnabled = useEditorPreferences(state => state.advancedEditingEnabled);
@@ -29,6 +31,12 @@ export function MoreSettings() {
   const [appearanceError, setAppearanceError] = useState<string | null>(null);
 
   return <div className={styles.content}>
+    <section className={styles.section} aria-label="Account">
+      <h3>Account</h3>
+      <div className={styles.actions}>
+        <button type="button" onClick={() => openSignIn()}>{user ? "Your account" : "Sign in"}</button>
+      </div>
+    </section>
     {component && <section className={styles.section} aria-label="Selected component">
       <div className={styles.actions}>
         <button type="button" onClick={() => {

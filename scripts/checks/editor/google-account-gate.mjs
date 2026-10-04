@@ -40,7 +40,7 @@ async function checkAccountGate(phone) {
   page.setDefaultTimeout(15000);
   const errors = [];
   page.on("pageerror", error => errors.push(error.message));
-  const auth = page.getByRole("dialog", { name: "Sign in to Restyle" });
+  const auth = page.locator("dialog[data-auth-step]");
   const exportSheet = page.getByRole("dialog", { name: "Export", exact: true });
   const beginExport = async () => {
     if (phone) {

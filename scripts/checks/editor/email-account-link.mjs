@@ -37,7 +37,9 @@ const clerkModule = `
       };
       host.replaceChildren(button);
     }
+    mountSignUp(host) { this.mountSignIn(host); }
     unmountSignIn(host) { host.replaceChildren(); }
+    unmountSignUp(host) { host.replaceChildren(); }
     async signOut(callback) {
       this.user = null;
       this.session = null;
@@ -56,7 +58,7 @@ try {
   let linkCalls = 0;
   let exchangeCalls = 0;
   const user = { id: "editor-account-1", name: "Editor tester" };
-  await context.route("**/assets/clerk-*.js", route => route.fulfill({ status: 200,
+  await context.route(/\/(?:assets\/clerk-[^/]+\.js|node_modules\/\.vite\/deps\/@clerk_clerk-js\.js)(?:\?.*)?$/, route => route.fulfill({ status: 200,
     contentType: "text/javascript", body: clerkModule }));
   await context.route("**/npm/@clerk/ui@1/dist/ui.browser.js", route => route.fulfill({ status: 200,
     contentType: "text/javascript", body: "window.__internal_ClerkUICtor = class ClerkUI {};" }));
@@ -135,7 +137,8 @@ try {
   assert.equal(signedIn, true, "Linking must retain the Google Restyle session");
 
   await account.getByRole("button", { name: "Sign out" }).click();
-  const signIn = page.getByRole("dialog", { name: "Sign in to Restyle" });
+  const signIn = page.locator("dialog[data-auth-step]");
+  await page.getByRole("dialog", { name: "Create a free account", exact: true }).waitFor();
   await signIn.waitFor();
   await page.evaluate(() => {
     const clerk = window.__clerk;
