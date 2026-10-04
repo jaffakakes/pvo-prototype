@@ -1,8 +1,11 @@
-import { json, checkOrigin, HttpError, escapeHtml } from "../http.js";
+import { json, checkOrigin, HttpError, escapeHtml, readJson } from "../http.js";
 import { randomId, digest } from "../identity.js";
 import { cookieValue, signCookie, verifyCookie, setCookie } from "./tokens.js";
-import { createAccountSession, endAccountSession, getAccountSession } from "./sessions.js";
+import { createAccountSession, createManagedAccountSession, endAccountSession,
+  getAccountSession, getRecentGoogleSession } from "./sessions.js";
 import { exchangeGoogleCode } from "./google.js";
+import { clerkIdentityFromRequest } from "./clerk.js";
+import { accountForClerk, accountIdentityStatus, linkClerkAccount } from "./clerkAccounts.js";
 
 const STATE_COOKIE = "__Host-pvo-oauth";
 const STATE_SECONDS = 10 * 60;
@@ -27,7 +30,32 @@ export async function authRoute(request, env, config, fetcher = fetch) {
   if (url.pathname === "/api/auth/session") {
     if (request.method !== "GET") throw new HttpError(405, "This sign-in operation is not supported.");
     const user = config.origin === url.origin ? await getAccountSession(request, env) : null;
-    return json({ available: config.authAvailable, user });
+    const identity = await accountIdentityStatus(user?.id, config.clerkIssuer, env.DB);
+    return json({ available: config.authAvailable, clerkAvailable: config.clerkAvailable,
+      clerkPublishableKey: config.clerkAvailable ? env.CLERK_PUBLISHABLE_KEY : null,
+      canLinkEmail: config.authAvailable && config.clerkAvailable && identity.hasGoogle && !identity.emailLinked,
+      emailLinked: identity.emailLinked, user });
+  }
+  if (url.pathname === "/api/auth/clerk/exchange" || url.pathname === "/api/auth/clerk/link") {
+    if (request.method !== "POST") throw new HttpError(405, "This sign-in operation is not supported.");
+    if (!config.clerkAvailable) throw new HttpError(503, "Email sign-in is not configured here yet.");
+    checkOrigin(request, config.origin);
+    const linking = url.pathname === "/api/auth/clerk/link";
+    const linkInput = linking ? await readJson(request, 256) : null;
+    if (linking && (!linkInput || typeof linkInput !== "object" || Array.isArray(linkInput)
+      || Object.keys(linkInput).length !== 1 || typeof linkInput.expectedUserId !== "string"
+      || !/^[A-Za-z0-9_-]{22}$/.test(linkInput.expectedUserId)))
+      throw new HttpError(400, "The account to connect is invalid.");
+    const owner = linking ? await getRecentGoogleSession(request, env) : null;
+    if (linking && !owner) throw new HttpError(403, "Sign in with Google again before connecting email sign-in.");
+    if (linking && owner.id !== linkInput.expectedUserId)
+      throw new HttpError(412, "Your Restyle account changed. Sign in with the original Google account and try again.");
+    if (linking && !(await accountIdentityStatus(owner.id, config.clerkIssuer, env.DB)).hasGoogle)
+      throw new HttpError(403, "Sign in with Google before connecting email sign-in.");
+    const identity = await clerkIdentityFromRequest(request, config.clerkIssuer, config.origin, fetcher);
+    if (linking) return json({ user: await linkClerkAccount(identity, owner, env.DB) });
+    const user = await accountForClerk(identity, env.DB);
+    return json({ user }, 200, { "Set-Cookie": await createManagedAccountSession(user.id, env) });
   }
   if (url.pathname === "/api/auth/google/start") {
     if (request.method !== "GET") throw new HttpError(405, "This sign-in operation is not supported.");

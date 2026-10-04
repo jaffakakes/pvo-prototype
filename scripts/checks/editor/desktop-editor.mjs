@@ -8,7 +8,9 @@ const browser = await chromium.launch({
 });
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
 await context.route(`${new URL(url).origin}/api/auth/session`, route => route.fulfill({ contentType: "application/json",
-  body: JSON.stringify({ available: true, user: { id: "editor-test", name: "Editor tester" } }) }));
+  body: JSON.stringify({ available: true, clerkAvailable: false, clerkPublishableKey: null,
+    canLinkEmail: false, emailLinked: false,
+    user: { id: "editor-test", name: "Editor tester" } }) }));
 const page = await context.newPage();
 const errors = [];
 page.on("pageerror", error => errors.push(error.message));

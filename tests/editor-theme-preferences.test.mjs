@@ -49,7 +49,14 @@ test.beforeEach(() => {
   useAuthGate.setState({ user: null, phase: "idle", source: null, error: null, connecting: false });
 });
 
-const session = user => ({ available: true, user });
+const session = user => ({
+  available: true,
+  clerkAvailable: false,
+  clerkPublishableKey: null,
+  canLinkEmail: false,
+  emailLinked: false,
+  user,
+});
 
 test("guests can save a mode but cannot select an account accent", () => {
   setThemeMode("light");

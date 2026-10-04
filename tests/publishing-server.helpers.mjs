@@ -1,6 +1,6 @@
 import { bundleWorkerModules } from "./worker-bundle.helpers.mjs";
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { packPvoProject } from "../packages/pvo-sdk/index.js";
 import { createAccountSession } from "../server/auth/sessions.js";
 
@@ -21,8 +21,12 @@ export async function workerFixture(overrides = {}, { createSessions = true, out
   }));
   const db = await mf.getD1Database("DB");
   const bucket = await mf.getR2Bucket("MEDIA");
-  const statements = (await readFile("migrations/0001_publishing.sql", "utf8")).split(";").map(sql => sql.trim()).filter(Boolean);
-  await db.batch(statements.map(sql => db.prepare(sql)));
+  const migrations = (await readdir("migrations")).filter(name => name.endsWith(".sql")).sort();
+  for (const migration of migrations) {
+    const statements = (await readFile(`migrations/${migration}`, "utf8"))
+      .split(";").map(sql => sql.trim()).filter(Boolean);
+    await db.batch(statements.map(sql => db.prepare(sql)));
+  }
   let cookie = null;
   let otherCookie = null;
   async function request(path, { method = "GET", body, headers = {}, session = cookie, ...rest } = {}) {
