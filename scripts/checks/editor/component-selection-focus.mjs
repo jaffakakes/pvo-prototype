@@ -194,13 +194,25 @@ try {
     return { originalPosition, position: { x: component.x, y: component.y }, animation: component.animation };
   });
   assert.deepEqual(placed.originalPosition, { x: 32, y: 35 });
-  assert.deepEqual(placed.position, placed.originalPosition,
-    "Desktop placement must retain the base position while authoring a keyframe");
-  assert(placed.animation?.tracks.x?.length && placed.animation?.tracks.y?.length,
-    "Desktop placement must use its keyframe command");
-  assert(Math.abs(afterPlacement.center.x - beforePlacement.center.x) > 5
-    && Math.abs(afterPlacement.center.y - beforePlacement.center.y) > 5,
-    "Direct placement must visibly move the Form through its keyframe command");
+  assertNear((placed.position.x - placed.originalPosition.x) / 100 * beforePlacement.width, 12,
+    "Direct drag must update the Form's base X by the pointer distance");
+  assertNear((placed.position.y - placed.originalPosition.y) / 100 * beforePlacement.height, 9,
+    "Direct drag must update the Form's base Y by the pointer distance");
+  assert.equal(placed.animation, undefined,
+    "Direct placement must not create a keyframe");
+  assertNear(afterPlacement.center.x - beforePlacement.center.x, 12,
+    "The Form must follow a horizontal placement drag");
+  assertNear(afterPlacement.center.y - beforePlacement.center.y, 9,
+    "The Form must follow a vertical placement drag");
+  await page.evaluate(() => window.selectionFocusFixture.store.getState().patch({ t: 6 }));
+  const earlyPosition = await selectedGeometry();
+  await page.evaluate(() => window.selectionFocusFixture.store.getState().patch({ t: 12 }));
+  const latePosition = await selectedGeometry();
+  assertNear(latePosition.center.x, earlyPosition.center.x,
+    "Base placement must stay at the same X throughout the component's visible interval");
+  assertNear(latePosition.center.y, earlyPosition.center.y,
+    "Base placement must stay at the same Y throughout the component's visible interval");
+  await page.evaluate(() => window.selectionFocusFixture.store.getState().patch({ t: 4 }));
 
   await page.getByRole("tab", { name: "Advanced", exact: true }).click();
   await focused.waitFor();
@@ -283,13 +295,16 @@ try {
     const component = store.getState().components.find(item => item.id === formId);
     return { position: { x: component.x, y: component.y }, animation: component.animation };
   });
-  assert.deepEqual(afterSecondDrag.position, contactPosition,
-    "The next keyframe drag must retain base placement");
-  assert.notDeepEqual(afterSecondDrag.animation, placed.animation,
-    "The next drag must edit the keyframe position");
-  assert(Math.abs(secondDrag.center.x - afterContact.center.x) > 5
-    && Math.abs(secondDrag.center.y - afterContact.center.y) > 5,
-    "The next drag must visibly move the Form through its keyframe command");
+  assertNear((afterSecondDrag.position.x - contactPosition.x) / 100 * afterContact.width, 12,
+    "The next drag must update base X after leaving code focus");
+  assertNear((afterSecondDrag.position.y - contactPosition.y) / 100 * afterContact.height, 9,
+    "The next drag must update base Y after leaving code focus");
+  assert.equal(afterSecondDrag.animation, undefined,
+    "Leaving code focus must not turn the next drag into a keyframe edit");
+  assertNear(secondDrag.center.x - afterContact.center.x, 12,
+    "The Form must follow the next horizontal drag");
+  assertNear(secondDrag.center.y - afterContact.center.y, 9,
+    "The Form must follow the next vertical drag");
 
   await page.getByRole("tab", { name: "Content", exact: true }).click();
   await page.getByRole("tab", { name: "Advanced", exact: true }).click();
@@ -307,7 +322,11 @@ try {
   assert.deepEqual(afterTimelineContact, afterSecondDrag.position,
     "Timeline contact must end code focus without changing authored placement");
 
-  await restartFocus();
+  await page.getByRole("tab", { name: "Look", exact: true }).click();
+  await page.locator("[data-keyframe-editor]")
+    .getByRole("button", { name: "Add Position keyframe", exact: true }).click();
+  await page.getByRole("tab", { name: "Advanced", exact: true }).click();
+  await focused.waitFor();
   const keyframeControl = page.locator('[data-keyframe-lane="position"] [data-keyframe-control]').first();
   await keyframeControl.waitFor();
   const beforeKeyframeContact = await page.evaluate(() => {
@@ -325,6 +344,25 @@ try {
   });
   assert.deepEqual(afterKeyframeContact, beforeKeyframeContact,
     "Selecting a timeline keyframe must leave authored placement and animation unchanged");
+
+  const selectedKeyFrame = await selected.boundingBox();
+  assert(selectedKeyFrame, "The explicitly selected Position key must keep the Form on the preview");
+  const keyDragStart = { x: selectedKeyFrame.x + selectedKeyFrame.width / 2,
+    y: selectedKeyFrame.y + selectedKeyFrame.height / 2 };
+  await page.mouse.move(keyDragStart.x, keyDragStart.y);
+  await page.mouse.down();
+  await page.mouse.move(keyDragStart.x + 12, keyDragStart.y + 9, { steps: 4 });
+  await page.mouse.up();
+  await assertPlacementMode("Selected Position keyframe drag");
+  const afterKeyDrag = await page.evaluate(() => {
+    const { store, formId } = window.selectionFocusFixture;
+    const component = store.getState().components.find(item => item.id === formId);
+    return { position: { x: component.x, y: component.y }, animation: component.animation };
+  });
+  assert.deepEqual(afterKeyDrag.position, afterKeyframeContact.position,
+    "Dragging an explicitly selected Position key must retain base placement");
+  assert.notDeepEqual(afterKeyDrag.animation, afterKeyframeContact.animation,
+    "Dragging an explicitly selected Position key must change its curve");
 
   await restartFocus();
   await page.evaluate(() => window.selectionFocusFixture.store.getState().patch({ sheet: "animation" }));

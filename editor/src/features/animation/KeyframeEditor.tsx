@@ -59,7 +59,8 @@ export function KeyframeEditor({ target, groups }: { target: AnimationTarget; gr
         </div>
         <p>To the next keyframe</p>
         <EasingChips value={picked.easing} compact disabled={blocked} onChange={easing => perform(() => setAuthoringEasing(target, picked.group, picked.time, easing))} />
-      </div> : <p className={styles.note}>{outside ? "Move the playhead into this layer to animate it." : "Click a ◆ on the timeline to edit it. Move the playhead and drag the layer (or a slider) to add one there."}</p>}
+      </div> : <p className={styles.note}>{outside ? "Move the playhead into this layer to animate it." : target.kind === "clip"
+        ? "Select a Position ◆ to move the video by dragging." : "Select a Position ◆ to edit it by dragging. Otherwise, dragging moves the layer throughout the video."}</p>}
       {!volumeOnly && following.available && !following.tracking && following.phase === "idle" && <button type="button" className={styles.follow} disabled={blocked} onClick={() => void following.pick()}>✦ Follow something on the video…</button>}
       {following.phase !== "idle" && <p className={styles.note} role="status">{following.phase === "frame" ? "Reading the video…" : "Tracking the selected object…"} <button className={styles.follow} type="button" onClick={following.cancel}>Cancel</button></p>}
       {following.error && <p className={styles.error} role="alert">{following.error}</p>}
