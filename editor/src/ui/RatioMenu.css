@@ -35,10 +35,10 @@
   gap: 2px;
   min-width: 148px;
   padding: 6px;
-  background: rgba(11, 11, 15, 0.92);
-  border: 2px solid rgba(255, 255, 255, 0.16);
+  background: color-mix(in srgb, var(--bar) 92%, transparent);
+  border: 2px solid var(--q14);
   border-radius: 14px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--outline) 50%, transparent);
   backdrop-filter: blur(10px);
   animation: rsUp 0.22s var(--spring) both;
 }
@@ -56,12 +56,12 @@
   cursor: pointer;
 }
 .ratioMenu button:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--q08);
 }
 .ratioMenu button[data-on="true"] {
   background: var(--text);
-  color: var(--ink);
-  border-color: #000;
+  color: var(--ground);
+  border-color: var(--outline);
   font-weight: 800;
 }
 .ratioMenu i {

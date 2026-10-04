@@ -16,12 +16,13 @@
   width: 36px;
   height: 36px;
   padding: 0;
-  border: 2.5px solid #000;
+  border: 2.5px solid var(--outline);
   border-radius: 11px;
   background: var(--surface);
   box-shadow: 3px 3px 0 var(--accent-soft);
 }
 .mark img { width: 22px; height: 22px; object-fit: contain; filter: invert(1); }
+:global(html[data-theme="light"]) .mark img { filter: none; }
 .title { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .title h1 { margin: 0; font: 17px/1.1 var(--f-display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .title p { margin: 0; color: var(--muted); font: 600 11px/1.2 var(--f-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -31,9 +32,9 @@
 .accountName { max-width: 92px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .guest button { flex: none; }
 .guest > i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
-.guest button { height: 24px; padding: 0 9px; background: var(--input); border: 2px solid var(--q14); border-radius: 7px; font-size: 11px; font-weight: 800; }
+.guest button { height: 24px; padding: 0 9px; background: var(--button-secondary-bg); border: 2px solid var(--button-border); border-radius: 7px; font-size: 11px; font-weight: 800; color: var(--button-secondary-text); }
 .target { padding: 0 12px; font-size: 12px; font-weight: 700; }
-.export { display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 16px; border: 2.5px solid #000; border-radius: 12px; background: var(--accent); box-shadow: 3px 3px 0 #000; font-size: 13px; font-weight: 800; }
+.export { display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 16px; border: 2.5px solid var(--button-border); border-radius: 12px; background: var(--button-primary-bg); box-shadow: 3px 3px 0 var(--button-shadow); font-size: 13px; font-weight: 800; color: var(--button-primary-text); }
 .export:not(:disabled):active { transform: translate(3px, 3px); box-shadow: none; }
 @media (any-pointer: coarse) {
   .mark, .target, .export { min-height: 44px; }

@@ -7,7 +7,7 @@
   box-sizing: border-box;
   border: 2px solid #000;
   border-radius: 50%;
-  background: #ff2d78;
+  background: var(--accent);
 }
 .restyleAvatar img {
   width: 14px;
@@ -35,9 +35,9 @@
   width: 26px;
   height: 26px;
   box-sizing: border-box;
-  border: 2px solid #ffffff29;
+  border: 2px solid var(--line-strong);
   border-radius: 8px;
-  background: #1c1c24;
+  background: var(--input);
   font-size: 10.5px;
   font-weight: 800;
 }
@@ -59,13 +59,13 @@
   font-weight: 800;
 }
 .timestamp {
-  color: #f2f0e973;
+  color: var(--muted);
   font-size: 10.5px;
   font-weight: 700;
 }
 .targetLabel {
   min-width: 0;
-  color: #c4b3fc;
+  color: var(--violet);
   font-size: 10.5px;
   font-weight: 700;
   overflow-wrap: anywhere;
@@ -84,13 +84,13 @@
   gap: 7px;
   min-width: 0;
   padding: 9px 11px 10px;
-  border: 2px solid #ffffff14;
+  border: 2px solid var(--q08);
   border-radius: 12px;
-  background: #15151c;
+  background: var(--surface);
 }
 .response {
   margin: 0;
-  color: #d8d5cb;
+  color: var(--text-secondary);
   font-size: 12.5px;
   font-weight: 600;
   line-height: 1.45;
@@ -125,19 +125,19 @@
   overflow-wrap: anywhere;
 }
 .okChip {
-  border-color: #00e5a073;
-  background: #00e5a01a;
-  color: #00e5a0;
+  border-color: color-mix(in srgb, var(--green) 45%, transparent);
+  background: color-mix(in srgb, var(--green) 10%, transparent);
+  color: var(--green);
 }
 .warningChip {
-  border-color: #ffd23e80;
-  background: #ffd23e1a;
-  color: #ffd23e;
+  border-color: color-mix(in srgb, var(--yellow) 50%, transparent);
+  background: color-mix(in srgb, var(--yellow) 10%, transparent);
+  color: var(--yellow);
 }
 .undoneChip {
-  border-color: #a7a3b842;
-  background: #a7a3b81f;
-  color: #c9c5d8;
+  border-color: color-mix(in srgb, var(--muted-strong) 26%, transparent);
+  background: color-mix(in srgb, var(--muted-strong) 12%, transparent);
+  color: var(--text-secondary);
 }
 .actions {
   display: flex;
@@ -152,12 +152,12 @@
   padding: 4px 0;
   border: 0;
   background: transparent;
-  color: #ff83a8;
+  color: var(--highlight);
   font-size: 11px;
   font-weight: 800;
 }
 .actions .show {
-  color: #c4b3fc;
+  color: var(--violet);
 }
 .actions button:disabled {
   opacity: .4;
@@ -166,7 +166,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #ff9fbc;
+  color: var(--pale);
   font-size: 12px;
   font-weight: 700;
   line-height: 1.5;
@@ -176,14 +176,14 @@
   width: 14px;
   height: 14px;
   box-sizing: border-box;
-  border: 2.5px solid #ff9fbc40;
-  border-top-color: #ff9fbc;
+  border: 2.5px solid color-mix(in srgb, var(--pale) 25%, transparent);
+  border-top-color: var(--pale);
   border-radius: 50%;
   animation: spin 900ms linear infinite;
 }
 .actionError {
   margin: 0;
-  color: #ffd23e;
+  color: var(--yellow);
   font-size: 11px;
   line-height: 1.45;
   overflow-wrap: anywhere;

@@ -12,6 +12,14 @@
         if (localStorage.getItem("restyle.editor.reduceMotion") === "true")
           document.documentElement.dataset.reduceMotion = "true";
       } catch {}
+      let mode;
+      try { mode = localStorage.getItem("restyle.editor.themeMode"); } catch {}
+      const systemDark = matchMedia("(prefers-color-scheme: dark)").matches;
+      const resolved = mode === "dark" || mode === "light" ? mode : systemDark ? "dark" : "light";
+      document.documentElement.dataset.theme = resolved;
+      document.documentElement.dataset.accent = "magenta";
+      document.documentElement.style.colorScheme = resolved;
+      document.querySelector('meta[name="theme-color"]').content = resolved === "light" ? "#F5F1EB" : "#0B0B0F";
     </script>
     <link rel="preload" href="/src/fonts/peace-sans.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="./restyle-mark.png" as="image" />

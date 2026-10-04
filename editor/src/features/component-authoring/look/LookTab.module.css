@@ -6,7 +6,7 @@
   padding: 0;
   border: 0;
   min-width: 0;
-  color: #F2F0E9;
+  color: var(--text);
 }
 
 .tab:disabled {
@@ -27,7 +27,7 @@
 }
 
 .tab button:focus-visible,.tab input:focus-visible {
-  outline: 3px solid #FF9FBC;
+  outline: 3px solid var(--highlight);
   outline-offset: 2px;
 }
 
@@ -37,7 +37,7 @@
 
 .error {
   margin: 0;
-  color: #ffb9b9;
+  color: var(--red);
   font: 700 12px/1.4 var(--f-ui);
 }
 
@@ -50,7 +50,7 @@
 .control p,.reset p {
   font-size: 12px;
   line-height: 1.5;
-  color: #c6c4ce;
+  color: var(--muted);
   margin: 4px 0 9px;
 }
 
@@ -63,9 +63,9 @@
 
 .preset {
   flex: 0 0 98px;
-  border: 1px solid #56535d;
+  border: 1px solid var(--button-border);
   border-radius: 12px;
-  background: #1c1c24;
+  background: var(--button-secondary-bg);
   padding: 5px;
   position: relative;
   min-height: 116px;
@@ -80,7 +80,7 @@
 }
 
 .preset[data-on=true] {
-  border: 2px solid #FF9FBC;
+  border: 2px solid var(--highlight);
   padding: 4px;
 }
 
@@ -91,7 +91,7 @@
   bottom: 8px;
   width: 6px;
   height: 6px;
-  background: #FF9FBC;
+  background: var(--highlight);
   border-radius: 50%;
 }
 
@@ -141,16 +141,16 @@
 .chips button,.custom,.reset button {
   min-height: 44px;
   padding: 8px 12px;
-  background: #1c1c24;
-  border: 1px solid #68636d;
+  background: var(--button-secondary-bg);
+  border: 1px solid var(--button-border);
   border-radius: 10px;
 }
 
 .chips button[data-on=true],.custom[data-on=true] {
-  background: #F2F0E9;
-  color: #15151C;
-  border-color: #000;
-  box-shadow: 2px 2px 0 #000;
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  border-color: var(--button-border);
+  box-shadow: 2px 2px 0 var(--button-shadow);
 }
 
 .partControls {
@@ -178,7 +178,7 @@
 }
 
 .swatch[data-on=true] {
-  border-color: #FF9FBC;
+  border-color: var(--highlight);
 }
 
 .swatch>span {
@@ -191,7 +191,7 @@
 }
 
 .none {
-  background: linear-gradient(135deg,transparent 46%,#FF9FBC 47%,#FF9FBC 53%,transparent 54%);
+  background: linear-gradient(135deg,transparent 46%,var(--highlight) 47%,var(--highlight) 53%,transparent 54%);
 }
 
 .custom {
@@ -212,8 +212,8 @@
 
 .customPanel {
   margin-top: 8px;
-  background: #1c1c24;
-  border: 1px solid #68636d;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
   border-radius: 12px;
   padding: 10px;
 }
@@ -244,22 +244,23 @@
   flex: 1;
   min-width: 0;
   min-height: 44px;
-  accent-color: #FF9FBC;
+  accent-color: var(--highlight);
 }
 
 .customPanel input[type=text] {
   min-width: 0;
   flex: 1;
   min-height: 44px;
-  background: #15151c;
-  border: 1px solid #68636d;
+  background: var(--input);
+  border: 1px solid var(--line-strong);
+  color: var(--text);
   border-radius: 8px;
   padding: 7px 10px;
   box-sizing: border-box;
 }
 
 .reset {
-  border-top: 1px solid #494550;
+  border-top: 1px solid var(--line-strong);
   padding-top: 14px;
 }
 
@@ -275,4 +276,3 @@
   overflow: hidden;
   clip-path: inset(50%);
 }
-

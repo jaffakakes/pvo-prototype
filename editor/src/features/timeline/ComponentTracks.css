@@ -36,8 +36,8 @@
   min-width: 140px;
   padding: 0 10px;
   background: transparent;
-  border: 2px dashed rgba(167, 139, 250, 0.45);
-  color: rgba(167, 139, 250, 0.75);
+  border: 2px dashed color-mix(in srgb, var(--violet) 45%, transparent);
+  color: var(--violet);
   font-weight: 700;
 }
 .compAdd svg {
@@ -46,15 +46,15 @@
 }
 .compAdd:hover,
 .compAdd:focus-visible {
-  border-color: rgba(167, 139, 250, 0.8);
+  border-color: var(--violet);
   color: var(--violet);
 }
 .compBar,
 .compMarker {
   padding: 0 8px;
   background: var(--violet);
-  color: var(--ink);
-  border: 2px solid #000;
+  color: var(--violet-foreground);
+  border: 2px solid var(--outline);
 }
 .compBar {
   appearance: none;
@@ -62,7 +62,7 @@
   padding: 0;
   overflow: visible;
   border: 0;
-  box-shadow: inset 0 0 0 2px #000;
+  box-shadow: inset 0 0 0 2px var(--outline);
 }
 .compBar:not(.compSelected)::before {
   content: "";
@@ -119,7 +119,7 @@
 .compMarker.compSelected {
   box-shadow:
     inset 0 0 0 2px var(--pale),
-    0 0 0 3px rgba(255, 159, 188, 0.3);
+    0 0 0 3px color-mix(in srgb, var(--pale) 30%, transparent);
   z-index: 2;
 }
 .compHandle {
