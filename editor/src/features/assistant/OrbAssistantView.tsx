@@ -20,6 +20,9 @@ export type OrbGestureHandlers = Pick<ButtonHTMLAttributes<HTMLButtonElement>,
 
 export interface OrbAssistantViewProps {
   phase: AssistantPhase;
+  threadOpen?: boolean;
+  exchangeCount?: number;
+  onOpenThread?(): void;
   target: PvoComponent | null;
   clipCount: number;
   duration: number;
@@ -48,14 +51,14 @@ export interface OrbAssistantViewProps {
 }
 
 export function OrbAssistantView({
-  phase, target, clipCount, duration, ratio, voiceSide = "right", draft, onDraftChange, transcript, progress, answer, suggestions,
+  phase, threadOpen = false, exchangeCount = 0, onOpenThread, target, clipCount, duration, ratio, voiceSide = "right", draft, onDraftChange, transcript, progress, answer, suggestions,
   voicePhase, voiceMode, onStartVoice,
   disabled = false, toolbarHeight = 100,
   orbRef, orbHandlers, onSubmit, onClose, onDone, onEditRequest, onSuggestion,
   placement = "workspace", availableHeight = 500,
 }: OrbAssistantViewProps) {
   const active = phase !== "idle";
-  const dismissible = phase === "typing" || phase === "listening";
+  const dismissible = !threadOpen && (phase === "typing" || phase === "listening");
   const targetLabel = target ? `${target.type} ${fmt(target.at)}` : "project";
   const workingLabel = progress || "Reading your project…";
   const startingVoice = phase === "listening" && voicePhase === "starting";
@@ -89,11 +92,11 @@ export function OrbAssistantView({
 
   return <div className={`orbAssistant ${styles.root} ${quickStyles.root} ${desktopStyles.root}`} data-assistant-phase={phase}
     data-has-target={!!target} data-voice-side={voiceSide} data-voice-phase={voicePhase}
-    data-placement={placement} style={rootStyle}>
+    data-placement={placement} data-thread-open={threadOpen} style={rootStyle}>
     {dismissible && <button type="button" className={styles.dismissArea}
       data-assistant-dismiss-area aria-label="Close assistant" tabIndex={-1} onClick={onClose} />}
 
-    {phase === "typing" && <>
+    {phase === "typing" && !threadOpen && <>
       <AssistantContext component={target} clipCount={clipCount} duration={duration} />
       <form className={styles.composer} data-assistant-composer onSubmit={event => {
         event.preventDefault();
@@ -119,7 +122,7 @@ export function OrbAssistantView({
       </div>}
     </>}
 
-    {(phase === "listening" || phase === "working") && <div className={styles.liveBubble} data-assistant-live>
+    {!threadOpen && (phase === "listening" || phase === "working") && <div className={styles.liveBubble} data-assistant-live>
       <div className={styles.liveHeading} data-assistant-live-heading
         role="status" aria-live="polite" aria-atomic="true"
         title={phase === "working" ? workingLabel : voiceHint}>
@@ -142,7 +145,7 @@ export function OrbAssistantView({
 
     <button {...orbHandlers} ref={orbRef} type="button" className={styles.orb}
       aria-label={orbLabel} title={orbTitle}
-      aria-disabled={phase === "review" || undefined} aria-expanded={active}
+      aria-disabled={phase === "review" || undefined} aria-expanded={active || threadOpen}
       aria-busy={phase === "working" || cancellableVoice} disabled={disabled} data-assistant-orb>
       {phase === "working" ? <span className={styles.stopLabel} aria-hidden="true" data-assistant-stop>
         <span className={styles.stopIcon} />Stop
@@ -151,5 +154,10 @@ export function OrbAssistantView({
       </span> : <img src="restyle-mark.png" alt="" draggable={false} />}
       <span className={styles.orbRing} aria-hidden="true" data-assistant-orb-ring />
     </button>
+    {exchangeCount > 0 && phase === "idle" && !threadOpen && onOpenThread && <button type="button"
+      className={styles.threadCount} aria-label={`Open Restyle thread, ${exchangeCount} ${exchangeCount === 1 ? "exchange" : "exchanges"}`}
+      title="Open Restyle thread" onClick={onOpenThread}>
+      {Math.min(exchangeCount, 9)}{exchangeCount > 9 ? "+" : ""}
+    </button>}
   </div>;
 }

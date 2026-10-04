@@ -73,7 +73,7 @@ editor/src/
     layers/                     Layer identity and ordering
     animation/                  Keyframe clocks, layer edits and tracked motion rules
     components/                 Defaults, Fields/PVO source mapping, outcomes and response timing policy
-    assistant/                  Answers, bounded context and atomic batch validation
+    assistant/                  Answers, bounded context, atomic batch validation and thread models
     notifications/              Approved events, short copy, priority and repetition rules
     export/                     Pure project-to-manifest construction
   state/
@@ -82,7 +82,7 @@ editor/src/
     components/                 Component commands, authoring state and measurements
     scenes/                     Scene commands and outcome routing
     editing/                    Clip, text, layer and overlay editing commands
-    assistant/                  Request session, batch commit and guarded Undo receipt
+    assistant/                  Request session, batch commit and guarded thread/notice Undo
     auth/                       Account placeholder visibility
     export/                     Direct export commands, completed export and publication attempt state
     notifications/              Ephemeral notices and retained issues
@@ -94,7 +94,7 @@ editor/src/
     timeline/                   Tracks, geometry, dragging and clip commands
     preview/                    Video, overlays and Try-mode host integration
     animation/                  Shared manual keyframes and tracking controls
-    assistant/                  Orb presentation, session orchestration and microphone input
+    assistant/                  Orb and thread presentation, session orchestration and microphone input
     notifications/              Top notices, retained issues and accessible dismissal
     scenes/                     Scene selection UI
     text/                       Text authoring and overlay UI
@@ -126,7 +126,7 @@ The workspace owns top and side system safe-area padding outside its resizable g
 
 Desktop and tablet Look tools expose Width and Height in canvas pixels through `features/component-authoring/size`. The fixed authoring canvas has a 1080px short edge, independent of window size and export quality. Explicit component `width`/`height` persist through history, checkpoints and export. `domain/components/pixelSize` retains the other axis when committing a dimension through the component command. `state/components/componentMeasurements` holds only transient natural bounds reported by the preview; they never enter project history. A shared runtime observer reads untransformed layout bounds so editor and player can fit both visual and code-owned content to the requested pixels. Each renderer disconnects its observers on removal.
 
-The [orb assistant](orb-assistant.md) uses one composer for questions and whole-project edits. Validated user-requested edits apply immediately as one undo step on both mobile and desktop; a typed 2.4-second completion notice offers a guarded Undo action. Questions open an answer card. The session store contains request and answer data outside persistence and history; there is no staged proposal preview. `features/assistant/` coordinates views, voice, application and answers. `domain/assistant/native/` projects private project data into bounded context, prepares typed operations against an isolated snapshot and validates compiled component changes. `infrastructure/assistant/` owns same-origin `/api/assistant/turn` transport and the bounded observation loop; its media adapters sample real frames and extract bounded audio without moving the editor playhead. Microphone input records locally with MediaRecorder, converts to bounded mono WAV and uses the same transcription route only after explicit Send or hold release; cancellation releases tracks and aborts pending transcription. `packages/pvo-assistant/native/` shares strict operation and observation contracts with `server/assistant/native/`. The server runs hosted text, vision and transcription models with origin checks, size limits and deadlines; there is no local preset fallback. `state/assistant/nativeCommands.ts` commits the complete validated batch atomically through normal history, checking the original project fingerprint and current editing preference. `state/assistant/applyChanges.ts` then executes requested playback or export effects; `nativeAppliedNotification.ts` owns the temporary Undo receipt and prevents an old action from undoing a newer edit.
+The [orb assistant](orb-assistant.md) uses one composer for questions and whole-project edits. Validated user-requested edits apply immediately as one undo step on both mobile and desktop; a typed 2.4-second completion notice offers a guarded Undo action. Questions open an answer card. The visible Restyle thread records bounded session exchanges and offers guarded row Undo/Redo for the current exact history state. The session stores contain request, answer and thread data outside persistence and history; there is no staged proposal preview. `features/assistant/` coordinates views, voice, application and answers. `domain/assistant/native/` projects private project data into bounded context, prepares typed operations against an isolated snapshot and validates compiled component changes. `infrastructure/assistant/` owns same-origin `/api/assistant/turn` transport and the bounded observation loop; its media adapters sample real frames and extract bounded audio without moving the editor playhead. Microphone input records locally with MediaRecorder, converts to bounded mono WAV and uses the same transcription route only after explicit Send or hold release; cancellation releases tracks and aborts pending transcription. `packages/pvo-assistant/native/` shares strict operation and observation contracts with `server/assistant/native/`. The server runs hosted text, vision and transcription models with origin checks, size limits and deadlines; there is no local preset fallback. `state/assistant/nativeCommands.ts` commits the complete validated batch atomically through normal history, checking the original project fingerprint and current editing preference. `state/assistant/applyChanges.ts` then executes requested playback or export effects; `nativeAppliedNotification.ts` owns the temporary Undo receipt and prevents an old action from undoing a newer edit.
 
 Keep new feature code in its owning folder rather than expanding the compatibility `store.ts` facade. Crop/speed, sound and discard sheets have feature owners; `app/Sheets.tsx` only selects the view. Timeline pointer wiring calls pure clip/text timing rules through state commands. Component timing keeps its existing transaction command. Export sessions and camera controls have dedicated hooks, and each Try session owns its runtime through explicit host adapters. Persistence accepts a project/history/resume snapshot rather than the complete capture store.
 
