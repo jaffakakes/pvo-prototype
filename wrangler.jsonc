@@ -4,7 +4,6 @@
   "account_id": "84880ccf8f98bb789d58cbea5436a645",
   "main": "server/worker.js",
   "workers_dev": true,
-  "routes": [{ "pattern": "getrestyle.app", "custom_domain": true }],
   "ai": { "binding": "AI" },
   "durable_objects": {
     "bindings": [

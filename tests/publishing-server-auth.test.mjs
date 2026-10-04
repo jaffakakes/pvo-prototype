@@ -162,7 +162,6 @@ test("apex sign-in is canonical while existing workers.dev publication links rem
   const origin = "https://getrestyle.app";
   const legacyOrigin = "https://lingering-butterfly-9ba8.jaffakakes28.workers.dev";
   assert.equal(deployment.vars.PUBLIC_ORIGIN, origin);
-  assert.deepEqual(deployment.routes, [{ pattern: "getrestyle.app", custom_domain: true }]);
   assert.equal(deployment.workers_dev, true);
 
   const f = await workerFixture({ PUBLIC_ORIGIN: origin, GOOGLE_CLIENT_ID: "client",
