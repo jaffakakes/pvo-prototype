@@ -52,6 +52,7 @@ async function seed(page) {
     const id = useCapture.getState().addComponent("card");
     setComponentAuthoringTab(id, "advanced");
   });
+  await page.locator("#restyle-launch-splash").waitFor({ state: "detached" });
   await page.getByLabel("Structure source", { exact: true }).waitFor();
   await settle(page);
 }

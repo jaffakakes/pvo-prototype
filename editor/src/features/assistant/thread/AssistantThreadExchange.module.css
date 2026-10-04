@@ -1,0 +1,239 @@
+.restyleAvatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  box-sizing: border-box;
+  border: 2px solid #000;
+  border-radius: 50%;
+  background: #ff2d78;
+}
+.restyleAvatar img {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  filter: invert(1);
+}
+
+.exchange {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  gap: 8px;
+  animation: rise 300ms ease-out both;
+}
+.requestRow, .responseRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.youAvatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  box-sizing: border-box;
+  border: 2px solid #ffffff29;
+  border-radius: 8px;
+  background: #1c1c24;
+  font-size: 10.5px;
+  font-weight: 800;
+}
+.requestBody {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-width: 0;
+  padding-top: 3px;
+}
+.requestMeta {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.timestamp {
+  color: #f2f0e973;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.targetLabel {
+  min-width: 0;
+  color: #c4b3fc;
+  font-size: 10.5px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.request {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.bubble {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  padding: 9px 11px 10px;
+  border: 2px solid #ffffff14;
+  border-radius: 12px;
+  background: #15151c;
+}
+.response {
+  margin: 0;
+  color: #d8d5cb;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.exchange[data-undone="true"] .response {
+  opacity: .55;
+  text-decoration: line-through;
+}
+.results {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.results:empty {
+  display: none;
+}
+.resultChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 2px 8px;
+  border: 1.5px solid;
+  border-radius: 7px;
+  font-size: 10.5px;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.okChip {
+  border-color: #00e5a073;
+  background: #00e5a01a;
+  color: #00e5a0;
+}
+.warningChip {
+  border-color: #ffd23e80;
+  background: #ffd23e1a;
+  color: #ffd23e;
+}
+.undoneChip {
+  border-color: #a7a3b842;
+  background: #a7a3b81f;
+  color: #c9c5d8;
+}
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 28px;
+  margin-left: auto;
+}
+.actions button {
+  min-width: 30px;
+  min-height: 28px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: #ff83a8;
+  font-size: 11px;
+  font-weight: 800;
+}
+.actions .show {
+  color: #c4b3fc;
+}
+.actions button:disabled {
+  opacity: .4;
+}
+.pending {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ff9fbc;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.spinner {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  box-sizing: border-box;
+  border: 2.5px solid #ff9fbc40;
+  border-top-color: #ff9fbc;
+  border-radius: 50%;
+  animation: spin 900ms linear infinite;
+}
+.actionError {
+  margin: 0;
+  color: #ffd23e;
+  font-size: 11px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.exchange[data-variant="phone"] .requestMeta {
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.exchange[data-variant="phone"] .timestamp {
+  font-weight: 600;
+}
+.exchange[data-variant="phone"] .request {
+  font-size: 13px;
+  font-weight: 500;
+}
+.exchange[data-variant="phone"] .bubble {
+  gap: 8px;
+  padding: 10px 12px 11px;
+}
+.exchange[data-variant="phone"] .response {
+  font-size: 13px;
+  font-weight: 500;
+}
+.exchange[data-variant="phone"] .pending {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.exchange[data-variant="phone"] .actions {
+  gap: 14px;
+  min-height: 44px;
+}
+.exchange[data-variant="phone"] .actions button {
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

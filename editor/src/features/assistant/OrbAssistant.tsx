@@ -4,33 +4,45 @@ import { OrbAssistantView, type AssistantPlacement } from "./OrbAssistantView";
 import { useAssistantSession } from "./useAssistantSession";
 import { useAssistantPlacement } from "./useAssistantPlacement";
 import { useOrbVoice } from "./voice/useOrbVoice";
+import { AssistantThread } from "./thread/AssistantThread";
+import { setAssistantThreadCollapsed, setAssistantThreadOpen, useAssistantThread } from "../../state/assistant/threadStore";
+import { assistantThreadActionAvailability, redoAssistantThreadExchange,
+  showAssistantThreadExchange, undoAssistantThreadExchange } from "../../state/assistant/threadCommands";
 import { clearSelection } from "../../state/editing/clearSelection";
 import { useCapture } from "../../state/captureStore";
 import { total } from "../../domain/clips/timing";
 import styles from "./AssistantHost.module.css";
 
-export function OrbAssistant({ placement: position = "workspace", portalTarget }: {
-  placement?: AssistantPlacement; portalTarget?: HTMLElement | null;
+export function OrbAssistant({ placement: position = "workspace", portalTarget, threadKeyboardOpen = false }: {
+  placement?: AssistantPlacement; portalTarget?: HTMLElement | null; threadKeyboardOpen?: boolean;
 } = {}) {
   const session = useAssistantSession({ inspectorVisible: position !== "workspace" });
+  const thread = useAssistantThread();
   const scenes = useCapture(state => state.scenes);
   const ratio = useCapture(state => state.ratio);
   const clips = scenes.flatMap(scene => scene.clips);
   const host = useRef<HTMLDivElement>(null);
   const orb = useRef<HTMLButtonElement>(null);
   const placement = useAssistantPlacement(host, position, portalTarget);
-  const active = session.available && session.phase !== "idle";
+  const active = session.available && (session.phase !== "idle" || thread.open);
+  const threadPending = thread.items.some(item => item.status === "pending");
+  const open = () => {
+    session.open();
+    requestAnimationFrame(() => host.current?.querySelector<HTMLInputElement>("input")?.focus({ preventScroll: true }));
+  };
+  const openThread = () => {
+    session.open();
+    setAssistantThreadOpen(true);
+  };
   const voice = useOrbVoice({
     contextKey: session.voiceContext,
     enabled: session.available && session.phase !== "working" && session.phase !== "review",
-    onTap: () => {
-      session.open();
-      host.current?.querySelector("input")?.focus({ preventScroll: true });
-    }, onListening: session.listen, onSend: words => { void session.submit(words); },
+    onTap: open, onListening: session.listen, onSend: words => { setAssistantThreadOpen(false); void session.submit(words); },
     onCancel: session.cancelVoice, onFailure: session.reportVoiceFailure,
   });
   const close = () => {
     voice.cancel();
+    setAssistantThreadOpen(false);
     if (session.phase === "review") session.acknowledge();
     else session.close();
     orb.current?.focus({ preventScroll: true });
@@ -40,6 +52,7 @@ export function OrbAssistant({ placement: position = "workspace", portalTarget }
     if (position === "workspace") clearSelection();
   };
   const startVoice = () => {
+    setAssistantThreadOpen(false);
     voice.start();
     orb.current?.focus({ preventScroll: true });
   };
@@ -69,14 +82,50 @@ export function OrbAssistant({ placement: position = "workspace", portalTarget }
       controls[next].focus({ preventScroll: true });
     };
     window.addEventListener("keydown", key, true);
-    return () => window.removeEventListener("keydown", key, true);
+    const outside = (event: PointerEvent) => {
+      if (!thread.open || !(event.target instanceof Element) || host.current?.contains(event.target)
+        || event.target.closest("[data-thread-resize], [data-notification-root]")) return;
+      close();
+    };
+    document.addEventListener("pointerdown", outside, true);
+    return () => {
+      window.removeEventListener("keydown", key, true);
+      document.removeEventListener("pointerdown", outside, true);
+    };
   });
 
   const view = <div ref={host} className={position === "toolbar" ? styles.toolbarHost : position === "floating" ? styles.floatingHost : styles.host}
     style={position === "workspace" ? { top: placement.top } : undefined}
     data-assistant-region data-active={active}>
     {session.available && <>
-      <OrbAssistantView phase={session.phase} target={session.target}
+      {thread.open && <div className={position === "workspace" ? styles.threadDock : styles.threadPopover}
+        style={position !== "workspace" ? { maxHeight: Math.max(160, placement.availableHeight - 66) } : undefined}>
+        <div className={styles.threadContent}>
+          <AssistantThread variant={position === "workspace" ? "phone" : "desktop"}
+            items={thread.items} collapsed={threadKeyboardOpen || thread.collapsed} draft={session.draft}
+            targetLabel={session.target?.type ?? null}
+            composeEnabled={(session.phase === "typing" || session.phase === "idle") && !threadPending}
+            autoFocus={session.phase === "typing" && !threadPending}
+            busy={session.phase === "working" || threadPending}
+            onDraftChange={session.setDraft}
+            onSubmit={() => { void session.submit(session.draft); }}
+            onStartVoice={startVoice}
+            onClose={close} onToggleCollapsed={() => setAssistantThreadCollapsed(!thread.collapsed)}
+            onUndo={id => { undoAssistantThreadExchange(id); }}
+            onRedo={id => { redoAssistantThreadExchange(id); }}
+            onShow={id => {
+              if (!assistantThreadActionAvailability(id).canShow) return;
+              close();
+              showAssistantThreadExchange(id);
+            }}
+            canUndo={item => assistantThreadActionAvailability(item.id).canUndo}
+            canRedo={item => assistantThreadActionAvailability(item.id).canRedo}
+            canShow={item => assistantThreadActionAvailability(item.id).canShow}
+            actionHint={item => assistantThreadActionAvailability(item.id).message} />
+        </div>
+      </div>}
+      <OrbAssistantView phase={session.phase} threadOpen={thread.open} exchangeCount={thread.items.length}
+        onOpenThread={openThread} target={session.target}
         clipCount={clips.length} duration={total(clips)} ratio={ratio} voiceSide={session.voiceSide}
         voicePhase={voice.phase} voiceMode={voice.mode} onStartVoice={startVoice}
         draft={session.draft} onDraftChange={session.setDraft}
