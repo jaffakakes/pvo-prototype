@@ -22,9 +22,9 @@ import { usePreviewAreaSize } from "./usePreviewAreaSize";
 import { Icon } from "../../ui/Icon";
 import { StageMotionPath } from "../animation/stage/StageMotionPath";
 
-type Props = { desktop?: boolean; safeZone?: boolean; onAddMedia?(): void };
+type Props = { desktop?: boolean; onAddMedia?(): void };
 
-export function Preview({ desktop = false, safeZone = false, onAddMedia }: Props = {}) {
+export function Preview({ desktop = false, onAddMedia }: Props = {}) {
   const s = useCapture();
   const assistantActive = useAssistant(state => state.phase !== "idle");
   const { areaRef, area } = usePreviewAreaSize();
@@ -74,10 +74,6 @@ export function Preview({ desktop = false, safeZone = false, onAddMedia }: Props
         trying={!!s.tryMode} time={s.t} onResponse={runComponentResponse} />)}
     <StageMotionPath width={bw} height={bh} />
     {!compact && !s.tryMode && clip && <span className={cx("tag pvTag")}><i /><span>Clip {(located?.i ?? 0) + 1} · {dur(clip).toFixed(1)}s</span></span>}
-    {desktop && safeZone && clip && <div className={styles.guides} data-portrait={s.ratio === "9:16"} aria-hidden="true">
-      <div className={styles.safeBorder} />
-      {s.ratio === "9:16" && <div className={styles.socialGuides}><i /><i /><i /></div>}
-    </div>}
     {desktop && s.tryMode && <span className={styles.tryBadge}><i />Trying</span>}
     {desktop && duration <= 0 && <div className={styles.empty}>
       <span><Icon name="edit" size={24} /></span>
