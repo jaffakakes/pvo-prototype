@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 30
     environment:
       name: prod
-      url: https://lingering-butterfly-9ba8.jaffakakes28.workers.dev
+      url: https://getrestyle.app
     steps:
       - name: Require Cloudflare credentials
         env:

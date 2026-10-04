@@ -23,13 +23,13 @@ const page = await context.newPage();
 page.setDefaultTimeout(12000);
 const errors = [];
 page.on("pageerror", error => errors.push(error.message));
-const requests = { sessions: 0, reservations: [], uploads: [] };
+const requests = { statuses: 0, reservations: [], uploads: [] };
 let uploadMode = "fail";
 let reserveMode = "ready";
 let releaseUpload;
-let releaseSession;
-let sessionMode = "ready";
-let hasSession = false;
+let releaseStatus;
+let statusMode = "ready";
+let signedIn = false;
 let available = true;
 const publication = { id: "acceptance_video_1", url: `${origin}/player/acceptance_video_1`, status: "pending" };
 
@@ -51,22 +51,25 @@ await page.addInitScript(() => {
     throw new DOMException("Share sheet dismissed", "AbortError");
   } });
 });
-await page.route(`${origin}/api/**`, async route => {
+await context.route(`${origin}/api/**`, async route => {
   const request = route.request();
   const pathname = new URL(request.url()).pathname;
   const respond = (body, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
-  if (pathname === "/api/publishing" && request.method() === "GET") {
-    return respond({ available, hasSession, maxBytes: 50 * 1024 * 1024 });
+  if (pathname === "/api/auth/session" && request.method() === "GET")
+    return respond({ available: true, user: signedIn ? { id: "editor-test", name: "Editor tester" } : null });
+  if (pathname === "/api/auth/google/start" && request.method() === "GET") {
+    signedIn = true;
+    return route.fulfill({ status: 200, contentType: "text/html",
+      body: `<script>window.opener.postMessage({type:"pvo:auth:complete",ok:true},${JSON.stringify(origin)});window.close()</script>` });
   }
-  if (pathname === "/api/publishing/session" && request.method() === "POST") {
-    requests.sessions++;
-    if (sessionMode === "fail") return respond({ error: "Session unavailable" }, 500);
-    if (sessionMode === "hold") await new Promise(resolve => { releaseSession = resolve; });
-    hasSession = true;
-    return respond({ available, hasSession, maxBytes: 50 * 1024 * 1024 }).catch(() => {});
+  if (pathname === "/api/publishing" && request.method() === "GET") {
+    requests.statuses++;
+    if (statusMode === "fail") return respond({ error: "Status unavailable" }, 500);
+    if (statusMode === "hold") await new Promise(resolve => { releaseStatus = resolve; });
+    return respond({ available, hasSession: signedIn, maxBytes: 50 * 1024 * 1024 }).catch(() => {});
   }
   if (pathname === "/api/publications" && request.method() === "POST") {
-    assert(hasSession, "The browser must establish a session before reserving a publication");
+    assert(signedIn, "The browser must sign in before reserving a publication");
     requests.reservations.push(request.postDataJSON());
     if (reserveMode === "expired") return respond({ error: "Reservation expired" }, 410);
     return respond(publication);
@@ -74,11 +77,9 @@ await page.route(`${origin}/api/**`, async route => {
   if (pathname === `/api/publications/${publication.id}/content` && request.method() === "PUT") {
     requests.uploads.push({ bytes: request.postDataBuffer(), type: request.headers()["content-type"] });
     if (uploadMode === "fail") {
-      hasSession = false;
       return respond({ error: "Temporary upload failure" }, 500);
     }
     if (uploadMode === "expired") {
-      hasSession = false;
       return respond({ error: "Session expired during upload" }, 401);
     }
     if (uploadMode === "hold") await new Promise(resolve => { releaseUpload = resolve; });
@@ -91,6 +92,14 @@ const share = page.getByRole("dialog", { name: "Share", exact: true });
 async function openExport() {
   await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
   await page.getByRole("button", { name: "Flat video", exact: true }).click();
+  const auth = page.getByRole("dialog", { name: "Sign in to Restyle" });
+  if (!signedIn) {
+    await auth.waitFor();
+    const popup = page.waitForEvent("popup");
+    await auth.getByRole("button", { name: "Continue with Google" }).click();
+    await popup;
+    await auth.waitFor({ state: "hidden" });
+  }
 }
 async function reopenShare() {
   await openExport();
@@ -122,7 +131,7 @@ try {
   assert(exported.length > 10000, "The real media export must contain video bytes");
   await share.getByLabel("Video title", { exact: true }).waitFor();
   assert.equal(await page.evaluate(() => window.exportObservation.renders), 1);
-  assert.equal(requests.sessions, 0, "Opening Share must not create a browser session");
+  assert(requests.statuses > 0, "Opening Share checks the existing account session");
   assert.equal(requests.reservations.length, 0, "Opening Share must not start an upload");
   assert.equal(requests.uploads.length, 0);
 
@@ -138,6 +147,19 @@ try {
   assert.deepEqual(Buffer.from(nativeFile.bytes), exported, "Native sharing must receive the original exported File");
   assert.equal(await share.getByRole("alert").count(), 0, "Dismissing native sharing is not an error");
 
+  signedIn = false;
+  await share.locator("[data-share-file]").click();
+  const expiredSession = page.getByRole("dialog", { name: "Sign in to Restyle" });
+  await expiredSession.waitFor();
+  assert.equal(await page.evaluate(() => window.exportObservation.files.length), 1,
+    "An expired account session must block native file sharing");
+  const restoredSession = page.waitForEvent("popup");
+  await expiredSession.getByRole("button", { name: "Continue with Google" }).click();
+  await restoredSession;
+  await expiredSession.waitFor({ state: "hidden" });
+  assert.equal(await page.evaluate(() => window.exportObservation.files.length), 1,
+    "Signing in must wait for another tap before opening native sharing");
+
   await share.getByRole("button", { name: "Close", exact: true }).click();
   await page.getByRole("button", { name: "Text", exact: true }).click();
   const addText = page.getByRole("dialog", { name: "Add text", exact: true });
@@ -148,21 +170,21 @@ try {
   await downloadAgain(exported);
   await share.getByLabel("Video title", { exact: true }).fill("Acceptance video");
 
-  assert.equal(await share.getByText(/No sign-in needed/).count(), 1);
-  sessionMode = "hold";
+  assert.equal(await share.getByText(/Your account can manage/).count(), 1);
+  statusMode = "hold";
   await share.locator("[data-create-publication]").click();
   await share.getByRole("progressbar", { name: "Preparing online sharing" }).waitFor();
   await share.getByRole("button", { name: "Cancel", exact: true }).click();
   await page.waitForFunction(() => !document.querySelector("[data-create-publication]")?.disabled);
-  releaseSession();
-  assert.equal(requests.reservations.length, 0, "Cancelling session preparation must not start an upload");
+  releaseStatus();
+  assert.equal(requests.reservations.length, 0, "Cancelling status preparation must not start an upload");
   assert.equal(await share.getByRole("alert").count(), 0);
-  sessionMode = "fail";
+  statusMode = "fail";
   await share.locator("[data-create-publication]").click();
   await share.getByRole("alert").waitFor();
-  assert.equal(requests.reservations.length, 0, "Failed session preparation must leave the export local");
+  assert.equal(requests.reservations.length, 0, "Failed status preparation must leave the export local");
   await downloadAgain(exported);
-  sessionMode = "ready";
+  statusMode = "ready";
   reserveMode = "expired";
   await share.locator("[data-create-publication]").click();
   await share.getByRole("alert").waitFor();
@@ -183,7 +205,7 @@ try {
   uploadMode = "expired";
   await share.locator("[data-create-publication]").click();
   await share.getByRole("alert").waitFor();
-  assert.match(await share.getByRole("alert").innerText(), /session expired/);
+  assert.match(await share.getByRole("alert").innerText(), /Sign in to manage/);
   assert.equal(await share.getByText("Shared videos", { exact: true }).count(), 0);
   await downloadAgain(exported);
 
@@ -207,8 +229,8 @@ try {
   await share.getByRole("button", { name: "Share link", exact: true }).click();
   assert.deepEqual(await page.evaluate(() => window.exportObservation.links), [publication.url]);
   assert.equal(await page.evaluate(() => window.exportObservation.renders), 1, "Retrying, sharing, and later edits must not trigger a second render");
-  assert.equal(requests.sessions, 7, "Each explicit attempt must refresh the browser session, including a stale displayed session");
-  assert.equal(context.pages().length, 1, "Guest publishing must not open a sign-in popup");
+  assert(requests.statuses >= 7, "Each explicit attempt checks link availability under the current account");
+  assert.equal(context.pages().length, 1, "The sign-in popup closes after completion");
   assert.equal(requests.reservations.length, 5);
   assert.notEqual(requests.reservations[0].idempotencyKey, requests.reservations[1].idempotencyKey, "Expired reservations must get a fresh identity on explicit retry");
   assert.equal(new Set(requests.reservations.slice(1).map(item => item.idempotencyKey)).size, 1, "Other upload retries must reuse the export identity");
@@ -238,13 +260,13 @@ try {
   assert.equal(await share.locator("[data-share-file]").count(), 0, "Unsupported file sharing must not be offered");
   await downloadAgain(exported);
   assert.deepEqual(errors, []);
-  console.log(`Export/share passed: real render/download, exact File and upload bytes, no automatic upload, retained result after edits/failure/cancel, guest-session cancellation/recovery, idempotent retries, canonical link. Screenshot: ${join(screenshots, "share-ready-mobile.png")}`);
+  console.log(`Export/share passed: Google sign-in, real render/download, exact File and upload bytes, retained result after edits/failure/cancel, idempotent retries, canonical link. Screenshot: ${join(screenshots, "share-ready-mobile.png")}`);
 } catch (error) {
   await page.screenshot({ path: join(screenshots, "failure.png"), fullPage: true }).catch(() => {});
   console.error(`Export/share UI: ${(await page.locator("body").innerText().catch(() => "")).slice(0, 1600)}\nScreenshots: ${screenshots}`);
   throw error;
 } finally {
   releaseUpload?.();
-  releaseSession?.();
+  releaseStatus?.();
   await browser.close();
 }

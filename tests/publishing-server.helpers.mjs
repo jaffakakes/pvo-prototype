@@ -2,6 +2,7 @@ import { bundleWorkerModules } from "./worker-bundle.helpers.mjs";
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
 import { readFile } from "node:fs/promises";
 import { packPvoProject } from "../packages/pvo-sdk/index.js";
+import { createAccountSession } from "../server/auth/sessions.js";
 
 export const ORIGIN = "https://restyle.example";
 export const SECRET = "integration-test-session-secret-not-used-in-production";
@@ -28,11 +29,10 @@ export async function workerFixture(overrides = {}, { createSessions = true } = 
       headers: { Origin: ORIGIN, ...(session ? { Cookie: session } : {}), ...headers }, ...rest });
   }
   if (createSessions) {
-    const first = await request("/api/publishing/session", { method: "POST", session: null });
-    const second = await request("/api/publishing/session", { method: "POST", session: null });
-    if (!first.ok || !second.ok) throw new Error("Publishing fixture could not create browser sessions.");
-    cookie = first.headers.get("Set-Cookie").split(";", 1)[0];
-    otherCookie = second.headers.get("Set-Cookie").split(";", 1)[0];
+    cookie = (await createAccountSession({ sub: "fixture-google-subject-1", name: "First creator" },
+      { DB: db, SESSION_SECRET: SECRET })).split(";", 1)[0];
+    otherCookie = (await createAccountSession({ sub: "fixture-google-subject-2", name: "Second creator" },
+      { DB: db, SESSION_SECRET: SECRET })).split(";", 1)[0];
   }
   return { mf, db, bucket, cookie, otherCookie, request, close: () => mf.dispose() };
 }

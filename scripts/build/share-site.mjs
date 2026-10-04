@@ -11,6 +11,8 @@ await mkdir(resolve(dist, "editor"), { recursive: true });
 await mkdir(resolve(dist, "packages/pvo-language"), { recursive: true });
 // Product deployment is independent of the PVO documentation and demo fixtures.
 await cp(resolve(root, "editor/deployment"), dist, { recursive: true });
+// Public product information lives beside the app on the same origin.
+await cp(resolve(root, "public"), dist, { recursive: true });
 // Copy module trees so new relative imports also exist in static output.
 await cp(resolve(root, "player"), resolve(dist, "player"), { recursive: true });
 const browserFiles = source => !/\.(?:md|ts)$/.test(source) && !source.endsWith("package.json");

@@ -3,6 +3,7 @@ import type { Publication } from "../../domain/publishing/model";
 import type { PublishingClient } from "../../infrastructure/publishing/client";
 import { copyPublicationLink } from "../../infrastructure/publishing/nativeShare";
 import { forgetExportPublication } from "../../state/export/exportArtifactStore";
+import { useAuthGate } from "../../state/auth/authGateStore";
 import styles from "./SharePanel.module.css";
 
 export function SharedVideos({ client }: { client: PublishingClient }) {
@@ -13,7 +14,10 @@ export function SharedVideos({ client }: { client: PublishingClient }) {
   const [removing, setRemoving] = useState<string | null>(null);
   const active = useRef<AbortController | null>(null);
   const mounted = useRef(true);
+  const accountId = useAuthGate(state => state.user?.id ?? null);
+  const lastAccountId = useRef(accountId);
   const load = async () => {
+    if (!useAuthGate.getState().user) return;
     active.current?.abort();
     const controller = new AbortController(); active.current = controller;
     setBusy(true); setFailure(null);
@@ -28,6 +32,18 @@ export function SharedVideos({ client }: { client: PublishingClient }) {
     mounted.current = true; void load();
     return () => { mounted.current = false; active.current?.abort(); };
   }, [client]);
+  useEffect(() => {
+    if (lastAccountId.current === accountId) return;
+    lastAccountId.current = accountId;
+    active.current?.abort();
+    active.current = null;
+    setItems([]);
+    setCopied(null);
+    setRemoving(null);
+    setFailure(null);
+    setBusy(!!accountId);
+    if (accountId) void load();
+  }, [accountId]);
   const remove = async (item: Publication) => {
     const controller = new AbortController(); active.current = controller;
     setBusy(true); setFailure(null);
@@ -44,7 +60,7 @@ export function SharedVideos({ client }: { client: PublishingClient }) {
   };
   return <section className={styles.library} aria-label="Shared videos">
     <div className={styles.sectionHeading}><h3>Shared videos</h3><button type="button" disabled={busy} onClick={() => { void load(); }}>Refresh</button></div>
-    <p>Links created in this browser. Clearing browser data removes your access to manage them.</p>
+    <p>Links saved to your account. You can manage them after signing in on another device.</p>
     {busy && <p role="status">Loading…</p>}
     {failure && <p className={styles.error} role="alert">{failure}</p>}
     {!busy && !items.length && !failure && <p>No shared videos yet.</p>}

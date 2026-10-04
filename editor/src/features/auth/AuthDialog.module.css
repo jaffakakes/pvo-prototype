@@ -6,6 +6,11 @@
 .close { width: 44px; height: 44px; flex: none; display: grid; place-items: center; padding: 0; background: var(--surface); border: 2px solid #000; border-radius: 10px; cursor: pointer; }
 .content > p { color: var(--muted); font-size: 13px; line-height: 1.7; margin: 16px 0 0; }
 .content .availability { padding: 14px; background: var(--surface); border: 2px solid var(--q14); border-radius: 12px; color: var(--text); }
+.content .error { color: #ff7585; }
+.content .disclosure { font-size: 12px; line-height: 1.5; }
+.disclosure a { color: var(--text); font-weight: 700; text-underline-offset: 2px; }
 .footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 12px; padding: 20px 26px; background: #08080c; border-top: 2px solid var(--q08); }
 .footer button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 14px; border: 2px solid #000; border-radius: 12px; background: var(--surface); box-shadow: 3px 3px 0 #000; font-size: 12px; font-weight: 800; cursor: pointer; }
+.footer .google { background: #fff; color: #181818; }
+.footer button:disabled { opacity: .55; cursor: not-allowed; }
 @media (max-width: 430px) { .content { padding: 22px 18px; } .heading h2 { font-size: 23px; } .footer { padding: 18px; } }

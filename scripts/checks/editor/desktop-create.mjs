@@ -226,6 +226,19 @@ async function inspectProjectStorage(page, checkpointKeys, mediaKeys) {
 async function run(width) {
   const height = width === 1024 ? 768 : 900;
   const context = await browser.newContext({ viewport: { width, height }, hasTouch: width === 1024, reducedMotion: "no-preference" });
+  let signedIn = false;
+  const origin = new URL(editorUrl).origin;
+  await context.route(`${origin}/api/auth/**`, route => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === "/api/auth/session") return route.fulfill({ contentType: "application/json",
+      body: JSON.stringify({ available: true, user: signedIn ? { id: "editor-test", name: "Editor tester" } : null }) });
+    if (path === "/api/auth/google/start") {
+      signedIn = true;
+      return route.fulfill({ contentType: "text/html",
+        body: `<script>window.opener.postMessage({type:"pvo:auth:complete",ok:true},${JSON.stringify(origin)});window.close()</script>` });
+    }
+    throw new Error(`Unexpected account operation ${path}`);
+  });
   const page = await context.newPage();
   page.setDefaultTimeout(15000);
   page.on("pageerror", error => errors.push(error.message));
@@ -254,9 +267,15 @@ async function run(width) {
     await saved(page, firstId);
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await page.getByRole("dialog", { name: "Sign in to Restyle", exact: true }).waitFor();
-    await page.getByText("You can edit, export and create links without signing in.", { exact: true }).waitFor();
+    await page.getByText("Sign in to export and manage your videos.", { exact: false }).waitFor();
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Export", exact: true }).click();
+    const auth = page.getByRole("dialog", { name: "Sign in to Restyle", exact: true });
+    await auth.waitFor();
+    const popup = page.waitForEvent("popup");
+    await auth.getByRole("button", { name: "Continue with Google" }).click();
+    await popup;
+    await auth.waitFor({ state: "hidden" });
     await page.getByRole("dialog", { name: "Export", exact: true }).waitFor();
     await page.keyboard.press("Escape");
     assert.equal(await page.getByRole("dialog").count(), 0);
@@ -581,5 +600,5 @@ try {
   await malformedRetainedCheckpoint();
   await mobileTargetedRecoveryImport();
   assert.deepEqual(errors, []);
-  console.log(`Responsive create passed: 1024/1280/1440 landscape plus existing phone/portrait editor, upload, ratio, account placeholder dismissal, direct guest export, stable routes, saved media, targeted recovery discard, multiple projects, templates and page-wide drop-ready strip. Screenshots: ${screenshots}`);
+  console.log(`Responsive create passed: 1024/1280/1440 landscape plus existing phone/portrait editor, upload, ratio, Google sign-in before export, stable routes, saved media, targeted recovery discard, multiple projects, templates and page-wide drop-ready strip. Screenshots: ${screenshots}`);
 } finally { await browser.close(); }
