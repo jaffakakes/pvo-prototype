@@ -248,8 +248,10 @@ export function Timeline() {
               onPointerUp={compUp}
               onPointerCancel={compUp}
               onClick={(event) => {
-                if (event.detail === 0 && !s.tryMode)
+                if (event.detail === 0 && !s.tryMode) {
+                  setCodePreviewFocus(false);
                   s.patch({ selComp: component.id, sel: -1 });
+                }
               }}
               disabled={!!s.tryMode}
               aria-label={`${component.type}: ${componentLabel(component)}`}

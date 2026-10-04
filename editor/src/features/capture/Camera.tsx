@@ -9,6 +9,7 @@ import { RatioMenu } from "../../ui/RatioMenu";
 import { fmt } from "../../ui/formatTime";
 import { SOUNDS } from "../sound/catalog";
 import { CaptureRecovery } from "./CaptureRecovery";
+import { CameraStorageRecovery } from "./CameraStorageRecovery";
 import recoveryStyles from "./CaptureRecovery.module.css";
 import { ShutterControls } from "./ShutterControls";
 import { useCamera } from "./useCamera";
@@ -391,6 +392,7 @@ export function Camera() {
       </footer>
       <div className={recoveryStyles.camera}>
         <CaptureRecovery />
+        <CameraStorageRecovery />
       </div>
       <input
         ref={uploadRef}

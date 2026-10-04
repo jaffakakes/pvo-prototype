@@ -1,5 +1,7 @@
 # Code structure audit
 
+The current assessment is the [4 October 2026 organization audit](organization-audit-2026-10-04.md), with a separate [branch cleanup record](branch-cleanup-2026-10-04.md). The remainder of this file preserves the earlier snapshot.
+
 Updated 26 September 2026 after the Rust/PVO language addition and the folder-organization pass. Counts include blank source lines and exclude generated files. This audit distinguishes completed structural work from remaining implementation work; line counts are navigation aids, not compliance scores.
 
 This is a historical snapshot. The [27 September review and remediation](standards-review-2026-09-27.md) records subsequent extraction, dependency checks and verification; the remaining findings below describe the earlier state.

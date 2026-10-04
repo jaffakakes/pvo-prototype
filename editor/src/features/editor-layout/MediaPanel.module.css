@@ -10,7 +10,7 @@
 .clip > div { position: relative; width: 100%; height: 110px; border: 2px solid var(--outline); border-radius: 12px; overflow: hidden; }
 .clip[aria-pressed="true"] > div { border-color: var(--pale); box-shadow: 0 0 0 2px var(--accent); }
 .clip video { width: 100%; height: 100%; object-fit: cover; }
-.clip span { position: absolute; bottom: 5px; right: 5px; padding: 2px 5px; border-radius: 4px; background: #000b; font-size: 9px; }
+.clip span { position: absolute; bottom: 5px; right: 5px; padding: 2px 5px; border-radius: 4px; background: #000b; color: #fff; font-size: 9px; }
 .clip strong { font-size: 12px; }
 .clip small { color: var(--muted); font-size: 10px; }
 .footer { margin: 0; text-align: center; color: var(--muted); font-size: 10px; line-height: 1.5; }

@@ -1,0 +1,53 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 14px;
+  border: 2px solid var(--violet);
+  border-radius: 13px;
+  background: var(--surface);
+}
+
+.card[data-selected="true"] {
+  border-color: var(--pale);
+  box-shadow: 2px 2px 0 var(--button-shadow);
+}
+
+.card strong {
+  color: var(--text);
+  font: 800 14px/1.3 var(--f-ui);
+}
+
+.card p,
+.note,
+.error {
+  margin: 0;
+  font: 600 11px/1.5 var(--f-ui);
+}
+
+.card p,
+.note { color: var(--muted); }
+.error { color: var(--yellow); }
+
+.card button {
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid var(--q14);
+  border-radius: 10px;
+  background: var(--violet);
+  color: var(--violet-foreground);
+  font: 800 12px/1.3 var(--f-ui);
+  cursor: pointer;
+}
+
+.card button:disabled { opacity: .55; cursor: default; }
+.card button:focus-visible { outline: 3px solid var(--pale); outline-offset: 2px; }
+
+.confirm { display: flex; flex-direction: column; gap: 8px; }
+.confirm button:last-child { background: transparent; color: var(--text); }

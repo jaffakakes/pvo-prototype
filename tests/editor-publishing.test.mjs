@@ -41,6 +41,21 @@ test("reservation and retry send stable metadata while upload sends the complete
   assert.equal(calls[2].options.headers["Content-Type"], "video/webm");
 });
 
+test("cover upload sends only the frozen WebP Blob to the owned publication", async () => {
+  const calls = [];
+  const client = createPublishingClient({ origin, fetch: async (url, options) => {
+    calls.push({ url, options });
+    return Response.json({ uploaded: true });
+  } });
+  const poster = new Blob(["RIFF....WEBP"], { type: "image/webp" });
+  await client.uploadPoster(reservation.id, poster);
+  assert.equal(calls[0].url, `${origin}/api/publications/publication_123/poster`);
+  assert.equal(calls[0].options.body, poster);
+  assert.equal(calls[0].options.credentials, "same-origin");
+  assert.equal(calls[0].options.headers["Content-Type"], "image/webp");
+  await assert.rejects(client.uploadPoster(reservation.id, new Blob(["wrong"], { type: "image/png" })), /cover/);
+});
+
 test("publishing URLs reject external origins, blob URLs and mismatched identifiers", () => {
   assert.throws(() => publicationReservation({ ...reservation, url: "https://evil.example/player/publication_123" }, origin), /destination/);
   assert.throws(() => publicationReservation({ ...reservation, url: "blob:https://restyle.example/local" }, origin), /destination/);
@@ -55,7 +70,7 @@ test("failed upload never returns a public ready result and uses a short operati
   await assert.rejects(client.upload(reservation.id, artifact()), { message: "Link sharing failed. Try again." });
 });
 
-test("expired sessions retain HTTP 401 for reservation and upload recovery", async () => {
+test("signed-out publication requests retain HTTP 401 for account recovery", async () => {
   const client = createPublishingClient({ origin, fetch: async () => Response.json({ error: "expired" }, { status: 401 }) });
   const file = artifact();
   const input = { title: "My video", filename: file.filename, format: file.format,

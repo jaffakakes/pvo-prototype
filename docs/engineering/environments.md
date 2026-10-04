@@ -51,6 +51,8 @@ Google sign-in requires the `DB` D1 database, exact HTTPS `PUBLIC_ORIGIN=https:/
 
 Creating a link additionally requires `PUBLISHING_ENABLED=true` and the private `MEDIA` R2 bucket. `GET /api/auth/session` reports account availability independently of `GET /api/publishing`; disabling publishing does not disable Google sign-in, editing, the player, the assistant, or release notifications. Video and PVO export require a signed-in account even when publishing is disabled. See the [publishing setup](cloudflare-publishing.md) for the provisioned resources, initial schema and account limits.
 
+The checked-in poster and reply APIs use the existing private R2 bucket and D1 account ownership. Production already has the render and reply feature schemas applied; confirm migration history for another deployment target before release. Server FFmpeg rendering is a separate capability: it stays unavailable without a Queue, a Container binding and `RENDERING_ENABLED=true`. The current account has no render Queue and requires a Workers Paid plan for Containers. Publishing this code does not activate paid rendering; browser rendering remains available. See [server rendering](server-rendering.md).
+
 ## Rollback
 
 Do not rewrite `prod`. Create a `fix/*` or `hotfix/*` branch that reverts the faulty change, then promote it through `dev`, `preprod`, and `prod`. This preserves an auditable production history and runs the same checks as every other release.

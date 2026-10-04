@@ -13,7 +13,8 @@ export function formatFileSize(bytes: number) {
   return bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function SharePanel({ artifact, url, downloadIssue, onDone }: { artifact: CompletedExport; url: string; downloadIssue?: string | null; onDone(): void }) {
+export function SharePanel({ artifact, url, renderMethod, downloadIssue, embedded = false, onDone }: { artifact: CompletedExport; url: string;
+  renderMethod?: "server" | "browser" | "mixed" | null; downloadIssue?: string | null; embedded?: boolean; onDone(): void }) {
   const publish = usePublication(artifact);
   const [title, setTitle] = useState(publish.title ?? "My video");
   const [localFailure, setLocalFailure] = useState<string | null>(downloadIssue ?? null);
@@ -29,6 +30,9 @@ export function SharePanel({ artifact, url, downloadIssue, onDone }: { artifact:
   const busy = publish.stage !== "idle";
   const tooLarge = !!publish.status?.available && artifact.blob.size > publish.status.maxBytes;
   const failure = localFailure ?? publish.failure;
+  const renderLabel = renderMethod === "server" ? "rendered on server"
+    : renderMethod === "browser" ? "rendered in browser"
+    : renderMethod === "mixed" ? "server and browser scenes" : null;
   const clearFailure = () => { setLocalFailure(null); publish.clearFailure(); };
   const shareFile = async () => {
     setSharing(true);
@@ -67,11 +71,11 @@ export function SharePanel({ artifact, url, downloadIssue, onDone }: { artifact:
     try { await navigator.share({ title: publish.title ?? title, url: ready.url }); }
     catch (error) { if (mounted.current && !cancelledShare(error)) setLocalFailure("Couldn't share the link. Try copying it."); }
   };
-  return <Shell title="Share" sub="Your export is ready. Sharing is optional.">
-    <div className={styles.panel} data-share-panel>
+  const panel = <div className={styles.panel} data-share-panel>
       <div className={styles.file}>
         <span className={styles.fileIcon}><Icon name={artifact.format === "pvo" ? "pvoExport" : "export"} size={24} /></span>
-        <div><strong>{artifact.filename}</strong><p>{artifact.format === "pvo" ? "Interactive PVO" : "Video"} · {formatFileSize(artifact.blob.size)}</p></div>
+        <div><strong>{artifact.filename}</strong><p>{artifact.format === "pvo" ? "Interactive PVO" : "Video"} · {formatFileSize(artifact.blob.size)}
+          {renderLabel && ` · ${renderLabel}`}</p></div>
         <Icon name="check" size={19} />
       </div>
       <div className={styles.fileActions}>
@@ -120,6 +124,6 @@ export function SharePanel({ artifact, url, downloadIssue, onDone }: { artifact:
         {showLibrary && <SharedVideos client={publish.client} />}
       </details>}
       <button type="button" className={styles.done} onClick={onDone} data-share-done>Done</button>
-    </div>
-  </Shell>;
+    </div>;
+  return embedded ? panel : <Shell title="Share" sub="Your export is ready. Sharing is optional.">{panel}</Shell>;
 }

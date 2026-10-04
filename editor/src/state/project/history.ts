@@ -8,7 +8,7 @@ import type { CaptureState } from "../types";
 
 export const projectSnapshot = (state: CaptureState): ProjectSnapshot => ({
   scenes: cloneScenes(normalizeSceneTree(state.scenes)), currentSceneId: state.currentSceneId, ratio: state.ratio,
-  allowedDomains: state.allowedDomains.slice(),
+  coverAt: state.coverAt, allowedDomains: state.allowedDomains.slice(),
 });
 export function restore(state: CaptureState, project: ProjectSnapshot): Partial<CaptureState> {
   const scenes = cloneScenes(normalizeSceneTree(project.scenes));
@@ -23,7 +23,7 @@ export function restore(state: CaptureState, project: ProjectSnapshot): Partial<
     ? active.texts.some(text => text.id === pick.textId)
     : active.components.some(component => component.id === pick.componentId));
   return {
-    scenes, currentSceneId: active.id, ratio: project.ratio,
+    scenes, currentSceneId: active.id, ratio: project.ratio, coverAt: project.coverAt,
     allowedDomains: project.allowedDomains?.slice() ?? [],
     clips: active.clips, audioClips: active.audioClips ?? [], texts: active.texts, components: active.components, muted: active.muted, sound: active.sound,
     t, sel, selComp, selText, selAudio: null, layers: layerOrder(active), playing: false, trim: null, orb: false,

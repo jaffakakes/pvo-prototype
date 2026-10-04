@@ -30,6 +30,15 @@ export function validatePvo(manifest) {
     if (typeof assetId !== "string" || !assetId) errors.push(`${path}.asset_id is required.`);
     else ids.assets.add(assetId);
   }
+  if (manifest.poster !== undefined) {
+    const poster = manifest.poster;
+    if (!poster || typeof poster !== "object" || Array.isArray(poster)
+      || typeof poster.asset_id !== "string" || !poster.asset_id
+      || poster.type !== "image/webp" || !Number.isFinite(poster.at) || poster.at < 0)
+      errors.push("poster must reference a WebP asset and a nonnegative time.");
+    else if (ids.assets.has(poster.asset_id))
+      errors.push("poster.asset_id must be separate from video media.");
+  }
   for (const [index, scene] of (manifest.scenes || []).entries()) {
     const path = `scenes[${index}]`;
     if (!scene?.id || typeof scene.id !== "string") errors.push(`${path}.id is required.`);

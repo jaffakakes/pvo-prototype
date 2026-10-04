@@ -107,6 +107,11 @@ export function usePublication(artifact: CompletedExport) {
         checkAccount();
         if (reserved.status !== "ready") throw new Error("The upload isn't ready. Try again.");
       }
+      if (artifact.poster) {
+        setStage("uploading");
+        await client.uploadPoster(reserved.id, artifact.poster, controller.signal);
+        checkAccount();
+      }
       checkAccount();
       setExportPublication(artifact.snapshotId, reserved, input.idempotencyKey);
     } catch (error) {

@@ -99,6 +99,7 @@ export interface PvoMedia { id: string; asset_id?: string; name?: string; type?:
 export interface PvoTimelineClip { id: string; source_clip?: string; asset_id: string; scene?: string; start: number; end: number }
 export interface PvoTimeline { id: string; kind?: "main" | "branch"; clips: PvoTimelineClip[] }
 export interface PvoPlayback { initial_timeline: string; timelines: PvoTimeline[] }
+export interface PvoPoster { asset_id: string; at: number; type: "image/webp" }
 export interface PvoManifest {
   spec_version: string;
   id?: string;
@@ -108,6 +109,7 @@ export interface PvoManifest {
   allowed_domains?: string[];
   state?: { initial?: Record<string, JsonValue>; persist?: boolean };
   media?: PvoMedia[];
+  poster?: PvoPoster;
   playback?: PvoPlayback;
   scenes: PvoScene[];
   components: PvoComponent[];

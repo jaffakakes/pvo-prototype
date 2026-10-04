@@ -122,11 +122,11 @@ Keep the existing update workflow. Adding new update access or recovery screens 
 
 ## Implementation ownership
 
-The notification host renders one compact top banner and retains acknowledged critical issues behind an issue control. That control appears after dismissal, or when another critical issue also needs attention. Healthy editing adds no notification chrome.
+The notification host renders one compact top banner and retains acknowledged critical issues in their feature's recovery controls. A dismissed restore banner does not reappear as a floating issue control or repeat on reload for the same project; the underlying restore failure remains unresolved until recovery succeeds. Other unresolved critical issues may still use the issue control. Healthy editing adds no notification chrome.
 
 Camera and More expose import results and recording recovery when a problem exists. Failed files can be retried together; failed recordings have a Record again action. A video-only camera fallback has a local microphone status. These states do not imply that missing footage was captured.
 
-Storage failures appear as short top toasts, never as a panel pinned below the camera. Detailed recovery controls appear when the user opens the retained storage issue or More. The desktop new-project screen instead owns its recovery panel while creation is blocked; the duplicate restore toast and retained-issue control stay hidden on that screen. Writes are gated behind successful restoration. Retry cannot hydrate over new session work or overwrite the unread saved checkpoint. New edits arriving during recovery block hydration; the user can export current work before reloading. Healthy autosaves remain silent.
+Storage failures appear as short top toasts. On Camera, a collapsed Storage options control exposes recovery without pinning a detailed panel below the footer; More provides the same controls in Editor. The desktop new-project screen owns its recovery panel while creation is blocked; the duplicate restore toast stays hidden on that screen. Writes are gated behind successful restoration. Retry cannot hydrate over new session work or overwrite the unread saved checkpoint. New edits arriving during recovery block hydration; the user can export current work before reloading. Healthy autosaves remain silent.
 
 Export retains Retry and collapsed details; its banner is scoped to the active Export workflow. Try requests expose pending/failure status on their component and honour authored error routes without another global toast. Component rendering failures have local details; source diagnostics remain in the code editor.
 

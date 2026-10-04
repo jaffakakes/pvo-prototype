@@ -3,15 +3,22 @@ import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import { attachReleaseNotifications } from "./releases.mjs";
+import { createLocalSessions, localBetaDataDirectory } from "./local-sessions.mjs";
+import { createLocalRenderApi } from "./render-jobs.mjs";
+import { createLocalReplyBoxApi } from "./reply-boxes.mjs";
 import { createLocalAuthApi } from "./local-auth.mjs";
 
 const root = fileURLToPath(new URL("../../dist/", import.meta.url));
 const port = Number(process.env.PVO_PORT || 4173);
-const localAuthDirectory = process.env.PVO_LOCAL_DATA_DIR
-  || fileURLToPath(new URL("../../.wrangler/local-beta/", import.meta.url));
-const authApi = await createLocalAuthApi({ directory: localAuthDirectory,
+const localDataDirectory = process.env.PVO_LOCAL_DATA_DIR || localBetaDataDirectory;
+const sessions = await createLocalSessions({ directory: localDataDirectory });
+const authApi = await createLocalAuthApi({ directory: localDataDirectory,
   origin: `http://127.0.0.1:${port}`, clientId: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET });
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  clerkPublishableKey: process.env.CLERK_PUBLISHABLE_KEY,
+  clerkIssuer: process.env.CLERK_ISSUER });
+const renderApi = await createLocalRenderApi({ userFor: authApi.userFor });
+const replyApi = await createLocalReplyBoxApi({ sessions, directory: localDataDirectory });
 const mime = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -29,20 +36,26 @@ const mime = {
 };
 
 const server = createServer(async (request, response) => {
+  let url;
   let pathname;
-  try { pathname = decodeURIComponent(new URL(request.url, `http://${request.headers.host}`).pathname); }
-  catch {
+  try {
+    url = new URL(request.url, `http://${request.headers.host}`);
+    pathname = decodeURIComponent(url.pathname);
+  } catch {
     response.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
     response.end("Invalid request address");
     return;
   }
-  if (pathname.startsWith("/api/auth/")) {
-    try { await authApi.handle(request, response, pathname); }
-    catch (error) {
-      console.error("Local sign-in request failed:", error?.name);
+  if (pathname.startsWith("/api/auth/") || pathname.startsWith("/api/renders") || pathname.startsWith("/api/reply-boxes")) {
+    try {
+      if (pathname.startsWith("/api/auth/")) await authApi.handle(request, response, pathname);
+      else if (pathname.startsWith("/api/reply-boxes")) await replyApi.handle(request, response, pathname, url.origin);
+      else await renderApi.handle(request, response, pathname, url.origin);
+    } catch (error) {
+      console.error("Local API request failed:", error?.name);
       if (!response.headersSent) {
         response.writeHead(500, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
-        response.end(JSON.stringify({ error: "The sign-in request could not finish." }));
+        response.end(JSON.stringify({ error: "The request could not finish." }));
       } else response.destroy(error);
     }
     return;
@@ -93,6 +106,7 @@ const server = createServer(async (request, response) => {
 });
 const closeReleases = attachReleaseNotifications(server, root);
 server.on("close", closeReleases);
+server.on("close", () => { void Promise.all([renderApi.close(), replyApi.close()]); });
 server.listen(port, "127.0.0.1", () => {
   console.log(`PVO prototype: http://127.0.0.1:${port}`);
 });

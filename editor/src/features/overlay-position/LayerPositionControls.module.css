@@ -1,7 +1,7 @@
 .section {
   margin-bottom: 22px;
   padding-bottom: 18px;
-  border-bottom: 1px solid #ffffff24;
+  border-bottom: 1px solid var(--q14);
 }
 
 .controls {
@@ -26,7 +26,7 @@
   display: grid;
   gap: 7px;
   min-width: 0;
-  color: #f2f0e9;
+  color: var(--text);
   font: 700 12px/1.4 var(--f-ui);
 }
 
@@ -36,22 +36,22 @@
   min-width: 0;
   min-height: 44px;
   padding: 10px 12px;
-  border: 1px solid #ffffff30;
+  border: 1px solid var(--line-strong);
   border-radius: 10px;
-  background: #1c1c24;
+  background: var(--input);
   color: inherit;
   font: 700 14px/1.4 var(--f-ui);
   user-select: text;
 }
 
 .field input:focus-visible {
-  outline: 3px solid #ff9fbc;
+  outline: 3px solid var(--highlight);
   outline-offset: 2px;
 }
 
 .unit,
 .controls p {
-  color: #c8c6c3;
+  color: var(--muted);
 }
 
 .controls p {

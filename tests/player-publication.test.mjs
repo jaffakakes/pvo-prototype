@@ -13,7 +13,8 @@ test("published MP4, WebM and PVO use server metadata and their canonical link",
   for (const [format, contentType] of [["video", "video/mp4"], ["video", "video/webm"], ["pvo", "application/vnd.pvo"]]) {
     const result = readPublication({ ...data, publicationFormat: format, publicationType: contentType },
       `${canonical}?src=/other.pvo#seek`, canonical);
-    assert.deepEqual(result, { id, format, contentType, mediaUrl: `${origin}/media/${id}`, canonicalUrl: canonical });
+    assert.deepEqual(result, { id, format, contentType, mediaUrl: `${origin}/media/${id}`,
+      posterUrl: null, canonicalUrl: canonical });
   }
 });
 
@@ -22,12 +23,19 @@ test("standalone files and source query strings do not imply a shareable publica
   assert.equal(readPublication({ ...data, shareable: "false" }, canonical, canonical), null);
 });
 
+test("a shared cover stays on this publication's same-origin poster route", () => {
+  const result = readPublication({ ...data, publicationPoster: `/poster/${id}` }, canonical, canonical);
+  assert.equal(result.posterUrl, `${origin}/poster/${id}`);
+});
+
 test("publication metadata cannot substitute external media, IDs, routes or unsupported formats", () => {
   for (const patch of [
     { publicationId: "../private" }, { publicationSrc: "https://other.example/video.mp4" },
     { publicationSrc: `/media/${id}?other=1` }, { publicationSrc: "/api/private" },
     { publicationSrc: "/media/another_publication" }, { publicationFormat: "html" },
     { publicationType: "text/html" },
+    { publicationPoster: "https://other.example/image.webp" },
+    { publicationPoster: `/poster/${id}?other=1` },
   ]) assert.throws(() => readPublication({ ...data, ...patch }, canonical, canonical), /invalid|unavailable/);
   for (const url of [`${origin}/editor/`, `https://elsewhere.example/player/${id}`, `${canonical}?src=x`]) {
     assert.throws(() => readPublication(data, canonical, url), /invalid/);

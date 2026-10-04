@@ -137,11 +137,8 @@ test("playback and export effects follow the one validated edit without adding h
     assert.equal(state().past.length, 1);
     assert.equal(state().t, 2);
     await new Promise(resolve => setImmediate(resolve));
-    assert.equal(state().sheet, null, "Assistant export waits for account sign-in");
-    assert.equal(api.useAuthGate.getState().source, "export");
-    signedIn = true;
-    await api.refreshAccountSession();
-    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(state().sheet, "export", "Assistant prepares export settings before the render-time account check");
+    assert.equal(api.useAuthGate.getState().source, null);
     assert.equal(state().sheet, "export");
     assert.equal(state().exportFormat, "video");
     assert.equal(state().past.length, 1, "Opening export does not add history");

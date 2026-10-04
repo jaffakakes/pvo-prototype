@@ -1,6 +1,7 @@
 import { inspectPvoProject } from "../../packages/pvo-sdk/index.js";
 import { HttpError } from "../http.js";
 import { inspectVideo } from "./inspect-video.js";
+import { isWebp } from "./poster.js";
 
 export function r2Source(bucket, key, size) {
   return {
@@ -23,6 +24,12 @@ export async function inspectUpload(bucket, key, publication) {
     const result = await inspectPvoProject(source, { maxHeaderBytes: 262144 });
     if (!result.validation.valid || !result.manifest?.playback?.timelines?.length || result.assets.length > 512)
       throw new Error(result.validation.errors[0] || "A playable PVO export is required.");
+    if (result.manifest.poster) {
+      const poster = result.assets.find(asset => asset.id === result.manifest.poster.asset_id);
+      if (!poster || poster.length < 12 || !isWebp(await source.readRange(
+        result.payloadStart + poster.offset, result.payloadStart + poster.offset + 12)))
+        throw new Error("The PVO poster is not a WebP image.");
+    }
     return "application/vnd.pvo";
   } catch (error) {
     if (error instanceof HttpError) throw error;

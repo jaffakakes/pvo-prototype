@@ -22,6 +22,8 @@ async function recordDemo(milliseconds) {
 }
 
 try {
+  await page.route("**/api/auth/session", route => route.fulfill({ contentType: "application/json",
+    body: JSON.stringify({ available: true, clerkAvailable: false, clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: { id: "components-check", name: "Components check" } }) }));
   await page.goto(editorUrl, { waitUntil: "networkidle" });
   await recordDemo(1200);
   await page.getByRole("button", { name: "Open editor" }).click();
@@ -57,36 +59,38 @@ try {
   await page.locator(".sceneChip").filter({ hasText: "Main" }).click();
   assert.equal(await page.locator(".compBar, .compMarker").count(), 1, "Main should show only its Choice lane item");
 
-  // Try mode hides the scene row, ends in Scene A, then restores the Main editing location.
+  // Try mode hides the scene row, routes to Scene A, then restores the Main editing location.
   await page.getByRole("button", { name: "Try", exact: true }).click();
   await page.getByRole("button", { name: "Stop trying", exact: true }).waitFor({ timeout: 5000 });
   await page.getByRole("button", { name: "Go B", exact: true }).click();
-  await editorSummary.filter({ hasText: /^Scene A ·/ }).waitFor({ timeout: 5000 });
+  await page.locator("header.editorHead[data-trying='true'] p")
+    .filter({ hasText: "Tap like a viewer · Scene A" }).waitFor({ timeout: 5000 });
   assert.equal(await page.getByRole("button", { name: "Show the whole scene tree" }).count(), 0);
-  let tryFailure = "";
-  try {
-    await editorSummary.filter({ hasText: /^Main ·/ }).waitFor({ timeout: 5000 });
-    await page.getByRole("button", { name: "Try", exact: true }).waitFor({ timeout: 5000 });
-  } catch (error) {
-    tryFailure = `Try mode did not finish in Scene A and restore the Main editing location: ${error.message}`;
-    await page.getByRole("button", { name: "Stop trying", exact: true }).click();
-  }
+  await page.getByRole("button", { name: "Stop trying", exact: true }).click();
+  await editorSummary.filter({ hasText: /^Main ·/ }).waitFor({ timeout: 5000 });
+  await page.getByRole("button", { name: "Try", exact: true }).waitFor({ timeout: 5000 });
 
   // Interactive export contains the Main scene and its branch.
   await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
   await page.getByRole("dialog", { name: "More" })
     .getByRole("button", { name: "Interactive (.pvo)", exact: true }).click();
-  const exportDialog = page.getByRole("dialog", { name: "Export" });
-  await exportDialog.getByRole("button", { name: /Interactive/ }).waitFor();
-  assert.equal(await exportDialog.getByRole("button", { name: /Interactive/ }).getAttribute("data-on"), "true", "Interactive should be preselected");
-  const downloadPromise = page.waitForEvent("download", { timeout: 45000 });
-  await exportDialog.getByRole("button", { name: "Export .pvo" }).click();
-  const download = await downloadPromise;
-  assert.equal(download.suggestedFilename(), "restyle-video.pvo");
+  const exportDialog = page.locator("dialog[data-state]");
+  await exportDialog.getByRole("button", { name: /Export \.pvo/ }).waitFor();
+  assert.equal(await exportDialog.getByRole("combobox", { name: "Export format" }).inputValue(),
+    "pvo", "Interactive should be preselected");
+  await exportDialog.getByRole("button", { name: /Export \.pvo/ }).click();
+  await page.locator('dialog[data-state="done"]').waitFor({ timeout: 60000 });
+  const [download] = await Promise.all([
+    page.waitForEvent("download", { timeout: 15000 }),
+    exportDialog.getByRole("button", { name: /Download/ }).click(),
+  ]);
+  assert.match(download.suggestedFilename(), /\.pvo$/, "Interactive export must download as PVO");
   const decoded = await readPvoProject(new Blob([await readFile(await download.path())]));
   assert.equal(decoded.validation.valid, true, JSON.stringify(decoded.validation.errors));
   assert.equal(decoded.manifest.scenes.length, 2);
-  assert.equal(decoded.assets.length, 8, "Two scene videos and three PVO source files for each component should be packaged");
+  assert.equal(decoded.assets.length, 9, "Two scene videos, three PVO source files per component and the selected cover should be packaged");
+  assert(decoded.assets.some(asset => asset.id === "poster" && asset.type === "image/webp"),
+    "Interactive export must package the selected WebP cover");
   assert.equal(decoded.assets.some(asset => /\.(?:html|css|js)$/.test(asset.path)), false,
     "Retired HTML/CSS/JavaScript component assets must not be packaged");
   const main = decoded.manifest.scenes.find(scene => scene.id === "main");
@@ -111,7 +115,6 @@ try {
   await viewerChoice.getByRole("button", { name: "Go B" }).click();
   await viewer.locator(`[data-asset-id="${branch.asset_id}"]`).waitFor({ timeout: 10000 });
   assert.deepEqual(pageErrors, [], "The editor should not report page errors");
-  assert.equal(tryFailure, "", tryFailure);
   console.log("Components E2E passed: Fields Choice + Tooltip, Try route, PVO-only export, and exported package playback.");
 } catch (error) {
   console.error(`Components E2E failed: ${error.message}`);

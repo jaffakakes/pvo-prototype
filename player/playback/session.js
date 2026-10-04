@@ -29,8 +29,6 @@ export function createPlaybackSession({ onDiagnostic, captureDiagnosticBodies } 
     renderedOverlayKey: "",
     runtimeStateRevision: 0,
     overlayResetRevision: 0,
-    controlsTimer: null,
-    resumeAfterScrub: false,
     captureMode: false,
     pvoLanguageSources: new Map(),
     mountedCustom: new Map(),

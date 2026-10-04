@@ -25,8 +25,11 @@ async function authorBox(target) {
     const box = element.getBoundingClientRect();
     const preview = document.querySelector(".pvBox").getBoundingClientRect();
     return {
-      x: (box.left + box.width / 2 - preview.left) / preview.width,
-      y: (box.top + box.height / 2 - preview.top) / preview.height,
+      // A selected component is lifted toward the preview centre without changing its authored position.
+      x: element.classList.contains("compOverlay") ? Number.parseFloat(element.style.left) / 100
+        : (box.left + box.width / 2 - preview.left) / preview.width,
+      y: element.classList.contains("compOverlay") ? Number.parseFloat(element.style.top) / 100
+        : (box.top + box.height / 2 - preview.top) / preview.height,
       width: box.width / preview.width, height: box.height / preview.height,
     };
   });

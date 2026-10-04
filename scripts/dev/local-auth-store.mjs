@@ -5,6 +5,7 @@ import { signCookie, verifyCookie } from "../../server/auth/tokens.js";
 
 const SESSION_COOKIE = "pvo-local-session";
 const SESSION_SECONDS = 7 * 24 * 60 * 60;
+const CLERK_SESSION_SECONDS = 15 * 60;
 const OAUTH_COOKIE = "pvo-local-oauth";
 const OAUTH_SECONDS = 10 * 60;
 
@@ -79,8 +80,8 @@ export async function createLocalAuthStore(directory) {
     return next;
   }
 
-  function userIdForGoogle(sub) {
-    return createHmac("sha256", Buffer.from(secret, "hex")).update(`google:${sub}`).digest("base64url");
+  function userIdFor(identityKey) {
+    return createHmac("sha256", Buffer.from(secret, "hex")).update(identityKey).digest("base64url");
   }
 
   async function userFor(request) {
@@ -92,17 +93,25 @@ export async function createLocalAuthStore(directory) {
     return user ? { id: record.userId, name: user.name } : null;
   }
 
-  async function startSession(identity) {
+  async function issueSession(identityKey, name, seconds) {
     return mutate(async () => {
-      const id = userIdForGoogle(identity.sub);
-      data.users[id] = { name: identity.name };
+      const id = userIdFor(identityKey);
+      data.users[id] = { name };
       for (const [hash, session] of Object.entries(data.sessions)) {
         if (session.expiresAt <= Date.now()) delete data.sessions[hash];
       }
       const token = randomBytes(32).toString("base64url");
-      data.sessions[tokenHash(token)] = { userId: id, expiresAt: Date.now() + SESSION_SECONDS * 1000 };
-      return cookie(SESSION_COOKIE, await signCookie({ token }, secret, "local-session", SESSION_SECONDS), SESSION_SECONDS);
+      data.sessions[tokenHash(token)] = { userId: id, expiresAt: Date.now() + seconds * 1000 };
+      return cookie(SESSION_COOKIE, await signCookie({ token }, secret, "local-session", seconds), seconds);
     });
+  }
+
+  function startSession(identity) {
+    return issueSession(`google:${identity.sub}`, identity.name, SESSION_SECONDS);
+  }
+
+  function startClerkSession(identity) {
+    return issueSession(`clerk:${identity.issuer}:${identity.sub}`, identity.name, CLERK_SESSION_SECONDS);
   }
 
   async function endSession(request) {
@@ -114,7 +123,7 @@ export async function createLocalAuthStore(directory) {
   }
 
   return {
-    userFor, startSession, endSession,
+    userFor, startSession, startClerkSession, endSession,
     oauthCookie: (value, seconds = OAUTH_SECONDS) => cookie(OAUTH_COOKIE, value, seconds),
     signOAuth: value => signCookie(value, secret, "local-oauth", OAUTH_SECONDS),
     verifyOAuth: request => verifyCookie(cookieValue(request, OAUTH_COOKIE), secret, "local-oauth"),

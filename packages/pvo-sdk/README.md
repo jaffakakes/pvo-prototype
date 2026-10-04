@@ -17,6 +17,7 @@ import {
 ```
 
 - `packPvoProject({ manifest, assets })` returns one self-contained `.pvo` Blob containing all main and branch media.
+- A `poster` manifest entry may reference a separate packaged WebP image and its selected initial-scene time. The player can show that image before the video decodes.
 - `readPvoProject(file)` returns `{ manifest, validation, assets }` for the self-contained package.
 - `readPvo(file)` reads both current `.pvo` packages and legacy PVO-in-MP4/MOV files.
 - `packPvo(media, manifest)` returns an MP4 or MOV Blob with the PVO manifest appended and the source media type preserved.

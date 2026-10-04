@@ -17,7 +17,7 @@ The header contains Undo, Redo, Try and More. Editing taps select; viewer action
 - Choices have exactly two options with independent outcomes.
 - Forms have a heading, submit label and one to five named fields. Each accepts Text, A number, or Yes / no.
 
-Forms default to a local Continue action. A network request is authored explicitly in Advanced Logic and sends typed answers only to its configured HTTP(S) destination through the host allowlist. It does not enable automatic email, tracking or integrations. The sending label lasts for the actual request; success follows a successful response and failure follows a failed response.
+Forms default to a local Continue action. **Collect replies** in Action creates a Restyle reply box and sends the viewer's answers there; creators read them in **More → Replies**. Choosing it on an untouched Form starter changes the prompt to “Send me a message” and leaves customized forms intact. Try simulates a successful submission without saving a reply. This first-party action does not send automatic email. Custom HTTP requests still require Advanced Logic and a configured destination. The sending label lasts for the actual request; success follows a successful response and failure follows a failed response.
 
 All component types expose Appears at, Pick on timeline, Use current playhead and Shows for (3s, 5s, 10s or Until clip ends). Messages, Choices, and Forms have two independent Action settings:
 
@@ -51,7 +51,7 @@ Visual values are typed, normalized and shared between preview and player. They 
 
 ## Actions and Advanced
 
-Each button or choice option can Continue video, Jump to a point, or Go to a scene. A routed scene becomes the rest of that viewing path; playback ends there unless another explicit action routes again. Timeline picking restores the same action chooser; Cancel restores the original playhead too. Requests, including their success and failure actions, are authored in Advanced Logic.
+Each button or choice option can Continue video, Jump to a point, or Go to a scene. A routed scene becomes the rest of that viewing path; playback ends there unless another explicit action routes again. Timeline picking restores the same action chooser; Cancel restores the original playhead too. Form Action also offers Collect replies with a creator inbox and a configurable playback route after a successful send. Other requests, including their success and failure actions, are authored in Advanced Logic.
 
 Advanced shows generated Structure, Style and Logic. Taking over with code makes Content and Look read-only. Action and timing remain editable. Returning to visual editing requires an explicit confirmation, resets appearance to Bold, and retains an independent source archive available through Use saved code. Turning Advanced off hides the tab without deleting source.
 
@@ -62,6 +62,8 @@ A valid source edit updates the fields projection and runtime. Action edits pres
 One text focus session or continuous colour gesture creates one undo entry. Project history is 40 entries deep and survives scene navigation. Layout and tab preferences do not enter project history.
 
 Visual components export through native PVO controls with `restyle_capture` appearance and form metadata. Code-owned components package their source and use the isolated compiled renderer. Both routes retain checked outcomes and destinations. Interactive `.pvo` carries the components; flat video omits them.
+
+Collect replies uses an ordinary PVO POST to the Restyle reply box created when the creator enables it. The destination travels with a downloaded `.pvo`, so a viewer can submit from another player that permits the declared request host. The inbox is stored by Restyle, outside the video file; deleting the box stops collection for any exported copies that reference it. Replies are untrusted viewer input and bounded. Each box and its replies are deleted 180 days after setup. Try never sends one.
 
 Routine edits are quiet. The repository’s [notification policy](../engineering/notification-policy.md) takes precedence over the proposal’s routine success-toast examples. The reserved Ask AI chip is not required for this flow; the existing assistant remains a separate feature.
 

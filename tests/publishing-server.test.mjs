@@ -80,6 +80,34 @@ test("publish, retry, range-read and delete a native video without replacing its
   } finally { await f.close(); }
 });
 
+test("the chosen cover is owner-uploaded once, shown on the shared page, and deleted with the link", async () => {
+  const f = await workerFixture();
+  try {
+    const file = tinyMp4();
+    const { body } = await reserve(f, file);
+    const id = body.id;
+    const poster = new Blob([new TextEncoder().encode("RIFF\x04\0\0\0WEBP")], { type: "image/webp" });
+    const put = (blob, options = {}) => f.request(`/api/publications/${id}/poster`, {
+      method: "PUT", body: blob, headers: { "Content-Type": blob.type }, ...options,
+    });
+    assert.equal((await put(poster)).status, 409, "a cover cannot publish before its video");
+    assert.equal((await upload(f, id, file)).status, 200);
+    assert.equal((await put(poster, { session: f.otherCookie })).status, 404);
+    assert.equal((await put(new Blob(["not an image"], { type: "image/webp" }))).status, 415);
+    assert.equal((await put(poster)).status, 200);
+    assert.equal((await put(poster)).status, 200, "retries keep the first cover");
+    const image = await f.request(`/poster/${id}`, { session: null });
+    assert.equal(image.headers.get("Content-Type"), "image/webp");
+    assert.deepEqual(new Uint8Array(await image.arrayBuffer()), new Uint8Array(await poster.arrayBuffer()));
+    const page = await (await f.request(`/player/${id}`, { session: null })).text();
+    assert(page.includes(`<meta property="og:image" content="${ORIGIN}/poster/${id}" />`));
+    assert(page.includes(`data-publication-poster="${ORIGIN}/poster/${id}"`));
+    assert.equal((await f.request(`/api/publications/${id}`, { method: "DELETE" })).status, 200);
+    assert.equal((await f.request(`/poster/${id}`, { session: null })).status, 404);
+    assert.equal(await f.bucket.head(`posters/${id}`), null);
+  } finally { await f.close(); }
+});
+
 test("invalid content and changed sizes cannot become ready; successful retry uses a new attempt", async () => {
   const f = await workerFixture();
   try {
@@ -114,6 +142,19 @@ test("WebM and interactive PVO exports retain their verified formats", async () 
       assert.equal(media.headers.get("Content-Type"), file.type);
       assert.deepEqual(new Uint8Array(await media.arrayBuffer()), new Uint8Array(await file.arrayBuffer()));
     }
+  } finally { await f.close(); }
+});
+
+test("published PVO poster bytes must decode as a WebP signature", async () => {
+  const f = await workerFixture();
+  try {
+    const goodPoster = new Blob([new TextEncoder().encode("RIFF\x04\0\0\0WEBP")], { type: "image/webp" });
+    const good = await tinyPvo(goodPoster);
+    const goodReservation = await reserve(f, good);
+    assert.equal((await upload(f, goodReservation.body.id, good)).status, 200);
+    const bad = await tinyPvo(new Blob(["wrong image"], { type: "image/webp" }));
+    const badReservation = await reserve(f, bad);
+    assert.equal((await upload(f, badReservation.body.id, bad)).status, 415);
   } finally { await f.close(); }
 });
 

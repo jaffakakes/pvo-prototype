@@ -50,6 +50,16 @@
         "additionalProperties": true
       }
     },
+    "poster": {
+      "type": "object",
+      "required": ["asset_id", "at", "type"],
+      "properties": {
+        "asset_id": { "type": "string", "minLength": 1 },
+        "at": { "type": "number", "minimum": 0 },
+        "type": { "const": "image/webp" }
+      },
+      "additionalProperties": true
+    },
     "playback": {
       "type": "object",
       "required": ["initial_timeline", "timelines"],
