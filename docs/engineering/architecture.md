@@ -14,6 +14,7 @@ pvo-prototype/
     engineering/                Standards, architecture and current audit
   editor/                       React/TypeScript recording and authoring app
   player/                       Standalone viewing app
+  server/                       Cloudflare account, publishing, rendering and assistant routes
   packages/
     pvo-sdk/                    Format containers, validation and action runtime
     pvo-language/               Native Rust compiler and browser WASM facade
@@ -147,7 +148,7 @@ Capture is off for each new run and applies only to subsequent requests. Data is
 
 The component sheet separates Content, Look and Action. Timing belongs to Content; Advanced is a device preference that exposes another editable view of the same component. `domain/components/` owns source/visual projection, exact appearance edits, named form fields and draft transitions. Source-backed rendering does not imply a visual editing lock. Pending or invalid drafts temporarily block Content and Look updates while retaining the draft and last validated source for explicit recovery. `componentAuthoringStore` holds only the selected tab and part, outside project history. Focused text edits and continuous colour gestures use the existing undoable command boundary.
 
-Simple Action controls expose local playback routes. The Advanced switch reveals the PVO source editor for Structure, Style and Logic; network requests are authored directly in Logic, without a visual request setup panel. Forms store `fields.formSubmitMode: "local"` or `"request"`; compiling a request action projects `"request"` into the form fields. Native exports carry the mode in `restyle_capture.form.submitMode`, so Try and the standalone player agree about whether form submission needs a network destination. Visual content and appearance edits preserve authored request methods, payloads and field identifiers.
+Simple Action controls expose local playback routes. Form Action also offers first-party Collect replies: the editor provisions a reply box through its HTTP adapter and stores its fixed URL in the Form, while `domain/components/forms` generates the standard PVO request body. Try simulates that first-party request so preview never writes to the inbox. The Advanced switch reveals the PVO source editor for Structure, Style and Logic; custom network requests are authored directly in Logic, without a visual request setup panel. Forms store `fields.formSubmitMode: "local"`, `"collect"` or `"request"`; compiling a custom request action projects `"request"` into the form fields. Native exports carry the mode in `restyle_capture.form.submitMode`, so Try and the standalone player agree about whether form submission needs a network destination. Visual content and appearance edits preserve authored request methods, payloads and field identifiers.
 
 `pvo-component-runtime` contains pure, validated appearance values used by the editor and standalone player. Visual component exports retain native manifest controls plus `restyle_capture` appearance/form metadata; code-owned components use the isolated PVO renderer. Both routes keep request destinations and playback outcomes under the existing checked host adapters. Form submission status follows the actual response.
 
@@ -162,9 +163,9 @@ player/
   app.js                        Session creation and controller wiring
   playback/                     Session state, timeline queries, transitions
   actions/                      SDK host adapter, component events, outcome routing
-  media/                        Package loading, video control, object URL ownership
+  media/                        Package loading, video/ambient painting, object URLs
   components/                   Views, visibility, overlays, compiled PVO source
-  ui/                           DOM references, controls and event bindings
+  ui/                           Shared shell, responsive geometry, state presentation and input
   index.html / styles.css       Entry document and current app styling
 
 packages/pvo-sdk/
@@ -175,6 +176,8 @@ packages/pvo-sdk/
 ```
 
 The player owns an explicit per-viewer session and passes capabilities to controllers. Rendering, media access, action execution, and playback decisions have separate owners. Some controllers still combine decisions with host coordination; they are not all pure domain functions.
+
+Local PVOs and published PVO/flat videos share the Restyle player shell. `ui/view-state.js` derives its sound, hold, sending, failure and completion presentation; `ui/input.js` wires footage, keyboard and button entry points to the same commands. The shell has no seek/control row. `ui/layout-geometry.js` owns fitting, lifting and collision calculations, while `ui/layout.js` measures the browser and preserves mounted component inputs through viewport/keyboard changes. Authored coordinates use the fitted footage rectangle. Ambient painting reuses the playing video and releases its timers with the viewer. `?debugHits=1` shows shell and Fields component targets, and `?cta=orange` pins an accent for visual checks. Creator attribution waits for public creator metadata; the current publication contract exposes a title and media duration only.
 
 SDK public import paths, exports, declarations, schema, and container bytes describe the current development contract. Contract changes replace superseded shapes instead of adding compatibility paths. The publication list includes internal module folders. The static build copies the player and JavaScript package trees so their relative imports work after deployment.
 

@@ -8,11 +8,14 @@ import type { Scene } from "../../domain/project/model";
 import type { ExportSnapshot } from "../../domain/publishing/model";
 import { clamp } from "../../domain/project/numbers";
 import { compileLanguages } from "../../infrastructure/language/compileProject";
-import { exportVideo, type ExportResult } from "../../infrastructure/media/exportVideo";
+import { exportVideo, type ExportResult, type VideoExportSource } from "../../infrastructure/media/exportVideo";
 import { pvoSceneMediaSource } from "./pvoMediaSource";
 
+export type SceneRenderer = (source: VideoExportSource, progress: (fraction: number) => void) => Promise<ExportResult>;
+
 /** Render each scene's media, then package compiled PVO language interactions. */
-export async function exportPvo(state: ExportSnapshot, onPct: (progress: number) => void): Promise<ExportResult> {
+export async function exportPvo(state: ExportSnapshot, onPct: (progress: number) => void,
+  renderScene: SceneRenderer = exportVideo, poster: Blob | null = null): Promise<ExportResult> {
   const scenes = state.scenes;
   if (!scenes.length)
     throw new Error("Record or upload a clip before exporting.");
@@ -35,7 +38,7 @@ export async function exportPvo(state: ExportSnapshot, onPct: (progress: number)
   let done = 0;
   for (const [index, scene] of scenes.entries()) {
     const sceneDuration = sceneLength(scene);
-    const result = await exportVideo(pvoSceneMediaSource(state, scene), (progress) => {
+    const result = await renderScene(pvoSceneMediaSource(state, scene), (progress) => {
       onPct(clamp((done + progress * sceneDuration) / duration, 0, 1));
     });
     try {
@@ -51,7 +54,12 @@ export async function exportPvo(state: ExportSnapshot, onPct: (progress: number)
     }
     done += sceneDuration;
   }
-  const manifest = buildPvoManifest(state, rendered, languages);
+  if (poster) {
+    if (poster.type !== "image/webp" || !poster.size || poster.size > 5 * 1024 * 1024)
+      throw new Error("The selected cover frame could not be packaged as a WebP image.");
+    assets.push({ id: "poster", name: "images/cover.webp", type: "image/webp", blob: poster });
+  }
+  const manifest = buildPvoManifest(state, rendered, languages, poster ? "poster" : undefined);
   for (const scene of scenes)
     for (const component of scene.components) {
       const base = `components/${component.id}`;

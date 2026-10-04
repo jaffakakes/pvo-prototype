@@ -25,7 +25,7 @@ export function Editor() {
   const debugOpen = useDebugUi(state => state.open);
   const wide = useWideLayout();
   const scenes = useCapture(state => state.scenes);
-  const sheetOpen = useCapture(state => state.sheet !== null && !state.playheadPick);
+  const sheetOpen = useCapture(state => state.sheet !== null && state.sheet !== "export" && !state.playheadPick);
   const animationSheet = useCapture(state => state.sheet === "animation");
   const componentSheet = useCapture(state => state.sheet === "component" || state.sheet === "components");
   const selectedComponent = useCapture(state => state.sheet === "component" ? state.selComp : null);

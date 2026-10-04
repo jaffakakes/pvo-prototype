@@ -38,7 +38,7 @@ type SourceFields = {
   }[];
   fieldKinds?: readonly FieldKind[];
   formFields?: readonly { name: string; type: "text" | "number" | "yesno" }[];
-  formSubmitMode?: "local" | "request";
+  formSubmitMode?: "local" | "request" | "collect";
   heading?: string;
   destination?: string;
   successOutcome?: Route;

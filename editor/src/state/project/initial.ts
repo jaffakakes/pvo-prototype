@@ -11,11 +11,11 @@ export const initial = () => {
     recSpeed: 1 as const, speedRow: false, replacing: null,
     scenes: [main], currentSceneId: main.id,
     clips: main.clips, audioClips: [], texts: main.texts, components: main.components, muted: main.muted, sound: main.sound,
-    ratio: "9:16" as Ratio, allowedDomains: [], recordingInto: null,
+    ratio: "9:16" as Ratio, coverAt: 0, allowedDomains: [], recordingInto: null,
     layers: ["video"] as LayerId[], sel: -1, selComp: null, selText: null, selAudio: null, t: 0, playing: false, trim: null, orb: false, tryMode: null, playheadPick: null,
     sheet: null, ratioMenu: false, draft: "", tColor: 2,
     exportFormat: "video" as const,
-    quality: "720p" as const, ex: "idle" as const, exPct: 0, exUrl: null, exName: "",
+    quality: "1080p" as const, ex: "idle" as const, exPct: 0, exUrl: null, exName: "",
     past: [] as ProjectSnapshot[], future: [] as ProjectSnapshot[],
   };
 };

@@ -10,6 +10,7 @@ import { SceneSettings } from "../scenes/SceneSettings";
 import { AdvancedSettings } from "./AdvancedSettings";
 import { ProjectStorageStatus } from "./ProjectStorageStatus";
 import { CaptureRecovery } from "../capture/CaptureRecovery";
+import { ReplyInbox } from "../replies/ReplyInbox";
 import styles from "./MoreSettings.module.css";
 import { requestExport } from "../../state/export/exportCommands";
 import { openSignIn, useAuthGate } from "../../state/auth/authGateStore";
@@ -39,6 +40,8 @@ export function MoreSettings() {
   const advancedLabelId = useId();
   const advancedHelpId = useId();
   const [appearanceError, setAppearanceError] = useState<string | null>(null);
+  const [showReplies, setShowReplies] = useState(false);
+  const repliesId = useId();
 
   return <div className={styles.content}>
     <section className={styles.section} aria-label="Account">
@@ -141,6 +144,14 @@ export function MoreSettings() {
           <span className={styles.switchTrack} aria-hidden="true"><span className={styles.switchThumb} /></span>
         </button>
       </div>
+    </section>
+    <section className={styles.section} aria-label="Replies">
+      <h3>Replies</h3>
+      <div className={styles.actions}>
+        <button type="button" aria-expanded={showReplies} aria-controls={repliesId}
+          onClick={() => setShowReplies(!showReplies)}>{showReplies ? "Close replies" : "Open replies"}</button>
+      </div>
+      {showReplies && <div id={repliesId}><ReplyInbox /></div>}
     </section>
     {screen === "editor" && <section className={styles.section} aria-labelledby="more-export-heading">
       <h3 id="more-export-heading">Export</h3>

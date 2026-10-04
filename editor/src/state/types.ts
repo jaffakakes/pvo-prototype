@@ -1,6 +1,7 @@
 import { type TextStyle } from "../../../packages/pvo-text-runtime/index.js";
 import type { AudioClip } from "../domain/audio/model";
 import { type LayerId } from "../domain/layers/model";
+import type { ExportQuality } from "../domain/publishing/model";
 import type { Clip, ComponentResponse, ComponentType, Outcome, OutcomeTarget, ProjectSnapshot, PvoComponent, Ratio, Scene, TextOverlay } from "../domain/project/model";
 
 export type TryMode = {
@@ -61,6 +62,7 @@ export type CaptureState = {
   sound: number;
   layers: LayerId[];
   ratio: Ratio;
+  coverAt: number;
   allowedDomains: string[];
   recordingInto: string | null;
   sel: number;
@@ -83,7 +85,7 @@ export type CaptureState = {
   draft: string;
   tColor: number;
   exportFormat: "video" | "pvo";
-  quality: "720p" | "1080p";
+  quality: ExportQuality;
   ex: "idle" | "running" | "done";
   exPct: number;
   exUrl: string | null;

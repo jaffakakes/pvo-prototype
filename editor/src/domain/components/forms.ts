@@ -21,6 +21,25 @@ export function getFormFields(fields: ComponentFields): FormField[] {
   }));
 }
 
+/** Turn only the untouched Form starter into a message prompt. Custom forms keep their wording and controls. */
+export function collectReplyStartingFields(fields: ComponentFields): ComponentFields {
+  const rows = fields.formFields;
+  const starter = fields.heading === "Get early access"
+    && fields.submitLabel === "Continue"
+    && fields.formSubmitMode === "local"
+    && !fields.destination
+    && fields.outcome?.kind === "continue"
+    && rows?.length === 2
+    && rows[0].name === "Name" && rows[0].type === "text"
+    && rows[1].name === "Email" && rows[1].type === "text";
+  return starter ? {
+    ...fields,
+    heading: "Send me a message",
+    formFields: [{ name: "Your message", type: "text" }],
+    submitLabel: "Send",
+  } : fields;
+}
+
 /** Project an explicitly authored Form action into the visual editor fields. */
 export function toVisualFormFields(fields: ComponentFields): ComponentFields {
   if (fields.formFields) return fields;
@@ -28,7 +47,7 @@ export function toVisualFormFields(fields: ComponentFields): ComponentFields {
   return {
     ...fields,
     formFields: getFormFields(fields),
-    formSubmitMode: formUsesRequest(fields) ? "request" : "local",
+    formSubmitMode: fields.formSubmitMode ?? (formUsesRequest(fields) ? "request" : "local"),
     destination: fields.destination ?? request?.url ?? "",
     successOutcome: fields.successOutcome ?? request?.onSuccess ?? (fields.outcome?.kind !== "request" ? fields.outcome : undefined) ?? { kind: "continue" },
     failureOutcome: fields.failureOutcome === undefined ? request?.onError ?? null : fields.failureOutcome,
@@ -63,6 +82,13 @@ export function setFormDestination(fields: ComponentFields, rawUrl: string): Com
   return { ...fields, formSubmitMode: "request", destination };
 }
 
+function formAnswerBody(componentId: string, controls: readonly Pick<FormControl, "name" | "label" | "type">[]): string {
+  if (!/^[A-Za-z0-9_-]+$/.test(componentId)) throw new Error("Form ID contains unsupported characters.");
+  return JSON.stringify({ answers: controls.map(field => ({
+    name: field.label, type: field.type, value: `{state.form.${componentId}.${field.name}}`,
+  })) });
+}
+
 export function formSubmissionOutcome(
   component: Pick<PvoComponent, "id" | "fields">,
   controls: readonly Pick<FormControl, "name" | "label" | "type">[] = formFieldControls(component.fields),
@@ -71,6 +97,16 @@ export function formSubmissionOutcome(
   if (fields.formSubmitMode === "local")
     return fields.outcome?.kind !== "request" ? fields.outcome ?? fields.successOutcome ?? { kind: "continue" }
       : fields.successOutcome ?? { kind: "continue" };
+  if (fields.formSubmitMode === "collect") {
+    if (!fields.destination?.trim()) return null;
+    requestHost(fields.destination);
+    return {
+      kind: "request", url: fields.destination.trim(), method: "POST",
+      body: formAnswerBody(component.id, controls),
+      onSuccess: fields.successOutcome ?? { kind: "continue" },
+      onError: fields.failureOutcome ?? null,
+    };
+  }
   const authoredRequest = fields.outcome?.kind === "request" ? fields.outcome : null;
   if (!authoredRequest && fields.formSubmitMode !== "request")
     return fields.outcome ?? { kind: "continue" };
@@ -84,12 +120,9 @@ export function formSubmissionOutcome(
     onSuccess: fields.successOutcome ?? authoredRequest.onSuccess,
     onError: fields.failureOutcome === undefined ? authoredRequest.onError : fields.failureOutcome,
   };
-  if (!/^[A-Za-z0-9_-]+$/.test(component.id)) throw new Error("Form ID contains unsupported characters.");
   return {
     kind: "request", url: destination.trim(), method: "POST",
-    body: JSON.stringify({ answers: controls.map(field => ({
-      name: field.label, type: field.type, value: `{state.form.${component.id}.${field.name}}`,
-    })) }),
+    body: formAnswerBody(component.id, controls),
     onSuccess: fields.successOutcome ?? { kind: "continue" },
     onError: fields.failureOutcome ?? null,
   };

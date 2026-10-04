@@ -1,7 +1,9 @@
 import type { ProjectSnapshot } from "../project/model";
 
 export type ExportFormat = "video" | "pvo";
-export type ExportSnapshot = ProjectSnapshot & { quality: "720p" | "1080p"; snapshotId: string };
+export type ExportQuality = "720p" | "1080p" | "4K";
+export type ExportStage = "preparing" | "uploading" | "rendering" | "downloading" | "browser";
+export type ExportSnapshot = ProjectSnapshot & { quality: ExportQuality; snapshotId: string };
 export type CompletedExport = {
   snapshotId: string;
   blob: Blob;
@@ -9,6 +11,8 @@ export type CompletedExport = {
   contentType: string;
   format: ExportFormat;
   createdAt: string;
+  coverAt: number;
+  poster: Blob | null;
 };
 
 export type PublishingStatus = {

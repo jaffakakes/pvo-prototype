@@ -5,6 +5,7 @@ import { TimelineKeyframes } from "../../animation/TimelineKeyframes";
 import { componentLength } from "../../../domain/components/timing";
 import { dur } from "../../../domain/clips/timing";
 import { clearTimelineSelection } from "../../../state/editing/selectionCommands";
+import { setCodePreviewFocus } from "../../../state/components/componentAuthoringStore";
 import type { CaptureState } from "../../../state/types";
 import { ClipPoster } from "../../../ui/media/ClipPoster";
 import { Icon } from "../../../ui/Icon";
@@ -422,9 +423,10 @@ export function DesktopVisualLayerLanes({
             onPointerUp={endTiming}
             onPointerCancel={endTiming}
             onLostPointerCapture={endTiming}
-            onClick={() =>
-              onSelect({ selComp: component.id, sheet: "component" })
-            }
+            onClick={() => {
+              setCodePreviewFocus(false);
+              onSelect({ selComp: component.id, sheet: "component" });
+            }}
           >
             {state.selComp === component.id && (
               <span className={styles.blockHandle} data-edge="l" />

@@ -33,6 +33,17 @@ These rules apply throughout this repository. Read the [coding standard](docs/en
 5. Review the diff for mixed responsibilities, duplicated rules, circular imports, unreadable formatting, and stale documentation.
 6. Run relevant checks and report what passed, failed, or was not run. Do not imply lint or architectural enforcement exists when it does not.
 7. After completing app changes, rebuild the beta with `npm run build` and verify that the running beta serves the new service-worker revision. The user expects changes to appear through **New beta release**, not only in source or a temporary preview. Locate the active beta server's actual output directory: it may serve a separate checkout, so updating this repository's `dist/` alone is not enough. Copy built assets there before the HTML and service worker, retaining old hashed assets for open clients. Preserve pending generated output in a backup before replacing it. Respect an explicit local-only request, and do not force an update or reload over the user's editing session.
+8. Finish an authorized production release by cleaning up its completed feature/fix branches under the rules below. Branch cleanup is part of finishing the release, not an optional follow-up requiring another confirmation.
+
+## Branch lifecycle and release cleanup
+
+- Follow the [release workflow](docs/engineering/environments.md): start new work from current `origin/dev` on a focused branch and promote through `dev` → `preprod` → `prod`. Do not accumulate unrelated new work on an already released feature branch.
+- After the production deployment succeeds and the live release is verified, delete the completed task's feature/fix branch from both the remote and local repository. A push or merge to `dev`, `preprod`, or even `prod` without a successful deployment is not sufficient.
+- Fetch current refs first. Confirm the exact branch tip is included in the successfully deployed production commit, normally with `git merge-base --is-ancestor`. For rebased or squash-merged work, establish explicit change/merge equivalence before deletion; a similar name or an old PR alone is not proof. Never discard unreleased commits.
+- Check open PRs, active tasks, worktree changes and running servers before deletion. Preserve branches still in use or containing unresolved source changes. Do not switch another active task's checkout or remove a serving worktree. For a finished inactive checkout, switch or detach safely before deleting its branch; preserve pending files and back up generated output if handling it during cleanup. Generated-only leftovers may remain in a preserved detached worktree rather than keeping a released branch indefinitely.
+- Save the deleted branch name and exact SHA in a local recovery record outside tracked source. Recheck local tips immediately before deletion and use expected-SHA leases for remote deletion so concurrent work is preserved. Prune stale remote-tracking refs afterward.
+- Keep integration/release branches (`dev`, `preprod`, `prod`) and designated history branches (`main`, `editor`). Delete task branches only; never force-reset, discard pending work, or close an unrelated PR as branch cleanup.
+- Report branches removed and any retained branch with its concrete reason. When asked what is pending production, distinguish open feature PRs, changes awaiting promotion/deployment, uncommitted work, and already released leftovers; do not present every remaining branch as an unreleased feature.
 
 ## Verification
 

@@ -17,7 +17,10 @@ const settle = () => page.evaluate(async () => {
   const frame = () => new Promise(resolve => requestAnimationFrame(resolve));
   await frame();
   await frame();
-  await Promise.all((document.querySelector(".pvBox")?.getAnimations() ?? []).map(animation => animation.finished.catch(() => {})));
+  const animations = [document.querySelector(".pvBox"), document.querySelector(".compOverlay")]
+    .flatMap(element => element?.getAnimations() ?? [])
+    .filter(animation => animation.effect?.getComputedTiming().iterations !== Infinity);
+  await Promise.all(animations.map(animation => animation.finished.catch(() => {})));
   await frame();
   await frame();
 });
@@ -30,8 +33,9 @@ async function box() {
     const preview = document.querySelector(".pvBox").getBoundingClientRect();
     return {
       width: bounds.width / preview.width, height: bounds.height / preview.width,
-      x: (bounds.left + bounds.width / 2 - preview.left) / preview.width,
-      y: (bounds.top + bounds.height / 2 - preview.top) / preview.height,
+      // Selection can lift the component visually; these checks track authored placement.
+      x: Number.parseFloat(element.style.left) / 100,
+      y: Number.parseFloat(element.style.top) / 100,
     };
   });
 }

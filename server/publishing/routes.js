@@ -5,6 +5,7 @@ import { publicationInput, publicationResult } from "./input.js";
 import { ownedPublication, reservePublication } from "./repository.js";
 import { uploadPublication } from "./upload.js";
 import { cleanPublication } from "./cleanup.js";
+import { uploadPoster } from "./poster.js";
 
 export async function publishingRoute(request, env, config) {
   const url = new URL(request.url);
@@ -12,7 +13,7 @@ export async function publishingRoute(request, env, config) {
     const owner = config.available ? await getAccountSession(request, env) : null;
     return json({ available: config.available, hasSession: Boolean(owner), maxBytes: config.maxBytes });
   }
-  if (!config.available) throw new HttpError(503, "Online sharing is not configured yet. Your download is still available.");
+  if (!config.available) throw new HttpError(503, "Online sharing is not configured yet.");
   if (request.method !== "GET") checkOrigin(request, config.origin);
   const owner = await getAccountSession(request, env);
   if (!owner) throw new HttpError(401, "Sign in to manage or create links.");
@@ -29,11 +30,13 @@ export async function publishingRoute(request, env, config) {
     }
     throw new HttpError(405, "This publication operation is not supported.");
   }
-  const match = /^\/api\/publications\/([^/]+)(\/content)?$/.exec(url.pathname);
+  const match = /^\/api\/publications\/([^/]+)(\/content|\/poster)?$/.exec(url.pathname);
   if (!match || !validPublicationId(match[1])) throw new HttpError(404, "This publication is unavailable.");
   const publication = await ownedPublication(env.DB, match[1], owner.id);
   if (match[2] && request.method === "PUT")
-    return json(publicationResult(await uploadPublication(request, env, config, publication), config.origin));
+    return match[2] === "/poster"
+      ? json(await uploadPoster(request, env, publication))
+      : json(publicationResult(await uploadPublication(request, env, config, publication), config.origin));
   if (!match[2] && request.method === "DELETE") {
     await env.DB.prepare("UPDATE publications SET status = 'deleting' WHERE id = ? AND owner_id = ?")
       .bind(publication.id, owner.id).run();

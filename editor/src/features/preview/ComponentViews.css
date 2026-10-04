@@ -141,7 +141,8 @@
   transform: translate(3px, 3px);
   box-shadow: none;
 }
-.compForm input {
+.compForm input,
+.compForm textarea {
   width: 100%;
   min-height: calc(30 * var(--u));
   margin: calc(5 * var(--u)) 0;
@@ -151,6 +152,11 @@
   border: 1.5px solid var(--q14);
   border-radius: calc(7 * var(--u));
   font: 600 calc(10 * var(--u)) var(--f-ui);
+}
+.compForm textarea {
+  min-height: calc(60 * var(--u));
+  padding: calc(7 * var(--u)) calc(8 * var(--u));
+  resize: vertical;
 }
 .compForm label {
   display: flex;

@@ -1,5 +1,6 @@
 import { validateFontAsset } from "../../../../packages/pvo-fonts/index.js";
 import type { ProjectSnapshot, Scene } from "../../domain/project/model";
+import type { ExportQuality } from "../../domain/publishing/model";
 import { assertResponsePolicyContract } from "../../domain/components/responsePolicy";
 import { cloneScenes } from "../../domain/project/snapshot";
 import { normalizeSceneTree } from "../../domain/scenes/rules";
@@ -18,7 +19,7 @@ export type RestoredProject = {
   selComp: string | null;
   selText: number | null;
   exportFormat: "video" | "pvo";
-  quality: "720p" | "1080p";
+  quality: ExportQuality;
   savedAt: number;
 };
 
@@ -39,7 +40,7 @@ export type PersistenceSnapshot = ProjectSnapshot &
 export type StoredCheckpoint = {
   localId?: string;
   projectName?: string;
-  version: 2;
+  version: 3;
   savedAt: number;
   project: ProjectSnapshot;
   past: ProjectSnapshot[];
@@ -56,13 +57,14 @@ function cloneProject(project: ProjectSnapshot): ProjectSnapshot {
     scenes: cloneScenes(normalizeSceneTree(project.scenes)),
     currentSceneId: project.currentSceneId,
     ratio: project.ratio,
+    coverAt: project.coverAt,
     allowedDomains: project.allowedDomains.slice(),
   };
 }
 
 export function captureCheckpoint(state: PersistenceSnapshot): CheckpointDraft {
   const draft: CheckpointDraft = {
-    version: 2,
+    version: 3,
     localId: state.localId ?? undefined,
     projectName: state.projectName,
     project: cloneProject(state),
@@ -196,7 +198,7 @@ export function validateCheckpoint(
   )
     throw new Error("Saved project identity is invalid.");
   if (
-    value.version !== 2 ||
+    value.version !== 3 ||
     !value.project ||
     !Array.isArray(value.project.scenes) ||
     !Array.isArray(value.past) ||
@@ -213,7 +215,9 @@ export function validateCheckpoint(
     ) ||
     !value.assetIds.every(
       (id) => typeof id === "string" && id.startsWith("asset:"),
-    )
+    ) ||
+    [value.project, ...value.past, ...value.future].some((project) =>
+      !Number.isFinite(project.coverAt) || project.coverAt < 0)
   )
     throw new Error("Saved project data is incomplete.");
   try {

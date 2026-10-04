@@ -62,3 +62,30 @@ test("Restyle field-based components remain valid in a self-contained scene pack
   assert.equal(decoded.manifest.components[0].restyle_capture.outcomes[0].sceneId, "b");
   assert.equal(decoded.assets.length, 2);
 });
+
+test("a selected WebP cover is an independently referenced PVO poster asset", async () => {
+  const poster = new Blob(["RIFF....WEBP"], { type: "image/webp" });
+  const manifest = {
+    spec_version: "0.1-prototype",
+    scenes: [{ id: "main", start: 0, end: 1, asset_id: "video" }],
+    components: [],
+    media: [{ id: "video", asset_id: "video", type: "video/mp4" }],
+    playback: { initial_timeline: "main", timelines: [
+      { id: "main", clips: [{ id: "clip", asset_id: "video", scene: "main", start: 0, end: 1 }] },
+    ] },
+    poster: { asset_id: "poster", at: 0.6, type: "image/webp" },
+  };
+  assert.deepEqual(validatePvo(manifest).errors, []);
+  const video = new Blob(["video"], { type: "video/mp4" });
+  await assert.rejects(packPvoProject({ manifest, assets: [{ id: "video", blob: video }] }), /poster.*not included/);
+  const packed = await packPvoProject({ manifest, assets: [
+    { id: "video", blob: video }, { id: "poster", blob: poster },
+  ] });
+  const decoded = await readPvoProject(packed);
+  assert.equal(decoded.manifest.poster.at, 0.6);
+  assert.equal(await decoded.assets.find((asset) => asset.id === "poster").blob.text(), "RIFF....WEBP");
+  assert.match(validatePvo({ ...manifest, poster: { ...manifest.poster, asset_id: "video" } }).errors.join(" "), /separate/);
+  await assert.rejects(packPvoProject({ manifest, assets: [
+    { id: "video", blob: video }, { id: "poster", blob: new Blob(["image"], { type: "image/png" }) },
+  ] }), /WebP image/);
+});

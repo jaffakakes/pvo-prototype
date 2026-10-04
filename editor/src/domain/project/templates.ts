@@ -124,5 +124,5 @@ export function templateProject(template: ProjectTemplate, media: Clip, nextId: 
     };
   });
   scenes[0].components.push(sampleComponent(template, scenes, scenes[0].clips[0].out, nextId));
-  return { scenes, currentSceneId: "main", ratio: template.ratio, allowedDomains: [] };
+  return { scenes, currentSceneId: "main", ratio: template.ratio, coverAt: 0, allowedDomains: [] };
 }

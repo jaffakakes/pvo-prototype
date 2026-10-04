@@ -7,20 +7,23 @@ import {
   useAuthGate,
 } from "../../state/auth/authGateStore";
 import { signOutClerk } from "../../infrastructure/auth/clerk";
+import { useCapture } from "../../state/captureStore";
 import { Icon } from "../../ui/Icon";
+import { AccountDisclosure } from "./AccountDisclosure";
 import { ClerkEmailSignIn } from "./ClerkEmailSignIn";
 import { useGoogleSignIn } from "./useGoogleSignIn";
 import styles from "./AuthDialog.module.css";
 
 export function AuthDialog() {
   const source = useAuthGate(state => state.source);
+  const exportSheetOpen = useCapture(state => state.sheet === "export");
   useEffect(() => {
     const refresh = () => { void refreshAccountSession().catch(() => {}); };
     refresh();
     window.addEventListener("focus", refresh);
     return () => window.removeEventListener("focus", refresh);
   }, []);
-  return source ? <OpenAuthDialog /> : null;
+  return source && !(source === "export" && exportSheetOpen) ? <OpenAuthDialog /> : null;
 }
 
 function OpenAuthDialog() {
@@ -144,7 +147,7 @@ function OpenAuthDialog() {
       {!user && phase === "checking" && <p className={styles.status} role="status">Checking your account…</p>}
       {!user && phase === "ready" && !available && !clerkAvailable && <p className={styles.availability}>Sign-in isn't configured here yet. Your edit is saved in this browser.</p>}
       {!user && phase === "ready" && available && !clerkAvailable && <p className={styles.status}>Email sign-in isn't configured here yet.</p>}
-      {!user && <p className={styles.disclosure}>Google shares your name and account identifier with Restyle. Clerk handles email addresses, passwords, and verification; Restyle receives a Clerk account identifier. If you already use Google, connect email from Your account first to keep your published links together. Read our <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a> and <a href="/terms.html" target="_blank" rel="noopener noreferrer">Terms of Service</a>.</p>}
+      {!user && <AccountDisclosure className={styles.disclosure} />}
       {error && !emailOpen && <p className={styles.error} role="alert">{error}</p>}
       {!user && phase === "error" && <button type="button" className={styles.secondary}
         onClick={() => { void refreshAccountSession().catch(() => {}); }}>Retry account check</button>}

@@ -1,24 +1,14 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { chromium } from "playwright-core";
-import { sourceModules } from "../helpers/source-assets.mjs";
+import { playerSourceAssets } from "../helpers/player-assets.mjs";
 import { packPvoProject, PVO_SPEC_VERSION } from "../../../packages/pvo-sdk/index.js";
 
-const files = [
-  ["/player/", "player/index.html", "text/html"],
-  ["/player/styles.css", "player/styles.css", "text/css"],
-  ["/player/publication/styles.css", "player/publication/styles.css", "text/css"],
-  ...["peace-sans", "open-sauce-600", "open-sauce-700"].map(font =>
-    [`/player/fonts/${font}.woff2`, `editor/src/fonts/${font}.woff2`, "font/woff2"]),
-  ["/packages/pvo-language/pkg/pvo_language.js", "packages/pvo-language/pkg/pvo_language.js", "text/javascript"],
-  ["/packages/pvo-language/pkg/pvo_language_bg.wasm", "packages/pvo-language/pkg/pvo_language_bg.wasm", "application/wasm"],
-];
-const assets = new Map(await Promise.all(files.map(async ([path, source, type]) =>
-  [path, { body: await readFile(new URL(`../../../${source}`, import.meta.url)), type }])));
-for (const directory of ["player", "packages/pvo-fonts", "packages/pvo-animation", "packages/pvo-sdk", "packages/pvo-code-runtime", "packages/pvo-component-runtime", "packages/pvo-text-runtime", "packages/pvo-language"]) {
-  for (const [path, asset] of await sourceModules(new URL(`../../../${directory}/`, import.meta.url), `/${directory}`)) assets.set(path, asset);
-}
+const assets = await playerSourceAssets();
+const screenshots = process.env.PVO_PLAYER_ARTIFACTS;
+if (screenshots) await mkdir(screenshots, { recursive: true });
 const template = await readFile(new URL("../../../player/published.html", import.meta.url), "utf8");
 const video = await readFile(new URL("../../../share/assets/preview.mp4", import.meta.url));
 const manifest = {
@@ -45,7 +35,7 @@ const server = createServer((request, response) => {
   if (Object.values(ids).includes(id)) {
     const format = id === ids.pvo ? "pvo" : "video";
     const values = { TITLE: "Published video", CANONICAL_URL: `${origin}/player/${id}`,
-      PUBLICATION_ID: id, FORMAT: format, MEDIA_URL: `/media/${id}`,
+      PUBLICATION_ID: id, FORMAT: format, MEDIA_URL: `/media/${id}`, POSTER_URL: "", POSTER_META: "",
       CONTENT_TYPE: format === "pvo" ? "application/vnd.pvo" : "video/mp4" };
     response.writeHead(200, { "content-type": "text/html", "cache-control": "no-store" });
     response.end(template.replace(/\{\{([A-Z_]+)\}\}/g, (_, key) => values[key]));
@@ -87,14 +77,20 @@ try {
   page.on("pageerror", error => errors.push(error.message));
   await page.goto(`${origin}/player/${ids.video}?src=/wrong.pvo#time`, { waitUntil: "networkidle" });
   await page.waitForFunction(() => document.querySelector("#video").readyState >= 1);
-  assert.equal(await page.locator("#video").evaluate(element => element.controls), true);
-  assert.equal(await page.locator("#playerControls").isVisible(), false);
-  assert.equal(await page.locator("#overlayLayer").isVisible(), false);
+  assert.equal(await page.locator("#video").evaluate(element => element.controls), false);
+  assert.equal(await page.locator("#playerControls, #progress, #volumeControl").count(), 0);
+  assert.equal(await page.locator("#overlayLayer").locator(".component-position").count(), 0);
   await page.locator("#video").evaluate(async element => { await element.play(); });
   await page.waitForFunction(() => document.querySelector("#video").currentTime > .1);
   await page.locator("#video").evaluate(element => { element.pause(); element.currentTime = 1; });
   await page.waitForFunction(() => Math.abs(document.querySelector("#video").currentTime - 1) < .05);
-  await page.getByRole("button", { name: "Share", exact: true }).click();
+  await page.locator("#centerPlayButton").waitFor({ state: "visible" });
+  if (screenshots) {
+    await page.screenshot({ path: join(screenshots, "light-phone-published-paused.png"), animations: "disabled" });
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.screenshot({ path: join(screenshots, "dark-phone-published-paused.png"), animations: "disabled" });
+  }
+  await page.locator("[data-player-share]:visible").click();
   assert.deepEqual(await page.evaluate(() => window.copiedLinks), [`${origin}/player/${ids.video}`]);
   assert.equal(await page.getByRole("link", { name: "Create a video", exact: true }).first().getAttribute("href"), "/");
   assert.equal(await page.locator('a[href*="docs"],a[href*="demo"]').count(), 0);
@@ -103,24 +99,26 @@ try {
   await page.locator('#video[data-asset-id="video"]').waitFor();
   await page.locator("pvo-component-view").getByText("Published PVO", { exact: true }).waitFor();
   assert.equal(await page.locator("#video").evaluate(element => element.controls), false);
-  assert.equal(await page.locator("#playerControls").isVisible(), true);
+  assert.equal(await page.locator("#statusWidget").isVisible(), true);
   assert.equal(mediaRequests.find(request => request.path === `/media/${ids.pvo}`)?.cookie, undefined);
-  await page.getByRole("button", { name: "Share", exact: true }).click();
+  await page.locator("[data-player-share]:visible").click();
   assert.deepEqual(await page.evaluate(() => window.copiedLinks), [`${origin}/player/${ids.pvo}`]);
-  await page.locator("#playButton").click();
+  if (await page.locator("#video").evaluate(element => element.paused)) {
+    await page.locator("#centerPlayButton").click();
+  }
   await page.waitForFunction(() => document.querySelector("#video").currentTime > .1);
 
   await page.goto(`${origin}/player/`, { waitUntil: "networkidle" });
   await page.locator("#pvoInput").setInputFiles({ name: "local.pvo", mimeType: "application/vnd.pvo", buffer: pvo });
   await page.locator('#video[data-asset-id="video"]').waitFor();
-  assert.equal(await page.getByRole("button", { name: "Share", exact: true }).count(), 0);
+  assert.equal(await page.locator("[data-player-share]:visible").count(), 0);
   assert.deepEqual(await page.evaluate(() => window.copiedLinks), []);
 
   await page.goto(`${origin}/player/${ids.failed}`, { waitUntil: "networkidle" });
   await page.getByRole("heading", { name: "Video unavailable" }).waitFor();
   assert.equal(await page.getByRole("button", { name: "Try again" }).isVisible(), true);
   assert.deepEqual(errors, []);
-  console.log("Published player passed: native video play/seek, PVO overlays/playback, canonical sharing, credential-free package fetch, local files unshareable, and unavailable-media recovery.");
+  console.log("Published player passed: shared video chrome/playback, PVO overlays/playback, canonical sharing, credential-free package fetch, local files unshareable, and unavailable-media recovery.");
 } finally {
   await browser?.close();
   await new Promise(resolve => server.close(resolve));
