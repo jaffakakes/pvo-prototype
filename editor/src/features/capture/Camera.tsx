@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { total } from "../../domain/clips/timing";
 import { projectRatio } from "../../domain/project/ratio";
 import { sceneRouteLabel } from "../../domain/scenes/references";
@@ -13,8 +13,10 @@ import { CaptureRecovery } from "./CaptureRecovery";
 import { CameraStorageRecovery } from "./CameraStorageRecovery";
 import recoveryStyles from "./CaptureRecovery.module.css";
 import { ShutterControls } from "./ShutterControls";
-import { useCamera } from "./useCamera";
+import { getCameraStream, useCamera } from "./useCamera";
 import { useCameraControls } from "./useCameraControls";
+import { useCameraFlash } from "./useCameraFlash";
+import flashStyles from "./CameraFlash.module.css";
 import { useRecorder } from "./useRecorder";
 import { importVideos } from "./videoImport";
 
@@ -27,21 +29,30 @@ export function Camera() {
     freezeVisible,
     startCam,
     cameraStatus,
+    cameraTrack,
+    releaseCamera,
     microphoneAvailable,
   } = useCamera();
-  const { onShutterDown, onShutterUp } = useRecorder();
+  const { onShutterDown, onShutterUp, stopRec, capturing } = useRecorder();
+  const releaseFailedFlash = useCallback(
+    (track: MediaStreamTrack) => {
+      // Finalize this camera's footage before releasing a torch that will not stop.
+      if (getCameraStream()?.getVideoTracks()[0] === track) stopRec();
+      releaseCamera(track);
+    },
+    [stopRec, releaseCamera],
+  );
+  const { flashAvailable, screenFlash, toggleFlash } = useCameraFlash(
+    cameraTrack,
+    capturing,
+    s.facing,
+    releaseFailedFlash,
+  );
   const uploadRef = useRef<HTMLInputElement>(null);
   const viewfinderRef = useRef<HTMLDivElement>(null);
   const [viewfinderSize, setViewfinderSize] = useState({ width: 0, height: 0 });
-  const {
-    flashUnavailable,
-    displayCameraStatus,
-    cameraPending,
-    removeLast,
-    flip,
-    toggleFlash,
-    startOver,
-  } = useCameraControls(cameraStatus, startCam);
+  const { displayCameraStatus, cameraPending, removeLast, flip, startOver } =
+    useCameraControls(cameraStatus, startCam);
   const activeClips = s.clips.filter((c) => c.id !== s.replacing);
   const used = total(activeClips);
   const live = s.recording ? s.elapsed : 0;
@@ -132,7 +143,16 @@ export function Camera() {
 
   return (
     <>
-      <div className={cx("camWrap")}>
+      <div
+        className={`${cx("camWrap")} ${screenFlash ? flashStyles.illuminated : ""}`}
+      >
+        {screenFlash && (
+          <div
+            className={flashStyles.screenLight}
+            data-screen-flash="true"
+            aria-hidden="true"
+          />
+        )}
         <div ref={viewfinderRef} className={cx("viewfinder")}>
           <div
             className={cx("cameraFrame")}
@@ -168,7 +188,10 @@ export function Camera() {
                 role={cameraPending ? "status" : undefined}
                 aria-live={cameraPending ? "polite" : undefined}
               >
-                <span className={cx("fallbackIco")} data-launch-splash-hidden="true">
+                <span
+                  className={cx("fallbackIco")}
+                  data-launch-splash-hidden="true"
+                >
                   <Icon name="camera" size={30} />
                 </span>
                 <h2 data-launch-splash-hidden="true">{fallbackTitle}</h2>
@@ -246,18 +269,19 @@ export function Camera() {
             </button>
           </div>
           <div className={cx("rightRail")}>
-            <button
-              className={cx("rail")}
-              data-on={s.flash}
-              onClick={toggleFlash}
-              disabled={flashUnavailable || cameraPending}
-              aria-label={flashUnavailable ? "Flash unavailable" : "Flash"}
-              title={
-                flashUnavailable ? "Flash unavailable on this camera" : "Flash"
-              }
-            >
-              <Icon name="flash" size={18} />
-            </button>
+            {flashAvailable && (
+              <button
+                className={cx("rail")}
+                data-on={s.flash}
+                onClick={toggleFlash}
+                disabled={cameraPending}
+                aria-label="Flash"
+                aria-pressed={s.flash}
+                title="Flash when recording"
+              >
+                <Icon name="flash" size={18} />
+              </button>
+            )}
             <button
               className={cx("rail")}
               data-on={s.timer > 0}
