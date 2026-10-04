@@ -147,6 +147,19 @@ try {
   assert.deepEqual(Buffer.from(nativeFile.bytes), exported, "Native sharing must receive the original exported File");
   assert.equal(await share.getByRole("alert").count(), 0, "Dismissing native sharing is not an error");
 
+  signedIn = false;
+  await share.locator("[data-share-file]").click();
+  const expiredSession = page.getByRole("dialog", { name: "Sign in to Restyle" });
+  await expiredSession.waitFor();
+  assert.equal(await page.evaluate(() => window.exportObservation.files.length), 1,
+    "An expired account session must block native file sharing");
+  const restoredSession = page.waitForEvent("popup");
+  await expiredSession.getByRole("button", { name: "Continue with Google" }).click();
+  await restoredSession;
+  await expiredSession.waitFor({ state: "hidden" });
+  assert.equal(await page.evaluate(() => window.exportObservation.files.length), 1,
+    "Signing in must wait for another tap before opening native sharing");
+
   await share.getByRole("button", { name: "Close", exact: true }).click();
   await page.getByRole("button", { name: "Text", exact: true }).click();
   const addText = page.getByRole("dialog", { name: "Add text", exact: true });

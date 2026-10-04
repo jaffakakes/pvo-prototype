@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CompletedExport } from "../../domain/publishing/model";
 import { canShareExport, cancelledShare, copyPublicationLink, shareExportFile } from "../../infrastructure/publishing/nativeShare";
 import { downloadCompletedExport } from "../export/exportWorkflow";
-import { requireAccount, useAuthGate } from "../../state/auth/authGateStore";
+import { openSignIn, refreshAccountSession, requireAccount, setAuthError, useAuthGate } from "../../state/auth/authGateStore";
 import { Icon } from "../../ui/Icon";
 import { Shell } from "../../ui/SheetShell";
 import { usePublication } from "./usePublication";
@@ -30,17 +30,32 @@ export function SharePanel({ artifact, url, downloadIssue, onDone }: { artifact:
   const tooLarge = !!publish.status?.available && artifact.blob.size > publish.status.maxBytes;
   const failure = localFailure ?? publish.failure;
   const clearFailure = () => { setLocalFailure(null); publish.clearFailure(); };
-  const shareFile = () => {
-    if (!useAuthGate.getState().user) {
-      // The native share sheet needs this click's user activation. After sign-in,
-      // the user taps Share file again to start it.
-      void requireAccount("share");
-      return;
+  const shareFile = async () => {
+    setSharing(true);
+    try {
+      // Verify the server session on this tap. A cached user can outlive a
+      // revoked session, while the native share sheet needs this tap's activation.
+      const session = await refreshAccountSession();
+      if (!session.user) {
+        openSignIn("share");
+        return;
+      }
+      clearFailure();
+      await shareExportFile(artifact);
+    } catch (error) {
+      if (!mounted.current) return;
+      if (!useAuthGate.getState().user) {
+        const checkError = useAuthGate.getState().error;
+        openSignIn("share");
+        if (checkError) setAuthError(checkError);
+      } else if (!cancelledShare(error)) {
+        setLocalFailure(error instanceof DOMException && error.name === "NotAllowedError"
+          ? "Your browser needs another tap to share. Try again or download the file."
+          : "Couldn't share this file. Try downloading it.");
+      }
+    } finally {
+      if (mounted.current) setSharing(false);
     }
-    clearFailure(); setSharing(true);
-    void shareExportFile(artifact)
-      .catch(error => { if (mounted.current && !cancelledShare(error)) setLocalFailure("Couldn't share this file. Try downloading it."); })
-      .finally(() => { if (mounted.current) setSharing(false); });
   };
   const downloadAgain = async () => {
     if (!await requireAccount("download")) return;
