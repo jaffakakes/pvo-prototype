@@ -16,8 +16,9 @@ export async function verifyGoogleIdentity(token, keys, clientId, nonce) {
 }
 
 export async function exchangeGoogleCode(code, verifier, nonce, env, origin, fetcher = fetch) {
+  // Workers reject redirect: "error"; manual lets us reject redirects without following them.
   const response = await fetcher("https://oauth2.googleapis.com/token", {
-    method: "POST", redirect: "error", signal: AbortSignal.timeout(15000),
+    method: "POST", redirect: "manual", signal: AbortSignal.timeout(15000),
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ client_id: env.GOOGLE_CLIENT_ID, client_secret: env.GOOGLE_CLIENT_SECRET,
       code, code_verifier: verifier, grant_type: "authorization_code",

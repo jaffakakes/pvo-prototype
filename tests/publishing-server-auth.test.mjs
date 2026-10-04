@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { generateKeyPair, exportJWK, createLocalJWKSet, SignJWT } from "jose";
-import { verifyGoogleIdentity } from "../server/auth/google.js";
+import { exchangeGoogleCode, verifyGoogleIdentity } from "../server/auth/google.js";
 import { signCookie, verifyCookie } from "../server/auth/tokens.js";
 import { authRoute } from "../server/auth/routes.js";
 import { cleanupAccountSessions, createAccountSession, getAccountSession } from "../server/auth/sessions.js";
@@ -37,6 +37,19 @@ test("Google identity requires the correct signature, audience, issuer, expiry a
     .setProtectedHeader({ alg: "RS256", kid: "google-test" }).setIssuer("https://attacker.example")
     .setAudience("client").setIssuedAt().setExpirationTime("5m").sign(pair.privateKey);
   await assert.rejects(verifyGoogleIdentity(wrongIssuer, keys, "client", "nonce"));
+});
+
+test("Google token exchange rejects a redirect before any credentials reach its destination", async () => {
+  let calls = 0;
+  await assert.rejects(exchangeGoogleCode("code", "verifier", "nonce",
+    { GOOGLE_CLIENT_ID: "client", GOOGLE_CLIENT_SECRET: "test-provider-secret" }, ORIGIN,
+    async (url, options) => {
+      calls += 1;
+      assert.equal(url, "https://oauth2.googleapis.com/token");
+      assert.equal(options.redirect, "manual");
+      return new Response(null, { status: 302, headers: { Location: "https://other.example/collect" } });
+    }), error => error.status === 401);
+  assert.equal(calls, 1);
 });
 
 test("Google callback creates a revocable account session and reuses the provider identity", async () => {
@@ -111,6 +124,57 @@ test("Google callback creates a revocable account session and reuses the provide
     await f.db.prepare("UPDATE sessions SET expires_at = 1 WHERE token_hash = ?")
       .bind(await digest(secondToken.token)).run();
     assert.equal(await getAccountSession(new Request(ORIGIN, { headers: { Cookie: secondCookie } }), env), null);
+  } finally { await f.close(); }
+});
+
+test("Worker Google callback exchanges a code without following provider redirects", async () => {
+  const pair = await generateKeyPair("RS256");
+  const jwk = { ...(await exportJWK(pair.publicKey)), kid: "google-test", alg: "RS256" };
+  let nonce;
+  let redirectTokenRequest = false;
+  const requests = [];
+  const provider = async request => {
+    requests.push(request.url);
+    if (request.url === "https://oauth2.googleapis.com/token") {
+      if (redirectTokenRequest) return new Response(null, {
+        status: 302, headers: { Location: "https://other.example/collect" },
+      });
+      return Response.json({ id_token: await googleToken(pair, nonce) });
+    }
+    if (request.url === "https://www.googleapis.com/oauth2/v3/certs")
+      return Response.json({ keys: [jwk] });
+    throw new Error("Unexpected outbound request in Google sign-in test.");
+  };
+  const f = await workerFixture({ GOOGLE_CLIENT_ID: "client", GOOGLE_CLIENT_SECRET: "test-provider-secret" },
+    { createSessions: false, outboundService: provider });
+  try {
+    async function start() {
+      const response = await f.request("/api/auth/google/start", { session: null, redirect: "manual" });
+      assert.equal(response.status, 302);
+      const authorization = new URL(response.headers.get("Location"));
+      nonce = authorization.searchParams.get("nonce");
+      return { cookie: response.headers.get("Set-Cookie").split(";", 1)[0],
+        state: authorization.searchParams.get("state") };
+    }
+    const pending = await start();
+    const success = await f.request(`/api/auth/google/callback?code=code&state=${pending.state}`,
+      { session: null, headers: { Cookie: pending.cookie } });
+    assert.equal(success.status, 200);
+    const sessionCookie = success.headers.getSetCookie()
+      .find(value => value.startsWith(`${sessionCookieName}=`)).split(";", 1)[0];
+    assert.equal((await (await f.request("/api/auth/session", { session: sessionCookie })).json()).user.name, "Alice");
+    assert.deepEqual(requests, [
+      "https://oauth2.googleapis.com/token", "https://www.googleapis.com/oauth2/v3/certs",
+    ]);
+
+    redirectTokenRequest = true;
+    const redirected = await start();
+    const rejected = await f.request(`/api/auth/google/callback?code=code2&state=${redirected.state}`,
+      { session: null, headers: { Cookie: redirected.cookie } });
+    assert.equal(rejected.status, 400);
+    assert.equal(requests.length, 3);
+    assert.equal(requests[2], "https://oauth2.googleapis.com/token");
+    assert.equal((await f.db.prepare("SELECT COUNT(*) AS count FROM sessions").first()).count, 1);
   } finally { await f.close(); }
 });
 
