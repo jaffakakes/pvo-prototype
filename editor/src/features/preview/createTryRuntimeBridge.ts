@@ -135,13 +135,20 @@ export function createTryRuntimeBridge(host: Host) {
                 host.applyPlaybackOutcome(component, { kind: "continue" }, interactionId(context)),
               );
           },
-          request: ({ url, ...options }) =>
-            host.request(url, {
+          request: ({ url, ...options }, context) => {
+            const component = componentFromContext(context);
+            if (component?.type === "form" && component.fields.formSubmitMode === "collect"
+              && component.fields.destination === url) {
+              // Trying a video must not deliver a real reply to its creator inbox.
+              return Promise.resolve(Response.json({ accepted: true, preview: true }));
+            }
+            return host.request(url, {
               ...options,
               credentials: "omit",
               redirect: "error",
               referrerPolicy: "no-referrer",
-            }),
+            });
+          },
         },
       );
       runtime = candidate;

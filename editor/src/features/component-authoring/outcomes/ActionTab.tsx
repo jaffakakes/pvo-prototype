@@ -3,6 +3,8 @@ import { responsePolicyFor } from "../../../domain/components/responsePolicy";
 import { formSubmissionOutcome, formUsesRequest } from "../../../domain/components/forms";
 import type { PvoComponent, ResponsePolicy } from "../../../domain/project/model";
 import { useCapture } from "../../../state/captureStore";
+import { ActionRow } from "./ActionRow";
+import { FormReplyCollection } from "./FormReplyCollection";
 import { LocalActionControl } from "./LocalActionControl";
 import styles from "../NoCodeEditor.module.css";
 
@@ -53,14 +55,29 @@ export function ActionTab({ component, onOpenAdvanced }: {
     A note is display-only — viewers read it, they don’t tap it. It can show saved state or a request result in its text.
   </p>;
   if (component.type === "form") {
-    const advancedAction = formUsesRequest(fields);
+    const collecting = fields.formSubmitMode === "collect";
+    const advancedAction = !collecting && formUsesRequest(fields);
     const outcome = advancedAction ? fields.outcome : formSubmissionOutcome({ id: component.id, fields });
+    const changeCollectRoute = (value: typeof fields.successOutcome, undoable = true) => {
+      if (!value) return false;
+      const state = useCapture.getState();
+      const current = state.scenes.flatMap(scene => scene.components).find(item => item.id === component.id);
+      if (!current || current.type !== "form") return false;
+      const shown = fieldsShownFor(current);
+      if (shown.formSubmitMode !== "collect") return false;
+      state.updateComponent(component.id, { fields: { ...shown, successOutcome: value } }, undoable);
+      return true;
+    };
     return <div className={styles.section}>
-      <LocalActionControl key={String(advancedAction)} component={component}
-        label={`When viewers tap “${fields.submitLabel || "Continue"}”`} outcome={outcome}
-        target={{ kind: "form" }} advancedAction={advancedAction} onOpenAdvanced={onOpenAdvanced}
-        onChange={(value, undoable) => update(component.id, { kind: "form" }, value, undoable)} />
-      {!advancedAction && <p className={styles.hint}>Answers stay in this video. Choose what plays next.</p>}
+      <FormReplyCollection component={component} fields={fields} />
+      {collecting ? <ActionRow component={component} label="After a reply is sent"
+        detail="Choose what plays next" outcome={fields.successOutcome ?? { kind: "continue" }}
+        target={{ kind: "form" }} branch="success" onChange={changeCollectRoute} />
+        : <LocalActionControl key={String(advancedAction)} component={component}
+          label={`When viewers tap “${fields.submitLabel || "Continue"}”`} outcome={outcome}
+          target={{ kind: "form" }} advancedAction={advancedAction} onOpenAdvanced={onOpenAdvanced}
+          onChange={(value, undoable) => update(component.id, { kind: "form" }, value, undoable)} />}
+      {!collecting && !advancedAction && <p className={styles.hint}>Answers stay in this video. Choose what plays next.</p>}
       <ResponsePolicyControls component={component} />
     </div>;
   }

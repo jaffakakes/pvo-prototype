@@ -150,6 +150,9 @@ function rulesFor(structure: PvoLanguageStructure, fields: ComponentFields, comp
   if (structure.type === "form") {
     if (fields.formSubmitMode === "local")
       return [{ event: "submit", target: null, action: formSubmissionOutcome({ id: componentId, fields })! }];
+    if (fields.formSubmitMode === "collect")
+      return [{ event: "submit", target: null, action: formRequest(structure, fields, componentId)
+        ?? { kind: "continue" } }];
     const original = fields.outcome;
     if (original?.kind === "request" && fields.destination === "")
       return [{ event: "submit", target: null, action: { kind: "continue" } }];

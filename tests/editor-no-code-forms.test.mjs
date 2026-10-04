@@ -25,6 +25,7 @@ const bundled = buildSync({
   bundle: true, write: false, format: "esm", platform: "browser",
 });
 const { useCapture, mkClip, initial, formFieldControls, setFormDestination, toVisualFormFields, validateFormFields, formUsesRequest,
+  collectReplyStartingFields,
   formValuesForSubmission, formSubmissionOutcome, buildPvoManifest, captureCheckpoint, storeCheckpoint,
   restoreCheckpoint, getTryRuntime, startTry, stopTry, runFormSubmission, useTryFeedback,
   beginPlayheadPick, acceptPlayheadPick, clearDeletedComponentRoutes, deletionImpact,
@@ -85,6 +86,43 @@ test("visual form editing projects an explicit request and both response routes"
   assert.equal(formUsesRequest({ formFields: [], destination: fields.outcome.url }), false, "A destination does not imply a request");
   assert.equal(formUsesRequest({ outcome: fields.outcome }), true, "An authored request is explicit");
   assert.equal(formUsesRequest({ formSubmitMode: "local", outcome: fields.outcome }), false, "Explicit local replaces an authored request");
+});
+
+test("Collect replies exports a checked POST and Try does not deliver a real reply", async t => {
+  start();
+  const starting = collectReplyStartingFields(useCapture.getState().components[0].fields);
+  assert.equal(starting.heading, "Send me a message");
+  assert.deepEqual(starting.formFields, [{ name: "Your message", type: "text" }]);
+  assert.equal(collectReplyStartingFields({ ...starting, heading: "My question" }).heading, "My question");
+  const destination = "https://restyle.example/api/reply-boxes/abcdefghij123456789012/replies";
+  const component = update({
+    ...starting,
+    formSubmitMode: "collect",
+    destination,
+    successOutcome: { kind: "continue" },
+  });
+  const generated = formSubmissionOutcome(component);
+  assert.equal(generated.kind, "request");
+  assert.equal(generated.url, destination);
+  assert.equal(generated.method, "POST");
+  assert.deepEqual(JSON.parse(generated.body), { answers: [{
+    name: "Your message", type: "text", value: `{state.form.${component.id}.field_1}`,
+  }] });
+  assert.equal(toVisualFormFields(component.fields).formSubmitMode, "collect");
+  assert.equal(formUsesRequest(component.fields), false, "A built-in collection is not an Advanced request");
+  assert.match(componentLanguageSource(component).logic, /request\(/);
+  const exported = manifest();
+  assert.deepEqual(validatePvo(exported).errors, []);
+  assert.deepEqual(exported.allowed_domains, ["restyle.example"]);
+  assert.equal(exported.components[0].restyle_capture.form.submitMode, "collect");
+  assert.equal(exported.components[0].on_submit.url, destination);
+  let sends = 0;
+  t.mock.method(globalThis, "fetch", async () => { sends++; throw new Error("Try sent a reply"); });
+  startTry();
+  await runFormSubmission(component, { field_1: "Hello from the video" });
+  assert.equal(sends, 0);
+  assert.deepEqual(getTryRuntime().state.form[component.id], { field_1: "Hello from the video" });
+  stopTry();
 });
 
 test("modern form source and compiled projection retain heading, labels, numeric input, waiting and request routes", () => {
