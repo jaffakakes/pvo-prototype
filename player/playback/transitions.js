@@ -15,6 +15,14 @@ export function createPlaybackTransitions({ session, refs, adapters }) {
     // The existing request failure remains in status; this releases only its invisible retry hold.
     void refs.video.play().catch(() => adapters.showControls());
   }
+  /** A visible component owns playback while its dispatched request is unresolved. */
+  function pauseForComponentRequest(componentId) {
+    if (session.finished || session.switchingClip || !componentId) return;
+    if (!adapters.visibleComponents().some(component => component.id === componentId)) return;
+    refs.video.pause();
+    adapters.updateProgress();
+  }
+
   function holdAtBoundary(component, message) {
     if (session.awaitingComponent?.id === component.id) return;
     session.awaitingComponent = component;
@@ -109,5 +117,5 @@ export function createPlaybackTransitions({ session, refs, adapters }) {
     await adapters.loadClip(0, autoplay);
   }
 
-  return { finishExperience, restartExperience, handleResponseBoundary, advanceAtClipEnd, releaseUnavailableResponse };
+  return { finishExperience, restartExperience, handleResponseBoundary, advanceAtClipEnd, releaseUnavailableResponse, pauseForComponentRequest };
 }

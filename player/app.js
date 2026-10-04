@@ -13,9 +13,13 @@ import { createOutcomeRouter } from "./actions/outcomes.js";
 import { createPlaybackTransitions } from "./playback/transitions.js";
 import { bindPlayerEvents } from "./ui/events.js";
 import { readPublication } from "./publication/metadata.js";
+import { mountPlayerShell } from "./ui/shell.js";
+import { createPlayerLayout } from "./ui/layout.js";
 
+mountPlayerShell();
 const session = createPlaybackSession();
 const refs = readPlayerElements();
+refs.video.muted = true;
 const publication = readPublication(document.body.dataset, window.location.href,
   document.querySelector('link[rel="canonical"]')?.href);
 registerComponentView();
@@ -80,23 +84,13 @@ const project = createProjectLoader({
 const controls = createPlayerControls({
   session,
   publication,
-  refs: {
-    status: refs.status,
-    progress: refs.progress,
-    time: refs.time,
-    video: refs.video,
-    play: refs.play,
-    mute: refs.mute,
-    volume: refs.volume,
-    centerPlay: refs.centerPlay,
-    frame: refs.frame,
-    timeline: refs.timeline,
-    share: refs.share,
-    endShare: refs.endShare,
-  },
+  refs,
   adapters: {
     elapsedTime: (...args) => timeline.elapsedTime(...args),
     timelineDuration: (...args) => timeline.timelineDuration(...args),
+    visibleComponents: (...args) => visibility.visibleComponents(...args),
+    updateLayout: () => layout.update(),
+    dispatchCapturedResponse: (...args) => actions.dispatchCapturedResponse(...args),
     restartExperience: (...args) => playback.restartExperience(...args),
   },
 });
@@ -110,6 +104,7 @@ const runtime = createActionRuntimeAdapter({
     activeClip: (...args) => timeline.activeClip(...args),
     elapsedTime: (...args) => timeline.elapsedTime(...args),
     setStatus: (...args) => controls.setStatus(...args),
+    pauseForComponentRequest: (...args) => playback.pauseForComponentRequest(...args),
   },
 });
 
@@ -118,13 +113,19 @@ const actions = createComponentActions({
   adapters: {
     componentCanReceiveResponse: (...args) => visibility.componentCanReceiveResponse(...args),
     releaseUnavailableResponse: (...args) => playback.releaseUnavailableResponse(...args),
-    setComponentPending: (...args) => overlays.setComponentPending(...args),
+    setComponentPending: (...args) => {
+      overlays.setComponentPending(...args);
+      controls.updateProgress();
+    },
     captureOutcome: (...args) => outcomes.captureOutcome(...args),
     applyActionOutcome: (...args) => outcomes.applyActionOutcome(...args),
     setStatus: (...args) => controls.setStatus(...args),
     visibleComponents: (...args) => visibility.visibleComponents(...args),
     renderOverlays: (...args) => overlays.renderOverlays(...args),
-    updateComponentResponse: (...args) => overlays.updateComponentResponse(...args),
+    updateComponentResponse: (...args) => {
+      overlays.updateComponentResponse(...args);
+      controls.updateProgress();
+    },
   },
 });
 
@@ -149,6 +150,7 @@ const playback = createPlaybackTransitions({
     elapsedTime: (...args) => timeline.elapsedTime(...args),
     componentsForClip: (...args) => visibility.componentsForClip(...args),
     componentCanReceiveResponse: (...args) => visibility.componentCanReceiveResponse(...args),
+    visibleComponents: (...args) => visibility.visibleComponents(...args),
     renderOverlays: (...args) => overlays.renderOverlays(...args),
     updateProgress: (...args) => controls.updateProgress(...args),
     setStatus: (...args) => controls.setStatus(...args),
@@ -162,6 +164,8 @@ const playback = createPlaybackTransitions({
   },
 });
 
+const layout = createPlayerLayout({ refs, session });
+
 bindPlayerEvents({
   session,
   refs,
@@ -173,7 +177,8 @@ bindPlayerEvents({
     updateProgress: (...args) => controls.updateProgress(...args),
     showControls: (...args) => controls.showControls(...args),
     seekToElapsed: (...args) => media.seekToElapsed(...args),
-    toggleFullscreen: (...args) => controls.toggleFullscreen(...args),
+    toggleMute: () => controls.toggleMute(),
+    retryResponse: () => controls.retryResponse(),
     shareExperience: (...args) => controls.shareExperience(...args),
     setStatus: (...args) => controls.setStatus(...args),
     handleResponseBoundary: (...args) => playback.handleResponseBoundary(...args),
@@ -185,6 +190,7 @@ bindPlayerEvents({
     destroyCustomOverlays: (...args) => overlays.destroyCustomOverlays(...args),
     revokeAssetUrls: (...args) => project.revokeAssetUrls(...args),
     destroyControls: () => controls.destroy(),
+    destroyLayout: () => layout.destroy(),
   },
 });
 

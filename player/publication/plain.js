@@ -1,60 +1,75 @@
-import { createPublicationSharing } from "./sharing.js";
+import { bindPlaybackInputs } from "../ui/input.js";
+import { createPlaybackSession } from "../playback/session.js";
+import { createPlayerControls } from "../ui/controls.js";
+import { createPlayerLayout } from "../ui/layout.js";
 
-/** A published flat video uses browser playback controls and owns no PVO runtime. */
+/** Flat publications use the same viewer chrome without instantiating a PVO runtime. */
 export function mountPlainPublication({ publication, refs, title }) {
-  const { video, frame, empty, shell, status } = refs;
+  const { video, frame, empty, shell } = refs;
+  const session = createPlaybackSession();
   const listeners = new AbortController();
   const on = (element, event, handler) => element?.addEventListener(event, handler, { signal: listeners.signal });
-  const setStatus = (message, error = false, visible = error) => {
-    status.textContent = message;
-    status.classList.toggle("error", error);
-    status.classList.toggle("is-visible", Boolean(message) && visible);
-  };
-  const sharing = createPublicationSharing({
-    publication, buttons: [refs.share, refs.endShare], title, setStatus,
+  const controls = createPlayerControls({
+    session, refs, publication,
+    adapters: {
+      timelineDuration: () => video.duration,
+      updateLayout: () => layout.update(),
+      restartExperience: async () => {
+        session.finished = false;
+        video.currentTime = 0;
+        controls.updateProgress();
+        try { await video.play(); }
+        catch { controls.setStatus("Playback could not start.", true); }
+      },
+    },
   });
+  const layout = createPlayerLayout({ refs, session });
   const loaded = () => {
     if (video.videoWidth > 0 && video.videoHeight > 0) {
-      const aspect = video.videoWidth / video.videoHeight;
-      frame.style.setProperty("--aspect", String(aspect));
-      frame.style.aspectRatio = String(aspect);
+      frame.style.setProperty("--aspect", String(video.videoWidth / video.videoHeight));
     }
-    setStatus("");
+    controls.setStatus("");
   };
   const failed = () => {
     video.pause();
     empty.hidden = false;
     shell.hidden = true;
-    setStatus("");
+    controls.setStatus("");
   };
   const dispose = () => {
     listeners.abort();
-    sharing.destroy();
+    controls.destroy();
+    layout.destroy();
     video.pause();
     video.removeAttribute("src");
     video.load();
   };
 
-  refs.controls.hidden = true;
-  refs.centerPlay.hidden = true;
-  refs.endScreen.hidden = true;
   refs.overlay.hidden = true;
   frame.dataset.publicationFormat = "video";
-  frame.classList.add("controls-visible");
   empty.hidden = true;
   shell.hidden = false;
-  video.controls = true;
-  video.preload = "metadata";
+  video.controls = false;
+  video.muted = true;
+  video.preload = "auto";
   video.setAttribute("aria-label", title);
-  setStatus("Loading…", false, true);
+  if (publication.posterUrl) video.poster = publication.posterUrl;
+  controls.setStatus("Loading…", false, true);
   on(video, "loadedmetadata", loaded);
-  on(video, "canplay", () => setStatus(""));
-  on(video, "playing", () => setStatus(""));
-  on(video, "waiting", () => setStatus("Loading…", false, true));
+  on(video, "canplay", () => controls.setStatus(""));
+  on(video, "playing", () => controls.setStatus(""));
+  on(video, "waiting", () => controls.setStatus("Loading…", false, true));
   on(video, "error", failed);
-  on(refs.share, "click", () => { void sharing.share(); });
+  for (const event of ["play", "pause", "volumechange", "durationchange"]) on(video, event, controls.updateProgress);
+  on(video, "ended", () => { session.finished = true; controls.updateProgress(); });
+  on(refs.endRestart, "click", controls.togglePlayback);
+  bindPlaybackInputs({ refs, commands: controls, signal: listeners.signal });
+
   on(window, "pagehide", event => { if (!event.persisted) dispose(); });
   video.src = publication.mediaUrl;
   video.load();
+  if (document.body.dataset.autoplay !== "false") {
+    void video.play().catch(() => { controls.setStatus(""); });
+  }
   return { destroy: dispose };
 }

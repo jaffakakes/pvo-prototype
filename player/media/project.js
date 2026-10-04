@@ -14,6 +14,7 @@ export function createProjectLoader({ session, refs, adapters }) {
   function revokeAssetUrls() {
     fontScope?.dispose();
     fontScope = null;
+    refs.video.removeAttribute("poster");
     session.assetUrls.forEach((url) => URL.revokeObjectURL(url));
     session.assetUrls = new Map();
   }
@@ -68,9 +69,10 @@ export function createProjectLoader({ session, refs, adapters }) {
       session.captureMode = session.manifest.restyle_capture?.version === 1;
       session.assets = new Map(decoded.assets.map((asset) => [asset.id, asset]));
       decoded.assets.forEach((asset) => session.assetUrls.set(asset.id, URL.createObjectURL(asset.blob)));
+      const posterId = session.manifest.poster?.asset_id;
+      if (posterId && session.assetUrls.has(posterId)) refs.video.poster = session.assetUrls.get(posterId);
       const ratio = session.manifest.canvas?.ratio || "16:9";
       const [width, height] = ratio.split(":").map(Number);
-      refs.frame.style.aspectRatio = width > 0 && height > 0 ? `${width} / ${height}` : "16 / 9";
       refs.frame.style.setProperty("--aspect", width > 0 && height > 0 ? String(width / height) : String(16 / 9));
       refs.empty.hidden = true;
       refs.shell.hidden = false;
@@ -82,8 +84,9 @@ export function createProjectLoader({ session, refs, adapters }) {
       updateRequestStatus(session, adapters.setStatus);
     } catch (error) {
       if (!projectLoadIsCurrent(operation)) return;
-      adapters.setStatus(`Could not open PVO · ${error.message}`, true);
+      refs.shell.hidden = true;
       refs.empty.hidden = false;
+      adapters.setStatus(`Could not open PVO · ${error.message}`, true);
     } finally {
       if (!adoptedFonts) nextFonts.dispose();
     }
@@ -112,8 +115,9 @@ export function createProjectLoader({ session, refs, adapters }) {
       await loadPvo(blob, { autoplay }, operation);
     } catch (error) {
       if (!projectLoadIsCurrent(operation)) return;
-      adapters.setStatus(error.message, true);
+      refs.shell.hidden = true;
       refs.empty.hidden = false;
+      adapters.setStatus(error.message, true);
     }
   }
 

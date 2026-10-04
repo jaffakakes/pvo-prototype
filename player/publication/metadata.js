@@ -14,11 +14,14 @@ export function readPublication(data, pageAddress, canonicalAddress) {
   const page = new URL(pageAddress);
   const media = new URL(data.publicationSrc, page);
   const canonical = new URL(canonicalAddress || `/player/${id}`, page);
-  for (const [url, path] of [[media, `/media/${id}`], [canonical, `/player/${id}`]]) {
+  const poster = data.publicationPoster ? new URL(data.publicationPoster, page) : null;
+  for (const [url, path] of [[media, `/media/${id}`], [canonical, `/player/${id}`],
+    ...(poster ? [[poster, `/poster/${id}`]] : [])]) {
     if (!/^https?:$/.test(url.protocol) || url.origin !== page.origin || url.username || url.password
       || url.pathname !== path || url.search || url.hash) {
       throw new Error("This published video has an invalid address.");
     }
   }
-  return { id, format, contentType, mediaUrl: media.href, canonicalUrl: canonical.href };
+  return { id, format, contentType, mediaUrl: media.href, posterUrl: poster?.href ?? null,
+    canonicalUrl: canonical.href };
 }
