@@ -23,6 +23,16 @@ function releaseUnowned(streams: MediaStream[]) {
   }
 }
 
+function preferredVideoConstraints(facing: Facing): MediaTrackConstraints {
+  // Preserve the camera's native shape; requesting the project ratio can make
+  // browsers crop and upscale the sensor image before recording starts.
+  return {
+    facingMode: facing,
+    width: { ideal: 1920 },
+    frameRate: { ideal: 30 },
+  };
+}
+
 export function useCamera() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const freezeRef = useRef<HTMLCanvasElement>(null);
@@ -92,22 +102,19 @@ export function useCamera() {
 
     const fresh: MediaStream[] = [];
     let source: MediaStream | null = null;
-    try {
-      source = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: facing },
-        audio: !switching,
-      });
-      fresh.push(source);
-    } catch {
-      if (id !== requestId.current) return;
-      if (!switching) {
+    const videoOptions = [preferredVideoConstraints(facing), { facingMode: facing }];
+    const audioOptions = switching ? [false] : [true, false];
+    for (const withAudio of audioOptions) {
+      for (const videoConstraints of videoOptions) {
         try {
-          source = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: false });
+          source = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: withAudio });
           fresh.push(source);
+          break;
         } catch {
-          source = null;
+          if (id !== requestId.current) return;
         }
       }
+      if (source) break;
     }
 
     if (id !== requestId.current) {

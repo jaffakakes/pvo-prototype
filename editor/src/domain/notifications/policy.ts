@@ -13,10 +13,11 @@ export type NotificationState = {
   seen: SeenEvent[];
   lastBriefAt: number | null;
   busy: boolean;
+  restoreAcknowledged: boolean;
 };
 
-export const initialNotifications = (): NotificationState => ({
-  current: null, unresolved: [], announcement: null, seen: [], lastBriefAt: null, busy: false,
+export const initialNotifications = (restoreAcknowledged = false): NotificationState => ({
+  current: null, unresolved: [], announcement: null, seen: [], lastBriefAt: null, busy: false, restoreAcknowledged,
 });
 
 /** No timers, queue, or feature state: display decisions use an explicit timestamp. */
@@ -41,6 +42,8 @@ export function receiveNotification(state: NotificationState, id: NotificationId
     ...(definition.action ? { action: definition.action } : {}), ...(summary ? { summary } : {}) };
   const unresolved = definition.persistent ? [...state.unresolved, notification] : state.unresolved;
   const seen = [...state.seen.filter(event => event.key !== key), { key, id, scope, at: now }];
+  // Acknowledged restore failures remain unresolved, but must not announce again on reload.
+  if (id === "restoreFailed" && state.restoreAcknowledged) return { ...state, unresolved, seen };
   // A second durable failure stays reachable in the registry; it never displaces the first.
   if (state.current && notificationDefinition(state.current.id).persistent)
     return definition.persistent ? { ...state, unresolved, seen } : state;
@@ -51,7 +54,10 @@ export function receiveNotification(state: NotificationState, id: NotificationId
 }
 
 export function dismissCurrentNotification(state: NotificationState): NotificationState {
-  return { ...state, current: null, announcement: null };
+  return {
+    ...state, current: null, announcement: null,
+    restoreAcknowledged: state.restoreAcknowledged || state.current?.id === "restoreFailed",
+  };
 }
 
 function removeMatching(state: NotificationState, matches: (entry: { id: NotificationId; scope: string }) => boolean): NotificationState {
@@ -65,9 +71,12 @@ function removeMatching(state: NotificationState, matches: (entry: { id: Notific
 }
 
 export function resolveNotificationEvent(state: NotificationState, id: NotificationId, scope?: string): NotificationState {
-  return removeMatching(state, entry => entry.id === id && (scope === undefined || entry.scope === scope));
+  const resolved = removeMatching(state, entry => entry.id === id && (scope === undefined || entry.scope === scope));
+  return id === "restoreFailed" ? { ...resolved, restoreAcknowledged: false } : resolved;
 }
 
 export function removeNotificationScope(state: NotificationState, scope: string): NotificationState {
-  return removeMatching(state, entry => entry.scope === scope);
+  const removed = removeMatching(state, entry => entry.scope === scope);
+  return state.unresolved.some(entry => entry.id === "restoreFailed" && entry.scope === scope)
+    ? { ...removed, restoreAcknowledged: false } : removed;
 }

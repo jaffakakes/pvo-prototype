@@ -9,6 +9,16 @@ import { getCameraStream } from "./useCamera";
 import { reportRecordingFailure } from "./recordingIssues";
 
 const HOLD_MS = 450;
+
+function recordingVideoBitrate(stream: MediaStream): number {
+  const settings = stream.getVideoTracks()[0]?.getSettings();
+  const width = settings?.width ?? 1280;
+  const height = settings?.height ?? 720;
+  const frameRate = settings?.frameRate ?? 30;
+  // Scale the encoder budget with the captured pixels, not the selected export size.
+  return Math.max(2_500_000, Math.min(16_000_000, Math.round(width * height * frameRate * 0.18)));
+}
+
 export function useRecorder() {
   const recorder = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
@@ -92,8 +102,19 @@ export function useRecorder() {
       ? "This browser could not start video recording. Upload a video or use another browser." : null;
     if (stream && window.MediaRecorder) {
       try {
-        const preferred = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm", "video/mp4"].find(type => MediaRecorder.isTypeSupported(type));
-        const rec = new MediaRecorder(stream, preferred ? { mimeType: preferred } : undefined);
+        const webkit = /AppleWebKit/.test(navigator.userAgent) && !/(Chrome|Chromium|Edg)/.test(navigator.userAgent);
+        const mp4 = ["video/mp4;codecs=avc1.42E01E,mp4a.40.2", "video/mp4"];
+        const webm = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"];
+        const preferred = (webkit ? [...mp4, ...webm] : [...webm, ...mp4])
+          .find(type => MediaRecorder.isTypeSupported(type));
+        const options = preferred ? { mimeType: preferred } : undefined;
+        let rec: MediaRecorder;
+        try {
+          rec = new MediaRecorder(stream, { ...options, videoBitsPerSecond: recordingVideoBitrate(stream) });
+        } catch {
+          // Some browsers reject an explicit bitrate even when the codec is supported.
+          rec = new MediaRecorder(stream, options);
+        }
         rec.ondataavailable = e => {
           if (e.data.size)
             chunks.current.push(e.data);

@@ -1,0 +1,25 @@
+.recovery {
+  min-width: 0;
+  color: var(--text);
+}
+
+.recovery summary {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  padding: 8px 12px;
+  border: 1px solid var(--q14);
+  border-radius: 8px;
+  background: var(--bar);
+  color: var(--muted);
+  font: 700 12px var(--f-ui);
+  cursor: pointer;
+  list-style: none;
+}
+
+.recovery summary::-webkit-details-marker { display: none; }
+.recovery summary::after { content: "⌄"; margin-left: 8px; font-size: 15px; }
+.recovery[open] summary::after { transform: rotate(180deg); }
+.recovery summary:focus-visible { outline: 2px solid var(--pale); outline-offset: 2px; }
+.recovery[open] summary { margin-bottom: 8px; }

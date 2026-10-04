@@ -42,7 +42,7 @@ export const notificationCatalog = {
   saveFailed: { message: "Couldn't save changes.", kind: "error", persistent: true,
     recovery: "Open the storage issue or More to retry saving." },
   restoreFailed: { message: "Couldn't restore your project.", kind: "error", persistent: true,
-    recovery: "Open the storage issue or More to retry recovery. Your saved project is retained." },
+    recovery: "Open Storage options in Camera or More to retry recovery. Your saved project is retained." },
   exportFailed: { message: "Export failed. Try again.", kind: "error" },
   tryFailed: { message: "Couldn't start preview.", kind: "error" },
   tryPlaybackFailed: { message: "Preview stopped. Try again.", kind: "error" },
