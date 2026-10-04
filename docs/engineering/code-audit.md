@@ -56,7 +56,7 @@ A read-only review found no runtime import cycles in the reorganized editor and 
 | Medium | [`editor/src/features/export/ExportSheet.tsx`](../../editor/src/features/export/ExportSheet.tsx) | Export/download kickoff remains in the view, although manifest rules and compilation/rendering are separate. A dedicated workflow hook would further isolate lifecycle handling. |
 | Lower | [`editor/src/state/editing/clipFactory.ts`](../../editor/src/state/editing/clipFactory.ts) | Clip creation still consumes the capture presentation catalog. Separate display defaults from model creation in a focused follow-up. |
 | Lower | Global styles, fonts and inherited formatting | `Capture.module.css`/`styles.ts` still span multiple features; some JSX remains dense; player fonts are copied from editor sources. Move local styles and shared assets as their owners are touched, without a blanket visual rewrite. |
-| Lower | [`tests/sdk.test.mjs`](../../tests/sdk.test.mjs) | Container, manifest and runtime cases still share one Node test file. Group them when expanding those suites, and update the current flat test-discovery pattern. |
+| Lower | [`tests/sdk.test.mjs`](https://github.com/jaffakakes/pvo-prototype/blob/9bcc1bc9856c6d1b0af4aa7bb8b3550308d3f734/tests/sdk.test.mjs) | Container, manifest and runtime cases still share one Node test file. Group them when expanding those suites, and update the current flat test-discovery pattern. |
 
 Keep generated renderer isolation separate from language authoring policy. Older sandbox APIs exist internally, but the new authoring workflow packages PVO source. Do not reintroduce arbitrary code authoring to simplify a migration.
 

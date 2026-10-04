@@ -7,7 +7,6 @@ const bundle = buildSync({
     contents: `
     export * from './editor/src/domain/clips/trim.ts';
     export * from './editor/src/domain/text/timing.ts';
-    export * from './editor/src/state/editing/timelineEditingCommands.ts';
     export * from './editor/src/state/editing/timelineTimingDrag.ts';
     export * from './editor/src/state/editing/clipAdjustmentCommands.ts';
     export * from './editor/src/domain/scenes/duration.ts';
@@ -25,9 +24,6 @@ const {
   trimClip,
   dragTextTiming,
   textTimingAt,
-  previewClipTrim,
-  previewTextTiming,
-  finishTextTimingPreview,
   beginTimelineTimingDrag,
   adjustSelectedClip,
   setSelectedClipSpeed,
@@ -54,18 +50,14 @@ const clip = {
 };
 function setup() {
   useCapture.setState(initial());
-  useCapture
-    .getState()
-    .patch({
-      clips: [{ ...clip }],
-      texts: [
-        { id: 2, text: "Hello", start: 1, end: 3, color: 0, x: 50, y: 50 },
-      ],
-      sel: 0,
-      t: 3,
-      past: [],
-      future: [],
-    });
+  useCapture.getState().patch({
+    clips: [{ ...clip }],
+    texts: [{ id: 2, text: "Hello", start: 1, end: 3, color: 0, x: 50, y: 50 }],
+    sel: 0,
+    t: 3,
+    past: [],
+    future: [],
+  });
 }
 
 test("clip trimming preserves source bounds and the speed-adjusted minimum duration", () => {
@@ -95,12 +87,17 @@ test("text timing keeps minimum and zero bounds while allowing a visual tail", (
 
 test("multiple trim frames produce one undo step and keep the active scene mirror synchronized", () => {
   setup();
-  previewClipTrim(clip, 0, "l", 0.5, true, 50);
-  previewClipTrim(clip, 0, "l", 1, false, 50);
+  const gesture = beginTimelineTimingDrag(
+    { kind: "clip", id: clip.id, mode: "l" },
+    { minimumClipDuration: 0.3 },
+  );
+  gesture.update(0.5, true);
+  gesture.update(1, true);
+  assert.equal(useCapture.getState().past.length, 0);
+  gesture.commit();
   const state = useCapture.getState();
   assert.equal(state.past.length, 1);
   assert.equal(state.clips[0].in, 3);
-  assert.equal(state.trim.shift, 50);
   assert.equal(state.scenes[0].clips[0].in, 3);
   state.undo();
   assert.equal(useCapture.getState().clips[0].in, 1);
@@ -108,8 +105,15 @@ test("multiple trim frames produce one undo step and keep the active scene mirro
 
 test("text movement and continuous crop changes retain grouped undo", () => {
   setup();
-  previewTextTiming(2, { start: 1, end: 3 }, "move", 0.2, true);
-  previewTextTiming(2, { start: 1, end: 3 }, "move", 0.5, false);
+  const gesture = beginTimelineTimingDrag({
+    kind: "text",
+    id: 2,
+    mode: "move",
+  });
+  gesture.update(0.2);
+  gesture.update(0.5);
+  assert.equal(useCapture.getState().past.length, 0);
+  gesture.commit();
   assert.equal(useCapture.getState().past.length, 1);
   useCapture.getState().undo();
   assert.equal(useCapture.getState().texts[0].start, 1);
@@ -124,12 +128,14 @@ test("mobile text timing keeps the playhead fixed until the gesture ends", () =>
   useCapture.getState().updateText(2, { start: 7, end: 20 }, false);
   useCapture.getState().patch({ t: 15, past: [], future: [] });
 
-  previewTextTiming(2, { start: 7, end: 20 }, "r", -11, true);
+  const gesture = beginTimelineTimingDrag({ kind: "text", id: 2, mode: "r" });
+  gesture.update(-11);
   assert.equal(useCapture.getState().texts[0].end, 9);
   assert.equal(useCapture.getState().t, 15);
-  assert.equal(useCapture.getState().past.length, 1);
+  assert.equal(useCapture.getState().past.length, 0);
 
-  finishTextTimingPreview();
+  gesture.commit();
+  assert.equal(useCapture.getState().past.length, 1);
   assert.equal(useCapture.getState().t, 9);
   useCapture.getState().undo();
   assert.equal(useCapture.getState().texts[0].end, 20);
@@ -151,7 +157,11 @@ test("text tail drag preserves the playhead until cancel or commit", () => {
   const cancelled = beginTimelineTimingDrag({ kind: "text", id: 2, mode: "r" });
   cancelled.update(-11);
   assert.equal(useCapture.getState().texts[0].end, 9);
-  assert.equal(useCapture.getState().t, 15, "Preview keeps the magnetic target stationary");
+  assert.equal(
+    useCapture.getState().t,
+    15,
+    "Preview keeps the magnetic target stationary",
+  );
   cancelled.cancel();
   assert.equal(useCapture.getState().texts[0].end, 20);
   assert.equal(useCapture.getState().t, 15);

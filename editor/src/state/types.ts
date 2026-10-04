@@ -2,36 +2,53 @@ import { type TextStyle } from "../../../packages/pvo-text-runtime/index.js";
 import type { AudioClip } from "../domain/audio/model";
 import { type LayerId } from "../domain/layers/model";
 import type { ExportQuality } from "../domain/publishing/model";
-import type { Clip, ComponentResponse, ComponentType, Outcome, OutcomeTarget, ProjectSnapshot, PvoComponent, Ratio, Scene, TextOverlay } from "../domain/project/model";
+import type {
+  Clip,
+  ComponentType,
+  Outcome,
+  OutcomeTarget,
+  ProjectSnapshot,
+  PvoComponent,
+  Ratio,
+  Scene,
+  TextOverlay,
+} from "../domain/project/model";
 
-export type TryMode = {
-  playing: boolean;
-  /** Interactive component waiting at the end of its layer for a response. */
-  holdingId: string | null;
-  /** Components whose response boundary has already been processed in this scene. */
-  handled: string[];
-  /** Responses captured locally; layer-end responses have not reached Logic yet. */
-  capturedResponses: Record<string, ComponentResponse>;
-  /** Responses already handed to Logic, used to prevent duplicate requests. */
-  dispatched: string[];
-};
-export type PlayheadPick = ({
-  kind: "component-at";
-  componentId: string;
-} | {
-  kind: "outcome-time";
-  componentId: string;
-  target: OutcomeTarget;
-  branch: "success" | "error" | null;
-} | {
-  kind: "text-start";
-  textId: number;
-}) & {
+import type { TryMode } from "../domain/preview/model";
+export type { TryMode } from "../domain/preview/model";
+
+export type PlayheadPick = (
+  | {
+      kind: "component-at";
+      componentId: string;
+    }
+  | {
+      kind: "outcome-time";
+      componentId: string;
+      target: OutcomeTarget;
+      branch: "success" | "error" | null;
+    }
+  | {
+      kind: "text-start";
+      textId: number;
+    }
+) & {
   sceneId: string;
   originalT: number;
   error?: string;
 };
-export type SheetName = null | "speed" | "crop" | "text" | "sound" | "more" | "export" | "discard" | "components" | "component" | "animation";
+export type SheetName =
+  | null
+  | "speed"
+  | "crop"
+  | "text"
+  | "sound"
+  | "more"
+  | "export"
+  | "discard"
+  | "components"
+  | "component"
+  | "animation";
 export type OverlayUpdateOptions = {
   /** A reversible drag preview keeps its magnetic playhead fixed until commit. */
   preservePlayhead?: boolean;
@@ -48,7 +65,7 @@ export type CaptureState = {
   flash: boolean;
   timer: 0 | 3 | 10;
   countdown: number;
-  recSpeed: .3 | .5 | 1 | 2 | 3;
+  recSpeed: 0.3 | 0.5 | 1 | 2 | 3;
   speedRow: boolean;
   replacing: number | null;
   scenes: Scene[];
@@ -97,27 +114,46 @@ export type CaptureState = {
   undo: () => void;
   redo: () => void;
   reset: () => void;
-  switchScene: (id: string, options?: {
-    undoable?: boolean;
-    preserveTry?: boolean;
-  }) => void;
-  createScene: (options?: {
-    name?: string;
-    openCamera?: boolean;
-  }) => string;
+  switchScene: (
+    id: string,
+    options?: {
+      undoable?: boolean;
+      preserveTry?: boolean;
+    },
+  ) => void;
+  createScene: (options?: { name?: string; openCamera?: boolean }) => string;
   deleteScene: (id: string) => void;
   duplicateScene: (id: string) => string | null;
   startRecordingIntoScene: (id: string) => void;
   cancelRecordingIntoScene: () => void;
-  updateScene: (id: string, changes: Partial<Omit<Scene, "id">>, undoable?: boolean) => void;
+  updateScene: (
+    id: string,
+    changes: Partial<Omit<Scene, "id">>,
+    undoable?: boolean,
+  ) => void;
   addComponent: (type: ComponentType) => string;
-  updateComponent: (id: string, changes: Partial<PvoComponent>, undoable?: boolean, options?: OverlayUpdateOptions) => void;
-  updateOutcome: (id: string, target: OutcomeTarget, outcome: Outcome, undoable?: boolean) => boolean;
+  updateComponent: (
+    id: string,
+    changes: Partial<PvoComponent>,
+    undoable?: boolean,
+    options?: OverlayUpdateOptions,
+  ) => void;
+  updateOutcome: (
+    id: string,
+    target: OutcomeTarget,
+    outcome: Outcome,
+    undoable?: boolean,
+  ) => boolean;
   deleteComponent: (id: string) => void;
   duplicateComponent: (id: string) => string | null;
   reorderLayer: (id: LayerId, direction: "up" | "down") => void;
   addText: (text: string, style?: TextStyle) => number;
-  updateText: (id: number, changes: Partial<TextOverlay>, undoable?: boolean, options?: OverlayUpdateOptions) => void;
+  updateText: (
+    id: number,
+    changes: Partial<TextOverlay>,
+    undoable?: boolean,
+    options?: OverlayUpdateOptions,
+  ) => void;
   deleteText: (id: number) => void;
   duplicateText: (id: number) => void;
 };

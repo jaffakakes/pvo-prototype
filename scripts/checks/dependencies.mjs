@@ -4,7 +4,13 @@ import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
-const sourceRoots = ["editor/src", "player", "server", "packages"];
+const sourceRoots = [
+  "editor/src",
+  "player",
+  "server",
+  "packages",
+  "scripts/dev",
+];
 const excluded = new Set(["node_modules", "target", "pkg", "tests"]);
 
 async function sourceFiles(directory) {
@@ -38,8 +44,13 @@ function violation(owner, dependency) {
   if (owner.startsWith("player/") && dependency.startsWith("editor/"))
     return "Player cannot import editor internals.";
   if (
+    /^(?:server|scripts\/dev)\//.test(owner) &&
+    /^(?:editor|player)\//.test(dependency)
+  )
+    return "Server adapters cannot import browser application internals.";
+  if (
     owner.startsWith("packages/") &&
-    /^(?:editor|player|server|docs)\//.test(dependency)
+    /^(?:editor|player|server|docs|scripts)\//.test(dependency)
   )
     return "Shared packages cannot import their applications.";
   return null;

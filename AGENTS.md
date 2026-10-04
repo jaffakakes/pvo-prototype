@@ -18,7 +18,7 @@ These rules apply throughout this repository. Read the [coding standard](docs/en
 
 - `docs/site/`: documentation website. `docs/language/`: PVO authoring guide. `docs/engineering/`: standards, architecture, audits. `SPEC.md`: canonical format note. Keep each document focused and link related material.
 - `editor/`: authoring and recording application. `player/`: viewing application. Neither application may import the other's internals.
-- `packages/`: shared format/compiler/runtime code exposed through public entry points. Packages must not import editor, player, or documentation application code.
+- `packages/`: shared format/compiler/runtime code exposed through public entry points. Packages must not import editor, player, server, documentation, or scripts. `server/` and `scripts/dev/` adapters must not import editor/player internals.
 - `packages/pvo-language/`: Rust compiler rules under `src/{structure,style,logic,compiler}/`, JSON/WASM exports in `bindings.rs`, and browser initialization in the root JavaScript facade. Follow its package `AGENTS.md`; keep host effects outside the compiler.
 - `share/`: public demo landing page and its assets. `scripts/build/`, `scripts/dev/`, and `scripts/checks/`: tooling grouped by purpose. `dist/`, language `pkg/`, and Cargo `target/`: generated output, never the source of a fix.
 - Group related files in a feature folder; co-locate its UI, hooks, and styles. Promote code to shared ownership only when the responsibility is genuinely shared.
@@ -47,10 +47,12 @@ These rules apply throughout this repository. Read the [coding standard](docs/en
 
 ## Verification
 
-- `npm run check`: source JavaScript syntax checks and the Node test suite (includes editor layer/history tests).
+- `npm run check`: source JavaScript syntax, declared dependency boundaries, adopted-file formatting, and the Node behavior suite.
+- `npm test`: recursively discovers `tests/**/*.test.mjs`, with four test files running concurrently by default; override with `npm test -- --test-concurrency=2`. Focused suites can use `node --test tests/sdk/*.test.mjs`.
+- `npm run format` / `npm run check:format`: pinned Prettier 3.9.9 for the explicit adopted-file list in `scripts/checks/formatting-scope.json`. Add maintained source files to that list when adopting formatting. This is not repository-wide lint, purity, cycle, or responsibility enforcement.
 - `npm run check:editor`: strict editor TypeScript checking.
 - `npm run check:language` and `npm run check:language:format`: native Rust behavior tests and formatting. Build WASM with `npm run build:language` and verify browser contracts when compiler or bindings change.
-- `npm run build`: static demo/player/docs output and editor build; this replaces `dist/`. Preserve pending generated changes or use an isolated build directory before running it in a dirty checkout.
+- `npm run build`: product pages, player, shared packages and editor build; this replaces `dist/`. Preserve pending generated changes or use an isolated build directory before running it in a dirty checkout.
 - For browser behavior, use `npm run check:browser -- <suite> [checks...]` or the named suite commands. Read [scripts/README.md](scripts/README.md) for browser/server prerequisites. Node and native Rust tests alone do not verify recording, layout, playback, WASM integration, or sandbox isolation.
 - A documentation-only change needs link/content verification, not artificial unit tests. Refactors need checks of observable behavior, not assertions about filenames or line counts.
 

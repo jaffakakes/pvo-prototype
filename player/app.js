@@ -1,6 +1,7 @@
+import { createPlaybackTransitionState } from "./playback/transition-state.js";
 import { createPlaybackSession } from "./playback/session.js";
 import { readPlayerElements } from "./ui/elements.js";
-import { registerComponentView } from "./components/legacy-view.js";
+import { registerComponentView } from "./components/component-view.js";
 import { createTimelineReader } from "./playback/timeline.js";
 import { createComponentQueries } from "./components/visibility.js";
 import { createOverlayRenderer } from "./components/overlays.js";
@@ -20,8 +21,11 @@ mountPlayerShell();
 const session = createPlaybackSession();
 const refs = readPlayerElements();
 refs.video.muted = true;
-const publication = readPublication(document.body.dataset, window.location.href,
-  document.querySelector('link[rel="canonical"]')?.href);
+const publication = readPublication(
+  document.body.dataset,
+  window.location.href,
+  document.querySelector('link[rel="canonical"]')?.href,
+);
 registerComponentView();
 
 const timeline = createTimelineReader({
@@ -64,14 +68,21 @@ const media = createVideoController({
     elapsedTime: (...args) => timeline.elapsedTime(...args),
     activeClip: (...args) => timeline.activeClip(...args),
     replaceActionRuntime: (...args) => runtime.replaceActionRuntime(...args),
-    dispatchCapturedResponse: (...args) => actions.dispatchCapturedResponse(...args),
-    componentCanReceiveResponse: (...args) => visibility.componentCanReceiveResponse(...args),
+    dispatchCapturedResponse: (...args) =>
+      actions.dispatchCapturedResponse(...args),
+    componentCanReceiveResponse: (...args) =>
+      visibility.componentCanReceiveResponse(...args),
   },
 });
 
 const project = createProjectLoader({
   session,
-  refs: { frame: refs.frame, empty: refs.empty, shell: refs.shell, video: refs.video },
+  refs: {
+    frame: refs.frame,
+    empty: refs.empty,
+    shell: refs.shell,
+    video: refs.video,
+  },
   adapters: {
     setStatus: (...args) => controls.setStatus(...args),
     destroyCustomOverlays: (...args) => overlays.destroyCustomOverlays(...args),
@@ -90,7 +101,8 @@ const controls = createPlayerControls({
     timelineDuration: (...args) => timeline.timelineDuration(...args),
     visibleComponents: (...args) => visibility.visibleComponents(...args),
     updateLayout: () => layout.update(),
-    dispatchCapturedResponse: (...args) => actions.dispatchCapturedResponse(...args),
+    dispatchCapturedResponse: (...args) =>
+      actions.dispatchCapturedResponse(...args),
     restartExperience: (...args) => playback.restartExperience(...args),
   },
 });
@@ -104,15 +116,18 @@ const runtime = createActionRuntimeAdapter({
     activeClip: (...args) => timeline.activeClip(...args),
     elapsedTime: (...args) => timeline.elapsedTime(...args),
     setStatus: (...args) => controls.setStatus(...args),
-    pauseForComponentRequest: (...args) => playback.pauseForComponentRequest(...args),
+    pauseForComponentRequest: (...args) =>
+      playback.pauseForComponentRequest(...args),
   },
 });
 
 const actions = createComponentActions({
   session,
   adapters: {
-    componentCanReceiveResponse: (...args) => visibility.componentCanReceiveResponse(...args),
-    releaseUnavailableResponse: (...args) => playback.releaseUnavailableResponse(...args),
+    componentCanReceiveResponse: (...args) =>
+      visibility.componentCanReceiveResponse(...args),
+    releaseUnavailableResponse: (...args) =>
+      playback.releaseUnavailableResponse(...args),
     setComponentPending: (...args) => {
       overlays.setComponentPending(...args);
       controls.updateProgress();
@@ -133,7 +148,8 @@ const outcomes = createOutcomeRouter({
   session,
   refs: { video: refs.video, endScreen: refs.endScreen },
   adapters: {
-    captureTimelineForScene: (...args) => timeline.captureTimelineForScene(...args),
+    captureTimelineForScene: (...args) =>
+      timeline.captureTimelineForScene(...args),
     renderOverlays: (...args) => overlays.renderOverlays(...args),
     loadClip: (...args) => media.loadClip(...args),
     seekToElapsed: (...args) => media.seekToElapsed(...args),
@@ -144,12 +160,13 @@ const outcomes = createOutcomeRouter({
 });
 
 const playback = createPlaybackTransitions({
-  session,
+  state: createPlaybackTransitionState(session),
   refs: { video: refs.video, endScreen: refs.endScreen },
   adapters: {
     elapsedTime: (...args) => timeline.elapsedTime(...args),
     componentsForClip: (...args) => visibility.componentsForClip(...args),
-    componentCanReceiveResponse: (...args) => visibility.componentCanReceiveResponse(...args),
+    componentCanReceiveResponse: (...args) =>
+      visibility.componentCanReceiveResponse(...args),
     visibleComponents: (...args) => visibility.visibleComponents(...args),
     renderOverlays: (...args) => overlays.renderOverlays(...args),
     updateProgress: (...args) => controls.updateProgress(...args),
@@ -159,7 +176,8 @@ const playback = createPlaybackTransitions({
     loadClip: (...args) => media.loadClip(...args),
     localClipTime: (...args) => timeline.localClipTime(...args),
     activeClip: (...args) => timeline.activeClip(...args),
-    dispatchCapturedResponse: (...args) => actions.dispatchCapturedResponse(...args),
+    dispatchCapturedResponse: (...args) =>
+      actions.dispatchCapturedResponse(...args),
     replaceActionRuntime: (...args) => runtime.replaceActionRuntime(...args),
   },
 });
@@ -181,7 +199,8 @@ bindPlayerEvents({
     retryResponse: () => controls.retryResponse(),
     shareExperience: (...args) => controls.shareExperience(...args),
     setStatus: (...args) => controls.setStatus(...args),
-    handleResponseBoundary: (...args) => playback.handleResponseBoundary(...args),
+    handleResponseBoundary: (...args) =>
+      playback.handleResponseBoundary(...args),
     advanceAtClipEnd: (...args) => playback.advanceAtClipEnd(...args),
     answerComponent: (...args) => actions.answerComponent(...args),
     answerFieldComponent: (...args) => actions.answerFieldComponent(...args),
@@ -194,8 +213,10 @@ bindPlayerEvents({
   },
 });
 
-const requestedSource = publication?.mediaUrl
-  || new URLSearchParams(window.location.search).get("src") || document.body.dataset.pvoSrc;
+const requestedSource =
+  publication?.mediaUrl ||
+  new URLSearchParams(window.location.search).get("src") ||
+  document.body.dataset.pvoSrc;
 if (requestedSource) {
   const autoplay = document.body.dataset.autoplay !== "false";
   refs.empty.hidden = true;
