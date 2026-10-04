@@ -25,8 +25,6 @@ export async function cleanupPublications(env, now = Date.now()) {
     WHERE p.status = 'deleting' OR (a.expires_at <= ? AND (p.status != 'ready' OR a.object_key != p.object_key)) LIMIT 100`)
     .bind(now).all();
   for (const row of results) await cleanPublication(env, row.id, now);
-  await env.DB.prepare("DELETE FROM sessions WHERE expires_at <= ?").bind(now).run();
-
   // Reconcile objects left after a process ended between R2 and D1 operations.
   // The cursor prevents live objects at the start of the bucket starving cleanup.
   const saved = await env.DB.prepare("SELECT value FROM maintenance_state WHERE name = 'orphan-cursor'").first();

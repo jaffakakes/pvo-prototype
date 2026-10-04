@@ -8,6 +8,7 @@ const bundle = buildSync({ stdin: { resolveDir: process.cwd(), contents: `
   export { applyAssistantChanges } from './editor/src/state/assistant/applyChanges.ts';
   export { notifyAssistantApplied, performNotificationAction } from './editor/src/state/assistant/nativeAppliedNotification.ts';
   export { useCapture } from './editor/src/state/captureStore.ts';
+  export { closeAuthGate, refreshAccountSession, useAuthGate } from './editor/src/state/auth/authGateStore.ts';
   export { useAssistant, resetAssistant } from './editor/src/state/assistant/assistantStore.ts';
   export { useNotifications, resetNotifications, dismissNotification } from './editor/src/state/notifications/notificationStore.ts';
   export { initial } from './editor/src/state/project/initial.ts';
@@ -118,19 +119,39 @@ test("applied summaries are bounded deterministic operation labels without user 
 
 
 test("playback and export effects follow the one validated edit without adding history", async () => {
-  reset();
-  const batch = await prepare([...operations, { kind: "playback.seek", sceneId: "main", time: 2 },
-    { kind: "export.prepare", format: "video" }]);
-  const receipt = api.applyAssistantChanges(batch);
-  assert.ok(receipt);
-  assert.equal(state().past.length, 1);
-  assert.equal(state().t, 2);
-  assert.equal(state().sheet, "export");
-  assert.equal(state().exportFormat, "video");
-  reset();
-  const invalid = await prepare();
-  invalid.playback = [{ kind: "playback.seek", sceneId: "missing", time: 2 }];
-  assert.throws(() => api.applyAssistantChanges(invalid), /playback position/);
-  assert.equal(state().past.length, 0);
-  assert.equal(state().texts.length, 0);
+  const originalFetch = globalThis.fetch;
+  let signedIn = false;
+  globalThis.fetch = async (path, options) => {
+    assert.equal(path, "/api/auth/session");
+    assert.equal(options.method, "GET");
+    return Response.json({ available: true, user: signedIn ? { id: "editor-test", name: "Editor tester" } : null });
+  };
+  try {
+    reset();
+    const batch = await prepare([...operations, { kind: "playback.seek", sceneId: "main", time: 2 },
+      { kind: "export.prepare", format: "video" }]);
+    const receipt = api.applyAssistantChanges(batch);
+    assert.ok(receipt);
+    assert.equal(state().past.length, 1);
+    assert.equal(state().t, 2);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(state().sheet, null, "Assistant export waits for account sign-in");
+    assert.equal(api.useAuthGate.getState().source, "export");
+    signedIn = true;
+    await api.refreshAccountSession();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(state().sheet, "export");
+    assert.equal(state().exportFormat, "video");
+    assert.equal(state().past.length, 1, "Opening export does not add history");
+
+    reset();
+    const invalid = await prepare();
+    invalid.playback = [{ kind: "playback.seek", sceneId: "missing", time: 2 }];
+    assert.throws(() => api.applyAssistantChanges(invalid), /playback position/);
+    assert.equal(state().past.length, 0);
+    assert.equal(state().texts.length, 0);
+  } finally {
+    api.closeAuthGate();
+    globalThis.fetch = originalFetch;
+  }
 });

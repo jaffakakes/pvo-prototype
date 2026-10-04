@@ -8,6 +8,7 @@ import {
 import { nameFromFile } from "../../domain/project/creation";
 import type { Ratio } from "../../domain/project/model";
 import { PROJECT_TEMPLATES, type ProjectTemplate } from "../../domain/project/templates";
+import { useAuthGate } from "../../state/auth/authGateStore";
 import { useCapture } from "../../state/captureStore";
 import { Icon } from "../../ui/Icon";
 import { MediaInput } from "./MediaInput";
@@ -33,6 +34,7 @@ export function CreateProjectPage({ hero = "studio", templateId, active = true, 
   const name = enteredName ?? (staged.media[0] ? nameFromFile(staged.media[0].file.name) : "");
   const busy = starting || staged.progress !== null;
   const savedName = useCapture(state => state.projectName);
+  const user = useAuthGate(state => state.user);
   const hasProject = useCapture(state => !!state.localId);
   const storage = useSyncExternalStore(subscribeProjectStorage, getProjectStorageStatus);
   const unavailable = storage.phase !== "ready";
@@ -73,8 +75,8 @@ export function CreateProjectPage({ hero = "studio", templateId, active = true, 
     <header className={styles.header}>
       <a className={styles.brand} href="?home=1" aria-label="Restyle home"><span><img src="./restyle-mark.png" alt="" /></span><strong>restyle</strong></a>
       <span className={styles.webTag}>WEB</span>
-      <div className={styles.headerActions}><span className={styles.guestStatus}><i />No account needed · sign up only to export</span>
-        <button type="button" className={styles.signIn} onClick={onSignIn}>Sign in</button>
+      <div className={styles.headerActions}><span className={styles.guestStatus}><i />{user ? `Signed in as ${user.name}` : "No account needed · sign in only to export"}</span>
+        <button type="button" className={styles.signIn} onClick={onSignIn}>{user ? "Account" : "Sign in"}</button>
       </div>
     </header>
     <main className={styles.main}>

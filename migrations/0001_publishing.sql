@@ -1,16 +1,25 @@
-CREATE TABLE creators (
+CREATE TABLE users (
   id TEXT PRIMARY KEY,
+  display_name TEXT NOT NULL,
   created_at INTEGER NOT NULL
 );
+CREATE TABLE provider_identities (
+  provider TEXT NOT NULL CHECK(provider IN ('google')),
+  subject TEXT NOT NULL,
+  user_id TEXT NOT NULL REFERENCES users(id),
+  PRIMARY KEY (provider, subject),
+  UNIQUE (provider, user_id)
+);
+CREATE INDEX provider_identities_user ON provider_identities(user_id);
 CREATE TABLE sessions (
   token_hash TEXT PRIMARY KEY,
-  owner_id TEXT NOT NULL REFERENCES creators(id),
+  user_id TEXT NOT NULL REFERENCES users(id),
   expires_at INTEGER NOT NULL
 );
 CREATE INDEX sessions_expiry ON sessions(expires_at);
 CREATE TABLE publications (
   id TEXT PRIMARY KEY,
-  owner_id TEXT NOT NULL REFERENCES creators(id),
+  owner_id TEXT NOT NULL REFERENCES users(id),
   idempotency_key TEXT NOT NULL,
   title TEXT NOT NULL,
   filename TEXT NOT NULL,

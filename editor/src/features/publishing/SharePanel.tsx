@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CompletedExport } from "../../domain/publishing/model";
 import { canShareExport, cancelledShare, copyPublicationLink, shareExportFile } from "../../infrastructure/publishing/nativeShare";
 import { downloadCompletedExport } from "../export/exportWorkflow";
+import { requireAccount, useAuthGate } from "../../state/auth/authGateStore";
 import { Icon } from "../../ui/Icon";
 import { Shell } from "../../ui/SheetShell";
 import { usePublication } from "./usePublication";
@@ -29,11 +30,21 @@ export function SharePanel({ artifact, url, downloadIssue, onDone }: { artifact:
   const tooLarge = !!publish.status?.available && artifact.blob.size > publish.status.maxBytes;
   const failure = localFailure ?? publish.failure;
   const clearFailure = () => { setLocalFailure(null); publish.clearFailure(); };
-  const shareFile = async () => {
+  const shareFile = () => {
+    if (!useAuthGate.getState().user) {
+      // The native share sheet needs this click's user activation. After sign-in,
+      // the user taps Share file again to start it.
+      void requireAccount("share");
+      return;
+    }
     clearFailure(); setSharing(true);
-    try { await shareExportFile(artifact); }
-    catch (error) { if (mounted.current && !cancelledShare(error)) setLocalFailure("Couldn't share this file. Try downloading it."); }
-    finally { if (mounted.current) setSharing(false); }
+    void shareExportFile(artifact)
+      .catch(error => { if (mounted.current && !cancelledShare(error)) setLocalFailure("Couldn't share this file. Try downloading it."); })
+      .finally(() => { if (mounted.current) setSharing(false); });
+  };
+  const downloadAgain = async () => {
+    if (!await requireAccount("download")) return;
+    downloadCompletedExport(url, artifact.filename);
   };
   const shareLink = async () => {
     if (!ready) return;
@@ -50,7 +61,7 @@ export function SharePanel({ artifact, url, downloadIssue, onDone }: { artifact:
       </div>
       <div className={styles.fileActions}>
         {canShareExport(artifact) && <button type="button" disabled={sharing} onClick={() => { void shareFile(); }} data-share-file>{sharing ? "Opening share…" : "Share file"}</button>}
-        <button type="button" onClick={() => downloadCompletedExport(url, artifact.filename)} data-download-again>Download again</button>
+        <button type="button" onClick={() => { void downloadAgain(); }} data-download-again>Download again</button>
       </div>
       <section className={styles.online} aria-label="Create an online link">
         <h3>{ready ? "Your link is ready" : "Create a link"}</h3>
@@ -75,7 +86,7 @@ export function SharePanel({ artifact, url, downloadIssue, onDone }: { artifact:
               disabled={busy || publish.title !== null} onChange={event => setTitle(event.target.value)} /></label>
             <small className={styles.limit}>Online limit: {formatFileSize(publish.status.maxBytes)}. Your local export stays available.</small>
             {tooLarge && <p className={styles.unavailable}>This file is too large for a link. You can still share or download the file.</p>}
-            <small className={styles.limit}>No sign-in needed. Manage and delete your links in this browser.</small>
+            <small className={styles.limit}>Your account can manage and delete this link on your devices.</small>
           </>}
           <button type="button" className={styles.primary} data-create-publication
             disabled={!publish.status?.available || busy || tooLarge || !(publish.title ?? title).trim()}

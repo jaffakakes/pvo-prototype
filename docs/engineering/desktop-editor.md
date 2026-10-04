@@ -21,7 +21,7 @@ The existing assistant can open from the timeline while the component Inspector 
 
 ## Capability limits
 
-The Media library contains Your clips and Samples; AI moments is omitted. The reference uses simulated processing results. Automatic captions, effects, transitions, sound effects and masks have no corresponding production pipeline in this beta and are explicitly unavailable. Existing clip fit/mirror/zoom/speed, text styling, synthesized music, components, scenes, real playback, history and export remain functional. Existing audio settings operate at scene level. Sign-in availability comes from the configured server; device export remains available when accounts are disabled.
+The Media library contains Your clips and Samples; AI moments is omitted. The reference uses simulated processing results. Automatic captions, effects, transitions, sound effects and masks have no corresponding production pipeline in this beta and are explicitly unavailable. Existing clip fit/mirror/zoom/speed, text styling, synthesized music, components, scenes, real playback and history remain functional. Existing audio settings operate at scene level. Video/PVO export requires a verified Google account session on both desktop and mobile; if account services are unavailable, editing remains available while export waits.
 
 The mock's routine edit toasts are superseded by the repository's [notification policy](notification-policy.md). Ordinary edits remain quiet and undoable.
 

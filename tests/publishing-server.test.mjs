@@ -8,18 +8,20 @@ test("publishing is explicitly disabled until its storage and session secret are
   try {
     const status = await (await f.request("/api/publishing")).json();
     assert.deepEqual(status, { available: false, hasSession: false, maxBytes: 52428800 });
-    assert.equal((await f.request("/api/publishing/session", { method: "POST" })).status, 503);
+    assert.equal((await f.request("/api/publishing/session", { method: "POST" })).status, 404);
     assert.equal((await reserve(f, tinyMp4())).response.status, 503);
     assert.equal((await f.request("/docs/")).status, 404);
     assert.equal((await f.request("/demo/")).status, 404);
     assert.equal((await f.request("/api/missing")).status, 404);
     assert.equal((await f.request("/media/missing")).status, 404);
     assert.equal((await f.request("/player/published")).status, 404);
+    assert.equal((await f.request("/about.html", { session: null })).status, 200);
+    assert.equal((await f.request("/privacy.html", { session: null })).status, 200);
     assert.equal((await f.request("/", { redirect: "manual" })).headers.get("Location"), `${ORIGIN}/editor/?home=1`);
   } finally { await f.close(); }
 });
 
-test("browser sessions, CSRF and ownership protect publication operations", async () => {
+test("account sessions, CSRF and ownership protect publication operations", async () => {
   const f = await workerFixture();
   try {
     assert.deepEqual(await (await f.request("/api/publishing")).json(),

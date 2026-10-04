@@ -1,11 +1,13 @@
 import { sceneDuration } from "../../domain/scenes/duration";
 import { total } from "../../domain/clips/timing";
 import { useCapture } from "../../state/captureStore";
+import { requireAccount } from "../../state/auth/authGateStore";
 import { cx } from "../../styles";
 import { Icon } from "../../ui/Icon";
 import { Shell } from "../../ui/SheetShell";
 import { fmt } from "../../ui/formatTime";
 import { SharePanel } from "../publishing/SharePanel";
+import { downloadCompletedExport } from "./exportWorkflow";
 import styles from "./ExportFeedback.module.css";
 
 import { useExportSession } from "./useExportSession";
@@ -24,6 +26,13 @@ export function ExportSheet() {
     format === "pvo" ? s.scenes.filter((scene) => total(scene.clips) <= 0) : [];
   const { failure, showShare, setShowShare, exported, start } =
     useExportSession(format);
+  const downloadAgain = async () => {
+    if (!exported.artifact || !exported.url || !await requireAccount("download")) return;
+    downloadCompletedExport(exported.url, exported.artifact.filename);
+  };
+  const openShare = async () => {
+    if (await requireAccount("share")) setShowShare(true);
+  };
   if (showShare && exported.artifact && exported.url)
     return (
       <SharePanel
@@ -134,15 +143,13 @@ export function ExportSheet() {
             Export ready
           </div>
           <div className={cx("exportDone")}>
-            <a
-              href={exported.url ?? s.exUrl ?? undefined}
-              download={exported.artifact?.filename ?? s.exName}
-            >
+            <button type="button" disabled={!exported.artifact || !exported.url}
+              onClick={() => { void downloadAgain(); }}>
               Download again
-            </a>
+            </button>
             <button
               disabled={!exported.artifact}
-              onClick={() => setShowShare(true)}
+              onClick={() => { void openShare(); }}
               data-export-share
             >
               Share

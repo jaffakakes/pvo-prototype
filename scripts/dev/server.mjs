@@ -3,9 +3,15 @@ import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import { attachReleaseNotifications } from "./releases.mjs";
+import { createLocalAuthApi } from "./local-auth.mjs";
 
 const root = fileURLToPath(new URL("../../dist/", import.meta.url));
 const port = Number(process.env.PVO_PORT || 4173);
+const localAuthDirectory = process.env.PVO_LOCAL_DATA_DIR
+  || fileURLToPath(new URL("../../.wrangler/local-beta/", import.meta.url));
+const authApi = await createLocalAuthApi({ directory: localAuthDirectory,
+  origin: `http://127.0.0.1:${port}`, clientId: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET });
 const mime = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -22,8 +28,25 @@ const mime = {
   ".woff2": "font/woff2",
 };
 
-const server = createServer((request, response) => {
-  const pathname = decodeURIComponent(new URL(request.url, `http://${request.headers.host}`).pathname);
+const server = createServer(async (request, response) => {
+  let pathname;
+  try { pathname = decodeURIComponent(new URL(request.url, `http://${request.headers.host}`).pathname); }
+  catch {
+    response.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+    response.end("Invalid request address");
+    return;
+  }
+  if (pathname.startsWith("/api/auth/")) {
+    try { await authApi.handle(request, response, pathname); }
+    catch (error) {
+      console.error("Local sign-in request failed:", error?.name);
+      if (!response.headersSent) {
+        response.writeHead(500, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+        response.end(JSON.stringify({ error: "The sign-in request could not finish." }));
+      } else response.destroy(error);
+    }
+    return;
+  }
   const clean = normalize(pathname).replace(/^(\.\.(\/|\\|$))+/, "");
   let file = join(root, clean === "/" ? "index.html" : clean);
   if (existsSync(file) && statSync(file).isDirectory()) file = join(file, "index.html");

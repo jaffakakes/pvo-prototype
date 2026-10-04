@@ -1,0 +1,66 @@
+<!doctype html>
+<!-- Draft for owner review before public OAuth deployment. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#101014" />
+    <meta name="description" content="How Restyle handles account information, local projects, exports, and AI requests." />
+    <link rel="stylesheet" href="/site.css" />
+    <title>Privacy policy · Restyle</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="wordmark" href="/about.html" aria-label="Restyle home">Restyle<span class="wordmark-dot">.</span></a>
+      <nav aria-label="Main navigation">
+        <a href="/editor/">Create</a>
+        <a href="/privacy.html" aria-current="page">Privacy</a>
+        <a href="/terms.html">Terms</a>
+      </nav>
+    </header>
+
+    <main class="policy-main">
+      <p class="eyebrow">Restyle</p>
+      <h1>Privacy policy</h1>
+      <p class="policy-date">Last updated 4 October 2026</p>
+      <p class="lead">This policy explains what Restyle handles when you use the editor, sign in with Google, ask its assistant for help, or create a viewing link. Questions or deletion requests can be sent to <a href="mailto:japhetdesouza6@gmail.com">japhetdesouza6@gmail.com</a>.</p>
+
+      <section>
+        <h2>Google sign-in and your account</h2>
+        <p>Google sign-in lets us identify your account so you can export and manage links you create. We request only the <code>openid</code> and <code>profile</code> scopes. We receive your Google account's stable identifier and display name, and store them with a Restyle account record. We do not request your email address, Google Drive files, contacts, or access to your Google content.</p>
+        <p>Google's authorization tokens are used to complete sign-in and are not saved in your Restyle account. A signed, HttpOnly session cookie keeps you signed in for up to seven days; a temporary cookie protects the sign-in flow and expires after ten minutes. Signing out ends the current Restyle session. Your account record and published links remain until they are deleted.</p>
+      </section>
+
+      <section>
+        <h2>Projects and exports</h2>
+        <p>Your editable drafts, imported footage, and edit history are saved in your browser's storage on this device. Signing in does not upload or sync them. You can remove local data using the browser's site-data controls.</p>
+        <p>When you choose to create a viewing link, the completed video or PVO export is uploaded to private Cloudflare storage. We store the link's title, filename, format, size, status, and account ownership in a database so you can manage it. A published link is unlisted, but anyone who has it can view or forward the export. Deleting a link stops new access and removes its stored file; it cannot retract copies already downloaded by viewers. A published export is a viewing copy, not a cloud backup of your editable project.</p>
+        <p>Interactive videos may contain request actions configured by their creators. If a viewer uses one, its configured external destination may receive the submitted fields. Check the video and destination before sharing personal information through an interactive form.</p>
+      </section>
+
+      <section>
+        <h2>Assistant requests</h2>
+        <p>If you use the optional AI assistant, your request and relevant project context are sent through our Cloudflare Worker to a hosted AI provider. Depending on what you ask, this can include sampled video frames or short audio excerpts for visual understanding or transcription. The current production configuration uses Runpod for these model requests. In the editor, assistant replies and temporary working context remain in browser memory rather than your saved project; they are not added to your published export unless you apply an edit.</p>
+        <p>We keep bounded operational diagnostics without storing your prompts, source, sampled images, audio, or transcripts in those diagnostics. To limit abuse and service usage, the server stores daily counters tied to a hashed client address rather than the raw address.</p>
+      </section>
+
+      <section>
+        <h2>Service providers and retention</h2>
+        <p>Cloudflare hosts the app, account database, published exports, and server requests. Google handles sign-in. Runpod processes assistant requests when you use that feature. These providers process data as needed to deliver those services and may handle operational information under their own policies.</p>
+        <p>Local projects remain until you or your browser remove them. Restyle sessions expire after seven days, while account information stays available for future sign-in. Published exports remain available until you delete their links or ask us to remove them. We may retain limited operational records needed to run and protect the service. To request deletion of your account or other data we hold, contact <a href="mailto:japhetdesouza6@gmail.com">japhetdesouza6@gmail.com</a>.</p>
+      </section>
+
+      <section>
+        <h2>Changes and contact</h2>
+        <p>We will update this page when our data practices change and show the new effective date. For privacy questions or requests, email <a href="mailto:japhetdesouza6@gmail.com">japhetdesouza6@gmail.com</a>.</p>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <a href="/about.html">About Restyle</a>
+      <a href="/terms.html">Terms of service</a>
+      <a href="/editor/">Open the editor</a>
+      <a href="mailto:japhetdesouza6@gmail.com">Contact</a>
+    </footer>
+  </body>
+</html>
