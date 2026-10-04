@@ -10,6 +10,7 @@ import { sceneDuration } from "../../../domain/scenes/duration";
 import { dur } from "../../../domain/clips/timing";
 import { useAssistant } from "../../../state/assistant/assistantStore";
 import { useCapture } from "../../../state/captureStore";
+import { setCodePreviewFocus } from "../../../state/components/componentAuthoringStore";
 import { clearTimelineSelection } from "../../../state/editing/selectionCommands";
 import { fmt } from "../../../ui/formatTime";
 import { AudioClipBar } from "../../sound/AudioClipBar";
@@ -151,6 +152,8 @@ export function DesktopTimeline({
       data-desktop-timeline
       data-animation-expanded={animationLanes.length > 0}
       data-time-pick={!!state.playheadPick}
+      onPointerDownCapture={() => setCodePreviewFocus(false)}
+      onFocusCapture={() => setCodePreviewFocus(false)}
     >
       {state.playheadPick ? (
         <TimelineTimePicker />

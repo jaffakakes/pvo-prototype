@@ -1,5 +1,16 @@
 .area { position: relative; }
 .canvas:not([data-trying="true"]) { touch-action: none; }
+.componentDimmer {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, .62);
+  pointer-events: none;
+  animation: componentDimIn 260ms ease-out;
+}
+@keyframes componentDimIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 
 .area[data-desktop="true"] { min-width: 0; padding: 20px; background: var(--deep); }
 .canvas[data-desktop="true"] { border: 2px solid var(--q12); border-radius: 14px; box-shadow: none; }

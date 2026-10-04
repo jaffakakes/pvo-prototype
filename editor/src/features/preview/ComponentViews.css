@@ -9,11 +9,21 @@
   user-select: none;
   -webkit-user-select: none;
 }
-.compOverlay.compSelected,
-.compOverlay[data-sel="true"] {
-  outline: 2px dashed var(--pale);
-  outline-offset: 4px;
-  border-radius: 10px;
+.compOverlay[data-component-focused="true"] {
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, .65));
+  animation: componentFocusEnter 320ms cubic-bezier(.22, 1, .36, 1) backwards;
+}
+@keyframes componentFocusEnter {
+  from {
+    translate: var(--focus-origin-x) var(--focus-origin-y);
+    scale: .94;
+    opacity: .82;
+  }
+  to {
+    translate: 0 0;
+    scale: 1;
+    opacity: 1;
+  }
 }
 .compOverlay[data-trying="true"] {
   cursor: default;
