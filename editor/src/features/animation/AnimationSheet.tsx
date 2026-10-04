@@ -57,7 +57,7 @@ function AnimateLayer({ target, close }: { target: AnimationTarget; close(): voi
           retrackDisabled={!following.available} onRetrack={following.retrack} perform={perform} /> : <>
         <div className={styles.keyDescription}><strong>{atPlayhead.length ? "◆ " : ""}{formatKeyTime(localTime)}</strong>
           <span>{atPlayhead.length ? layer.audio ? formatKeyValue("volume", volume!.value) : atPlayhead.map(row => GROUP_LABELS[row.group]).join(" · ")
-            : layer.audio ? `between keyframes · volume ${formatKeyValue("volume", volume!.value)}` : "no keyframe here · drag the layer or a control to add one"}</span></div>
+            : layer.audio ? `between keyframes · volume ${formatKeyValue("volume", volume!.value)}` : "no keyframe here · add one before dragging to animate"}</span></div>
         <button type="button" className={styles.keyAction} data-delete={!!atPlayhead.length} disabled={disabled} data-keyframe-control
           onClick={() => perform(() => atPlayhead.length ? removeAuthoringKey(target, state.t, { wholeTransform: !layer.audio, group: layer.audio ? "volume" : undefined })
             : addAuthoringKey(target, state.t, { wholeTransform: !layer.audio, group: layer.audio ? "volume" : undefined }))}>
