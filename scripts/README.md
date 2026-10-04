@@ -5,9 +5,12 @@ Run npm commands from the repository root. Scripts are grouped by their job:
 ```text
 scripts/
   build/              Static site, Rust/WASM, sample and share-demo preparation
-  dev/                Static development server
+  dev/                Local server, auth, render-jobs/ and reply-boxes/ adapters
   checks/
     javascript.mjs    Source JavaScript syntax checks (excluding generated code)
+    dependencies.mjs  Declared import-boundary checks
+    formatting.mjs    Pinned Prettier for formatting-scope.json adopted files
+    tests.mjs         Recursive Node behavior test discovery
     run.mjs           Select and run a browser suite or named checks
     editor/           Recording, authoring, layers, requests and export
     player/           Playback and action workflows against a running player
@@ -30,12 +33,16 @@ scripts/
 | `npm run build:language` | Generate only `packages/pvo-language/pkg/` with wasm-pack. |
 | `npm run dev` | Full build, then serve `dist/` on loopback port 4173 (`PVO_PORT` overrides it), including local Google auth routes. |
 | `npm run dev:editor` | Build the language, then run Vite on port 5173; Vite alone does not provide Google auth routes. |
-| `npm run check` | Check JavaScript syntax, dependency boundaries and Node behavior tests. |
-| `npm run check:architecture` | Check domain/state/presentation, editor/player and shared-package import directions. This does not replace responsibility, lifecycle or cycle review. |
+| `npm run check` | Check JavaScript syntax, dependency boundaries, adopted-file formatting and Node behavior tests. |
+| `npm test` | Recursively run `tests/**/*.test.mjs`, including `tests/sdk/` and `tests/server/`; default concurrency is four files. |
+| `npm run format` / `npm run check:format` | Write/check pinned Prettier 3.9.9 formatting for the explicit `scripts/checks/formatting-scope.json` list. |
+| `npm run check:architecture` | Check declared domain/state, editor/player, server/dev-to-browser and package-to-consumer import boundaries. Includes `scripts/dev`; shared packages cannot import scripts. |
 | `npm run check:editor` | Check editor TypeScript. |
 | `npm run check:language` | Run native Rust tests with the checked-in Cargo lockfile. |
 | `npm run check:language:format` | Verify Rust formatting. |
 | `npm run build:sample` | Regenerate the self-contained example `.pvo` package. |
+
+Pass Node test options with `npm test -- --test-concurrency=2`; use `node --test tests/sdk/*.test.mjs` for the focused SDK suites. Add maintained files to the explicit formatting list as formatting is adopted; `npm run format` does not rewrite unlisted source. The dependency check parses static imports/exports, literal dynamic imports/requires and import types. Neither check proves cohesion, naming quality, lifecycle cleanup, cycle freedom or renderer parity; there is no general-purpose linter.
 
 Rust, the `wasm32-unknown-unknown` target, and wasm-pack are needed for language builds. The browser bridge imports generated `pkg/` bindings; build them before editor builds or tests that bundle the editor. `target/`, `pkg/`, and `dist/` are output, not source to edit.
 
@@ -55,14 +62,18 @@ Make its directory private with `chmod 700 .wrangler/local-beta` and the file pr
 
 The loopback server creates its own private account/session store in that directory and uses HttpOnly, SameSite=Lax cookies lasting seven days. It runs over HTTP on `127.0.0.1`, so these local cookies omit the production cookie's `Secure` attribute. Without the local client, `GET /api/auth/session` reports `available: false`; editing still works, but export waits for account services. This local static server does not provide publication uploads or R2 storage. For those, use the Worker with its configured D1/R2 bindings and exact HTTPS origin. `npm run dev:editor` serves only Vite and cannot complete live Google sign-in by itself.
 
-For local Clerk email/password configuration, see the [local account setup](../docs/engineering/cloudflare-publishing.md#google-sign-in-on-the-loopback-beta).
+For local Clerk email/password configuration, see the [local account setup](../docs/engineering/cloudflare-publishing.md#local-account-adapter).
 
 ## Browser suites
 
 For export-quality diagnosis, run `node scripts/diagnostics/export-quality.mjs` with Vite serving the editor on port 5173, Chrome, Playwright WebKit, and FFmpeg/FFprobe installed. It checks output dimensions, first frame, colour, codec, and motion in both engines and reports encoded-duration drift separately; it is intentionally not part of the normal browser suite while WebKit's real-time timing issue remains unresolved.
 Run `node scripts/diagnostics/export-cancel.mjs` against the same Vite editor to verify that cancelling a browser render stops its recorder, canvas capture track, and progress promptly.
 
+Local HTTP routing lives in `scripts/dev/render-jobs/routes.mjs` and `scripts/dev/reply-boxes/routes.mjs`, with separate input, job/transfer and repository modules. `scripts/dev/server.mjs` composes them with auth; `scripts/dev/http.mjs` supplies shared Node HTTP helpers.
+
 The local beta server on port 4173 also offers private FFmpeg render jobs for eligible exports. Sign in with Google or Clerk email/password on that beta before using the render API. Set `PVO_FFMPEG_PATH` and `PVO_FFPROBE_PATH` when the desired binaries are not on `PATH`; HLG/PQ uploads need an FFmpeg build with `zscale` (for example Homebrew `ffmpeg-full`). Set `PVO_RENDER_COOKIE` to the signed-in browser's `pvo-local-session=...` cookie header value, then run `node scripts/diagnostics/server-render.mjs` against the beta to check exact trim timing, H.264/AAC, and 720p/1080p/4K output. Run `EDITOR_URL=http://127.0.0.1:4173/editor/ npm run check:browser -- editor server-render` with Chrome and FFprobe for the upload-to-download UI path. `PVO_RENDER_ORIGIN` points the diagnostic at another local server. The production Worker render capability remains off until its Queue, Container and D1 migration are configured; see [server rendering](../docs/engineering/server-rendering.md).
+
+`npm run check:browser -- editor export-dialog export-rendering cover-layout` requires Vite, generated WASM and Chrome. The dialog check covers desktop/phone settings, cover picking, cancellation and completed playback. The rendering check covers WebP layers/fonts, source/result animation clocks and media/URL cleanup. `cover-layout` compares the actual native DOM and canvas geometry at two sizes, including text, number, yes/no, collected-reply, styled and applied-font forms; it also checks the reply disclosure is painted. These representative fixtures guard shared behavior without claiming pixel identity for every authored style.
 
 `npm run check:browser -- editor audio-extraction` verifies explicit audio extraction, independent movement/trimming, undo/cancel, original-audio muting, saved media, mobile deletion, and the audible timing of exported video including audio beyond the last video frame. It requires Vite, Chrome and `ffmpeg` on PATH; the test generates its own tone video and inspects the encoded audio.
 

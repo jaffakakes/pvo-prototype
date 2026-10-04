@@ -21,7 +21,7 @@ import {
 } from "../../../state/editing/selectionCommands";
 import { Icon } from "../../../ui/Icon";
 import { fmt } from "../../../ui/formatTime";
-import { componentLabel } from "../../preview/ComponentOverlay";
+import { componentLabel } from "../../../domain/components/presentation";
 import { SOUNDS } from "../../sound/catalog";
 import { MAX_ZOOM, MIN_ZOOM } from "./geometry";
 import styles from "./TimelineToolbar.module.css";

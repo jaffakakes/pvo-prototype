@@ -1,14 +1,12 @@
+import { useGestureCancellation } from "./useGestureCancellation";
 import { beginAudioTimingDrag } from "../../state/editing/audioCommands";
-import { useEffect, useRef, type PointerEvent } from "react";
+import { useRef, type PointerEvent } from "react";
 import { beginComponentTimingDrag } from "../../state/components/componentTimingDrag";
 import {
   beginTimelineTimingDrag,
   type TimelineTimingTarget,
 } from "../../state/editing/timelineTimingDrag";
-import {
-  snappedTimingDelta,
-  type TimingSnapSettings,
-} from "./timingSnap";
+import { snappedTimingDelta, type TimingSnapSettings } from "./timingSnap";
 
 type Target =
   | { kind: "audio"; id: number; mode: "move" | "l" | "r" }
@@ -33,36 +31,17 @@ export function useTimingPointer(
     snap: { edgeTime: number; playhead: number } | null;
     transaction: Transaction;
   } | null>(null);
-  useEffect(() => {
-    const cancel = () => {
-      const active = gesture.current;
-      gesture.current = null;
-      active?.transaction.cancel();
-      if (active?.element.hasPointerCapture(active.pointerId))
-        active.element.releasePointerCapture(active.pointerId);
-    };
-    const escape = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && gesture.current) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        cancel();
-      }
-    };
-    window.addEventListener("keydown", escape, true);
-    window.addEventListener("blur", cancel);
-    return () => {
-      cancel();
-      window.removeEventListener("keydown", escape, true);
-      window.removeEventListener("blur", cancel);
-    };
-  }, []);
+  useGestureCancellation(() => {
+    const active = gesture.current;
+    gesture.current = null;
+    active?.transaction.cancel();
+    if (active?.element.hasPointerCapture(active.pointerId))
+      active.element.releasePointerCapture(active.pointerId);
+    return !!active;
+  });
 
   return {
-    begin(
-      event: PointerEvent<HTMLElement>,
-      target: Target,
-      edgeTime?: number,
-    ) {
+    begin(event: PointerEvent<HTMLElement>, target: Target, edgeTime?: number) {
       event.stopPropagation();
       if (event.button > 0 || gesture.current) return;
       const transaction =
@@ -94,9 +73,7 @@ export function useTimingPointer(
       const active = gesture.current;
       if (active?.pointerId !== event.pointerId) return;
       const delta =
-        (event.clientX - active.x) /
-        active.scale /
-        active.pixelsPerSecond;
+        (event.clientX - active.x) / active.scale / active.pixelsPerSecond;
       const result = active.snap
         ? snappedTimingDelta(
             active.snap.edgeTime,

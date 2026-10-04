@@ -25,7 +25,7 @@ pvo-prototype/
     pvo-component-runtime/      Shared no-code presets and bounded appearance values
   scripts/
     build/                      WASM, static site and sample/demo preparation
-    dev/                        Static development server
+    dev/                        Local server, auth, render jobs and reply-box adapters
     checks/                     JavaScript checks and browser suites by owner
   tests/                        Node behavior tests
   share/                        Demo landing page and assets
@@ -37,6 +37,8 @@ pvo-prototype/
 The product home `/` opens the camera/editor application under `/editor/`; mobile home selects the existing camera after recovering the local draft, while landscape tablet/desktop home (1024px and above) shows the create-project studio. `/about.html`, `/privacy.html` and `/terms.html` are static product pages for the canonical `https://getrestyle.app` origin. `/player/` opens local files and `/player/{id}` opens a published export through the Worker. Demo and documentation pages are excluded from product output. The documentation website uses its own HTML, CSS, and JavaScript in `docs/site/`, with a separate `npm run build:docs` output. Engineering and language Markdown are repository guides, not automatically rendered website pages.
 
 `server/` owns Cloudflare routing, Google OIDC sign-in and account sessions, publication rules and D1/R2 adapters. Its entry point delegates to focused route modules; uploaded media is stored in R2 and account ownership/lifecycle records in D1. Editor and player consume the same HTTP publication boundary without importing server internals. Video/PVO export and publication require an account, while recording, editing, viewing and the assistant do not. The independent `server/assistant/` service uses the configured hosted inference provider and the shared PVO compiler to propose native project operations through `/api/assistant/turn`, with bounded media observation and transcription. Every provider-backed request first reserves capacity from the application-owned `AssistantBudget`; status fails closed when that binding is unavailable. The current beta allowance is 60 requests per UTC day across the service, 20 per client per day and twelve per client per minute. The minute allowance accommodates one task’s maximum six model turns and six metered observations. Each request also retains bounded media inspection, deadlines and one repair attempt, while the configured provider's account allowance remains an independent limit. Assistant availability does not depend on sign-in. See [publishing setup](cloudflare-publishing.md), the [product flow](publishing-plan.md), and the [orb assistant](orb-assistant.md).
+
+`scripts/dev/server.mjs` composes loopback auth, `render-jobs/routes.mjs` and `reply-boxes/routes.mjs`. Those feature folders separate input validation, job/transfer ownership or repository storage from HTTP routing; `http.mjs` owns shared Node request/response helpers. Local adapters use the same public contracts as the Worker without importing browser applications.
 
 `server/imessage/` owns the bounded test-message request and queue; `scripts/dev/imessage-bridge.mjs` is the Mac-only effect adapter that polls it and asks Messages to send the fixed text. The editor uses an ordinary checked PVO request, so it never gains direct access to Messages. See [Mac iMessage test sender](imessage-test.md).
 
@@ -58,7 +60,7 @@ flowchart TD
   Player --> Text
 ```
 
-Editor and player must not import each other's internals. Packages must not import their consumers. The Rust compiler owns deterministic parsing, validation, compilation, diagnostics, and capability rules; it does not perform requests or playback. Bindings expose its contracts, and the JavaScript facade initializes WASM. Hosts validate events and execute checked outcomes.
+Editor and player must not import each other's internals. Server and local development adapters must not import browser application internals. Packages must not import their consumers, including scripts. The Rust compiler owns deterministic parsing, validation, compilation, diagnostics, and capability rules; it does not perform requests or playback. Bindings expose its contracts, and the JavaScript facade initializes WASM. Hosts validate events and execute checked outcomes.
 
 Editor domain code depends on project data and package contracts, not React, Zustand, DOM elements, or UI state. Browser-oriented packages such as the renderer and text painter legitimately use browser capabilities. The generic SDK supports host handlers and retains its existing default network/browser behavior.
 
@@ -74,7 +76,8 @@ editor/src/
     scenes/                     Naming, scene references and total duration
     layers/                     Layer identity and ordering
     animation/                  Keyframe clocks, layer edits and tracked motion rules
-    components/                 Defaults, Fields/PVO source mapping, outcomes and response timing policy
+    components/                 Defaults, display metadata, Fields/PVO mapping and response policy
+    preview/                    Pure Try playback boundary and resume decisions
     assistant/                  Answers, bounded context, atomic batch validation and thread models
     notifications/              Approved events, short copy, priority and repetition rules
     export/                     Pure project-to-manifest construction
@@ -105,7 +108,8 @@ editor/src/
       look/                     Preset previews and scoped appearance controls
       outcomes/                 Requests and playback-route configuration
       language/                 Structure/Style/Logic editor and diagnostics
-    export/                     Export orchestration, progress and download UI
+    export/                     Export workflow, preview lifetimes and controlled dialog views
+    replies/                    Inbox presentation and account-scoped request workflow
     settings/                   Settings views and their styles
     sound/                      Music selection, audio layers and playback wiring
   infrastructure/               Media export, audio, language compilation, IDs
@@ -122,6 +126,8 @@ Editor appearance uses semantic chrome and button tokens in `theme.css`, with Li
 
 `features/editor-layout/` keeps navigation, preview, transport and the lower panel in one measured layout. Panel height is local presentation state, outside project history. Component sheets inherit the timeline height when opened and clamp their maximum to keep the player, transport and header visible. Other panels retain their fullscreen expansion; those regions stay mounted and return when space becomes available. Shared shells use `ui/sheets/SheetDockContext.tsx` to register their dismissal and expansion behavior; the camera renders the same shells without a dock provider. Timeline picking hides the panel without unmounting its draft, then restores it. Try hides the lower region and restores its height alongside the original scene, playhead and selection when the session stops. OS keyboard viewport changes temporarily fit the sheet around the focused field without replacing its preferred height.
 
+Timeline clip/text gestures share `state/editing/timelineTimingDrag` across the main timeline and compact timing controls. Focused trim/layer hooks handle pointer geometry; the transaction applies domain timing rules, commits one history entry, and restores cancelled previews without overwriting newer history. `useGestureCancellation` wires Escape, blur and unmount; pointer cancellation and lost capture follow the same rollback path. Component and audio timing retain their dedicated transactions.
+
 Timeline and sheet panels share `usePanelResize` and `PanelResizeHandle`, with independent size state. Sheets may dismiss when pulled down; the timeline stops at a usable minimum. `useTimelineMeasurements` reads the natural track content and fixed scene/toolbar controls to determine the default and minimum, independently of the height allocated while dragging. The timeline's existing scroll container fills the remaining space without changing layer coordinates or editing commands.
 
 The workspace owns top and side system safe-area padding outside its resizable grid. `useWorkspaceMeasurements` measures the usable height after that padding, so fullscreen and every intermediate size keep their drag handles below the status bar. Header and panel shells must not add another top inset. Bottom clearance belongs to the timeline toolbar and sheet scroll content.
@@ -132,11 +138,19 @@ Desktop and tablet Look tools expose Width and Height in canvas pixels through `
 
 The [orb assistant](orb-assistant.md) uses one composer for questions and whole-project edits. Validated user-requested edits apply immediately as one undo step on both mobile and desktop; a typed 2.4-second completion notice offers a guarded Undo action. Questions open an answer card. The visible Restyle thread records bounded session exchanges and offers guarded row Undo/Redo for the current exact history state. The session stores contain request, answer and thread data outside persistence and history; there is no staged proposal preview. `features/assistant/` coordinates views, voice, application and answers. `domain/assistant/native/` projects private project data into bounded context, prepares typed operations against an isolated snapshot and validates compiled component changes. `infrastructure/assistant/` owns same-origin `/api/assistant/turn` transport and the bounded observation loop; its media adapters sample real frames and extract bounded audio without moving the editor playhead. Microphone input records locally with MediaRecorder, converts to bounded mono WAV and uses the same transcription route only after explicit Send or hold release; cancellation releases tracks and aborts pending transcription. `packages/pvo-assistant/native/` shares strict operation and observation contracts with `server/assistant/native/`. The server runs hosted text, vision and transcription models with origin checks, size limits and deadlines; there is no local preset fallback. `state/assistant/nativeCommands.ts` commits the complete validated batch atomically through normal history, checking the original project fingerprint and current editing preference. `state/assistant/applyChanges.ts` then executes requested playback or export effects; `nativeAppliedNotification.ts` owns the temporary Undo receipt and prevents an old action from undoing a newer edit.
 
+`useAssistantSession` owns UI, playback and voice lifetimes. `assistantRequestWorkflow` owns cancellation, stale-project rejection and final apply guards through narrow capabilities; `assistantSessionRequest` supplies concrete editor effects. `useReplyInbox` similarly binds presentation/account lifetime to `replyInboxWorkflow`, which owns loading, selection, deletion and late-response suppression. Previous-account data is cleared on owner changes.
+
+`ExportSheet` composes controlled settings, progress, result and footer views. `useExportProgress` owns its timer; `previewUrl` and `useExportPreviewUrls` own pending cover/poster/PVO media URLs, cancellation and revocation. `useExportPreviewPlayback` owns source/result clocks, seeking and decoder cleanup. Cover selection uses the domain clamp. Native cover painting separates compositing, shared drawing primitives, native panels and form geometry; the `cover-layout` browser check compares DOM/canvas geometry, including reply controls and applied fonts. Native DOM and canvas layout rules still require coordinated maintenance.
+
+`domain/components/presentation` owns component labels and time visibility shared by timeline, preview and export, so consumers do not import metadata from a React renderer.
+
 Keep new feature code in its owning folder rather than expanding the compatibility `store.ts` facade. Crop/speed, sound and discard sheets have feature owners; `app/Sheets.tsx` only selects the view. Timeline pointer wiring calls pure clip/text timing rules through state commands. Component timing keeps its existing transaction command. Export sessions and camera controls have dedicated hooks, and each Try session owns its runtime through explicit host adapters. Persistence accepts a project/history/resume snapshot rather than the complete capture store.
 
 Feature CSS is co-located with its views. `EditorStyles.module.css` imports the extracted styles in their original cascade order, retaining a single compatibility namespace for existing `cx` consumers and pointer hooks. New independent feature modules can continue using their own CSS modules. Further migration of the compatibility namespace and shared fonts is separate work.
 
 ### Try diagnostics
+
+`createTrySession` composes an explicit host with focused request, response, runtime-bridge and diagnostic owners. `domain/preview/playback` supplies pure boundary/resume decisions; request cleanup and response epochs prevent a stopped or replaced session from applying late outcomes.
 
 Try records a bounded, transient diagnostic run even when its panel is closed. The SDK exposes optional typed observation callbacks for actions, requests and state; the sandbox and host adapters add readiness, input and playback facts. Observer failures cannot reject an action. Shared packages never import the editor or its UI, and the standalone player can expose the same facts without mounting authoring tools. Diagnostics do not introduce PVO syntax or enter manifests, project saves, exports or undo history.
 
@@ -175,7 +189,7 @@ packages/pvo-sdk/
   runtime/                      State paths, conditions, request policy, execution
 ```
 
-The player owns an explicit per-viewer session and passes capabilities to controllers. Rendering, media access, action execution, and playback decisions have separate owners. Some controllers still combine decisions with host coordination; they are not all pure domain functions.
+The player owns an explicit per-viewer session and passes capabilities to controllers. `playback/transition-policy.js` makes pure response-boundary and clip-end decisions; `transition-state.js` supplies narrow state operations, and `transitions.js` applies media/UI effects. `components/component-view.js` owns custom-element events and pending controls, delegating structured Fields and manifest HTML rendering to `fields-view.js` and `manifest-view.js`. Generated PVO content keeps its separate sandbox boundary.
 
 Local PVOs and published PVO/flat videos share the Restyle player shell. `ui/view-state.js` derives its sound, hold, sending, failure and completion presentation; `ui/input.js` wires footage, keyboard and button entry points to the same commands. The shell has no seek/control row. `ui/layout-geometry.js` owns fitting, lifting and collision calculations, while `ui/layout.js` measures the browser and preserves mounted component inputs through viewport/keyboard changes. Authored coordinates use the fitted footage rectangle. Ambient painting reuses the playing video and releases its timers with the viewer. `?debugHits=1` shows shell and Fields component targets, and `?cta=orange` pins an accent for visual checks. Creator attribution waits for public creator metadata; the current publication contract exposes a title and media duration only.
 
@@ -206,6 +220,6 @@ See the [package ownership guide](../../packages/pvo-language/README.md) for int
 
 ## Build and verification
 
-[Scripts and prerequisites](../../scripts/README.md) document stable npm commands and the grouped suites. `npm run check` checks JavaScript syntax, the declared dependency boundaries and Node behavior tests. Rust has native/format checks; browser fixtures verify compiler, editor, player and isolation behavior. The CI workflow installs locked Node dependencies and wasm-pack, then checks Rust formatting/tests, the production build, JavaScript/Node and editor types. Browser suites remain explicit local checks.
+[Scripts and prerequisites](../../scripts/README.md) document stable npm commands and the grouped suites. `npm run check` checks JavaScript syntax, the declared dependency boundaries, pinned Prettier formatting for explicitly adopted files, and Node behavior tests. See the [coding standard](coding-standards.md#verification-and-review) for the limits of those checks; there is no general-purpose linter. Rust has native/format checks; browser fixtures verify compiler, editor, player and isolation behavior. The CI workflow installs locked Node dependencies and wasm-pack, then checks Rust formatting/tests, the production build, JavaScript/Node and editor types. Browser suites remain explicit local checks.
 
-The production build includes the language facade and generated `pkg/`, not Cargo sources or `target/`. It replaces `dist/`; use an isolated build tree when existing generated output must be preserved. Player fonts still copy from `editor/src/fonts`; independent shared font ownership remains a follow-up. Node tests still use `tests/*.test.mjs`; change test discovery if moving those into nested folders.
+The production build includes the language facade and generated `pkg/`, not Cargo sources or `target/`. It replaces `dist/`; use an isolated build tree when existing generated output must be preserved. Player fonts still copy from `editor/src/fonts`; independent shared font ownership remains a follow-up. Node tests are discovered recursively under `tests/`, including the focused SDK suites in `tests/sdk/` and local adapter suites in `tests/server/`. The default is four concurrent files; `npm test -- --test-concurrency=2` overrides it.

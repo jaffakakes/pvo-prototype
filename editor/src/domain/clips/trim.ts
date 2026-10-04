@@ -21,11 +21,12 @@ export function trimClipHandle(
   side: "l" | "r",
   deltaSeconds: number,
   exact = false,
+  minimumSeconds = 0.5,
 ) {
   const duration = (clip.out - clip.in) / clip.speed;
   const adjusted = exact ? deltaSeconds : Math.round(deltaSeconds * 10) / 10;
   if (adjusted === 0) return clip;
   // A preexisting short segment may grow, but the handle must not silently
   // lengthen it or shorten it further just to meet the normal minimum.
-  return trimClip(clip, side, adjusted, Math.min(duration, 0.5));
+  return trimClip(clip, side, adjusted, Math.min(duration, minimumSeconds));
 }

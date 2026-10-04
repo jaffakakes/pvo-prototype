@@ -10,7 +10,10 @@ export type TimelineTimingTarget =
   | { kind: "text"; id: number; mode: "move" | "l" | "r" };
 
 /** A pointer gesture previews timing and records one undo step on release. */
-export function beginTimelineTimingDrag(target: TimelineTimingTarget) {
+export function beginTimelineTimingDrag(
+  target: TimelineTimingTarget,
+  { minimumClipDuration = 0.5 }: { minimumClipDuration?: number } = {},
+) {
   const before = useCapture.getState();
   const clip =
     target.kind === "clip"
@@ -82,7 +85,13 @@ export function beginTimelineTimingDrag(target: TimelineTimingTarget) {
       if (!active()) return false;
       const state = useCapture.getState();
       if (clip && target.kind === "clip") {
-        const next = trimClipHandle(clip, target.mode, delta, exact);
+        const next = trimClipHandle(
+          clip,
+          target.mode,
+          delta,
+          exact,
+          minimumClipDuration,
+        );
         changed = next.in !== clip.in || next.out !== clip.out;
         const clips = state.clips.map((item) =>
           item.id === clip.id ? next : item,
@@ -108,7 +117,7 @@ export function beginTimelineTimingDrag(target: TimelineTimingTarget) {
       if (!active()) {
         if (unchangedHistory()) restore();
         ended = true;
-        return;
+        return false;
       }
       if (changed) {
         const state = useCapture.getState();
@@ -119,6 +128,7 @@ export function beginTimelineTimingDrag(target: TimelineTimingTarget) {
         });
       }
       ended = true;
+      return true;
     },
     cancel() {
       if (unchangedHistory()) restore();

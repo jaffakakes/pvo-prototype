@@ -1,5 +1,7 @@
 # Organization audit — 4 October 2026
 
+The [implementation update](#implementation-update) records the completed follow-up changes. The earlier sections retain the evidence and limitations of their inspected snapshots.
+
 The architecture is still substantially intact. Feature grouping, domain boundaries, small files, descriptive names and useful comments remain present. The code needs targeted maintenance in a few workflows; the evidence does not support a repository-wide reorganization.
 
 The main weakness is duplicated or mixed ownership inside otherwise sensible folders. Small files and a passing dependency check do not, by themselves, establish single responsibility or SOLID compliance.
@@ -30,7 +32,7 @@ Lengths include blank lines. They are navigation aids, not quality scores. CSS, 
 
 **Medium priority; observable divergence found by code inspection.** Mobile clip/text timing edits and desktop edits have different command and cancellation lifecycles.
 
-- [Mobile gestures](../../editor/src/features/timeline/useTimelineGestures.ts), lines 216–279 and 357–419, call [preview commands](../../editor/src/state/editing/timelineEditingCommands.ts), lines 9–48. These write history on the first movement. `textBarUp` finishes its preview even for `pointercancel`; it does not restore the original timing.
+- [Mobile gestures](../../editor/src/features/timeline/useTimelineGestures.ts), lines 216–279 and 357–419, call [preview commands](https://github.com/jaffakakes/pvo-prototype/blob/9bcc1bc9856c6d1b0af4aa7bb8b3550308d3f734/editor/src/state/editing/timelineEditingCommands.ts), lines 9–48. These write history on the first movement. `textBarUp` finishes its preview even for `pointercancel`; it does not restore the original timing.
 - [Desktop pointer wiring](../../editor/src/features/timeline/useTimingPointer.ts), line 68, uses [the timing transaction](../../editor/src/state/editing/timelineTimingDrag.ts). Its `commit` and `cancel`, lines 107–125, record history on completion or restore the original state. The hook also handles Escape, blur and unmount.
 
 The same editing operation therefore has two workflow owners despite sharing some pure calculations. Route both through one transaction command, retaining their distinct pointer geometry. Preserve or explicitly decide cancellation behavior with regressions in the existing timeline suites. The divergence was not reproduced in a browser during this audit.
@@ -51,7 +53,7 @@ Build on the existing `useExportSession` and `exportWorkflow`: move cover-previe
 
 ### 4. Give local backend implementations an explicit owner
 
-**Medium priority.** [Local render jobs](../../scripts/dev/render-jobs.mjs), lines 45–227, combine input checks, job storage, expiry, queue execution, upload, cancellation, HTTP handling and renderer configuration. The production equivalents are already split under `server/render-jobs/`. [Local reply boxes](../../scripts/dev/reply-boxes.mjs), lines 81–193, similarly combine storage, ownership, quotas, CORS and routing. Reply limits appear both here and in [the production repository](../../server/replies/repository.js).
+**Medium priority.** [Local render jobs](https://github.com/jaffakakes/pvo-prototype/blob/9bcc1bc9856c6d1b0af4aa7bb8b3550308d3f734/scripts/dev/render-jobs.mjs), lines 45–227, combine input checks, job storage, expiry, queue execution, upload, cancellation, HTTP handling and renderer configuration. The production equivalents are already split under `server/render-jobs/`. [Local reply boxes](https://github.com/jaffakakes/pvo-prototype/blob/9bcc1bc9856c6d1b0af4aa7bb8b3550308d3f734/scripts/dev/reply-boxes.mjs), lines 81–193, similarly combine storage, ownership, quotas, CORS and routing. Reply limits appear both here and in [the production repository](../../server/replies/repository.js).
 
 `scripts/dev` now contains substantial product behavior as well as tooling. Keep the development entry point as composition, group its feature adapters clearly, and share genuinely common validation/policy through narrow contracts.
 
@@ -73,7 +75,7 @@ These are interface segregation and ownership concerns in short files, not evide
 
 ### 7. Improve names and formatting where they conceal responsibilities
 
-**Lower priority.** [legacy-view.js](../../player/components/legacy-view.js) implements the current Fields renderer, including Collect replies, as well as manifest HTML/CSS rendering and event translation. Its name suggests obsolete functionality and does not explain its current role. Rename the host around its actual responsibility and separate rendering strategies when their independent changes warrant it.
+**Lower priority.** [legacy-view.js](https://github.com/jaffakakes/pvo-prototype/blob/9bcc1bc9856c6d1b0af4aa7bb8b3550308d3f734/player/components/legacy-view.js) implements the current Fields renderer, including Collect replies, as well as manifest HTML/CSS rendering and event translation. Its name suggests obsolete functionality and does not explain its current role. Rename the host around its actual responsibility and separate rendering strategies when their independent changes warrant it.
 
 Readability is uneven: this file's CSS at lines 129–141, [ExportSheet JSX](../../editor/src/features/export/ExportSheet.tsx) from line 149, and [ComponentOverlay's outer element](../../editor/src/features/preview/ComponentOverlay.tsx) at line 55 pack several decisions or operations onto single lines. Expand them and name handlers/decisions where touched. Comments cannot compensate for dense structure.
 
@@ -81,7 +83,7 @@ Names such as `beginComponentTimingDrag`, `exportCoverAt`, `captureExportSnapsho
 
 ### 8. Bring test organization and enforcement up to date
 
-**Lower priority; partly recorded historical debt.** There are 82 files directly under `tests/`. [sdk.test.mjs](../../tests/sdk.test.mjs) has 739 lines covering containers, manifests, templates, execution, requests and schemas, although source ownership is already separated. Group this suite by responsibility with focused fixtures, updating the flat `tests/*.test.mjs` discovery pattern in [package.json](../../package.json) at the same time.
+**Lower priority; partly recorded historical debt.** There are 82 files directly under `tests/`. [sdk.test.mjs](https://github.com/jaffakakes/pvo-prototype/blob/9bcc1bc9856c6d1b0af4aa7bb8b3550308d3f734/tests/sdk.test.mjs) has 739 lines covering containers, manifests, templates, execution, requests and schemas, although source ownership is already separated. Group this suite by responsibility with focused fixtures, updating the flat `tests/*.test.mjs` discovery pattern in [package.json](../../package.json) at the same time.
 
 Do not split cohesive preview-session or gesture suites simply because they are long. Their behavior and failure paths are more useful review criteria.
 
@@ -148,3 +150,40 @@ The reconciled code therefore needs focused workflow cleanup, not a wholesale fo
 ### Addendum verification limits
 
 This update is a source review and documentation change. Local links and current counts were checked; no application code changed for this addendum. The initial 609-test result and import-graph counts above belong only to the historical snapshot. Separate release work exercised current PVO export, audio extraction/export, keyframe rendering, player layout/playback/fonts and cover/preview rendering in browsers. Those checks support the tested behavior, not a claim that every module is SOLID or every renderer is pixel-identical. Use the final release verification record for final check totals and deployment status.
+
+
+## Implementation update
+
+The follow-up implements the actionable findings above as focused changes. It retains feature ownership and public SDK, package, container and authoring contracts. Formatting expands previously dense JSX and statements; file length is still a responsibility-review signal rather than a quota.
+
+| Finding | Implementation and evidence |
+| --- | --- |
+| Timeline transactions | Mobile clip/text timing now uses the same `beginTimelineTimingDrag` transaction as desktop. Geometry remains in feature hooks, and window/pointer cancellation has one hook. Live previews add no history; a completed drag adds one step; cancellation restores timing. Mobile's continuous trim and 0.3-second minimum remain explicit. Scene, Try and newer-history guards prevent a late release from overwriting newer state. Layer reordering now has its own transaction that restores only the original scene and preserves a new project or history entry. |
+| Try session | `domain/preview/playback` owns pure boundary/eligibility rules. `createTryRequests` owns request cancellation and subscription disposal; `createTryResponses` owns response dispatch. `createTrySession` composes the session through a narrow host. Existing hold, request and scene lifecycle regressions remain. |
+| Assistant | `assistantRequestWorkflow` prepares requests through explicit adapters; `assistantSessionRequest` owns project-scoped request application, feedback and cancellation. The React hook retains view/voice lifetime and playback restoration. Fingerprint guards and one atomic history update remain. |
+| Export | Focused hooks own media URLs, preview playback and progress timing; state-specific components own settings, progress, result and footer rendering. The shared domain cover clamp is reused. Quality selection and URL cancellation/disposal have regression coverage. |
+| Inbox | `replyInboxWorkflow` owns list/open/delete state and cancellation; `useReplyInbox` binds its lifetime to the account. Account changes clear old data, Back cancels pending reads, and deletion retains ownership until completion before navigation resumes. Confirmation stays in the view. |
+| Local and hosted backends | Local render/reply folders separate routes, input, storage/jobs and transfer lifetimes. Shared reply quotas and identifiers have one owner. Hosted render routes delegate queue-failure transitions to the repository and signed internal transfers to their own adapter. Concurrent deletion rechecks the selected box inside the write queue, preventing removal of another box. |
+| Shared metadata and player | Component labels/visibility live in `domain/components/presentation`. The player now names the current component host and separates Fields/manifest rendering. Playback transitions consume a narrow state adapter and pure transition policy. |
+| Tests and readability | SDK cases live under `tests/sdk/`, retaining all original assertions. The Node runner discovers nested suites and bounds concurrent test files. Pinned Prettier checks an explicit adopted-file list as part of `npm run check`. The import gate now includes local server adapters and prevents their dependency on browser application internals. |
+| Cover parity | Representative DOM/canvas geometry fixtures cover tooltip, card, choice and form rendering at two sizes, with authored looks and fonts. They exposed and now cover form spacing and omitted Collect replies textarea/disclosure; form and panel painters have focused owners. |
+
+The automatic checks cover formatting and declared import directions, not every SOLID principle, cycle or domain side effect. Reviews must still assess responsibility, naming, duplication, comments and useful interfaces. There is no general-purpose JS/TS linter.
+
+### Remaining explicit limits
+
+- Native DOM/CSS and canvas component layouts still have distinct implementations. The representative parity fixtures are a guard against drift, not proof for every appearance or arbitrary text. A generic renderer rewrite was not required to resolve this audit.
+- Player transition contracts were narrowed where the audit identified mixed policy/effects. Other cohesive controllers still use the per-viewer session; review their inputs as their responsibilities change.
+- The timeline browser fixture exposed an existing desktop hit-target limitation: an outside left trim handle at time zero is clipped by the scroll viewport. The behavioral fixture positions its short layers inside visible bounds; fixing the zero-edge target requires a separate track-gutter/coordinate change. This is not claimed fixed by transaction unification.
+- Large cohesive presentation, sandbox and fixture modules remain subject to review rather than arbitrary splitting. Untouched historical formatting is adopted incrementally through the explicit formatter scope.
+
+### Follow-up validation
+
+- `npm run check`: passed — 503 source JavaScript modules, 701 dependency-boundary modules, 107 adopted formatting files, and 1,084 Node behavior tests; none failed or skipped.
+- `npm run check:editor`: passed.
+- Rust formatting and 23 native behavior tests: passed. The production build, including rebuilt WASM, passed; it retains the existing large-bundle warning.
+- Browser timing/stack checks passed on the completed gesture changes, including touch cancellation, Escape, blur, lost capture, unmount, snapping and Undo. Try diagnostics, native assistant application/cancellation/retries and the assistant thread passed on desktop and phone.
+- Export URL/decoder lifecycle, real rendering, dialog quality selection, and 20 representative DOM/canvas cover comparisons passed. Player layout and the responsive playback/replay journey passed.
+- Built-output Collect replies authoring, Try isolation, downloaded PVO submission, inbox and deletion passed against an isolated local server. The complete built desktop journey passed, including persistence/reload, Try, export and scene navigation.
+- Existing browser fixtures were corrected to use persistable blob media, visible short-layer handles, and the current assistant button label. The native assistant suite was rerun successfully after concurrent WASM rebuilding had reloaded its Vite page; this is not a claim that all browser suites were run.
+- Changed documentation links/anchors and source diffs were checked. Deployment status belongs to the release PRs and the task completion record; a successful local build alone is not production verification.
