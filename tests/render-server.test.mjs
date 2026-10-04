@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import { ORIGIN, SECRET, tinyMp4, workerFixture } from "./publishing-server.helpers.mjs";
 import { renderRoute } from "../server/render-jobs/routes.js";
@@ -54,9 +53,6 @@ function fakeBucket() {
 
 async function renderFixture() {
   const fixture = await workerFixture();
-  const migration = (await readFile("migrations/0002_render_jobs.sql", "utf8"))
-    .split(";").map(statement => statement.trim()).filter(Boolean);
-  await fixture.db.batch(migration.map(statement => fixture.db.prepare(statement)));
   const bucket = fakeBucket();
   const messages = [];
   const config = { origin: ORIGIN, renderAvailable: true };

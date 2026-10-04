@@ -4,7 +4,7 @@ The architecture is still substantially intact. Feature grouping, domain boundar
 
 The main weakness is duplicated or mixed ownership inside otherwise sensible folders. Small files and a passing dependency check do not, by themselves, establish single responsibility or SOLID compliance.
 
-This is an audit of the current working tree, including pending and untracked source, on `codex/orb-conversation-thread` at `73674cc`. Another task was actively editing themes in the same checkout. Counts and line references describe the inspected snapshot, not a frozen production release. No application code was changed by this audit. See the separate [branch cleanup record](branch-cleanup-2026-10-04.md).
+The initial sections below preserve the historical working-tree audit, including pending and untracked source, on `codex/orb-conversation-thread` at `73674cc`. The [reconciled source assessment](#reconciled-source-assessment) at the end updates that evidence after integration with newer production work. Another task was actively editing themes in the same checkout. Counts and line references describe the inspected snapshot, not a frozen production release. No application code was changed by this audit. See the separate [branch cleanup record](branch-cleanup-2026-10-04.md).
 
 ## Evidence and scope
 
@@ -107,3 +107,44 @@ SOLID is present most strongly in dependency direction and focused domain functi
 - No application changes, build, deployment, native Rust checks or browser suites were performed for this audit. A beta rebuild was unnecessary because only audit documentation was added. Passing Node/type checks does not establish browser behavior or complete SOLID compliance.
 
 Start with the shared timeline transaction, then the Try-session and export boundaries. Keep those refactors separate from deliberate behavior changes and from broad formatting changes. The remaining findings are focused follow-ups, with shared metadata extraction offering a small independent improvement.
+
+
+## Reconciled source assessment
+
+**4 October 2026, after production reconciliation.** This addendum reviews the combined source on `codex/pending-work-production`, including native assistant, themes, export, replies and player changes. It supersedes the initial size snapshot for the release candidate; it does not rewrite the earlier observations or imply that the candidate is already deployed. Counts include tracked and untracked source, use the original extensions/exclusions, include declarations, and exclude package test directories.
+
+| Measure | Reconciled source |
+| --- | ---: |
+| Application/package code files | 673 |
+| Files at most 300 lines | 663 |
+| Files at most 200 lines | 636 |
+| Median file length | 49 lines |
+| Files over 500 lines | 1 |
+| Editor TS/TSX files | 459 |
+| Editor TS/TSX files over 300 lines | 8 |
+| Largest player JavaScript file | 252 lines |
+| Largest server JavaScript file | 176 lines |
+
+**The organizational foundations remain.** Growth is mainly in feature-owned modules, with thin editor/store composition still at 54/36 lines. These counts locate review candidates; they do not prove that a file has one responsibility. Neither the 256-line native cover painter nor the 465-line sandbox session needs an arbitrary split simply to reduce length.
+
+### Latest feature boundaries
+
+- **Native assistant:** [shared parsing/schema](../../packages/pvo-assistant/native/), [project operations](../../editor/src/domain/assistant/native/), [history/application commands](../../editor/src/state/assistant/), [media and transport adapters](../../editor/src/infrastructure/assistant/), [provider/service policy](../../server/assistant/native/) and [orb/thread/voice presentation](../../editor/src/features/assistant/) have distinguishable owners. Batch preparation receives compilation, IDs and font data explicitly; the store applies a validated batch once. The bounded [task runner](../../editor/src/infrastructure/assistant/runNativeTask.ts) receives adapters instead of importing React or the store. This is practical dependency inversion, not just folder naming.
+- **Export:** `exportWorkflow`, `useExportSession`, `pvoMediaSource`, `captureCoverFrame` and `ExportAccountGate` identify real responsibilities. Cover capture now consumes the same [ordered scene painter](../../editor/src/infrastructure/media/drawSceneFrame.ts) as video export and inspection; the obsolete duplicate video/text painter was removed. Cover capture owns and releases its font scope; the native component painter composites animated opacity as one layer. This reduces rendering-rule drift while preserving lower authored layers.
+- **Replies:** [the inbox](../../editor/src/features/replies/ReplyInbox.tsx) and its CSS are co-located; [the HTTP client](../../editor/src/infrastructure/replies/client.ts) validates responses and owns transport deadlines/cancellation. [Server input, routes, repository and source hashing](../../server/replies/) are separate. Account ownership and submission quotas stay outside rendering. A 169-line inbox is a cohesive feature, although its request lifecycle is the next extraction opportunity below.
+
+Names such as `prepareNativeBatch`, `applyAssistantChanges`, `pvoSceneMediaSource` and `captureCoverFrame` explain intent. Comments still explain non-obvious guarantees: only the matching top history state may be undone; raw frames are sent once; diagnostics cannot change an editing outcome; layer opacity must composite the whole shape. Adding comments everywhere would not improve those boundaries. Dense JSX and packed state updates remain worth expanding when touched.
+
+### Remaining work, with current evidence
+
+1. **Keep the original timeline and Try-session priorities.** The two timeline transaction lifecycles described above remain, and [createTrySession.ts](../../editor/src/features/preview/createTrySession.ts) is now 539 lines. Extract its transition policy and request lifetime by responsibility, preserving response/hold/cancellation behavior. The 453-line timeline gesture file and 445-line desktop visual rows are review locations, not automatic violations.
+2. **Narrow the assistant session workflow.** [useAssistantSession.ts](../../editor/src/features/assistant/useAssistantSession.ts), 277 lines, owns UI/voice availability and playback restoration (lines 34–109), configures observation/font/compilation adapters inside submission (111–198), and applies results while updating thread/history/notifications (199–246). A project-scoped request workflow with explicit adapters would let the hook focus on UI lifetime. Preserve the existing task runner, fingerprint guards and atomic application boundary; do not introduce a generic assistant framework.
+3. **Finish export lifecycle separation.** [ExportSheet.tsx](../../editor/src/features/export/ExportSheet.tsx), 294 lines, still combines dialog state, elapsed/ETA derivation, cover URL ownership and state-specific presentation. Its cover-save clamp at line 128 repeats [the domain cover rule](../../editor/src/domain/project/cover.ts). [ExportPreview.tsx](../../editor/src/features/export/ExportPreview.tsx), 298 lines, still owns package-media URLs, two media elements, clocks, seeking and markup. Extract those lifecycles into focused hooks and use the shared cover rule; retain the source/result animation and font regressions. The new [cover component painter](../../editor/src/features/export/paintCoverComponent.ts), lines 96–223, also specifies native component layout separately from DOM/CSS renderers. Maintain cross-renderer layout fixtures as looks evolve, sharing deterministic layout rules only where the contract is genuinely common.
+4. **Extract inbox loading when extending it.** [ReplyInbox.tsx](../../editor/src/features/replies/ReplyInbox.tsx), lines 35–131, repeats abort-controller, busy/error and stale-result handling across list/open/delete while also handling account transitions. A feature-owned inbox hook would give that lifecycle one owner before pagination or further actions are added. Keep HTTP validation in the existing client and the deletion confirmation in the view.
+5. **Retain the smaller ownership follow-ups.** Pure label/visibility helpers still live in `ComponentOverlay.tsx`; `legacy-view.js` still names the current Fields renderer poorly; player controllers still accept a broad mutable session; local render/reply backends still combine policy with tooling adapters. The flat Node test directory has grown to 136 files, while `sdk.test.mjs` still spans several SDK responsibilities. Group tests when their ownership changes and update discovery together, without splitting cohesive behavior suites for size alone.
+
+The reconciled code therefore needs focused workflow cleanup, not a wholesale folder move. Single responsibility and narrower interfaces remain the main gaps; domain/adapter separation, functional grouping and meaningful names are still evident.
+
+### Addendum verification limits
+
+This update is a source review and documentation change. Local links and current counts were checked; no application code changed for this addendum. The initial 609-test result and import-graph counts above belong only to the historical snapshot. Separate release work exercised current PVO export, audio extraction/export, keyframe rendering, player layout/playback/fonts and cover/preview rendering in browsers. Those checks support the tested behavior, not a claim that every module is SOLID or every renderer is pixel-identical. Use the final release verification record for final check totals and deployment status.

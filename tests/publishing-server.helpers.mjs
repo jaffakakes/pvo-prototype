@@ -19,27 +19,32 @@ export async function workerFixture(overrides = {}, { createSessions = true, out
     serviceBindings: { ASSETS: request => new Response(new URL(request.url).pathname === "/player/published"
       ? template : "static asset", { headers: { "Content-Type": "text/html" } }) },
   }));
-  const db = await mf.getD1Database("DB");
-  const bucket = await mf.getR2Bucket("MEDIA");
-  const migrations = (await readdir("migrations")).filter(name => name.endsWith(".sql")).sort();
-  for (const migration of migrations) {
-    const statements = (await readFile(`migrations/${migration}`, "utf8"))
-      .split(";").map(sql => sql.trim()).filter(Boolean);
-    await db.batch(statements.map(sql => db.prepare(sql)));
+  try {
+    const db = await mf.getD1Database("DB");
+    const bucket = await mf.getR2Bucket("MEDIA");
+    const migrations = (await readdir("migrations")).filter(name => name.endsWith(".sql")).sort();
+    for (const migration of migrations) {
+      const statements = (await readFile(`migrations/${migration}`, "utf8"))
+        .split(";").map(sql => sql.trim()).filter(Boolean);
+      await db.batch(statements.map(sql => db.prepare(sql)));
+    }
+    let cookie = null;
+    let otherCookie = null;
+    async function request(path, { method = "GET", body, headers = {}, session = cookie, ...rest } = {}) {
+      return mf.dispatchFetch(`${ORIGIN}${path}`, { method, body,
+        headers: { Origin: ORIGIN, ...(session ? { Cookie: session } : {}), ...headers }, ...rest });
+    }
+    if (createSessions) {
+      cookie = (await createAccountSession({ sub: "fixture-google-subject-1", name: "First creator" },
+        { DB: db, SESSION_SECRET: SECRET })).split(";", 1)[0];
+      otherCookie = (await createAccountSession({ sub: "fixture-google-subject-2", name: "Second creator" },
+        { DB: db, SESSION_SECRET: SECRET })).split(";", 1)[0];
+    }
+    return { mf, db, bucket, cookie, otherCookie, request, close: () => mf.dispose() };
+  } catch (error) {
+    await mf.dispose();
+    throw error;
   }
-  let cookie = null;
-  let otherCookie = null;
-  async function request(path, { method = "GET", body, headers = {}, session = cookie, ...rest } = {}) {
-    return mf.dispatchFetch(`${ORIGIN}${path}`, { method, body,
-      headers: { Origin: ORIGIN, ...(session ? { Cookie: session } : {}), ...headers }, ...rest });
-  }
-  if (createSessions) {
-    cookie = (await createAccountSession({ sub: "fixture-google-subject-1", name: "First creator" },
-      { DB: db, SESSION_SECRET: SECRET })).split(";", 1)[0];
-    otherCookie = (await createAccountSession({ sub: "fixture-google-subject-2", name: "Second creator" },
-      { DB: db, SESSION_SECRET: SECRET })).split(";", 1)[0];
-  }
-  return { mf, db, bucket, cookie, otherCookie, request, close: () => mf.dispose() };
 }
 
 function box(name, contents) {
