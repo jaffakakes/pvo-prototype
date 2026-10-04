@@ -1,38 +1,42 @@
 import {
-  clearResponseProgress,
-  invalidateActionOperations,
-  invalidatePlaybackNavigation,
-} from "../actions/operations.js";
-import { updateRequestStatus } from "../actions/request-status.js";
-import { needsResponseBoundary, responseBoundaryWork } from "../actions/response-policy.js";
-import { reportPlayerDiagnostic } from "../actions/diagnostics.js";
+  clipEndTransition,
+  responseBoundaryDecision,
+} from "./transition-policy.js";
 
-export function createPlaybackTransitions({ session, refs, adapters }) {
+export function createPlaybackTransitions({ state, refs, adapters }) {
   function releaseUnavailableResponse(component) {
-    if (session.awaitingComponent?.id !== component.id || adapters.componentCanReceiveResponse(component)) return;
-    session.awaitingComponent = null;
+    if (
+      state.read().awaitingComponent?.id !== component.id ||
+      adapters.componentCanReceiveResponse(component)
+    )
+      return;
+    state.releaseHold();
     adapters.renderOverlays(true);
     // The existing request failure remains in status; this releases only its invisible retry hold.
     void refs.video.play().catch(() => adapters.showControls());
   }
   /** A visible component owns playback while its dispatched request is unresolved. */
   function pauseForComponentRequest(componentId) {
-    if (session.finished || session.switchingClip || !componentId) return;
-    if (!adapters.visibleComponents().some(component => component.id === componentId)) return;
+    const { finished, switchingClip } = state.read();
+    if (finished || switchingClip || !componentId) return;
+    if (
+      !adapters
+        .visibleComponents()
+        .some((component) => component.id === componentId)
+    )
+      return;
     refs.video.pause();
     adapters.updateProgress();
   }
 
   function holdAtBoundary(component, message) {
-    if (session.awaitingComponent?.id === component.id) return;
-    session.awaitingComponent = component;
-    refs.video.pause();
-    reportPlayerDiagnostic(session, "playback.hold", session.capturedResponses.get(component.id)?.diagnostic, {
-      componentId: component.id,
-      reason: session.capturedResponses.has(component.id) ? "applying_response" : "awaiting_answer",
-    });
+    if (state.read().awaitingComponent?.id === component.id) return;
+    state.hold(component, () => refs.video.pause());
     const clip = adapters.activeClip();
-    refs.video.currentTime = Math.min(clip.end, clip.start + Number(component.presentation?.end || 0));
+    refs.video.currentTime = Math.min(
+      clip.end,
+      clip.start + Number(component.presentation?.end || 0),
+    );
     adapters.renderOverlays(true);
     adapters.updateProgress();
     adapters.setStatus(message, false, true);
@@ -46,25 +50,34 @@ export function createPlaybackTransitions({ session, refs, adapters }) {
   function handleResponseBoundary() {
     // Once a boundary owns playback, every later media event must keep that
     // same hold until its response outcome explicitly releases or routes it.
-    if (session.awaitingComponent) return true;
-    const local = session.captureMode ? adapters.elapsedTime() : adapters.localClipTime();
-    const ending = adapters.componentsForClip()
-      .filter((component) => needsResponseBoundary(component)
-        && !session.handledResponses.has(component.id))
-      .sort((a, b) => Number(a.presentation?.end || 0) - Number(b.presentation?.end || 0))
-      .filter((component) => local >= Number(component.presentation?.end || 0) - 0.04);
+    const playback = state.read();
+    if (playback.awaitingComponent) return true;
+    const local = playback.captureMode
+      ? adapters.elapsedTime()
+      : adapters.localClipTime();
+    const ending = state.boundaries(adapters.componentsForClip(), local);
 
-    for (const component of ending) {
-      const response = session.capturedResponses.get(component.id);
-      if (session.forcedHidden.has(component.id) || !response
-        && !adapters.componentCanReceiveResponse(component, Number(component.presentation?.end || 0))) {
-        session.handledResponses.add(component.id);
-        continue;
-      }
-      session.handledResponses.add(component.id);
-      const work = responseBoundaryWork(component, response);
+    for (const boundary of ending) {
+      const { component, response, hidden } = boundary;
+      const canReceiveResponse =
+        !hidden &&
+        !response &&
+        adapters.componentCanReceiveResponse(
+          component,
+          Number(component.presentation?.end || 0),
+        );
+      const work = responseBoundaryDecision({
+        ...boundary,
+        canReceiveResponse,
+      });
+      state.markHandled(component.id);
       if (work === "wait") {
-        holdAtBoundary(component, component.kind === "form" ? "Submit to continue" : "Choose to continue");
+        holdAtBoundary(
+          component,
+          component.kind === "form"
+            ? "Submit to continue"
+            : "Choose to continue",
+        );
         return true;
       }
       if (work === "dispatch") {
@@ -77,45 +90,47 @@ export function createPlaybackTransitions({ session, refs, adapters }) {
   }
 
   function advanceAtClipEnd(force = false) {
-    const clip = adapters.activeClip();
-    if (!clip || session.switchingClip || session.finished) return;
-    if (!force && refs.video.currentTime < clip.end - 0.04) return;
-    if (handleResponseBoundary()) return;
-    const next = session.currentClipIndex + 1;
-    if (next < session.currentTimeline.clips.length) {
-      void adapters.loadClip(next, true).catch((error) => adapters.setStatus(error.message, true));
+    const transition = clipEndTransition({
+      ...state.read(),
+      clip: adapters.activeClip(),
+      mediaTime: refs.video.currentTime,
+      force,
+    });
+    if (transition.kind === "none" || handleResponseBoundary()) return;
+    if (transition.kind === "next") {
+      void adapters
+        .loadClip(transition.index, true)
+        .catch((error) => adapters.setStatus(error.message, true));
       return;
     }
     finishExperience();
   }
 
   function finishExperience() {
-    invalidatePlaybackNavigation(session);
-    refs.video.pause();
-    session.finished = true;
-    session.awaitingComponent = null;
+    state.finish(() => refs.video.pause());
     refs.endScreen.hidden = false;
     adapters.renderOverlays(true);
     adapters.updateProgress();
-    updateRequestStatus(session, adapters.setStatus);
+    state.refreshRequestStatus(adapters.setStatus);
     adapters.showControls();
   }
 
   async function restartExperience(autoplay = true) {
-    if (!session.manifest) return;
-    invalidatePlaybackNavigation(session);
-    invalidateActionOperations(session);
-    clearResponseProgress(session);
-    session.forcedVisible = new Set();
-    session.forcedHidden = new Set();
-    session.finished = false;
-    session.renderedOverlayKey = "";
+    const initialTimelineId = state.resetForRestart();
+    if (initialTimelineId === null) return;
     refs.endScreen.hidden = true;
     adapters.replaceActionRuntime(false);
-    session.currentTimeline = adapters.timelineById(session.manifest.playback.initial_timeline);
+    state.selectTimeline(adapters.timelineById(initialTimelineId));
     adapters.setStatus("");
     await adapters.loadClip(0, autoplay);
   }
 
-  return { finishExperience, restartExperience, handleResponseBoundary, advanceAtClipEnd, releaseUnavailableResponse, pauseForComponentRequest };
+  return {
+    finishExperience,
+    restartExperience,
+    handleResponseBoundary,
+    advanceAtClipEnd,
+    releaseUnavailableResponse,
+    pauseForComponentRequest,
+  };
 }

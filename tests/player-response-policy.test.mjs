@@ -1,8 +1,12 @@
+import { createPlaybackTransitionState } from "../player/playback/transition-state.js";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createPvoRuntime } from "../packages/pvo-sdk/index.js";
 import { createComponentActions } from "../player/actions/components.js";
-import { beginActionOperation, invalidateActionOperations } from "../player/actions/operations.js";
+import {
+  beginActionOperation,
+  invalidateActionOperations,
+} from "../player/actions/operations.js";
 import { createOutcomeRouter } from "../player/actions/outcomes.js";
 import { createActionRuntimeAdapter } from "../player/actions/runtime.js";
 import { createOverlayRenderer } from "../player/components/overlays.js";
@@ -29,10 +33,12 @@ function controlledRuntime() {
     },
     execute(action, context) {
       executions.push({ action, context });
-      return new Promise((resolve) => waits.push(() => {
-        context.playerInteraction.outcome = { kind: "continue" };
-        resolve(true);
-      }));
+      return new Promise((resolve) =>
+        waits.push(() => {
+          context.playerInteraction.outcome = { kind: "continue" };
+          resolve(true);
+        }),
+      );
     },
   };
   return { runtime, executions, resolveNext: () => waits.shift()?.() };
@@ -57,20 +63,31 @@ function actionHarness(component, controlled = controlledRuntime()) {
   const session = createPlaybackSession();
   session.captureMode = true;
   session.manifest = { components: [component] };
-  session.currentTimeline = { id: "main", clips: [{ scene: "main", start: 0, end: 10 }] };
+  session.currentTimeline = {
+    id: "main",
+    clips: [{ scene: "main", start: 0, end: 10 }],
+  };
   session.actionRuntime = controlled.runtime;
   const applied = [];
   const pending = [];
   const video = {
     paused: false,
-    pause() { this.paused = true; },
-    async play() { this.paused = false; },
+    pause() {
+      this.paused = true;
+    },
+    async play() {
+      this.paused = false;
+    },
   };
   const actions = createComponentActions({
     session,
     adapters: {
-      setComponentPending(id, value) { pending.push([id, value]); },
-      captureOutcome(item, index) { return item.restyle_capture.outcomes[index]; },
+      setComponentPending(id, value) {
+        pending.push([id, value]);
+      },
+      captureOutcome(item, index) {
+        return item.restyle_capture.outcomes[index];
+      },
       async applyActionOutcome(item, index, outcome) {
         applied.push({ item, index, outcome });
         session.awaitingComponent = null;
@@ -90,7 +107,7 @@ function transitionHarness(component, actionState) {
   const { session, actions, controlled, applied, pending, video } = actionState;
   const statuses = [];
   const transitions = createPlaybackTransitions({
-    session,
+    state: createPlaybackTransitionState(session),
     refs: { video, endScreen: { hidden: true } },
     adapters: {
       elapsedTime: () => elapsed,
@@ -99,7 +116,9 @@ function transitionHarness(component, actionState) {
       componentCanReceiveResponse: () => true,
       renderOverlays() {},
       updateProgress() {},
-      setStatus(message) { statuses.push(message); },
+      setStatus(message) {
+        statuses.push(message);
+      },
       showControls() {},
       activeClip: () => session.currentTimeline.clips[0],
       dispatchCapturedResponse: (id) => actions.dispatchCapturedResponse(id),
@@ -108,7 +127,19 @@ function transitionHarness(component, actionState) {
       async loadClip() {},
     },
   });
-  return { session, actions, controlled, applied, pending, video, statuses, transitions, setElapsed: (value) => { elapsed = value; } };
+  return {
+    session,
+    actions,
+    controlled,
+    applied,
+    pending,
+    video,
+    statuses,
+    transitions,
+    setElapsed: (value) => {
+      elapsed = value;
+    },
+  };
 }
 
 test("layer-end responses stay local, latest wins, and dispatch once at the boundary", async () => {
@@ -117,12 +148,28 @@ test("layer-end responses stay local, latest wins, and dispatch once at the boun
 
   harness.actions.answerComponent({ componentId: component.id, index: 0 });
   harness.actions.answerComponent({ componentId: component.id, index: 1 });
-  assert.equal(harness.controlled.executions.length, 0, "Logic ran before the layer boundary");
-  assert.equal(harness.controlled.runtime.state.choices, undefined, "Captured choice leaked into runtime state");
-  assert.equal(harness.session.capturedResponses.get(component.id).index, 1, "The latest response did not replace the first");
+  assert.equal(
+    harness.controlled.executions.length,
+    0,
+    "Logic ran before the layer boundary",
+  );
+  assert.equal(
+    harness.controlled.runtime.state.choices,
+    undefined,
+    "Captured choice leaked into runtime state",
+  );
+  assert.equal(
+    harness.session.capturedResponses.get(component.id).index,
+    1,
+    "The latest response did not replace the first",
+  );
 
   assert.equal(harness.transitions.handleResponseBoundary(), true);
-  assert.equal(harness.video.paused, true, "Layer-end dispatch must own the async boundary");
+  assert.equal(
+    harness.video.paused,
+    true,
+    "Layer-end dispatch must own the async boundary",
+  );
   assert.equal(harness.controlled.executions.length, 1);
   assert.equal(harness.controlled.executions[0].action.name, "second");
   assert.equal(harness.controlled.runtime.state.choices.choice, 1);
@@ -132,7 +179,11 @@ test("layer-end responses stay local, latest wins, and dispatch once at the boun
   assert.equal(harness.applied.length, 1);
   assert.equal(harness.video.paused, false);
   assert.equal(harness.session.awaitingComponent, null);
-  assert.equal(harness.transitions.handleResponseBoundary(), false, "A handled boundary dispatched twice");
+  assert.equal(
+    harness.transitions.handleResponseBoundary(),
+    false,
+    "A handled boundary dispatched twice",
+  );
 });
 
 test("unanswered continue and pause policies remain independent from dispatch timing", async () => {
@@ -161,7 +212,11 @@ test("unanswered continue and pause policies remain independent from dispatch ti
     "A later media event must not release an unanswered boundary",
   );
   requiredHarness.transitions.advanceAtClipEnd(true);
-  assert.equal(requiredHarness.session.finished, false, "An ended event must preserve the unanswered boundary");
+  assert.equal(
+    requiredHarness.session.finished,
+    false,
+    "An ended event must preserve the unanswered boundary",
+  );
   assert.equal(requiredHarness.session.awaitingComponent.id, "form");
 
   const dispatched = requiredHarness.actions.answerFieldComponent({
@@ -169,7 +224,9 @@ test("unanswered continue and pause policies remain independent from dispatch ti
     index: 0,
     fields: { name: "Ada" },
   });
-  assert.deepEqual(requiredHarness.controlled.runtime.state.form.form, { name: "Ada" });
+  assert.deepEqual(requiredHarness.controlled.runtime.state.form.form, {
+    name: "Ada",
+  });
   requiredHarness.controlled.resolveNext();
   await dispatched;
   assert.equal(requiredHarness.video.paused, false);
@@ -180,12 +237,22 @@ test("an interaction-time response satisfies pause-if-unanswered while its actio
   const component = choice({ dispatch: "interaction", unanswered: "pause" });
   const harness = transitionHarness(component, actionHarness(component));
 
-  const dispatched = harness.actions.answerComponent({ componentId: component.id, index: 0 });
+  const dispatched = harness.actions.answerComponent({
+    componentId: component.id,
+    index: 0,
+  });
   assert.equal(harness.controlled.executions.length, 1);
-  assert.equal(harness.session.capturedResponses.get(component.id).status, "pending");
+  assert.equal(
+    harness.session.capturedResponses.get(component.id).status,
+    "pending",
+  );
 
   assert.equal(harness.transitions.handleResponseBoundary(), false);
-  assert.equal(harness.video.paused, false, "An answered interaction must not pause at the layer boundary");
+  assert.equal(
+    harness.video.paused,
+    false,
+    "An answered interaction must not pause at the layer boundary",
+  );
   assert.equal(harness.session.handledResponses.has(component.id), true);
 
   harness.controlled.resolveNext();
@@ -207,7 +274,12 @@ test("Continue releases only the component that owns the active boundary", async
   const owner = { id: "owner" };
   const other = { id: "other" };
   session.awaitingComponent = owner;
-  const video = { paused: true, async play() { this.paused = false; } };
+  const video = {
+    paused: true,
+    async play() {
+      this.paused = false;
+    },
+  };
   const router = createOutcomeRouter({
     session,
     refs: { video },
@@ -223,22 +295,46 @@ test("Continue releases only the component that owns the active boundary", async
 
 test("forward seek dispatches crossed deferred work and rewind re-arms its boundary", async () => {
   const component = choice({ dispatch: "layer_end", unanswered: "pause" });
-  component.presentation = { scene: "main", start: 1, end: 5, x: .1, y: .1, width: .5, height: .3 };
+  component.presentation = {
+    scene: "main",
+    start: 1,
+    end: 5,
+    x: 0.1,
+    y: 0.1,
+    width: 0.5,
+    height: 0.3,
+  };
   const session = createPlaybackSession();
   session.captureMode = true;
   session.manifest = { components: [component] };
-  session.currentTimeline = { id: "main", clips: [{ id: "clip", asset_id: "video", scene: "main", start: 0, end: 10 }] };
+  session.currentTimeline = {
+    id: "main",
+    clips: [
+      { id: "clip", asset_id: "video", scene: "main", start: 0, end: 10 },
+    ],
+  };
   session.actionRuntime = {};
-  session.capturedResponses.set(component.id, { componentId: component.id, index: 0, status: "pending" });
+  session.capturedResponses.set(component.id, {
+    componentId: component.id,
+    index: 0,
+    status: "pending",
+  });
   beginActionOperation(session, component.id);
   const video = {
     currentTime: 3,
     paused: false,
     dataset: {},
-    pause() { this.paused = true; },
-    async play() { this.paused = false; },
+    pause() {
+      this.paused = true;
+    },
+    async play() {
+      this.paused = false;
+    },
   };
-  const timeline = createTimelineReader({ session, readMediaTime: () => video.currentTime });
+  const timeline = createTimelineReader({
+    session,
+    readMediaTime: () => video.currentTime,
+  });
   const dispatched = [];
   const statuses = [];
   const media = createVideoController({
@@ -250,7 +346,9 @@ test("forward seek dispatches crossed deferred work and rewind re-arms its bound
       finishExperience() {},
       renderOverlays() {},
       updateProgress() {},
-      setStatus(message) { statuses.push(message); },
+      setStatus(message) {
+        statuses.push(message);
+      },
       showControls() {},
       replaceActionRuntime() {},
       async dispatchCapturedResponse(id) {
@@ -267,21 +365,30 @@ test("forward seek dispatches crossed deferred work and rewind re-arms its bound
   assert.equal(video.currentTime, 8);
   assert.equal(session.handledResponses.has(component.id), true);
   assert.equal(session.pendingComponents.size, 0);
-  assert.equal(statuses.includes(""), true, "Cancelling the old request must clear its status");
+  assert.equal(
+    statuses.includes(""),
+    true,
+    "Cancelling the old request must clear its status",
+  );
 
   await media.seekToElapsed(3, false);
   assert.equal(session.capturedResponses.has(component.id), false);
   assert.equal(session.handledResponses.has(component.id), false);
   video.currentTime = 5;
   const transitions = createPlaybackTransitions({
-    session,
+    state: createPlaybackTransitionState(session),
     refs: { video, endScreen: { hidden: true } },
     adapters: {
       ...timeline,
       componentsForClip: () => [component],
       componentCanReceiveResponse: () => true,
-      renderOverlays() {}, updateProgress() {}, setStatus() {}, showControls() {},
-      dispatchCapturedResponse() {}, replaceActionRuntime() {}, async loadClip() {},
+      renderOverlays() {},
+      updateProgress() {},
+      setStatus() {},
+      showControls() {},
+      dispatchCapturedResponse() {},
+      replaceActionRuntime() {},
+      async loadClip() {},
     },
   });
   assert.equal(transitions.handleResponseBoundary(), true);
@@ -301,7 +408,10 @@ test("Card buttons use the same response policy and preserve the selected action
     restyle_capture: { outcomes: [{ kind: "continue" }, { kind: "continue" }] },
   };
   const harness = actionHarness(component);
-  const dispatched = harness.actions.answerComponent({ componentId: "card", index: 1 });
+  const dispatched = harness.actions.answerComponent({
+    componentId: "card",
+    index: 1,
+  });
   assert.equal(harness.controlled.executions[0].action.name, "second");
   harness.controlled.resolveNext();
   await dispatched;
@@ -312,19 +422,33 @@ test("a stale operation cannot route or clear a newer response after session rep
   const component = choice({ dispatch: "interaction", unanswered: "continue" });
   const first = controlledRuntime();
   const harness = actionHarness(component, first);
-  const firstRun = harness.actions.answerComponent({ componentId: "choice", index: 0 });
+  const firstRun = harness.actions.answerComponent({
+    componentId: "choice",
+    index: 0,
+  });
   assert.equal(harness.session.pendingComponents.has("choice"), true);
 
   invalidateActionOperations(harness.session);
   const second = controlledRuntime();
   harness.session.actionRuntime = second.runtime;
-  const secondRun = harness.actions.answerComponent({ componentId: "choice", index: 1 });
+  const secondRun = harness.actions.answerComponent({
+    componentId: "choice",
+    index: 1,
+  });
   assert.equal(harness.session.pendingComponents.has("choice"), true);
 
   first.resolveNext();
   await firstRun;
-  assert.equal(harness.applied.length, 0, "The stale response applied a playback outcome");
-  assert.equal(harness.session.pendingComponents.has("choice"), true, "Stale cleanup cleared the newer operation");
+  assert.equal(
+    harness.applied.length,
+    0,
+    "The stale response applied a playback outcome",
+  );
+  assert.equal(
+    harness.session.pendingComponents.has("choice"),
+    true,
+    "Stale cleanup cleared the newer operation",
+  );
   assert.equal(harness.session.capturedResponses.get("choice").index, 1);
 
   second.resolveNext();
@@ -335,13 +459,28 @@ test("a stale operation cannot route or clear a newer response after session rep
 });
 
 test("native component copy resolves request-backed runtime state without mutating the manifest", () => {
-  const note = { id: "note", kind: "tooltip", text: "Answer: {state.responses.choice.answer}" };
-  const displayed = componentWithRuntimeState(note, { responses: { choice: { answer: "Dublin" } } });
+  const note = {
+    id: "note",
+    kind: "tooltip",
+    text: "Answer: {state.responses.choice.answer}",
+  };
+  const displayed = componentWithRuntimeState(note, {
+    responses: { choice: { answer: "Dublin" } },
+  });
   assert.equal(displayed.text, "Answer: Dublin");
   assert.equal(note.text, "Answer: {state.responses.choice.answer}");
-  const card = { id: "card", kind: "card", title: "{state.responses.choice.answer}" };
-  assert.equal(componentWithRuntimeState(card, { responses: { choice: { answer: "Dublin" } } }), card,
-    "Runtime presentation templates are a display-only Note contract");
+  const card = {
+    id: "card",
+    kind: "card",
+    title: "{state.responses.choice.answer}",
+  };
+  assert.equal(
+    componentWithRuntimeState(card, {
+      responses: { choice: { answer: "Dublin" } },
+    }),
+    card,
+    "Runtime presentation templates are a display-only Note contract",
+  );
 });
 
 test("only the current runtime publishes targeted state updates", () => {
@@ -357,8 +496,12 @@ test("only the current runtime publishes targeted state updates", () => {
     session,
     refs: { frame: { dispatchEvent() {} } },
     adapters: {
-      renderOverlays() { renders += 1; },
-      updateRuntimeState(state) { states.push(structuredClone(state)); },
+      renderOverlays() {
+        renders += 1;
+      },
+      updateRuntimeState(state) {
+        states.push(structuredClone(state));
+      },
       activeClip: () => null,
       elapsedTime: () => 0,
       setStatus() {},
@@ -374,7 +517,11 @@ test("only the current runtime publishes targeted state updates", () => {
   const second = adapter.replaceActionRuntime(true);
   assert.equal(second.state.answer, "first");
   first.setState("answer", "stale");
-  assert.equal(states.length, 1, "A replaced runtime triggered a visible update");
+  assert.equal(
+    states.length,
+    1,
+    "A replaced runtime triggered a visible update",
+  );
   second.setState("answer", "current");
   assert.equal(renders, 0);
   assert.deepEqual(states.at(-1), { answer: "current" });
@@ -383,20 +530,48 @@ test("only the current runtime publishes targeted state updates", () => {
 
 test("state updates refresh only mounted Notes and preserve Forms", () => {
   const session = createPlaybackSession();
-  const customNote = { id: "custom-note", kind: "tooltip", text: "{state.answer}" };
+  const customNote = {
+    id: "custom-note",
+    kind: "tooltip",
+    text: "{state.answer}",
+  };
   const customForm = { id: "custom-form", kind: "form" };
-  const nativeNote = { id: "native-note", kind: "tooltip", text: "Answer: {state.answer}" };
+  const nativeNote = {
+    id: "native-note",
+    kind: "tooltip",
+    text: "Answer: {state.answer}",
+  };
   const nativeForm = { id: "native-form", kind: "form" };
-  session.manifest = { components: [customNote, customForm, nativeNote, nativeForm] };
+  session.manifest = {
+    components: [customNote, customForm, nativeNote, nativeForm],
+  };
   session.captureMode = true;
   const customUpdates = [];
   const formCustomUpdates = [];
-  session.mountedCustom.set(customNote.id, { update(value) { customUpdates.push(value); } });
-  session.mountedCustom.set(customForm.id, { update(value) { formCustomUpdates.push(value); } });
+  session.mountedCustom.set(customNote.id, {
+    update(value) {
+      customUpdates.push(value);
+    },
+  });
+  session.mountedCustom.set(customForm.id, {
+    update(value) {
+      formCustomUpdates.push(value);
+    },
+  });
   const noteViewUpdates = [];
   const formViewUpdates = [];
-  const noteView = { componentId: nativeNote.id, update(...args) { noteViewUpdates.push(args); } };
-  const formView = { componentId: nativeForm.id, update(...args) { formViewUpdates.push(args); } };
+  const noteView = {
+    componentId: nativeNote.id,
+    update(...args) {
+      noteViewUpdates.push(args);
+    },
+  };
+  const formView = {
+    componentId: nativeForm.id,
+    update(...args) {
+      formViewUpdates.push(args);
+    },
+  };
   const renderer = createOverlayRenderer({
     session,
     refs: {
