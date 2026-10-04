@@ -15,8 +15,9 @@ async function fixtureKeys() {
 
 async function token(pair, changes = {}) {
   const { issuer = ISSUER, azp = ORIGIN, sub = "user_clerktest1", sid = "sess_clerktest1",
-    status = "active", name, issuedAt = Math.floor(Date.now() / 1000), expiresAt = issuedAt + 60 } = changes;
-  return new SignJWT({ azp, sub, sid, ...(status ? { sts: status } : {}), ...(name ? { name } : {}) })
+    status = "active", omitStatus = false, name,
+    issuedAt = Math.floor(Date.now() / 1000), expiresAt = issuedAt + 60 } = changes;
+  return new SignJWT({ azp, sub, sid, ...(!omitStatus && { sts: status }), ...(name ? { name } : {}) })
     .setProtectedHeader({ alg: "RS256", kid: "clerk-test" })
     .setIssuer(issuer).setIssuedAt(issuedAt).setNotBefore(issuedAt - 1)
     .setExpirationTime(expiresAt).sign(pair.privateKey);
@@ -48,6 +49,9 @@ test("Clerk tokens require a fresh signed session from the exact issuer and edit
   const { pair, keys } = await fixtureKeys();
   assert.deepEqual(await verifyClerkIdentity(await token(pair, { name: "Ada" }), keys, ISSUER, ORIGIN),
     { issuer: ISSUER, sub: "user_clerktest1", sid: "sess_clerktest1", name: "Ada" });
+  assert.deepEqual(await verifyClerkIdentity(await token(pair, { omitStatus: true }), keys, ISSUER, ORIGIN),
+    { issuer: ISSUER, sub: "user_clerktest1", sid: "sess_clerktest1", name: "Creator" },
+    "A normal personal-account token may omit Clerk's optional status claim");
   const invalid = [
     { issuer: "https://other.clerk.accounts.dev" },
     { azp: "https://attacker.example" },
@@ -57,6 +61,7 @@ test("Clerk tokens require a fresh signed session from the exact issuer and edit
     { status: "pending" },
     { status: "ended" },
     { status: "revoked" },
+    { status: "unknown" },
     { issuedAt: Math.floor(Date.now() / 1000) - 180, expiresAt: Math.floor(Date.now() / 1000) + 30 },
     { expiresAt: 1 },
   ];

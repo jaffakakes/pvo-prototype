@@ -29,7 +29,7 @@ export async function verifyClerkIdentity(token, keys, issuer, authorizedParty) 
     const { payload } = await jwtVerify(token, keys, {
       algorithms: ["RS256"], issuer, maxTokenAge: "2m", clockTolerance: 10,
     });
-    if (payload.azp !== authorizedParty || payload.sts !== "active"
+    if (payload.azp !== authorizedParty || (payload.sts !== undefined && payload.sts !== "active")
       || typeof payload.sub !== "string" || !/^user_[A-Za-z0-9]+$/.test(payload.sub)
       || typeof payload.sid !== "string" || !/^sess_[A-Za-z0-9]+$/.test(payload.sid))
       throw new HttpError(401, INVALID_TOKEN);
