@@ -19,6 +19,8 @@
     .hint { margin: 9px 0 22px; color: #b6c1d5; font-size: 14px; }
     .consent { display: flex; align-items: start; gap: 11px; margin: 0 0 24px; color: #e2e7f3; line-height: 1.45; font-weight: 400; }
     .consent input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: #a5bdff; flex: none; }
+    .privacy { margin: -10px 0 22px; color: #c7cfdf; font-size: 14px; line-height: 1.45; }
+    .privacy a { color: #b3c7ff; }
     button { width: 100%; min-height: 54px; padding: 12px; border: 0; border-radius: 14px; background: #b3c7ff; color: #10172a; font: inherit; font-weight: 750; cursor: pointer; }
     button:hover { background: #d0ddff; }
     button:disabled { opacity: .65; cursor: wait; }
@@ -36,17 +38,18 @@
   <main>
     <p class="eyebrow">Mac Messages · test</p>
     <h1>Send one test iMessage</h1>
-    <p class="intro">Enter your number and your Mac will send exactly: <strong>“Hi, how are you?”</strong></p>
+    <p class="intro">Enter your number to ask Restyle’s test sender to send exactly: <strong>“Hi, how are you?”</strong></p>
     <form id="message-form">
       <label for="phone">Your phone number</label>
       <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+44 7700 900123" maxlength="40" required>
       <p class="hint">Include the + and country code.</p>
       <label class="consent" for="consent"><input id="consent" type="checkbox" required><span>I want to receive this one test iMessage at the number above.</span></label>
+      <p class="privacy">Your number is used for this test. <a href="/privacy.html">How we handle it</a>.</p>
       <button id="send" type="submit">Send “Hi, how are you?”</button>
     </form>
     <p id="status" class="status" role="status">Checking the Mac sender…</p>
     <p id="result" class="result" role="status" aria-live="polite"></p>
-    <p class="note">The Mac must be awake, signed in to iMessage and running the test sender. Messages accepting the send is not delivery confirmation. This test does not fall back to SMS.</p>
+    <p class="note">Restyle’s Mac must be awake, signed in to iMessage and running the test sender. Messages accepting the send is not delivery confirmation. This test does not fall back to SMS.</p>
   </main>
   <script type="module">
     const form = document.querySelector("#message-form");
