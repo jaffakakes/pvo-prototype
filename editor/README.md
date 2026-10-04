@@ -65,3 +65,5 @@ The installed app checks for a new beta release when it opens, returns to the fo
 `src/store.ts` remains the stable state API used by browser checks. Its implementation is split into focused modules; scene mirrors and undo/redo behavior are retained. Keyboard and toolbar split/delete actions use the same clip commands. Existing global theme and capture styles remain at the source root, and fonts remain in `src/fonts/` for the shared build.
 
 The editor state, layer, history and command regression tests run with `node --test tests/editor-layers.test.mjs` from the repository root. Follow the [repository coding standard](../docs/engineering/coding-standards.md) when adding or moving responsibilities.
+
+Each provider identity maps to a Restyle account that owns its published links across devices. Existing Google users can connect email from Your account after a recent Google sign-in and explicit review of the Clerk email; otherwise the two methods create separate Restyle accounts.

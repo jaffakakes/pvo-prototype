@@ -282,7 +282,7 @@ try {
     await accountButton.click();
     const accountDialog = accountTab.getByRole("dialog", { name: "Your account" });
     await accountDialog.getByRole("button", { name: "Sign out" }).click();
-    await accountTab.getByRole("dialog", { name: "Sign in to Restyle" }).waitFor();
+    await accountTab.getByRole("dialog", { name: "Create a free account" }).waitFor();
   } finally {
     await accountTab.close();
   }

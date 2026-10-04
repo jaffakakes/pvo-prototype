@@ -85,7 +85,7 @@ editor/src/
     scenes/                     Scene commands and outcome routing
     editing/                    Clip, text, layer and overlay editing commands
     assistant/                  Request session, batch commit and guarded thread/notice Undo
-    auth/                       Google account session and sign-in gate
+    auth/                       Google/Clerk account session and sign-in gate
     export/                     Direct export commands, completed export and publication attempt state
     notifications/              Ephemeral notices and retained issues
     preferences/                Device editing, motion and appearance preferences

@@ -266,7 +266,7 @@ async function run(width) {
     assert.equal(await clips(page).count(), 1);
     await saved(page, firstId);
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
-    await page.getByRole("dialog", { name: "Sign in to Restyle", exact: true }).waitFor();
+    await page.getByRole("dialog", { name: "Create a free account", exact: true }).waitFor();
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Export", exact: true }).click();
     const exportDialog = page.getByRole("dialog", { name: "Export", exact: true });
