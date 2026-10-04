@@ -66,6 +66,8 @@ For local Clerk email/password configuration, see the [local account setup](../d
 
 ## Browser suites
 
+`npm run check:browser -- editor camera-flash camera-startup` checks front-camera screen light, recording and camera acquisition. `camera-flash` uses real canvas video streams and MediaRecorder with device capability fixtures to cover armed/idle and countdown states, tap/hold stop, recorder failure, ended tracks, camera switching, rear torch cleanup, and reachable recording controls. Set `BROWSER=webkit` for the flash check on an installed Playwright WebKit runtime. These fixtures do not verify a physical phone's light output or torch hardware; screen light follows the device's existing display brightness.
+
 For export-quality diagnosis, run `node scripts/diagnostics/export-quality.mjs` with Vite serving the editor on port 5173, Chrome, Playwright WebKit, and FFmpeg/FFprobe installed. It checks output dimensions, first frame, colour, codec, and motion in both engines and reports encoded-duration drift separately; it is intentionally not part of the normal browser suite while WebKit's real-time timing issue remains unresolved.
 Run `node scripts/diagnostics/export-cancel.mjs` against the same Vite editor to verify that cancelling a browser render stops its recorder, canvas capture track, and progress promptly.
 
