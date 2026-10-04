@@ -116,7 +116,11 @@ test("desktop visual layers use the minimum tracks and reuse touching intervals"
       video: 2,
     },
   });
-  assert.deepEqual(source, before, "packing must not reorder or mutate project data");
+  assert.deepEqual(
+    source,
+    before,
+    "packing must not reorder or mutate project data",
+  );
 });
 
 test("desktop packing separates overlapping minimum hit targets", () => {
@@ -415,7 +419,7 @@ test("a cancelled timing drag preserves pending redo and later edits", () => {
   stale.update(1);
   useCapture.getState().updateText(3, { start: 5, end: 7 });
   assert.equal(stale.update(2), false);
-  stale.cancel();
+  assert.equal(stale.commit(), false);
   assert.equal(useCapture.getState().texts[0].start, 5);
 });
 
@@ -432,7 +436,7 @@ test("a scene switch or Try start rolls back unfinished timing without moving th
   const drag = beginTimelineTimingDrag({ kind: "clip", id: 1, mode: "r" });
   drag.update(-1);
   state.patch({ currentSceneId: "branch", t: 0 });
-  drag.commit();
+  assert.equal(drag.commit(), false);
   assert.equal(useCapture.getState().scenes[0].clips[0].out, 9);
   assert.equal(useCapture.getState().t, 0);
   assert.equal(useCapture.getState().past.length, 0);
@@ -443,14 +447,12 @@ test("a scene switch or Try start rolls back unfinished timing without moving th
     mode: "move",
   });
   textDrag.update(1);
-  useCapture
-    .getState()
-    .patch({
-      tryMode: { playing: true, holdingId: null, handled: [], answers: {} },
-      t: 0,
-    });
+  useCapture.getState().patch({
+    tryMode: { playing: true, holdingId: null, handled: [], answers: {} },
+    t: 0,
+  });
   assert.equal(textDrag.update(2), false);
-  textDrag.commit();
+  assert.equal(textDrag.commit(), false);
   assert.equal(useCapture.getState().texts[0].start, 1);
   assert.equal(useCapture.getState().t, 0);
 });

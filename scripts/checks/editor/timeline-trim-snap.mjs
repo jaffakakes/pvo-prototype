@@ -24,7 +24,9 @@ async function timingState() {
   return page.evaluate(() => {
     const state = window.timelineSnapCapture.getState();
     const fixture = window.timelineSnapFixture;
-    const component = state.components.find((item) => item.id === fixture.componentId);
+    const component = state.components.find(
+      (item) => item.id === fixture.componentId,
+    );
     const text = state.texts.find((item) => item.id === fixture.textId);
     const audio = state.audioClips.find((item) => item.id === fixture.audioId);
     return {
@@ -52,8 +54,7 @@ function edgeTime(state, kind, side) {
     return side === "l"
       ? state.component.at
       : state.component.at + state.component.dur;
-  if (kind === "text")
-    return side === "l" ? state.text.start : state.text.end;
+  if (kind === "text") return side === "l" ? state.text.start : state.text.end;
   if (kind === "audio")
     return side === "l"
       ? state.audio.start
@@ -73,7 +74,10 @@ async function dragEdgeNearPlayhead(bar, side, candidateOffset = 5) {
     playhead.boundingBox(),
     playhead.getAttribute("data-time"),
   ]);
-  assert(barBox && handleBox && playheadBox, "Timeline geometry must be measurable");
+  assert(
+    barBox && handleBox && playheadBox,
+    "Timeline geometry must be measurable",
+  );
   const boundary = side === "l" ? barBox.x : barBox.x + barBox.width;
   const movement = playheadBox.x + candidateOffset - boundary;
   const startX = handleBox.x + handleBox.width / 2;
@@ -96,10 +100,12 @@ async function dragEdgeNearPlayhead(bar, side, candidateOffset = 5) {
     playhead.boundingBox(),
     playhead.getAttribute("data-time"),
   ]);
-  assert(afterBar && afterPlayhead, "Timeline geometry must remain measurable after trimming");
+  assert(
+    afterBar && afterPlayhead,
+    "Timeline geometry must remain measurable after trimming",
+  );
   return {
-    liveBoundary:
-      side === "l" ? duringBar.x : duringBar.x + duringBar.width,
+    liveBoundary: side === "l" ? duringBar.x : duringBar.x + duringBar.width,
     livePlayheadX: duringPlayhead.x,
     liveTime: Number(duringTime),
     boundary: side === "l" ? afterBar.x : afterBar.x + afterBar.width,
@@ -117,7 +123,7 @@ async function expectMagneticTrim({ bar, kind, side, label }) {
   const after = await timingState();
   assert(
     Math.abs(result.liveBoundary - result.livePlayheadX) < 1,
-    `${label} did not click onto the playhead before release`,
+    `${label} did not click onto the playhead before release (${JSON.stringify({ result, before, after })})`,
   );
   assert(
     Math.abs(result.liveTime - result.timeBefore) < 0.000001,
@@ -136,7 +142,11 @@ async function expectMagneticTrim({ bar, kind, side, label }) {
     Math.abs(edgeTime(after, kind, side) - after.playhead) < 0.000001,
     `${label} did not store the exact playhead time`,
   );
-  assert.equal(after.past, before.past + 1, `${label} should create one undo step`);
+  assert.equal(
+    after.past,
+    before.past + 1,
+    `${label} should create one undo step`,
+  );
 
   await undo.click();
   const restored = await timingState();
@@ -172,7 +182,10 @@ async function expectDesktopMagnetRelease(bar) {
   );
   await page.mouse.move(startX + playheadBox.x + 12 - boundary, startY);
   const releasedBox = await bar.boundingBox();
-  assert(releasedBox, "Desktop bar must remain visible outside the magnetic zone");
+  assert(
+    releasedBox,
+    "Desktop bar must remain visible outside the magnetic zone",
+  );
   const releasedDistance = releasedBox.x + releasedBox.width - playheadBox.x;
   assert(
     releasedDistance > 11 && releasedDistance < 13,
@@ -250,6 +263,107 @@ async function expectDesktopVideoMagnetRelease(bar) {
   await undo.click();
 }
 
+async function expectMobileCancellation(timeline, kind, reason) {
+  const select =
+    kind === "text"
+      ? timeline.getByRole("button", { name: /Select text layer:/ })
+      : timeline.getByRole("button", {
+          name: "Select video layer",
+          exact: true,
+        });
+  await select.click();
+  const handle =
+    kind === "text"
+      ? timeline.locator('.textBar [data-side="r"]')
+      : timeline.locator(".tlClip .handleR");
+  await page.evaluate(
+    (time) => window.timelineSnapCapture.getState().patch({ t: time }),
+    kind === "video" ? 7.37 : 1.5,
+  );
+  const before = await timingState();
+  await handle.evaluate((element) =>
+    element.addEventListener(
+      "pointerdown",
+      (event) => {
+        window.cancelledTimingPointer = event.pointerId;
+      },
+      { once: true },
+    ),
+  );
+  const box = await handle.boundingBox();
+  assert(box, `${kind} handle must be visible for ${reason}`);
+  const x = box.x + box.width / 2,
+    y = box.y + box.height / 2;
+  await cdp.send("Input.dispatchTouchEvent", {
+    type: "touchStart",
+    touchPoints: [{ x, y }],
+  });
+  await cdp.send("Input.dispatchTouchEvent", {
+    type: "touchMove",
+    touchPoints: [{ x: x - 30, y }],
+  });
+  const during = await timingState();
+  assert.notDeepEqual(
+    during[kind === "text" ? "text" : "clip"],
+    before[kind === "text" ? "text" : "clip"],
+  );
+  assert.equal(
+    during.past,
+    before.past,
+    "A preview must not add an undo step before release",
+  );
+  if (reason === "pointercancel") {
+    await cdp.send("Input.dispatchTouchEvent", {
+      type: "touchCancel",
+      touchPoints: [],
+    });
+  } else {
+    if (reason === "escape") await page.keyboard.press("Escape");
+    if (reason === "blur")
+      await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+    if (reason === "lostcapture")
+      await handle.evaluate((element) => {
+        const pointer = window.cancelledTimingPointer;
+        for (let owner = element; owner; owner = owner.parentElement) {
+          if (!owner.hasPointerCapture(pointer)) continue;
+          owner.releasePointerCapture(pointer);
+          return;
+        }
+        throw new Error("The timing gesture must own pointer capture.");
+      });
+    if (reason === "unmount")
+      await page.setViewportSize({ width: 1440, height: 900 });
+    await cdp.send("Input.dispatchTouchEvent", {
+      type: "touchEnd",
+      touchPoints: [],
+    });
+  }
+  const after = await timingState();
+  assert.deepEqual(
+    after[kind === "text" ? "text" : "clip"],
+    before[kind === "text" ? "text" : "clip"],
+    `${kind} ${reason} must restore original timing`,
+  );
+  assert.equal(
+    after.playhead,
+    before.playhead,
+    `${kind} ${reason} must restore the playhead`,
+  );
+  assert.equal(
+    after.past,
+    before.past,
+    `${kind} ${reason} must leave history unchanged`,
+  );
+  assert.equal(
+    await page.evaluate(() => window.timelineSnapCapture.getState().trim),
+    null,
+  );
+  if (reason === "unmount") {
+    await page.setViewportSize({ width: 390, height: 850 });
+    await timeline.getByRole("slider", { name: "Timeline playhead" }).waitFor();
+  }
+}
+
 async function expectLiveMobileTrim({
   bar,
   handle,
@@ -271,7 +385,10 @@ async function expectLiveMobileTrim({
     handle.boundingBox(),
     mobilePlayhead.boundingBox(),
   ]);
-  assert(barBox && handleBox && playheadBox, "Mobile timeline geometry must be measurable");
+  assert(
+    barBox && handleBox && playheadBox,
+    "Mobile timeline geometry must be measurable",
+  );
   const playheadX = playheadBox.x + playheadBox.width / 2;
   const boundary = side === "l" ? barBox.x : barBox.x + barBox.width;
   const movement = playheadX + 5 - boundary;
@@ -292,7 +409,10 @@ async function expectLiveMobileTrim({
     bar.boundingBox(),
     mobilePlayhead.boundingBox(),
   ]);
-  assert(duringBar && duringPlayhead, "Mobile geometry must remain measurable during trimming");
+  assert(
+    duringBar && duringPlayhead,
+    "Mobile geometry must remain measurable during trimming",
+  );
   const duringBoundary =
     side === "l" ? duringBar.x : duringBar.x + duringBar.width;
   const duringPlayheadX = duringPlayhead.x + duringPlayhead.width / 2;
@@ -304,7 +424,11 @@ async function expectLiveMobileTrim({
     Math.abs(edgeTime(during, kind, side) - during.playhead) < 0.000001,
     `${label} did not update its stored edge during the drag`,
   );
-  assert.equal(during.playhead, before.playhead, `${label} moved the playhead time`);
+  assert.equal(
+    during.playhead,
+    before.playhead,
+    `${label} moved the playhead time`,
+  );
   assert(
     Math.abs(duringPlayheadX - playheadX) < 0.25,
     `${label} moved the rendered playhead (${playheadX} to ${duringPlayheadX})`,
@@ -324,7 +448,10 @@ async function expectLiveMobileTrim({
       y: duringHandle.y + duringHandle.height / 2,
     },
   );
-  assert(ownsPointer.handle && !ownsPointer.playhead, `${label} is blocked by the mobile playhead`);
+  assert(
+    ownsPointer.handle && !ownsPointer.playhead,
+    `${label} is blocked by the mobile playhead`,
+  );
 
   await cdp.send("Input.dispatchTouchEvent", {
     type: "touchEnd",
@@ -381,7 +508,10 @@ async function expectMobileMagnetRelease({
     touchPoints: [{ x: startX + playheadX - 12 - boundary, y: startY }],
   });
   const releasedBox = await bar.boundingBox();
-  assert(releasedBox, "Mobile bar must remain visible outside the magnetic zone");
+  assert(
+    releasedBox,
+    "Mobile bar must remain visible outside the magnetic zone",
+  );
   const releasedDistance = playheadX - (releasedBox.x + releasedBox.width);
   assert(
     releasedDistance > 11 && releasedDistance < 13,
@@ -402,17 +532,17 @@ async function expectMobileMagnetRelease({
 }
 
 try {
-  const editorUrl =
-    process.env.EDITOR_URL ||
-    "http://127.0.0.1:5173/";
+  const editorUrl = process.env.EDITOR_URL || "http://127.0.0.1:5173/";
   await page.goto(editorUrl, { waitUntil: "domcontentloaded" });
   await page.evaluate(async () => {
     const { useCapture } = await import("/src/store.ts");
     const { extractSelectedAudio } =
       await import("/src/state/editing/audioCommands.ts");
+    const response = await fetch("/samples/restyle-sample.mp4");
+    if (!response.ok) throw new Error("Timeline fixture media is unavailable.");
     const clip = {
       id: 1,
-      url: new URL("/samples/restyle-sample.mp4", location.href).href,
+      url: URL.createObjectURL(await response.blob()),
       color: "#594066",
       srcDur: 7.9,
       in: 0,
@@ -450,30 +580,31 @@ try {
       selText: null,
       selAudio: null,
       sheet: null,
-      t: 0.53,
+      t: 1.53,
       playing: false,
       past: [],
       future: [],
     });
+    // Leave space before these short layers so their outside trim handles are visible.
     const componentId = useCapture.getState().addComponent("tooltip");
     useCapture
       .getState()
-      .updateComponent(componentId, { at: 0, dur: 1.1 }, false);
+      .updateComponent(componentId, { at: 1, dur: 1.1 }, false);
     const textId = useCapture.getState().addText("Magnetic trim");
-    useCapture
-      .getState()
-      .updateText(textId, { start: 0, end: 1.1 }, false);
-    useCapture.getState().patch({ sel: 0, t: 0.53 });
+    useCapture.getState().updateText(textId, { start: 1, end: 2.1 }, false);
+    useCapture.getState().patch({ sel: 0, t: 1.53 });
     extractSelectedAudio();
     const extracted = useCapture.getState().audioClips[0];
     const audioId = extracted.id;
-    useCapture.getState().updateScene(
-      "main",
-      { audioClips: [{ ...extracted, start: 0, out: 1.1 }] },
-      false,
-    );
+    useCapture
+      .getState()
+      .updateScene(
+        "main",
+        { audioClips: [{ ...extracted, start: 1, out: 1.1 }] },
+        false,
+      );
     useCapture.getState().patch({
-      t: 0.53,
+      t: 1.53,
       sel: -1,
       selComp: null,
       selText: null,
@@ -506,22 +637,49 @@ try {
   }
 
   for (const check of [
-    { bar: component, kind: "component", side: "l", label: "Component left edge" },
-    { bar: component, kind: "component", side: "r", label: "Component right edge" },
+    {
+      bar: component,
+      kind: "component",
+      side: "l",
+      label: "Component left edge",
+    },
+    {
+      bar: component,
+      kind: "component",
+      side: "r",
+      label: "Component right edge",
+    },
     { bar: text, kind: "text", side: "l", label: "Text left edge" },
     { bar: text, kind: "text", side: "r", label: "Text right edge" },
-    { bar: audio, kind: "audio", side: "l", label: "Extracted-audio left edge" },
-    { bar: audio, kind: "audio", side: "r", label: "Extracted-audio right edge" },
+    {
+      bar: audio,
+      kind: "audio",
+      side: "l",
+      label: "Extracted-audio left edge",
+    },
+    {
+      bar: audio,
+      kind: "audio",
+      side: "r",
+      label: "Extracted-audio right edge",
+    },
     { bar: video, kind: "video", side: "r", label: "Video right edge" },
   ])
     await expectMagneticTrim(check);
 
   await expectDesktopMagnetRelease(component);
-  await page.evaluate(() => window.timelineSnapCapture.getState().patch({ t: 3 }));
+  await page.evaluate(() =>
+    window.timelineSnapCapture.getState().patch({ t: 3 }),
+  );
   await expectDesktopVideoMagnetRelease(video);
-  await page.evaluate(() => window.timelineSnapCapture.getState().patch({ t: 0.53 }));
+  await page.evaluate(() =>
+    window.timelineSnapCapture.getState().patch({ t: 1.53 }),
+  );
 
-  const snap = timeline.getByRole("button", { name: "Snap to edges", exact: true });
+  const snap = timeline.getByRole("button", {
+    name: "Snap to edges",
+    exact: true,
+  });
   assert.equal(await snap.getAttribute("aria-pressed"), "true");
   await snap.click();
   assert.equal(await snap.getAttribute("aria-pressed"), "false");
@@ -550,7 +708,9 @@ try {
   const mobileTimeline = page.locator(".tl");
   const mobilePlayhead = mobileTimeline.locator(".playhead");
   const mobileUndo = page.getByRole("button", { name: "Undo", exact: true });
-  await mobileTimeline.getByRole("slider", { name: "Timeline playhead" }).waitFor();
+  await mobileTimeline
+    .getByRole("slider", { name: "Timeline playhead" })
+    .waitFor();
   const mobileComponent = mobileTimeline.locator(".compBar");
   const mobileText = mobileTimeline.locator(".textBar");
   const mobileAudio = mobileTimeline.locator("[data-audio-id]");
@@ -570,7 +730,7 @@ try {
       kind: "component",
       side: "l",
       label: "Mobile component left edge",
-      prepare: setMobilePlayhead(0.12),
+      prepare: setMobilePlayhead(1.12),
     },
     {
       bar: mobileComponent,
@@ -581,7 +741,7 @@ try {
       kind: "component",
       side: "r",
       label: "Mobile component right edge",
-      prepare: setMobilePlayhead(0.98),
+      prepare: setMobilePlayhead(1.98),
     },
     {
       bar: mobileText,
@@ -592,7 +752,7 @@ try {
       kind: "text",
       side: "l",
       label: "Mobile text left edge",
-      prepare: setMobilePlayhead(0.12),
+      prepare: setMobilePlayhead(1.12),
     },
     {
       bar: mobileText,
@@ -603,25 +763,29 @@ try {
       kind: "text",
       side: "r",
       label: "Mobile text right edge",
-      prepare: setMobilePlayhead(0.98),
+      prepare: setMobilePlayhead(1.98),
     },
     {
       bar: mobileAudio,
-      select: mobileTimeline.getByRole("button", { name: /Select Clip 1 audio/ }),
+      select: mobileTimeline.getByRole("button", {
+        name: /Select Clip 1 audio/,
+      }),
       handle: mobileAudio.locator('[data-edge="l"]'),
       kind: "audio",
       side: "l",
       label: "Mobile extracted-audio left edge",
-      prepare: setMobilePlayhead(0.12),
+      prepare: setMobilePlayhead(1.12),
     },
     {
       bar: mobileAudio,
-      select: mobileTimeline.getByRole("button", { name: /Select Clip 1 audio/ }),
+      select: mobileTimeline.getByRole("button", {
+        name: /Select Clip 1 audio/,
+      }),
       handle: mobileAudio.locator('[data-edge="r"]'),
       kind: "audio",
       side: "r",
       label: "Mobile extracted-audio right edge",
-      prepare: setMobilePlayhead(0.98),
+      prepare: setMobilePlayhead(1.98),
     },
     {
       bar: mobileVideo,
@@ -642,7 +806,7 @@ try {
       undo: mobileUndo,
     });
 
-  await setMobilePlayhead(0.98)();
+  await setMobilePlayhead(1.98)();
   if (!(await mobileComponent.locator('[data-side="r"]').count()))
     await mobileTimeline
       .getByRole("button", { name: /Select component layer:/ })
@@ -653,6 +817,16 @@ try {
     playhead: mobilePlayhead,
     undo: mobileUndo,
   });
+
+  for (const kind of ["text", "video"])
+    for (const reason of [
+      "pointercancel",
+      "escape",
+      "blur",
+      "lostcapture",
+      "unmount",
+    ])
+      await expectMobileCancellation(mobileTimeline, kind, reason);
 
   assert.deepEqual(errors, []);
   console.log(

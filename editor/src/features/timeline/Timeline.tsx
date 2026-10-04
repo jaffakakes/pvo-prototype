@@ -7,7 +7,7 @@ import { setCodePreviewFocus } from "../../state/components/componentAuthoringSt
 import { cx } from "../../styles";
 import { fmt } from "../../ui/formatTime";
 import { Icon } from "../../ui/Icon";
-import { componentLabel } from "../preview/ComponentOverlay";
+import { componentLabel } from "../../domain/components/presentation";
 import { DebugLayerIssue } from "../editor-layout/debugging/DebugLayerIssue";
 import { SOUNDS } from "../sound/catalog";
 import { EmptySceneTimeline } from "./EmptySceneTimeline";
@@ -138,16 +138,25 @@ export function Timeline() {
                       onPointerDown={(e) => trimDown(e, i, "l")}
                       onPointerMove={trimMove}
                       onPointerUp={trimUp}
+                      onPointerCancel={trimUp}
+                      onLostPointerCapture={trimUp}
                     />
                     <span
                       className={cx("handle handleR")}
                       onPointerDown={(e) => trimDown(e, i, "r")}
                       onPointerMove={trimMove}
                       onPointerUp={trimUp}
+                      onPointerCancel={trimUp}
+                      onLostPointerCapture={trimUp}
                     />
                   </>
                 )}
-                <TimelineKeyframes color="#FF9FBC" animation={clip.animation} start={clip.in} end={clip.out} />
+                <TimelineKeyframes
+                  color="#FF9FBC"
+                  animation={clip.animation}
+                  start={clip.in}
+                  end={clip.out}
+                />
               </button>
             ))}
             <button
@@ -170,7 +179,15 @@ export function Timeline() {
               }}
             >
               <span>♪ {SOUNDS[s.sound]?.name ?? "Music"}</span>
-              <TimelineKeyframes color="#5CF0C0" animation={s.scenes.find(scene => scene.id === s.currentSceneId)?.musicAnimation} start={0} end={length} />
+              <TimelineKeyframes
+                color="#5CF0C0"
+                animation={
+                  s.scenes.find((scene) => scene.id === s.currentSceneId)
+                    ?.musicAnimation
+                }
+                start={0}
+                end={length}
+              />
             </div>
           )}
           {s.audioClips.map((clip, index) => (
@@ -209,6 +226,7 @@ export function Timeline() {
               onPointerMove={textBarMove}
               onPointerUp={textBarUp}
               onPointerCancel={textBarUp}
+              onLostPointerCapture={textBarUp}
               onClick={(e) => {
                 if (e.detail === 0 && !s.tryMode)
                   s.patch({ selText: x.id, sheet: "text" });
@@ -220,7 +238,11 @@ export function Timeline() {
                 <span className={cx("compHandle")} data-side="l" />
               )}
               <span>{x.text}</span>
-              <TimelineKeyframes animation={x.animation} start={0} end={x.end - x.start} />
+              <TimelineKeyframes
+                animation={x.animation}
+                start={0}
+                end={x.end - x.start}
+              />
               {s.selText === x.id && (
                 <span className={cx("compHandle")} data-side="r" />
               )}
@@ -247,6 +269,7 @@ export function Timeline() {
               onPointerMove={compMove}
               onPointerUp={compUp}
               onPointerCancel={compUp}
+              onLostPointerCapture={compUp}
               onClick={(event) => {
                 if (event.detail === 0 && !s.tryMode) {
                   setCodePreviewFocus(false);
@@ -256,7 +279,12 @@ export function Timeline() {
               disabled={!!s.tryMode}
               aria-label={`${component.type}: ${componentLabel(component)}`}
             >
-              <TimelineKeyframes color="#A78BFA" animation={component.animation} start={0} end={componentLength(component, s.clips)} />
+              <TimelineKeyframes
+                color="#A78BFA"
+                animation={component.animation}
+                start={0}
+                end={componentLength(component, s.clips)}
+              />
               {s.selComp === component.id && (
                 <span className={cx("compHandle")} data-side="l" />
               )}
@@ -387,7 +415,12 @@ export function Timeline() {
             }}
           />
         )}
-        <MobilePlayhead scrub={playhead} time={s.t} duration={length} disabled={!!s.tryMode} />
+        <MobilePlayhead
+          scrub={playhead}
+          time={s.t}
+          duration={length}
+          disabled={!!s.tryMode}
+        />
       </div>
     </div>
   );
