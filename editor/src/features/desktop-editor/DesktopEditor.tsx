@@ -14,7 +14,6 @@ import styles from "./DesktopEditor.module.css";
 /** Desktop presentation shares the mobile editor's project, history and commands. */
 export function DesktopEditor() {
   const [library, setLibrary] = useState("media");
-  const [safeZone, setSafeZone] = useState(true);
   const [snap, setSnap] = useState(true);
   const [assistantTarget, setAssistantTarget] = useState<HTMLElement | null>(null);
   const sheet = useCapture(state => state.sheet);
@@ -43,12 +42,10 @@ export function DesktopEditor() {
         <DesktopLibrary tab={library} onTabChange={openLibrary} />
       </div>
       <div className={styles.region} {...(assistantActive || picking ? { inert: "" } : {})}>
-        <DesktopPlayer safeZone={safeZone} onSafeZoneChange={setSafeZone}
-          onOpenProject={openProject} onOpenLibrary={openLibrary} />
+        <DesktopPlayer onOpenProject={openProject} onOpenLibrary={openLibrary} />
       </div>
       <div className={styles.region} data-editing-paused={trying} {...((assistantActive && !assistantTarget) || trying || picking ? { inert: "" } : {})}>
-        <DesktopInspector safeZone={safeZone} onSafeZoneChange={setSafeZone}
-          snap={snap} onSnapChange={setSnap} onOpenLibrary={openLibrary}
+        <DesktopInspector snap={snap} onSnapChange={setSnap} onOpenLibrary={openLibrary}
           onAssistantTargetChange={setAssistantTarget} />
       </div>
       <div className={styles.timeline}>
