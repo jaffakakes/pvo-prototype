@@ -9,6 +9,8 @@ import { nativeAssistantRoute } from "./assistant/native/routes.js";
 import { fontsRoute } from "./fonts/routes.js";
 import { webRoute } from "./web/routes.js";
 import { imessageRoute } from "./imessage/routes.js";
+import { authRoute } from "./auth/routes.js";
+import { cleanupAccountSessions } from "./auth/sessions.js";
 
 export async function handleRequest(request, env) {
   const url = new URL(request.url);
@@ -18,8 +20,9 @@ export async function handleRequest(request, env) {
     if (url.pathname.startsWith("/api/imessage/")) return await imessageRoute(request, env);
     if (url.pathname.startsWith("/api/fonts/")) return await fontsRoute(request);
     if (url.pathname.startsWith("/api/assistant/")) return await nativeAssistantRoute(request, env, config);
+    if (url.pathname.startsWith("/api/auth/")) return await authRoute(request, env, config);
     if (url.pathname.startsWith("/api/releases/")) return await releaseRoute(request, env);
-    if (url.pathname === "/api/publishing" || url.pathname === "/api/publishing/session"
+    if (url.pathname === "/api/publishing"
       || url.pathname === "/api/publications" || url.pathname.startsWith("/api/publications/"))
       return await publishingRoute(request, env, config);
     if (url.pathname === "/api" || url.pathname.startsWith("/api/")) return notFound();
@@ -44,6 +47,7 @@ export async function handleRequest(request, env) {
 export default {
   fetch: handleRequest,
   async scheduled(_event, env) {
+    await cleanupAccountSessions(env);
     await cleanupPublications(env);
   },
 };

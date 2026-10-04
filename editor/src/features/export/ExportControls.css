@@ -74,7 +74,6 @@
 .exportSuccess svg {
   color: var(--green);
 }
-.exportDone a,
 .exportDone button {
   height: 50px;
   display: grid;
@@ -87,9 +86,9 @@
   text-decoration: none;
   cursor: pointer;
 }
-.exportDone a {
+.exportDone button:first-child {
   background: var(--surface);
 }
-.exportDone button {
+.exportDone button:not(:first-child) {
   background: var(--accent);
 }

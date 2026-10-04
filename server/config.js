@@ -16,6 +16,8 @@ export function configuration(env, requestOrigin) {
     origin,
     available: env.PUBLISHING_ENABLED === "true" && Boolean(env.DB && env.MEDIA && origin === requestOrigin
       && env.SESSION_SECRET?.length >= 32),
+    authAvailable: Boolean(env.DB && origin === requestOrigin && env.SESSION_SECRET?.length >= 32
+      && env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
     maxBytes: positive(env.MAX_UPLOAD_BYTES, 50 * MIB, 50 * MIB),
     ownerQuota: positive(env.OWNER_STORAGE_BYTES, 500 * MIB),
     totalQuota: positive(env.TOTAL_STORAGE_BYTES, 5 * 1024 * MIB),

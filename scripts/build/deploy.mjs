@@ -16,7 +16,9 @@ const config = JSON.parse(await readFile(resolve(root, "wrangler.jsonc"), "utf8"
 const release = JSON.parse(await readFile(resolve(root, "dist/editor/release.json"), "utf8"));
 const revision = validateEditorReleaseRevision(release.revision);
 const origin = config.vars.PUBLIC_ORIGIN;
-const retained = await retainEditorAssets({ distRoot: resolve(root, "dist"), origin });
+// This host remains enabled for existing links and already serves the previous release before the apex cutover.
+const retentionOrigin = "https://lingering-butterfly-9ba8.jaffakakes28.workers.dev";
+const retained = await retainEditorAssets({ distRoot: resolve(root, "dist"), origin: retentionOrigin });
 console.log(`Release assets: ${retained.assets.length} immutable editor files preserved (${retained.downloaded} downloaded).`);
 const secretPath = resolve(root, ".wrangler/release-secrets.json");
 await mkdir(resolve(root, ".wrangler"), { recursive: true });

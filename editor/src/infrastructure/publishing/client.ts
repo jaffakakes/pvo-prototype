@@ -11,7 +11,7 @@ export class PublishingHttpError extends Error {
 }
 
 function responseFailure(status: number) {
-  if (status === 401) return new PublishingHttpError(status, "Your sharing session expired. Try creating the link again.");
+  if (status === 401) return new PublishingHttpError(status, "Sign in to manage or create links.");
   if (status === 410) return new PublishingHttpError(status, "This link is no longer available. Try creating it again.");
   if (status === 413) return new PublishingHttpError(status, "This file exceeds the online size limit.");
   if (status === 429) return new PublishingHttpError(status, "Sharing is busy. Try again shortly.");
@@ -19,7 +19,7 @@ function responseFailure(status: number) {
   return new PublishingHttpError(status, "Link sharing failed. Try again.");
 }
 
-/** Same-origin browser-owned publications; static deployments keep local files available. */
+/** Same-origin account-owned publications. */
 export function createPublishingClient(options: Options = {}) {
   const origin = options.origin ?? location.origin;
   const send = options.fetch ?? fetch;
@@ -53,9 +53,6 @@ export function createPublishingClient(options: Options = {}) {
     async status(signal?: AbortSignal) {
       return publishingStatus(await json("/api/publishing", { method: "GET" }, signal, true));
     },
-    async session(signal?: AbortSignal) {
-      return publishingStatus(await json("/api/publishing/session", { method: "POST" }, signal));
-    },
     async reserve(input: PublicationInput, signal?: AbortSignal) {
       return publicationReservation(await json("/api/publications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) }, signal), origin);
     },
@@ -65,6 +62,13 @@ export function createPublishingClient(options: Options = {}) {
       }, signal), origin);
       if (result.id !== id) throw new Error("The upload returned a different publication.");
       return result;
+    },
+    async uploadPoster(id: string, poster: Blob, signal?: AbortSignal) {
+      if (poster.type !== "image/webp" || !poster.size || poster.size > 5 * 1024 * 1024)
+        throw new Error("The selected cover could not be shared. Choose another frame and export again.");
+      await json(`/api/publications/${encodeURIComponent(id)}/poster`, {
+        method: "PUT", headers: { "Content-Type": "image/webp" }, body: poster,
+      }, signal);
     },
     async list(signal?: AbortSignal) {
       return publicationList(await json("/api/publications", { method: "GET" }, signal), origin);

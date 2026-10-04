@@ -1,6 +1,6 @@
 import { checkOrigin, HttpError, json, readJson } from "../http.js";
 import { validPublicationId } from "../identity.js";
-import { createSession, getSession } from "./sessions.js";
+import { getAccountSession } from "../auth/sessions.js";
 import { publicationInput, publicationResult } from "./input.js";
 import { ownedPublication, reservePublication } from "./repository.js";
 import { uploadPublication } from "./upload.js";
@@ -9,19 +9,13 @@ import { cleanPublication } from "./cleanup.js";
 export async function publishingRoute(request, env, config) {
   const url = new URL(request.url);
   if (url.pathname === "/api/publishing" && request.method === "GET") {
-    const owner = config.available ? await getSession(request, env) : null;
+    const owner = config.available ? await getAccountSession(request, env) : null;
     return json({ available: config.available, hasSession: Boolean(owner), maxBytes: config.maxBytes });
   }
   if (!config.available) throw new HttpError(503, "Online sharing is not configured yet. Your download is still available.");
   if (request.method !== "GET") checkOrigin(request, config.origin);
-  const owner = await getSession(request, env);
-  if (url.pathname === "/api/publishing/session") {
-    if (request.method !== "POST") throw new HttpError(405, "This publishing operation is not supported.");
-    const cookie = owner ? null : await createSession(env);
-    return json({ available: true, hasSession: true, maxBytes: config.maxBytes }, 200,
-      cookie ? { "Set-Cookie": cookie } : {});
-  }
-  if (!owner) throw new HttpError(401, "Your link-sharing session expired. Try creating the link again.");
+  const owner = await getAccountSession(request, env);
+  if (!owner) throw new HttpError(401, "Sign in to manage or create links.");
   if (url.pathname === "/api/publications") {
     if (request.method === "POST") {
       const input = publicationInput(await readJson(request), config.maxBytes);

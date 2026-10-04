@@ -14,7 +14,7 @@ const origin = "https://restyle.example";
 const reservation = { id: "publication_123", url: `${origin}/player/publication_123`, status: "pending" };
 const artifact = () => ({ snapshotId: "snapshot-one", blob: new Blob(["exact completed export"], { type: "video/webm" }), filename: "my-video.webm", format: "video", contentType: "video/webm", createdAt: "2026-09-27T12:00:00Z" });
 
-test("a static deployment honestly disables links without making local sharing depend on a backend", async () => {
+test("a static deployment honestly disables online links", async () => {
   for (const response of [new Response("Not found", { status: 404 }), new Response("<html>App</html>", { headers: { "Content-Type": "text/html" } })]) {
     const client = createPublishingClient({ origin, fetch: async () => response });
     assert.equal((await client.status()).available, false);
@@ -62,7 +62,7 @@ test("expired sessions retain HTTP 401 for reservation and upload recovery", asy
     contentType: file.contentType, size: file.blob.size, idempotencyKey: file.snapshotId };
   for (const attempt of [() => client.reserve(input), () => client.upload(reservation.id, file)]) {
     await assert.rejects(attempt(), error => error instanceof PublishingHttpError
-      && error.status === 401 && error.message === "Your sharing session expired. Try creating the link again.");
+      && error.status === 401 && error.message === "Sign in to manage or create links.");
   }
 });
 
@@ -105,7 +105,7 @@ test("native file sharing checks the exact format and sends only the completed f
   await assert.rejects(shareExportFile(file), error => cancelledShare(error));
 });
 
-test("publishing status requires a browser session flag", () => {
+test("publishing status requires an account session flag", () => {
   assert.deepEqual(publishingStatus({ available: true, hasSession: false, maxBytes: 50 }), {
     available: true, hasSession: false, maxBytes: 50,
   });
@@ -113,22 +113,19 @@ test("publishing status requires a browser session flag", () => {
   assert.throws(() => publishingStatus({ available: true, hasSession: "yes", maxBytes: 50 }), /status/);
 });
 
-test("reading availability does not create a session; an explicit session request uses same-origin credentials", async () => {
+test("reading availability uses the existing same-origin account session", async () => {
   const calls = [];
   const client = createPublishingClient({ origin, fetch: async (url, options) => {
     calls.push({ url, options });
-    return Response.json({ available: true, hasSession: options.method === "POST", maxBytes: 50 });
+    return Response.json({ available: true, hasSession: true, maxBytes: 50 });
   } });
-  assert.equal((await client.status()).hasSession, false);
+  assert.equal((await client.status()).hasSession, true);
   assert.deepEqual(calls.map(call => [call.url, call.options.method]), [[`${origin}/api/publishing`, "GET"]]);
-  assert.equal((await client.session()).hasSession, true);
-  assert.equal(calls[1].url, `${origin}/api/publishing/session`);
-  assert.equal(calls[1].options.method, "POST");
-  assert.equal(calls[1].options.credentials, "same-origin");
-  assert.equal(calls[1].options.redirect, "error");
+  assert.equal(calls[0].options.credentials, "same-origin");
+  assert.equal(calls[0].options.redirect, "error");
 });
 
-test("cancelling session preparation releases the request and allows a fresh explicit attempt", async () => {
+test("cancelling a status refresh releases the request and allows a fresh check", async () => {
   let transport;
   let release;
   let attempts = 0;
@@ -140,12 +137,12 @@ test("cancelling session preparation releases the request and allows a fresh exp
     return Response.json(status);
   } });
   const controller = new AbortController();
-  const pending = client.session(controller.signal);
+  const pending = client.status(controller.signal);
   controller.abort();
   await assert.rejects(pending, { name: "AbortError" });
   assert.equal(transport.aborted, true);
   release(Response.json(status));
-  assert.deepEqual(await client.session(), status);
+  assert.deepEqual(await client.status(), status);
   assert.equal(attempts, 2);
 });
 
