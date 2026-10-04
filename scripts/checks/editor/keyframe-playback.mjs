@@ -116,11 +116,11 @@ try {
     "Enter still activates a focused property diamond");
   await inspector.getByRole("button", { name: "Jump", exact: true }).click();
   await assertPlayback("Desktop Space after setting keyframe easing", () => page.keyboard.press("Space"));
-  const safeZone = page.getByRole("button", { name: "Safe zone", exact: true });
-  const previousSafeZone = await safeZone.getAttribute("aria-pressed");
-  await safeZone.focus();
-  await safeZone.press("Space");
-  assert.notEqual(await safeZone.getAttribute("aria-pressed"), previousSafeZone,
+  const snapToggle = page.getByRole("button", { name: "Snap to edges", exact: true });
+  const previousSnap = await snapToggle.getAttribute("aria-pressed");
+  await snapToggle.focus();
+  await snapToggle.press("Space");
+  assert.notEqual(await snapToggle.getAttribute("aria-pressed"), previousSnap,
     "Space retains normal activation on an unrelated button");
   assert.equal(await page.evaluate(() => window.keyframePlayback.useCapture.getState().playing), false,
     "Space on an ordinary button does not start playback");

@@ -12,8 +12,7 @@ const RATIOS: { value: Ratio; width: number; height: number; hint: string }[] = 
   { value: "16:9", width: 24, height: 14, hint: "YouTube · landscape" },
 ];
 
-export function ProjectInspector({ safeZone, onSafeZoneChange, snap, onSnapChange }: {
-  safeZone?: boolean; onSafeZoneChange?: (enabled: boolean) => void;
+export function ProjectInspector({ snap, onSnapChange }: {
   snap?: boolean; onSnapChange?: (enabled: boolean) => void;
 }) {
   const state = useCapture();
@@ -28,10 +27,9 @@ export function ProjectInspector({ safeZone, onSafeZoneChange, snap, onSnapChang
     })) },
     { kind: "note", text: RATIOS.find(ratio => ratio.value === state.ratio)?.hint ?? "" },
   ] }];
-  const guides: InspectorSection = { title: "Guides", controls: [] };
-  if (onSafeZoneChange) guides.controls.push({ kind: "toggle", label: "Safe zone", on: !!safeZone, onToggle: () => onSafeZoneChange(!safeZone) });
-  if (onSnapChange) guides.controls.push({ kind: "toggle", label: "Snap to edges", on: !!snap, onToggle: () => onSnapChange(!snap) });
-  if (guides.controls.length) sections.push(guides);
+  if (onSnapChange) sections.push({ title: "Timeline", controls: [
+    { kind: "toggle", label: "Snap to edges", on: !!snap, onToggle: () => onSnapChange(!snap) },
+  ] });
   sections.push({ title: "This project", controls: [
     { kind: "list", rows: [
       { label: "Scenes", value: String(state.scenes.length) },

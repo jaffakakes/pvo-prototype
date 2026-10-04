@@ -10,13 +10,11 @@ import { DebugEntry } from "../../editor-layout/debugging/DebugEntry";
 import styles from "./DesktopPlayer.module.css";
 
 type Props = {
-  safeZone: boolean;
-  onSafeZoneChange(enabled: boolean): void;
   onOpenProject(): void;
   onOpenLibrary(tab: string): void;
 };
 
-export function DesktopPlayer({ safeZone, onSafeZoneChange, onOpenProject, onOpenLibrary }: Props) {
+export function DesktopPlayer({ onOpenProject, onOpenLibrary }: Props) {
   const time = useCapture(state => state.t);
   const clips = useCapture(state => state.clips);
   const ratio = useCapture(state => state.ratio);
@@ -27,7 +25,7 @@ export function DesktopPlayer({ safeZone, onSafeZoneChange, onOpenProject, onOpe
 
   return <section className={styles.panel} aria-label="Player" data-desktop-player>
     <DesktopSceneBar onOpenTree={() => onOpenLibrary("scenes")} />
-    <Preview desktop safeZone={safeZone} onAddMedia={() => onOpenLibrary("media")} />
+    <Preview desktop onAddMedia={() => onOpenLibrary("media")} />
     <div className={styles.transport}>
       <div className={styles.time} aria-label={`Playback time ${pickTime(time)} of ${pickTime(duration)}`}>
         {pickTime(time)} <span>/ {pickTime(duration)}</span>
@@ -42,8 +40,6 @@ export function DesktopPlayer({ safeZone, onSafeZoneChange, onOpenProject, onOpe
           <span aria-hidden="true">{tryMode ? "■" : "▷"}</span>{tryMode ? "Stop" : "Try"}
         </button>
         <DebugEntry variant="desktop" />
-        <button type="button" className={styles.safe} data-on={safeZone} aria-label="Safe zone" aria-pressed={safeZone}
-          onClick={() => onSafeZoneChange(!safeZone)}><Icon name="ratio" size={16} /></button>
         <button type="button" className={styles.ratio} onClick={onOpenProject} disabled={!!tryMode}
           aria-label={`Aspect ratio ${ratio}`}>{ratio}</button>
       </div>

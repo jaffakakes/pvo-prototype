@@ -3,11 +3,6 @@
 
 .area[data-desktop="true"] { min-width: 0; padding: 20px; background: var(--deep); }
 .canvas[data-desktop="true"] { border: 2px solid var(--q12); border-radius: 14px; box-shadow: none; }
-.guides { position: absolute; inset: 0; z-index: 9998; pointer-events: none; }
-.safeBorder { position: absolute; inset: 12px; border: 1.5px dashed #ffffff4d; border-radius: 8px; }
-.guides[data-portrait="true"] .safeBorder { bottom: 22%; }
-.socialGuides { position: absolute; right: 10px; top: 34%; display: flex; flex-direction: column; gap: 10px; }
-.socialGuides i { width: 24px; height: 24px; border: 1.5px dashed #ffffff4d; border-radius: 50%; }
 .tryBadge { position: absolute; top: 10px; right: 10px; z-index: 10000; display: flex; align-items: center; gap: 5px; padding: 5px 7px; border: 2px solid #000; border-radius: 20px; background: var(--accent); font-size: 9.5px; font-weight: 800; text-transform: uppercase; pointer-events: none; }
 .tryBadge i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; animation: rsPulse 1s infinite; }
 .empty { position: absolute; inset: 12px; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; border: 2px dashed var(--q14); border-radius: 12px; background: #0e0e14; text-align: center; }
