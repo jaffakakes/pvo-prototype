@@ -8,13 +8,14 @@ export const ORIGIN = "https://restyle.example";
 export const SECRET = "integration-test-session-secret-not-used-in-production";
 let bundle;
 
-export async function workerFixture(overrides = {}, { createSessions = true } = {}) {
+export async function workerFixture(overrides = {}, { createSessions = true, outboundService } = {}) {
   bundle ??= bundleWorkerModules({ entryPoints: ["server/index.js"] });
   const template = await readFile("player/published.html", "utf8");
   const mf = new Miniflare(convertV4MiniflareOptions({ name: "publishing-test",
     modules: await bundle, compatibilityDate: "2026-09-27",
     d1Databases: ["DB"], r2Buckets: ["MEDIA"],
     bindings: { PUBLISHING_ENABLED: "true", PUBLIC_ORIGIN: ORIGIN, SESSION_SECRET: SECRET, ...overrides },
+    ...(outboundService ? { outboundService } : {}),
     serviceBindings: { ASSETS: request => new Response(new URL(request.url).pathname === "/player/published"
       ? template : "static asset", { headers: { "Content-Type": "text/html" } }) },
   }));
