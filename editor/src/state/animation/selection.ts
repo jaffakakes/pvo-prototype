@@ -34,6 +34,14 @@ export const useAnimationSelection = create<AnimationSelectionState>((set) => ({
   },
 }));
 
+/** A stage drag edits a position key only after that key is explicitly selected at the playhead. */
+export function selectedPositionKeyAt(sceneId: string, target: AnimationTarget, time: number): boolean {
+  const selection = useAnimationSelection.getState().selection;
+  return !!selection && selection.sceneId === sceneId && selection.group === "position"
+    && sameAnimationTarget(selection.target, target)
+    && Math.abs(selection.time - time) < KEYFRAME_TIME_EPSILON;
+}
+
 // Undo, project/layer switches and deletion must never leave Delete targeting an old hidden key.
 useCapture.subscribe((state, previous) => {
   const selection = useAnimationSelection.getState().selection;
