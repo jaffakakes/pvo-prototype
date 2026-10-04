@@ -27,7 +27,7 @@
 .region { position: relative; min-width: 0; min-height: 0; }
 .region > * { height: 100%; }
 .region[data-editing-paused="true"] > * { opacity: .32; }
-.region[data-editing-paused="true"]::after { content: "Editing is paused while you try"; position: absolute; top: 84px; left: 50%; transform: translateX(-50%); padding: 9px 12px; border: 3px solid #000; border-radius: 13px; background: var(--bar); box-shadow: 4px 4px 0 #000; font: 800 12px var(--f-ui); white-space: nowrap; pointer-events: none; }
+.region[data-editing-paused="true"]::after { content: "Editing is paused while you try"; position: absolute; top: 84px; left: 50%; transform: translateX(-50%); padding: 9px 12px; border: 3px solid var(--outline); border-radius: 13px; background: var(--bar); box-shadow: 4px 4px 0 var(--button-shadow); font: 800 12px var(--f-ui); white-space: nowrap; pointer-events: none; }
 .timeline { grid-column: 1 / -1; min-width: 0; min-height: 0; }
 .timeline > * { height: 100%; }
 .editor[data-trying="true"] .timeline :global([data-desktop-timeline] [role="toolbar"]) { opacity: .35; }

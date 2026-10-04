@@ -3,7 +3,7 @@
   gap: 12px;
   margin-bottom: 22px;
   padding-bottom: 18px;
-  border-bottom: 1px solid #ffffff24;
+  border-bottom: 1px solid var(--q14);
 }
 
 .heading {
@@ -21,10 +21,10 @@
 .heading button {
   min-height: 36px;
   padding: 6px 10px;
-  border: 1px solid #ffffff30;
+  border: 1px solid var(--button-border);
   border-radius: 8px;
-  background: transparent;
-  color: #F2F0E9;
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
   font: 700 12px/1.3 var(--f-ui);
   cursor: pointer;
 }
@@ -46,7 +46,7 @@
   gap: 7px;
   min-width: 0;
   font: 700 12px/1.4 var(--f-ui);
-  color: #F2F0E9;
+  color: var(--text);
 }
 
 .field input {
@@ -55,22 +55,22 @@
   min-height: 44px;
   box-sizing: border-box;
   padding: 10px 12px;
-  border: 1px solid #ffffff30;
+  border: 1px solid var(--line-strong);
   border-radius: 10px;
-  background: #1C1C24;
+  background: var(--input);
   color: inherit;
   font: 700 14px/1.4 var(--f-ui);
 }
 
 .field input:focus-visible,
 .heading button:focus-visible {
-  outline: 3px solid #FF9FBC;
+  outline: 3px solid var(--highlight);
   outline-offset: 2px;
 }
 
 .unit,
 .size p {
-  color: #c8c6c3;
+  color: var(--muted);
 }
 
 .size p {

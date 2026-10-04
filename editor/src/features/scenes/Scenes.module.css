@@ -63,31 +63,31 @@ button.chip, .treeButton { cursor: pointer; }
   position: absolute;
   z-index: -1;
   inset: 9px 0;
-  border: 2px solid rgba(255, 255, 255, .14);
+  border: 2px solid var(--q14);
   border-radius: 8px;
-  background: #15151C;
+  background: var(--surface);
 }
 
 .parent { font-weight: 800; }
 .parent::before, .chip[data-on="true"]::before, .treeButton::before {
-  border-color: #000;
-  box-shadow: 2px 2px 0 #000;
+  border-color: var(--outline);
+  box-shadow: 2px 2px 0 var(--button-shadow);
 }
 
-.chip[data-on="true"], .nodeChip[data-on="true"] { color: #111; font-weight: 800; }
-.chip[data-on="true"]::before { background: #F2F0E9; }
+.chip[data-on="true"], .nodeChip[data-on="true"] { color: var(--surface); font-weight: 800; }
+.chip[data-on="true"]::before { background: var(--text); }
 .chip small, .nodeChip small { font: 600 9.5px var(--f-ui); opacity: .55; }
-.separator { flex: none; font: 800 12px var(--f-ui); opacity: .4; }
-.branchCount { color: #A78BFA; font-size: 9px; }
-.add { color: #A78BFA; font-weight: 800; }
-.add::before { background: transparent; border: 2px dashed rgba(167, 139, 250, .6); }
-.treeButton { width: 44px; padding: 0; color: #A78BFA; }
+.separator { flex: none; font: 800 12px var(--f-ui); opacity: .4; color: var(--faint); }
+.branchCount { color: var(--violet); font-size: 9px; }
+.add { color: var(--violet); font-weight: 800; }
+.add::before { background: transparent; border: 2px dashed color-mix(in srgb, var(--violet) 60%, transparent); }
+.treeButton { width: 44px; padding: 0; color: var(--violet); }
 .treeButton::before { inset: 8px 4px; }
-.treeButton[aria-expanded="true"]::before { border-color: #A78BFA; }
+.treeButton[aria-expanded="true"]::before { border-color: var(--violet); }
 
 .row button:focus-visible { outline: none; }
 .row button:focus-visible::before, .tree button:focus-visible {
-  outline: 3px solid #FF9FBC;
+  outline: 3px solid var(--highlight);
   outline-offset: 2px;
 }
 
@@ -130,7 +130,7 @@ button.chip, .treeButton { cursor: pointer; }
 }
 
 .treeHeader h2 { margin: 0; white-space: nowrap; font: 400 14px var(--f-display); }
-.treeHeader p { margin: 0; font: 600 10px var(--f-ui); opacity: .5; }
+.treeHeader p { margin: 0; font: 600 10px var(--f-ui); opacity: .5; color: var(--muted); }
 .close {
   display: grid;
   flex: 0 0 32px;
@@ -141,8 +141,9 @@ button.chip, .treeButton { cursor: pointer; }
   padding: 0;
   border: 0;
   border-radius: 8px;
-  background: var(--surface);
+  background: var(--button-secondary-bg);
   cursor: pointer;
+  color: var(--button-secondary-text);
 }
 
 .treeBody { flex: 1; min-height: 0; overflow: auto; padding: 2px 0 8px; scrollbar-width: none; }
@@ -161,7 +162,7 @@ button.chip, .treeButton { cursor: pointer; }
   cursor: pointer;
 }
 
-.tick { flex: 0 0 12px; width: 12px; height: 1.5px; background: #A78BFA; }
+.tick { flex: 0 0 12px; width: 12px; height: 1.5px; background: var(--violet); }
 .nodeChip {
   display: inline-flex;
   flex: none;
@@ -171,13 +172,13 @@ button.chip, .treeButton { cursor: pointer; }
   padding: 0 9px;
   border: 2px solid var(--q14);
   border-radius: 8px;
-  background: #15151C;
+  background: var(--surface);
   font: 700 10.5px var(--f-ui);
   white-space: nowrap;
 }
 
-.nodeChip[data-on="true"] { border-color: #000; background: #F2F0E9; box-shadow: 2px 2px 0 #000; }
-.meta { font: 600 9.5px var(--f-ui); opacity: .45; white-space: nowrap; }
+.nodeChip[data-on="true"] { border-color: var(--outline); background: var(--text); box-shadow: 2px 2px 0 var(--button-shadow); }
+.meta { font: 600 9.5px var(--f-ui); opacity: .45; white-space: nowrap; color: var(--faint); }
 
 @keyframes treeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes lanesIn { from { opacity: 0; } to { opacity: 1; } }

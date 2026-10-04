@@ -24,6 +24,7 @@
   filter: invert(1);
   opacity: 0.45;
 }
+html[data-theme="light"] .orb:not([data-awake="true"]) img { filter: none; }
 .orb[data-awake="true"] {
   top: -80px;
   background: var(--accent);
@@ -48,13 +49,13 @@
   align-items: center;
   gap: 8px;
   padding: 9px 14px;
-  background: rgba(21, 21, 28, 0.97);
-  border: 2px solid rgba(255, 255, 255, 0.16);
+  background: color-mix(in srgb, var(--surface) 97%, transparent);
+  border: 2px solid var(--line-strong);
   border-radius: 22px;
   box-shadow:
-    0 0 0 2px rgba(255, 45, 120, 0.16),
-    0 0 22px rgba(255, 45, 120, 0.35),
-    3px 3px 0 rgba(0, 0, 0, 0.6);
+    0 0 0 2px color-mix(in srgb, var(--accent) 16%, transparent),
+    0 0 22px color-mix(in srgb, var(--accent) 35%, transparent),
+    3px 3px 0 color-mix(in srgb, var(--outline) 60%, transparent);
   font: 700 12px var(--f-ui);
   white-space: nowrap;
   cursor: pointer;

@@ -14,7 +14,7 @@
 .scenesRow > span:first-child {
   flex: none;
   margin-right: 3px;
-  color: rgba(242, 240, 233, 0.45);
+  color: var(--faint);
   font: 700 10px var(--f-ui);
   letter-spacing: 0.4px;
 }
@@ -28,7 +28,7 @@
   gap: 5px;
   padding: 0 9px;
   background: transparent;
-  color: rgba(242, 240, 233, 0.75);
+  color: var(--text-secondary);
   border: 0;
   font: 700 11px var(--f-ui);
   white-space: nowrap;
@@ -48,13 +48,13 @@
   opacity: 0.55;
 }
 .sceneChip[data-on="true"] {
-  color: var(--ink);
+  color: var(--button-primary-text);
   font-weight: 800;
 }
 .sceneChip[data-on="true"]::before {
-  background: var(--text);
-  border-color: #000;
-  box-shadow: 2px 2px 0 #000;
+  background: var(--button-primary-bg);
+  border-color: var(--outline);
+  box-shadow: 2px 2px 0 var(--button-shadow);
 }
 .sceneAdd {
   position: relative;
@@ -93,10 +93,10 @@
   padding: 5px 5px 5px 12px;
   transform: translateX(-50%);
   background: var(--violet);
-  color: var(--ink);
-  border: 2.5px solid #000;
+  color: var(--violet-foreground);
+  border: 2.5px solid var(--outline);
   border-radius: 14px;
-  box-shadow: 3px 3px 0 #000;
+  box-shadow: 3px 3px 0 var(--button-shadow);
   font: 800 12px var(--f-ui);
   white-space: nowrap;
 }
@@ -112,7 +112,7 @@
   place-items: center;
   background: var(--surface);
   color: var(--text);
-  border: 2px solid #000;
+  border: 2px solid var(--outline);
   border-radius: 8px;
   cursor: pointer;
 }

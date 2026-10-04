@@ -17,18 +17,18 @@ type Props = {
 };
 type Review = { email: string; clerkUserId: string };
 
-const standaloneAppearance = {
+const accountAppearance = {
   variables: {
-    colorPrimary: "var(--auth-accent, #ff8a00)",
-    colorPrimaryForeground: "var(--auth-accent-text, #141118)",
-    colorForeground: "#e6e3dc",
-    colorMutedForeground: "rgba(230, 227, 220, .62)",
-    colorBackground: "#1c1b22",
-    colorInput: "#141118",
-    colorInputForeground: "#e6e3dc",
-    colorNeutral: "#e6e3dc",
-    colorDanger: "#ff7b7b",
-    colorBorder: "#4a4852",
+    colorPrimary: "var(--auth-accent, var(--button-primary-bg))",
+    colorPrimaryForeground: "var(--auth-accent-text, var(--button-primary-text))",
+    colorForeground: "var(--text)",
+    colorMutedForeground: "var(--muted)",
+    colorBackground: "var(--surface)",
+    colorInput: "var(--deep)",
+    colorInputForeground: "var(--text)",
+    colorNeutral: "var(--text)",
+    colorDanger: "var(--red)",
+    colorBorder: "var(--line-strong)",
     fontFamily: "var(--f-ui)",
     borderRadius: "12px",
   },
@@ -111,7 +111,7 @@ export function ClerkEmailSignIn({ publishableKey, onBack, mode, expectedUserId,
       const formProps = {
         routing: "hash" as const,
         forceRedirectUrl: redirectUrl,
-        ...(standalone ? { appearance: standaloneAppearance } : {}),
+        appearance: accountAppearance,
       };
       if (initialStep === "signup") clerk.mountSignUp(element, formProps);
       else clerk.mountSignIn(element, { ...formProps, signUpForceRedirectUrl: redirectUrl });

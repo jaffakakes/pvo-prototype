@@ -10,17 +10,18 @@
   font: 700 12px var(--f-ui);
 }
 .transportTime span {
-  color: rgba(242, 240, 233, 0.4);
+  color: var(--muted);
 }
 .playBtn {
   width: 50px;
   height: 50px;
   display: grid;
   place-items: center;
-  background: var(--accent);
-  border: 3px solid #000;
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  border: 3px solid var(--button-border);
   border-radius: 50%;
-  box-shadow: 3px 3px 0 #000;
+  box-shadow: 3px 3px 0 var(--button-shadow);
 }
 .playBtn svg {
   margin-left: 2px;
@@ -37,8 +38,9 @@
   display: grid;
   place-items: center;
   padding: 0;
-  background: var(--surface);
-  border: 2px solid var(--q12);
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  border: 2px solid var(--button-border);
   border-radius: 9px;
   cursor: pointer;
 }

@@ -24,15 +24,15 @@
   cursor: pointer;
 }
 .iconButton:disabled, .tryButton:disabled { opacity: .4; cursor: default; }
-.tryButton { min-width: 44px; padding: 0 7px; background: var(--pale); color: var(--ink); border: 2px solid #000; font: 800 12px var(--f-ui); }
-.iconButton:focus-visible, .tryButton:focus-visible { outline: 3px solid #ff9fbc; outline-offset: -3px; }
-.stopTryButton { border: 1.5px solid var(--q14); border-radius: 11px; background: rgba(255, 255, 255, .03); color: #d8d5cb; }
+.tryButton { min-width: 44px; padding: 0 7px; background: var(--button-primary-bg); color: var(--button-primary-text); border: 2px solid var(--button-border); font: 800 12px var(--f-ui); }
+.iconButton:focus-visible, .tryButton:focus-visible { outline: 3px solid var(--pale); outline-offset: -3px; }
+.stopTryButton { border: 1.5px solid var(--q14); border-radius: 11px; background: var(--button-secondary-bg); color: var(--button-secondary-text); }
 .stopTryButton:hover { border-color: var(--pale); color: var(--text); }
-.header[data-trying="true"] .title h1 { display: flex; align-items: center; gap: 7px; color: #d8d5cb; font: 600 16px/1.2 var(--f-ui); }
-.header[data-trying="true"] .title p { color: rgba(242, 240, 233, .55); font-size: 10.5px; }
+.header[data-trying="true"] .title h1 { display: flex; align-items: center; gap: 7px; color: var(--text-secondary); font: 600 16px/1.2 var(--f-ui); }
+.header[data-trying="true"] .title p { color: var(--muted); font-size: 10.5px; }
 .tryDot { width: 6px; height: 6px; flex: none; border-radius: 50%; background: var(--violet); }
 .ratio, .guest { display: none; }
-.export { display: flex; flex: none; align-items: center; justify-content: center; gap: 8px; min-width: 44px; height: 44px; padding: 0 10px; background: var(--accent); border: 2px solid #000; border-radius: 12px; font-size: 13px; font-weight: 800; cursor: pointer; }
+.export { display: flex; flex: none; align-items: center; justify-content: center; gap: 8px; min-width: 44px; height: 44px; padding: 0 10px; background: var(--button-primary-bg); border: 2px solid var(--button-border); border-radius: 12px; font-size: 13px; font-weight: 800; cursor: pointer; color: var(--button-primary-text); }
 .export:disabled { opacity: .4; }
 .export > span { display: none; }
 
@@ -47,7 +47,7 @@
   .title h1 { font-size: 22px; }
   .title p { font-size: 12px; }
   .export > span { display: inline; }
-  .export { padding: 0 16px; box-shadow: 3px 3px 0 #000; }
+  .export { padding: 0 16px; box-shadow: 3px 3px 0 var(--button-shadow); }
   .guest { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 8px 0 12px; background: var(--surface); border: 2px solid var(--q14); border-radius: 10px; color: var(--muted); font-size: 12px; cursor: pointer; }
   .guest i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
   .guest span { padding: 5px 8px; border: 1px solid var(--q14); border-radius: 7px; background: var(--input); color: var(--text); font-size: 11px; }

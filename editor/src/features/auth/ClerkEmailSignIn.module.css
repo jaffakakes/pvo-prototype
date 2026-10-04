@@ -1,22 +1,112 @@
-.email { display: flex; flex-direction: column; align-items: stretch; gap: 12px; min-width: 0; }
-.back { align-self: flex-start; min-height: 38px; padding: 0 12px; border: 2px solid #4a4852; border-radius: 10px; background: #1c1b22; color: #e6e3dc; font: 700 12px var(--f-ui); cursor: pointer; }
-.status { margin: 0; color: rgba(230,227,220,.72); font: 600 13px/1.45 var(--f-ui); }
-.form { width: 100%; min-width: 0; }
-.form[data-visible="false"] { display: none; }
-.form :global(.cl-rootBox), .form :global(.cl-cardBox) { width: 100%; max-width: 100%; }
-.review { display: grid; gap: 10px; padding: 14px; border: 2px solid #4a4852; border-radius: 12px; background: #1c1b22; }
-.review p { margin: 0; color: #e6e3dc; font: 600 13px/1.45 var(--f-ui); overflow-wrap: anywhere; }
-.review strong { color: #ffd23e; }
-.review button { justify-self: start; min-height: 42px; padding: 0 12px; border: 2px solid #000; border-radius: 10px; background: #ffd23e; color: #181818; font: 800 12px var(--f-ui); cursor: pointer; }
-.review .secondary, .retry .secondary { background: #1c1b22; color: #e6e3dc; border-color: #4a4852; }
-.retry { display: grid; gap: 10px; }
-.retry p { margin: 0; color: #ff7b7b; font: 600 12px/1.45 var(--f-ui); }
-.retry button { justify-self: start; min-height: 40px; padding: 0 12px; border: 2px solid #4a4852; border-radius: 10px; background: #1c1b22; color: #e6e3dc; font: 700 12px var(--f-ui); cursor: pointer; }
-.email button:focus-visible { outline: 3px solid #ffd23e; outline-offset: 2px; }
+.email {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  min-width: 0;
+}
+
+.back {
+  align-self: flex-start;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 2px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font: 700 12px var(--f-ui);
+  cursor: pointer;
+}
+
+.status {
+  margin: 0;
+  color: var(--muted);
+  font: 600 13px/1.45 var(--f-ui);
+}
+
+.form {
+  width: 100%;
+  min-width: 0;
+}
+
+.form[data-visible="false"] {
+  display: none;
+}
+
+.form :global(.cl-rootBox), .form :global(.cl-cardBox) {
+  width: 100%;
+  max-width: 100%;
+}
+
+.review {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 2px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.review p {
+  margin: 0;
+  color: var(--text);
+  font: 600 13px/1.45 var(--f-ui);
+  overflow-wrap: anywhere;
+}
+
+.review strong {
+  color: var(--highlight);
+}
+
+.review button {
+  justify-self: start;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 2px solid var(--button-border);
+  border-radius: 10px;
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  font: 800 12px var(--f-ui);
+  cursor: pointer;
+}
+
+.review .secondary, .retry .secondary {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+
+.retry {
+  display: grid;
+  gap: 10px;
+}
+
+.retry p {
+  margin: 0;
+  color: var(--red);
+  font: 600 12px/1.45 var(--f-ui);
+}
+
+.retry button {
+  justify-self: start;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 2px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font: 700 12px var(--f-ui);
+  cursor: pointer;
+}
+
+.email button:focus-visible {
+  outline: 3px solid var(--highlight);
+  outline-offset: 2px;
+}
 
 .standalone {
   --email-field-height: 50px;
-  color: #e6e3dc;
+  color: var(--text);
 }
 
 .standalone :global(.cl-cardBox),
@@ -49,12 +139,12 @@
 }
 
 .standalone :global(.cl-headerTitle) {
-  color: #e6e3dc;
+  color: var(--text);
   font: 400 22px/1.15 var(--f-display);
 }
 
 .standalone :global(.cl-headerSubtitle) {
-  color: rgba(230, 227, 220, .62);
+  color: var(--muted);
   font: 500 13px/1.5 var(--f-ui);
 }
 
@@ -67,7 +157,7 @@
 }
 
 .standalone :global(.cl-formFieldLabel) {
-  color: #e6e3dc;
+  color: var(--text);
   font: 700 12px/1.4 var(--f-ui);
 }
 
@@ -75,10 +165,10 @@
 .standalone :global(.cl-otpCodeFieldInput) {
   box-sizing: border-box;
   min-height: var(--email-field-height);
-  border: 2px solid rgba(230, 227, 220, .18);
+  border: 2px solid var(--q14);
   border-radius: 12px;
-  background: #141118;
-  color: #e6e3dc;
+  background: var(--deep);
+  color: var(--text);
   box-shadow: none;
   font: 600 14px/1.4 var(--f-ui);
 }
@@ -95,31 +185,31 @@
 }
 
 .standalone :global(.cl-formFieldInput)::placeholder {
-  color: rgba(230, 227, 220, .62);
+  color: var(--muted);
 }
 
 .standalone :global(.cl-formFieldInput):focus,
 .standalone :global(.cl-otpCodeFieldInput):focus {
   outline: none;
-  border-color: #e6e3dc;
-  box-shadow: 0 0 0 3px rgba(230, 227, 220, .18);
+  border-color: var(--text);
+  box-shadow: 0 0 0 3px var(--q14);
 }
 
 .standalone :global(.cl-formFieldInput)[aria-invalid="true"],
 .standalone :global(.cl-formFieldInput):global(.cl-error) {
-  border-color: #ff7b7b;
+  border-color: var(--red);
 }
 
 .standalone :global(.cl-formFieldErrorText),
 .standalone :global(.cl-otpCodeFieldErrorText) {
-  color: #ff7b7b;
+  color: var(--red);
   font: 600 12px/1.45 var(--f-ui);
 }
 
 .standalone :global(.cl-formFieldInputShowPasswordButton) {
   min-width: 40px;
   min-height: 40px;
-  color: rgba(230, 227, 220, .7);
+  color: var(--muted);
 }
 
 .standalone :global(.cl-formButtonPrimary),
@@ -128,18 +218,18 @@
   width: 100%;
   min-height: 52px;
   padding: 10px 16px;
-  border: 2px solid #4a4852;
+  border: 2px solid var(--line-strong);
   border-radius: 14px;
-  background: var(--auth-accent, #ff8a00);
-  color: var(--auth-accent-text, #141118);
-  box-shadow: 3px 3px 0 #4a4852;
+  background: var(--auth-accent, var(--button-primary-bg));
+  color: var(--auth-accent-text, var(--button-primary-text));
+  box-shadow: 3px 3px 0 var(--button-shadow);
   font: 800 15px/1.3 var(--f-ui);
   text-transform: none;
 }
 
 .standalone :global(.cl-formButtonPrimary):hover,
 .standalone .review button:first-of-type:hover {
-  background: var(--auth-accent, #ff8a00);
+  background: var(--auth-accent, var(--button-primary-bg));
   filter: brightness(1.06);
 }
 
@@ -147,7 +237,7 @@
 .standalone :global(.cl-footerActionLink),
 .standalone :global(.cl-footerPagesLink),
 .standalone :global(.cl-formResendCodeLink) {
-  color: #e6e3dc;
+  color: var(--text);
   font-weight: 700;
   text-decoration: underline;
   text-decoration-thickness: 2px;
@@ -157,9 +247,9 @@
 .standalone :global(.cl-formFieldCheckboxInput) {
   width: 20px;
   height: 20px;
-  border: 2px solid #141118;
+  border: 2px solid var(--deep);
   border-radius: 6px;
-  accent-color: var(--auth-accent, #ff8a00);
+  accent-color: var(--auth-accent, var(--button-primary-bg));
 }
 
 /* Keep provider branding, legal links, and development notices in the real form. */
@@ -177,7 +267,7 @@
 
 .standalone button:focus-visible,
 .standalone a:focus-visible {
-  outline: 3px solid #e6e3dc;
+  outline: 3px solid var(--text);
   outline-offset: 3px;
 }
 

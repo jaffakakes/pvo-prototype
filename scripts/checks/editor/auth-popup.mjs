@@ -30,6 +30,7 @@ const clerkModule = `
       form.dataset.testClerkForm = mode;
       form.textContent = mode === "signup" ? "Managed create-account form" : "Managed sign-in form";
       const complete = document.createElement("button");
+      complete.className = "cl-formButtonPrimary";
       complete.textContent = "Complete mocked email sign-in";
       complete.onclick = () => {
         this.user = { id: "popup-clerk-user", primaryEmailAddress: {
@@ -37,7 +38,11 @@ const clerkModule = `
         this.session = { id: "popup-clerk-session", getToken: async () => "popup-email-token" };
         for (const listener of this.listeners) listener({ session: this.session, user: this.user });
       };
-      form.append(complete);
+      const email = document.createElement("input");
+      email.className = "cl-formFieldInput";
+      email.type = "email";
+      email.setAttribute("aria-label", "Mock email");
+      form.append(email, complete);
       host.replaceChildren(form);
     }
     mountSignIn(host) { this.mount(host, "signin"); }
@@ -83,6 +88,7 @@ async function waitForSavedProject(page, projectId) {
 async function checkPopup(phone) {
   const context = await browser.newContext({
     viewport: { width: 1280, height: 800 },
+    colorScheme: "dark",
     hasTouch: phone,
     serviceWorkers: "block",
   });
@@ -174,7 +180,7 @@ async function checkPopup(phone) {
         borderWidth: style.borderTopWidth, radius: style.borderTopLeftRadius };
     });
     assert.equal(frame.width, phone ? 342 : 520, "The popup must match the handed-off responsive width");
-    assert.equal(frame.background, "rgb(28, 27, 34)");
+    assert.equal(frame.background, "rgb(21, 21, 28)");
     assert.equal(frame.border, "rgb(74, 72, 82)");
     assert.equal(frame.borderWidth, "3px");
     assert.equal(frame.radius, "22px");
@@ -189,6 +195,20 @@ async function checkPopup(phone) {
     await gate.getByRole("button", { name: "Continue with email", exact: true }).click();
     await page.getByRole("dialog", { name: "Create account", exact: true }).waitFor();
     await dialog.locator('[data-test-clerk-form="signup"]').waitFor();
+    for (const [mode, surface, text, accent] of [
+      ["light", "rgb(255, 253, 251)", "rgb(36, 29, 37)", "rgb(197, 27, 92)"],
+      ["dark", "rgb(21, 21, 28)", "rgb(242, 240, 233)", "rgb(255, 45, 120)"],
+    ]) {
+      await page.emulateMedia({ colorScheme: mode });
+      await page.waitForFunction(expected => document.documentElement.dataset.theme === expected, mode);
+      const colors = await dialog.evaluate(element => ({
+        surface: getComputedStyle(element).backgroundColor,
+        inputText: getComputedStyle(element.querySelector("input")).color,
+        action: getComputedStyle(element.querySelector(".cl-formButtonPrimary")).backgroundColor,
+      }));
+      assert.deepEqual(colors, { surface, inputText: text, action: accent },
+        "The email form must follow editor surfaces, readable text, and the guest accent in both modes");
+    }
     await dialog.getByRole("button", { name: /^Back/ }).click();
     await gate.waitFor();
     await gate.getByRole("button", { name: "Sign in", exact: true }).click();

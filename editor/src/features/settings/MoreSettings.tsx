@@ -13,8 +13,15 @@ import { CaptureRecovery } from "../capture/CaptureRecovery";
 import styles from "./MoreSettings.module.css";
 import { requestExport } from "../../state/export/exportCommands";
 import { openSignIn, useAuthGate } from "../../state/auth/authGateStore";
+import { THEME_ACCENTS, THEME_MODES, type ThemeAccent, type ThemeMode } from "../../domain/appearance/theme";
+import { setThemeAccent, setThemeMode, useThemePreferences } from "../../state/preferences/themePreferences";
 
 const ratios = Object.keys(RATIOS) as Ratio[];
+const modeLabels: Record<ThemeMode, string> = { system: "System", light: "Light", dark: "Dark" };
+const accentLabels: Record<ThemeAccent, string> = {
+  magenta: "Magenta", orange: "Orange", emerald: "Emerald",
+  cyan: "Cyan", blue: "Blue", violet: "Violet",
+};
 
 export function MoreSettings() {
   const user = useAuthGate(state => state.user);
@@ -22,6 +29,9 @@ export function MoreSettings() {
   const edit = useCapture(state => state.edit);
   const advancedEditingEnabled = useEditorPreferences(state => state.advancedEditingEnabled);
   const reduceMotion = useEditorPreferences(state => state.reduceMotion);
+  const themeMode = useThemePreferences(state => state.mode);
+  const themeAccent = useThemePreferences(state => state.accent);
+  const themeSaveFailed = useThemePreferences(state => state.storageSaveFailed);
   const currentSceneId = useCapture(state => state.currentSceneId);
   const screen = useCapture(state => state.screen);
   const storageSaveFailed = useEditorPreferences(state => state.storageSaveFailed);
@@ -36,6 +46,28 @@ export function MoreSettings() {
       <div className={styles.actions}>
         <button type="button" onClick={() => openSignIn()}>{user ? "Your account" : "Sign in"}</button>
       </div>
+    </section>
+    <section className={styles.section} aria-labelledby="more-appearance-heading">
+      <h3 id="more-appearance-heading">Appearance</h3>
+      <p className={styles.themeHelp}>Choose how the editor looks on this device.</p>
+      <div className={styles.themeModes} role="group" aria-label="Color mode">
+        {THEME_MODES.map(mode => <button key={mode} type="button"
+          aria-pressed={themeMode === mode} data-selected={themeMode === mode}
+          onClick={() => setThemeMode(mode)}>{modeLabels[mode]}</button>)}
+      </div>
+      <h4 className={styles.themeSubheading}>Accent color</h4>
+      {user ? <div className={styles.themeAccents} role="group" aria-label="Accent color">
+        {THEME_ACCENTS.map(accent => <button key={accent} type="button"
+          aria-label={accentLabels[accent]} aria-pressed={themeAccent === accent}
+          data-selected={themeAccent === accent} data-accent={accent}
+          onClick={() => setThemeAccent(accent)}>
+          <span className={styles.themeSwatch} aria-hidden="true" />
+          <span>{accentLabels[accent]}</span>
+        </button>)}
+      </div> : <p className={styles.themeHelp}>Magenta is the guest color. Sign in to choose another.</p>}
+      {themeSaveFailed && <p className={styles.preferenceNote} role="status">
+        Couldn’t save this appearance setting. It still applies to this session.
+      </p>}
     </section>
     {component && <section className={styles.section} aria-label="Selected component">
       <div className={styles.actions}>

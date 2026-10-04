@@ -1,6 +1,6 @@
 .dialog {
-  --auth-accent: #ff8a00;
-  --auth-accent-text: #141118;
+  --auth-accent: var(--button-primary-bg);
+  --auth-accent-text: var(--button-primary-text);
   box-sizing: border-box;
   width: min(520px, calc(100vw - 48px));
   max-height: calc(100dvh - 48px);
@@ -8,19 +8,37 @@
   padding: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  background: #1c1b22;
-  color: #e6e3dc;
-  border: 3px solid #4a4852;
+  background: var(--surface);
+  color: var(--text);
+  border: 3px solid var(--line-strong);
   border-radius: 22px;
-  box-shadow: 8px 8px 0 #4a4852;
+  box-shadow: 8px 8px 0 var(--frame-shadow);
   font-family: var(--f-ui);
   overscroll-behavior: contain;
 }
 
-.dialog::backdrop { background: rgba(0, 0, 0, .62); }
-.heading { display: flex; align-items: flex-start; gap: 12px; padding: 24px 28px 0; }
-.heading h2 { flex: 1; min-width: 0; margin: 5px 0 0; font: 26px/1.05 var(--f-display); }
-.heading h2:focus { outline: none; }
+.dialog::backdrop {
+  background: rgba(0, 0, 0, .62);
+}
+
+.heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 24px 28px 0;
+}
+
+.heading h2 {
+  flex: 1;
+  min-width: 0;
+  margin: 5px 0 0;
+  font: 26px/1.05 var(--f-display);
+}
+
+.heading h2:focus {
+  outline: none;
+}
+
 .iconButton {
   display: grid;
   place-items: center;
@@ -28,16 +46,34 @@
   width: 36px;
   height: 36px;
   padding: 0;
-  border: 2px solid #4a4852;
+  border: 2px solid var(--line-strong);
   border-radius: 10px;
-  background: #1c1b22;
-  color: #e6e3dc;
-  box-shadow: 3px 3px 0 #4a4852;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 3px 3px 0 var(--button-shadow);
   cursor: pointer;
 }
-.content { display: flex; flex-direction: column; gap: 18px; padding: 8px 28px 24px; }
-.description { margin: 0; color: rgba(230, 227, 220, .62); font: 500 13px/1.5 var(--f-ui); }
-.providers { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 8px 28px 24px;
+}
+
+.description {
+  margin: 0;
+  color: var(--muted);
+  font: 500 13px/1.5 var(--f-ui);
+}
+
+.providers {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+
 .provider {
   display: grid;
   grid-template-columns: 56px minmax(0, 1fr) 56px;
@@ -45,54 +81,191 @@
   width: 100%;
   min-height: 56px;
   padding: 0;
-  border: 2px solid #4a4852;
+  border: 2px solid var(--line-strong);
   border-radius: 14px;
-  box-shadow: 3px 3px 0 #4a4852;
-  background: #1c1b22;
-  color: #e6e3dc;
+  box-shadow: 3px 3px 0 var(--button-shadow);
+  background: var(--surface);
+  color: var(--text);
   font: 700 15px/1.25 var(--f-ui);
   cursor: pointer;
 }
+
 .providerIcon {
   display: grid;
   place-items: center;
   align-self: stretch;
-  border-right: 2px solid #4a4852;
+  border-right: 2px solid var(--line-strong);
   border-radius: 12px 0 0 12px;
-  background: #141118;
+  background: var(--deep);
   background-clip: padding-box;
 }
-.email { background: var(--auth-accent); color: var(--auth-accent-text); font-weight: 800; }
-.email .providerIcon { background: color-mix(in oklab, var(--auth-accent) 78%, #000); }
-.availability { margin: 0; padding: 14px; border: 2px solid rgba(230, 227, 220, .18); border-radius: 12px; background: #141118; font: 500 13px/1.5 var(--f-ui); }
-.status, .error { margin: 0; font: 600 12px/1.5 var(--f-ui); }
-.status { color: rgba(230, 227, 220, .62); }
-.error { color: #ff7b7b; }
-.footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 28px; background: #141118; border-top: 2px solid #4a4852; }
-.secondary { flex: none; min-height: 44px; padding: 0 18px; border: 2px solid #4a4852; border-radius: 12px; background: #1c1b22; color: #e6e3dc; box-shadow: 3px 3px 0 #4a4852; font: 800 13.5px/1.25 var(--f-ui); cursor: pointer; }
-.content > .secondary { align-self: flex-start; }
-.swap { flex: 1; margin: 0; color: rgba(230, 227, 220, .62); font: 500 12.5px/1.5 var(--f-ui); }
-.swap button { position: relative; padding: 0; border: 0; background: transparent; color: #e6e3dc; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 2px; font: 700 12.5px/1.5 var(--f-ui); cursor: pointer; }
-.swap button::after { content: ""; position: absolute; inset: -13px -3px; }
-.dialog button:disabled { opacity: .55; cursor: not-allowed; }
-.dialog button:focus-visible { outline: 3px solid #ffd23e; outline-offset: 2px; }
 
-@media (max-width: 700px) {
-  .dialog { width: min(342px, calc(100vw - 48px)); }
-  .heading { gap: 10px; padding: 18px 18px 0; }
-  .heading h2 { margin-top: 4px; font-size: 22px; }
-  .iconButton { width: 34px; height: 34px; position: relative; }
-  .iconButton::after { content: ""; position: absolute; inset: -5px; }
-  .content { gap: 14px; padding: 12px 18px 0; }
-  .description { margin-top: -4px; font-size: 12px; }
-  .providers { gap: 10px; margin-top: 2px; }
-  .provider { min-height: 52px; grid-template-columns: 52px minmax(0, 1fr) 52px; font-size: 14.5px; }
-  .footer { margin-top: 16px; padding: 14px 18px 18px; }
-  .secondary { padding: 0 14px; border-radius: 11px; font-size: 12.5px; }
-  .swap { text-align: center; font-size: 12px; }
-  .swap button { font-size: 12px; }
+.email {
+  background: var(--auth-accent);
+  color: var(--auth-accent-text);
+  font-weight: 800;
 }
 
-.disclosure { margin: 0; color: rgba(230, 227, 220, .62); font: 500 12px/1.5 var(--f-ui); }
-.disclosure a { color: #e6e3dc; font-weight: 700; text-underline-offset: 2px; }
-.dialog[data-auth-step="account"] .footer { flex-wrap: wrap; }
+.email .providerIcon {
+  background: color-mix(in oklab, var(--auth-accent) 78%, #000);
+}
+
+.availability {
+  margin: 0;
+  padding: 14px;
+  border: 2px solid var(--q14);
+  border-radius: 12px;
+  background: var(--deep);
+  font: 500 13px/1.5 var(--f-ui);
+}
+
+.status, .error {
+  margin: 0;
+  font: 600 12px/1.5 var(--f-ui);
+}
+
+.status {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--red);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 28px;
+  background: var(--deep);
+  border-top: 2px solid var(--line-strong);
+}
+
+.secondary {
+  flex: none;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 2px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 3px 3px 0 var(--button-shadow);
+  font: 800 13.5px/1.25 var(--f-ui);
+  cursor: pointer;
+}
+
+.content > .secondary {
+  align-self: flex-start;
+}
+
+.swap {
+  flex: 1;
+  margin: 0;
+  color: var(--muted);
+  font: 500 12.5px/1.5 var(--f-ui);
+}
+
+.swap button {
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+  font: 700 12.5px/1.5 var(--f-ui);
+  cursor: pointer;
+}
+
+.swap button::after {
+  content: "";
+  position: absolute;
+  inset: -13px -3px;
+}
+
+.dialog button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.dialog button:focus-visible {
+  outline: 3px solid var(--highlight);
+  outline-offset: 2px;
+}
+
+@media (max-width: 700px) {
+  .dialog {
+    width: min(342px, calc(100vw - 48px));
+  }
+  .heading {
+    gap: 10px;
+    padding: 18px 18px 0;
+  }
+  .heading h2 {
+    margin-top: 4px;
+    font-size: 22px;
+  }
+  .iconButton {
+    width: 34px;
+    height: 34px;
+    position: relative;
+  }
+  .iconButton::after {
+    content: "";
+    position: absolute;
+    inset: -5px;
+  }
+  .content {
+    gap: 14px;
+    padding: 12px 18px 0;
+  }
+  .description {
+    margin-top: -4px;
+    font-size: 12px;
+  }
+  .providers {
+    gap: 10px;
+    margin-top: 2px;
+  }
+  .provider {
+    min-height: 52px;
+    grid-template-columns: 52px minmax(0, 1fr) 52px;
+    font-size: 14.5px;
+  }
+  .footer {
+    margin-top: 16px;
+    padding: 14px 18px 18px;
+  }
+  .secondary {
+    padding: 0 14px;
+    border-radius: 11px;
+    font-size: 12.5px;
+  }
+  .swap {
+    text-align: center;
+    font-size: 12px;
+  }
+  .swap button {
+    font-size: 12px;
+  }
+}
+
+.disclosure {
+  margin: 0;
+
+  color: var(--muted);
+
+  font: 500 12px/1.5 var(--f-ui);
+}
+
+.disclosure a {
+  color: var(--text);
+  font-weight: 700;
+  text-underline-offset: 2px;
+}
+
+.dialog[data-auth-step="account"] .footer {
+  flex-wrap: wrap;
+}

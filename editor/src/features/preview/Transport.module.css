@@ -2,16 +2,16 @@
 .transport[data-thread-open="true"] { height: 72px; }
 .time { width: auto; min-width: 84px; flex: none; font-size: 11px; }
 .time span { color: var(--muted); }
-.play { width: 44px; height: 44px; flex: none; border-width: 2px; box-shadow: 2px 2px 0 #000; }
-.play:focus-visible { outline: 3px solid #ff9fbc; outline-offset: 1px; }
+.play { width: 44px; height: 44px; flex: none; border-width: 2px; box-shadow: 2px 2px 0 var(--button-shadow); }
+.play:focus-visible { outline: 3px solid var(--highlight); outline-offset: 1px; }
 .threadStatus {
   justify-self: end;
   max-width: 100%;
   padding: 6px 8px;
-  border: 2px solid #ffffff24;
+  border: 2px solid var(--q14);
   border-radius: 9px;
-  background: #15151c;
-  color: #f2f0e9b3;
+  background: var(--surface);
+  color: var(--muted);
   font: 700 10px var(--f-ui);
   text-align: center;
 }

@@ -87,7 +87,7 @@ editor/src/
     auth/                       Google/Clerk account session and sign-in gate
     export/                     Direct export commands, completed export and publication attempt state
     notifications/              Ephemeral notices and retained issues
-    preferences/                Device editing and motion preferences
+    preferences/                Device editing, motion and appearance preferences
   features/
     capture/                    Camera, recorder and recording UI
     editor-layout/              Docked panels, resize gestures and viewport measurements
@@ -116,6 +116,8 @@ editor/src/
 These folders now exist. `app/Editor.tsx` composes focused views instead of implementing the full timeline and preview. `state/captureStore.ts` composes state behavior; domain models no longer live in the store. Keyboard and toolbar splitting/deletion share one command layer. Manifest mapping takes a project snapshot and compiled language data, while the export workflow owns compilation, media rendering, progress, and packaging.
 
 State files are grouped by the responsibility they own. `state/project/` integrates project history and scene mirrors; feature command folders apply domain rules through the composed store. Transient authoring, assistant, account session, export and notification state stays with its own owner. Export and publishing workflows call the account gate before protected effects, and the Worker verifies the session again for publication writes. Import these modules directly; the existing `store.ts` compatibility API remains the shared entry point for existing consumers.
+
+Editor appearance uses semantic chrome and button tokens in `theme.css`, with Light, Dark and System resolved on the document root before the first paint. `domain/appearance/` validates modes and accent IDs; `state/preferences/` holds the active preference and `infrastructure/preferences/` persists it. Mode is device-wide; the accent is keyed to a verified account ID in browser storage, and guests always use Magenta. Account refresh and sign-out update the active accent. This does not change authored component colors or the separate player theme.
 
 `features/editor-layout/` keeps navigation, preview, transport and the lower panel in one measured layout. Panel height is local presentation state, outside project history. Component sheets inherit the timeline height when opened and clamp their maximum to keep the player, transport and header visible. Other panels retain their fullscreen expansion; those regions stay mounted and return when space becomes available. Shared shells use `ui/sheets/SheetDockContext.tsx` to register their dismissal and expansion behavior; the camera renders the same shells without a dock provider. Timeline picking hides the panel without unmounting its draft, then restores it. Try hides the lower region and restores its height alongside the original scene, playhead and selection when the session stops. OS keyboard viewport changes temporarily fit the sheet around the focused field without replacing its preferred height.
 

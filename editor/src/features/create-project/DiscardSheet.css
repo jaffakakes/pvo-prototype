@@ -1,12 +1,14 @@
 .discardGrid button {
   height: 52px;
-  background: var(--surface);
-  border: 3px solid #000;
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  border: 3px solid var(--button-border);
   border-radius: 14px;
-  box-shadow: 3px 3px 0 #000;
+  box-shadow: 3px 3px 0 var(--button-shadow);
   font: 800 15px var(--f-ui);
   cursor: pointer;
 }
 .discardGrid button:last-child {
   background: var(--red);
+  color: var(--surface);
 }
