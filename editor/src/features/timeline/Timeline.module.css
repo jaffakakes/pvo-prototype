@@ -1,13 +1,13 @@
 .timeline {
-  background: #484E58;
+  background: var(--bar);
   border-top-color: var(--q14);
   border-bottom-color: var(--q14);
 }
 
-.timeline :global(.tick) { color: #D5DBE4; }
+.timeline :global(.tick) { color: var(--muted); }
 
 .labelRail { position: absolute; inset: 0 auto 0 0; background: var(--ground); z-index: 3; pointer-events: none; }
-.currentTime { position: absolute; left: 16px; top: 7px; z-index: 4; color: #ff6fa6; font: 800 10px var(--f-ui); pointer-events: none; }
+.currentTime { position: absolute; left: 16px; top: 7px; z-index: 4; color: var(--highlight); font: 800 10px var(--f-ui); pointer-events: none; }
 .timeline .trackLabel:global(.layerName), .timeline .audioLabel {
   position: absolute;
   left: 8px;
@@ -17,23 +17,23 @@
   align-items: center;
   gap: 6px;
   padding: 0 7px;
-  border: 1px solid #ffffff14;
+  border: 1px solid var(--q08);
   border-radius: 9px;
-  background: #15151c;
-  color: #d8d5cb;
+  background: var(--surface);
+  color: var(--text-secondary);
   font: 700 10px var(--f-ui);
   text-transform: none;
 }
-.timeline .trackLabel:global(.layerName)[data-sel="true"] { border-color: #ff9fbc; color: #ffe0eb; }
-.trackLabel svg { flex-shrink: 0; color: #a78bfa; }
-.trackLabel[data-kind="video"] svg { color: #ff9fbc; }
-.trackLabel[data-kind="text"] svg { color: #ffd23e; }
-.trackLabel[data-kind="audio"] svg { color: #2ec4b6; }
-.trackLabel small { display: block; margin-top: 3px; font-size: 9px; font-weight: 600; color: #ffffff66; }
+.timeline .trackLabel:global(.layerName)[data-sel="true"] { border-color: var(--pale); color: var(--highlight); }
+.trackLabel svg { flex-shrink: 0; color: var(--violet); }
+.trackLabel[data-kind="video"] svg { color: var(--pale); }
+.trackLabel[data-kind="text"] svg { color: var(--yellow); }
+.trackLabel[data-kind="audio"] svg { color: var(--teal); }
+.trackLabel small { display: block; margin-top: 3px; font-size: 9px; font-weight: 600; color: var(--faint); }
 .audioLabel { cursor: pointer; }
 
-.timeline :global(.mute) { background: #596271; }
-.timeline :global(.addClip) { border-color: rgba(255, 255, 255, .45); }
+.timeline :global(.mute) { background: var(--surface); }
+.timeline :global(.addClip) { border-color: var(--line-strong); }
 
 .emptyTimeline { background: var(--ground); }
 .emptyContent { display: flex; align-items: center; padding: 20px; height: 134px; }

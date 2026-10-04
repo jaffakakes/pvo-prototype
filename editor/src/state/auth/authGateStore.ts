@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { getAccountSession, logOutAccount, type AccountSession, type AccountUser } from "../../infrastructure/auth/client";
 import { clearAccountPublication } from "../export/exportArtifactStore";
+import { syncThemeAccount } from "../preferences/themePreferences";
 
 export type AuthSource = "signin" | "export" | "download" | "share" | "replies";
 type AuthGateState = {
@@ -62,6 +63,7 @@ export function refreshAccountSession(): Promise<AccountSession> {
     if (requestEpoch !== sessionEpoch) return currentSession();
     const previousUser = useAuthGate.getState().user;
     if (previousUser && previousUser.id !== session.user?.id) clearAccountPublication();
+    syncThemeAccount(session.user?.id ?? null);
     useAuthGate.setState(state => ({
       phase: "ready",
       available: session.available,
@@ -77,6 +79,7 @@ export function refreshAccountSession(): Promise<AccountSession> {
   }).catch(error => {
     if (requestEpoch !== sessionEpoch) return currentSession();
     if (useAuthGate.getState().user) clearAccountPublication();
+    syncThemeAccount(null);
     useAuthGate.setState({
       phase: "error",
       user: null,
@@ -124,6 +127,7 @@ async function performSignOut(): Promise<void> {
     throw error;
   }
   clearAccountPublication();
+  syncThemeAccount(null);
   useAuthGate.setState({ user: null, error: null, connecting: false, phase: "ready" });
 }
 

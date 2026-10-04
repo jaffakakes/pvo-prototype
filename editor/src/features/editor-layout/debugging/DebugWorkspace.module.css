@@ -10,7 +10,7 @@
   background: var(--bar);
   outline-offset: -3px;
 }
-.handle span { width: 44px; height: 4px; border-radius: 99px; background: #55535d; }
+.handle span { width: 44px; height: 4px; border-radius: 99px; background: var(--line-strong); }
 .handle:focus-visible { outline: 2px solid var(--highlight); }
 .handle:hover span { background: var(--highlight); }
 .handle[data-mobile="true"] { flex-basis: 24px; height: 24px; }
@@ -22,7 +22,7 @@
 .timeline { height: 100%; min-height: 0; }
 .timeline[data-hidden="true"] { display: none; }
 .timeline > * { height: 100%; }
-.locate { position: absolute; inset: -8px; border: 2px dashed #a78bfa; border-radius: 10px; pointer-events: none; z-index: 999; }
-.locate span { position: absolute; left: 0; bottom: calc(100% + 4px); background: #a78bfa; color: #111; border: 2px solid #000; border-radius: 6px; padding: 4px 7px; font: 800 11px var(--f-ui); white-space: nowrap; }
-.layerIssue { display: inline-grid; place-items: center; flex: none; width: 16px; height: 16px; margin-inline: 4px; border: 1px solid #000; border-radius: 5px; background: #ff797d; color: #111; font: 900 11px var(--f-ui); }
+.locate { position: absolute; inset: -8px; border: 2px dashed var(--violet); border-radius: 10px; pointer-events: none; z-index: 999; }
+.locate span { position: absolute; left: 0; bottom: calc(100% + 4px); background: var(--violet); color: var(--surface); border: 2px solid var(--outline); border-radius: 6px; padding: 4px 7px; font: 800 11px var(--f-ui); white-space: nowrap; }
+.layerIssue { display: inline-grid; place-items: center; flex: none; width: 16px; height: 16px; margin-inline: 4px; border: 1px solid var(--outline); border-radius: 5px; background: var(--red); color: var(--surface); font: 900 11px var(--f-ui); }
 @media (pointer: coarse) { .handle[data-mobile="true"] { flex-basis: 44px; height: 44px; } }

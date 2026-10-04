@@ -11,20 +11,21 @@
   color: var(--text);
   border: 2px solid var(--pale);
   border-radius: 14px;
-  box-shadow: 0 0 0 3px rgba(255, 159, 188, 0.25);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--highlight) 25%, transparent);
   font: 700 15px var(--f-ui);
 }
 .textEntry button {
   height: 52px;
   padding: 0 20px;
-  background: var(--accent);
-  border: 3px solid #000;
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  border: 3px solid var(--button-border);
   border-radius: 14px;
-  box-shadow: 3px 3px 0 #000;
+  box-shadow: 3px 3px 0 var(--button-shadow);
   font: 800 15px var(--f-ui);
 }
 .textEntry button:disabled {
-  background: rgba(255, 45, 120, 0.35);
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
   box-shadow: none;
   opacity: 0.6;
 }

@@ -33,9 +33,9 @@
   cursor: pointer;
 }
 .speedRow button[data-on="true"] {
-  background: var(--text);
-  color: var(--ink);
-  border-color: #000;
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  border-color: var(--outline);
   font-weight: 800;
 }
 .modeRow {
@@ -52,10 +52,10 @@
   cursor: pointer;
 }
 .modeRow button[data-on="true"] {
-  background: var(--text);
-  color: var(--ink);
-  border-color: #000;
-  box-shadow: 2px 2px 0 #000;
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  border-color: var(--outline);
+  box-shadow: 2px 2px 0 var(--button-shadow);
   font-weight: 800;
   text-shadow: none;
 }
@@ -188,3 +188,4 @@
   object-fit: contain;
   filter: invert(1);
 }
+html[data-theme="light"] .brandMark img { filter: none; }

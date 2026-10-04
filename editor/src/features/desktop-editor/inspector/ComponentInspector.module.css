@@ -1,5 +1,5 @@
 .chrome { flex: none; min-width: 0; }
-.navigation { flex: none; border-bottom: 2px solid #ffffff0f; }
+.navigation { flex: none; border-bottom: 2px solid var(--q06); }
 
 .navigation [role="tablist"] {
   gap: 6px;
@@ -14,18 +14,18 @@
   min-height: 32px;
   height: 32px;
   padding: 0 4px;
-  border: 2px solid #ffffff1a;
+  border: 2px solid var(--q10);
   border-radius: 10px;
-  color: #a7a3b8;
+  color: var(--muted-strong);
   font-size: 12px;
   font-weight: 700;
 }
 
 .navigation [role="tab"][aria-selected="true"] {
-  border-color: #000;
-  background: #1c1c24;
-  color: #f2f0e9;
-  box-shadow: 2px 2px 0 #ff2d78;
+  border-color: var(--outline);
+  background: var(--input);
+  color: var(--text);
+  box-shadow: 2px 2px 0 var(--accent);
   font-weight: 800;
 }
 
@@ -46,20 +46,20 @@
 
 .body > fieldset,
 .body > section {
-  border-bottom: 2px solid #ffffff0f;
+  border-bottom: 2px solid var(--q06);
 }
 
 /* The assistant is portalled into the source frame and owns its control styles. */
 .body h3:where(:not([data-assistant-region] *)),
 .body h4:where(:not([data-assistant-region] *)) { font-size: 12.5px; }
-.body label:where(:not([data-assistant-region] *)) { color: #d8d5cb; font-size: 12px; font-weight: 600; }
-.body p:where(:not([data-assistant-region] *)) { color: #ffffff80; font-size: 12px; line-height: 1.5; }
+.body label:where(:not([data-assistant-region] *)) { color: var(--text-secondary); font-size: 12px; font-weight: 600; }
+.body p:where(:not([data-assistant-region] *)) { color: var(--muted); font-size: 12px; line-height: 1.5; }
 .body input:not([type="range"]):where(:not([data-assistant-region] *)),
 .body:not([data-authoring-tab="advanced"]) textarea:where(:not([data-assistant-region] *)) {
   min-height: 38px;
   padding: 8px 10px;
-  border: 2px solid #ffffff1a;
-  background: #1c1c24;
+  border: 2px solid var(--q10);
+  background: var(--input);
   font-size: 12px;
   font-weight: 600;
 }
@@ -73,10 +73,10 @@
 }
 
 .body button[aria-pressed="true"]:where(:not([data-assistant-region] *)) {
-  background: #1c1c24;
-  border-color: #000;
-  box-shadow: 2px 2px 0 #ff2d78;
-  color: #f2f0e9;
+  background: var(--input);
+  border-color: var(--outline);
+  box-shadow: 2px 2px 0 var(--accent);
+  color: var(--text);
 }
 
 .wording {
@@ -88,13 +88,13 @@
 .body [data-component-look] { gap: 0; padding: 0; border-bottom: 0; }
 .body [data-component-look] > div {
   padding: 14px 16px;
-  border-bottom: 2px solid #ffffff0f;
+  border-bottom: 2px solid var(--q06);
 }
 
 .body [data-component-look] > div:last-child { border-top: 0; }
 .body [data-look-presets] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; overflow: visible; padding: 3px 0; }
-.body [data-look-presets] > button { min-width: 0; padding: 6px; border: 2px solid #ffffff1a; border-radius: 12px; background: #0b0b0f; }
-.body [data-look-presets] > button[data-on="true"] { border-color: #ff9fbc; box-shadow: 0 0 0 3px #ff2d7833; }
+.body [data-look-presets] > button { min-width: 0; padding: 6px; border: 2px solid var(--q10); border-radius: 12px; background: var(--ground); }
+.body [data-look-presets] > button[data-on="true"] { border-color: var(--pale); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
 .body [data-look-presets] > button[data-on="true"]::after { display: none; }
 .body [data-look-presets] > button > span:last-child { text-align: center; font-size: 11px; }
 .body [data-look-presets] > button > span:first-child { height: 86px; padding: 0 10px; background: linear-gradient(145deg, #fb8963, #ec9a6a 38%, #6d415a 60%, #342640); }
@@ -104,7 +104,7 @@
 .body [data-look-swatches] > button { width: 27px; height: 27px; min-height: 27px; padding: 1px; border-radius: 50%; }
 .body [data-look-swatches] > button > span { width: 21px; height: 21px; border: 2px solid #000; }
 .body [data-look-swatches] > button:last-child { width: auto; padding: 4px 8px; border-radius: 9px; }
-.body [data-look-swatches] > button[data-on="true"] { border-color: #ff9fbc; background: transparent; box-shadow: none; }
+.body [data-look-swatches] > button[data-on="true"] { border-color: var(--pale); background: transparent; box-shadow: none; }
 .body[data-authoring-tab="advanced"] > div:last-child { display: flex; min-height: 360px; flex: 1; }
 .body[data-authoring-tab="advanced"][data-expanded="true"] { overflow: hidden; }
 .body[data-authoring-tab="advanced"][data-expanded="true"] > div:last-child { min-height: 0; padding-bottom: 0; }

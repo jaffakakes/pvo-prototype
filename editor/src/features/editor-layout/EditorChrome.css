@@ -32,9 +32,10 @@
   align-items: center;
   gap: 8px;
   padding: 0 14px 0 16px;
-  background: var(--accent);
-  border: 2.5px solid #000;
+  background: var(--button-primary-bg);
+  border: 2.5px solid var(--button-border);
   border-radius: 12px;
-  box-shadow: 3px 3px 0 #000;
+  box-shadow: 3px 3px 0 var(--button-shadow);
   font: 800 13px var(--f-ui);
+  color: var(--button-primary-text);
 }

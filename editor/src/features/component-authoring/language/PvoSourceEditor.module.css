@@ -1,4 +1,12 @@
 .frame {
+  /* Source syntax uses a fixed dark palette, independent of editor chrome mode. */
+  --source-surface: #060609;
+  --source-raised: #15151c;
+  --source-text: #f2f0e9;
+  --source-muted: #a6a2b3;
+  --source-edge: #68636d;
+  --source-focus: #a78bfa;
+  --source-line: rgb(255 255 255 / 12%);
   --source-font-size: 11.5px;
   --source-line-height: 19.55px;
   --source-padding-y: 12px;
@@ -7,13 +15,13 @@
   min-width: 0;
   min-height: 156px;
   overflow: hidden;
-  border: 2px solid var(--q14, rgba(255, 255, 255, .14));
+  border: 2px solid var(--source-edge);
   border-radius: 14px;
-  background: var(--deep, #060609);
+  background: var(--source-surface);
 }
 
 .frame:focus-within {
-  border-color: var(--violet, #A78BFA);
+  border-color: var(--source-focus);
 }
 
 .frame[data-expanded="true"] {
@@ -59,8 +67,8 @@
   box-sizing: border-box;
   overflow: hidden;
   padding: var(--source-padding-y) 0;
-  border-right: 1px solid var(--q10, rgba(255, 255, 255, .1));
-  color: #8C899A;
+  border-right: 1px solid var(--source-line);
+  color: var(--source-muted);
   font-size: 11.5px;
   text-align: right;
   pointer-events: none;
@@ -94,7 +102,7 @@
 
 .highlight {
   overflow: hidden;
-  color: var(--text, #F2F0E9);
+  color: var(--source-text);
   pointer-events: none;
   user-select: none;
 }
@@ -106,14 +114,14 @@
   background: transparent;
   color: transparent;
   -webkit-text-fill-color: transparent;
-  caret-color: var(--text, #F2F0E9);
+  caret-color: var(--source-text);
   user-select: text;
   -webkit-user-select: text;
 }
 
 .textarea::placeholder {
-  color: #A6A2B3;
-  -webkit-text-fill-color: #A6A2B3;
+  color: var(--source-muted);
+  -webkit-text-fill-color: var(--source-muted);
   opacity: 1;
 }
 
@@ -122,7 +130,7 @@
   color: transparent;
 }
 
-.plain { color: var(--text, #F2F0E9); }
+.plain { color: var(--source-text); }
 .tag { color: #84CCFF; }
 .attribute { color: #FFD08A; }
 .string { color: #B7E596; }
@@ -143,16 +151,16 @@
   width: 30px;
   height: 30px;
   place-items: center;
-  border: 2px solid #000;
+  border: 2px solid var(--source-edge);
   border-radius: 8px;
-  background: var(--surface, #15151C);
-  color: var(--text, #F2F0E9);
+  background: var(--source-raised);
+  color: var(--source-text);
   font: 800 15px var(--f-ui);
   cursor: pointer;
 }
 
 .expand:focus-visible {
-  outline: 2px solid var(--pale, #FF9FBC);
+  outline: 2px solid var(--source-focus);
   outline-offset: 2px;
 }
 
