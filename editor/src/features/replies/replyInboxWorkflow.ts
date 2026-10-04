@@ -13,6 +13,7 @@ export type ReplyInboxState = {
   emptySession: boolean;
   requiresSignIn: boolean;
   busy: boolean;
+  deleting: boolean;
 };
 
 type Account = { available: boolean; userId: string | null };
@@ -33,6 +34,7 @@ export function emptyReplyInbox(): ReplyInboxState {
     emptySession: false,
     requiresSignIn: false,
     busy: false,
+    deleting: false,
   };
 }
 
@@ -55,21 +57,21 @@ export function createReplyInboxWorkflow(adapters: InboxAdapters) {
   const perform = async (
     fallback: string,
     action: (signal: AbortSignal, current: () => boolean) => Promise<void>,
-    handleMissingSession = false,
+    options: { handleMissingSession?: boolean; deleting?: boolean } = {},
   ) => {
-    if (disposed) return;
+    if (disposed || state.deleting) return;
     cancel();
     const controller = new AbortController();
     active = controller;
     const current = () =>
       active === controller && !controller.signal.aborted && !disposed;
-    update({ busy: true, message: null });
+    update({ busy: true, deleting: options.deleting === true, message: null });
     try {
       await action(controller.signal, current);
     } catch (error) {
       if (!current()) return;
       if (
-        handleMissingSession &&
+        options.handleMissingSession &&
         error instanceof RepliesHttpError &&
         error.status === 401
       ) {
@@ -89,7 +91,7 @@ export function createReplyInboxWorkflow(adapters: InboxAdapters) {
     } finally {
       if (active === controller) {
         active = null;
-        update({ busy: false });
+        update({ busy: false, deleting: false });
       }
     }
   };
@@ -121,11 +123,11 @@ export function createReplyInboxWorkflow(adapters: InboxAdapters) {
               : null,
         });
       },
-      true,
+      { handleMissingSession: true },
     );
 
   const openBox = (box: ReplyBox) => {
-    if (disposed) return Promise.resolve();
+    if (disposed || state.deleting) return Promise.resolve();
     update({ selectedId: box.id, replies: null });
     return perform(
       "Couldn’t load this box. Try again.",
@@ -137,15 +139,19 @@ export function createReplyInboxWorkflow(adapters: InboxAdapters) {
   };
 
   const removeBox = (box: ReplyBox) =>
-    perform("Couldn’t delete this box. Try again.", async (signal, current) => {
-      await adapters.client.deleteBox(box.id, signal);
-      if (current())
-        update({
-          selectedId: null,
-          replies: null,
-          boxes: state.boxes.filter((item) => item.id !== box.id),
-        });
-    });
+    perform(
+      "Couldn’t delete this box. Try again.",
+      async (signal, current) => {
+        await adapters.client.deleteBox(box.id, signal);
+        if (current())
+          update({
+            selectedId: null,
+            replies: null,
+            boxes: state.boxes.filter((item) => item.id !== box.id),
+          });
+      },
+      { deleting: true },
+    );
 
   const accountChanged = (nextId: string | null) => {
     const previous = accountId;
@@ -162,6 +168,9 @@ export function createReplyInboxWorkflow(adapters: InboxAdapters) {
     removeBox,
     accountChanged,
     back: () => {
+      // Aborting a DELETE cannot undo a server commit. Keep its result owned until
+      // it settles, while Back remains free to cancel an ordinary inbox read.
+      if (state.deleting) return;
       cancel();
       update({ selectedId: null, replies: null, busy: false });
     },

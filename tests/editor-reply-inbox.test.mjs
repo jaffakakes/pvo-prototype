@@ -254,3 +254,61 @@ test("disposal aborts the request and prevents every late view update", async ()
   assert.equal(signal.aborted, true);
   assert.equal(f.changes.length, count);
 });
+
+test("Back waits for a pending delete so the server result removes the cached box", async () => {
+  const f = fixture();
+  await f.workflow.loadBoxes();
+  await f.workflow.openBox(box("first"));
+  const pending = deferred();
+  let signal;
+  let deletions = 0;
+  f.adapters.client.deleteBox = (_id, value) => {
+    deletions++;
+    signal = value;
+    return pending.promise;
+  };
+  const deletion = f.workflow.removeBox(box("first"));
+  assert.equal(f.state.deleting, true);
+  f.workflow.back();
+  await f.workflow.openBox(box("second"));
+  await f.workflow.removeBox(box("first"));
+  assert.equal(f.state.selectedId, "first");
+  assert.equal(f.state.busy, true);
+  assert.equal(
+    signal.aborted,
+    false,
+    "Navigation must not lose a potentially committed deletion",
+  );
+  assert.equal(deletions, 1);
+  pending.resolve();
+  await deletion;
+  assert.deepEqual(
+    f.state.boxes.map((item) => item.id),
+    ["second"],
+  );
+  assert.equal(f.state.selectedId, null);
+  assert.equal(f.state.busy, false);
+  assert.equal(f.state.deleting, false);
+});
+
+test("failed deletion restores Back navigation and retains the box for retry", async () => {
+  const f = fixture();
+  await f.workflow.loadBoxes();
+  await f.workflow.openBox(box("first"));
+  const pending = deferred();
+  f.adapters.client.deleteBox = async () => {
+    await pending.promise;
+    throw new Error("The deletion failed");
+  };
+  const deletion = f.workflow.removeBox(box("first"));
+  f.workflow.back();
+  pending.resolve();
+  await deletion;
+  assert.equal(f.state.deleting, false);
+  assert.equal(f.state.selectedId, "first");
+  assert.equal(f.state.boxes.length, 2);
+  assert.equal(f.state.message, "Couldn’t delete this box. Try again.");
+  f.workflow.back();
+  assert.equal(f.state.selectedId, null);
+  assert.equal(f.state.busy, false);
+});

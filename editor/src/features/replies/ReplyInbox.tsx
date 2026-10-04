@@ -27,6 +27,7 @@ export function ReplyInbox() {
     emptySession,
     requiresSignIn,
     busy,
+    deleting,
     loadBoxes,
     openBox,
     removeBox,
@@ -61,7 +62,7 @@ export function ReplyInbox() {
       </div>
       {busy && (
         <p role="status" className={styles.note}>
-          Loading…
+          {deleting ? "Deleting…" : "Loading…"}
         </p>
       )}
       {message && (
@@ -91,7 +92,12 @@ export function ReplyInbox() {
         )}
       {selected ? (
         <>
-          <button type="button" className={styles.back} onClick={back}>
+          <button
+            type="button"
+            className={styles.back}
+            onClick={back}
+            disabled={deleting}
+          >
             ← All reply boxes
           </button>
           {replies && !replies.length && (
