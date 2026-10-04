@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CompletedExport } from "../../domain/publishing/model";
 import { canShareExport, cancelledShare, copyPublicationLink, shareExportFile } from "../../infrastructure/publishing/nativeShare";
 import { downloadCompletedExport } from "../export/exportWorkflow";
+import { openSignIn, refreshAccountSession, requireAccount, setAuthError, useAuthGate } from "../../state/auth/authGateStore";
 import { Icon } from "../../ui/Icon";
 import { Shell } from "../../ui/SheetShell";
 import { usePublication } from "./usePublication";
@@ -30,10 +31,35 @@ export function SharePanel({ artifact, url, downloadIssue, onDone }: { artifact:
   const failure = localFailure ?? publish.failure;
   const clearFailure = () => { setLocalFailure(null); publish.clearFailure(); };
   const shareFile = async () => {
-    clearFailure(); setSharing(true);
-    try { await shareExportFile(artifact); }
-    catch (error) { if (mounted.current && !cancelledShare(error)) setLocalFailure("Couldn't share this file. Try downloading it."); }
-    finally { if (mounted.current) setSharing(false); }
+    setSharing(true);
+    try {
+      // Verify the server session on this tap. A cached user can outlive a
+      // revoked session, while the native share sheet needs this tap's activation.
+      const session = await refreshAccountSession();
+      if (!session.user) {
+        openSignIn("share");
+        return;
+      }
+      clearFailure();
+      await shareExportFile(artifact);
+    } catch (error) {
+      if (!mounted.current) return;
+      if (!useAuthGate.getState().user) {
+        const checkError = useAuthGate.getState().error;
+        openSignIn("share");
+        if (checkError) setAuthError(checkError);
+      } else if (!cancelledShare(error)) {
+        setLocalFailure(error instanceof DOMException && error.name === "NotAllowedError"
+          ? "Your browser needs another tap to share. Try again or download the file."
+          : "Couldn't share this file. Try downloading it.");
+      }
+    } finally {
+      if (mounted.current) setSharing(false);
+    }
+  };
+  const downloadAgain = async () => {
+    if (!await requireAccount("download")) return;
+    downloadCompletedExport(url, artifact.filename);
   };
   const shareLink = async () => {
     if (!ready) return;
@@ -50,7 +76,7 @@ export function SharePanel({ artifact, url, downloadIssue, onDone }: { artifact:
       </div>
       <div className={styles.fileActions}>
         {canShareExport(artifact) && <button type="button" disabled={sharing} onClick={() => { void shareFile(); }} data-share-file>{sharing ? "Opening share…" : "Share file"}</button>}
-        <button type="button" onClick={() => downloadCompletedExport(url, artifact.filename)} data-download-again>Download again</button>
+        <button type="button" onClick={() => { void downloadAgain(); }} data-download-again>Download again</button>
       </div>
       <section className={styles.online} aria-label="Create an online link">
         <h3>{ready ? "Your link is ready" : "Create a link"}</h3>
@@ -75,7 +101,7 @@ export function SharePanel({ artifact, url, downloadIssue, onDone }: { artifact:
               disabled={busy || publish.title !== null} onChange={event => setTitle(event.target.value)} /></label>
             <small className={styles.limit}>Online limit: {formatFileSize(publish.status.maxBytes)}. Your local export stays available.</small>
             {tooLarge && <p className={styles.unavailable}>This file is too large for a link. You can still share or download the file.</p>}
-            <small className={styles.limit}>No sign-in needed. Manage and delete your links in this browser.</small>
+            <small className={styles.limit}>Your account can manage and delete this link on your devices.</small>
           </>}
           <button type="button" className={styles.primary} data-create-publication
             disabled={!publish.status?.available || busy || tooLarge || !(publish.title ?? title).trim()}

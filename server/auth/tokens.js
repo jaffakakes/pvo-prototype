@@ -1,19 +1,18 @@
 import { SignJWT, jwtVerify } from "jose";
 
-const ISSUER = "restyle-publishing";
-const AUDIENCE = "browser-owner";
+const ISSUER = "pvo-auth";
 
-export async function signCookie(payload, secret, seconds) {
+export async function signCookie(payload, secret, audience, seconds) {
   return new SignJWT(payload).setProtectedHeader({ alg: "HS256" }).setIssuer(ISSUER)
-    .setAudience(AUDIENCE).setIssuedAt().setExpirationTime(`${seconds}s`)
+    .setAudience(audience).setIssuedAt().setExpirationTime(`${seconds}s`)
     .sign(new TextEncoder().encode(secret));
 }
 
-export async function verifyCookie(value, secret) {
-  if (!value || value.length > 4096) return null;
+export async function verifyCookie(value, secret, audience) {
+  if (!value || value.length > 4096 || !secret) return null;
   try {
     return (await jwtVerify(value, new TextEncoder().encode(secret), {
-      algorithms: ["HS256"], issuer: ISSUER, audience: AUDIENCE,
+      algorithms: ["HS256"], issuer: ISSUER, audience,
     })).payload;
   } catch { return null; }
 }

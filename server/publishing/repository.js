@@ -4,7 +4,7 @@ import { samePublication } from "./input.js";
 
 export async function reservePublication(db, owner, input, config, now = Date.now()) {
   const id = randomId();
-  // The limits and reservation are one SQLite statement: concurrent creators
+  // The limits and reservation are one SQLite statement: concurrent accounts
   // cannot each spend the same remaining storage quota.
   await db.prepare(`INSERT INTO publications
     (id, owner_id, idempotency_key, title, filename, format, content_type, bytes, created_at, expires_at)

@@ -40,6 +40,9 @@ export function expirePublicationAttempt(snapshotId: string, publicationKey: str
 export function forgetExportPublication(id: string, nextKey: string) {
   if (useExportArtifact.getState().publication?.id === id) useExportArtifact.setState({ publication: null, publicationKey: nextKey, publicationTitle: null });
 }
+export function clearAccountPublication() {
+  useExportArtifact.setState({ publication: null, publicationKey: crypto.randomUUID(), publicationTitle: null });
+}
 export function resetExportArtifact() {
   const current = useExportArtifact.getState();
   if (current.url) URL.revokeObjectURL(current.url);

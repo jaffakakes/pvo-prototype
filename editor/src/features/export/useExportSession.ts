@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { captureExportSnapshot } from "../../domain/publishing/exportSnapshot";
+import { requireAccount } from "../../state/auth/authGateStore";
 import { useCapture } from "../../state/captureStore";
 import {
   beginExportAttempt,
@@ -25,6 +26,7 @@ export function useExportSession(format: "video" | "pvo") {
     };
   }, []);
   const start = async () => {
+    if (!await requireAccount("export") || !mounted.current) return;
     const current = useCapture.getState();
     if (current.ex === "running") return;
     const snapshot = captureExportSnapshot(current, crypto.randomUUID());
@@ -61,6 +63,7 @@ export function useExportSession(format: "video" | "pvo") {
       exUrl: completed.url,
       exName: completed.artifact.filename,
     });
+    if (!await requireAccount("download") || !mounted.current) return;
     try {
       downloadCompletedExport(completed.url, completed.artifact.filename);
     } catch {
