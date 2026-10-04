@@ -55,7 +55,7 @@ export function StageMotionPath({ width, height, pathDots = true }: { width: num
     {geometry.keys.map(key => {
       const selected = selection?.sceneId === scene!.id && selection.target.kind === target.kind
         && "id" in selection.target && selection.target.id === targetId
-        && (selection.group === "position" || state.sheet === "animation")
+        && selection.group === "position"
         && Math.abs(selection.time - key.time) < .000001;
       return <button type="button" key={key.time} className={styles.handle}
         data-animation-path-key data-keyframe-control aria-label={`Position keyframe at ${Number(key.time.toFixed(3))} seconds`}

@@ -3,6 +3,8 @@ import type { OverlayTransform } from "../../domain/layers/transform";
 import { useCapture } from "../../state/captureStore";
 import { beginOverlayTransform } from "../../state/editing/overlayTransform";
 import { beginStageAnimationTransform, type StageAnimationTarget } from "../../state/animation/stageGesture";
+import { selectedPositionKeyAt } from "../../state/animation/selection";
+import { canAuthorAnimation } from "../../state/animation/access";
 import { locate } from "../../domain/clips/timing";
 import { gestureGeometry, type GesturePoint } from "./gestureGeometry";
 import type { LookPart } from "../../domain/components/look";
@@ -19,7 +21,7 @@ type Session = {
   pinched: boolean;
   moved: boolean;
   part: LookPart | null;
-  autoKey: boolean;
+  keyframe: boolean;
 };
 
 function layerTarget(element: Element | null, animate: boolean): StageAnimationTarget | null {
@@ -91,23 +93,25 @@ export function useOverlayGestures(boxRef: RefObject<HTMLDivElement>, directSele
     let current = session.current;
     if (!current) {
       const state = useCapture.getState();
-      const autoKey = directSelectionOnly || state.sheet === "animation";
-      const direct = layerTarget(event.target as Element, autoKey);
+      if (!canAuthorAnimation(state)) return;
+      const canSelectClip = directSelectionOnly || state.sheet === "animation";
+      const direct = layerTarget(event.target as Element, canSelectClip);
       const selected: StageAnimationTarget | null = state.selText != null ? { kind: "text", id: state.selText }
         : state.selComp ? { kind: "component", id: state.selComp }
-          : autoKey && state.clips[state.sel] ? { kind: "clip", id: state.clips[state.sel].id } : null;
+          : canSelectClip && state.clips[state.sel] ? { kind: "clip", id: state.clips[state.sel].id } : null;
       const target = direct ?? (directSelectionOnly ? null : selected);
       const layerId = target?.kind === "clip" ? "video" : target && `${target.kind}:${target.id}`;
       if (!target || !event.currentTarget.querySelector(`[data-layer-id="${layerId}"]`)) return;
+      const keyframe = selectedPositionKeyAt(state.currentSceneId, target, state.t);
       state.patch({ selText: target.kind === "text" ? target.id : null,
         selComp: target.kind === "component" ? target.id : null,
         sel: target.kind === "clip" ? state.clips.findIndex(clip => clip.id === target.id) : -1,
         playing: false, orb: false });
-      const transaction = autoKey ? beginStageAnimationTransform(target, !directSelectionOnly)
+      const transaction = keyframe ? beginStageAnimationTransform(target, false)
         : target.kind === "clip" ? null : beginOverlayTransform(target);
       if (!transaction) return;
       current = {
-        target, transaction, autoKey, points: new Map(), anchor: { x: event.clientX, y: event.clientY, distance: 1 },
+        target, transaction, keyframe, points: new Map(), anchor: { x: event.clientX, y: event.clientY, distance: 1 },
         original: transaction.value(), movable: !!direct, pinched: false, moved: false,
         part: target.kind === "component" ? (event.target as Element).closest<HTMLElement>("[data-look-part]")?.dataset.lookPart as LookPart ?? null : null,
       };
@@ -134,12 +138,10 @@ export function useOverlayGestures(boxRef: RefObject<HTMLDivElement>, directSele
     current.moved = true;
     const box = event.currentTarget;
     if (!box.clientWidth || !box.clientHeight) { cancel(); return; }
-    const rect = box.getBoundingClientRect();
-    const followPointer = current.autoKey && !current.pinched;
     if (!current.transaction.update({
-      x: followPointer ? (geometry.x - rect.left) / rect.width * 100 : current.original.x + dx / box.clientWidth * 100,
-      y: followPointer ? (geometry.y - rect.top) / rect.height * 100 : current.original.y + dy / box.clientHeight * 100,
-      size: current.original.size * ratio,
+      x: current.original.x + dx / box.clientWidth * 100,
+      y: current.original.y + dy / box.clientHeight * 100,
+      size: current.keyframe ? current.original.size : current.original.size * ratio,
     })) cancel();
   };
   const onPointerUp = (event: PointerEvent<HTMLDivElement>) => {
