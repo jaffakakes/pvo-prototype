@@ -23,14 +23,12 @@ import styles from "./Inspector.module.css";
 
 type Props = {
   onOpenLibrary: (tab: string) => void;
-  safeZone?: boolean;
-  onSafeZoneChange?: (enabled: boolean) => void;
   snap?: boolean;
   onSnapChange?: (enabled: boolean) => void;
   onAssistantTargetChange?: (target: HTMLElement | null) => void;
 };
 
-export function DesktopInspector({ onOpenLibrary, safeZone, onSafeZoneChange, snap, onSnapChange, onAssistantTargetChange }: Props) {
+export function DesktopInspector({ onOpenLibrary, snap, onSnapChange, onAssistantTargetChange }: Props) {
   const state = useCapture();
   const authoring = useComponentAuthoring();
   const advanced = useEditorPreferences(preferences => preferences.advancedEditingEnabled);
@@ -102,8 +100,7 @@ export function DesktopInspector({ onOpenLibrary, safeZone, onSafeZoneChange, sn
   else content = <>
     <InspectorHeader title="Project" subtitle="Nothing selected · click the timeline to edit" icon="pvoExport" kind="project" />
     <InspectorTabs tabs={["Project"]} selected="Project" onSelect={() => {}} />
-    <div className={styles.body}><ProjectInspector safeZone={safeZone} onSafeZoneChange={onSafeZoneChange}
-      snap={snap} onSnapChange={onSnapChange} /></div>
+    <div className={styles.body}><ProjectInspector snap={snap} onSnapChange={onSnapChange} /></div>
   </>;
   return <>
     {expansion.expanded && <div className={styles.backdrop} aria-hidden="true" onClick={() => expansion.setExpanded(false)} />}
