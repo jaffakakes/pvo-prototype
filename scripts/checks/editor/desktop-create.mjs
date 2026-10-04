@@ -86,7 +86,8 @@ async function assertTemplateGallery(page, width) {
   assert.equal(await gallery.getByText("6 templates", { exact: true }).count(), 1);
   assert.equal(await gallery.getByRole("button", { name: "Browse all", exact: true }).count(), 1);
   assert.equal(await tablist.getByRole("tab").first().evaluate(tab => Math.round(tab.getBoundingClientRect().height)), 36);
-  assert.match(await tablist.getByRole("tab").first().evaluate(tab => getComputedStyle(tab).boxShadow), /rgb\(255, 45, 120\)/);
+  assert.notEqual(await tablist.getByRole("tab").first().evaluate(tab => getComputedStyle(tab).boxShadow), "none",
+    "The selected template filter must remain visually raised in either theme");
   assert.equal(await gridTracks(gallery), width < 1200 ? 4 : 6);
 
   if (width < 1200) {
@@ -243,6 +244,8 @@ async function run(width) {
   page.setDefaultTimeout(15000);
   page.on("pageerror", error => errors.push(error.message));
   page.on("console", message => { if (message.type() === "error") console.error(message.text()); });
+  await page.route("**/api/renders", route => route.fulfill({ contentType: "application/json",
+    body: JSON.stringify({ available: false, maxSourceBytes: 0, maxSources: 0, formats: [] }) }));
   await page.route("**/api/publishing", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ available: false, hasSession: false, maxBytes: 0 }) }));
   try {
     const home = new URL(editorUrl);
@@ -278,7 +281,7 @@ async function run(width) {
     await auth.getByRole("button", { name: "Continue with Google" }).click();
     await popup;
     await auth.waitFor({ state: "hidden" });
-    await page.getByRole("dialog", { name: "Export", exact: true }).waitFor();
+    await page.locator('dialog[data-state="exporting"]').waitFor();
     await page.keyboard.press("Escape");
     assert.equal(await page.getByRole("dialog").count(), 0);
     assert.equal(page.url(), firstUrl);
