@@ -84,6 +84,7 @@ export function createActionRuntimeAdapter({ session, refs, adapters }) {
           if (requestId) {
             session.pendingRequestComponents.add(requestId);
           }
+          adapters.pauseForComponentRequest?.(requestId);
           updateRequestStatus(session, adapters.setStatus);
         } else if (event.type === "request_success" || event.type === "request_error") {
           if (requestId) session.pendingRequestComponents.delete(requestId);

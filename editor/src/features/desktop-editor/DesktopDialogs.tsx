@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Sheets } from "../../app/Sheets";
+import { ExportSheet } from "../export/ExportSheet";
 import { useCapture } from "../../state/captureStore";
 import { SheetDockContext, type SheetDockContextValue } from "../../ui/sheets/SheetDockContext";
 import styles from "./DesktopDialogs.module.css";
@@ -7,7 +8,8 @@ import styles from "./DesktopDialogs.module.css";
 /** Export and settings retain their existing workflows outside the inspector. */
 export function DesktopDialogs() {
   const sheet = useCapture(state => state.sheet);
-  return sheet === "export" || sheet === "more" || sheet === "discard"
+  if (sheet === "export") return <ExportSheet />;
+  return sheet === "more" || sheet === "discard"
     ? <EditorDialog key={sheet} /> : null;
 }
 

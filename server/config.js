@@ -5,6 +5,15 @@ function positive(value, fallback, maximum = Number.MAX_SAFE_INTEGER) {
   return Number.isSafeInteger(parsed) && parsed > 0 ? Math.min(parsed, maximum) : fallback;
 }
 
+function clerkIssuer(value) {
+  try {
+    const url = new URL(value);
+    if (url.protocol === "https:" && url.pathname === "/" && !url.search && !url.hash
+      && !url.username && !url.password) return url.origin;
+  } catch { /* A missing or invalid issuer disables Clerk sign-in. */ }
+  return null;
+}
+
 export function configuration(env, requestOrigin) {
   let origin = null;
   try {
@@ -12,12 +21,21 @@ export function configuration(env, requestOrigin) {
     if (configured.protocol === "https:" && configured.pathname === "/" && !configured.search && !configured.hash)
       origin = configured.origin;
   } catch { /* Missing configuration leaves publishing disabled. */ }
+  const available = env.PUBLISHING_ENABLED === "true" && Boolean(env.DB && env.MEDIA && origin === requestOrigin
+    && env.SESSION_SECRET?.length >= 32);
+  const managedAuthReady = Boolean(env.DB && origin === requestOrigin && env.SESSION_SECRET?.length >= 32
+    && env.CLERK_PUBLISHABLE_KEY && clerkIssuer(env.CLERK_ISSUER));
   return {
     origin,
-    available: env.PUBLISHING_ENABLED === "true" && Boolean(env.DB && env.MEDIA && origin === requestOrigin
-      && env.SESSION_SECRET?.length >= 32),
+    available,
     authAvailable: Boolean(env.DB && origin === requestOrigin && env.SESSION_SECRET?.length >= 32
       && env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
+    renderAvailable: available && env.RENDERING_ENABLED === "true"
+      && typeof env.RENDER_QUEUE?.send === "function"
+      && typeof env.RENDERER?.get === "function"
+      && typeof env.RENDERER?.idFromName === "function",
+    clerkAvailable: managedAuthReady,
+    clerkIssuer: managedAuthReady ? clerkIssuer(env.CLERK_ISSUER) : null,
     maxBytes: positive(env.MAX_UPLOAD_BYTES, 50 * MIB, 50 * MIB),
     ownerQuota: positive(env.OWNER_STORAGE_BYTES, 500 * MIB),
     totalQuota: positive(env.TOTAL_STORAGE_BYTES, 5 * 1024 * MIB),

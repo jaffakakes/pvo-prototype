@@ -2,38 +2,14 @@ import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { chromium } from "playwright-core";
-import { sourceModules } from "../helpers/source-assets.mjs";
+import { playerSourceAssets } from "../helpers/player-assets.mjs";
 import { packPvoProject, readPvoProject, PVO_SPEC_VERSION } from "../../../packages/pvo-sdk/index.js";
 
 // Prerequisites: `npm run build:language` and Chrome (or CHROME_PATH).
 // Serve the player source directly so this check does not replace or depend on dist/.
-const routes = [
-  ["/player/", "../../../player/index.html", "text/html; charset=utf-8"],
-  ["/player/app.js", "../../../player/app.js", "text/javascript"],
-  ["/player/styles.css", "../../../player/styles.css", "text/css"],
-  ["/player/fonts/peace-sans.woff2", "../../../editor/src/fonts/peace-sans.woff2", "font/woff2"],
-  ["/player/fonts/open-sauce-600.woff2", "../../../editor/src/fonts/open-sauce-600.woff2", "font/woff2"],
-  ["/player/fonts/open-sauce-700.woff2", "../../../editor/src/fonts/open-sauce-700.woff2", "font/woff2"],
-  ["/packages/pvo-sdk/index.js", "../../../packages/pvo-sdk/index.js", "text/javascript"],
-  ["/packages/pvo-code-runtime/index.js", "../../../packages/pvo-code-runtime/index.js", "text/javascript"],
-  ["/packages/pvo-text-runtime/index.js", "../../../packages/pvo-text-runtime/index.js", "text/javascript"],
-  ["/packages/pvo-component-runtime/index.js", "../../../packages/pvo-component-runtime/index.js", "text/javascript"],
-  ["/packages/pvo-language/index.js", "../../../packages/pvo-language/index.js", "text/javascript"],
-  ["/packages/pvo-language/result.js", "../../../packages/pvo-language/result.js", "text/javascript"],
-  ["/packages/pvo-language/pkg/pvo_language.js", "../../../packages/pvo-language/pkg/pvo_language.js", "text/javascript"],
-  ["/packages/pvo-language/pkg/pvo_language_bg.wasm", "../../../packages/pvo-language/pkg/pvo_language_bg.wasm", "application/wasm"],
-];
-
 let servedAssets;
 try {
-  servedAssets = new Map(await Promise.all(routes.map(async ([route, path, type]) => [
-    route,
-    { body: await readFile(new URL(path, import.meta.url)), type },
-  ])));
-  for (const directory of ["player", "packages/pvo-fonts", "packages/pvo-animation", "packages/pvo-sdk", "packages/pvo-code-runtime", "packages/pvo-component-runtime", "packages/pvo-text-runtime"]) {
-    const modules = await sourceModules(new URL(`../../../${directory}/`, import.meta.url), `/${directory}`);
-    modules.forEach(([route, asset]) => servedAssets.set(route, asset));
-  }
+  servedAssets = await playerSourceAssets();
 } catch (error) {
   throw new Error(`PVO language player check needs generated WASM. Run npm run build:language first. ${error.message}`);
 }
@@ -169,6 +145,7 @@ await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
 const playerUrl = `http://127.0.0.1:${server.address().port}/player/`;
 let browser;
 let page;
+let releaseCompiler;
 const browserErrors = [];
 
 try {
@@ -190,14 +167,30 @@ try {
   assert.equal(response?.status(), 200);
 
   // A valid cached HTML fallback must not bypass an invalid PVO source file.
+  const compilerReady = new Promise(resolve => { releaseCompiler = resolve; });
+  await page.route("**/pvo_language_bg.wasm", async route => {
+    await compilerReady;
+    await route.continue();
+  });
   await page.locator("#pvoInput").setInputFiles(packages.invalid);
-  await page.locator("#status.error.is-visible").waitFor({ state: "attached", timeout: 10000 });
-  assert.match(await page.locator("#status").textContent(), /structure line .*attribute/i);
+  await page.getByRole("status").filter({ hasText: "Loading…" }).waitFor({ state: "visible" });
+  assert.equal(await page.locator("#playerShell").isVisible(), false);
+  assert.equal(await page.locator("#openErrorDetails").isVisible(), false);
+  releaseCompiler();
+  await page.getByRole("status").filter({ hasText: "Couldn't open this PVO." }).waitFor({ state: "visible" });
+  assert.equal(await page.locator("#openErrorMessage").isVisible(), false);
+  await page.getByText("Details", { exact: true }).click();
+  await page.locator("#openErrorMessage").waitFor({ state: "visible" });
+  assert.match(await page.locator("#openErrorMessage").textContent(), /structure line .*attribute/i);
+  assert.equal(await page.locator("#status").textContent(), "");
   assert.equal(await page.locator("#playerShell").isVisible(), false);
 
   await page.locator("#pvoInput").setInputFiles(packages.language);
   await page.locator("#playerShell").waitFor({ state: "visible" });
   await page.getByText("Choose to continue").waitFor({ state: "visible", timeout: 10000 });
+  assert.equal(await page.locator("#emptyState").isVisible(), false);
+  assert.equal(await page.locator("#openStatus").textContent(), "");
+  assert.equal(await page.locator("#openErrorMessage").textContent(), "");
   const languageFrame = page.locator(".code-position iframe").first().contentFrame();
   await languageFrame.getByRole("button", { name: "Language route" }).waitFor({ state: "visible" });
   assert.equal(await languageFrame.getByRole("button", { name: "Stale compiled route" }).count(), 0);
@@ -209,19 +202,23 @@ try {
 
   await page.reload({ waitUntil: "networkidle" });
   await page.locator("#pvoInput").setInputFiles(packages.legacy);
-  await page.locator("#status.error.is-visible").waitFor({ state: "attached", timeout: 10000 });
-  assert.match(await page.locator("#status").textContent(), /retired HTML\/CSS\/JavaScript format/i);
+  await page.getByRole("status").filter({ hasText: "Couldn't open this PVO." }).waitFor({ state: "visible" });
+  await page.getByText("Details", { exact: true }).click();
+  assert.match(await page.locator("#openErrorMessage").textContent(), /retired HTML\/CSS\/JavaScript format/i);
+  assert.equal(await page.locator("#status").textContent(), "");
   assert.equal(await page.locator("#playerShell").isVisible(), false);
   assert.deepEqual(browserErrors, []);
-  console.log("PVO language player passed: invalid source rejected, source recompiled over stale assets, Choice routed, legacy code rejected.");
+  console.log("PVO language player passed: visible load progress/errors, successful retry, source recompiled over stale assets, Choice routed, legacy code rejected.");
 } catch (error) {
   console.error(`PVO language player failed: ${error.message}`);
+  console.error(`Open status: ${await page?.locator("#openStatus").textContent().catch(() => "unavailable")}`);
   console.error(`Player status: ${await page?.locator("#status").textContent().catch(() => "unavailable")}`);
   console.error(`Video: ${JSON.stringify(await page?.locator("#video").evaluate(video => ({ paused: video.paused, time: video.currentTime, duration: video.duration, readyState: video.readyState, asset: video.dataset.assetId })).catch(() => ({})))}`);
   console.error(`Overlay frames: ${await page?.locator(".code-position iframe").count().catch(() => "unavailable")}`);
   console.error(`Browser errors: ${browserErrors.join("; ") || "none"}`);
   process.exitCode = 1;
 } finally {
+  releaseCompiler?.();
   await browser?.close();
   await new Promise(resolve => server.close(resolve));
 }

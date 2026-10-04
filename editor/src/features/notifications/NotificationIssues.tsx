@@ -8,12 +8,13 @@ const issueLabels: Record<string, string> = {
   saveFailed: "Save issue", restoreFailed: "Restore issue", recordingFailed: "Recording issue", importFailed: "Import issue",
 };
 
-/** A dismissed banner is an acknowledgement, never proof of recovery. */
+/** Acknowledged restore errors stay in storage status without repeating a floating prompt. */
 export function NotificationIssues({ hideRestore = false }: { hideRestore?: boolean }) {
   const allUnresolved = useNotifications(state => state.unresolved);
   const current = useNotifications(state => state.current);
+  const restoreAcknowledged = useNotifications(state => state.restoreAcknowledged);
   const [expanded, setExpanded] = useState(false);
-  const unresolved = hideRestore ? allUnresolved.filter(issue => issue.id !== "restoreFailed") : allUnresolved;
+  const unresolved = allUnresolved.filter(issue => issue.id !== "restoreFailed" || (!hideRestore && !restoreAcknowledged));
   if (!unresolved.length) return null;
   if (!expanded && unresolved.length === 1 && unresolved[0].key === current?.key) return null;
   const hasStorageIssue = unresolved.some(issue => issue.id === "saveFailed" || issue.id === "restoreFailed");

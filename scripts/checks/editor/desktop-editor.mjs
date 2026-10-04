@@ -8,7 +8,7 @@ const browser = await chromium.launch({
 });
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
 await context.route(`${new URL(url).origin}/api/auth/session`, route => route.fulfill({ contentType: "application/json",
-  body: JSON.stringify({ available: true, user: { id: "editor-test", name: "Editor tester" } }) }));
+  body: JSON.stringify({ available: true, clerkAvailable: false, clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: { id: "editor-test", name: "Editor tester" } }) }));
 const page = await context.newPage();
 const errors = [];
 page.on("pageerror", error => errors.push(error.message));
@@ -161,6 +161,8 @@ async function checkVisualLayerStack() {
 }
 
 try {
+  await page.route("**/api/auth/session", route => route.fulfill({ contentType: "application/json",
+    body: JSON.stringify({ available: true, clerkAvailable: false, clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: { id: "desktop-check", name: "Desktop check" } }) }));
   await page.route("**/api/publishing", route => route.fulfill({ contentType: "application/json",
     body: JSON.stringify({ available: false, hasSession: false, maxBytes: 0 }) }));
   const home = new URL(url);
@@ -219,7 +221,7 @@ try {
   await checkFrame();
   console.log("PASS: layout, shared routes, real media, speed/split history, pixel size and save/reload.");
 
-  await page.getByRole("button", { name: /Restyle assistant/ }).click();
+  await page.getByRole("button", { name: /^Restyle — tap for the thread/ }).click();
   const input = page.getByRole("textbox", { name: "Describe a change" });
   await input.waitFor();
   const inputBounds = await input.boundingBox();
@@ -275,7 +277,7 @@ try {
   assert.equal(await page.locator("[data-desktop-inspector]").evaluate(element => !!element.closest("[inert]")), false);
   await page.getByRole("button", { name: "Export", exact: true }).click();
   await page.getByRole("dialog", { name: "Export", exact: true }).waitFor();
-  await page.getByRole("button", { name: /Interactive/ }).waitFor();
+  await page.getByRole("radio", { name: /Interactive/ }).waitFor();
   await page.keyboard.press("Escape");
   assert.equal(await page.locator("dialog[open]").count(), 0);
   assert.equal(page.url(), projectUrl);

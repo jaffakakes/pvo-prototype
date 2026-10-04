@@ -5,14 +5,14 @@ import { buildSync } from "esbuild";
 const bundled = buildSync({ stdin: { contents: `
   export { captureExportSnapshot, publicationInput } from "./editor/src/domain/publishing/exportSnapshot.ts";
   export { renderCompletedExport } from "./editor/src/features/export/exportWorkflow.ts";
-  export { useExportArtifact, beginExportAttempt, finishExportAttempt, setExportPublication, beginPublicationAttempt, expirePublicationAttempt, forgetExportPublication, resetExportArtifact } from "./editor/src/state/export/exportArtifactStore.ts";
+  export { useExportArtifact, beginExportAttempt, cancelExportAttempt, finishExportAttempt, setExportPublication, beginPublicationAttempt, expirePublicationAttempt, forgetExportPublication, resetExportArtifact } from "./editor/src/state/export/exportArtifactStore.ts";
 `, resolveDir: process.cwd() }, bundle: true, write: false, format: "esm", platform: "browser" });
 const { captureExportSnapshot, publicationInput, renderCompletedExport, useExportArtifact,
-  beginExportAttempt, finishExportAttempt, setExportPublication, beginPublicationAttempt, expirePublicationAttempt, forgetExportPublication, resetExportArtifact } =
+  beginExportAttempt, cancelExportAttempt, finishExportAttempt, setExportPublication, beginPublicationAttempt, expirePublicationAttempt, forgetExportPublication, resetExportArtifact } =
   await import(`data:text/javascript;base64,${Buffer.from(bundled.outputFiles[0].text).toString("base64")}`);
 
 function project() {
-  return { currentSceneId: "main", ratio: "9:16", quality: "720p", allowedDomains: ["example.com"], scenes: [{
+  return { currentSceneId: "main", ratio: "9:16", coverAt: 1.2, quality: "720p", allowedDomains: ["example.com"], scenes: [{
     id: "main", name: "Main", parent: null, clips: [{ id: 1, url: "blob:original", in: 0, out: 2, speed: 1, zoom: 1, mirror: false, color: "#000" }],
     texts: [{ id: 1, text: "Original", start: 0, end: 2, style: { color: "#fff" } }], components: [], layers: ["video", "text:1"], muted: true, sound: 0,
   }] };
@@ -35,10 +35,21 @@ test("export snapshots detach clips, content, domains and settings from later ed
   input.scenes[0].clips[0].out = 7;
   input.allowedDomains.push("other.example");
   input.quality = "1080p";
+  input.coverAt = 1.8;
   assert.equal(snapshot.scenes[0].texts[0].text, "Original");
   assert.equal(snapshot.scenes[0].clips[0].out, 2);
   assert.deepEqual(snapshot.allowedDomains, ["example.com"]);
   assert.equal(snapshot.quality, "720p");
+  assert.equal(snapshot.coverAt, 1.2);
+});
+
+test("a cover beyond a shortened main scene freezes to its final visible frame", () => {
+  const input = project();
+  input.coverAt = 9;
+  input.scenes[0].clips[0].out = 1;
+  input.scenes[0].texts[0].end = 1;
+  const snapshot = captureExportSnapshot(input, "shortened");
+  assert(snapshot.coverAt > 0.9 && snapshot.coverAt < 1);
 });
 
 test("flat exports render once from leased snapshot inputs and preserve the returned Blob", async () => {
@@ -49,6 +60,7 @@ test("flat exports render once from leased snapshot inputs and preserve the retu
   assert.equal(result.artifact.snapshotId, "snapshot-one");
   assert.equal(result.artifact.format, "video");
   assert.equal(result.artifact.contentType, "video/webm");
+  assert.equal(result.artifact.coverAt, 1.2);
   assert.equal(fixture.events.filter(([event]) => event === "video").length, 1);
   assert.equal(fixture.events.find(([event]) => event === "video")[1].clips[0].url, "blob:leased");
   assert.equal(snapshot.scenes[0].clips[0].url, "blob:original");
@@ -64,6 +76,83 @@ test("PVO export keeps its chosen format and does not invoke the flat renderer",
   assert.equal(result.artifact.format, "pvo");
   assert.equal(result.artifact.contentType, "application/vnd.pvo");
   assert.equal(result.artifact.blob, fixture.output);
+});
+
+test("the cover selected at export start is frozen with the result and passed to PVO packaging", async () => {
+  const fixture = adapters();
+  const poster = new Blob(["RIFF....WEBP"], { type: "image/webp" });
+  fixture.value.pvo = async (_source, _progress, _renderScene, suppliedPoster) => {
+    assert.equal(suppliedPoster, poster);
+    return { blob: fixture.output, url: "blob:completed", name: "video.pvo" };
+  };
+  const snapshot = captureExportSnapshot(project(), "poster-pvo");
+  const result = await renderCompletedExport(snapshot, "pvo", () => {}, fixture.value, { poster });
+  assert.equal(result.artifact.poster, poster);
+  assert.equal(result.artifact.coverAt, 1.2);
+});
+
+test("eligible flat export gives original source bytes and selected quality to server", async () => {
+  const fixture = adapters();
+  const input = project();
+  input.scenes[0].texts = [];
+  input.scenes[0].layers = ["video"];
+  const original = new Blob(["original video"], { type: "video/quicktime" });
+  fixture.value.readMedia = async url => { fixture.events.push(["read", url]); return original; };
+  fixture.value.server = () => async (source, media, progress) => {
+    fixture.events.push(["server", source, media]);
+    progress(1);
+    return { blob: fixture.output, url: "blob:remote", name: "video.mp4" };
+  };
+  const result = await renderCompletedExport(captureExportSnapshot(input, "server-flat"), "video", () => {}, fixture.value);
+  const [, source, media] = fixture.events.find(([event]) => event === "server");
+  assert.equal(source.quality, "720p");
+  assert.equal(media.get("blob:leased"), original);
+  assert.equal(result.artifact.blob, fixture.output);
+  assert.equal(result.url, "blob:remote");
+  assert.equal(fixture.events.filter(([event]) => event === "video").length, 0);
+});
+
+test("PVO workflow can use the same server scene renderer before packaging", async () => {
+  const fixture = adapters();
+  const input = project();
+  input.scenes[0].texts = [];
+  input.scenes[0].layers = ["video"];
+  fixture.value.server = () => async (source, media) => {
+    fixture.events.push(["server-scene", source, media]);
+    return { blob: new Blob(["scene mp4"], { type: "video/mp4" }), url: "blob:scene", name: "scene.mp4" };
+  };
+  fixture.value.pvo = async (source, progress, renderScene) => {
+    const scene = source.scenes[0];
+    const rendered = await renderScene({ ...scene, ratio: source.ratio, quality: source.quality }, progress);
+    fixture.events.push(["package", rendered.blob.type]);
+    return { blob: fixture.output, url: "blob:completed", name: "video.pvo" };
+  };
+  const result = await renderCompletedExport(captureExportSnapshot(input, "server-pvo"), "pvo", () => {}, fixture.value);
+  assert.equal(result.artifact.format, "pvo");
+  assert.equal(fixture.events.filter(([event]) => event === "server-scene").length, 1);
+  assert.deepEqual(fixture.events.find(([event]) => event === "package"), ["package", "video/mp4"]);
+  assert.equal(fixture.events.filter(([event]) => event === "video").length, 0);
+});
+
+test("an unavailable server falls back to the browser renderer for that scene", async () => {
+  const fixture = adapters();
+  fixture.value.server = () => async () => null;
+  await renderCompletedExport(captureExportSnapshot(project(), "browser-fallback"), "video", () => {}, fixture.value);
+  assert.equal(fixture.events.filter(([event]) => event === "video").length, 1);
+});
+
+test("browser fallback receives cancellation and releases its leased source", async () => {
+  const fixture = adapters();
+  const controller = new AbortController();
+  fixture.value.server = () => async () => null;
+  fixture.value.video = async (_source, _progress, signal) => {
+    assert.equal(signal, controller.signal);
+    controller.abort(new DOMException("Cancelled", "AbortError"));
+    signal.throwIfAborted();
+  };
+  await assert.rejects(renderCompletedExport(captureExportSnapshot(project(), "browser-cancel"),
+    "video", () => {}, fixture.value, { signal: controller.signal }), { name: "AbortError" });
+  assert.deepEqual(fixture.events.at(-1), ["revoke", "blob:leased"]);
 });
 
 test("flat export ignores inaccessible media in a branch it does not export", async () => {
@@ -108,14 +197,27 @@ test("replacement and reset revoke URLs while an upload can retain the immutable
   assert.deepEqual(revoked, ["blob:one", "blob:stale"]);
 });
 
-test("publishing validates a browser session and size without changing the completed artifact", () => {
+test("a closing export sheet can cancel only the attempt it owns", t => {
+  t.after(resetExportArtifact);
+  const old = new AbortController();
+  const current = new AbortController();
+  beginExportAttempt("older", old);
+  beginExportAttempt("current", current);
+  assert.equal(cancelExportAttempt("older"), false);
+  assert.equal(current.signal.aborted, false);
+  assert.equal(cancelExportAttempt("current"), true);
+  assert.equal(current.signal.aborted, true);
+  assert.equal(useExportArtifact.getState().attempt, null);
+});
+
+test("publishing validates an account session and size without changing the completed artifact", () => {
   const artifact = { snapshotId: "one", blob: new Blob(["file"]), filename: "video.webm", contentType: "video/webm", format: "video", createdAt: "now" };
   const status = { available: true, hasSession: true, maxBytes: 10 };
   assert.deepEqual(publicationInput(artifact, "  My video  ", status, "same-key"), {
     title: "My video", filename: "video.webm", contentType: "video/webm", format: "video", size: 4, idempotencyKey: "same-key",
   });
   assert.throws(() => publicationInput(artifact, "Title", { ...status, available: false }, "key"), /isn’t available/);
-  assert.throws(() => publicationInput(artifact, "Title", { ...status, hasSession: false }, "key"), /prepare link sharing/);
+  assert.throws(() => publicationInput(artifact, "Title", { ...status, hasSession: false }, "key"), /Sign in/);
   assert.throws(() => publicationInput(artifact, "Title", { ...status, maxBytes: 3 }, "key"), /size limit/);
   assert.throws(() => publicationInput(artifact, " ", status, "key"), /title/);
 });

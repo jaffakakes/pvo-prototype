@@ -1,7 +1,9 @@
 import { readPlayerElements } from "../ui/elements.js";
 import { readPublication } from "./metadata.js";
 import { mountPlainPublication } from "./plain.js";
+import { mountPlayerShell } from "../ui/shell.js";
 
+mountPlayerShell();
 const refs = readPlayerElements();
 document.querySelector("#publicationRetry")?.addEventListener("click", () => window.location.reload());
 

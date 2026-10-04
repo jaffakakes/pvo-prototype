@@ -96,19 +96,25 @@ async function assertPosition(left, top) {
   const position = page.locator(".capture-position");
   await position.waitFor({ state: "visible" });
   const actual = await position.evaluate(element => {
-    const frame = document.querySelector("#playerFrame").getBoundingClientRect();
+    const frame = document.querySelector("#overlayLayer").getBoundingClientRect();
     const box = element.getBoundingClientRect();
     return {
       left: element.style.left,
       top: element.style.top,
       x: (box.left + box.width / 2 - frame.left) / frame.width * 100,
       y: (box.top + box.height / 2 - frame.top) / frame.height * 100,
+      minimumX: (box.width / 2 + 8) / frame.width * 100,
+      maximumX: (frame.width - box.width / 2 - 8) / frame.width * 100,
+      minimumY: (box.height / 2 + 8) / frame.height * 100,
+      maximumY: (frame.height - box.height / 2 - 8) / frame.height * 100,
     };
   });
   assert.equal(actual.left, `${left}%`);
   assert.equal(actual.top, `${top}%`);
-  assert.ok(Math.abs(actual.x - left) < 1, `Overlay x did not use its authored center: ${JSON.stringify(actual)}`);
-  assert.ok(Math.abs(actual.y - top) < 1, `Overlay y did not use its authored center: ${JSON.stringify(actual)}`);
+  const visibleX = Math.min(actual.maximumX, Math.max(actual.minimumX, left));
+  const visibleY = Math.min(actual.maximumY, Math.max(actual.minimumY, top));
+  assert.ok(Math.abs(actual.x - visibleX) < 1, `Overlay x must preserve its authored center within reachable bounds: ${JSON.stringify(actual)}`);
+  assert.ok(Math.abs(actual.y - visibleY) < 1, `Overlay y must preserve its authored center within reachable bounds: ${JSON.stringify(actual)}`);
 }
 
 try {
@@ -123,7 +129,7 @@ try {
   const choice = page.locator("pvo-component-view").filter({ hasText: "Choose a path" });
   await page.waitForTimeout(500);
   if (await choice.count() === 0 && await page.locator("#video").evaluate(video => video.paused)) {
-    await page.locator("#playButton").click();
+    await page.locator("#centerPlayButton").click();
   }
   await choice.waitFor({ state: "visible", timeout: 10000 });
   await assertPosition(37, 62);

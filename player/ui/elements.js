@@ -1,27 +1,19 @@
-/** Resolve the player shell once; controllers receive only the elements they use. */
+/** Resolve the shell once; controllers receive only the elements they use. */
 export function readPlayerElements() {
+  const ids = {
+    input: "pvoInput", empty: "emptyState", dropZone: "dropZone", shell: "playerShell",
+    openStatus: "openStatus", openDetails: "openErrorDetails", openError: "openErrorMessage",
+    frame: "playerFrame", video: "video", overlay: "overlayLayer", ambient: "ambientCanvas",
+    endScreen: "endScreen", endRestart: "endRestartButton", centerPlay: "centerPlayButton",
+    mute: "muteButton", soundIcon: "soundIcon", soundLabel: "soundLabel",
+    statusWidget: "statusWidget", holdStatus: "holdStatus", holdBadge: "holdBadge",
+    holdLabel: "holdLabel", holdArrow: "holdArrow", retry: "retryButton",
+    keyboardDone: "keyboardDoneButton", brand: "brandSticker", brandCreate: "brandCreateLink", timeline: "timelineLabel", status: "status",
+  };
   return {
-  input: document.querySelector("#pvoInput"),
-  empty: document.querySelector("#emptyState"),
-  dropZone: document.querySelector("#dropZone"),
-  shell: document.querySelector("#playerShell"),
-  frame: document.querySelector("#playerFrame"),
-  video: document.querySelector("#video"),
-  overlay: document.querySelector("#overlayLayer"),
-  endScreen: document.querySelector("#endScreen"),
-  endRestart: document.querySelector("#endRestartButton"),
-  centerPlay: document.querySelector("#centerPlayButton"),
-  controls: document.querySelector("#playerControls"),
-  restart: document.querySelector("#restartButton"),
-  play: document.querySelector("#playButton"),
-  mute: document.querySelector("#muteButton"),
-  volume: document.querySelector("#volumeControl"),
-  progress: document.querySelector("#progress"),
-  fullscreen: document.querySelector("#fullscreenButton"),
-  share: document.querySelector("#shareButton"),
-  endShare: document.querySelector("#endShareButton"),
-  timeline: document.querySelector("#timelineLabel"),
-  time: document.querySelector("#timeLabel"),
-  status: document.querySelector("#status"),
-};
+    ...Object.fromEntries(Object.entries(ids).map(([name, id]) => [name, document.getElementById(id)])),
+    shares: [...document.querySelectorAll("[data-player-share]")],
+    titles: [...document.querySelectorAll("[data-player-title]")],
+    metadata: [...document.querySelectorAll("[data-player-meta]")],
+  };
 }

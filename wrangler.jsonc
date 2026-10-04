@@ -22,7 +22,7 @@
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
-    "run_worker_first": ["/", "/api", "/api/*", "/media", "/media/*", "/player/published", "/player/published.html", "/docs", "/docs/*", "/demo", "/demo/*"],
+    "run_worker_first": ["/", "/api", "/api/*", "/media", "/media/*", "/poster", "/poster/*", "/player/published", "/player/published.html", "/docs", "/docs/*", "/demo", "/demo/*"],
     "not_found_handling": "none"
   },
   "vars": {
@@ -30,6 +30,8 @@
     "RUNPOD_TRANSCRIPTION_ENDPOINT": "5uqruzvtb96kph",
     "PUBLISHING_ENABLED": "true",
     "PUBLIC_ORIGIN": "https://getrestyle.app",
+    "CLERK_ISSUER": "https://clerk.getrestyle.app",
+    "CLERK_PUBLISHABLE_KEY": "pk_live_Y2xlcmsuZ2V0cmVzdHlsZS5hcHAk",
     "MAX_UPLOAD_BYTES": "52428800",
     "OWNER_STORAGE_BYTES": "524288000",
     "TOTAL_STORAGE_BYTES": "5368709120"

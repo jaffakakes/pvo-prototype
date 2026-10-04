@@ -19,22 +19,28 @@ try {
   await page.getByRole("button", { name: "Stop recording" }).click();
   await page.getByRole("button", { name: "Open editor" }).click();
   await page.getByRole("button", { name: "Components", exact: true }).click();
-  await page.locator(".componentTypeTile").filter({ hasText: "Choice" }).click();
+  await page.locator(".componentTypeTile").filter({ hasText: "Let viewers choose" }).click();
 
   const choiceSheet = page.getByRole("dialog", { name: "Choice" });
-  assert.equal(await choiceSheet.locator(".componentOptionRow").count(), 2, "Choice must show exactly two option rows");
+  assert.equal(await choiceSheet.getByRole("textbox", { name: /^Option [12]$/ }).count(), 2,
+    "Choice must show exactly two option fields");
   assert.equal(await choiceSheet.getByRole("button", { name: /Add option|Remove option/ }).count(), 0, "Choice options must not be added or removed");
-  await choiceSheet.getByRole("textbox", { name: "Option 1 label" }).fill("Option one");
-  await choiceSheet.getByRole("textbox", { name: "Option 2 label" }).fill("Option two");
-  await choiceSheet.getByRole("button", { name: "Close" }).click();
+  await choiceSheet.getByRole("textbox", { name: "Option 1" }).fill("Option one");
+  await choiceSheet.getByRole("textbox", { name: "Option 2" }).fill("Option two");
+  await choiceSheet.getByRole("button", { name: "Done" }).click();
   assert.equal(await page.locator(".compChoice button").count(), 2, "Preview must render exactly two Choice buttons");
   assert.deepEqual(await page.locator(".compChoice button").allTextContents(), ["Option one", "Option two"]);
 
-  await page.getByRole("button", { name: "Next" }).click();
-  const exportDialog = page.getByRole("dialog", { name: "Export" });
-  const downloadPromise = page.waitForEvent("download", { timeout: 45000 });
-  await exportDialog.getByRole("button", { name: "Export .pvo" }).click();
-  const download = await downloadPromise;
+  await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
+  await page.getByRole("dialog", { name: "More" })
+    .getByRole("button", { name: "Interactive (.pvo)", exact: true }).click();
+  const exportDialog = page.locator("dialog[data-state]");
+  await exportDialog.getByRole("button", { name: /Export \.pvo/ }).click();
+  await page.locator('dialog[data-state="done"]').waitFor({ timeout: 60000 });
+  const [download] = await Promise.all([
+    page.waitForEvent("download", { timeout: 15000 }),
+    exportDialog.getByRole("button", { name: /Download/ }).click(),
+  ]);
   const decoded = await readPvoProject(new Blob([await readFile(await download.path())]));
   assert.equal(decoded.validation.valid, true, JSON.stringify(decoded.validation.errors));
   const choice = decoded.manifest.components.find(component => component.kind === "choice");

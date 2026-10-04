@@ -1,0 +1,52 @@
+.inbox { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.note, .error { margin: 0; font: 600 11px/1.5 var(--f-ui); }
+.note { color: var(--muted); }
+.error { color: var(--yellow); }
+
+.toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.toolbar strong { min-width: 0; overflow-wrap: anywhere; font: 800 13px/1.4 var(--f-ui); }
+.toolbar button, .back, .delete, .deleteConfirm button {
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid var(--q14);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font: 700 12px/1.3 var(--f-ui);
+  cursor: pointer;
+}
+.toolbar button:disabled, .delete:disabled, .deleteConfirm button:disabled { opacity: .5; cursor: default; }
+.back { align-self: flex-start; background: transparent; }
+.delete { align-self: flex-start; color: var(--pale); }
+
+.boxes, .replies { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.boxes button {
+  display: flex;
+  width: 100%;
+  min-height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--q14);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.boxes button:disabled { opacity: .5; cursor: default; }
+.boxes span { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.boxes strong { overflow-wrap: anywhere; font: 800 12px/1.3 var(--f-ui); }
+.boxes small { color: var(--muted); font: 600 10px/1.3 var(--f-ui); }
+.boxes b { white-space: nowrap; color: var(--pale); font: 800 11px/1.3 var(--f-ui); }
+
+.replies li { padding: 12px; border: 1px solid var(--q14); border-radius: 10px; background: var(--surface); }
+.replies time { color: var(--muted); font: 600 10px/1.3 var(--f-ui); }
+.replies dl { display: flex; flex-direction: column; gap: 9px; margin: 10px 0 0; }
+.replies dt { color: var(--muted); font: 700 10px/1.4 var(--f-ui); }
+.replies dd { margin: 2px 0 0; overflow-wrap: anywhere; white-space: pre-wrap; font: 600 12px/1.45 var(--f-ui); }
+
+.deleteConfirm { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--pale); border-radius: 10px; }
+.deleteConfirm p { margin: 0; font: 600 11px/1.5 var(--f-ui); }
+.deleteConfirm button:last-child { color: var(--pale); }

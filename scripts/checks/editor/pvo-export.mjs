@@ -93,8 +93,6 @@ try {
   const assets = new Map(decoded.assets.map(asset => [asset.id, asset]));
   const language = component.restyle_capture.code.language;
   const structure = await assets.get(language.structure)?.blob.text();
-  const fieldLanguage = fieldComponent.restyle_capture.code.language;
-  const fieldStructure = await assets.get(fieldLanguage.structure)?.blob.text();
   assert.equal(result.fileName, "restyle-video.pvo");
   assert.equal(decoded.validation.valid, true);
   assert.equal(component.title, "Round-trip {{title}} & <prompt>");
@@ -109,8 +107,8 @@ try {
   assert.equal(component.restyle_capture.code.css, undefined);
   assert.equal(component.restyle_capture.code.js, undefined);
   assert.equal(fieldComponent.text, "No-code tooltip");
-  assert.match(fieldStructure, /<text>No-code tooltip<\/text>/);
-  assert.equal(fieldLanguage.version, 1);
+  assert.equal(fieldComponent.restyle_capture.code, undefined,
+    "Visual components should use their native manifest presentation without a code runtime");
   assert.equal(cardComponent.title, "No-code title");
   assert.equal(cardComponent.actions[0].label, "Okay");
   assert.equal(cardComponent.actions[0].action.type, "custom");
@@ -121,7 +119,7 @@ try {
   assert.ok(result.invalidDraftError, "Export must reject the first invalid Advanced draft");
   assert.equal(decoded.assets.length, 13);
   assert.deepEqual(errors, []);
-  console.log("PVO language export passed: real media package, authored and Fields source, semantic manifest, no legacy code assets.");
+  console.log("PVO language export passed: real media package, authored code and visual Fields, semantic manifest, no legacy code assets.");
 } finally {
   await browser.close();
 }

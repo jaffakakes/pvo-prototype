@@ -56,5 +56,10 @@ export async function inspectPvoProject({ size, readRange }, { maxHeaderBytes = 
     const id = media?.asset_id || media?.id;
     if (id && !ids.has(id)) throw new Error(`PVO package is missing media asset "${id}".`);
   }
+  if (header.manifest?.poster && !ids.has(header.manifest.poster.asset_id))
+    throw new Error(`PVO package is missing poster asset "${header.manifest.poster.asset_id}".`);
+  const poster = header.manifest?.poster && assets.find(asset => asset.id === header.manifest.poster.asset_id);
+  if (poster && (poster.type !== "image/webp" || poster.length > 5 * 1024 * 1024))
+    throw new Error("The PVO poster must be a WebP image under 5 MiB.");
   return { manifest: header.manifest, validation: validatePvo(header.manifest), assets, payloadStart };
 }

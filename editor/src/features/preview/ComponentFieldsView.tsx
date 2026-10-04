@@ -62,6 +62,8 @@ export function ComponentFieldsView({ component, unit, trying, selectedPart, onR
     >{fields.options?.[index]?.label || `Option ${String.fromCharCode(65 + index)}`}</button>)}
   </div>;
   const controls = formFieldControls(fields);
+  const replyField = fields.formSubmitMode === "collect"
+    ? controls.findIndex(field => field.type === "text") : -1;
   const setFieldValue = (name: string, value: string) => setFormValues(previous => ({ ...previous, [name]: value }));
   return <form {...whole} className={`${cx("compForm")} ${styles.part}`} aria-busy={pending} onSubmit={event => {
     event.preventDefault();
@@ -73,7 +75,7 @@ export function ComponentFieldsView({ component, unit, trying, selectedPart, onR
   }}>
     {fields.heading && <h3 {...part("heading", appearance?.heading)}>{fields.heading}</h3>}
     <div {...part("body", appearance?.body)} className={`${styles.fields} ${styles.part}`}>
-      {controls.map(field => <label key={field.name} className={styles.field}>
+      {controls.map((field, index) => <label key={field.name} className={styles.field}>
         <span>{field.label}</span>
         {field.type === "yesno" ? <select
           style={appearance?.field as CSSProperties}
@@ -84,7 +86,16 @@ export function ComponentFieldsView({ component, unit, trying, selectedPart, onR
         >
           <option value="no">No</option>
           <option value="yes">Yes</option>
-        </select> : <input
+        </select> : index === replyField ? <textarea
+          style={appearance?.field as CSSProperties}
+          disabled={!trying || pending}
+          aria-label={field.label}
+          placeholder={field.label}
+          rows={3}
+          maxLength={1024}
+          value={formValues[field.name] ?? ""}
+          onChange={event => setFieldValue(field.name, event.target.value)}
+        /> : <input
           style={appearance?.field as CSSProperties}
           disabled={!trying || pending}
           aria-label={field.label}
@@ -96,6 +107,7 @@ export function ComponentFieldsView({ component, unit, trying, selectedPart, onR
         />}
       </label>)}
     </div>
+    {fields.formSubmitMode === "collect" && <p className={styles.replyNotice}>Your reply is sent to this video’s creator.</p>}
     <button {...button(0)} type="submit" disabled={!trying || pending}>
       {pending ? fields.waitingLabel || "Sending…" : fields.submitLabel || "Send"}
     </button>

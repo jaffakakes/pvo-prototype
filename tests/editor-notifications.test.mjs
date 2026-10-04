@@ -159,6 +159,24 @@ test("durable failures protect the current banner and retain a second failure af
   assert.equal(state.current.id, "saveFailed", "A genuinely recovered operation can fail again");
 });
 
+test("acknowledged restore failures retain recovery state without showing another prompt", () => {
+  let state = receiveNotification(initialNotifications(), "restoreFailed", { scope: "project" }, 0);
+  state = dismissCurrentNotification(state);
+  assert.equal(state.restoreAcknowledged, true);
+  assert.equal(state.current, null);
+  assert.deepEqual(state.unresolved.map(issue => issue.id), ["restoreFailed"]);
+
+  state = receiveNotification(initialNotifications(true), "restoreFailed", { scope: "project" }, 10_000);
+  assert.equal(state.current, null, "A reload must not repeat an acknowledged restore error");
+  assert.equal(state.announcement, null);
+  assert.deepEqual(state.unresolved.map(issue => issue.id), ["restoreFailed"]);
+
+  state = resolveNotificationEvent(state, "restoreFailed", "project");
+  assert.equal(state.restoreAcknowledged, false);
+  state = receiveNotification(state, "restoreFailed", { scope: "project" }, 20_000);
+  assert.equal(state.current?.id, "restoreFailed", "A failure after successful recovery is new");
+});
+
 test("leaving one scope clears its notices and dedupe without losing project issues or cooldown", () => {
   let state = receiveNotification(initialNotifications(), "assistantFailed", { scope: "component:1" }, 0);
   state = receiveNotification(state, "saveFailed", { scope: "project" }, 1);

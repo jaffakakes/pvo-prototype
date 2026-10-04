@@ -86,7 +86,8 @@ async function assertTemplateGallery(page, width) {
   assert.equal(await gallery.getByText("6 templates", { exact: true }).count(), 1);
   assert.equal(await gallery.getByRole("button", { name: "Browse all", exact: true }).count(), 1);
   assert.equal(await tablist.getByRole("tab").first().evaluate(tab => Math.round(tab.getBoundingClientRect().height)), 36);
-  assert.match(await tablist.getByRole("tab").first().evaluate(tab => getComputedStyle(tab).boxShadow), /rgb\(255, 45, 120\)/);
+  assert.notEqual(await tablist.getByRole("tab").first().evaluate(tab => getComputedStyle(tab).boxShadow), "none",
+    "The selected template filter must remain visually raised in either theme");
   assert.equal(await gridTracks(gallery), width < 1200 ? 4 : 6);
 
   if (width < 1200) {
@@ -158,13 +159,13 @@ const oldChoice = {
 
 function checkpoint(id, components = [], assetIds = []) {
   return {
-    version: 2,
+    version: 3,
     localId: id,
     projectName: id === "legacy-project" ? "Legacy edit" : "Keep me",
     savedAt: Date.now(),
     project: {
       scenes: [{ id: "main", name: "Main", parent: null, clips: [], texts: [], components, muted: false, sound: 0 }],
-      currentSceneId: "main", ratio: "9:16", allowedDomains: [],
+      currentSceneId: "main", ratio: "9:16", coverAt: 0, allowedDomains: [],
     },
     past: [], future: [], assetIds,
     resume: { screen: "editor", t: 0, sel: 0, selComp: null, selText: null, exportFormat: "video", quality: "1080p" },
@@ -231,7 +232,7 @@ async function run(width) {
   await context.route(`${origin}/api/auth/**`, route => {
     const path = new URL(route.request().url()).pathname;
     if (path === "/api/auth/session") return route.fulfill({ contentType: "application/json",
-      body: JSON.stringify({ available: true, user: signedIn ? { id: "editor-test", name: "Editor tester" } : null }) });
+      body: JSON.stringify({ available: true, clerkAvailable: false, clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: signedIn ? { id: "editor-test", name: "Editor tester" } : null }) });
     if (path === "/api/auth/google/start") {
       signedIn = true;
       return route.fulfill({ contentType: "text/html",
@@ -243,6 +244,8 @@ async function run(width) {
   page.setDefaultTimeout(15000);
   page.on("pageerror", error => errors.push(error.message));
   page.on("console", message => { if (message.type() === "error") console.error(message.text()); });
+  await page.route("**/api/renders", route => route.fulfill({ contentType: "application/json",
+    body: JSON.stringify({ available: false, maxSourceBytes: 0, maxSources: 0, formats: [] }) }));
   await page.route("**/api/publishing", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ available: false, hasSession: false, maxBytes: 0 }) }));
   try {
     const home = new URL(editorUrl);
@@ -266,17 +269,19 @@ async function run(width) {
     assert.equal(await clips(page).count(), 1);
     await saved(page, firstId);
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
-    await page.getByRole("dialog", { name: "Sign in to Restyle", exact: true }).waitFor();
-    await page.getByText("Sign in to export and manage your videos.", { exact: false }).waitFor();
+    await page.getByRole("dialog", { name: "Create a free account", exact: true }).waitFor();
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Export", exact: true }).click();
-    const auth = page.getByRole("dialog", { name: "Sign in to Restyle", exact: true });
+    const exportDialog = page.getByRole("dialog", { name: "Export", exact: true });
+    await exportDialog.waitFor();
+    await exportDialog.getByRole("button", { name: /Export video/ }).click();
+    const auth = page.getByRole("dialog", { name: "Create a free account to export", exact: true });
     await auth.waitFor();
     const popup = page.waitForEvent("popup");
     await auth.getByRole("button", { name: "Continue with Google" }).click();
     await popup;
     await auth.waitFor({ state: "hidden" });
-    await page.getByRole("dialog", { name: "Export", exact: true }).waitFor();
+    await page.locator('dialog[data-state="exporting"]').waitFor();
     await page.keyboard.press("Escape");
     assert.equal(await page.getByRole("dialog").count(), 0);
     assert.equal(page.url(), firstUrl);
@@ -540,7 +545,8 @@ async function mobileTargetedRecoveryImport() {
   await page.goto(url.href);
   await page.locator('[data-notification-id="restoreFailed"]').waitFor();
   await page.getByRole("button", { name: "Dismiss notification", exact: true }).click();
-  await page.getByRole("button", { name: "Restore issue", exact: true }).click();
+  assert.equal(await page.getByRole("button", { name: "Restore issue", exact: true }).count(), 0);
+  await page.getByText("Storage options", { exact: true }).click();
   const storage = page.getByRole("region", { name: "Project storage", exact: true });
   await storage.getByRole("button", { name: "Discard saved edit", exact: true }).click();
   await storage.getByRole("button", { name: "Discard and continue", exact: true }).click();

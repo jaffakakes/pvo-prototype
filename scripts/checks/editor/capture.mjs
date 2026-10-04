@@ -3,11 +3,18 @@ import { resolve } from "node:path";
 import { tmpdir } from "node:os";
 
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe", headless: true, args: ["--no-sandbox", "--use-fake-device-for-media-stream"] });
-const page = await browser.newPage({ viewport: { width: 1280, height: 1050 }, acceptDownloads: true });
+const page = await browser.newPage({ viewport: { width: 500, height: 1000 }, acceptDownloads: true });
 const errors = [];
 page.on("pageerror", error => errors.push(error.message));
+async function signedInForExport(target) {
+  await target.route("**/api/auth/session", route => route.fulfill({ contentType: "application/json",
+    body: JSON.stringify({ available: true, clerkAvailable: false, clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: { id: "capture-check", name: "Capture check" } }) }));
+}
 try {
+  await signedInForExport(page);
   await page.goto(process.env.EDITOR_URL || process.env.RESTYLE_EDITOR_URL || "http://127.0.0.1:5173/", { waitUntil: "networkidle" });
+  const visit = page.getByRole("button", { name: "Visit Site", exact: true });
+  if (await visit.isVisible()) await visit.click();
   await page.getByRole("button", { name: "Record" }).waitFor();
   if (await page.locator(".modeRow").count()) throw new Error("Timed recording modes are still visible");
   if (await page.getByRole("button", { name: /Filters?|Effects/ }).count()) throw new Error("A filter control is still visible");
@@ -51,7 +58,7 @@ try {
   await page.getByRole("button", { name: "Add", exact: true }).click();
   if (await page.locator(".textOverlay").count() !== 1) throw new Error("Text overlay missing");
   await page.getByRole("button", { name: "Collapse text tools" }).click();
-  await page.getByRole("button", { name: "More", exact: true }).click();
+  await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
   const more = page.getByRole("dialog", { name: "More" });
   const squareRatio = more.getByRole("group", { name: "Video ratio" }).getByRole("button", { name: "1:1", exact: true });
   await squareRatio.click();
@@ -66,16 +73,22 @@ try {
   await page.keyboard.press("Control+Shift+z");
   await page.waitForTimeout(350);
   if (await page.locator(".pvBox").evaluate(element => Math.abs(element.clientWidth - element.clientHeight)) > 2) throw new Error("Ratio redo failed");
-  await page.getByRole("button", { name: "Next" }).click();
-  const download = page.waitForEvent("download", { timeout: 30000 });
-  await page.getByRole("button", { name: "Export video" }).click();
-  const saved = await download.catch(async error => {
+  await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
+  await page.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Flat video" }).click();
+  const exportDialog = page.locator("dialog[data-state]");
+  await exportDialog.getByRole("button", { name: /Export video/ }).click();
+  await page.locator('dialog[data-state="done"]').waitFor({ timeout: 45000 });
+  const saved = await Promise.all([
+    page.waitForEvent("download", { timeout: 15000 }),
+    exportDialog.getByRole("button", { name: /Download/ }).click(),
+  ]).then(([download]) => download).catch(async error => {
     throw new Error(`${error.message}\nExport UI: ${await page.getByRole('dialog').innerText()}\nNotifications: ${await page.locator('[data-notification-root]').allTextContents()}\nPage errors: ${errors.join('; ')}`);
   });
-  if (!saved.suggestedFilename().startsWith("restyle-video.")) throw new Error("Unexpected export filename");
+  if (!/\.(webm|mp4)$/.test(saved.suggestedFilename())) throw new Error("Unexpected export filename");
   if (process.argv[2]) {
     const real = await browser.newPage({ viewport: { width: 500, height: 1000 }, acceptDownloads: true });
     real.on("pageerror", error => errors.push(error.message));
+    await signedInForExport(real);
     await real.goto(process.env.EDITOR_URL || process.env.RESTYLE_EDITOR_URL || "http://127.0.0.1:5173/", { waitUntil: "networkidle" });
     await real.locator('input[type="file"]').setInputFiles(process.argv[2]);
     await real.locator('.shutter[data-clips="1"] svg circle').waitFor();
@@ -133,10 +146,15 @@ try {
     await real.keyboard.press("Space");
     await real.keyboard.press("s");
     if (await real.locator(".tlClip").count() !== 2) throw new Error("Split did not create two clips");
-    await real.getByRole("button", { name: "Next" }).click();
-    const realDownload = real.waitForEvent("download", { timeout: 30000 });
-    await real.getByRole("button", { name: "Export video" }).click();
-    const realSaved = await realDownload;
+    await real.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
+    await real.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Flat video" }).click();
+    const realDialog = real.locator("dialog[data-state]");
+    await realDialog.getByRole("button", { name: /Export video/ }).click();
+    await real.locator('dialog[data-state="done"]').waitFor({ timeout: 45000 });
+    const [realSaved] = await Promise.all([
+      real.waitForEvent("download", { timeout: 15000 }),
+      realDialog.getByRole("button", { name: /Download/ }).click(),
+    ]);
     await realSaved.saveAs(resolve(tmpdir(), "capture-real-export.webm"));
     console.log("Real video upload, uncropped fit, replacement, trim, speed, crop, sound, split, and export passed");
     await real.close();
@@ -150,7 +168,7 @@ try {
     const match = footer.match(/(\d+):(\d+)$/);
     if (!match || Number(match[1]) * 60 + Number(match[2]) <= 15) throw new Error(`Long upload was capped: ${footer}`);
     if (await long.locator('.shutter').getAttribute('data-scale') !== '60') throw new Error('Ring did not rescale from 10 to 60 seconds');
-    await long.getByRole('button', { name: 'Open editor' }).click();
+    await long.getByRole('button', { name: /^(Open editor|Start editing)$/ }).click();
     await long.locator('.tlClip').click({ position: { x: 20, y: 20 } });
     await long.getByRole('button', { name: 'Speed', exact: true }).click();
     await long.getByRole('button', { name: '2x' }).click();

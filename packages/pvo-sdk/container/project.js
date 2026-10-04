@@ -43,6 +43,11 @@ export async function packPvoProject({ manifest, assets }) {
     const assetId = media?.asset_id || media?.id;
     if (assetId && !ids.has(assetId)) throw new Error(`Manifest media "${assetId}" is not included in the PVO package.`);
   }
+  if (manifest.poster && !ids.has(manifest.poster.asset_id))
+    throw new Error(`Manifest poster "${manifest.poster.asset_id}" is not included in the PVO package.`);
+  const poster = manifest.poster && prepared.find(({ entry }) => entry.id === manifest.poster.asset_id)?.entry;
+  if (poster && (poster.type !== "image/webp" || poster.length > 5 * 1024 * 1024))
+    throw new Error("The PVO poster must be a WebP image under 5 MiB.");
 
   const headerBytes = textEncoder.encode(JSON.stringify({
     format: "pvo",

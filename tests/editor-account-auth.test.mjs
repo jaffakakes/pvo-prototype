@@ -3,23 +3,27 @@ import test from "node:test";
 import { buildSync } from "esbuild";
 
 const bundled = buildSync({ stdin: { contents: `
-  export { getAccountSession } from "./editor/src/infrastructure/auth/client.ts";
-  export { closeAuthGate, refreshAccountSession, requireAccount, signOutAccount, useAuthGate } from "./editor/src/state/auth/authGateStore.ts";
+  export { exchangeClerkSession, getAccountSession, linkClerkSession } from "./editor/src/infrastructure/auth/client.ts";
+  export { closeAuthGate, refreshAccountSession, refreshAccountSessionAfterSignIn, requireAccount, signOutAccount, useAuthGate } from "./editor/src/state/auth/authGateStore.ts";
   export { resetExportArtifact, useExportArtifact } from "./editor/src/state/export/exportArtifactStore.ts";
 `, resolveDir: process.cwd() }, bundle: true, write: false, format: "esm", platform: "browser" });
-const { closeAuthGate, getAccountSession, refreshAccountSession, requireAccount, resetExportArtifact,
+const { closeAuthGate, exchangeClerkSession, getAccountSession, linkClerkSession, refreshAccountSession, refreshAccountSessionAfterSignIn,
+  requireAccount, resetExportArtifact,
   signOutAccount, useAuthGate, useExportArtifact } =
   await import(`data:text/javascript;base64,${Buffer.from(bundled.outputFiles[0].text).toString("base64")}`);
 
 const originalFetch = globalThis.fetch;
 test.after(() => { globalThis.fetch = originalFetch; });
 
+const accountSession = user => ({ available: true, user, clerkAvailable: false,
+  clerkPublishableKey: null, canLinkEmail: false, emailLinked: false });
+
 test("account gate waits for verified sign-in and resumes the intended action", async () => {
   let signedIn = false;
   globalThis.fetch = async (_path, init) => {
     assert.equal(init.credentials, "same-origin");
     assert.equal(init.redirect, "error");
-    return Response.json({ available: true, user: signedIn ? { id: "person-1", name: "Christina" } : null });
+    return Response.json(accountSession(signedIn ? { id: "person-1", name: "Christina" } : null));
   };
   const allowed = requireAccount("export");
   await new Promise(resolve => setImmediate(resolve));
@@ -33,7 +37,7 @@ test("account gate waits for verified sign-in and resumes the intended action", 
 });
 
 test("dismissal cancels the queued export and a new action checks the live session", async () => {
-  globalThis.fetch = async () => Response.json({ available: true, user: null });
+  globalThis.fetch = async () => Response.json(accountSession(null));
   const allowed = requireAccount("download");
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(useAuthGate.getState().source, "download");
@@ -43,11 +47,67 @@ test("dismissal cancels the queued export and a new action checks the live sessi
   assert.equal((await getAccountSession()).user, null);
 });
 
-test("unconfigured Google sign-in cannot be mistaken for an authenticated session", async () => {
+test("unconfigured sign-in cannot be mistaken for an authenticated session", async () => {
   globalThis.fetch = async () => new Response("Not found", { status: 404 });
-  assert.deepEqual(await getAccountSession(), { available: false, user: null });
-  globalThis.fetch = async () => Response.json({ available: true, user: { id: 123, name: "Bad" } });
+  assert.deepEqual(await getAccountSession(), { available: false, user: null, clerkAvailable: false,
+    clerkPublishableKey: null, canLinkEmail: false, emailLinked: false });
+  globalThis.fetch = async () => Response.json(accountSession({ id: 123, name: "Bad" }));
   await assert.rejects(getAccountSession(), /invalid response/);
+});
+
+test("email sign-in exchanges only a Clerk session token through the same-origin account endpoint", async () => {
+  globalThis.fetch = async (path, init) => {
+    assert.equal(path, "/api/auth/clerk/exchange");
+    assert.equal(init.method, "POST");
+    assert.equal(init.credentials, "same-origin");
+    assert.equal(init.redirect, "error");
+    assert.equal(init.headers.Authorization, "Bearer short-lived-token");
+    assert.equal(init.body, undefined);
+    return Response.json({ user: { id: "account-a", name: "Alice" } });
+  };
+  await exchangeClerkSession("short-lived-token");
+});
+
+test("email linking sends the reviewed Restyle account and handles an identity conflict", async () => {
+  let status = 200;
+  globalThis.fetch = async (path, init) => {
+    assert.equal(path, "/api/auth/clerk/link");
+    assert.equal(init.method, "POST");
+    assert.equal(init.credentials, "same-origin");
+    assert.equal(init.redirect, "error");
+    assert.equal(init.headers.Authorization, "Bearer reviewed-token");
+    assert.equal(init.headers["Content-Type"], "application/json");
+    assert.deepEqual(JSON.parse(init.body), { expectedUserId: "reviewed-user" });
+    return Response.json({ user: null }, { status });
+  };
+  await linkClerkSession("reviewed-token", "reviewed-user");
+  status = 409;
+  await assert.rejects(linkClerkSession("reviewed-token", "reviewed-user"),
+    /already connected to another Restyle account/);
+  status = 412;
+  await assert.rejects(linkClerkSession("reviewed-token", "reviewed-user"),
+    /Restyle account changed/);
+});
+
+test("provider exchange ignores an account check started before its new cookie existed", async () => {
+  let releaseOldCheck;
+  const oldCheckReady = new Promise(resolve => { releaseOldCheck = resolve; });
+  let checks = 0;
+  globalThis.fetch = async () => {
+    checks++;
+    if (checks === 1) {
+      await oldCheckReady;
+      return Response.json(accountSession(null));
+    }
+    return Response.json(accountSession({ id: "email-1", name: "Email creator" }));
+  };
+  const staleCheck = refreshAccountSession();
+  const signedIn = await refreshAccountSessionAfterSignIn();
+  assert.equal(signedIn.user.id, "email-1");
+  releaseOldCheck();
+  assert.equal((await staleCheck).user.id, "email-1");
+  assert.equal(useAuthGate.getState().user.id, "email-1");
+  assert.equal(checks, 2);
 });
 
 test("sign-out and account changes forget account-owned links while retaining the local export", async () => {
@@ -71,7 +131,7 @@ test("sign-out and account changes forget account-owned links while retaining th
   useExportArtifact.setState({ publication, publicationKey: "another-old-key", publicationTitle: "Old title" });
   globalThis.fetch = async (_path, init) => {
     assert.equal(init.method, "GET");
-    return Response.json({ available: true, user: { id: "account-b", name: "Bob" } });
+    return Response.json(accountSession({ id: "account-b", name: "Bob" }));
   };
   await refreshAccountSession();
   assert.equal(useAuthGate.getState().user.id, "account-b");
@@ -97,7 +157,7 @@ test("a failed account check forgets the previous account's ready link", async (
   assert.equal(useExportArtifact.getState().publicationTitle, null);
   assert.notEqual(useExportArtifact.getState().publicationKey, "account-a-key");
 
-  globalThis.fetch = async () => Response.json({ available: true, user: { id: "account-b", name: "Bob" } });
+  globalThis.fetch = async () => Response.json(accountSession({ id: "account-b", name: "Bob" }));
   await refreshAccountSession();
   assert.equal(useAuthGate.getState().user.id, "account-b");
   assert.equal(useExportArtifact.getState().publication, null);
@@ -115,8 +175,8 @@ test("a pre-logout account check cannot restore the old account or authorize its
   globalThis.fetch = async (_path, init) => {
     if (init.method === "POST") return Response.json({ user: null });
     checks++;
-    if (checks === 1) { await oldCheck; return Response.json({ available: true, user: { id: "account-a", name: "Alice" } }); }
-    return Response.json({ available: true, user: null });
+    if (checks === 1) { await oldCheck; return Response.json(accountSession({ id: "account-a", name: "Alice" })); }
+    return Response.json(accountSession(null));
   };
 
   const staleCheck = refreshAccountSession();
@@ -150,7 +210,7 @@ test("a session check finishing during logout cannot authorize a queued action",
   globalThis.fetch = async (_path, init) => {
     if (init.method === "POST") { await logout; return Response.json({ user: null }); }
     await oldCheck;
-    return Response.json({ available: true, user: { id: "account-a", name: "Alice" } });
+    return Response.json(accountSession({ id: "account-a", name: "Alice" }));
   };
 
   const staleCheck = refreshAccountSession();
@@ -178,8 +238,7 @@ test("a lost logout response verifies whether to clear or retain the account lin
   globalThis.fetch = async (_path, init) => {
     if (init.method === "POST") throw new Error("Logout response lost");
     checks++;
-    return Response.json({ available: true,
-      user: accountIsSignedIn ? { id: "account-a", name: "Alice" } : null });
+    return Response.json(accountSession(accountIsSignedIn ? { id: "account-a", name: "Alice" } : null));
   };
 
   await signOutAccount();

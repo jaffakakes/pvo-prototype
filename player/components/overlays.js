@@ -4,6 +4,7 @@ import { applyVideoMotion } from "./video-motion.js";
 import { createComponentMotion } from "./motion.js";
 import { componentWithRuntimeState } from "./state.js";
 import { observeDiagnostic } from "../../packages/pvo-sdk/index.js";
+import { canvasPixelSize } from "../../packages/pvo-component-runtime/index.js";
 
 export function createOverlayRenderer({ session, refs, adapters }) {
   const entries = new Map();
@@ -45,9 +46,13 @@ export function createOverlayRenderer({ session, refs, adapters }) {
     }
     applyVideoMotion(refs.video, sceneLayers?.clips, adapters.elapsedTime(),
       adapters.activeClip()?.end - adapters.activeClip()?.start);
-    refs.overlay.style.zIndex = sceneLayers ? "auto" : "2";
-    refs.video.style.position = sceneLayers ? "relative" : "";
-    refs.video.style.zIndex = sceneLayers ? String(Math.max(0, order.indexOf("video")) + 1) : "";
+    // Keep authored layers on both sides of the video: animated footage can
+    // reveal a lower layer. Chrome and dimming use separate stack positions.
+    const videoLayer = sceneLayers ? Math.max(0, order.indexOf("video")) * 2 + 2 : 2;
+    refs.overlay.style.zIndex = sceneLayers ? "auto" : "4";
+    refs.video.style.zIndex = String(videoLayer);
+    refs.frame.style.setProperty("--video-layer-z", String(videoLayer));
+    refs.frame.style.setProperty("--player-chrome-layer", String(order.length * 2 + 10));
     for (const text of texts) {
       let canvas = textEntries.get(text.id);
       if (!canvas) {
@@ -57,11 +62,11 @@ export function createOverlayRenderer({ session, refs, adapters }) {
       }
       canvas.className = "capture-text";
       canvas.dataset.layerId = `text:${text.id}`;
-      canvas.style.cssText = `position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:${order.indexOf(`text:${text.id}`) + 1}`;
-      const width = refs.frame.clientWidth, height = refs.frame.clientHeight;
-      canvas.width = width * 2; canvas.height = height * 2;
+      canvas.style.cssText = `position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:${order.indexOf(`text:${text.id}`) * 2 + 2}`;
+      const { width, height } = canvasPixelSize(session.manifest.canvas?.width, session.manifest.canvas?.height);
+      canvas.width = width; canvas.height = height;
       const context = canvas.getContext("2d");
-      if (context) { context.scale(2, 2); drawText(context, width, height, text, adapters.elapsedTime() - text.start); }
+      if (context) drawText(context, width, height, text, adapters.elapsedTime() - text.start);
     }
     visible.forEach((component) => {
       const retained = entries.get(component.id);
@@ -71,15 +76,20 @@ export function createOverlayRenderer({ session, refs, adapters }) {
       const custom = session.captureMode && session.pvoLanguageSources.has(component.id);
       const interactive = custom || (session.captureMode ? component.kind !== "tooltip" : ["card", "choice", "form"].includes(component.kind));
       position.className = `component-position${interactive ? " interactive" : ""}${session.captureMode ? " capture-position" : ""}`;
+      position.dataset.componentId = component.id;
+      position.dataset.componentKind = component.kind;
       if (custom) position.classList.add("code-position", `code-${component.kind}`);
       if (session.captureMode) {
-        if (sceneLayers) position.style.zIndex = String(order.indexOf(`component:${component.id}`) + 1);
+        if (sceneLayers) position.style.zIndex = String(order.indexOf(`component:${component.id}`) * 2 + 2);
         position.dataset.layerId = `component:${component.id}`;
+        position.dataset.authoredMotion = String(Boolean(Object.keys(component.restyle_capture?.animation?.tracks || {}).length));
+        position.dataset.belowVideo = String(Boolean(sceneLayers && order.indexOf(`component:${component.id}`) < order.indexOf("video")));
       } else {
         position.style.left = `${Number(presentation.x || 0) * 100}%`;
         position.style.top = `${Number(presentation.y || 0) * 100}%`;
         position.style.width = `${Number(presentation.width || 1) * 100}%`;
         position.style.height = `${Number(presentation.height || 1) * 100}%`;
+        position.style.transform = "translate(var(--component-lift-x, 0px), var(--component-lift-y, 0px)) scale(var(--component-lift-scale, 1))";
       }
       refs.overlay.append(position);
       if (custom) {
@@ -111,12 +121,12 @@ export function createOverlayRenderer({ session, refs, adapters }) {
         const selected = (component.kind === "choice" || component.kind === "card") && response
           ? response.index : undefined;
         const displayed = componentWithRuntimeState(component, session.actionRuntime?.state);
-        view.update(displayed, selected, session.captureMode, refs.frame.clientWidth / 247);
+        view.update(displayed, selected, session.captureMode, 1);
         view.setPending?.(session.pendingComponents.has(component.id));
         position.append(view);
       }
       const motion = session.captureMode ? createComponentMotion(position, component, {
-        frame: refs.frame, manifest: session.manifest, elapsedTime: adapters.elapsedTime, custom,
+        manifest: session.manifest, elapsedTime: adapters.elapsedTime,
       }) : null;
       entries.set(component.id, { position, motion });
     });
@@ -140,7 +150,7 @@ export function createOverlayRenderer({ session, refs, adapters }) {
       const selected = (component.kind === "choice" || component.kind === "card") && response
         ? response.index : undefined;
       view.update(componentWithRuntimeState(component, session.actionRuntime?.state), selected,
-        session.captureMode, refs.frame.clientWidth / 247);
+        session.captureMode, 1);
       view.setPending?.(session.pendingComponents.has(componentId));
     });
   }
@@ -155,7 +165,7 @@ export function createOverlayRenderer({ session, refs, adapters }) {
       const component = components.get(view.componentId);
       if (component?.kind !== "tooltip") return;
       view.update(componentWithRuntimeState(component, state), undefined,
-        session.captureMode, refs.frame.clientWidth / 247);
+        session.captureMode, 1);
     });
   }
 

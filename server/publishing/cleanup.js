@@ -1,4 +1,5 @@
 import { discardAttempt } from "./repository.js";
+import { posterKey } from "./poster.js";
 
 export async function cleanPublication(env, id, now = Date.now()) {
   const publication = await env.DB.prepare("SELECT * FROM publications WHERE id = ?").bind(id).first();
@@ -11,6 +12,10 @@ export async function cleanPublication(env, id, now = Date.now()) {
     try {
       await discardAttempt(env.DB, env.MEDIA, id, { id: attempt.id, key: attempt.object_key });
     } catch { console.error("Publication storage cleanup deferred", id, attempt.id); }
+  }
+  if (publication.status === "deleting") {
+    try { await env.MEDIA.delete(posterKey(id)); }
+    catch { console.error("Publication poster cleanup deferred", id); return; }
   }
   await env.DB.prepare(`UPDATE publications SET status = 'deleted', object_key = NULL, active_attempt = NULL
     WHERE id = ? AND status = 'deleting' AND NOT EXISTS
@@ -37,4 +42,17 @@ export async function cleanupPublications(env, now = Date.now()) {
   }
   await env.DB.prepare(`INSERT INTO maintenance_state (name, value) VALUES ('orphan-cursor', ?)
     ON CONFLICT(name) DO UPDATE SET value = excluded.value`).bind(objects.truncated ? objects.cursor : "").run();
+
+  // A deletion racing a cover upload may leave a deterministic poster object.
+  const posterCursor = await env.DB.prepare("SELECT value FROM maintenance_state WHERE name = 'orphan-poster-cursor'").first();
+  const posters = await env.MEDIA.list({ prefix: "posters/", limit: 100,
+    ...(posterCursor?.value ? { cursor: posterCursor.value } : {}) });
+  for (const object of posters.objects) {
+    if (object.uploaded.getTime() > now - 86400000) continue;
+    const id = object.key.slice("posters/".length);
+    const ready = await env.DB.prepare("SELECT 1 AS found FROM publications WHERE id = ? AND status = 'ready'").bind(id).first();
+    if (!ready) await env.MEDIA.delete(object.key);
+  }
+  await env.DB.prepare(`INSERT INTO maintenance_state (name, value) VALUES ('orphan-poster-cursor', ?)
+    ON CONFLICT(name) DO UPDATE SET value = excluded.value`).bind(posters.truncated ? posters.cursor : "").run();
 }

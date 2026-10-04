@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { chromium } from "playwright-core";
-import { sourceModules } from "../helpers/source-assets.mjs";
+import { playerSourceAssets } from "../helpers/player-assets.mjs";
 import { validateFontAsset, fontFamily } from "../../../packages/pvo-fonts/index.js";
 import { packageManifestFonts } from "../../../packages/pvo-fonts/portable.js";
 import { packPvoProject, PVO_SPEC_VERSION } from "../../../packages/pvo-sdk/index.js";
@@ -13,17 +13,7 @@ const font = validateFontAsset({
   faces: [{ dataUrl: `data:font/woff2;base64,${(await readFile(new URL("../../../editor/src/fonts/peace-sans.woff2", import.meta.url))).toString("base64")}`, weight: "400 700", style: "normal" }],
 });
 const family = fontFamily(font);
-const served = new Map();
-for (const directory of ["player", "packages/pvo-fonts", "packages/pvo-animation", "packages/pvo-sdk", "packages/pvo-code-runtime", "packages/pvo-component-runtime", "packages/pvo-text-runtime", "packages/pvo-language"]) {
-  for (const [path, asset] of await sourceModules(new URL(`../../../${directory}/`, import.meta.url), `/${directory}`)) served.set(path, asset);
-}
-for (const [route, path, type] of [
-  ["/player/", "player/index.html", "text/html"],
-  ["/player/styles.css", "player/styles.css", "text/css"],
-  ["/packages/pvo-language/pkg/pvo_language.js", "packages/pvo-language/pkg/pvo_language.js", "text/javascript"],
-  ["/packages/pvo-language/pkg/pvo_language_bg.wasm", "packages/pvo-language/pkg/pvo_language_bg.wasm", "application/wasm"],
-  ...["peace-sans", "open-sauce-600", "open-sauce-700"].map(name => [`/player/fonts/${name}.woff2`, `editor/src/fonts/${name}.woff2`, "font/woff2"]),
-]) served.set(route, { body: await readFile(new URL(`../../../${path}`, import.meta.url)), type });
+const served = await playerSourceAssets();
 const texts = [{ id: 1, text: "Portable font", start: 0, end: 2, x: 50, y: 70, style: { fontAsset: font } }];
 const manifest = {
   spec_version: PVO_SPEC_VERSION, initial_scene: "main", canvas: { ratio: "9:16" },
