@@ -172,6 +172,9 @@ export async function createLocalReplyRepository({
       const index = next.findIndex(
         (box) => box.id === id && box.owner === owner,
       );
+      // Ownership and expiry must still hold when this serialized write begins.
+      // Another queued deletion or expiry pruning may have removed the box.
+      if (index < 0) throw new HttpError(404, "This reply box is unavailable.");
       next.splice(index, 1);
     });
   }

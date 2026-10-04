@@ -88,3 +88,60 @@ test("concurrent public replies observe the minute quota and resume when its win
     "After the window",
   );
 });
+
+test("concurrent deletes cannot remove a different owner's box after the first delete wins", async (t) => {
+  const { boxes, directory } = await fixture(t);
+  const target = await boxes.create("owner", "Delete this", "http://localhost");
+  const retained = await boxes.create(
+    "another-owner",
+    "Keep this",
+    "http://localhost",
+  );
+  // Both HTTP requests can pass their ownership read before either queued write completes.
+  boxes.owned(target.id, "owner");
+  boxes.owned(target.id, "owner");
+  const attempts = await Promise.allSettled([
+    boxes.remove(target.id, "owner"),
+    boxes.remove(target.id, "owner"),
+  ]);
+  assert.equal(
+    attempts.filter((attempt) => attempt.status === "fulfilled").length,
+    1,
+  );
+  assert.equal(
+    attempts.find((attempt) => attempt.status === "rejected").reason.status,
+    404,
+  );
+  assert.equal(
+    boxes.list("another-owner", "http://localhost")[0].id,
+    retained.id,
+  );
+  assert.deepEqual(
+    JSON.parse(await readFile(join(directory, "reply-boxes.json"), "utf8")).map(
+      (box) => box.id,
+    ),
+    [retained.id],
+  );
+});
+
+test("a box expiring between its ownership read and queued delete leaves the next box intact", async (t) => {
+  const { REPLY_BOX_LIFETIME_MS } =
+    await import("../../server/replies/limits.js");
+  const { boxes, advance } = await fixture(t);
+  const expiring = await boxes.create("owner", "Old box", "http://localhost");
+  advance(1000);
+  const retained = await boxes.create(
+    "another-owner",
+    "New box",
+    "http://localhost",
+  );
+  advance(REPLY_BOX_LIFETIME_MS - 1001);
+  boxes.owned(expiring.id, "owner");
+  const deletion = boxes.remove(expiring.id, "owner");
+  advance(2);
+  await assert.rejects(deletion, (error) => error.status === 404);
+  assert.equal(
+    boxes.list("another-owner", "http://localhost")[0].id,
+    retained.id,
+  );
+});
