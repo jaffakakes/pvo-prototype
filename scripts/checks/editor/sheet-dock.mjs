@@ -124,12 +124,12 @@ try {
   await page.goto(editorUrl, { waitUntil: "networkidle" });
   const visit = page.getByRole("button", { name: "Visit Site", exact: true });
   if (await visit.isVisible()) await visit.click();
-  await page.getByRole("button", { name: "Add sound", exact: true }).click();
-  const cameraSheet = page.getByRole("dialog", { name: "Sound", exact: true });
+  await page.locator('input[type="file"]').setInputFiles(videoFile);
+  await page.getByRole("button", { name: "Start over", exact: true }).click();
+  const cameraSheet = page.getByRole("dialog", { name: "Start over?", exact: true });
   assert.equal(await cameraSheet.getAttribute("aria-modal"), "true", "Camera sheets must remain modal");
   assert.equal(await page.locator(".sheetScrim:visible").count(), 1);
-  await cameraSheet.getByRole("button", { name: "Close", exact: true }).click();
-  await page.locator('input[type="file"]').setInputFiles(videoFile);
+  await cameraSheet.getByRole("button", { name: "Keep", exact: true }).click();
   await page.getByRole("button", { name: "Open editor", exact: true }).click();
   await page.evaluate(() => document.fonts.ready);
   await page.locator(".editorWorkspace").waitFor();

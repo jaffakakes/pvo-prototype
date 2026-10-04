@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { total } from "../../domain/clips/timing";
 import { projectRatio } from "../../domain/project/ratio";
 import { sceneRouteLabel } from "../../domain/scenes/references";
+import { useWideLayout } from "../../infrastructure/viewport";
 import { useCapture } from "../../state/captureStore";
 import { cx } from "../../styles";
 import { Icon } from "../../ui/Icon";
@@ -19,6 +20,7 @@ import { importVideos } from "./videoImport";
 
 export function Camera() {
   const s = useCapture();
+  const wide = useWideLayout();
   const {
     videoRef,
     freezeRef,
@@ -223,13 +225,15 @@ export function Camera() {
             >
               <Icon name="close" />
             </button>
-            <button
-              className={cx("soundPill")}
-              onClick={() => s.patch({ sheet: "sound" })}
-            >
-              <Icon name="music" size={15} />{" "}
-              <span>{s.sound ? SOUNDS[s.sound].name : "Add sound"}</span>
-            </button>
+            {wide && (
+              <button
+                className={cx("soundPill")}
+                onClick={() => s.patch({ sheet: "sound" })}
+              >
+                <Icon name="music" size={15} />{" "}
+                <span>{s.sound ? SOUNDS[s.sound].name : "Add sound"}</span>
+              </button>
+            )}
             <button
               className={cx("sq42 flipButton")}
               data-switching={displayCameraStatus === "switching"}
