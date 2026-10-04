@@ -39,7 +39,7 @@ scripts/
 
 Rust, the `wasm32-unknown-unknown` target, and wasm-pack are needed for language builds. The browser bridge imports generated `pkg/` bindings; build them before editor builds or tests that bundle the editor. `target/`, `pkg/`, and `dist/` are output, not source to edit.
 
-The application build includes public About, Privacy and Terms pages from [`public/`](../public/) but excludes demo, PVO documentation pages and demo media. To prepare development/demo fixtures, use `node scripts/build/share-demo.mjs <source.pvo> <output.pvo> <preview.mp4>`; it requires ffmpeg. See the [Cloudflare publishing guide](../docs/engineering/cloudflare-publishing.md) for Google account, D1/R2 and pending public-domain setup.
+The application build includes public About, Privacy and Terms pages from [`public/`](../public/) for `https://getrestyle.app`, but excludes demo, PVO documentation pages and demo media. To prepare development/demo fixtures, use `node scripts/build/share-demo.mjs <source.pvo> <output.pvo> <preview.mp4>`; it requires ffmpeg. See the [Cloudflare publishing guide](../docs/engineering/cloudflare-publishing.md) for Google account, D1/R2, DNS verification and OAuth Branding setup.
 
 ## Local Google sign-in
 

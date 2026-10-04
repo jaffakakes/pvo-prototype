@@ -1,13 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { generateKeyPair, exportJWK, createLocalJWKSet, SignJWT } from "jose";
 import { verifyGoogleIdentity } from "../server/auth/google.js";
 import { signCookie, verifyCookie } from "../server/auth/tokens.js";
 import { authRoute } from "../server/auth/routes.js";
 import { cleanupAccountSessions, createAccountSession, getAccountSession } from "../server/auth/sessions.js";
 import { configuration } from "../server/config.js";
-import { digest } from "../server/identity.js";
-import { workerFixture, ORIGIN, SECRET } from "./publishing-server.helpers.mjs";
+import { digest, randomId } from "../server/identity.js";
+import { workerFixture, ORIGIN, SECRET, tinyMp4 } from "./publishing-server.helpers.mjs";
 
 const sessionCookieName = "__Host-pvo-session";
 
@@ -153,5 +154,46 @@ test("scheduled account cleanup removes expired sessions without depending on me
     const { results } = await f.db.prepare("SELECT token_hash FROM sessions").all();
     assert.equal(results.length, 1);
     assert.notEqual(results[0].token_hash, "expired-token");
+  } finally { await f.close(); }
+});
+
+test("apex sign-in is canonical while existing workers.dev publication links remain readable", async () => {
+  const deployment = JSON.parse(await readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"));
+  const origin = "https://getrestyle.app";
+  const legacyOrigin = "https://lingering-butterfly-9ba8.jaffakakes28.workers.dev";
+  assert.equal(deployment.vars.PUBLIC_ORIGIN, origin);
+  assert.deepEqual(deployment.routes, [{ pattern: "getrestyle.app", custom_domain: true }]);
+  assert.equal(deployment.workers_dev, true);
+
+  const f = await workerFixture({ PUBLIC_ORIGIN: origin, GOOGLE_CLIENT_ID: "client",
+    GOOGLE_CLIENT_SECRET: "test-provider-secret" }, { createSessions: false });
+  try {
+    const cookie = (await createAccountSession({ sub: "legacy-publication-owner", name: "Creator" },
+      { DB: f.db, SESSION_SECRET: SECRET })).split(";", 1)[0];
+    const account = await f.mf.dispatchFetch(`${origin}/api/auth/session`, { headers: { Cookie: cookie } });
+    assert.equal((await account.json()).user.name, "Creator");
+    const publishing = await f.mf.dispatchFetch(`${origin}/api/publishing`, { headers: { Cookie: cookie } });
+    assert.deepEqual(await publishing.json(), { available: true, hasSession: true, maxBytes: 52428800 });
+    const legacyAccount = await f.mf.dispatchFetch(`${legacyOrigin}/api/auth/session`, { headers: { Cookie: cookie } });
+    assert.deepEqual(await legacyAccount.json(), { available: false, user: null });
+    const legacyPublishing = await f.mf.dispatchFetch(`${legacyOrigin}/api/publishing`, { headers: { Cookie: cookie } });
+    assert.equal((await legacyPublishing.json()).available, false);
+
+    const id = randomId();
+    const key = `exports/${id}/video.mp4`;
+    const file = tinyMp4();
+    const now = Date.now();
+    const owner = await f.db.prepare("SELECT id FROM users").first();
+    await f.bucket.put(key, file);
+    await f.db.prepare(`INSERT INTO publications (id, owner_id, idempotency_key, title, filename, format,
+      content_type, bytes, status, object_key, created_at, expires_at)
+      VALUES (?, ?, ?, 'Legacy video', 'video.mp4', 'video', 'video/mp4', ?, 'ready', ?, ?, ?)`)
+      .bind(id, owner.id, randomId(), file.size, key, now, now + 86400000).run();
+    const player = await f.mf.dispatchFetch(`${legacyOrigin}/player/${id}`);
+    assert.equal(player.status, 200);
+    assert((await player.text()).includes(`${legacyOrigin}/media/${id}`));
+    const media = await f.mf.dispatchFetch(`${legacyOrigin}/media/${id}`);
+    assert.equal(media.status, 200);
+    assert.equal((await media.arrayBuffer()).byteLength, file.size);
   } finally { await f.close(); }
 });

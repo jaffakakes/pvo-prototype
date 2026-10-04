@@ -3,6 +3,8 @@
   "name": "lingering-butterfly-9ba8",
   "account_id": "84880ccf8f98bb789d58cbea5436a645",
   "main": "server/worker.js",
+  "workers_dev": true,
+  "routes": [{ "pattern": "getrestyle.app", "custom_domain": true }],
   "ai": { "binding": "AI" },
   "durable_objects": {
     "bindings": [
@@ -28,7 +30,7 @@
     "ASSISTANT_PROVIDER": "runpod",
     "RUNPOD_TRANSCRIPTION_ENDPOINT": "5uqruzvtb96kph",
     "PUBLISHING_ENABLED": "true",
-    "PUBLIC_ORIGIN": "https://lingering-butterfly-9ba8.jaffakakes28.workers.dev",
+    "PUBLIC_ORIGIN": "https://getrestyle.app",
     "MAX_UPLOAD_BYTES": "52428800",
     "OWNER_STORAGE_BYTES": "524288000",
     "TOTAL_STORAGE_BYTES": "5368709120"
