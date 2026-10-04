@@ -2,46 +2,120 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 
-const root = fileURLToPath(new URL("../../../", import.meta.url)).replaceAll("\\", "/");
-const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe", headless: true });
+const root = fileURLToPath(new URL("../../../", import.meta.url)).replaceAll(
+  "\\",
+  "/",
+);
+const browser = await chromium.launch({
+  executablePath:
+    process.env.CHROME_PATH ||
+    "C:/Program Files/Google/Chrome/Application/chrome.exe",
+  headless: true,
+});
 try {
   const page = await browser.newPage();
   page.setDefaultTimeout(10000);
-  await page.goto(process.env.EDITOR_URL || "http://127.0.0.1:5173/", { waitUntil: "domcontentloaded" });
-  const result = await page.evaluate(async root => {
-    const { defaultFields } = await import("/src/domain/components/defaults.ts");
+  await page.goto(process.env.EDITOR_URL || "http://127.0.0.1:5173/", {
+    waitUntil: "domcontentloaded",
+  });
+  const result = await page.evaluate(async (root) => {
+    const { defaultFields } =
+      await import("/src/domain/components/defaults.ts");
     const { createLook } = await import("/src/domain/components/look.ts");
-    const { componentLanguageSource } = await import("/src/domain/components/languageCompilation.ts");
+    const { componentLanguageSource } =
+      await import("/src/domain/components/languageCompilation.ts");
     const { buildPvoManifest } = await import("/src/domain/export/manifest.ts");
-    const { compilePvoComponent } = await import(`/@fs/${root}packages/pvo-language/index.js`);
-    const { registerComponentView } = await import(`/@fs/${root}player/components/legacy-view.js`);
+    const { compilePvoComponent } = await import(
+      `/@fs/${root}packages/pvo-language/index.js`
+    );
+    const { registerComponentView } = await import(
+      `/@fs/${root}player/components/component-view.js`
+    );
     registerComponentView();
     const compiledCases = [];
     for (const type of ["tooltip", "card", "choice", "form"]) {
       for (const preset of ["bold", "soft", "minimal", "contrast"]) {
         const component = {
-          id: `${type}-${preset}`, type, sceneId: "main", at: 1, dur: 3, x: 50, y: 50,
-          ...(type === "tooltip" ? {} : { responsePolicy: { dispatch: "interaction", unanswered: "continue" } }),
-          fields: defaultFields(type), look: createLook(preset, type === "choice" ? 2 : type === "tooltip" ? 0 : 1),
+          id: `${type}-${preset}`,
+          type,
+          sceneId: "main",
+          at: 1,
+          dur: 3,
+          x: 50,
+          y: 50,
+          ...(type === "tooltip"
+            ? {}
+            : {
+                responsePolicy: {
+                  dispatch: "interaction",
+                  unanswered: "continue",
+                },
+              }),
+          fields: defaultFields(type),
+          look: createLook(
+            preset,
+            type === "choice" ? 2 : type === "tooltip" ? 0 : 1,
+          ),
         };
         await compilePvoComponent(type, componentLanguageSource(component));
         compiledCases.push(`${type}/${preset}`);
       }
     }
     const component = {
-      id: "form-player", type: "form", sceneId: "main", at: 1, dur: null, x: 50, y: 60,
+      id: "form-player",
+      type: "form",
+      sceneId: "main",
+      at: 1,
+      dur: null,
+      x: 50,
+      y: 60,
       responsePolicy: { dispatch: "interaction", unanswered: "pause" },
       fields: {
-      ...defaultFields("form"), formFields: [{ name: "Height", type: "number" }, { name: "Subscribe?", type: "yesno" }], waitingLabel: "Working…",
+        ...defaultFields("form"),
+        formFields: [
+          { name: "Height", type: "number" },
+          { name: "Subscribe?", type: "yesno" },
+        ],
+        waitingLabel: "Working…",
       },
       look: createLook("soft", 1),
     };
     component.look.body.color = "#FF5C5C";
     component.look.body.size = "XL";
     component.look.btns[0].fill = "#00E5A0";
-    const clip = { id: 1, url: null, color: "#000", srcDur: 10, in: 0, out: 10, speed: 1, zoom: 1, mirror: false, width: 720, height: 1280, fit: "cover" };
-    const scene = { id: "main", name: "Main", parent: null, clips: [clip], texts: [], components: [component], muted: true, sound: -1 };
-    const manifest = buildPvoManifest({ scenes: [scene], currentSceneId: "main", ratio: "9:16", allowedDomains: [] }, [{ scene, assetId: "video", name: "main.mp4", type: "video/mp4" }]);
+    const clip = {
+      id: 1,
+      url: null,
+      color: "#000",
+      srcDur: 10,
+      in: 0,
+      out: 10,
+      speed: 1,
+      zoom: 1,
+      mirror: false,
+      width: 720,
+      height: 1280,
+      fit: "cover",
+    };
+    const scene = {
+      id: "main",
+      name: "Main",
+      parent: null,
+      clips: [clip],
+      texts: [],
+      components: [component],
+      muted: true,
+      sound: -1,
+    };
+    const manifest = buildPvoManifest(
+      {
+        scenes: [scene],
+        currentSceneId: "main",
+        ratio: "9:16",
+        allowedDomains: [],
+      },
+      [{ scene, assetId: "video", name: "main.mp4", type: "video/mp4" }],
+    );
     const view = document.createElement("pvo-component-view");
     view.update(manifest.components[0], undefined, true, 1);
     document.body.append(view);
@@ -55,7 +129,9 @@ try {
       background: getComputedStyle(form).backgroundColor,
       inputColor: getComputedStyle(input).color,
       inputSize: getComputedStyle(input).fontSize,
-      inputType: input.type, step: input.step, selection: select.value,
+      inputType: input.type,
+      step: input.step,
+      selection: select.value,
       submitFill: getComputedStyle(submit).backgroundColor,
     };
     input.value = "172.5";
@@ -82,41 +158,110 @@ try {
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(async () => {
-    const moduleUrl = name => performance.getEntriesByType("resource").map(item => item.name).find(url => url.includes(`/src/state/${name}.ts`));
+    const moduleUrl = (name) =>
+      performance
+        .getEntriesByType("resource")
+        .map((item) => item.name)
+        .find((url) => url.includes(`/src/state/${name}.ts`));
     const { useCapture } = await import(moduleUrl("captureStore"));
-    const { setComponentAuthoringTab } = await import(moduleUrl("components/componentAuthoringStore"));
+    const { setComponentAuthoringTab } = await import(
+      moduleUrl("components/componentAuthoringStore")
+    );
     window.lookTestCapture = useCapture;
-    const clip = { id: 1, url: null, color: "#333", srcDur: 10, in: 0, out: 10, speed: 1, zoom: 1, mirror: false, width: 720, height: 1280, fit: "cover" };
-    const scene = { id: "main", name: "Main", parent: null, clips: [clip], texts: [], components: [], muted: true, sound: -1, layers: ["video"] };
-    useCapture.getState().patch({ scenes: [scene], clips: scene.clips, texts: [], components: [], currentSceneId: "main", screen: "editor", sheet: null, t: 2, past: [], future: [] });
+    const clip = {
+      id: 1,
+      url: null,
+      color: "#333",
+      srcDur: 10,
+      in: 0,
+      out: 10,
+      speed: 1,
+      zoom: 1,
+      mirror: false,
+      width: 720,
+      height: 1280,
+      fit: "cover",
+    };
+    const scene = {
+      id: "main",
+      name: "Main",
+      parent: null,
+      clips: [clip],
+      texts: [],
+      components: [],
+      muted: true,
+      sound: -1,
+      layers: ["video"],
+    };
+    useCapture.getState().patch({
+      scenes: [scene],
+      clips: scene.clips,
+      texts: [],
+      components: [],
+      currentSceneId: "main",
+      screen: "editor",
+      sheet: null,
+      t: 2,
+      past: [],
+      future: [],
+    });
     const id = useCapture.getState().addComponent("choice");
     setComponentAuthoringTab(id, "content");
   });
   await page.locator("#restyle-launch-splash").waitFor({ state: "detached" });
-  const secondOption = await page.locator('[data-look-part="button:1"]').boundingBox();
+  const secondOption = await page
+    .locator('[data-look-part="button:1"]')
+    .boundingBox();
   assert(secondOption, "The second option is visible on the video");
-  await page.mouse.click(secondOption.x + secondOption.width / 2, secondOption.y + secondOption.height / 2);
-  assert.equal(await page.getByRole("tab", { name: "Look", exact: true }).getAttribute("aria-selected"), "true");
-  assert.equal(await page.locator('[data-look-part="button:1"]').getAttribute("data-part-selected"), "true");
-  await page.getByRole("button", { name: "Custom", exact: true }).first().click();
-  const historyLength = () => page.evaluate(() => window.lookTestCapture.getState().past.length);
+  await page.mouse.click(
+    secondOption.x + secondOption.width / 2,
+    secondOption.y + secondOption.height / 2,
+  );
+  assert.equal(
+    await page
+      .getByRole("tab", { name: "Look", exact: true })
+      .getAttribute("aria-selected"),
+    "true",
+  );
+  assert.equal(
+    await page
+      .locator('[data-look-part="button:1"]')
+      .getAttribute("data-part-selected"),
+    "true",
+  );
+  await page
+    .getByRole("button", { name: "Custom", exact: true })
+    .first()
+    .click();
+  const historyLength = () =>
+    page.evaluate(() => window.lookTestCapture.getState().past.length);
   const beforeSlider = await historyLength();
   const slider = page.getByRole("slider", { name: "Fill hue", exact: true });
   await slider.focus();
   await slider.press("ArrowRight");
   await slider.press("ArrowRight");
   await slider.press("ArrowRight");
-  assert.equal(await historyLength(), beforeSlider + 1, "Continuous colour changes group undo");
+  assert.equal(
+    await historyLength(),
+    beforeSlider + 1,
+    "Continuous colour changes group undo",
+  );
   const hex = page.getByRole("textbox", { name: "Fill hex", exact: true });
   await hex.focus();
   await hex.press("ControlOrMeta+A");
   await hex.pressSequentially("#123456");
   assert.equal(await hex.inputValue(), "#123456");
-  const editedLook = await page.evaluate(() => window.lookTestCapture.getState().components[0].look);
+  const editedLook = await page.evaluate(
+    () => window.lookTestCapture.getState().components[0].look,
+  );
   assert.equal(editedLook.btns[1].fill, "#123456");
   assert.equal(editedLook.btns[0].fill, "#FF9FBC");
-  console.log("PASS: all 16 preset/compiler contracts and exported native player appearance, numeric forms and pending labels.");
-  console.log("PASS: video tap selects its Look part, continuous slider changes group undo, and full hex typing preserves the other option.");
+  console.log(
+    "PASS: all 16 preset/compiler contracts and exported native player appearance, numeric forms and pending labels.",
+  );
+  console.log(
+    "PASS: video tap selects its Look part, continuous slider changes group undo, and full hex typing preserves the other option.",
+  );
 } finally {
   await browser.close();
 }

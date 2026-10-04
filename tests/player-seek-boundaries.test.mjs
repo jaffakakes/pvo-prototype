@@ -1,3 +1,4 @@
+import { createPlaybackTransitionState } from "../player/playback/transition-state.js";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createOutcomeRouter } from "../player/actions/outcomes.js";
@@ -6,12 +7,24 @@ import { createPlaybackSession } from "../player/playback/session.js";
 import { createTimelineReader } from "../player/playback/timeline.js";
 import { createPlaybackTransitions } from "../player/playback/transitions.js";
 
-function choice(id, policy = { dispatch: "layer_end", unanswered: "pause" }, end = 5) {
+function choice(
+  id,
+  policy = { dispatch: "layer_end", unanswered: "pause" },
+  end = 5,
+) {
   return {
     id,
     kind: "choice",
     response_policy: policy,
-    presentation: { scene: "main", start: 1, end, x: .1, y: .1, width: .5, height: .3 },
+    presentation: {
+      scene: "main",
+      start: 1,
+      end,
+      x: 0.1,
+      y: 0.1,
+      width: 0.5,
+      height: 0.3,
+    },
     options: [
       { label: "First", action: { type: "custom", name: "first" } },
       { label: "Second", action: { type: "custom", name: "second" } },
@@ -25,7 +38,9 @@ function seekHarness(components, { currentTime = 2, dispatch } = {}) {
   session.manifest = { components };
   session.currentTimeline = {
     id: "main",
-    clips: [{ id: "clip", asset_id: "video", scene: "main", start: 0, end: 10 }],
+    clips: [
+      { id: "clip", asset_id: "video", scene: "main", start: 0, end: 10 },
+    ],
   };
   session.actionRuntime = {};
   session.assets.set("video", {});
@@ -34,10 +49,17 @@ function seekHarness(components, { currentTime = 2, dispatch } = {}) {
     currentTime,
     paused: true,
     dataset: { assetId: "video" },
-    pause() { this.paused = true; },
-    async play() { this.paused = false; },
+    pause() {
+      this.paused = true;
+    },
+    async play() {
+      this.paused = false;
+    },
   };
-  const timeline = createTimelineReader({ session, readMediaTime: () => video.currentTime });
+  const timeline = createTimelineReader({
+    session,
+    readMediaTime: () => video.currentTime,
+  });
   const dispatched = [];
   const statuses = [];
   const media = createVideoController({
@@ -49,7 +71,9 @@ function seekHarness(components, { currentTime = 2, dispatch } = {}) {
       finishExperience() {},
       renderOverlays() {},
       updateProgress() {},
-      setStatus(message) { statuses.push(message); },
+      setStatus(message) {
+        statuses.push(message);
+      },
       showControls() {},
       replaceActionRuntime() {},
       componentCanReceiveResponse: () => true,
@@ -123,7 +147,9 @@ test("an authored seek skips response boundaries instead of dispatching them en 
 test("restart invalidates a crossed response before its late completion can restore the old seek", async () => {
   const component = choice("deferred");
   let finishDispatch;
-  const dispatched = new Promise((resolve) => { finishDispatch = resolve; });
+  const dispatched = new Promise((resolve) => {
+    finishDispatch = resolve;
+  });
   const harness = seekHarness([component], {
     dispatch: async (id) => {
       await dispatched;
@@ -132,20 +158,26 @@ test("restart invalidates a crossed response before its late completion can rest
       harness.session.awaitingComponent = null;
     },
   });
-  harness.session.manifest.playback = { initial_timeline: "main", timelines: [harness.session.currentTimeline] };
+  harness.session.manifest.playback = {
+    initial_timeline: "main",
+    timelines: [harness.session.currentTimeline],
+  };
   harness.session.capturedResponses.set(component.id, {
     componentId: component.id,
     index: 0,
     status: "captured",
   });
   const transitions = createPlaybackTransitions({
-    session: harness.session,
+    state: createPlaybackTransitionState(harness.session),
     refs: { video: harness.video, endScreen: { hidden: true } },
     adapters: {
       ...harness.timeline,
       componentsForClip: () => [component],
       componentCanReceiveResponse: () => true,
-      renderOverlays() {}, updateProgress() {}, setStatus() {}, showControls() {},
+      renderOverlays() {},
+      updateProgress() {},
+      setStatus() {},
+      showControls() {},
       replaceActionRuntime() {},
       timelineById: () => harness.session.currentTimeline,
       loadClip: (...args) => harness.media.loadClip(...args),
@@ -175,24 +207,35 @@ test("a newer scrub wins when an older cross-clip seek finishes loading later", 
       { id: "two", asset_id: "two", scene: "main", start: 0, end: 5 },
     ],
   };
-  session.assets = new Map([["one", {}], ["two", {}]]);
-  session.assetUrls = new Map([["one", "blob:one"], ["two", "blob:two"]]);
+  session.assets = new Map([
+    ["one", {}],
+    ["two", {}],
+  ]);
+  session.assetUrls = new Map([
+    ["one", "blob:one"],
+    ["two", "blob:two"],
+  ]);
   const listeners = new Map();
   const video = {
     currentTime: 2,
     paused: true,
     dataset: { assetId: "one" },
-    pause() {}, play: async () => {}, load() {},
+    pause() {},
+    play: async () => {},
+    load() {},
     addEventListener(name, listener) {
       const entries = listeners.get(name) || new Set();
       entries.add(listener);
       listeners.set(name, entries);
     },
-    removeEventListener(name, listener) { listeners.get(name)?.delete(listener); },
+    removeEventListener(name, listener) {
+      listeners.get(name)?.delete(listener);
+    },
   };
-  const clipAtElapsedTime = (value) => value < 5
-    ? { index: 0, local: value, elapsed: value }
-    : { index: 1, local: value - 5, elapsed: value };
+  const clipAtElapsedTime = (value) =>
+    value < 5
+      ? { index: 0, local: value, elapsed: value }
+      : { index: 1, local: value - 5, elapsed: value };
   const media = createVideoController({
     session,
     refs: { video },
@@ -200,15 +243,22 @@ test("a newer scrub wins when an older cross-clip seek finishes loading later", 
       elapsedTime: () => 2,
       clipAtElapsedTime,
       activeClip: () => session.currentTimeline.clips[session.currentClipIndex],
-      updateTimelineLabel() {}, renderOverlays() {}, updateProgress() {}, setStatus() {}, showControls() {},
-      finishExperience() {}, replaceActionRuntime() {}, componentCanReceiveResponse: () => true,
+      updateTimelineLabel() {},
+      renderOverlays() {},
+      updateProgress() {},
+      setStatus() {},
+      showControls() {},
+      finishExperience() {},
+      replaceActionRuntime() {},
+      componentCanReceiveResponse: () => true,
       dispatchCapturedResponse() {},
     },
   });
 
   const older = media.seekToElapsed(8);
   const newer = media.seekToElapsed(2);
-  for (const listener of [...(listeners.get("loadedmetadata") || [])]) listener();
+  for (const listener of [...(listeners.get("loadedmetadata") || [])])
+    listener();
   await Promise.all([older, newer]);
 
   assert.equal(session.currentClipIndex, 0);
