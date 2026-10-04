@@ -1,6 +1,12 @@
 /* --u is one preview pixel at a 247px-wide reference frame. */
 .compOverlay {
   --u: 1px;
+  /* Authored preview content keeps its own palette when editor chrome changes. */
+  --text: #f2f0e9;
+  --surface: #15151c;
+  --ink: #111;
+  --violet: #a78bfa;
+  --accent: #ff2d78;
   position: absolute;
   z-index: 3;
   transform: translate(-50%, -50%);

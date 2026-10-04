@@ -1,16 +1,16 @@
-.dialog { width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); padding: 0; overflow-y: auto; background: var(--ground); color: var(--text); border: 3px solid #000; border-radius: 24px; box-shadow: 10px 10px 0 var(--frame-shadow); font-family: var(--f-ui); }
+.dialog { width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); padding: 0; overflow-y: auto; background: var(--surface); color: var(--text); border: 3px solid var(--outline); border-radius: 24px; box-shadow: 10px 10px 0 var(--frame-shadow); font-family: var(--f-ui); }
 .dialog::backdrop { background: #000b; }
 .content { padding: 26px; }
 .heading { display: flex; align-items: flex-start; gap: 12px; }
 .heading h2 { flex: 1; margin: 0; font: 26px/1.1 var(--f-display); }
-.close { width: 44px; height: 44px; flex: none; display: grid; place-items: center; padding: 0; background: var(--surface); border: 2px solid #000; border-radius: 10px; cursor: pointer; }
+.close { width: 44px; height: 44px; flex: none; display: grid; place-items: center; padding: 0; background: var(--button-secondary-bg); color: var(--button-secondary-text); border: 2px solid var(--button-border); border-radius: 10px; cursor: pointer; }
 .content > p { color: var(--muted); font-size: 13px; line-height: 1.7; margin: 16px 0 0; }
 .content .availability { padding: 14px; background: var(--surface); border: 2px solid var(--q14); border-radius: 12px; color: var(--text); }
-.content .error { color: #ff7585; }
+.content .error { color: var(--red); }
 .content .disclosure { font-size: 12px; line-height: 1.5; }
 .disclosure a { color: var(--text); font-weight: 700; text-underline-offset: 2px; }
-.footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 12px; padding: 20px 26px; background: #08080c; border-top: 2px solid var(--q08); }
-.footer button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 14px; border: 2px solid #000; border-radius: 12px; background: var(--surface); box-shadow: 3px 3px 0 #000; font-size: 12px; font-weight: 800; cursor: pointer; }
-.footer .google { background: #fff; color: #181818; }
+.footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 12px; padding: 20px 26px; background: var(--deep); border-top: 2px solid var(--q08); }
+.footer button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 14px; border: 2px solid var(--button-border); border-radius: 12px; background: var(--button-secondary-bg); color: var(--button-secondary-text); box-shadow: 3px 3px 0 var(--button-shadow); font-size: 12px; font-weight: 800; cursor: pointer; }
+.footer .google { background: var(--button-primary-bg); color: var(--button-primary-text); }
 .footer button:disabled { opacity: .55; cursor: not-allowed; }
 @media (max-width: 430px) { .content { padding: 22px 18px; } .heading h2 { font-size: 23px; } .footer { padding: 18px; } }

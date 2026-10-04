@@ -38,7 +38,7 @@
 }
 
 .docked .header button { min-width: 44px; min-height: 44px; }
-.docked .header .done { color: #ff9fbc; font: 800 13px var(--f-ui); border: 0; background: transparent; }
+.docked .header .done { color: var(--highlight); font: 800 13px var(--f-ui); border: 0; background: transparent; }
 
 .header h2,
 .header p {

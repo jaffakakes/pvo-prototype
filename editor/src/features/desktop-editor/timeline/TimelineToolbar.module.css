@@ -6,7 +6,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 2px solid var(--q06);
 }
 .tools,
 .right {
@@ -29,32 +29,32 @@
   place-items: center;
   padding: 0;
   background: transparent;
-  color: #d8d5cb;
+  color: var(--text-secondary);
   border: 0;
   border-radius: 9px;
   cursor: pointer;
   font-size: 20px;
 }
 .tool:hover:enabled {
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--q08);
 }
 .tool:disabled {
-  color: #4a4757;
+  color: var(--disabled);
   cursor: not-allowed;
 }
 .tool[data-active="true"] {
-  color: #ff6fa6;
-  background: rgba(255, 45, 120, 0.14);
+  color: var(--highlight);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
 .tool:focus-visible,
 .zoom:focus-visible {
-  outline: 2px solid #ff6fa6;
+  outline: 2px solid var(--highlight);
   outline-offset: 2px;
 }
 .separator {
   width: 2px;
   height: 22px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--q10);
   margin: 0 6px;
   flex-shrink: 0;
 }
@@ -70,20 +70,20 @@
   line-height: 24px;
   font-size: 11px;
   font-weight: 800;
-  border: 2px dashed rgba(255, 255, 255, 0.16);
+  border: 2px dashed var(--q14);
   border-radius: 20px;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--muted-strong);
 }
 .selection[data-selected="true"] {
-  background: var(--selection-color, #ff2d78);
-  border: 2px solid #000;
-  box-shadow: 2px 2px 0 #000;
-  color: #111;
+  background: var(--button-primary-bg);
+  border: 2px solid var(--button-border);
+  box-shadow: 2px 2px 0 var(--button-shadow);
+  color: var(--button-primary-text);
 }
 .zoom {
   width: 96px;
   height: 5px;
-  accent-color: #ff6fa6;
+  accent-color: var(--highlight);
   cursor: pointer;
 }
 .assistant {
@@ -118,12 +118,12 @@
 }
 
 .tool[data-tone="keyframe"]:enabled {
-  color: #ffd23e;
-  background: rgba(255, 210, 62, 0.12);
+  color: var(--yellow);
+  background: color-mix(in srgb, var(--yellow) 12%, transparent);
 }
 
 .tool[data-tone="delete"]:enabled {
-  color: #ff6f81;
+  color: var(--red);
 }
 
 .following {
@@ -136,11 +136,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  background: #ff2d78;
-  border: 2px solid #000;
+  background: var(--button-primary-bg);
+  border: 2px solid var(--button-border);
   border-radius: 20px;
-  box-shadow: 2px 2px 0 #000;
-  color: #fff;
+  box-shadow: 2px 2px 0 var(--button-shadow);
+  color: var(--button-primary-text);
   font-size: 11px;
   font-weight: 800;
 }
@@ -150,7 +150,7 @@
   height: 7px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: #ff6fa6;
+  background: var(--button-primary-text);
 }
 
 @media (max-width: 1279px) {

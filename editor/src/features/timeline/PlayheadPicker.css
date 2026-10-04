@@ -15,7 +15,7 @@
 }
 .playheadPickAccept {
   background: var(--violet);
-  color: var(--ink);
+  color: var(--violet-foreground);
 }
 :global(.app[data-playhead-pick="true"]) .editorHead,
 :global(.app[data-playhead-pick="true"]) .previewArea,
@@ -40,7 +40,7 @@
   margin-left: 6px;
   padding: 3px 5px;
   background: var(--violet);
-  color: var(--ink);
+  color: var(--violet-foreground);
   border-radius: 6px;
   font: 800 9px/1 var(--f-ui);
 }
