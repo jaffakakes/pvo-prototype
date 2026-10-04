@@ -202,28 +202,30 @@ try {
   await denied.getByRole("button", { name: "Flip camera" }).click();
   await denied.getByRole("heading", { name: "Camera is off" }).waitFor();
   await denied.getByRole("button", { name: "Allow camera" }).waitFor();
-  const deniedCalls = await denied.evaluate(() => window.__cameraRequests.length);
-  if (deniedCalls !== 2) {
-    throw new Error(`A video-only camera switch unexpectedly retried the microphone: ${deniedCalls} requests`);
+  const deniedSwitches = await denied.evaluate(() => window.__cameraRequests.slice(1).map(request => request.constraints));
+  if (!deniedSwitches.length || deniedSwitches.length > 2 || deniedSwitches.some(constraints => constraints.audio !== false)) {
+    throw new Error(`A video-only camera switch unexpectedly retried the microphone: ${JSON.stringify(deniedSwitches)}`);
   }
   await deniedContext.close();
 
   const silentContext = await browser.newContext({ viewport: { width: 390, height: 844 }, permissions: ["camera", "microphone"] });
   const silent = await silentContext.newPage();
-  await instrumentCamera(silent, { failRequests: [1] });
+  // Deny both preferred and minimal video requests with audio so this fixture
+  // actually reaches the video-only acquisition path.
+  await instrumentCamera(silent, { failRequests: [1, 2] });
   await silent.goto(editorUrl, { waitUntil: "domcontentloaded" });
   await silent.waitForFunction(() => document.querySelector(".live")?.videoWidth > 0);
   await silent.getByRole("button", { name: "Flip camera" }).click();
-  await silent.waitForFunction(() => window.__cameraRequests.length === 3 &&
-    document.querySelector(".live")?.srcObject?.getVideoTracks()[0] === window.__cameraRequests[2]?.stream?.getVideoTracks()[0] &&
+  await silent.waitForFunction(() => window.__cameraRequests.length === 4 &&
+    document.querySelector(".live")?.srcObject?.getVideoTracks()[0] === window.__cameraRequests[3]?.stream?.getVideoTracks()[0] &&
     document.querySelector(".live")?.videoWidth > 0);
   const silentState = await silent.evaluate(() => ({
     calls: window.__cameraRequests.length,
-    initialRetryVideoOnly: window.__cameraRequests[1].constraints.audio === false,
-    flipVideoOnly: window.__cameraRequests[2].constraints.audio === false,
+    initialRetryVideoOnly: window.__cameraRequests[2].constraints.audio === false,
+    flipVideoOnly: window.__cameraRequests[3].constraints.audio === false,
     noAudio: document.querySelector(".live").srcObject.getAudioTracks().length === 0,
   }));
-  if (silentState.calls !== 3 || !silentState.initialRetryVideoOnly || !silentState.flipVideoOnly || !silentState.noAudio) {
+  if (silentState.calls !== 4 || !silentState.initialRetryVideoOnly || !silentState.flipVideoOnly || !silentState.noAudio) {
     throw new Error(`Camera without microphone did not remain usable after flip: ${JSON.stringify(silentState)}`);
   }
   await silentContext.close();

@@ -148,6 +148,10 @@ Keep new feature code in its owning folder rather than expanding the compatibili
 
 Feature CSS is co-located with its views. `EditorStyles.module.css` imports the extracted styles in their original cascade order, retaining a single compatibility namespace for existing `cx` consumers and pointer hooks. New independent feature modules can continue using their own CSS modules. Further migration of the compatibility namespace and shared fonts is separate work.
 
+### Camera light
+
+The capture feature keeps flash selection separate from illumination. `useCamera` exposes the ready video track; `useRecorder` reports actual capture separately from the clip's save/finalization state. `useCameraFlash` arms a white front-camera screen light or a supported rear-camera torch only during capture. `cameraFlash` owns capability detection, actual camera facing, serialized constraint updates, and verification through track settings. Stopped recording, ended tracks, switching cameras, and leaving capture release the light. The screen layer stays outside recorded video and preserves access to the stop control.
+
 ### Try diagnostics
 
 `createTrySession` composes an explicit host with focused request, response, runtime-bridge and diagnostic owners. `domain/preview/playback` supplies pure boundary/resume decisions; request cleanup and response epochs prevent a stopped or replaced session from applying late outcomes.
