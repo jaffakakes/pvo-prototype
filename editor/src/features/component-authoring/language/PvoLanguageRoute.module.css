@@ -1,15 +1,15 @@
 .route{display:flex;flex:1;min-height:0;flex-direction:column;gap:9px;overflow:hidden}
-.tabs{display:flex;flex:none;min-width:0;gap:3px;padding:4px;background:#15151C;border:2px solid #000;border-radius:13px}
-.tabs button{height:36px;flex:1;min-width:0;padding:0 5px;background:transparent;color:rgba(242,240,233,.68);border:2px solid transparent;border-radius:9px;font:700 12px var(--f-ui);cursor:pointer}
-.tabs button[data-on=true]{background:#A78BFA;color:#111;border-color:#000;box-shadow:2px 2px 0 #000;font-weight:800}
-.tabs button:focus-visible,.status button:focus-visible{outline:2px solid #FF9FBC;outline-offset:2px}
-.help{flex:none;margin:0;color:rgba(242,240,233,.56);font:600 10.5px/1.4 var(--f-ui)}
-.status{display:flex;flex:none;align-items:center;gap:8px;min-height:19px;color:#00E5A0;font:700 10.5px/1.35 var(--f-ui)}
-.status[data-state=checking]{color:#A78BFA}.status[data-state=invalid]{align-items:flex-start;color:#FF5C5C}
+.tabs{display:flex;flex:none;min-width:0;gap:3px;padding:4px;background:var(--surface);border:2px solid var(--outline);border-radius:13px}
+.tabs button{height:36px;flex:1;min-width:0;padding:0 5px;background:transparent;color:var(--muted);border:2px solid transparent;border-radius:9px;font:700 12px var(--f-ui);cursor:pointer}
+.tabs button[data-on=true]{background:var(--violet);color:var(--surface);border-color:var(--outline);box-shadow:2px 2px 0 var(--button-shadow);font-weight:800}
+.tabs button:focus-visible,.status button:focus-visible{outline:2px solid var(--highlight);outline-offset:2px}
+.help{flex:none;margin:0;color:var(--muted);font:600 10.5px/1.4 var(--f-ui)}
+.status{display:flex;flex:none;align-items:center;gap:8px;min-height:19px;color:var(--green);font:700 10.5px/1.35 var(--f-ui)}
+.status[data-state=checking]{color:var(--violet)}.status[data-state=invalid]{align-items:flex-start;color:var(--red)}
 .status span{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .status[data-state=invalid] span{overflow:visible;white-space:normal}
-.status button{flex:none;max-width:110px;padding:2px 5px;background:transparent;color:#FF9FBC;border:0;font:800 10.5px var(--f-ui);cursor:pointer}
-.status small{flex:none;color:rgba(242,240,233,.4);font:600 10px var(--f-ui)}
+.status button{flex:none;max-width:110px;padding:2px 5px;background:transparent;color:var(--highlight);border:0;font:800 10.5px var(--f-ui);cursor:pointer}
+.status small{flex:none;color:var(--faint);font:600 10px var(--f-ui)}
 @media (max-width:360px){.tabs button{font-size:11px}.status small{display:none}}
 @media (prefers-reduced-motion:reduce){.route *{animation:none!important;transition:none!important}}
 

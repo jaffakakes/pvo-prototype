@@ -168,7 +168,7 @@ try {
   await page.getByRole("button", { name: /^(Try|Try viewer preview)$/ }).first().click();
   assert.equal(await tree.count(), 0, "Starting Try must close the tree");
   assert.equal(await row.count(), 0, "Try hides scene navigation");
-  await page.getByRole("button", { name: /^(Stop|Stop viewer preview)$/ }).first().click();
+  await page.getByRole("button", { name: /^(Stop trying|Stop viewer preview)$/ }).first().click();
   await assertCurrent("Main");
 
   await page.getByRole("button", { name: "Components", exact: true }).click();
@@ -247,4 +247,3 @@ try {
   await context.close();
   await browser.close();
 }
-

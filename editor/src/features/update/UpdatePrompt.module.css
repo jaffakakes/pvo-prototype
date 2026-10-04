@@ -22,9 +22,9 @@
 .dismiss {
   flex: none;
   min-height: 44px;
-  color: var(--text);
-  background: var(--surface);
-  border: 2.5px solid #000;
+  color: var(--button-secondary-text);
+  background: var(--button-secondary-bg);
+  border: 2.5px solid var(--button-border);
   border-radius: 13px;
   box-shadow: 3px 3px 0 var(--accent);
   cursor: pointer;
@@ -47,6 +47,7 @@
   object-fit: contain;
   filter: invert(1);
 }
+:global(html[data-theme="light"]) .update img { filter: none; }
 
 .update span {
   min-width: 0;
@@ -57,9 +58,9 @@
 .update strong {
   flex: none;
   padding: 5px 7px;
-  color: var(--ink);
+  color: var(--pale-foreground);
   background: var(--pale);
-  border: 1.5px solid #000;
+  border: 1.5px solid var(--outline);
   border-radius: 7px;
   font: 800 11px/1 var(--f-ui);
 }

@@ -120,7 +120,7 @@
 }
 .textToggles button[aria-pressed="true"] {
   background: var(--pale);
-  color: var(--ink);
+  color: var(--pale-foreground);
   border-color: var(--pale);
 }
 .textRange {

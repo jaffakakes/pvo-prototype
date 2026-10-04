@@ -40,10 +40,10 @@
   width: 58px;
   height: 58px;
   padding: 0;
-  border: 3px solid #000;
+  border: 3px solid var(--outline);
   border-radius: 50%;
   background: var(--surface);
-  box-shadow: 3px 3px 0 #000;
+  box-shadow: 3px 3px 0 var(--button-shadow);
   color: var(--text);
   pointer-events: auto;
   touch-action: none;
@@ -53,6 +53,7 @@
 }
 
 .orb img { width: 32px; height: 32px; object-fit: contain; filter: invert(1); opacity: .45; pointer-events: none; transition: opacity 250ms ease; }
+:global(html[data-theme="light"]) .root[data-assistant-phase="idle"]:not([data-thread-open="true"]) .orb img { filter: none; }
 .stopLabel { display: grid; justify-items: center; gap: 3px; font-size: 10px; font-weight: 800; line-height: 1; }
 .stopIcon { width: 10px; height: 10px; border-radius: 2px; background: currentColor; }
 .orbRing { position: absolute; inset: -6px; border-radius: 50%; pointer-events: none; }
@@ -65,10 +66,10 @@
   min-width: 22px;
   height: 22px;
   padding: 0 3px;
-  border: 2px solid #000;
+  border: 2px solid var(--outline);
   border-radius: 12px;
   background: var(--violet);
-  color: #fff;
+  color: var(--violet-foreground);
   font-size: 10px;
   font-weight: 800;
   line-height: 1;
@@ -80,6 +81,7 @@
 .root:not([data-assistant-phase="idle"]) .orb {
   bottom: calc(var(--assistant-orb-bottom) + 8px);
   background: var(--accent);
+  color: var(--button-primary-text);
   animation: breathe 1600ms ease-in-out infinite;
 }
 .root[data-assistant-phase="typing"] .orb,
@@ -109,7 +111,7 @@
   border: 2px solid var(--violet);
   border-radius: 12px;
   background: var(--input);
-  box-shadow: 2px 2px 0 #000;
+  box-shadow: 2px 2px 0 var(--button-shadow);
   color: var(--text);
   font-size: 13px;
   font-weight: 700;
@@ -117,7 +119,7 @@
 }
 .composer input:focus { border-color: var(--pale); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pale) 25%, transparent); }
 .composer input::placeholder { color: var(--muted); }
-.composer button { flex: 0 0 44px; display: grid; place-items: center; padding: 0; border: 2px solid #000; border-radius: 12px; background: var(--accent); box-shadow: 2px 2px 0 #000; color: var(--text); }
+.composer button { flex: 0 0 44px; display: grid; place-items: center; padding: 0; border: 2px solid var(--button-border); border-radius: 12px; background: var(--button-primary-bg); box-shadow: 2px 2px 0 var(--button-shadow); color: var(--button-primary-text); }
 .composer button:disabled { background: color-mix(in srgb, var(--input) 93%, var(--text)); opacity: .6; }
 
 .liveBubble {
@@ -128,14 +130,14 @@
   max-height: calc(100% - var(--assistant-bubble-bottom) - 16px);
   padding: 12px 14px;
   box-sizing: border-box;
-  border: 2.5px solid #000;
+  border: 2.5px solid var(--outline);
   border-radius: 18px;
   background: var(--surface);
-  box-shadow: 4px 4px 0 #000;
+  box-shadow: 4px 4px 0 var(--button-shadow);
   pointer-events: auto;
   animation: rise 300ms ease-out both;
 }
-.liveBubble::after { content: ""; position: absolute; bottom: -10px; right: 22px; width: 16px; height: 16px; background: var(--surface); border-right: 2.5px solid #000; border-bottom: 2.5px solid #000; transform: rotate(45deg); }
+.liveBubble::after { content: ""; position: absolute; bottom: -10px; right: 22px; width: 16px; height: 16px; background: var(--surface); border-right: 2.5px solid var(--outline); border-bottom: 2.5px solid var(--outline); transform: rotate(45deg); }
 .root[data-assistant-phase="listening"][data-voice-side="left"] .liveBubble { left: 14px; right: auto; }
 .root[data-assistant-phase="listening"][data-voice-side="left"] .liveBubble::after { left: 28px; right: auto; }
 .liveHeading { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; color: var(--violet); font-size: 10px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; }
@@ -158,8 +160,8 @@
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes listening { 50% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--violet) 13%, transparent); } }
 @keyframes breathe {
-  0%, 100% { box-shadow: 3px 3px 0 #000; }
-  50% { box-shadow: 3px 3px 0 #000, 0 0 22px color-mix(in srgb, var(--accent) 55%, transparent); }
+  0%, 100% { box-shadow: 3px 3px 0 var(--button-shadow); }
+  50% { box-shadow: 3px 3px 0 var(--button-shadow), 0 0 22px color-mix(in srgb, var(--accent) 55%, transparent); }
 }
 @keyframes blink { 50% { opacity: 0; } }
 

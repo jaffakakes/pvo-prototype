@@ -44,9 +44,9 @@
   bottom: -9px;
   width: 16px;
   height: 16px;
-  border-right: 3px solid #000;
-  border-bottom: 3px solid #000;
-  background: #08080c;
+  border-right: 3px solid var(--outline);
+  border-bottom: 3px solid var(--outline);
+  background: var(--deep);
   transform: rotate(45deg);
 }
 
@@ -70,10 +70,10 @@
   height: var(--dock-height);
   padding-top: var(--thread-handle-height, 26px);
   box-sizing: border-box;
-  border-top: 3px solid #000;
+  border-top: 3px solid var(--outline);
   border-radius: 26px 26px 0 0;
-  background: #111117;
-  box-shadow: 0 -6px 0 #ff9fbc59;
+  background: var(--bar);
+  box-shadow: 0 -6px 0 color-mix(in srgb, var(--pale) 35%, transparent);
 }
 
 .threadDock .threadContent { pointer-events: auto; }

@@ -46,7 +46,7 @@
   flex: 0 0 52px;
   min-width: 0;
   padding: 6px 10px 0;
-  border-bottom: 2px solid rgba(255, 255, 255, .06);
+  border-bottom: 2px solid var(--q06);
   box-sizing: border-box;
 }
 
@@ -68,10 +68,10 @@
   gap: 6px;
   height: 32px;
   padding: 0 12px;
-  border: 2px solid rgba(255, 255, 255, .1);
+  border: 2px solid var(--q10);
   border-radius: 10px;
   background: transparent;
-  color: var(--inactive);
+  color: var(--muted-strong);
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
@@ -81,7 +81,7 @@
 .debugTabs button[aria-selected="true"],
 .stateTabs button[aria-selected="true"] {
   background: var(--input);
-  border-color: #000;
+  border-color: var(--outline);
   box-shadow: 2px 2px 0 var(--accent);
   color: var(--text);
   font-weight: 800;
@@ -98,11 +98,11 @@
   min-width: 18px;
   height: 18px;
   padding: 0 4px;
-  border: 2px solid #000;
+  border: 2px solid var(--outline);
   border-radius: 12px;
   background: var(--red);
   box-sizing: border-box;
-  color: #111;
+  color: var(--surface);
   font-size: 10px;
   font-weight: 800;
   line-height: 1;
@@ -113,7 +113,7 @@
   height: 24px;
   flex: none;
   border-radius: 2px;
-  background: rgba(255, 255, 255, .1);
+  background: var(--q10);
 }
 
 .statusLine {
@@ -157,18 +157,18 @@
   width: 28px;
   height: 28px;
   flex: none;
-  border: 2px solid #000;
+  border: 2px solid var(--outline);
   border-radius: 8px;
   background: var(--text);
-  box-shadow: 2px 2px 0 #000;
+  box-shadow: 2px 2px 0 var(--button-shadow);
   box-sizing: border-box;
-  color: #111;
+  color: var(--surface);
 }
 
 .statusGlyph[data-state="held"] { background: var(--yellow); }
 .statusGlyph[data-state="failed"] { background: var(--red); }
 .statusGlyph[data-state="waiting"] { background: var(--pale); }
-.statusGlyph[data-state="stopped"] { background: var(--inactive); }
+.statusGlyph[data-state="stopped"] { background: var(--disabled); }
 
 .statusWords {
   display: flex;
@@ -193,7 +193,7 @@
 .statusSub {
   min-width: 0;
   overflow: hidden;
-  color: rgba(242, 240, 233, .58);
+  color: var(--muted);
   font-size: 12px;
   font-weight: 600;
   text-overflow: ellipsis;
@@ -207,7 +207,7 @@
   flex: none;
   height: 26px;
   padding: 0 7px 0 9px;
-  border: 2px solid rgba(167, 139, 250, .5);
+  border: 2px solid color-mix(in srgb, var(--violet) 50%, transparent);
   border-radius: 8px;
   background: var(--surface);
   box-sizing: border-box;
@@ -217,7 +217,7 @@
 }
 
 .holdLink:hover { border-color: var(--violet); }
-.holdLink svg { color: #c4b3fc; }
+.holdLink svg { color: var(--violet); }
 .violetDot { width: 7px; height: 7px; flex: none; border-radius: 50%; background: var(--violet); }
 
 .requestCount {
@@ -227,9 +227,9 @@
   flex: none;
   height: 26px;
   padding: 0 9px;
-  border: 2px solid rgba(255, 159, 188, .45);
+  border: 2px solid color-mix(in srgb, var(--pale) 45%, transparent);
   border-radius: 8px;
-  background: rgba(255, 159, 188, .08);
+  background: color-mix(in srgb, var(--pale) 8%, transparent);
   color: var(--pale);
   font-size: 11px;
   font-weight: 800;
@@ -241,7 +241,7 @@
   width: 10px;
   height: 10px;
   flex: none;
-  border: 2px solid rgba(255, 159, 188, .3);
+  border: 2px solid color-mix(in srgb, var(--pale) 30%, transparent);
   border-top-color: var(--pale);
   border-radius: 50%;
   box-sizing: border-box;
@@ -281,11 +281,11 @@
   white-space: nowrap;
 }
 
-.captureButton { font-weight: 700; color: var(--text-2, #d8d5cb); }
-.captureButton[data-active="true"] { border-color: rgba(255, 159, 188, .6); }
+.captureButton { font-weight: 700; color: var(--text-secondary); }
+.captureButton[data-active="true"] { border-color: color-mix(in srgb, var(--pale) 60%, transparent); }
 .reportButton,
-.secondaryButton { border-color: #000; box-shadow: 2px 2px 0 #000; }
-.primaryButton { border-color: #000; background: var(--accent); box-shadow: 2px 2px 0 #000; }
+.secondaryButton { border-color: var(--button-border); background: var(--button-secondary-bg); color: var(--button-secondary-text); box-shadow: 2px 2px 0 var(--button-shadow); }
+.primaryButton { border-color: var(--button-border); background: var(--button-primary-bg); color: var(--button-primary-text); box-shadow: 2px 2px 0 var(--button-shadow); }
 .closeButton,
 .moreButton { width: 30px; padding: 0; }
 
@@ -296,7 +296,7 @@
   height: 18px;
   flex: none;
   padding: 1px;
-  border: 2px solid #000;
+  border: 2px solid var(--outline);
   border-radius: 10px;
   background: var(--input);
   box-sizing: border-box;
@@ -305,7 +305,7 @@
 .toggleTrack i {
   width: 12px;
   height: 12px;
-  border: 1.5px solid #000;
+  border: 1.5px solid var(--outline);
   border-radius: 50%;
   background: var(--text);
   box-sizing: border-box;
@@ -333,7 +333,7 @@
   width: 47%;
   min-width: 0;
   min-height: 0;
-  border-right: 2px solid rgba(255, 255, 255, .06);
+  border-right: 2px solid var(--q06);
   box-sizing: border-box;
 }
 
@@ -369,7 +369,7 @@
   height: 16px;
   padding: 0 3px;
   border-radius: 9px;
-  background: rgba(255, 255, 255, .1);
+  background: var(--q10);
   box-sizing: border-box;
   font-size: 9.5px;
   font-weight: 800;
@@ -388,7 +388,7 @@
   border-radius: 9px;
   background: var(--input);
   box-sizing: border-box;
-  color: var(--inactive);
+  color: var(--muted-strong);
   font-size: 11.5px;
   font-weight: 700;
   white-space: nowrap;
@@ -404,7 +404,7 @@
   flex: 0 0 36px;
   min-width: 0;
   padding: 0 12px;
-  border-top: 2px solid rgba(255, 255, 255, .06);
+  border-top: 2px solid var(--q06);
   box-sizing: border-box;
   color: var(--faint);
   font-size: 11px;
@@ -414,7 +414,7 @@
 
 .listFooter > span { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .followButton { display: inline-flex; align-items: center; gap: 8px; padding: 0; border: 0; background: none; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
-.textButton { padding: 0; border: 0; background: none; color: #ff83a8 !important; font-size: 11.5px; font-weight: 800; white-space: nowrap; }
+.textButton { padding: 0; border: 0; background: none; color: var(--highlight) !important; font-size: 11.5px; font-weight: 800; white-space: nowrap; }
 
 .popoverScrim {
   position: absolute;
@@ -434,7 +434,7 @@
   max-height: 250px;
   padding: 8px;
   overflow: auto;
-  border: 3px solid #000;
+  border: 3px solid var(--outline);
   border-radius: 16px;
   background: var(--surface);
   box-shadow: 6px 6px 0 var(--frame-shadow);
@@ -463,7 +463,7 @@
   max-width: min(440px, calc(100% - 24px));
   margin: 0;
   padding: 8px 11px;
-  border: 2px solid #000;
+  border: 2px solid var(--outline);
   border-radius: 10px;
   background: var(--surface);
   box-shadow: 3px 3px 0 var(--accent);

@@ -13,10 +13,11 @@
   min-height: 40px;
   margin-left: auto;
   padding: 0 10px;
-  background: var(--surface);
-  border: 2px solid #000;
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  border: 2px solid var(--button-border);
   border-radius: 10px;
-  box-shadow: 2px 2px 0 #000;
+  box-shadow: 2px 2px 0 var(--button-shadow);
   font: 800 11.5px var(--f-ui);
   cursor: pointer;
 }
@@ -37,16 +38,18 @@
   align-items: center;
   justify-content: center;
   padding: 0 11px;
-  background: var(--surface);
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
   border: 2px solid var(--q14);
   border-radius: 11px;
   font: 700 11.5px var(--f-ui);
   cursor: pointer;
 }
 .componentDuration button[data-on="true"] {
-  background: var(--accent);
-  border: 2px solid #000;
-  box-shadow: 2px 2px 0 #000;
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  border: 2px solid var(--button-border);
+  box-shadow: 2px 2px 0 var(--button-shadow);
   font-weight: 800;
 }
 .componentAddRow {
@@ -57,7 +60,7 @@
   padding: 0 12px;
   background: transparent;
   color: var(--violet);
-  border: 2px dashed rgba(167, 139, 250, 0.55);
+  border: 2px dashed color-mix(in srgb, var(--violet) 55%, transparent);
   border-radius: 10px;
   font: 700 11.5px var(--f-ui);
   cursor: pointer;
@@ -89,7 +92,7 @@
 }
 .outcomeRow[data-on="true"] {
   border: 2.5px solid var(--pale);
-  box-shadow: 0 0 0 3px rgba(255, 159, 188, 0.22);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--highlight) 22%, transparent);
 }
 .outcomeRow > i {
   width: 22px;
@@ -97,13 +100,13 @@
   flex: none;
   display: grid;
   place-items: center;
-  border: 2.5px solid rgba(242, 240, 233, 0.35);
+  border: 2.5px solid var(--q14);
   border-radius: 50%;
 }
 .outcomeRow[data-on="true"] > i {
   background: var(--accent);
-  color: var(--text);
-  border: 2px solid #000;
+  color: var(--button-primary-text);
+  border: 2px solid var(--outline);
 }
 .outcomeRow strong {
   display: block;
@@ -133,13 +136,13 @@
   flex: none;
   display: grid;
   place-items: center;
-  border: 2.5px solid rgba(242, 240, 233, 0.35);
+  border: 2.5px solid var(--q14);
   border-radius: 50%;
 }
 .outcomeRow[data-on="true"] .outcomeMain > i {
   background: var(--accent);
-  color: var(--text);
-  border: 2px solid #000;
+  color: var(--button-primary-text);
+  border: 2px solid var(--outline);
 }
 .outcomePlayhead {
   min-height: 36px;
@@ -168,12 +171,12 @@
 }
 .sceneChoices button[data-on="true"] {
   background: var(--violet);
-  color: var(--ink);
-  border-color: #000;
-  box-shadow: 2px 2px 0 #000;
+  color: var(--violet-foreground);
+  border-color: var(--outline);
+  box-shadow: 2px 2px 0 var(--button-shadow);
   font-weight: 800;
 }
-.sceneChoices button:last-child {
+.sceneChoices button:last-child:not([data-on="true"]) {
   color: var(--violet);
   border-style: dashed;
   border-color: var(--violet);

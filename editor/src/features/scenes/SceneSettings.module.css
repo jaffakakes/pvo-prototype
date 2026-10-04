@@ -5,14 +5,15 @@
   min-height: 44px;
   padding: 10px 12px;
   text-align: left;
-  background: var(--surface);
-  border: 2px solid var(--q14);
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  border: 2px solid var(--button-border);
   border-radius: 10px;
   font: 700 12px var(--f-ui);
   cursor: pointer;
 }
 .section button:disabled { opacity: .4; }
-.section button:focus-visible, .form input:focus-visible { outline: 3px solid #FF9FBC; outline-offset: 2px; }
+.section button:focus-visible, .form input:focus-visible { outline: 3px solid var(--highlight); outline-offset: 2px; }
 .section .danger { color: var(--red); }
 .form label { display: flex; flex-direction: column; gap: 8px; font: 700 11px var(--f-ui); }
 .form input { width: 100%; min-height: 44px; padding: 10px; border: 2px solid var(--q14); border-radius: 10px; background: var(--input); color: var(--text); }
