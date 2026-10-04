@@ -202,6 +202,7 @@ export function DesktopTimeline({
             tabIndex={-1}
             style={{ width: (length + 8) * zoom }}
             onPointerDownCapture={(event) => {
+              setCodePreviewFocus(false);
               if (!state.playheadPick) return;
               event.stopPropagation();
               beginScrub(event);

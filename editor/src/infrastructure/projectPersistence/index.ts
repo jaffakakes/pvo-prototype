@@ -42,6 +42,7 @@ type ProjectMarkers = Pick<
   | "past"
   | "future"
   | "ratio"
+  | "coverAt"
   | "allowedDomains"
   | "currentSceneId"
   | "screen"
@@ -62,6 +63,7 @@ function markers(state: PersistenceSnapshot): ProjectMarkers {
     past: state.past,
     future: state.future,
     ratio: state.ratio,
+    coverAt: state.coverAt,
     allowedDomains: state.allowedDomains,
     currentSceneId: state.currentSceneId,
     screen: state.screen,
@@ -90,6 +92,7 @@ function shouldQueue(
     current.past !== previous.past ||
     current.future !== previous.future ||
     current.ratio !== previous.ratio ||
+    current.coverAt !== previous.coverAt ||
     current.allowedDomains !== previous.allowedDomains ||
     current.currentSceneId !== previous.currentSceneId ||
     current.screen !== previous.screen ||

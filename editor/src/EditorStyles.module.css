@@ -12,7 +12,6 @@
 @import "./ui/RatioMenu.css";
 @import "./features/text/TextEntry.css";
 @import "./features/sound/SoundSheet.css";
-@import "./features/export/ExportControls.css";
 @import "./features/create-project/DiscardSheet.css";
 @import "./features/preview/PreviewLayers.css";
 @import "./features/timeline/TimelineLayers.css";

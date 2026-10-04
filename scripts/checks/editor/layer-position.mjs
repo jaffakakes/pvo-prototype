@@ -66,7 +66,11 @@ async function assertPosition(scope, target, expected, message) {
   const yField = scope.getByRole("spinbutton", { name: "Y position (px)", exact: true });
   assert.equal(await xField.inputValue(), String(expected.x), `${message}: X field`);
   assert.equal(await yField.inputValue(), String(expected.y), `${message}: Y field`);
-  const center = await canvasCenter(target);
+  const center = await target.evaluate((element, canvas) => element.classList.contains("compOverlay")
+    && element.dataset.componentFocused === "true"
+    ? { x: Number.parseFloat(element.style.left) / 100 * canvas.width,
+      y: Number.parseFloat(element.style.top) / 100 * canvas.height }
+    : null, CANVAS) ?? await canvasCenter(target);
   assertNear(center.x, expected.x, `${message}: visible X`);
   assertNear(center.y, expected.y, `${message}: visible Y`);
   return { xField, yField };

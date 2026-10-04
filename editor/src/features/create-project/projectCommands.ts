@@ -19,7 +19,7 @@ export async function createProject(input: NewProject, onCreated: () => void = (
     await saveProjectBeforeUpdate();
     const project = input.template && input.clips[0]
       ? templateProject(input.template, input.clips[0], uid)
-      : { scenes: [{ ...mainScene(), clips: input.clips }], currentSceneId: "main", ratio: input.ratio, allowedDomains: [] };
+      : { scenes: [{ ...mainScene(), clips: input.clips }], currentSceneId: "main", ratio: input.ratio, coverAt: 0, allowedDomains: [] };
     const id = crypto.randomUUID();
     useCapture.getState().reset();
     useCapture.getState().patch({

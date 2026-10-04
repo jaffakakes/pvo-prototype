@@ -49,13 +49,12 @@ try {
 
   // Card fields, plus a timeline move and trim, are real project edits.
   await page.getByRole("button", { name: "Components", exact: true }).click();
-  await page.locator(".componentTypeTile").filter({ hasText: "Card" }).click();
-  let dialog = page.getByRole("dialog", { name: "Card" });
-  await dialog.locator(".componentInput").first().fill("Learn about this look");
-  await dialog.locator(".componentTextArea").fill("A short interactive card");
-  await dialog.getByRole("button", { name: "Add button" }).click();
-  await dialog.locator(".componentOptionRow .componentInput").fill("Skip ahead");
-  await dialog.getByRole("button", { name: "Close" }).click();
+  await page.locator(".componentTypeTile").filter({ hasText: "Show a message" }).click();
+  let dialog = page.getByRole("dialog", { name: "Message" });
+  await dialog.getByRole("textbox", { name: "Title" }).fill("Learn about this look");
+  await dialog.getByRole("textbox", { name: "Text" }).fill("A short interactive card");
+  await dialog.getByRole("textbox", { name: "Button 1" }).fill("Skip ahead");
+  await dialog.getByRole("button", { name: "Done" }).click();
   const bar = page.locator(".compBar").first();
   await bar.waitFor();
   const leftBefore = await bar.evaluate(element => Number.parseFloat(element.style.left));
@@ -73,60 +72,75 @@ try {
   const widthRedone = await barWidth();
   assert(Math.abs(widthRedone - widthAfter) < 2, "Redo did not restore the card trim");
 
-  // Set the Card button to jump to the current playhead, then add a pausing Form.
+  // Route the Message button to the current playhead.
   await scrubBy(-50);
   await page.getByRole("button", { name: "Edit", exact: true }).click();
-  dialog = page.getByRole("dialog", { name: "Card" });
-  await dialog.getByRole("button", { name: "Continue" }).click();
-  await page.getByRole("button", { name: /Jump to time/ }).click();
-  await page.getByRole("button", { name: "Back", exact: true }).click();
-  assert.match(await dialog.locator(".componentOutcome").innerText(), /0:01/, "Card outcome did not store the playhead time");
-  await dialog.getByRole("button", { name: "Close" }).click();
+  dialog = page.getByRole("dialog", { name: "Message" });
+  await dialog.getByRole("tab", { name: "Action" }).click();
+  await dialog.getByRole("button", { name: /When viewers tap “Skip ahead”/ }).click();
+  await dialog.getByRole("group", { name: "Viewer action" })
+    .getByRole("button", { name: /Jump to a point/ }).first().click();
+  assert.match(await dialog.getByRole("button", { name: /When viewers tap “Skip ahead”/ }).innerText(),
+    /Jump to a point/, "Message button should route to a point in this scene");
+  await dialog.getByRole("button", { name: "Done" }).click();
 
+  await page.getByRole("button", { name: "Try", exact: true }).click();
+  const messageButton = page.locator(".compCardButtons").getByRole("button", { name: "Skip ahead" });
+  await messageButton.waitFor({ state: "visible", timeout: 5000 });
+  await messageButton.click();
+  await page.waitForFunction(() => /^0:0[1-9]/.test(document.querySelector(".transportTime")?.textContent ?? ""));
+  await page.getByRole("button", { name: "Stop trying", exact: true }).click();
+
+  // Add a pausing Form as a second interactive layer.
   await scrubBy(-25);
   await page.keyboard.press("c");
-  await page.locator(".componentTypeTile").filter({ hasText: "Form" }).click();
+  await page.locator(".componentTypeTile").filter({ hasText: "Ask for details" }).click();
   dialog = page.getByRole("dialog", { name: "Form" });
-  await dialog.locator(".componentInput").fill("Send answer");
-  await dialog.getByRole("button", { name: "Phone" }).click();
-  assert.equal(await dialog.getByRole("button", { name: "Phone" }).getAttribute("data-on"), "true", "Form field selection did not update");
-  await dialog.getByRole("button", { name: "Continue" }).click();
-  await page.getByRole("dialog", { name: /where\?/ }).getByRole("button", { name: /Continue/ }).click();
-  await page.getByRole("button", { name: "Back", exact: true }).click();
-  await page.getByRole("dialog", { name: "Form" }).getByRole("button", { name: "Close" }).click();
+  await dialog.getByRole("textbox", { name: "Heading" }).fill("Tell us more");
+  await dialog.getByRole("textbox", { name: "Submit button" }).fill("Send answer");
+  await dialog.getByRole("textbox", { name: "Field 1 name" }).fill("Name");
+  await dialog.getByRole("tab", { name: "Action" }).click();
+  const pause = dialog.getByRole("switch", { name: "Pause if nobody responds" });
+  if (await pause.getAttribute("aria-checked") !== "true") await pause.click();
+  assert.equal(await pause.getAttribute("aria-checked"), "true", "The Form must wait for a response");
+  await dialog.getByRole("button", { name: "Done" }).click();
+  assert.equal(await page.locator(".compBar").count(), 2, "Both interactive layers should have timeline bars");
 
-  // Viewer preview: the Card routes to 0:01; the Form pauses until submitted.
-  await scrubBy(80);
-  await page.getByRole("button", { name: "Try viewer preview" }).click();
-  await page.locator(".compCardButtons button").waitFor({ state: "visible", timeout: 5000 });
-  await page.locator(".compCardButtons button").click();
-  await page.locator(".holdTag").waitFor({ state: "visible", timeout: 5000 });
-  assert.match(await page.locator(".transportTime").innerText(), /HOLD/, "Form did not pause viewer playback");
-  await page.getByRole("textbox", { name: "Name" }).fill("Ada");
-  await page.getByRole("textbox", { name: "Email" }).fill("ada@example.com");
-  await page.getByRole("textbox", { name: "Phone" }).fill("5551234");
+  // In viewer preview, the Form holds until submitted.
+  await page.getByRole("button", { name: "Try", exact: true }).click();
+  await page.waitForFunction(() => !!document.querySelector(".compForm")
+    && !!document.querySelector(".playBtn:disabled"), null, { timeout: 15000 });
+  const heldTime = await page.locator(".transportTime").innerText();
+  await page.waitForTimeout(250);
+  assert.equal(await page.locator(".transportTime").innerText(), heldTime,
+    "The Form must pause viewer playback until submitted");
+  await page.locator(".compForm").getByLabel("Name", { exact: true }).fill("Ada");
   await page.locator(".compForm").getByRole("button", { name: "Send answer" }).click();
-  await page.locator(".holdTag").waitFor({ state: "hidden", timeout: 5000 });
-  if (await page.getByRole("button", { name: "Stop viewer preview" }).count()) {
-    await page.getByRole("button", { name: "Stop viewer preview" }).click();
-  }
+  await page.waitForFunction(() => !document.querySelector(".playBtn:disabled"), null, { timeout: 5000 });
+  if (await page.getByRole("button", { name: "Stop trying", exact: true }).count())
+    await page.getByRole("button", { name: "Stop trying", exact: true }).click();
 
   // Flat export must remain a playable video, not a PVO package or an overlay burn-in.
-  await page.getByRole("button", { name: "Next" }).click();
-  assert.equal(await page.locator(".formatGrid button").count(), 2, "Export format switch is missing with components");
-  await page.locator(".formatGrid button").first().click();
-  const downloadPromise = page.waitForEvent("download", { timeout: 30000 });
-  await page.getByRole("button", { name: "Export video" }).click();
-  const download = await downloadPromise;
-  assert.match(download.suggestedFilename(), /^restyle-video\.(webm|mp4)$/, "Flat export has the wrong filename");
+  await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
+  await page.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Flat video" }).click();
+  const exportDialog = page.locator("dialog[data-state]");
+  const format = exportDialog.getByRole("combobox", { name: "Export format" });
+  assert.deepEqual(await format.locator("option").evaluateAll(options => options.map(option => option.value)),
+    ["video", "pvo"], "Export format switch is missing with components");
+  await format.selectOption("video");
+  await exportDialog.getByRole("button", { name: /Export video/ }).click();
+  await page.locator('dialog[data-state="done"]').waitFor({ timeout: 60000 });
+  const [download] = await Promise.all([
+    page.waitForEvent("download", { timeout: 15000 }),
+    exportDialog.getByRole("button", { name: /Download/ }).click(),
+  ]);
+  assert.match(download.suggestedFilename(), /\.(webm|mp4)$/, "Flat export has the wrong filename");
   const bytes = await readFile(await download.path());
   assert(bytes.length > 1024, "Flat export is unexpectedly empty");
   assert.notEqual(bytes.subarray(0, 8).toString(), "PVOPACK1", "Flat export is a PVO container");
-  const sample = await page.getByRole("link", { name: "Download" }).evaluate(async link => {
-    const video = document.createElement("video");
+  const sample = await page.locator('[data-export-preview] video[data-visible="true"]').evaluate(async video => {
     video.muted = true;
-    video.src = link.href;
-    await new Promise((resolve, reject) => { video.onloadedmetadata = resolve; video.onerror = reject; });
+    if (video.readyState < 1) await new Promise((resolve, reject) => { video.onloadedmetadata = resolve; video.onerror = reject; });
     video.currentTime = Math.min(.7, Math.max(.1, video.duration / 3));
     await new Promise((resolve, reject) => { video.onseeked = resolve; video.onerror = reject; });
     const canvas = document.createElement("canvas");
@@ -140,7 +154,7 @@ try {
   assert(sample.width > 0 && sample.height > 0, "Flat export is not decodable video");
   assert(sample.luminance > 65, `Card appears to have been burned into the flat video: ${JSON.stringify(sample)}`);
   assert.deepEqual(pageErrors, [], "Uncaught browser errors occurred");
-  console.log(JSON.stringify({ card: "fields, move, trim, undo, redo, jump", form: "fields, continue, pause, submit", export: download.suggestedFilename(), sample }, null, 2));
+  console.log(JSON.stringify({ card: "fields, move, trim, undo, redo, jump", form: "fields, pause, submit", export: download.suggestedFilename(), sample }, null, 2));
 } finally {
   await browser.close();
 }

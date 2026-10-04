@@ -158,13 +158,13 @@ const oldChoice = {
 
 function checkpoint(id, components = [], assetIds = []) {
   return {
-    version: 2,
+    version: 3,
     localId: id,
     projectName: id === "legacy-project" ? "Legacy edit" : "Keep me",
     savedAt: Date.now(),
     project: {
       scenes: [{ id: "main", name: "Main", parent: null, clips: [], texts: [], components, muted: false, sound: 0 }],
-      currentSceneId: "main", ratio: "9:16", allowedDomains: [],
+      currentSceneId: "main", ratio: "9:16", coverAt: 0, allowedDomains: [],
     },
     past: [], future: [], assetIds,
     resume: { screen: "editor", t: 0, sel: 0, selComp: null, selText: null, exportFormat: "video", quality: "1080p" },
@@ -231,7 +231,7 @@ async function run(width) {
   await context.route(`${origin}/api/auth/**`, route => {
     const path = new URL(route.request().url()).pathname;
     if (path === "/api/auth/session") return route.fulfill({ contentType: "application/json",
-      body: JSON.stringify({ available: true, user: signedIn ? { id: "editor-test", name: "Editor tester" } : null }) });
+      body: JSON.stringify({ available: true, clerkAvailable: false, clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: signedIn ? { id: "editor-test", name: "Editor tester" } : null }) });
     if (path === "/api/auth/google/start") {
       signedIn = true;
       return route.fulfill({ contentType: "text/html",
@@ -267,10 +267,12 @@ async function run(width) {
     await saved(page, firstId);
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await page.getByRole("dialog", { name: "Sign in to Restyle", exact: true }).waitFor();
-    await page.getByText("Sign in to export and manage your videos.", { exact: false }).waitFor();
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Export", exact: true }).click();
-    const auth = page.getByRole("dialog", { name: "Sign in to Restyle", exact: true });
+    const exportDialog = page.getByRole("dialog", { name: "Export", exact: true });
+    await exportDialog.waitFor();
+    await exportDialog.getByRole("button", { name: /Export video/ }).click();
+    const auth = page.getByRole("dialog", { name: "Create a free account to export", exact: true });
     await auth.waitFor();
     const popup = page.waitForEvent("popup");
     await auth.getByRole("button", { name: "Continue with Google" }).click();
@@ -540,7 +542,8 @@ async function mobileTargetedRecoveryImport() {
   await page.goto(url.href);
   await page.locator('[data-notification-id="restoreFailed"]').waitFor();
   await page.getByRole("button", { name: "Dismiss notification", exact: true }).click();
-  await page.getByRole("button", { name: "Restore issue", exact: true }).click();
+  assert.equal(await page.getByRole("button", { name: "Restore issue", exact: true }).count(), 0);
+  await page.getByText("Storage options", { exact: true }).click();
   const storage = page.getByRole("region", { name: "Project storage", exact: true });
   await storage.getByRole("button", { name: "Discard saved edit", exact: true }).click();
   await storage.getByRole("button", { name: "Discard and continue", exact: true }).click();

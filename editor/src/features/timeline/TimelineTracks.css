@@ -133,6 +133,7 @@
   margin: 6px 7px;
   padding: 1px 6px;
   background: rgba(0, 0, 0, 0.75);
+  color: #f2f0e9;
   border-radius: 5px;
   font: 700 9px var(--f-ui);
 }

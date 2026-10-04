@@ -8,7 +8,8 @@ const browser = await chromium.launch({
   executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
   headless: true, args: ["--no-sandbox"],
 });
-const context = await browser.newContext({ viewport: { width: 430, height: 932 }, hasTouch: true, isMobile: true });
+const context = await browser.newContext({ viewport: { width: 430, height: 932 }, hasTouch: true, isMobile: true,
+  acceptDownloads: true });
 const page = await context.newPage();
 const errors = [];
 page.on("pageerror", error => errors.push(error.message));
@@ -26,8 +27,12 @@ await context.addInitScript(message => {
   };
 }, sentinel);
 
-const sheet = page.getByRole("dialog", { name: "Export", exact: true });
+const sheet = page.locator("dialog[data-state]");
 const notice = page.locator('[data-notification-id="exportFailed"]');
+async function openExport() {
+  await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
+  await page.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Flat video" }).click();
+}
 
 async function assertExportFailure() {
   await notice.waitFor();
@@ -43,49 +48,54 @@ async function assertExportFailure() {
   const banner = await notice.boundingBox();
   assert(app && banner && banner.y >= app.y && banner.y + banner.height <= app.y + 100,
     "Export failure must appear in the compact top notification area");
-  const details = sheet.locator("details");
-  assert.equal(await details.getAttribute("open"), null, "Failure details start collapsed");
-  assert.equal(await details.getByText(sentinel, { exact: true }).isVisible(), false);
-  await details.locator("summary").click();
-  await details.getByText(sentinel, { exact: true }).waitFor();
-  await details.locator("summary").click();
-  await sheet.getByRole("button", { name: "Retry export", exact: true }).waitFor();
+  await page.locator('dialog[data-state="failed"]').waitFor();
+  await sheet.getByText(sentinel, { exact: true }).waitFor();
+  assert.equal(await sheet.getByRole("button", { name: "Copy details", includeHidden: true }).count(), 1,
+    "The failure should retain a copyable diagnostic on larger screens");
+  await sheet.getByRole("button", { name: "Retry", exact: true }).waitFor();
 }
 
 try {
+  await page.route("**/api/auth/session", route => route.fulfill({ contentType: "application/json",
+    body: JSON.stringify({ available: true, clerkAvailable: false, clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: { id: "notification-check", name: "Notification check" } }) }));
   await page.goto(editorUrl, { waitUntil: "networkidle" });
   const visit = page.getByRole("button", { name: "Visit Site", exact: true });
   if (await visit.isVisible()) await visit.click();
   await page.locator('input[type="file"]').setInputFiles(fileURLToPath(new URL("../../../share/assets/preview.mp4", import.meta.url)));
-  await page.getByRole("button", { name: "Open editor", exact: true }).click();
-  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await page.getByRole("button", { name: /^(Open editor|Start editing)$/ }).click();
+  await openExport();
   assert.equal(await page.locator("[data-notification-id]").count(), 0, "Import and opening Export need no confirmation");
-  await sheet.getByRole("button", { name: "Export video", exact: true }).click();
+  await sheet.getByRole("button", { name: /Export video/ }).click();
   await assertExportFailure();
   const firstNoticeAt = Date.now();
   assert.equal(await page.evaluate(() => exportCaptureFixture.calls), 1);
-  await sheet.getByRole("button", { name: "Close", exact: true }).click();
+  await sheet.getByRole("button", { name: "Close export" }).click();
   await notice.waitFor({ state: "detached" });
 
-  await page.getByRole("button", { name: "Next", exact: true }).click();
-  assert.equal(await sheet.locator("details").count(), 0, "A closed export attempt cannot leave stale diagnostics");
+  await openExport();
+  assert.equal(await sheet.getByText(sentinel, { exact: true }).count(), 0,
+    "A closed export attempt cannot leave stale diagnostics");
   // Respect the production brief-message cooldown before a separate failed attempt.
   await page.waitForTimeout(Math.max(0, 10100 - (Date.now() - firstNoticeAt)));
-  await sheet.getByRole("button", { name: "Export video", exact: true }).click();
+  await sheet.getByRole("button", { name: /Export video/ }).click();
   await assertExportFailure();
   assert.equal(await page.evaluate(() => exportCaptureFixture.calls), 2);
 
   await page.evaluate(() => { exportCaptureFixture.fail = false; });
-  const download = page.waitForEvent("download", { timeout: 30000 });
-  await sheet.getByRole("button", { name: "Retry export", exact: true }).click();
+  await sheet.getByRole("button", { name: "Retry", exact: true }).click();
   await notice.waitFor({ state: "detached" });
-  await sheet.getByText("Ready to download", { exact: true }).waitFor({ timeout: 30000 });
-  assert.match((await download).suggestedFilename(), /^restyle-video\.(mp4|webm)$/);
+  await page.locator('dialog[data-state="done"]').waitFor({ timeout: 45000 });
+  const [download] = await Promise.all([
+    page.waitForEvent("download", { timeout: 15000 }),
+    sheet.getByRole("button", { name: /Download/ }).click(),
+  ]);
+  assert.match(download.suggestedFilename(), /\.(mp4|webm)$/);
   assert.equal(await page.evaluate(() => exportCaptureFixture.calls), 3, "Retry must execute the exporter again");
-  assert.equal(await sheet.locator("details").count(), 0, "Successful retry clears prior diagnostics");
+  assert.equal(await sheet.getByText(sentinel, { exact: true }).count(), 0,
+    "Successful retry clears prior diagnostics");
   assert.equal(await page.locator("[data-notification-id]").count(), 0, "Visible completion needs no success toast");
   assert.deepEqual(errors, []);
-  console.log("Export notifications passed: actual capability failure, concise top message, collapsed details, close cleanup, successful retry and quiet completion.");
+  console.log("Export notifications passed: actual capability failure, concise top message, visible details, close cleanup, successful retry and quiet completion.");
 } finally {
   await context.close();
   await browser.close();

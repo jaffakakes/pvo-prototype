@@ -54,7 +54,8 @@ function drawVideoLayer(
 export function drawSceneFrame(
   context: CanvasRenderingContext2D, width: number, height: number,
   input: { clip: Clip | null; video: HTMLVideoElement | null; sourceTime: number;
-    time: number; texts: TextOverlay[]; layers: string[]; includeText?: boolean; includeVideoAnimation?: boolean },
+    time: number; texts: TextOverlay[]; layers: string[]; includeText?: boolean; includeVideoAnimation?: boolean;
+    paintAdditionalLayer?: (id: string) => void },
 ) {
   context.fillStyle = "#000";
   context.fillRect(0, 0, width, height);
@@ -64,9 +65,9 @@ export function drawSceneFrame(
         ? { ...input.clip, animation: undefined } : input.clip, input.video, input.sourceTime);
       continue;
     }
-    if (input.includeText === false) continue;
     const text = input.texts.find(item => id === `text:${item.id}`);
-    if (text && input.time >= text.start && input.time < text.end)
+    if (text && input.includeText !== false && input.time >= text.start && input.time < text.end)
       drawText(context, width, height, text, input.time - text.start);
+    if (!text) input.paintAdditionalLayer?.(id);
   }
 }

@@ -85,7 +85,7 @@ export type ComponentFields = {
   }[];
   fieldKinds?: ("name" | "email" | "phone" | "short" | "yesno")[];
   formFields?: FormField[];
-  formSubmitMode?: "local" | "request";
+  formSubmitMode?: "local" | "request" | "collect";
   heading?: string;
   destination?: string;
   waitingLabel?: string;
@@ -156,5 +156,7 @@ export type ProjectSnapshot = {
   scenes: Scene[];
   currentSceneId: string;
   ratio: Ratio;
+  /** Chosen poster frame in seconds on the main scene timeline. */
+  coverAt: number;
   allowedDomains: string[];
 };

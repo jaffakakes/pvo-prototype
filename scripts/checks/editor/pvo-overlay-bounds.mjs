@@ -59,14 +59,29 @@ async function bounds() {
       width: inner.width * scale, height: inner.height * scale,
     } : null;
     const content = rendered ?? outer;
+    const reviewOutline = getComputedStyle(element, "::after");
     return {
       outer, frame, rendered,
       center: { x: parseFloat(element.style.left) / 100, y: parseFloat(element.style.top) / 100 },
       centerOffset: { x: content.left + content.width / 2 - preview.left - borderLeft,
         y: content.top + content.height / 2 - preview.top - borderTop },
-      contentWidth, contentHeight, outlined: getComputedStyle(element).outlineStyle !== "none",
+      contentWidth, contentHeight,
+      selectionOutline: getComputedStyle(element).outlineStyle,
+      focused: element.dataset.componentFocused === "true",
+      proposed: element.dataset.proposed === "true",
+      reviewOutline: { content: reviewOutline.content, borderStyle: reviewOutline.borderTopStyle },
     };
   });
+}
+
+function assertSelectionIndicators(measured) {
+  assert.equal(measured.selectionOutline, "none", "Editor selection must not draw an outline around components");
+  if (measured.proposed) {
+    assert.notEqual(measured.reviewOutline.content, "none", "The proposed review outline must render its pseudo-element");
+    assert.equal(measured.reviewOutline.borderStyle, "dashed", "The proposed review outline must remain dashed");
+  } else {
+    assert.equal(measured.reviewOutline.borderStyle, "none", "A selected component must not show the proposed review outline");
+  }
 }
 
 async function assertFitted(expectedCenter) {
@@ -79,15 +94,16 @@ async function assertFitted(expectedCenter) {
   assert(measured.frame && measured.rendered);
   for (const key of ["left", "top", "width", "height"]) {
     assert(Math.abs(measured.outer[key] - measured.frame[key]) < 1,
-      `Selection bounds must fit the rendered frame (${key}): ${JSON.stringify(measured)}`);
+      `Component bounds must fit the rendered frame (${key}): ${JSON.stringify(measured)}`);
     assert(Math.abs(measured.outer[key] - measured.rendered[key]) < 2,
-      `Selection bounds must fit the visible Card (${key}): ${JSON.stringify(measured)}`);
+      `Component bounds must fit the visible Card (${key}): ${JSON.stringify(measured)}`);
   }
+  const expectedVisualCenter = measured.focused ? { x: .5, y: .5 } : expectedCenter;
   for (const [axis, length] of [["x", measured.contentWidth], ["y", measured.contentHeight]]) {
-    assert(Math.abs(measured.centerOffset[axis] - expectedCenter[axis] * length) < 1,
-      `PVO content must preserve its authored center (${axis}): ${JSON.stringify(measured)}`);
+    assert(Math.abs(measured.centerOffset[axis] - expectedVisualCenter[axis] * length) < 1,
+      `PVO content must fit its ${measured.focused ? "lifted" : "authored"} center (${axis}): ${JSON.stringify(measured)}`);
   }
-  assert(measured.outlined, "The fitted selected/proposed component must retain its outline");
+  assertSelectionIndicators(measured);
   return measured;
 }
 

@@ -36,8 +36,8 @@ test("checkpoint keeps every undoable clip Blob reference only once", () => {
   const state = initial();
   state.scenes = [scene([clip(1, "blob:current")])];
   state.clips = state.scenes[0].clips;
-  state.past = [{ scenes: [scene([clip(2, "blob:deleted")])], currentSceneId: "main", ratio: "9:16", allowedDomains: [] }];
-  state.future = [{ scenes: [scene([clip(1, "blob:current")])], currentSceneId: "main", ratio: "9:16", allowedDomains: [] }];
+  state.past = [{ scenes: [scene([clip(2, "blob:deleted")])], currentSceneId: "main", ratio: "9:16", coverAt: 0, allowedDomains: [] }];
+  state.future = [{ scenes: [scene([clip(1, "blob:current")])], currentSceneId: "main", ratio: "9:16", coverAt: 0, allowedDomains: [] }];
   const draft = captureCheckpoint(state);
   assert.deepEqual(referencedMedia(draft), ["blob:current", "blob:deleted"]);
   state.scenes[0].clips[0].out = 1;
@@ -48,7 +48,8 @@ test("restore rewrites media URLs across current project and undo history", () =
   const state = initial();
   state.scenes = [scene([clip(1, "blob:current")])];
   state.clips = state.scenes[0].clips;
-  state.past = [{ scenes: [scene([clip(2, "blob:deleted")])], currentSceneId: "main", ratio: "4:5", allowedDomains: ["example.com"] }];
+  state.coverAt = 1.25;
+  state.past = [{ scenes: [scene([clip(2, "blob:deleted")])], currentSceneId: "main", ratio: "4:5", coverAt: 0.5, allowedDomains: ["example.com"] }];
   const draft = captureCheckpoint(state);
   const record = storeCheckpoint(draft, new Map([
     ["blob:current", "asset:current"],
@@ -62,7 +63,19 @@ test("restore rewrites media URLs across current project and undo history", () =
   assert.equal(restored.project.scenes[0].clips[0].url, "blob:new-current");
   assert.equal(restored.past[0].scenes[0].clips[0].url, "blob:new-deleted");
   assert.deepEqual(restored.past[0].allowedDomains, ["example.com"]);
+  assert.equal(restored.project.coverAt, 1.25);
+  assert.equal(restored.past[0].coverAt, 0.5);
   assert.equal(restored.savedAt, 123);
+});
+
+test("checkpoint rejects a missing or invalid cover time", () => {
+  const record = storeCheckpoint(captureCheckpoint(initial()), new Map(), 123);
+  const missing = structuredClone(record);
+  delete missing.project.coverAt;
+  assert.throws(() => validateCheckpoint(missing), /incomplete/);
+  const negative = structuredClone(record);
+  negative.project.coverAt = -1;
+  assert.throws(() => validateCheckpoint(negative), /incomplete/);
 });
 
 test("incomplete media never passes restore validation", () => {
@@ -109,7 +122,7 @@ test("checkpoint capture and storage refuse component data that cannot be restor
   assert.throws(() => storeCheckpoint(draft, new Map(), 123), /Interactive components require a response policy/);
 });
 
-test("named local projects survive a checkpoint while old checkpoints remain readable", () => {
+test("named local projects survive a checkpoint while anonymous drafts stay valid", () => {
   const state = { ...initial(), localId: "local-project-123", projectName: "A new story" };
   const record = storeCheckpoint(captureCheckpoint(state), new Map(), 123);
   validateCheckpoint(record);
@@ -134,7 +147,7 @@ function animatedState() {
   current.sound = 1;
   current.musicAnimation = curve("gain", 1, 0);
   state.scenes = [current];
-  state.past = [{ scenes: structuredClone(state.scenes), currentSceneId: "main", ratio: "9:16", allowedDomains: [] }];
+  state.past = [{ scenes: structuredClone(state.scenes), currentSceneId: "main", ratio: "9:16", coverAt: 0, allowedDomains: [] }];
   state.future = structuredClone(state.past);
   return state;
 }
@@ -193,7 +206,7 @@ test("downloaded fonts retain their bytes and licence across project saves and u
   const current = scene([], [{ ...choice(), font }]);
   current.texts = [{ id: 1, text: "Title", start: 0, end: 2, x: 50, y: 50, style: { fontAsset: font } }];
   state.scenes = [current];
-  state.past = [{ scenes: structuredClone(state.scenes), currentSceneId: "main", ratio: "9:16", allowedDomains: [] }];
+  state.past = [{ scenes: structuredClone(state.scenes), currentSceneId: "main", ratio: "9:16", coverAt: 0, allowedDomains: [] }];
   state.future = structuredClone(state.past);
   const draft = captureCheckpoint(state);
   font.faces[0].weight = "700";

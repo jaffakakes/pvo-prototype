@@ -187,7 +187,7 @@ export function buildPvoManifest(state: ProjectSnapshot, rendered: Array<{
   assetId: string;
   name: string;
   type: string;
-}>, languages: CompiledLanguages = new Map()): PvoManifest {
+}>, languages: CompiledLanguages = new Map(), posterAssetId?: string): PvoManifest {
   if (!rendered.length)
     throw new Error("Record or upload a clip before exporting.");
   const entry = state.scenes.find(scene => scene.id === "main");
@@ -212,8 +212,10 @@ export function buildPvoManifest(state: ProjectSnapshot, rendered: Array<{
     initial_scene: entry.id,
     allowed_domains: [...allowedDomains],
     canvas: { ratio: state.ratio, width, height },
-    restyle_capture: { version: 1, scene_layers: Object.fromEntries(rendered.map(({ scene }) => [scene.id, { order: layerOrder(scene),
-      texts: scene.texts.map(({ animationTracking: _tracking, ...text }) => text), ...manifestMediaAnimations(scene) }])) },
+    restyle_capture: { version: 1, cover_at: state.coverAt,
+      scene_layers: Object.fromEntries(rendered.map(({ scene }) => [scene.id, { order: layerOrder(scene),
+        texts: scene.texts.map(({ animationTracking: _tracking, ...text }) => text), ...manifestMediaAnimations(scene) }])) },
+    ...(posterAssetId ? { poster: { asset_id: posterAssetId, at: state.coverAt, type: "image/webp" as const } } : {}),
     media: rendered.map(({ scene, assetId, name, type }) => ({ id: `media-${scene.id}`, asset_id: assetId, name, type })),
     scenes: rendered.map(({ scene, assetId }) => ({
       id: scene.id,

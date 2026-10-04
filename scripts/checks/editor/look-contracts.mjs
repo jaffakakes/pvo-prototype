@@ -92,7 +92,7 @@ try {
     const id = useCapture.getState().addComponent("choice");
     setComponentAuthoringTab(id, "content");
   });
-  await page.waitForTimeout(400);
+  await page.locator("#restyle-launch-splash").waitFor({ state: "detached" });
   const secondOption = await page.locator('[data-look-part="button:1"]').boundingBox();
   assert(secondOption, "The second option is visible on the video");
   await page.mouse.click(secondOption.x + secondOption.width / 2, secondOption.y + secondOption.height / 2);

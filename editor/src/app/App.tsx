@@ -12,7 +12,7 @@ import { useEditorKeyboard } from "./useEditorKeyboard";
 import { useAppLocation } from "./navigation";
 import { CreateEntry } from "../features/create-project/CreateEntry";
 import { AuthDialog } from "../features/auth/AuthDialog";
-import { closeAuthGate, openSignIn } from "../state/auth/authGateStore";
+import { openSignIn } from "../state/auth/authGateStore";
 import { useProjectNavigation } from "./useProjectNavigation";
 import { useWideLayout } from "../infrastructure/viewport";
 
@@ -33,7 +33,6 @@ export default function App() {
   const picking = useCapture(s => !!s.playheadPick);
   useEditorKeyboard(!showLanding);
   useEffect(() => { useCapture.getState().patch({ ratioMenu: false }); }, [screen]);
-  useEffect(() => { if (!wide) closeAuthGate(); }, [wide]);
   useEffect(() => {
     const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
     const applyTheme = () => {
