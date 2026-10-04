@@ -6,10 +6,11 @@ import { fmt,pickTime } from "../../ui/formatTime";
 import { togglePlayback } from "../../state/editing/playbackCommands";
 import styles from "./Transport.module.css";
 
-export function Transport() {
+export function Transport({ threadOpen = false }: { threadOpen?: boolean } = {}) {
   const s = useCapture();
-  return <div className={`${cx("transport")} ${styles.transport}`}>
+  return <div className={`${cx("transport")} ${styles.transport}`} data-thread-open={threadOpen}>
     <div className={`${cx("transportTime")} ${styles.time}`}>{s.playheadPick ? pickTime(s.t) : fmt(s.t)} <span>/ {fmt(sceneDuration(s))}</span></div>
     <button className={`${cx("playBtn press")} ${styles.play}`} onClick={togglePlayback} aria-label={s.playing ? "Pause" : "Play"} disabled={!!s.tryMode?.holdingId}><Icon name={s.playing ? "pause" : "play"} size={s.playing ? 18 : 20} /></button>
+    {threadOpen && <span className={styles.threadStatus}>Paused · Restyle open</span>}
   </div>;
 }

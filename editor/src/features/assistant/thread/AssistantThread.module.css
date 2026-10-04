@@ -1,0 +1,375 @@
+.thread {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-height: 100%;
+  box-sizing: border-box;
+  color: #f2f0e9;
+  background: #0b0b0f;
+  font-family: var(--f-ui);
+  pointer-events: auto;
+}
+
+.thread[data-variant="desktop"] {
+  border: 3px solid #000;
+  border-radius: 20px;
+  box-shadow: 8px 8px 0 color-mix(in oklab, #ff6fa6 55%, #e8e3d6);
+  transform-origin: bottom right;
+  animation: open 120ms ease-out both;
+}
+
+.thread[data-variant="phone"] {
+  flex: 1;
+  height: 100%;
+  background: #111117;
+}
+.thread button, .thread input {
+  font-family: inherit;
+}
+.thread button {
+  cursor: pointer;
+}
+.thread button:disabled {
+  cursor: default;
+}
+.thread button:focus-visible {
+  outline: 2px solid #ff9fbc;
+  outline-offset: 3px;
+}
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  padding: 13px 12px 12px 14px;
+  border-bottom: 2px solid #ffffff14;
+}
+.heading {
+  flex: 1;
+  min-width: 0;
+}
+.heading h2 {
+  margin: 0;
+  font-family: var(--f-display, "Peace Sans", sans-serif);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+.heading p {
+  margin: 3px 0 0;
+  overflow: hidden;
+  color: #f2f0e980;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.restyleAvatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  box-sizing: border-box;
+  border: 2px solid #000;
+  border-radius: 50%;
+  background: #ff2d78;
+}
+.restyleAvatar img {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  filter: invert(1);
+}
+.headingAvatar {
+  width: 28px;
+  height: 28px;
+  box-shadow: 2px 2px 0 #000;
+}
+.headingAvatar img {
+  width: 15px;
+  height: 15px;
+}
+.collapse {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: none;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 2px solid #000;
+  border-radius: 9px;
+  background: #1c1c24;
+  color: #f2f0e9;
+  box-shadow: 2px 2px 0 #ff2d78;
+  font-size: 11.5px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.chevron {
+  transition: transform 150ms ease;
+}
+.thread[data-collapsed="true"] .chevron {
+  transform: rotate(180deg);
+}
+.close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 2px solid #ffffff24;
+  border-radius: 9px;
+  background: #15151c;
+  color: #f2f0e9;
+}
+
+/* Reversed rows keep the newest exchange at the natural bottom scroll position. */
+.list {
+  display: flex;
+  flex-direction: column-reverse;
+  flex: 1 1 auto;
+  gap: 14px;
+  min-height: 0;
+  max-height: 380px;
+  margin: 0;
+  padding: 12px 14px 14px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  scrollbar-color: #ffffff30 transparent;
+  scrollbar-width: thin;
+}
+.earlierRow {
+  flex: none;
+}
+.earlierRow button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 2px dashed #ffffff29;
+  border-radius: 10px;
+  background: transparent;
+  color: #a7a3b8;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.earlierRow span {
+  color: #ff83a8;
+  font-weight: 800;
+}
+.empty {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 100px;
+  padding: 24px;
+  text-align: center;
+}
+.emptyMark {
+  color: #ff6fa6;
+  font-size: 24px;
+}
+.empty p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+}
+.empty > span:last-child {
+  max-width: 290px;
+  color: #a7a3b8;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.composer {
+  flex: none;
+  padding: 10px 12px 14px 14px;
+  border-top: 2px solid #ffffff14;
+  border-radius: 0 0 17px 17px;
+  background: #08080c;
+}
+.composeHint {
+  margin: 0 0 7px;
+  color: #a7a3b8;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.composeHint[role="status"] {
+  color: #ff9fbc;
+}
+.composeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.composeRow input {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  height: 42px;
+  box-sizing: border-box;
+  padding: 0 11px;
+  border: 2px solid #ffffff24;
+  border-radius: 12px;
+  outline: none;
+  background: #1c1c24;
+  color: #f2f0e9;
+  font-size: 13px;
+  font-weight: 600;
+}
+.composeRow input::placeholder {
+  color: #a7a3b8;
+  opacity: 1;
+}
+.composeRow input:focus {
+  border-color: #ff9fbc;
+  box-shadow: 0 0 0 3px #ff9fbc40;
+}
+.composeRow input:disabled {
+  opacity: .6;
+}
+.mic, .send {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  box-sizing: border-box;
+  padding: 0;
+  border: 2.5px solid #000;
+  border-radius: 12px;
+  background: #ff2d78;
+  color: #f2f0e9;
+  box-shadow: 2px 2px 0 #000;
+}
+.mic {
+  border-width: 2px;
+  background: #15151c;
+  color: #ff9fbc;
+  touch-action: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.mic[aria-pressed="true"] {
+  border-color: #ff9fbc;
+  background: #ff2d7833;
+}
+.send:disabled {
+  background: #2a2a33;
+  box-shadow: none;
+  opacity: .6;
+}
+.mic:disabled {
+  opacity: .4;
+}
+.send:not(:disabled):active, .collapse:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.thread[data-variant="phone"] .header {
+  padding: 10px 18px 8px;
+  border-bottom: 0;
+}
+.thread[data-variant="phone"] .heading h2 {
+  font-size: 22px;
+}
+.thread[data-variant="phone"] .heading p {
+  color: #f2f0e98c;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+.thread[data-variant="phone"] .collapse {
+  min-height: 32px;
+  font-weight: 700;
+}
+.thread[data-variant="phone"] .close {
+  width: 34px;
+  height: 34px;
+  border: 2.5px solid #000;
+  border-radius: 10px;
+}
+.thread[data-variant="phone"] .list {
+  max-height: none;
+  padding: 6px 18px 12px;
+}
+.thread[data-variant="phone"] .earlierRow button {
+  min-height: 44px;
+}
+.thread[data-variant="phone"] .composer {
+  padding: 10px 14px max(12px, env(safe-area-inset-bottom));
+  border-radius: 0;
+}
+.thread[data-variant="phone"] .composeRow input {
+  height: 44px;
+  font-size: 16px;
+}
+.thread[data-variant="phone"] .send {
+  width: 44px;
+  height: 44px;
+}
+
+@media (pointer: coarse) {
+  .thread[data-variant] .close {
+    min-width: 44px;
+    min-height: 44px;
+    width: 44px;
+    height: 44px;
+  }
+  .thread[data-variant] .collapse {
+    min-height: 44px;
+  }
+  .thread .mic, .thread .send {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thread, .thread * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+:global(.app[data-reduce-motion="true"]) .thread,
+:global(.app[data-reduce-motion="true"]) .thread * {
+  animation: none !important;
+  transition: none !important;
+}
+
+@keyframes open {
+  from {
+    opacity: 0;
+    transform: scale(.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

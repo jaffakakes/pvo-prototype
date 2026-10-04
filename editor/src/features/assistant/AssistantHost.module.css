@@ -25,3 +25,65 @@
   pointer-events: none;
   isolation: isolate;
 }
+
+.threadPopover {
+  position: absolute;
+  right: 0;
+  bottom: 64px;
+  display: flex;
+  width: min(440px, calc(100vw - 32px));
+  pointer-events: auto;
+  transform-origin: bottom right;
+  animation: openThread 120ms ease-out;
+}
+
+.threadPopover::after {
+  content: "";
+  position: absolute;
+  right: 18px;
+  bottom: -9px;
+  width: 16px;
+  height: 16px;
+  border-right: 3px solid #000;
+  border-bottom: 3px solid #000;
+  background: #08080c;
+  transform: rotate(45deg);
+}
+
+.floatingHost .threadPopover {
+  right: 14px;
+  bottom: 84px;
+  max-height: calc(100% - 96px) !important;
+}
+
+.floatingHost .threadPopover input { font-size: 16px; }
+
+.threadContent { display: flex; flex: 1; min-width: 0; min-height: 0; }
+
+.threadDock {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  height: var(--dock-height);
+  padding-top: var(--thread-handle-height, 26px);
+  box-sizing: border-box;
+  border-top: 3px solid #000;
+  border-radius: 26px 26px 0 0;
+  background: #111117;
+  box-shadow: 0 -6px 0 #ff9fbc59;
+}
+
+.threadDock .threadContent { pointer-events: auto; }
+
+@keyframes openThread {
+  from { opacity: 0; transform: scale(.96); }
+}
+
+:global(.app[data-reduce-motion="true"]) .threadPopover { animation: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .threadPopover { animation: none; }
+}

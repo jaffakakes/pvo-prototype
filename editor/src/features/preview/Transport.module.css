@@ -1,5 +1,17 @@
 .transport { display: grid; grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr); align-items: center; height: 52px; gap: 10px; padding: 4px 12px; }
+.transport[data-thread-open="true"] { height: 72px; }
 .time { width: auto; min-width: 84px; flex: none; font-size: 11px; }
 .time span { color: var(--muted); }
 .play { width: 44px; height: 44px; flex: none; border-width: 2px; box-shadow: 2px 2px 0 #000; }
 .play:focus-visible { outline: 3px solid #ff9fbc; outline-offset: 1px; }
+.threadStatus {
+  justify-self: end;
+  max-width: 100%;
+  padding: 6px 8px;
+  border: 2px solid #ffffff24;
+  border-radius: 9px;
+  background: #15151c;
+  color: #f2f0e9b3;
+  font: 700 10px var(--f-ui);
+  text-align: center;
+}

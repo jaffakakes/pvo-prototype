@@ -13,7 +13,10 @@ import { trackAssistantObject, TrackingSelectionError } from "../../infrastructu
 import { uid } from "../../infrastructure/ids";
 import { applyAssistantChanges } from "../../state/assistant/applyChanges";
 import { notifyAssistantApplied } from "../../state/assistant/nativeAppliedNotification";
+import { appliedAssistantSummary } from "../../domain/assistant/appliedSummary";
 import { resetAssistant, useAssistant } from "../../state/assistant/assistantStore";
+import { completeAssistantExchange, finishAssistantExchange, startAssistantExchange,
+  updateAssistantExchangeProgress, setAssistantThreadOpen, useAssistantThread } from "../../state/assistant/threadStore";
 import { useCapture } from "../../state/captureStore";
 import { projectSnapshot } from "../../state/project/history";
 import { useEditorPreferences } from "../../state/preferences/editorPreferences";
@@ -43,6 +46,7 @@ export function useAssistantSession({ inspectorVisible = false }: { inspectorVis
   const voiceOrigin = useRef<"idle" | "typing">("idle");
   const playback = useRef<{ sceneId: string; playing: boolean } | null>(null);
   const operation = useRef(0);
+  const activeExchange = useRef<string | null>(null);
 
   const pause = () => {
     const current = useCapture.getState();
@@ -58,6 +62,8 @@ export function useAssistantSession({ inspectorVisible = false }: { inspectorVis
   };
   useEffect(() => () => {
     request.current?.abort();
+    if (activeExchange.current) finishAssistantExchange(activeExchange.current, "cancelled");
+    activeExchange.current = null;
     resetAssistant();
     clearNotificationScope("assistant");
     restorePlayback();
@@ -67,6 +73,9 @@ export function useAssistantSession({ inspectorVisible = false }: { inspectorVis
     if (!available || changedProject) {
       request.current?.abort();
       request.current = null;
+      if (activeExchange.current) finishAssistantExchange(activeExchange.current, "cancelled");
+      activeExchange.current = null;
+      setAssistantThreadOpen(false);
       resetAssistant({ preserveConversation: !changedProject });
       playback.current = null;
     }
@@ -87,6 +96,8 @@ export function useAssistantSession({ inspectorVisible = false }: { inspectorVis
   const stop = () => {
     request.current?.abort();
     request.current = null;
+    if (activeExchange.current) finishAssistantExchange(activeExchange.current, "cancelled");
+    activeExchange.current = null;
     useAssistant.setState({ phase: "typing", transcript: "", progress: "", answer: null });
   };
   const close = () => {
@@ -112,6 +123,8 @@ export function useAssistantSession({ inspectorVisible = false }: { inspectorVis
         throw new Error("The project changed while the assistant was working. Please ask again.");
     };
     try { assertCurrent(); } catch (error) { report(error, "request"); return; }
+    const exchangeId = startAssistantExchange(prompt);
+    activeExchange.current = exchangeId;
     const pending = new AbortController();
     request.current = pending;
     let message = "";
@@ -172,7 +185,10 @@ export function useAssistantSession({ inspectorVisible = false }: { inspectorVis
           trackingEvidence,
         }),
         commit: () => { throw new Error("Prepare a complete validated batch before applying changes."); },
-        progress: progress => useAssistant.setState({ progress }),
+        progress: progress => {
+          useAssistant.setState({ progress });
+          updateAssistantExchangeProgress(exchangeId, progress);
+        },
         report: event => {
           if (event.observation) observations.push(event.message);
           else message = event.message;
@@ -191,26 +207,40 @@ export function useAssistantSession({ inspectorVisible = false }: { inspectorVis
         trace({ stage: "application", status: "completed", changed: Boolean(applied) });
         applying = false;
         if (!applied && !planned.playback.length && !planned.exportFormat) {
+          completeAssistantExchange(exchangeId, { response: answer.message });
+          setAssistantThreadOpen(false);
           useAssistant.setState({ phase: "review", progress: "", answer, history, evidence });
           return;
         }
+        completeAssistantExchange(exchangeId, {
+          response: result.answer ?? message,
+          summary: applied ? appliedAssistantSummary(planned.operations) : undefined,
+          change: applied ?? undefined,
+        });
         if (planned.playback.length) playback.current = null;
+        if (result.answer || planned.playback.length || planned.exportFormat) setAssistantThreadOpen(false);
         useAssistant.setState({ phase: result.answer ? "review" : "idle", answer: result.answer ? answer : null, progress: "", draft: "",
           evidence, history: [...history, { role: "assistant" as const,
             content: "The editor completed the validated operations. Use the current project for any follow-up." }].slice(-12) });
         clearNotificationScope("assistant");
-        if (!result.answer) restorePlayback();
+        if (!result.answer && !useAssistantThread.getState().open) restorePlayback();
         if (applied) notifyAssistantApplied(applied, planned.operations, `apply:${++operation.current}`);
       } else {
+        completeAssistantExchange(exchangeId, { response: answer.message });
+        setAssistantThreadOpen(false);
         useAssistant.setState({ phase: "review", progress: "", answer, history, evidence });
       }
     } catch (error) {
       if (applying) trace({ stage: "application", status: "failed", reason: assistantFailureReason(error) });
       if (!pending.signal.aborted) {
+        finishAssistantExchange(exchangeId, "failed", "Could not complete this request.");
         useAssistant.setState({ phase: prior.answer ? "review" : "typing", draft: prompt, progress: "" });
         report(error, "request");
       }
-    } finally { if (request.current === pending) request.current = null; }
+    } finally {
+      if (request.current === pending) request.current = null;
+      if (activeExchange.current === exchangeId) activeExchange.current = null;
+    }
   };
   const acknowledge = () => {
     if (!useAssistant.getState().answer) return;

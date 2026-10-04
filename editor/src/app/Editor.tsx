@@ -1,5 +1,6 @@
 import { OrbAssistant } from "../features/assistant/OrbAssistant";
 import { useAssistant } from "../state/assistant/assistantStore";
+import { setAssistantThreadOpen, useAssistantThread } from "../state/assistant/threadStore";
 import { EditorWorkspace } from "../features/editor-layout/EditorWorkspace";
 import { EditorHeader } from "../features/editor-layout/EditorHeader";
 import { Preview } from "../features/preview/Preview";
@@ -34,16 +35,20 @@ export function Editor() {
     ? selectedComponent ?? undefined : undefined;
   const trying = useCapture(state => !!state.tryMode);
   const assistantActive = useAssistant(state => state.phase !== "idle");
+  const thread = useAssistantThread();
   if (!scenes.length) return null;
   if (wide) return <DesktopEditor />;
   return <>
     <EditorWorkspace open={sheetOpen} animationSheet={animationSheet} componentSheet={componentSheet} codeEditingId={codeEditingId} trying={trying}
       debugOpen={debugOpen} onCloseDebug={() => setDebugOpen(false)}
       debugPanel={<DebugSheet onClose={() => setDebugOpen(false)} onEditComponent={editDebugComponent} onLocate={locateDebugComponent} />}
-      header={<EditorHeader />} preview={<Preview />} playback={<Transport />}
+      header={<EditorHeader />} preview={<Preview />} playback={<Transport threadOpen={thread.open && !codeEditingId} />}
       timeline={<><SceneTimeline><Timeline /></SceneTimeline><ToolRow /></>} sheets={<Sheets />}
-      assistant={(expanded, target) => <OrbAssistant placement={expanded ? "floating" : "workspace"} portalTarget={target} />}
-      assistantActive={assistantActive}
+      threadOpen={thread.open && !codeEditingId} threadCollapsed={thread.collapsed}
+      onCloseThread={() => setAssistantThreadOpen(false)}
+      assistant={(expanded, target, keyboardOpen) => <OrbAssistant placement={expanded ? "floating" : "workspace"}
+        portalTarget={target} threadKeyboardOpen={keyboardOpen} />}
+      assistantActive={assistantActive || thread.open}
       onDismiss={() => useCapture.getState().patch({ sheet: null })} />
   </>;
 }
