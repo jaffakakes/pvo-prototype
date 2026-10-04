@@ -110,25 +110,28 @@ export function ExportSettings({
           role="radiogroup"
           aria-label="Export quality"
         >
-          {(["720p", "1080p", "4K"] as const).map((quality) => (
+          {(["720p", "1080p", "4K"] as const).map((optionQuality) => (
             <button
-              key={quality}
+              key={optionQuality}
               type="button"
               role="radio"
-              aria-checked={quality === quality}
-              data-selected={quality === quality}
-              onClick={() => onQuality(quality)}
+              aria-checked={quality === optionQuality}
+              data-selected={quality === optionQuality}
+              onClick={() => onQuality(optionQuality)}
             >
-              <strong>{quality}</strong>
+              <strong>{optionQuality}</strong>
               <span className={styles.qualityHint}>
-                {quality === "720p"
+                {optionQuality === "720p"
                   ? "smaller"
-                  : quality === "1080p"
+                  : optionQuality === "1080p"
                     ? "recommended"
                     : "slower"}
               </span>
               <span className={styles.qualitySize}>
-                ~{formatFileSize(estimatedExportBytes(allDuration, quality))}
+                ~
+                {formatFileSize(
+                  estimatedExportBytes(allDuration, optionQuality),
+                )}
               </span>
             </button>
           ))}
