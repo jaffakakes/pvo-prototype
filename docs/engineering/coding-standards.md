@@ -48,7 +48,7 @@ Share proven common behavior between the editor and player through package APIs.
 
 ## Effects, errors, and diagnosis
 
-Make the owner of each MediaStream, object URL, worker, iframe, event listener, and timer explicit. Release owned resources on completion, cancellation, replacement, and failure. Avoid global mutable state that hides which project or playback session owns a resource.
+Make the owner of each MediaStream, object URL, worker, iframe, event listener, and timer explicit. Release owned resources on completion, cancellation, replacement, and failure. Avoid global mutable state that hides which project or playback session owns a resource. Separate request workflows from React presentation through narrow adapters; abort replaced work and reject late results even if the underlying effect ignores cancellation. Project/account changes must invalidate work belonging to the previous owner. Continuous edits use one preview/commit/cancel transaction across entry points, with cancellation on lost pointer capture, Escape, blur and unmount.
 
 Propagate useful errors at the operation boundary, with a component/scene/asset identifier when relevant. Keep detailed diagnostics separate from concise user messages. Do not swallow errors or report a failed success-action as a failed HTTP request. Avoid logging secrets, full request bodies, or private media.
 
@@ -77,11 +77,13 @@ Test behavior at the boundary that owns it. Pure rules should have focused cases
 | Sandbox or host commands | Relevant browser isolation and editor/player command checks, including rejection and cleanup behavior. |
 | Documentation only | Link, command, and content verification. |
 
-`npm run check` runs JavaScript syntax checks, `check:architecture`, and the same Node test suite as `npm test`; running both test commands is redundant without a reason. It discovers source JavaScript modules under packages, player, scripts, tests, and the docs site, excluding generated Cargo/WASM directories. Browser checks live under `scripts/checks/{editor,player,language,runtime}/`; use the named npm commands and [documented prerequisites](../../scripts/README.md).
+`npm run check` runs JavaScript syntax checks, `check:architecture`, `check:format`, and the same Node test suite as `npm test`; running both test commands is redundant without a reason. Syntax discovery excludes generated Cargo/WASM directories. Node behavior tests are discovered recursively under `tests/`, so focused folders such as `tests/sdk/` and `tests/server/` are included. The runner defaults to four concurrent test files; override with `npm test -- --test-concurrency=2`. Browser checks live under `scripts/checks/{editor,player,language,runtime}/`; use the named npm commands and [documented prerequisites](../../scripts/README.md).
 
 The build replaces `dist/`. Preserve existing generated changes or validate in an isolated checkout/output tree. Do not edit generated bundles to fix source. When splitting package modules, update static copying, publication allowlists, type exports, and test servers in the same change.
 
-Before finishing, review file responsibilities, dependency direction, shared rules, lifecycle/error handling, public compatibility, and documentation. Report the checks actually run and remaining limitations. Rust formatting is checked with rustfmt. `npm run check:architecture` checks static imports/exports, literal dynamic imports and import types for domain-to-outer-layer, state-to-presentation, editor/player and package/application violations. It does not prove cycle freedom, purity or contract parity. JavaScript/TypeScript formatting and responsibility review remain manual requirements; there is no configured JS/TS formatter or general-purpose linter.
+Before finishing, review file responsibilities, dependency direction, shared rules, lifecycle/error handling, public compatibility, and documentation. Report the checks actually run and remaining limitations. Rust formatting is checked with rustfmt. Pinned Prettier 3.9.9 formats only files listed in [`scripts/checks/formatting-scope.json`](../../scripts/checks/formatting-scope.json): `npm run format` writes that adopted set, and `npm run check:format` verifies it. Add maintained files deliberately rather than reformatting untouched source.
+
+`npm run check:architecture` inspects static imports/exports, literal dynamic imports/requires and import types under editor, player, server, packages and `scripts/dev`. It rejects domain-to-outer-layer, state-to-presentation, editor/player, server/dev-to-browser-app and package-to-consumer imports (including scripts). It does not prove cycle freedom, purity, cleanup or renderer parity. There is no general-purpose linter; names, cohesion, comments and unenforced dependency rules still need review.
 
 ## Incremental adoption
 
