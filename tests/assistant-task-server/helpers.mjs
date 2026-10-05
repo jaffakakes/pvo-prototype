@@ -16,11 +16,21 @@ export async function taskFixture({
   storage = true,
   broken = false,
   planner = null,
+  services = false,
+  providerControl = null,
 } = {}) {
   modules ??= bundleWorkerModules({
     stdin: {
       resolveDir: process.cwd(),
       contents: `
+    import { ServiceRelease } from "./server/cloud-services/release.js";
+    import { reconcileTaskServices } from "./server/assistant/tasks/providerRunner.js";
+    export class TestServiceRelease extends ServiceRelease {
+      constructor(ctx, env) { super(ctx, env); ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS calls (id INTEGER PRIMARY KEY CHECK (id=1), count INTEGER NOT NULL)"); }
+      now() { return Date.UTC(2100, 0, 1); }
+      async publish(value) { this.ctx.storage.sql.exec("INSERT INTO calls (id,count) VALUES (1,1) ON CONFLICT(id) DO UPDATE SET count=count+1"); return super.publish(value); }
+      stats() { return { calls: this.ctx.storage.sql.exec("SELECT count FROM calls").toArray()[0]?.count ?? 0, sourcePresent: !!this.row()?.source }; }
+    }
     import { savedTaskPlanningAvailable } from "./server/assistant/tasks/availability.js";
     import { handleRequest } from "./server/index.js";
     export { AssistantBudget } from "./server/assistant/budget.js";
@@ -36,6 +46,30 @@ export async function taskFixture({
         if (!this.env.CONTROLLED_PLAN) return super.plan(task, signal);
         return (await this.env.PLANNER.fetch("https://planner.test/", { method: "POST", body: JSON.stringify(task), signal })).json();
       }
+      providerTimeoutMs() { return 500; }
+      serviceProvider() {
+        if (this.providerDisabled) return null;
+        const provider = super.serviceProvider();
+        if (!provider || !this.env.PROVIDER_CONTROL) return provider;
+        const call = async (action, value) => {
+          const identity = value.identity ?? value;
+          const control = async phase => {
+            const response = await this.env.PROVIDER_CONTROL.fetch("https://provider-control.test", { method: "POST", body: JSON.stringify({ phase, action, identity }) });
+            const decision = await response.json();
+            if (decision.fail) throw new Error("Controlled provider failure");
+          };
+          await control("before");
+          const result = await provider[action](value);
+          await control("after");
+          return result;
+        };
+        return { publish: value => call("publish", value), lookup: value => call("lookup", value), cancel: value => call("cancel", value) };
+      }
+      disableProvider() { this.providerDisabled = true; }
+      async reconcileProviders() { await this.transaction(() => this.providers.noteTerminal(this.now())); await reconcileTaskServices(this); return this.providers.entries(); }
+      providerRows() { return this.providers.entries(); }
+      async providerStatus(identity) { const stub=this.env.SERVICE_RELEASES.getByName(identity.resourceId); return { observation: await stub.lookup(identity), stats: await stub.stats() }; }
+      async providerProbe(identity, input) { return this.env.SERVICE_RELEASES.getByName(identity.resourceId).probe(identity, input); }
       setTime(now) { this.clock = now; }
       async inspect() { return { alarm: await this.ctx.storage.getAlarm(), records: this.repository.records(),
         identities: this.ctx.storage.sql.exec("SELECT COUNT(*) AS count FROM tasks").one().count }; }
@@ -65,6 +99,12 @@ export async function taskFixture({
         const { action, ...args } = await request.json();
         const stub = env.ASSISTANT_TASKS.getByName("owner:" + owner.id);
         try {
+          if (action === "disable-provider") { await stub.disableProvider(); return json({ ok: true }); }
+          if (action === "publish") return json(await stub.publishService(owner.id, args.id, args.source, args.guard));
+          if (action === "provider-reconcile") return json(await stub.reconcileProviders());
+          if (action === "provider-rows") return json(await stub.providerRows());
+          if (action === "provider-status") return json(await stub.providerStatus(args.identity));
+          if (action === "provider-probe") return json(await stub.providerProbe(args.identity, args.input));
           if (action === "time") { await stub.setTime(args.now); return json({ ok: true }); }
           if (action === "inspect") return json(await stub.inspect());
           if (action === "sweep") return json(await stub.sweep());
@@ -95,11 +135,27 @@ export async function taskFixture({
         BROKEN: broken,
         CONTROLLED_PLAN: Boolean(planner),
       },
-      ...(planner ? { serviceBindings: { PLANNER: planner } } : {}),
+      ...(planner || providerControl
+        ? {
+            serviceBindings: {
+              ...(planner ? { PLANNER: planner } : {}),
+              ...(providerControl ? { PROVIDER_CONTROL: providerControl } : {}),
+            },
+          }
+        : {}),
+      ...(services ? { workerLoaders: { SERVICE_LOADER: {} } } : {}),
       ...(storage
         ? {
             durableObjects: {
               ASSISTANT_TASKS: { className: "TestTasks", useSQLite: true },
+              ...(services
+                ? {
+                    SERVICE_RELEASES: {
+                      className: "TestServiceRelease",
+                      useSQLite: true,
+                    },
+                  }
+                : {}),
               ...(planner
                 ? {
                     ASSISTANT_BUDGET: {

@@ -1,6 +1,11 @@
+import { ProviderOperations } from "./providerOperations.js";
+import { serviceProvider } from "./serviceProvider.js";
+import { publishTaskService, reconcileTaskServices } from "./providerRunner.js";
+
 import { TaskResults } from "./results.js";
 import {
   transitionTask,
+  assertTaskExecution,
   TASK_LIMITS,
 } from "../../../packages/pvo-assistant/tasks/index.js";
 import { TaskAttempts } from "./attempts.js";
@@ -25,6 +30,7 @@ export class AssistantTasks extends DurableObject {
     super(ctx, env);
     this.repository = new TaskRepository(ctx.storage.sql);
     this.results = new TaskResults(ctx.storage.sql);
+    this.providers = new ProviderOperations(ctx.storage.sql, this.repository);
     this.attempts = new TaskAttempts(ctx.storage.sql, this.repository);
     this.active = new Map();
   }
@@ -53,7 +59,8 @@ export class AssistantTasks extends DurableObject {
       const now = this.now();
       const repository = this.repository;
       repository.bindOwner(ownerId);
-      repository.maintain(now);
+      this.providers.noteTerminal(now);
+      repository.maintain(now, this.providers.heldTasks());
       this.results.prune();
       let result;
       try {
@@ -93,6 +100,7 @@ export class AssistantTasks extends DurableObject {
         if (!(error instanceof HttpError)) throw error;
         result = { error: error.message, status: error.status };
       }
+      this.providers.noteTerminal(now);
       await this.scheduleMaintenance(now);
       return result;
     });
@@ -141,6 +149,32 @@ export class AssistantTasks extends DurableObject {
     );
   }
 
+  serviceProvider() {
+    return serviceProvider(this.env);
+  }
+  providerTimeoutMs() {
+    return 5000;
+  }
+
+  /** Trusted authoring capability. No browser route or model tool can select publication metadata. */
+  async publishService(ownerId, id, source, guard) {
+    taskId(ownerId);
+    taskId(id);
+    const claimed = await this.transaction(() => {
+      this.repository.bindOwner(ownerId);
+      const task = this.repository.read(id, this.now());
+      const current = {
+        ownerId,
+        expectedRevision: guard.expectedRevision,
+        claim: guard.claim,
+        now: this.now(),
+      };
+      assertTaskExecution(task, current);
+      return task;
+    });
+    return publishTaskService(this, claimed, source);
+  }
+
   stepTimeoutMs() {
     return 45000;
   }
@@ -164,14 +198,16 @@ export class AssistantTasks extends DurableObject {
 
   claimNext() {
     const now = this.now();
-    this.repository.maintain(now);
+    this.providers.noteTerminal(now);
+    this.repository.maintain(now, this.providers.heldTasks());
     for (const [id, controller] of this.active) {
       const task = this.attempts.task(id);
       if (!task || task.state !== "running" || task.claim.expiresAt <= now)
         controller.abort();
     }
     this.attempts.recover(now);
-    this.repository.maintain(now);
+    this.providers.noteTerminal(now);
+    this.repository.maintain(now, this.providers.heldTasks());
     this.attempts.prune();
     this.results.prune();
     for (let task of this.repository.records()) {
@@ -189,7 +225,12 @@ export class AssistantTasks extends DurableObject {
         this.repository.save(recovered, task.revision);
         task = recovered;
       }
-      if (task.state !== "queued" || task.nextRunAt > now) continue;
+      if (
+        task.state !== "queued" ||
+        task.nextRunAt > now ||
+        this.providers.awaiting(task.id)
+      )
+        continue;
       const claimed = this.repository.update(
         task.id,
         { kind: "claim", claimId: randomId(), leaseMs: this.leaseMs() },
@@ -235,11 +276,14 @@ export class AssistantTasks extends DurableObject {
     const times = [
       this.repository.nextMaintenance(now),
       this.attempts.nextBudgetWakeup(),
+      this.providers.nextWakeup(),
       ...this.repository
         .records()
         .flatMap((task) =>
           task.state === "queued"
-            ? [task.nextRunAt]
+            ? this.providers.awaiting(task.id)
+              ? []
+              : [task.nextRunAt]
             : task.state === "running"
               ? [task.claim.expiresAt]
               : [],
@@ -251,6 +295,8 @@ export class AssistantTasks extends DurableObject {
   }
 
   async alarm() {
+    await this.transaction(() => this.providers.noteTerminal(this.now()));
+    await reconcileTaskServices(this);
     // Durable wakeups run independently of HTTP requests. Each invocation owns at most two steps.
     for (let index = 0; index < 2; index++) {
       const claimed = await this.transaction(() => this.claimNext());
@@ -258,6 +304,9 @@ export class AssistantTasks extends DurableObject {
       await runAuthoringStep(this, claimed);
     }
     await settleAuthoringBudgets(this);
-    await this.transaction(() => this.attempts.prune());
+    await this.transaction(() => {
+      this.attempts.prune();
+      this.providers.prune();
+    });
   }
 }

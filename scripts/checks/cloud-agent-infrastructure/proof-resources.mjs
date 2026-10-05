@@ -10,7 +10,7 @@ import { createAccountReader, readCloudflareToken } from "./account.mjs";
 const exec = promisify(execFile);
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 
-// Owns only the two randomly named deployments recorded in this run's journal.
+// Owns only the randomly named deployments recorded in this run's journal.
 export async function prepareResources(accountId) {
   const token = await readCloudflareToken();
   const read = createAccountReader({ accountId, token });
@@ -66,7 +66,7 @@ export async function prepareResources(accountId) {
     return results;
   }
 
-  async function prepare(kind) {
+  async function prepare(kind, { entrypoint, bindings, loaderBinding } = {}) {
     const name = `restyle-${kind}-proof-${id}`;
     assert.equal(
       (await read(`workers/scripts/${name}/settings`)).status,
@@ -89,12 +89,19 @@ export async function prepareResources(accountId) {
       removed: false,
     };
     const className = kind === "workspace" ? "Workspace" : "Release";
+    const ownedBindings = bindings ?? [
+      {
+        name: kind === "workspace" ? "WORKSPACE" : "RELEASE",
+        class_name: className,
+      },
+    ];
     const config = {
       name,
       account_id: accountId,
       main: resolve(
         root,
-        `scripts/checks/cloud-agent-infrastructure/${kind}-worker.js`,
+        entrypoint ??
+          `scripts/checks/cloud-agent-infrastructure/${kind}-worker.js`,
       ),
       compatibility_date: "2026-10-03",
       workers_dev: true,
@@ -104,21 +111,17 @@ export async function prepareResources(accountId) {
         PROOF_ID: id,
         PROOF_EXPIRES_AT: String(Date.now() + 20 * 60_000),
       },
-      durable_objects: {
-        bindings: [
+      durable_objects: { bindings: ownedBindings },
+      exports: Object.fromEntries(
+        ownedBindings.map((binding) => [
+          binding.class_name,
           {
-            name: kind === "workspace" ? "WORKSPACE" : "RELEASE",
-            class_name: className,
+            type: "durable-object",
+            storage: "sqlite",
+            ...(kind === "workspace" ? { container: name } : {}),
           },
-        ],
-      },
-      exports: {
-        [className]: {
-          type: "durable-object",
-          storage: "sqlite",
-          ...(kind === "workspace" ? { container: name } : {}),
-        },
-      },
+        ]),
+      ),
       ...(kind === "workspace"
         ? {
             containers: [
@@ -129,7 +132,7 @@ export async function prepareResources(accountId) {
               },
             ],
           }
-        : { worker_loaders: [{ binding: "LOADER" }] }),
+        : { worker_loaders: [{ binding: loaderBinding ?? "LOADER" }] }),
     };
     await writeFile(resource.config, JSON.stringify(config, null, 2), {
       mode: 0o600,
