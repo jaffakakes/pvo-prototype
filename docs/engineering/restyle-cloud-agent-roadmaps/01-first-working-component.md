@@ -29,7 +29,7 @@ Build this before committing to a provider-specific implementation.
 
 ## 1B. Save the task and its questions
 
-**Progress: 1B is verified complete.** Saved tasks, planning, questions, prepared results and provider recovery pass the local/browser acceptance matrix and the [actual Cloudflare proof](../restyle-cloud-provider-recovery-proof.md). Source is in PR #87; integration and production delivery are separate. Next is **1C.01**, the generated service package and test agreement. Arbitrary workspace generation remains 1C.
+**Progress: 1B is verified complete.** Saved tasks, planning, questions, prepared results and provider recovery pass the local/browser acceptance matrix and the [actual Cloudflare proof](../restyle-cloud-provider-recovery-proof.md). Source is in PR #87; integration and production delivery are separate. The following 1C.01 contract is now verified; integration and provider construction remain separate. Arbitrary workspace generation remains 1C.
 
 The task record is the agent's notebook. It must be saved on the server. Follow the [detailed 1B implementation plan](1b-saved-tasks.md) for contracts, build order, and failure tests.
 
@@ -50,7 +50,9 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 
 ## 1C. Let the agent write and test backend code
 
-- [ ] **1C.01** Agree on a small service package: source files, locked dependencies, runtime target, supported operations, input/result descriptions, and tests. An operation means one thing the component can ask the service to do.
+**Progress: 1C.01 verified.** The [service contract](../../../packages/pvo-assistant/services/README.md) defines a saved behavior agreement, bounded source/test package, exact content identity and invocation/result rules. Fifteen focused tests and the full local check pass. Follow the [1C workshop implementation plan](1c-generated-services.md) for the remaining adapters and test gate. The agent cannot yet generate/execute these packages; next are **1C.02/1C.03**.
+
+- [x] **1C.01** Agree on a small service package: source files, locked dependencies, runtime target, supported operations, input/result descriptions, and tests. An operation means one thing the component can ask the service to do.
 - [ ] **1C.02** Start one isolated workspace per task. Restore files from saved source when resuming.
 - [ ] **1C.03** Give resource creation a stable task identifier. If a create response is lost, look up the existing workspace or deployment before creating another.
 - [ ] **1C.04** Expose bounded tools for reading/writing workspace files, running commands, and reading test results. Advertise each tool to the model only when its adapter is available.

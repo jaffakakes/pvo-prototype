@@ -2,7 +2,7 @@
 
 **Continuing with Claude Code or Codex:** read [current progress](restyle-cloud-agent-progress.md), then the [handoff/restart guide](restyle-cloud-agent-handoff.md). Every checklist item now has a stable task ID. After each verified task, check it off and save its evidence and exact next action. Root [AGENTS.md](../../AGENTS.md) and [CLAUDE.md](../../CLAUDE.md) require this workflow.
 
-Status: implementation in progress, 5 October 2026. **1A and 1B passed:** real workshop/independent hosting and saved tasks with questions, background planning, guarded prepared results and actual provider recovery are verified. **Next: 1C.01, the generated service package and test agreement.** See [current evidence](restyle-cloud-agent-progress.md), the [infrastructure proof](restyle-cloud-infrastructure-proof.md) and the [provider recovery proof](restyle-cloud-provider-recovery-proof.md). Unchecked items remain proposed work.
+Status: implementation in progress, 5 October 2026. **1A and 1B passed:** real workshop/independent hosting and saved tasks with questions, background planning, guarded prepared results and actual provider recovery are verified. **1C.01 also passed:** the service package, behavior agreement and invocation rules are defined and tested. **Next: 1C.02/1C.03, isolated workspaces and restoration.** See [current evidence](restyle-cloud-agent-progress.md), the [infrastructure proof](restyle-cloud-infrastructure-proof.md) and the [provider recovery proof](restyle-cloud-provider-recovery-proof.md). Unchecked items remain proposed work.
 
 Start with [Roadmap 1](restyle-cloud-agent-roadmaps/01-first-working-component.md). It delivers the first complete version: ask for a component, let the agent build a new backend, try it, and share something that keeps working after its temporary computer shuts down.
 
@@ -29,7 +29,7 @@ Use the numbered tasks in the linked guide as the detailed checklist. The phase 
 | --- | --- | --- | --- |
 | **1A — complete** | Real workshop and independent hosting | Account access | Service works after workshop deletion; limits and cleanup verified |
 | **1B — complete** | Saved tasks, questions, progress, resumable authoring | Existing accounts; 1A adapters for provider recovery checks | Close browser, restart runner, answer later, stop safely, and recover one existing deployment |
-| 1C | Agent writes, tests, and repairs backend code | 1B task/receipt model and 1A runtime | Two different generated services pass trusted tests; invalid code cannot bypass the gate |
+| **1C — in progress** | Agent writes, tests, and repairs backend code | 1B task/receipt model and 1A runtime | Two different generated services pass trusted tests; invalid code cannot bypass the gate |
 | 1D | Owned services, records, quotas, pause/delete | 1B records and 1C immutable artifacts | Duplicate and competing submissions behave correctly; isolation and cleanup hold |
 | 1E | Verified service attached to component | 1C/1D receipts and existing editor/player boundaries | Try uses test permissions; file export and publication both use the correct live service |
 | 1F | First complete product release | 1B–1E gates | Two natural-language demonstrations; restart/failure checks; beta and authorized release evidence |
@@ -46,7 +46,7 @@ Use the numbered tasks in the linked guide as the detailed checklist. The phase 
 | 4C | Better service management | 1D basic controls; 2/3 for connected work | Creator can identify failure, control usage, and retire resources safely |
 | 4D | Additional capability justified by a request | Existing ownership/lifecycle gates | One concrete new capability meets the same isolation, recovery, and truthful-result checks |
 
-For the next milestone, use the [detailed 1B implementation plan](restyle-cloud-agent-roadmaps/1b-saved-tasks.md). Later milestones already contain their task breakdowns in Roadmaps 1–4; expand a task's implementation notes when starting it without renumbering or resetting completed work.
+For the current milestone, use the [1C workshop implementation plan](restyle-cloud-agent-roadmaps/1c-generated-services.md). The completed [1B implementation plan](restyle-cloud-agent-roadmaps/1b-saved-tasks.md) retains its acceptance evidence. Later milestones already contain their task breakdowns in Roadmaps 1–4; expand a task's implementation notes when starting it without renumbering or resetting completed work.
 
 ## The order inside the first roadmap
 
@@ -114,6 +114,6 @@ Production promotion follows dev → preprod → prod. After successful deployme
 
 ## Start here
 
-**Continue with 1C.01 in Roadmap 1:** define the generated service bundle, operation inputs/results and frozen behavior tests. The saved task foundation is verified, including actual Cloudflare recovery after a create reply is lost. The model-driven workshop and public service activation remain unimplemented. Record new resource/cost plans before later live tests; the US$15 recovery-test approval covered its bounded verification batch.
+**Continue with 1C.02/1C.03 in Roadmap 1:** implement one owned isolated workspace per task, save source outside it, restore it after restart and reconcile its stable resource identity. The [service agreement and package](../../packages/pvo-assistant/services/README.md) now define what is built and how its inputs/results are checked. Integrate the verified prerequisite slices through dev first; see the current progress for exact PR/check status. The full model-driven build and trusted test gate remain later 1C steps.
 
 Use completion checks to judge progress. Calendar estimates depend on provider access, implementation results, and integration difficulties discovered in these steps.

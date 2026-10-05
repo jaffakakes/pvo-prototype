@@ -25,3 +25,5 @@ Native preparation results include a typed `execution` context on subsequent tur
 `service-errors.js` defines public assistant failure codes, their HTTP statuses and fixed diagnostic copy. The browser accepts only matching known codes; provider messages and rejected model output never become user-facing diagnostics.
 
 The [inactive release contract](releases/README.md) defines owned provider identities, immutable publication data and strict observations used by saved-task recovery. Provider effects stay in server adapters.
+
+The [generated service contract](services/README.md) defines the behavior agreement, bounded source package and validated invocation/reply used by the cloud workshop. It does not execute code or grant deployment readiness.
