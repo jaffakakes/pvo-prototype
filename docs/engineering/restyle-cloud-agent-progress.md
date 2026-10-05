@@ -14,12 +14,12 @@ Last checkpoint: **5 October 2026**. Recheck Git and provider state before relyi
 | Next document to follow | [Detailed 1B implementation plan](restyle-cloud-agent-roadmaps/1b-saved-tasks.md#1b03--store-the-task-and-expose-owned-operations) |
 | First concrete action | Design owned server-project resolution and the durable task/index coordinator; reuse account sessions and the 1B.01 transition contract |
 | Product work in progress | 1B.02 implementation and beta verification complete; server task storage/routes, background runner, and cloud-task UI remain unimplemented |
-| Partial source changes | None after this verified batch is committed; if interrupted during delivery, inspect Git and finish its commit/push/PR |
+| Partial source changes | None; source and delivery checkpoint committed. Inspect Git before continuing |
 | Implementation checkout | `/Users/christinasmacbook/.codex/worktrees/restyle-task-project-link/pvo-prototype` |
 | Current implementation branch | `feature/restyle-task-project-link`, based on `origin/dev` at `2013da2` |
-| Tested source | The implementation commit containing this entry; source, Node/browser tests, and documentation in this same batch |
-| Review/integration | Prior PR #81 merged into `dev` at `2013da2bd61a30912af749bb08980e5c00640580`; new 1B.02 PR publication next |
-| CI evidence | 1B.01 final-head checks passed before merge. 1B.02 local checks passed; its CI has not yet started |
+| Tested source | `4ba61bd84396a1d36bc564cd01de1d79258aca74`; source, Node/browser tests, and completion evidence in the same commit |
+| Review/integration | [PR #82](https://github.com/jaffakakes/pvo-prototype/pull/82) open against `dev`; source committed and pushed. Prior PR #81 merged at `2013da2bd61a30912af749bb08980e5c00640580` |
+| CI evidence | 1B.02 local checks passed; [PR test run](https://github.com/jaffakakes/pvo-prototype/actions/runs/37339806006) is running and promotion passed at this checkpoint. Inspect the latest head checks before integration |
 | Beta | Delivered and verified at port 4173: **`restyle-editor-shell-8e25ded02bf27bd6`**; existing editor sessions were not forcibly reloaded |
 | Production | No production promotion or deployment performed |
 | Cloud resources | None created for 1B.02; earlier disposable 1A resources remain removed |
@@ -31,7 +31,7 @@ Last checkpoint: **5 October 2026**. Recheck Git and provider state before relyi
 
 ### The next working session
 
-1. Read root instructions, this checkpoint, and the [restart guide](restyle-cloud-agent-handoff.md). Inspect Git, worktrees, remote refs, and the current PR; finish publishing this verified slice if interrupted before its PR is recorded.
+1. Read root instructions, this checkpoint, and the [restart guide](restyle-cloud-agent-handoff.md). Inspect Git, worktrees, remote refs, and the current PR.
 2. Read [1B.03](restyle-cloud-agent-roadmaps/1b-saved-tasks.md#1b03--store-the-task-and-expose-owned-operations), [shared task contract](../../packages/pvo-assistant/tasks/README.md), [local link commands](../../editor/src/state/assistant/taskProjectCommands.ts), [account sessions](../../server/auth/sessions.js), and [existing budget object](../../server/assistant/budget.js).
 3. Define how an authenticated owner resolves/creates a server project for a local draft before creating the first task. Browser IDs and stored locators are lookup hints, never permission. Specify the owned project/task index, atomic task creation/revision updates, retention, and missing-binding behavior.
 4. Implement persistent create/read/list/answer/resume/stop operations with current ownership and CSRF boundaries. Prove duplicate keys, two owners, stale revisions, malformed inputs, and a true storage restart. Preserve the existing anonymous ordinary editor assistant. Running the authoring loop remains 1B.04/1B.05.
@@ -126,7 +126,7 @@ Append new entries here after verified tasks. Keep old evidence when requirement
 - **Limits of evidence:** account and assistant HTTP are fixtures; no live server task, server ownership enforcement, hosted build, or third-party account action was exercised. Those interfaces do not yet exist. No production release.
 - **Beta:** actual server serves `/Users/christinasmacbook/Desktop/pvo-prototype/dist/`. Delivered assets before HTML/service worker/release marker; retained 71 existing hashed assets. Verified served HTML, release JSON, service-worker revision, and a fresh browser's successful UI load and activated service worker: **`restyle-editor-shell-8e25ded02bf27bd6`**. No forced reload of the user's session.
 - **Backup/cleanup:** 188 pre-existing beta files and the new 124-file build are preserved under `/Users/christinasmacbook/.codex/backups/restyle-task-project-link-f7osnzgu/`; `delivery.json` records paths, hashes, and revisions. Task Vite stopped. Temporary dependency symlink removed; generated changes in the isolated implementation checkout were restored after preserving the build. No cloud resources created.
-- **Code / delivery:** this implementation commit includes source, checks, and roadmap evidence. Prior PR #81 merged at `2013da2`; this task uses a new focused branch. Its commit/push/PR publication is the remaining delivery action at this checkpoint.
+- **Code / delivery:** source, checks, and roadmap evidence are committed at `4ba61bd84396a1d36bc564cd01de1d79258aca74`. [PR #82](https://github.com/jaffakakes/pvo-prototype/pull/82) is open against `dev`; a following documentation commit records its URL. Prior PR #81 merged at `2013da2`. Beta is delivered; review/merge and production promotion remain separate.
 - **Next:** **1B.03**. Start with owned server-project resolution and durable task/index storage, then authenticated task operations and true restart tests. Integrate this slice first through its PR.
 
 ## Template for the next evidence entry
