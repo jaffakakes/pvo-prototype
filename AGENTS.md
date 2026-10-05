@@ -26,6 +26,16 @@ These rules apply throughout this repository. Read the [coding standard](docs/en
 
 ## Working method
 
+### Restyle cloud agent progress and handoff
+
+When working on the Restyle cloud agent, read [the handoff](docs/engineering/restyle-cloud-agent-handoff.md), [current progress](docs/engineering/restyle-cloud-agent-progress.md), and the linked numbered roadmap before editing. This applies to Codex, Claude Code, and other coding agents.
+
+- After each verified task, mark its numbered roadmap checkbox complete and record the result, checks, commit/PR or pending files, and exact next task in the progress document. Update these files in the same work batch as the change; do not leave progress only in chat.
+- Keep incomplete or unverified work unchecked. Before stopping, record partial changes, failing or unrun checks, blockers, and the next concrete action. Checkpoint after meaningful changes so an interrupted session can be resumed.
+- Separate implementation completion from PR merge, beta availability, and production deployment. Record resources before creation and their cleanup status afterward; keep secrets outside these documents.
+
+### General work sequence
+
 1. Inspect relevant instructions, callers, tests, and `git status`. Preserve existing user changes.
 2. Identify the responsibility and dependency direction before editing. Follow the target architecture incrementally; do not create empty scaffolding or rewrite unrelated features.
 3. Separate behavior changes from file extraction. Add meaningful regression coverage for moved rules or risky lifecycles where coverage is missing.
