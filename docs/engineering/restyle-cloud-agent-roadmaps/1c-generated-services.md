@@ -6,7 +6,7 @@
 
 **1C.01 is verified.** The shared contract has a behavior agreement and a separate source package. Each operation declares its inputs, result, audience and storage access. Ordered examples describe expected results and state changes. The source package refers to the exact saved agreement digest. Contract parsing cannot grant permissions or mark a service ready.
 
-A private workspace core is now locally verified in `packages/pvo-assistant/workspaces/` and `server/assistant/workspaces/`: durable source/receipts, stable resource identity, bounded commands, global compute reservations and cleanup. See the [workspace contract](../../../packages/pvo-assistant/workspaces/README.md). Saved-task claim/revocation integration, model wiring and actual provider acceptance remain pending.
+A private workspace core is now locally verified in `packages/pvo-assistant/workspaces/` and `server/assistant/workspaces/`: durable source/receipts, stable resource identity, bounded commands, global compute reservations and cleanup. See the [workspace contract](../../../packages/pvo-assistant/workspaces/README.md). Actual native Container acceptance has passed and cleanup is verified. Saved-task claim/revocation integration and model wiring remain pending.
 
 The remaining numbered tasks are unchecked. This document records implementation decisions to carry into their code and tests; it is not evidence that a workspace or model-driven build already exists.
 
@@ -59,4 +59,4 @@ Exercise owner/task isolation; concurrent starts; lost start/command replies; ac
 
 Before any new paid acceptance run, record exact resource names, count, lifetime, call bounds, expected charges and cleanup responsibility. The approved US$15 recovery batch is already complete; do not silently reuse its approval for a new Container/model batch. Complete local code and tests first so any remaining spending decision is concrete.
 
-The [workspace provider verification plan](../restyle-workspace-provider-proof.md) records the prepared disposable diagnostic, limits, proposed test ceiling and cleanup procedure. It has not been run against the real provider.
+The [workspace provider verification plan](../restyle-workspace-provider-proof.md) records the prepared disposable diagnostic, limits, proposed test ceiling and cleanup procedure. The first approved real provider run passed on 5 October 2026; all disposable resources were removed and their absence verified. The evidence records the exact source, bundle and resources.
