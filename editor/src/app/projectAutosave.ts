@@ -1,3 +1,4 @@
+import type { ProjectSnapshot } from "../domain/project/model";
 import { highestProjectId } from "../domain/project/highestProjectId";
 import { hasUnfinishedWork } from "../domain/project/unfinishedWork";
 import { advanceUidPast } from "../infrastructure/ids";
@@ -66,3 +67,8 @@ export const retryProjectStorage = autosave.retry;
 export const discardProjectRecovery = autosave.discardRecovery;
 export const getProjectStorageStatus = autosave.getStatus;
 export const subscribeProjectStorage = autosave.subscribe;
+
+/** Call after the save boundary; persisted asset IDs remain stable after reopening. */
+export const persistedProjectSnapshot = (
+  project: ProjectSnapshot,
+): ProjectSnapshot => persistence.storedProject(project);

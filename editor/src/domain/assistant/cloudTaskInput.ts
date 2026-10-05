@@ -12,7 +12,7 @@ export function cloudTaskInput(
   project: ProjectSnapshot,
   request: string,
   proposal: TaskProposal,
-  identity: { projectId: string; operationId: string },
+  identity: { projectId: string; operationId: string; fingerprint: string },
 ): TaskInput {
   const context = nativeProjectContext(project, 0);
   const components = context.scenes.flatMap((scene) =>
@@ -31,9 +31,10 @@ export function cloudTaskInput(
     }),
   );
   return parseTaskInput({
-    ...identity,
+    projectId: identity.projectId,
+    operationId: identity.operationId,
     request,
     ...parseTaskProposal(proposal),
-    context: { fingerprint: context.fingerprint, components },
+    context: { fingerprint: identity.fingerprint, components },
   });
 }

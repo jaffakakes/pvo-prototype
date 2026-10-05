@@ -43,6 +43,13 @@ export async function assistantTaskRoute(request, env, config) {
     );
   }
   if (result.error) throw new HttpError(result.status, result.error);
+  if (operation.kind === "result")
+    return new Response(result.body, {
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-store",
+      },
+    });
   return json(result, result.created ? 201 : 200);
 }
 
@@ -68,14 +75,19 @@ async function taskOperation(request, url) {
       input: creationInput(await readJson(request, TASK_LIMITS.inputBytes)),
     };
   const match =
-    /^\/api\/assistant\/tasks\/([A-Za-z0-9_-]{1,128})(?:\/(answers|resume|stop))?$/.exec(
+    /^\/api\/assistant\/tasks\/([A-Za-z0-9_-]{1,128})(?:\/(answers|resume|stop|result))?$/.exec(
       path,
     );
   if (match) {
     taskId(match[1]);
+    if (match[2] === "result" && request.method === "GET")
+      return { kind: "result", id: match[1] };
     if (!match[2] && request.method === "GET")
       return { kind: "read", id: match[1] };
-    if (match[2] && request.method === "POST") {
+    if (
+      ["answers", "resume", "stop"].includes(match[2]) &&
+      request.method === "POST"
+    ) {
       const input = await readJson(request, 8192);
       creatorCommand(match[2], input);
       return { kind: match[2], id: match[1], input };

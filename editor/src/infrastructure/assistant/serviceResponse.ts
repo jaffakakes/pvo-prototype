@@ -1,13 +1,26 @@
-import { AssistantServiceError, type AssistantServiceErrorCode } from "../../domain/assistant/failure";
+import {
+  AssistantServiceError,
+  type AssistantServiceErrorCode,
+} from "../../domain/assistant/failure";
 import { assistantServiceErrorDefinition } from "../../../../packages/pvo-assistant/service-errors.js";
 
 /** Bound response decoding too; release the reader immediately on cancellation. */
-export async function readAssistantJson(response: Response, signal: AbortSignal, maximumBytes = 96 * 1024): Promise<unknown> {
-  if (response.headers.get("Content-Type")?.split(";", 1)[0].trim() !== "application/json")
+export async function readAssistantBytes(
+  response: Response,
+  signal: AbortSignal,
+  maximumBytes: number,
+): Promise<Uint8Array<ArrayBuffer>> {
+  if (
+    response.headers.get("Content-Type")?.split(";", 1)[0].trim() !==
+    "application/json"
+  )
     throw new AssistantServiceError(422, undefined, "model_output_invalid");
   const reader = response.body?.getReader();
-  if (!reader) throw new AssistantServiceError(422, undefined, "model_output_invalid");
-  const cancel = () => { void reader.cancel(signal.reason).catch(() => {}); };
+  if (!reader)
+    throw new AssistantServiceError(422, undefined, "model_output_invalid");
+  const cancel = () => {
+    void reader.cancel(signal.reason).catch(() => {});
+  };
   signal.addEventListener("abort", cancel, { once: true });
   const chunks: Uint8Array[] = [];
   let size = 0;
@@ -26,23 +39,44 @@ export async function readAssistantJson(response: Response, signal: AbortSignal,
     }
     const bytes = new Uint8Array(size);
     let offset = 0;
-    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
-    try { return JSON.parse(new TextDecoder().decode(bytes)) as unknown; }
-    catch { throw new AssistantServiceError(422, undefined, "model_output_invalid"); }
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return bytes;
   } finally {
     signal.removeEventListener("abort", cancel);
     reader.releaseLock();
   }
 }
 
+export async function readAssistantJson(
+  response: Response,
+  signal: AbortSignal,
+  maximumBytes = 96 * 1024,
+): Promise<unknown> {
+  const bytes = await readAssistantBytes(response, signal, maximumBytes);
+  try {
+    return JSON.parse(new TextDecoder().decode(bytes)) as unknown;
+  } catch {
+    throw new AssistantServiceError(422, undefined, "model_output_invalid");
+  }
+}
+
 /** Only recognized structured reasons affect UI; upstream messages never cross this boundary. */
-export async function assistantServiceFailure(response: Response, signal: AbortSignal): Promise<AssistantServiceError> {
+export async function assistantServiceFailure(
+  response: Response,
+  signal: AbortSignal,
+): Promise<AssistantServiceError> {
   let code: AssistantServiceErrorCode | undefined;
   try {
     if (response.status === 429 || response.status === 422) {
       const result = await readAssistantJson(response, signal, 4096);
       if (result && typeof result === "object" && "code" in result)
-        code = assistantServiceErrorDefinition(result.code, response.status)?.code;
+        code = assistantServiceErrorDefinition(
+          result.code,
+          response.status,
+        )?.code;
     }
   } catch {
     signal.throwIfAborted();

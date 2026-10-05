@@ -18,6 +18,7 @@ type CreationAdapters = {
   stage(scope: TaskLinkRequest, input: TaskInput): TaskLinkRequest;
   finish(scope: TaskLinkRequest, task: TaskRecord): TaskLinkRequest;
   flush(): Promise<void>;
+  fingerprint(project: ProjectSnapshot): string;
   resolve(localId: string, signal: AbortSignal): Promise<string>;
   create(input: TaskInput, signal: AbortSignal): Promise<TaskRecord>;
   read(
@@ -93,7 +94,11 @@ export function createSavedTaskWorkflow(adapters: CreationAdapters) {
           input.project,
           input.request,
           input.proposal,
-          { projectId, operationId: adapters.operationId() },
+          {
+            projectId,
+            operationId: adapters.operationId(),
+            fingerprint: adapters.fingerprint(input.project),
+          },
         );
         scope = adapters.stage(scope, submission);
         pending = { ownerId: scope.ownerId, input: submission };

@@ -5,7 +5,7 @@ import { assertResponsePolicyContract } from "../../domain/components/responsePo
 import { cloneScenes } from "../../domain/project/snapshot";
 import { normalizeSceneTree } from "../../domain/scenes/rules";
 import { assertSceneAnimation } from "../../domain/animation/validation";
-import { remapTrackingMediaReferences } from "../../domain/animation/trackingPersistence";
+import { remapProjectMedia } from "../../domain/project/mediaReferences";
 import {
   parseTaskProjectLinks,
   type TaskProjectLinks,
@@ -148,30 +148,6 @@ export function referencedMedia(checkpoint: CheckpointDraft): string[] {
   return [...urls];
 }
 
-function remapProject(
-  project: ProjectSnapshot,
-  urlMap: Map<string, string>,
-): ProjectSnapshot {
-  return remapTrackingMediaReferences(project, {
-    ...project,
-    scenes: normalizeSceneTree(project.scenes).map((scene) => ({
-      ...scene,
-      ...(scene.audioClips
-        ? {
-            audioClips: scene.audioClips.map((clip) => ({
-              ...clip,
-              url: clip.url ? (urlMap.get(clip.url) ?? null) : null,
-            })),
-          }
-        : {}),
-      clips: scene.clips.map((clip) => ({
-        ...clip,
-        url: clip.url ? (urlMap.get(clip.url) ?? null) : null,
-      })),
-    })),
-  });
-}
-
 export function storeCheckpoint(
   draft: CheckpointDraft,
   assetIdByUrl: Map<string, string>,
@@ -187,9 +163,9 @@ export function storeCheckpoint(
   });
   return {
     ...draft,
-    project: remapProject(draft.project, assetIdByUrl),
-    past: draft.past.map((item) => remapProject(item, assetIdByUrl)),
-    future: draft.future.map((item) => remapProject(item, assetIdByUrl)),
+    project: remapProjectMedia(draft.project, assetIdByUrl),
+    past: draft.past.map((item) => remapProjectMedia(item, assetIdByUrl)),
+    future: draft.future.map((item) => remapProjectMedia(item, assetIdByUrl)),
     assetIds,
     savedAt,
   };
@@ -209,9 +185,9 @@ export function restoreCheckpoint(
             record.assistantTaskLinks,
             record.localId ?? null,
           ),
-    project: remapProject(record.project, urlMap),
-    past: record.past.map((item) => remapProject(item, urlMap)),
-    future: record.future.map((item) => remapProject(item, urlMap)),
+    project: remapProjectMedia(record.project, urlMap),
+    past: record.past.map((item) => remapProjectMedia(item, urlMap)),
+    future: record.future.map((item) => remapProjectMedia(item, urlMap)),
     ...record.resume,
     savedAt: record.savedAt,
   };
