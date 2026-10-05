@@ -1,3 +1,4 @@
+import type { TaskRecord } from "../tasks/index.js";
 import type { ServiceSourceFile } from "../services/index.js";
 export type WorkspaceIdentity = {
   resourceId: string;
@@ -185,3 +186,9 @@ export function parseWorkspaceObservation(
   value: unknown,
   expected: WorkspaceIdentity,
 ): WorkspaceObservation;
+export function workspaceTaskCleanup(
+  task: TaskRecord | null | undefined,
+  identity: WorkspaceIdentity,
+  grant: WorkspaceGrant,
+  now: number,
+): "stop" | "suspend" | null;

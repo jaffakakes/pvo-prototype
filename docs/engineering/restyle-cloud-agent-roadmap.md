@@ -2,7 +2,7 @@
 
 **Continuing with Claude Code or Codex:** read [current progress](restyle-cloud-agent-progress.md), then the [handoff/restart guide](restyle-cloud-agent-handoff.md). Every checklist item now has a stable task ID. After each verified task, check it off and save its evidence and exact next action. Root [AGENTS.md](../../AGENTS.md) and [CLAUDE.md](../../CLAUDE.md) require this workflow.
 
-Status: implementation in progress, 5 October 2026. **1A and 1B passed:** real workshop/independent hosting and saved tasks with questions, background planning, guarded prepared results and actual provider recovery are verified. **1C.01 also passed:** the service package, behavior agreement and invocation rules are defined and tested. **Next: 1C.02/1C.03, isolated workspaces and restoration.** See [current evidence](restyle-cloud-agent-progress.md), the [infrastructure proof](restyle-cloud-infrastructure-proof.md) and the [provider recovery proof](restyle-cloud-provider-recovery-proof.md). Unchecked items remain proposed work.
+Status: implementation in progress, 5 October 2026. **1A and 1B passed:** real workshop/independent hosting and saved tasks with questions, background planning, guarded prepared results and actual provider recovery are verified. **1C.01 also passed:** the service package, behavior agreement and invocation rules are defined and tested. **1C.02/03/09 also passed:** task-owned workspaces, restoration and cleanup. **Next: 1C.04, bounded tools; then 1C.05, the builder loop.** See [current evidence](restyle-cloud-agent-progress.md), the [infrastructure proof](restyle-cloud-infrastructure-proof.md) and the [provider recovery proof](restyle-cloud-provider-recovery-proof.md). Unchecked items remain proposed work.
 
 Start with [Roadmap 1](restyle-cloud-agent-roadmaps/01-first-working-component.md). It delivers the first complete version: ask for a component, let the agent build a new backend, try it, and share something that keeps working after its temporary computer shuts down.
 
@@ -114,6 +114,4 @@ Production promotion follows dev → preprod → prod. After successful deployme
 
 ## Start here
 
-**Continue with 1C.02/1C.03 in Roadmap 1:** implement one owned isolated workspace per task, save source outside it, restore it after restart and reconcile its stable resource identity. The [service agreement and package](../../packages/pvo-assistant/services/README.md) now define what is built and how its inputs/results are checked. Integrate the verified prerequisite slices through dev first; see the current progress for exact PR/check status. The full model-driven build and trusted test gate remain later 1C steps.
-
-Use completion checks to judge progress. Calendar estimates depend on provider access, implementation results, and integration difficulties discovered in these steps.
+**Continue with 1C.04 in Roadmap 1:** expose bounded workspace read/save/start/command capabilities only when their adapters are available. The task-owned workspace, stable identity, restoration and Stop cleanup are verified; actual provider test resources were deleted. 1C.05 then connects the model builder. Trusted test approval remains in 1C.07/08. Continue local implementation without waiting for GitHub checks, as authorized; keep remote integration and production separate. Read the current progress before editing.

@@ -20,7 +20,7 @@ The earlier US$15 approval covered the completed 1B provider-recovery batch. The
 8. Run a command that prints too much. Stop it and retain the saved source.
 9. Remove every disposable resource and verify that it is gone.
 
-These are fixed infrastructure diagnostics. They do not show that the model can generate services or that generated tests can approve their own releases. Saved-task operation accounting, model tools and the independent trusted test gate still need their roadmap work. Leave 1C.02/1C.03/1C.04/1C.09 unchecked until their complete acceptance conditions are met.
+These are fixed infrastructure diagnostics. They do not show that the model can generate services or that generated tests can approve their own releases. Task operation accounting and lifecycle integration subsequently passed local restart/RPC tests. 1C.02/1C.03/1C.09 are now checked with that combined evidence. Model tools and the independent trusted test gate remain unfinished.
 
 ## Resources and limits
 
@@ -66,5 +66,4 @@ On failure or success, stop all owned workspaces, delete their private diagnosti
 - **Cleanup:** all four fixed workspace identities reported their computers absent. Diagnostic contents were deleted; Worker, application and both namespaces were removed and absence verified at `2026-10-05T21:32:18.788Z`. Local diagnostic secret files were removed. Report flags: `passed: true`, `cleanupVerified: true`.
 - **Private receipt:** `.wrangler/cloud-agent-infrastructure/workspace-A6Nmfg/report.json` in the active workspace checkout; log `/tmp/restyle-workspaces-live-1.log`. The portable evidence above is sufficient when these ignored files are unavailable. Do not recreate paid resources to replace a missing local receipt.
 - **Cost:** bounded by the approved US$1 batch; exact billed cost was not retrieved. One run used; stop-after-success ends this batch.
-- **Roadmap:** no additional checkbox yet. The provider portion of 1C.02/1C.03/1C.09 is verified; connect saved-task claims, accounting, Stop and recovery next. Model construction and trusted service tests remain later work.
-
+- **Roadmap:** this run supplied the provider evidence for 1C.02/1C.03/1C.09. Those boxes were subsequently completed after task claims/accounting/Stop/recovery passed local tests. Next: 1C.04 bounded tools, then the builder and trusted service tests.

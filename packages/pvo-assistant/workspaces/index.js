@@ -32,3 +32,4 @@ export {
   revokeWorkspaceGrant,
 } from "./grants.js";
 export { parseWorkspaceReceipt, parseWorkspaceObservation } from "./results.js";
+export { workspaceTaskCleanup } from "./taskCleanup.js";

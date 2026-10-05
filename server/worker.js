@@ -5,3 +5,5 @@ export { AssistantTasks } from "./assistant/tasks/coordinator.js";
 export { IMessageTestQueue } from "./imessage/queue.js";
 export { RenderContainer } from "./render/container.js";
 export { ServiceRelease } from "./cloud-services/release.js";
+export { AssistantWorkspace } from "./assistant/workspaces/coordinator.js";
+export { WorkspaceBudget } from "./assistant/workspaces/budget.js";

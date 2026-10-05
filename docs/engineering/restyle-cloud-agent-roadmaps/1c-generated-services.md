@@ -4,11 +4,11 @@
 
 ## Current implementation
 
-**1C.01 is verified.** The shared contract has a behavior agreement and a separate source package. Each operation declares its inputs, result, audience and storage access. Ordered examples describe expected results and state changes. The source package refers to the exact saved agreement digest. Contract parsing cannot grant permissions or mark a service ready.
+**1C.01/1C.02/1C.03/1C.09 are verified.** The shared contract has a behavior agreement and a separate source package. Each operation declares its inputs, result, audience and storage access. Ordered examples describe expected results and state changes. The source package refers to the exact saved agreement digest. Contract parsing cannot grant permissions or mark a service ready.
 
-A private workspace core is now locally verified in `packages/pvo-assistant/workspaces/` and `server/assistant/workspaces/`: durable source/receipts, stable resource identity, bounded commands, global compute reservations and cleanup. See the [workspace contract](../../../packages/pvo-assistant/workspaces/README.md). Actual native Container acceptance has passed and cleanup is verified. Saved-task claim/revocation integration and model wiring remain pending.
+The workspace core and saved-task integration are verified in `packages/pvo-assistant/workspaces/` and `server/assistant/workspaces/`: durable source/receipts, stable resource identity, bounded commands, global compute reservations and cleanup. See the [workspace contract](../../../packages/pvo-assistant/workspaces/README.md). Actual native Container acceptance has passed and cleanup is verified. Saved-task claim/revocation, operation/usage journals and Stop/deadline cleanup now pass local restart/RPC tests. Model tool advertising and construction remain pending.
 
-The remaining numbered tasks are unchecked. This document records implementation decisions to carry into their code and tests; it is not evidence that a workspace or model-driven build already exists.
+The remaining numbered tasks are unchecked. This document records decisions for their code and tests; the model-driven build and independent test approval are still unfinished.
 
 ## What the creator should experience
 

@@ -18,11 +18,16 @@ export async function taskFixture({
   planner = null,
   services = false,
   providerControl = null,
+  workspaces = false,
+  workspaceControl = null,
+  workspaceEffects = async () => Response.json({}),
 } = {}) {
   modules ??= bundleWorkerModules({
     stdin: {
       resolveDir: process.cwd(),
       contents: `
+    export { TestBudget, TestWorkspace } from './tests/assistant-workspaces/controlled-worker.js';
+    import { reconcileTaskWorkspaces } from './server/assistant/tasks/workspaceRunner.js';
     import { ServiceRelease } from "./server/cloud-services/release.js";
     import { reconcileTaskServices } from "./server/assistant/tasks/providerRunner.js";
     export class TestServiceRelease extends ServiceRelease {
@@ -65,6 +70,35 @@ export async function taskFixture({
         };
         return { publish: value => call("publish", value), lookup: value => call("lookup", value), cancel: value => call("cancel", value) };
       }
+      workspaceTimeoutMs() { return 500; }
+      workspaceProvider() {
+        if (this.workspacesDisabled) return null;
+        const provider = super.workspaceProvider();
+        if (!provider) return null;
+        const call = async (action, ...args) => {
+          const control = async phase => {
+            if (!this.env.WORKSPACE_CONTROL) return;
+            const decision = await (await this.env.WORKSPACE_CONTROL.fetch("https://workspace-control.test", {
+              method: "POST", body: JSON.stringify({ phase, action, identity: args[0], request: args[2] }) })).json();
+            if (decision.fail) throw new Error("Controlled workspace RPC failure");
+          };
+          await control("before");
+          await this.env.ASSISTANT_WORKSPACES.getByName(args[0].resourceId).setTime(this.now());
+          await this.env.WORKSPACE_BUDGET.getByName("global").setTime(this.now());
+          const result = await provider[action](...args);
+          await control("after");
+          return result;
+        };
+        return Object.fromEntries(["operate", "receipt", "lookup", "suspend", "stop"].map(action => [action, (...args) => call(action, ...args)]));
+      }
+      disableWorkspaces() { this.workspacesDisabled = true; }
+      async reconcileWorkspaces() { await reconcileTaskWorkspaces(this); return this.workspaceRows(); }
+      workspaceRows() { return { operations: this.workspaces.entries(), links: this.workspaces.links() }; }
+      async workspaceStatus(identity) {
+        const stub = this.env.ASSISTANT_WORKSPACES.getByName(identity.resourceId);
+        await stub.setTime(this.now());
+        return { observation: await stub.lookup(identity), stats: await stub.inspect() };
+      }
       disableProvider() { this.providerDisabled = true; }
       async reconcileProviders() { await this.transaction(() => this.providers.noteTerminal(this.now())); await reconcileTaskServices(this); return this.providers.entries(); }
       providerRows() { return this.providers.entries(); }
@@ -99,6 +133,11 @@ export async function taskFixture({
         const { action, ...args } = await request.json();
         const stub = env.ASSISTANT_TASKS.getByName("owner:" + owner.id);
         try {
+          if (action === "workspace") return json(await stub.workspaceOperation(owner.id, args.id, args.kind, args.request, args.guard));
+          if (action === "workspace-rows") return json(await stub.workspaceRows());
+          if (action === "workspace-reconcile") return json(await stub.reconcileWorkspaces());
+          if (action === "workspace-status") return json(await stub.workspaceStatus(args.identity));
+          if (action === "disable-workspaces") { await stub.disableWorkspaces(); return json({ ok: true }); }
           if (action === "disable-provider") { await stub.disableProvider(); return json({ ok: true }); }
           if (action === "publish") return json(await stub.publishService(owner.id, args.id, args.source, args.guard));
           if (action === "provider-reconcile") return json(await stub.reconcileProviders());
@@ -135,10 +174,14 @@ export async function taskFixture({
         BROKEN: broken,
         CONTROLLED_PLAN: Boolean(planner),
       },
-      ...(planner || providerControl
+      ...(planner || providerControl || workspaces
         ? {
             serviceBindings: {
               ...(planner ? { PLANNER: planner } : {}),
+              ...(workspaces ? { CONTROL: workspaceEffects } : {}),
+              ...(workspaceControl
+                ? { WORKSPACE_CONTROL: workspaceControl }
+                : {}),
               ...(providerControl ? { PROVIDER_CONTROL: providerControl } : {}),
             },
           }
@@ -148,6 +191,18 @@ export async function taskFixture({
         ? {
             durableObjects: {
               ASSISTANT_TASKS: { className: "TestTasks", useSQLite: true },
+              ...(workspaces
+                ? {
+                    ASSISTANT_WORKSPACES: {
+                      className: "TestWorkspace",
+                      useSQLite: true,
+                    },
+                    WORKSPACE_BUDGET: {
+                      className: "TestBudget",
+                      useSQLite: true,
+                    },
+                  }
+                : {}),
               ...(services
                 ? {
                     SERVICE_RELEASES: {
