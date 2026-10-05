@@ -68,6 +68,8 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 
 ## 1D. Run the finished service and manage its data
 
+**Current implementation:** start with [the 1D ownership and hosting notes](1d-hosted-services.md); all 1D tasks remain unchecked.
+
 - [ ] **1D.01** Add owned service and release records. Link each release to its exact source bundle, test result, runtime, operations, and storage permissions.
 - [ ] **1D.02** Deploy releases inactive. Separate test data and permissions from live data and permissions.
 - [ ] **1D.03** Create a stable Restyle address that routes to the recorded release. Validate input and ownership before generated code runs.
