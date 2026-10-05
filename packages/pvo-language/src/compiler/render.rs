@@ -131,14 +131,16 @@ pub(super) fn default_css() -> &'static str {
        box-shadow:3px 3px 0 #000;padding:12px;}\n\
      #pvo-root .pvo-tooltip{width:max-content;max-width:220px;background:#FFD23E;color:#111;font-weight:800;font-size:13px;}\n\
      #pvo-root .pvo-card,#pvo-root .pvo-choice,#pvo-root .pvo-form{width:208px;}\n\
+     #pvo-root .pvo-choice{display:grid;gap:7px;width:176px;background:transparent;border-width:0;box-shadow:none;padding:0;}\n\
      #pvo-root .pvo-title,#pvo-root .pvo-prompt,#pvo-root .pvo-heading{margin:0 0 8px;font-weight:800;font-size:19px;}\n\
+     #pvo-root .pvo-prompt{margin:0;text-align:center;}\n\
      #pvo-root .pvo-body{margin:0 0 10px;font-weight:700;font-size:11px;}\n\
      #pvo-root .pvo-actions{display:flex;gap:6px;}\n\
      #pvo-root .pvo-button,#pvo-root .pvo-option,#pvo-root .pvo-submit{\
        min-height:36px;background:#A78BFA;color:#111;border:2px solid #000;\
        border-radius:9px;box-shadow:2px 2px 0 #000;font-weight:800;font-size:12px;cursor:pointer;}\n\
      #pvo-root .pvo-button{flex:1;min-width:0;background:#FF2D78;color:#F2F0E9;}\n\
-     #pvo-root .pvo-option{display:block;width:100%;margin-top:7px;}\n\
+     #pvo-root .pvo-option{display:block;width:100%;margin-top:0;}\n\
      #pvo-root .pvo-field{display:block;width:100%;min-height:32px;margin-bottom:6px;\
        padding:6px 8px;background:#1C1C24;color:#F2F0E9;border:2px solid #4A4757;border-radius:7px;}\n\
      #pvo-root .pvo-submit{width:100%;background:#FF2D78;color:#F2F0E9;}\n"
