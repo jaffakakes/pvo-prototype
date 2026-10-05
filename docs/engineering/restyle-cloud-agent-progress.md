@@ -357,3 +357,13 @@ Verified locally so far: 17 task/provider/validation tests, eight provider/contr
 ### 2026-10-06 — inactive hosting delivered and checkpointed
 
 Implementation `12ae422` is pushed in draft #97, attached to the task. Combined beta `5e4be2a` passed build/editor types/30 focused checks/Worker dry run and serves `restyle-editor-shell-a6daa4bf3a021fcd`; exact backup/receipt paths are above. Generated output before rebuilding was verified byte-for-byte against its saved backup. No model/cloud spend, remote CI polling or production change. Continue 1D.03–1D.05 under the existing authorization.
+
+
+### 2026-10-06 — stable service/data slice started
+
+Desktop's nine documentation snapshots were refreshed at `24fa3b2` after every previous hash matched its receipt. Next-slice notes choose one per-service durable object to keep release selection, state and action receipts in one SQLite ownership boundary. First extract the existing release storage without behavior changes; then evolve that undeployed object/binding to the stable service contract and implement route/record behavior. 1D.03–1D.05 remain unchecked. No new paid resources/calls.
+
+
+### 2026-10-06 — release persistence extracted before stable routing
+
+Moved unchanged inactive release SQL/byte/quota/tombstone behavior into `server/cloud-services/releaseStore.js`. The Durable Object still owns transactions, alarms and runtime effects; publication/probe behavior and the current binding are unchanged. Updated diagnostic/test inspection paths. All **21 existing provider/recovery/automatic-host tests** pass (`/tmp/restyle-hosting-storage-extract.log`); one missed fixture inspection path was corrected before this final rerun. This structural checkpoint is committed separately from the following contract/storage changes. Next: one service object with bounded immutable release records, stable route, durable invocation state and receipts. 1D.03–1D.05 remain unchecked.

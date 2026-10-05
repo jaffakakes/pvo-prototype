@@ -27,7 +27,7 @@ export class ProofRelease extends ServiceRelease {
       calls:
         this.ctx.storage.sql.exec("SELECT count FROM proof_calls").toArray()[0]
           ?.count ?? 0,
-      sourcePresent: this.row()?.body != null,
+      sourcePresent: this.store.row()?.body != null,
     };
   }
 }

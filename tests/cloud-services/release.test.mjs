@@ -44,7 +44,7 @@ async function fixture() {
     export class TestRelease extends ServiceRelease {
       now() { return this.clock ?? Date.UTC(2100, 0, 1); }
       async expire(now) { this.clock = now; await this.alarm(); }
-      inspect() { const row=this.row(); return { sourcePresent: !!row?.body, probes: row?.probes ?? 0 }; }
+      inspect() { const row=this.store.row(); return { sourcePresent: !!row?.body, probes: row?.probes ?? 0 }; }
     }
     export default { async fetch(request, env) {
       const { action, target, publication, identity, input, now } = await request.json();

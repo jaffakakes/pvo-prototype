@@ -238,6 +238,7 @@
   "server/cloud-services/packageExecution.js",
   "server/cloud-services/release.js",
   "server/cloud-services/releaseContract.js",
+  "server/cloud-services/releaseStore.js",
   "server/contentDigest.js",
   "server/render-jobs/internal-transfer.js",
   "server/render-jobs/repository.js",
