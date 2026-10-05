@@ -17,6 +17,7 @@ export {
   nextBuilderTool,
   recordBuilderTool,
   interruptBuilderBatch,
+  recordBuilderReview,
   builderContext,
 } from "./state.js";
 
@@ -28,3 +29,5 @@ export {
   parseBuilderResearchResult,
   builderResearchDefinitions,
 } from "./research.js";
+
+export { builderReviewRequest } from "./review.js";

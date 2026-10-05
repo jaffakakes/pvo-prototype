@@ -15,3 +15,14 @@ export {
   parseServiceFiles,
   serializeServiceFiles,
 } from "./files.js";
+
+export {
+  SERVICE_TEST_POLICY,
+  SERVICE_TEST_LIMITS,
+  parseServiceTestIdentity,
+  parseServiceCaseResult,
+  parseServiceTestReport,
+  newServiceTestReport,
+  appendServiceCaseResult,
+  inspectServiceReply,
+} from "./testing.js";

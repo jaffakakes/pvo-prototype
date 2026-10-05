@@ -104,3 +104,68 @@ export function matchServicePackage(
   value: unknown,
   expectedAgreementDigest: string,
 ): ServicePackage;
+
+export const SERVICE_TEST_POLICY: "restyle-service-checks-v1";
+export const SERVICE_TEST_LIMITS: Readonly<{
+  cpuMs: number;
+  invocationMs: number;
+  caseMs: number;
+  invocationBytes: number;
+  replyBytes: number;
+  reportBytes: number;
+  packages: number;
+}>;
+export type ServiceTestIdentity = {
+  agreementDigest: string;
+  packageDigest: string;
+  sourceDigest: string;
+};
+export type ServiceTestFailure = {
+  step: number;
+  code:
+    | "invalid_reply"
+    | "execution_failed"
+    | "output_limit"
+    | "timeout"
+    | "mismatch"
+    | "interrupted";
+  detail: string;
+};
+export type ServiceCaseResult = {
+  id: string;
+  status: "passed" | "failed" | "interrupted";
+  completedSteps: number;
+  failure: ServiceTestFailure | null;
+};
+export type ServiceTestReport = {
+  policy: typeof SERVICE_TEST_POLICY;
+  identity: ServiceTestIdentity;
+  status: "running" | "passed" | "failed" | "interrupted";
+  cases: ServiceCaseResult[];
+};
+export function parseServiceTestIdentity(value: unknown): ServiceTestIdentity;
+export function parseServiceCaseResult(
+  value: unknown,
+  scenario: ServiceAgreement["cases"][number],
+): ServiceCaseResult;
+export function parseServiceTestReport(
+  value: unknown,
+  agreement: ServiceAgreement,
+  identity: ServiceTestIdentity,
+): ServiceTestReport;
+export function newServiceTestReport(
+  agreement: ServiceAgreement,
+  identity: ServiceTestIdentity,
+): ServiceTestReport;
+export function appendServiceCaseResult(
+  report: ServiceTestReport,
+  agreement: ServiceAgreement,
+  identity: ServiceTestIdentity,
+  result: ServiceCaseResult,
+): ServiceTestReport;
+export function inspectServiceReply(
+  agreement: ServiceAgreement,
+  invocation: ServiceInvocation,
+  expected: ServiceReply,
+  actual: unknown,
+): { code: "invalid_reply" | "mismatch"; detail: string } | null;

@@ -26,7 +26,7 @@ Inference and execution use separate task claims. Each saved batch contains up t
 
 After claim loss, cleanup and receipt lookup finish before recovery. The builder consumes already completed effects once and abandons remaining calls against the old computer. Missing output stays unknown. A reconciled failed builder batch may resume within the existing three-retry and active-task limits; Stop never resumes. A completed review checkpoint resumes without another model or tool call.
 
-The task caps remain six model turns, 24 tool calls and four computer sessions. No Internet or dependencies are granted by a builder decision. The trusted service test gate remains 1C.07/1C.08, and publishing/attachment remain later tasks. The connected local builder does not yet make a deployable service available in the app.
+The task caps remain six model turns, 24 tool calls and four computer sessions. No Internet or dependencies are granted by a builder decision. The trusted service test gate is described in the [service contract](../services/README.md#independent-test-reports); publishing/attachment remain later tasks. The connected local builder does not yet make a deployable service available in the app.
 
 ## Controlled public research
 
@@ -37,3 +37,8 @@ Results retain actual source URLs and retrieval times. Page text is at most 16,0
 `TaskResearch` saves the owned intent before a request, reserves one tool call, and saves its actual result before further inference. Exact request-ID replay returns the saved result and charges once; different input conflicts. On worker loss, an unfinished read settles as unknown and is not silently repeated. Stop cancels the request and blocks late evidence from advancing the builder. Private query/result content expires with the task. No workspace is started for research.
 
 The package policy remains the current **empty dependency lock**: standard JavaScript/Web APIs only. There is no package-install tool and the computer remains offline. Introducing dependencies requires a scoped resolver with pinned versions/integrity and a demonstrated need; it does not follow from a model asking for Internet access.
+
+
+## Independent review and repair
+
+A review captures the exact requested owned snapshot and runs saved behavior cases outside generated code. The platform saves `reviewFeedback` beside builder state: the exact review request, either a completed trusted test report or a bounded artifact error, and the immutable agreement reference. A failed review returns to model repair within existing budgets. Feedback remains visible while source is repaired and clears when a new review is requested. The model cannot submit this feedback or replace the agreement. A passed report goes to the separate `host` task stage; it does not mark the component ready.

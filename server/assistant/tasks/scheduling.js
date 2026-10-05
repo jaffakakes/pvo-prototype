@@ -17,6 +17,7 @@ export function claimNextTask(coordinator) {
   }
   coordinator.attempts.recover(now);
   coordinator.research.recover(now);
+  coordinator.validation.recover(now);
   coordinator.noteTerminal(now);
   coordinator.repository.maintain(now, coordinator.heldTasks());
   coordinator.attempts.prune();
@@ -85,8 +86,9 @@ export function claimNextTask(coordinator) {
       },
     );
     const tools =
-      claimed.stepId === "build" &&
-      coordinator.builders.stage(claimed.id) !== "model";
+      claimed.stepId === "validate" ||
+      (claimed.stepId === "build" &&
+        coordinator.builders.stage(claimed.id) !== "model");
     let code = null;
     if (
       claimed.operations.some((operation) =>
@@ -97,7 +99,8 @@ export function claimNextTask(coordinator) {
     )
       code = "reconciliation_required";
     else if (
-      !["plan", "build"].includes(claimed.stepId) ||
+      !["plan", "build", "validate"].includes(claimed.stepId) ||
+      (claimed.stepId === "validate" && !coordinator.validationAvailable()) ||
       (claimed.stepId === "build" && !coordinator.workspaceProvider()) ||
       (!tools && !coordinator.plannerAvailable())
     )

@@ -1,3 +1,7 @@
+import { ServiceArtifacts } from "../validation/artifacts.js";
+import { ServiceValidationJournal } from "../validation/journal.js";
+import { runServiceValidation } from "../validation/runner.js";
+import { runServiceCase } from "../validation/cases.js";
 import { claimNextTask } from "./scheduling.js";
 import { TaskResearch } from "../builder/researchJournal.js";
 import { publicResearch } from "../builder/researchProvider.js";
@@ -45,6 +49,11 @@ export class AssistantTasks extends DurableObject {
     this.attempts = new TaskAttempts(ctx.storage.sql, this.repository);
     this.builders = new TaskBuilders(ctx.storage.sql, this.repository);
     this.research = new TaskResearch(ctx.storage.sql, this.repository);
+    this.validation = new ServiceValidationJournal(
+      ctx.storage.sql,
+      this.repository,
+    );
+    this.artifacts = new ServiceArtifacts(ctx.storage.sql, this.repository);
     this.active = new Map();
   }
 
@@ -77,6 +86,8 @@ export class AssistantTasks extends DurableObject {
       this.results.prune();
       this.builders.prune(now);
       this.research.prune(now);
+      this.validation.prune(now);
+      this.artifacts.prune(now);
       let result;
       try {
         result = this.ctx.storage.transactionSync(() => {
@@ -251,6 +262,23 @@ export class AssistantTasks extends DurableObject {
     return publishTaskService(this, claimed, source);
   }
 
+  validationAvailable() {
+    return Boolean(
+      this.workspaceProvider() &&
+      typeof this.env.SERVICE_LOADER?.load === "function",
+    );
+  }
+  runValidationCase(artifact, index, signal) {
+    return runServiceCase(
+      this.env.SERVICE_LOADER,
+      artifact.package,
+      artifact.agreement,
+      artifact.identity.agreementDigest,
+      index,
+      signal,
+    );
+  }
+
   stepTimeoutMs() {
     return 45000;
   }
@@ -290,6 +318,7 @@ export class AssistantTasks extends DurableObject {
       this.repository.nextMaintenance(now),
       this.attempts.nextBudgetWakeup(),
       this.research.nextWakeup(now),
+      this.validation.nextWakeup(now),
       this.providers.nextWakeup(),
       this.workspaces.nextWakeup(),
       ...this.repository
@@ -317,7 +346,9 @@ export class AssistantTasks extends DurableObject {
     for (let index = 0; index < 2; index++) {
       const claimed = await this.transaction(() => this.claimNext());
       if (!claimed) break;
-      if (
+      if (claimed.stepId === "validate")
+        await runServiceValidation(this, claimed);
+      else if (
         claimed.stepId === "build" &&
         this.builders.stage(claimed.id) !== "model"
       )
@@ -331,6 +362,8 @@ export class AssistantTasks extends DurableObject {
       this.workspaces.prune(this.now());
       this.builders.prune(this.now());
       this.research.prune(this.now());
+      this.validation.prune(this.now());
+      this.artifacts.prune(this.now());
     });
   }
 }

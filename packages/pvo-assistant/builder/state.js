@@ -1,3 +1,4 @@
+import { parseBuilderReviewFeedback, builderReviewRequest } from "./review.js";
 import { BUILDER_RESEARCH_KINDS } from "./research.js";
 import {
   boundedJson,
@@ -27,6 +28,7 @@ export function newBuilderState() {
     batchEnd: null,
     feedback: [],
     omittedFeedback: 0,
+    reviewFeedback: null,
   };
 }
 
@@ -42,6 +44,7 @@ export function parseBuilderState(value) {
       "batchEnd",
       "feedback",
       "omittedFeedback",
+      "reviewFeedback",
     ],
     "Saved builder",
   );
@@ -123,19 +126,19 @@ export function parseBuilderState(value) {
     value.feedback.length + value.omittedFeedback <= TASK_LIMITS.toolCalls,
     "Too many saved tool results.",
   );
+  if (value.reviewFeedback !== null)
+    parseBuilderReviewFeedback(value.reviewFeedback, value.agreement);
   boundedJson(value, 2 * 1024 * 1024, "Saved builder");
   return structuredClone(value);
 }
 
 export function builderStage(value) {
   const state = parseBuilderState(value);
-  if (
-    state.decision?.kind === "review" ||
-    (state.decision?.kind === "tools" &&
-      state.batchEnd === "completed" &&
-      state.decision.review !== null)
-  )
-    return "review";
+  if (builderReviewRequest(state))
+    return state.reviewFeedback &&
+      state.reviewFeedback.report?.status !== "passed"
+      ? "model"
+      : "review";
   if (
     ["tools", "research"].includes(state.decision?.kind) &&
     state.batchEnd === null
@@ -163,6 +166,10 @@ export function acceptBuilderDecision(value, decision, agreementDigest) {
     round: state.round + 1,
     agreement,
     decision,
+    reviewFeedback:
+      decision.kind === "review" || decision.review
+        ? null
+        : state.reviewFeedback,
     cursor: 0,
     claimGeneration: null,
     batchEnd: null,
@@ -245,6 +252,25 @@ export function interruptBuilderBatch(value) {
   });
 }
 
+/** Only the independent runner supplies this feedback; model decisions have no such field. */
+export function recordBuilderReview(value, feedback) {
+  const state = parseBuilderState(value);
+  const review = builderReviewRequest(state);
+  requireTask(
+    builderStage(state) === "review" && review,
+    "No review is awaiting a report.",
+  );
+  feedback = parseBuilderReviewFeedback(feedback, state.agreement);
+  requireTask(
+    feedback.review.revision === review.revision &&
+      feedback.review.digest === review.digest &&
+      feedback.review.entrypoint === review.entrypoint &&
+      JSON.stringify(feedback.review.tests) === JSON.stringify(review.tests),
+    "Report belongs to a different review request.",
+  );
+  return parseBuilderState({ ...state, reviewFeedback: feedback });
+}
+
 /** Keep complete receipts in their journal; project only bounded recent decision/feedback into inference. */
 export function builderContext(value) {
   const state = parseBuilderState(value);
@@ -276,5 +302,6 @@ export function builderContext(value) {
     batchEnd: state.batchEnd,
     feedback: state.feedback,
     omittedFeedback: state.omittedFeedback,
+    reviewFeedback: state.reviewFeedback,
   };
 }

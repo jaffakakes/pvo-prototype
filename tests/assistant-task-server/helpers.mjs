@@ -22,6 +22,7 @@ export async function taskFixture({
   workspaceControl = null,
   workspaceEffects = async () => Response.json({}),
   researchFetch = null,
+  validationControl = null,
 } = {}) {
   modules ??= bundleWorkerModules({
     stdin: {
@@ -94,6 +95,18 @@ export async function taskFixture({
         };
         return Object.fromEntries(["operate", "receipt", "lookup", "suspend", "stop"].map(action => [action, (...args) => call(action, ...args)]));
       }
+      async runValidationCase(artifact, index, signal) {
+        const control = async phase => {
+          if (!this.env.VALIDATION_CONTROL) return;
+          const decision = await (await this.env.VALIDATION_CONTROL.fetch("https://validation-control.test", {method:"POST", body:JSON.stringify({phase,index,identity:artifact.identity})})).json();
+          if (decision.fail) throw new Error("Controlled validation interruption");
+        };
+        await control("before");
+        const result = await super.runValidationCase(artifact,index,signal);
+        await control("after");
+        return result;
+      }
+      validationState(id) { return { attempts: this.validation.entries().filter(row => row.taskId === id), artifacts: this.ctx.storage.sql.exec("SELECT body FROM task_service_artifacts WHERE task_id=? ORDER BY round",id).toArray().map(row => JSON.parse(row.body)) }; }
       researchProvider() { return this.env.RESEARCH ? publicResearch({ fetch: (url, init) => this.env.RESEARCH.fetch(url, init) }) : super.researchProvider(); }
       async researchTool(ownerId, id, tool, operationId, guard) { return taskResearchTools(this, await this.claimForOperation(ownerId,id,guard)).execute(tool,operationId); }
       researchRows() { return this.research.entries(); }
@@ -140,6 +153,7 @@ export async function taskFixture({
         const { action, ...args } = await request.json();
         const stub = env.ASSISTANT_TASKS.getByName("owner:" + owner.id);
         try {
+          if (action === "validation-state") return json(await stub.validationState(args.id));
           if (action === "research-tool") return json(await stub.researchTool(owner.id,args.id,args.tool,args.operationId,args.guard));
           if (action === "research-rows") return json(await stub.researchRows());
           if (action === "builder-state") return json(await stub.builderState(args.id));
@@ -186,10 +200,17 @@ export async function taskFixture({
         BROKEN: broken,
         CONTROLLED_PLAN: Boolean(planner),
       },
-      ...(planner || providerControl || workspaces || researchFetch
+      ...(planner ||
+      providerControl ||
+      workspaces ||
+      researchFetch ||
+      validationControl
         ? {
             serviceBindings: {
               ...(planner ? { PLANNER: planner } : {}),
+              ...(validationControl
+                ? { VALIDATION_CONTROL: validationControl }
+                : {}),
               ...(researchFetch ? { RESEARCH: researchFetch } : {}),
               ...(workspaces ? { CONTROL: workspaceEffects } : {}),
               ...(workspaceControl

@@ -41,3 +41,29 @@ void result;
 void schema;
 void executable;
 void incomplete;
+
+const {
+  newServiceTestReport,
+  appendServiceCaseResult,
+  parseServiceTestReport,
+} = await import("../../packages/pvo-assistant/services/index.js");
+const identity = {
+  agreementDigest: "a".repeat(64),
+  packageDigest: "b".repeat(64),
+  sourceDigest: "c".repeat(64),
+};
+let report = newServiceTestReport(agreement, identity);
+report = appendServiceCaseResult(report, agreement, identity, {
+  id: "case",
+  status: "passed",
+  completedSteps: 1,
+  failure: null,
+});
+parseServiceTestReport(report, agreement, identity);
+// @ts-expect-error A report has no deployment authority or live URL.
+report.liveUrl = "https://example.com";
+// @ts-expect-error Every test identity must include the exact package digest.
+newServiceTestReport(agreement, {
+  agreementDigest: identity.agreementDigest,
+  sourceDigest: identity.sourceDigest,
+});

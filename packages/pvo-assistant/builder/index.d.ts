@@ -86,6 +86,18 @@ export function builderDecisionSchema(
   }>,
 ): object;
 
+export type BuilderReviewFeedback = {
+  review: Extract<BuilderDecision, { kind: "review" }>;
+  report: import("../services/index.js").ServiceTestReport | null;
+  error: string | null;
+};
+export function builderReviewRequest(
+  value: BuilderState,
+): Extract<BuilderDecision, { kind: "review" }> | null;
+export function recordBuilderReview(
+  value: BuilderState,
+  feedback: BuilderReviewFeedback,
+): BuilderState;
 export type BuilderState = {
   round: number;
   agreement: {
@@ -102,6 +114,7 @@ export type BuilderState = {
     result: unknown;
   }>;
   omittedFeedback: number;
+  reviewFeedback: BuilderReviewFeedback | null;
 };
 export type BuilderPosition = {
   round: number;
@@ -136,6 +149,7 @@ export function builderContext(value: BuilderState): {
   batchEnd: BuilderState["batchEnd"];
   feedback: BuilderState["feedback"];
   omittedFeedback: number;
+  reviewFeedback: BuilderReviewFeedback | null;
 };
 
 export type BuilderResearch =

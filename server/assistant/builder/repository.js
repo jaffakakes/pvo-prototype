@@ -8,6 +8,7 @@ import {
   recordBuilderTool,
   interruptBuilderBatch,
   builderContext,
+  recordBuilderReview,
 } from "../../../packages/pvo-assistant/builder/index.js";
 import { hasCurrentClaim } from "../tasks/executionClaim.js";
 
@@ -111,6 +112,12 @@ export class TaskBuilders {
   interrupt(claimed, now) {
     if (!this.current(claimed, now)) return false;
     this.write(claimed.id, interruptBuilderBatch(this.get(claimed.id)));
+    return true;
+  }
+  review(claimed, feedback, now) {
+    if (!this.current(claimed, now) || claimed.stepId !== "validate")
+      return false;
+    this.write(claimed.id, recordBuilderReview(this.get(claimed.id), feedback));
     return true;
   }
   prune(now) {
