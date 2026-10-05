@@ -44,3 +44,8 @@ If cleanup fails, the local journal keeps names, IDs and private cleanup access;
 - Cost evidence is resource use, not an invoice. The approved US$15 bound applied to this verification batch. No remaining proof resources are running.
 
 This proves recovery for the implemented inactive service provider. It does not claim the later model-driven builder, active viewer service, external booking/message provider or production release.
+
+
+## Current diagnostic source after 1D.01/02
+
+The checked-package hosting implementation replaces the old source-string publication contract. The deployable recovery diagnostic now constructs a fixed package, obtains a real isolated platform report and publishes that exact package through the same task gate. It is a diagnostic fixture, not a product template or a model-supplied pass claim. Current local workerd checks pass; the historical paid runs above remain evidence of their recorded commits and limits. This change has not been rerun against the paid provider, and the completed recovery budget is not reused. Current private probe limits are documented in the [release contract](../../packages/pvo-assistant/releases/README.md).

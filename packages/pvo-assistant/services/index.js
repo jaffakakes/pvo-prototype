@@ -22,6 +22,7 @@ export {
   parseServiceTestIdentity,
   parseServiceCaseResult,
   parseServiceTestReport,
+  serializeServiceTestReport,
   newServiceTestReport,
   appendServiceCaseResult,
   inspectServiceReply,

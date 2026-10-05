@@ -9,6 +9,7 @@ import { randomId } from "../../identity.js";
 export function claimNextTask(coordinator) {
   const now = coordinator.now();
   coordinator.noteTerminal(now);
+  coordinator.services.maintain(now);
   coordinator.repository.maintain(now, coordinator.heldTasks());
   for (const [id, controller] of coordinator.active) {
     const task = coordinator.attempts.task(id);
@@ -41,8 +42,9 @@ export function claimNextTask(coordinator) {
     if (
       task.state === "failed" &&
       task.failure.code === "reconciliation_required" &&
-      task.stepId === "build" &&
-      coordinator.builders.stage(task.id) === "tools" &&
+      ((task.stepId === "build" &&
+        coordinator.builders.stage(task.id) === "tools") ||
+        task.stepId === "host") &&
       now < task.deadlineAt &&
       task.retries < TASK_LIMITS.retries &&
       !coordinator.awaiting(task.id) &&
@@ -51,7 +53,7 @@ export function claimNextTask(coordinator) {
       !task.operations.some((operation) =>
         ["unknown", "planned"].includes(operation.status),
       ) &&
-      coordinator.workspaces.link(task.id)?.cleaned
+      (task.stepId === "host" || coordinator.workspaces.link(task.id)?.cleaned)
     ) {
       try {
         task = coordinator.repository.update(
@@ -86,7 +88,7 @@ export function claimNextTask(coordinator) {
       },
     );
     const tools =
-      claimed.stepId === "validate" ||
+      ["validate", "host"].includes(claimed.stepId) ||
       (claimed.stepId === "build" &&
         coordinator.builders.stage(claimed.id) !== "model");
     let code = null;
@@ -99,7 +101,8 @@ export function claimNextTask(coordinator) {
     )
       code = "reconciliation_required";
     else if (
-      !["plan", "build", "validate"].includes(claimed.stepId) ||
+      !["plan", "build", "validate", "host"].includes(claimed.stepId) ||
+      (claimed.stepId === "host" && !coordinator.serviceProvider()) ||
       (claimed.stepId === "validate" && !coordinator.validationAvailable()) ||
       (claimed.stepId === "build" && !coordinator.workspaceProvider()) ||
       (!tools && !coordinator.plannerAvailable())

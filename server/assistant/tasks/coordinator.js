@@ -1,3 +1,5 @@
+import { ServiceCatalog } from "../../cloud-services/catalog.js";
+import { runHostingStep } from "../hosting/runner.js";
 import { ServiceArtifacts } from "../validation/artifacts.js";
 import { ServiceValidationJournal } from "../validation/journal.js";
 import { runServiceValidation } from "../validation/runner.js";
@@ -44,7 +46,12 @@ export class AssistantTasks extends DurableObject {
     super(ctx, env);
     this.repository = new TaskRepository(ctx.storage.sql);
     this.results = new TaskResults(ctx.storage.sql);
-    this.providers = new ProviderOperations(ctx.storage.sql, this.repository);
+    this.services = new ServiceCatalog(ctx.storage.sql);
+    this.providers = new ProviderOperations(
+      ctx.storage.sql,
+      this.repository,
+      this.services,
+    );
     this.workspaces = new WorkspaceOperations(ctx.storage.sql, this.repository);
     this.attempts = new TaskAttempts(ctx.storage.sql, this.repository);
     this.builders = new TaskBuilders(ctx.storage.sql, this.repository);
@@ -82,6 +89,7 @@ export class AssistantTasks extends DurableObject {
       const repository = this.repository;
       repository.bindOwner(ownerId);
       this.noteTerminal(now);
+      this.services.maintain(now);
       repository.maintain(now, this.heldTasks());
       this.results.prune();
       this.builders.prune(now);
@@ -244,7 +252,7 @@ export class AssistantTasks extends DurableObject {
   }
 
   /** Trusted authoring capability. No browser route or model tool can select publication metadata. */
-  async publishService(ownerId, id, source, guard) {
+  async publishService(ownerId, id, guard) {
     taskId(ownerId);
     taskId(id);
     const claimed = await this.transaction(() => {
@@ -259,7 +267,7 @@ export class AssistantTasks extends DurableObject {
       assertTaskExecution(task, current);
       return task;
     });
-    return publishTaskService(this, claimed, source);
+    return publishTaskService(this, claimed);
   }
 
   validationAvailable() {
@@ -316,6 +324,7 @@ export class AssistantTasks extends DurableObject {
   async scheduleMaintenance(now) {
     const times = [
       this.repository.nextMaintenance(now),
+      this.services.nextExpiry(now),
       this.attempts.nextBudgetWakeup(),
       this.research.nextWakeup(now),
       this.validation.nextWakeup(now),
@@ -346,7 +355,8 @@ export class AssistantTasks extends DurableObject {
     for (let index = 0; index < 2; index++) {
       const claimed = await this.transaction(() => this.claimNext());
       if (!claimed) break;
-      if (claimed.stepId === "validate")
+      if (claimed.stepId === "host") await runHostingStep(this, claimed);
+      else if (claimed.stepId === "validate")
         await runServiceValidation(this, claimed);
       else if (
         claimed.stepId === "build" &&

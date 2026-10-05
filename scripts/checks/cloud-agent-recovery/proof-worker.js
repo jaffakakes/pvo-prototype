@@ -1,3 +1,5 @@
+import { installCheckedDiagnostic } from "./checked-fixture.js";
+import { recoveryCheckedService } from "./checked-service.js";
 import { AssistantTasks } from "../../../server/assistant/tasks/coordinator.js";
 import { ServiceRelease } from "../../../server/cloud-services/release.js";
 import { reconcileTaskServices } from "../../../server/assistant/tasks/providerRunner.js";
@@ -6,15 +8,6 @@ import {
   transitionGuard,
 } from "../../../server/assistant/tasks/executionClaim.js";
 import { authorize, mark } from "../cloud-agent-infrastructure/proof-http.js";
-
-// Fixed diagnostic code only. The endpoint cannot accept source, URLs or arbitrary commands.
-const source = `export default { async fetch(request, env) {
-  const input = await request.json();
-  if (input.spin) { while (true) {} }
-  if (input.big) return new Response('x'.repeat(5000));
-  let blocked = false; try { await fetch('https://example.com'); } catch { blocked = true; }
-  return Response.json({ answer: input.value * 2, blocked, keys: Object.keys(env), auth: request.headers.get('authorization') });
-} };`;
 
 export class ProofRelease extends ServiceRelease {
   constructor(ctx, env) {
@@ -34,7 +27,7 @@ export class ProofRelease extends ServiceRelease {
       calls:
         this.ctx.storage.sql.exec("SELECT count FROM proof_calls").toArray()[0]
           ?.count ?? 0,
-      sourcePresent: this.row()?.source != null,
+      sourcePresent: this.row()?.body != null,
     };
   }
 }
@@ -108,7 +101,7 @@ export class ProofTasks extends AssistantTasks {
       let current = task;
       for (const command of [
         { kind: "claim", claimId: "plan-proof", leaseMs: 60000 },
-        { kind: "checkpoint", stepId: "publish" },
+        { kind: "checkpoint", stepId: "host" },
         { kind: "claim", claimId: "publish-proof", leaseMs: 60000 },
       ]) {
         current = this.repository.update(
@@ -123,9 +116,14 @@ export class ProofTasks extends AssistantTasks {
       }
       return current;
     });
+    await installCheckedDiagnostic(
+      this,
+      claimed,
+      await recoveryCheckedService(this.env.SERVICE_LOADER),
+    );
     this.crashAfterPublication = mode === "recover";
     this.delayPublication = mode === "cancel";
-    await this.publishService(ownerId, claimed.id, source, {
+    await this.publishService(ownerId, claimed.id, {
       expectedRevision: claimed.revision,
       claim: taskClaim(claimed),
     });
@@ -142,7 +140,7 @@ export class ProofTasks extends AssistantTasks {
       instanceId: this.instanceId,
       task,
       row: row
-        ? { ...row, source: row.source === null ? null : "retained" }
+        ? { ...row, publication: row.publication === null ? null : "retained" }
         : null,
       provider: row ? await super.serviceProvider().lookup(row.identity) : null,
       calls: release ? (await release.inspect()).calls : 0,
@@ -176,7 +174,7 @@ export class ProofTasks extends AssistantTasks {
         transitionGuard(task, this.now()),
       ),
     );
-    await this.publishService(task.ownerId, task.id, source, {
+    await this.publishService(task.ownerId, task.id, {
       expectedRevision: claimed.revision,
       claim: taskClaim(claimed),
     });
@@ -188,7 +186,14 @@ export class ProofTasks extends AssistantTasks {
       return {
         result: await this.env.SERVICE_RELEASES.getByName(
           identity.resourceId,
-        ).probe(identity, input),
+        ).probe(identity, {
+          operation: "double",
+          input: {
+            value: input.value ?? 0,
+            spin: Boolean(input.spin),
+            big: Boolean(input.big),
+          },
+        }),
       };
     } catch (error) {
       return {

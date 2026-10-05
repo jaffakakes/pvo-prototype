@@ -67,3 +67,30 @@ newServiceTestReport(agreement, {
   agreementDigest: identity.agreementDigest,
   sourceDigest: identity.sourceDigest,
 });
+
+const {
+  parseServicePublication,
+  parseOwnedRelease,
+  parseOwnedService,
+  planOwnedPublication,
+} = await import("../../packages/pvo-assistant/releases/index.js");
+const publication = parseServicePublication({});
+const ownedRelease = parseOwnedRelease({});
+const ownedService = parseOwnedService({});
+ownedRelease.identity.reportDigest = publication.identity.reportDigest;
+ownedService.identity.serviceId = publication.identity.serviceId;
+// @ts-expect-error Caller data cannot grant release activation.
+ownedRelease.state = "live";
+// @ts-expect-error Source strings are no longer a publication contract.
+publication.source = "export default {}";
+// @ts-expect-error An owned release cannot omit its service identity or report digest.
+publication.identity = {
+  ...identity,
+  resourceId: "release",
+  ownerId: "owner",
+  projectId: "project",
+  taskId: "task",
+  operationId: "op",
+  expiresAt: 1,
+};
+void planOwnedPublication;

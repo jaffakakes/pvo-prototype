@@ -49,10 +49,13 @@ export async function exerciseRecovery(
   const executed = expect(await call("/recover/probe", "POST"), 200);
   assert.equal(executed.result.status, 200);
   assert.deepEqual(JSON.parse(executed.result.body), {
-    answer: 42,
-    blocked: true,
-    keys: [],
-    auth: null,
+    result: {
+      answer: 42,
+      blocked: true,
+      keys: [],
+      auth: null,
+    },
+    state: null,
   });
   assert.equal(
     expect(await call("/recover/oversize", "POST"), 200).error,

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
 import { bundleWorkerModules } from "../worker-bundle.helpers.mjs";
-import { serviceWorkerCode } from "../../server/assistant/validation/packageExecution.js";
+import { serviceWorkerCode } from "../../server/cloud-services/packageExecution.js";
 import {
   packageFor,
   dinnerAgreement,
@@ -16,7 +16,7 @@ async function fixture() {
     stdin: {
       resolveDir: process.cwd(),
       contents: `
-    import {executeServicePackage} from './server/assistant/validation/packageExecution.js';
+    import {executeServicePackage} from './server/cloud-services/packageExecution.js';
     import {runServiceCase} from './server/assistant/validation/cases.js';
     export default {async fetch(request,env) {
       const value=await request.json();

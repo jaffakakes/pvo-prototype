@@ -122,6 +122,9 @@ export function parseServiceTestReport(value, agreement, identity) {
   boundedJson(value, SERVICE_TEST_LIMITS.reportBytes, "Service test report");
   return structuredClone(value);
 }
+export const serializeServiceTestReport = (value, agreement, identity) =>
+  canonicalJson(parseServiceTestReport(value, agreement, identity));
+
 export function newServiceTestReport(agreement, identity) {
   return parseServiceTestReport(
     { policy: SERVICE_TEST_POLICY, identity, status: "running", cases: [] },

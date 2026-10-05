@@ -12,9 +12,10 @@ const resource = (row) => ({ kind: "service", id: row.identity.resourceId });
 
 /** Durable provider intent and recovery state. No provider call occurs inside this journal. */
 export class ProviderOperations {
-  constructor(sql, tasks) {
+  constructor(sql, tasks, services) {
     this.sql = sql;
     this.tasks = tasks;
+    this.services = services;
     sql.exec(
       "CREATE TABLE IF NOT EXISTS provider_operations (id TEXT PRIMARY KEY, task_id TEXT NOT NULL, body TEXT NOT NULL)",
     );
@@ -58,8 +59,8 @@ export class ProviderOperations {
   begin(claimed, publication, inputDigest, now) {
     let task = this.task(claimed.id);
     if (!hasCurrentClaim(task, claimed, now)) return null;
-    if (task.stepId !== "publish")
-      throw new Error("Service publication requires the trusted publish step.");
+    if (task.stepId !== "host")
+      throw new Error("Service publication requires the trusted host step.");
     if (
       publication.identity.ownerId !== task.ownerId ||
       publication.identity.projectId !== task.input.projectId ||
@@ -73,7 +74,8 @@ export class ProviderOperations {
     if (
       previous.some(
         (row) =>
-          row.identity.sourceDigest !== publication.identity.sourceDigest,
+          row.identity.packageDigest !== publication.identity.packageDigest ||
+          row.identity.reportDigest !== publication.identity.reportDigest,
       )
     )
       throw new Error("The publication step's source is already frozen.");
@@ -89,6 +91,7 @@ export class ProviderOperations {
         throw new Error("Provider operation identity conflicts.");
       return existing;
     }
+    this.services.intent(task, publication, now);
     const revision = task.revision;
     const apply = (command) => {
       task = transitionTask(
@@ -118,7 +121,7 @@ export class ProviderOperations {
       stepId: task.stepId,
       identity,
       inputDigest,
-      source: publication.source,
+      publication,
       generation: task.generation,
       claimId: task.claim.id,
       dispatched: false,
@@ -299,9 +302,14 @@ export class ProviderOperations {
         });
         row.settled = true;
         row.outcome = operation.status;
-        row.source = null;
+        row.publication = null;
       }
     }
+    if (
+      observation.state === "deleted" ||
+      (observation.state === "available" && !row.cancelRequested)
+    )
+      this.services.observe(row.identity, observation.state, now);
     if (observation.state === "deleted") row.cancelled = true;
     row.nextAt = pending(row) ? now : null;
     if (task.revision !== revision) this.tasks.save(task, revision);
