@@ -383,3 +383,57 @@ test("unavailable service and failed application each produce one request failur
     ["started", "failed"],
   );
 });
+
+test("cloud handoff saves the original request once and never applies native history", async () => {
+  const proposal = {
+    examples: [
+      {
+        id: "accepted",
+        input: "Friend accepts",
+        expected: "Save their acceptance",
+      },
+    ],
+  };
+  const f = fixture([
+    {
+      message: "Planning",
+      operations: [],
+      observations: [],
+      cloudTask: proposal,
+    },
+  ]);
+  const saved = [];
+  f.adapters.saveTask = async (input, signal, guard) => {
+    guard();
+    signal.throwIfAborted();
+    saved.push(input);
+    return { id: "saved-task" };
+  };
+  await f.submit("Create an invitation with saved replies");
+  assert.equal(f.applications.length, 0);
+  assert.equal(saved.length, 1);
+  assert.equal(saved[0].request, "Create an invitation with saved replies");
+  assert.deepEqual(saved[0].proposal, proposal);
+  assert.equal(f.events.at(-1).result.savedTaskId, "saved-task");
+});
+
+test("a cloud proposal after prepared native edits discards the batch without a server create", async () => {
+  const f = fixture([
+    edit,
+    {
+      message: "Planning",
+      operations: [],
+      observations: [],
+      cloudTask: { examples: [{ id: "a", input: "x", expected: "y" }] },
+    },
+  ]);
+  let creates = 0;
+  f.adapters.saveTask = async () => {
+    creates++;
+    return { id: "wrong" };
+  };
+  await f.submit();
+  assert.equal(creates, 0);
+  assert.equal(f.applications.length, 0);
+  assert.equal(f.events.at(-1).kind, "failed");
+});

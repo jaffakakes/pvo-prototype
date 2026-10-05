@@ -21,6 +21,7 @@ export async function taskFixture({
     stdin: {
       resolveDir: process.cwd(),
       contents: `
+    import { savedTaskPlanningAvailable } from "./server/assistant/tasks/availability.js";
     import { handleRequest } from "./server/index.js";
     export { AssistantBudget } from "./server/assistant/budget.js";
     import { AssistantTasks } from "./server/assistant/tasks/coordinator.js";
@@ -54,6 +55,8 @@ export async function taskFixture({
     }
     export default { async fetch(request, env) {
       // Test-only controls never enter the production entry point.
+      if (new URL(request.url).pathname === "/__capability") return json({ available: await savedTaskPlanningAvailable(request,
+        { ...env, AI: { run() {} }, ASSISTANT_BUDGET: {}, ...(new URL(request.url).search ? { ASSISTANT_TASKS: undefined } : {}) }, { origin: env.PUBLIC_ORIGIN }) });
       if (new URL(request.url).pathname === "/__test") {
         const owner = await getAccountSession(request, env);
         if (!owner) return new Response(null, { status: 401 });

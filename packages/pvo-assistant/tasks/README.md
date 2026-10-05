@@ -1,6 +1,6 @@
 # Saved authoring-task contract
 
-Implemented for [Roadmap 1B.01](../../../docs/engineering/restyle-cloud-agent-roadmaps/1b-saved-tasks.md#1b01--define-the-record-and-legal-changes). In plain terms, this is the format of the agent's notebook and the rules for changing it. It does not save anything to a database yet.
+Implemented for [Roadmap 1B.01](../../../docs/engineering/restyle-cloud-agent-roadmaps/1b-saved-tasks.md#1b01--define-the-record-and-legal-changes). In plain terms, this is the format of the agent's notebook and the rules for changing it. The pure package has no effects; the [server adapter](../../../server/assistant/tasks/README.md) owns durable storage and execution.
 
 Import through `packages/pvo-assistant/tasks/index.js`; [index.d.ts](index.d.ts) describes the same public contract. These modules have no UI, network, storage, clock, random-ID, authentication, or provider effects. Parsers return isolated clones and reject missing/unknown fields instead of supporting a second contract.
 
@@ -8,6 +8,7 @@ Import through `packages/pvo-assistant/tasks/index.js`; [index.d.ts](index.d.ts)
 
 | Function | Responsibility |
 | --- | --- |
+| `parseTaskProposal(value)` | Validate the native model's bounded behavior examples without accepting effects or identities |
 | `parseTaskInput(value)` | Validate the creation operation key, server project ID, original request, expected behavior examples, and bounded component context |
 | `parseTaskReference(value)` | Validate a private `{ ownerId, projectId, taskId }` locator with the same bounded IDs; it carries no authorization or task contents |
 | `createTask(input, metadata)` | Create a queued record using a trusted owner, new task ID, timestamp, and input digest |
@@ -21,7 +22,7 @@ Trusted adapters supply IDs, nondecreasing millisecond timestamps, and lowercase
 
 ## Ownership and concurrency
 
-Creation input cannot carry an owner. A server adapter must derive `ownerId` from the existing account session and verify that `projectId` belongs to that account. A local editor `localId` is not a server project identity. [1B.02](../../../docs/engineering/restyle-cloud-agent-roadmaps/1b-saved-tasks.md#1b02--link-the-notebook-to-the-local-draft) adds a local draft association that consumes this contract; the owned server routes remain 1B.03 work.
+Creation input cannot carry an owner. A server adapter must derive `ownerId` from the existing account session and verify that `projectId` belongs to that account. A local editor `localId` is not a server project identity. [1B.02](../../../docs/engineering/restyle-cloud-agent-roadmaps/1b-saved-tasks.md#1b02--link-the-notebook-to-the-local-draft) adds a local draft association that consumes this contract; the owned server routes enforce this independently.
 
 Every transition requires `{ ownerId, expectedRevision, now, claim }`. The owner and revision must match the stored task, and `now` cannot move backward. Each change increments the revision. An exact receipt or answer replay returns the original record without advancing it; it still requires the current guard. After a revision conflict, the adapter must reload and evaluate replay against the latest record.
 
@@ -86,3 +87,9 @@ Server task storage, HTTP authentication, atomic compare-and-swap, hashing, alar
 ### Interrupted usage bookkeeping
 
 `reconcile_usage` is a trusted coordinator command with `{operationId, modelTurns, toolCalls, consumed}`. It requires a null claim guard, no running worker, an existing settled operation and no remaining uncertain operations. It can settle already reserved usage after Stop or expiry; it cannot reserve new work or restart a task. Storage adapters must atomically journal whether that operation's reservation has already been settled. There is no HTTP/model route for this command. Worker-owned usage still uses `settle_usage` under its live claim.
+
+## Native handoff and local creation replay
+
+`parseTaskProposal` accepts only one to eight bounded, uniquely identified expected-behavior examples. Native model output cannot choose task/project/account identities, providers, URLs, code or credentials. The server gates this handoff by real capability and signed session; the editor rejects it after native changes have been prepared. The proposal itself creates no task or external effect.
+
+The editor stores an exact pending `TaskInput` beside its local checkpoint before POST, replays it after an uncertain response, and removes it after `replayTaskCreation` confirms the matching owned receipt. Completed local associations contain IDs only. Pending inputs are outside Undo/export, are bounded by this contract and are stripped from independent project copies. No media bytes are added to these inputs. See the [editor lifecycle](../../../docs/engineering/restyle-cloud-agent-roadmaps/1b-saved-tasks.md).

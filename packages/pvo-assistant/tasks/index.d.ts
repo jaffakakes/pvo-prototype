@@ -33,6 +33,9 @@ export type TaskInput = {
   examples: Array<{ id: string; input: string; expected: string }>;
   context: TaskContext;
 };
+export type TaskProposal = { examples: TaskInput["examples"] };
+export function parseTaskProposal(value: unknown): TaskProposal;
+export const taskProposalSchema: Readonly<Record<string, unknown>>;
 export type TaskQuestion = {
   id: string;
   revision: number;

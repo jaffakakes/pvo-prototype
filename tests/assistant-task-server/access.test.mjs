@@ -135,3 +135,26 @@ test("malformed and oversized inputs, absent bindings and failed storage never r
     await fixture.close();
   }
 });
+
+test("saved planning capability requires a real signed account and storage, regardless of client claims", async () => {
+  const fixture = await taskFixture();
+  try {
+    assert.equal((await fixture.request("/__capability")).body.available, true);
+    for (const session of [null, fixture.cookie + "tampered"])
+      assert.equal(
+        (
+          await fixture.request("/__capability", {
+            session,
+            headers: { "X-Assistant-Saved-Tasks": "1", "X-Owner-Id": "owner" },
+          })
+        ).body.available,
+        false,
+      );
+    assert.equal(
+      (await fixture.request("/__capability?without-storage")).body.available,
+      false,
+    );
+  } finally {
+    await fixture.close();
+  }
+});

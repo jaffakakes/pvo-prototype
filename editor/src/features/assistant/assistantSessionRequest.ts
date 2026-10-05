@@ -1,3 +1,4 @@
+import { savedTaskCreation } from "./saved-tasks/creationCommands";
 import { compilePvoComponent } from "../../../../packages/pvo-language/index.js";
 import { appliedAssistantSummary } from "../../domain/assistant/appliedSummary";
 import { AssistantServiceError } from "../../domain/assistant/failure";
@@ -69,6 +70,7 @@ export function createAssistantSessionRequest(effects: SessionEffects) {
       };
     },
     availability: readNativeAvailability,
+    saveTask: savedTaskCreation.start,
     createTrace: createAssistantTrace,
     advancedEditingEnabled: () =>
       useEditorPreferences.getState().advancedEditingEnabled,
@@ -166,6 +168,7 @@ export function createAssistantSessionRequest(effects: SessionEffects) {
           effects.report(error, "request");
         },
         completed: ({
+          savedTaskId,
           planned,
           applied,
           answer,
@@ -173,6 +176,22 @@ export function createAssistantSessionRequest(effects: SessionEffects) {
           history,
           evidence,
         }) => {
+          if (savedTaskId) {
+            completeAssistantExchange(exchangeId, {
+              response:
+                "Your planning task is saved. You can close Restyle and return to its progress here.",
+            });
+            useAssistant.setState({
+              phase: "idle",
+              draft: "",
+              progress: "",
+              answer: null,
+              history,
+              evidence,
+            });
+            setAssistantThreadOpen(true);
+            return;
+          }
           if (
             !planned ||
             (!applied && !planned.playback.length && !planned.exportFormat)

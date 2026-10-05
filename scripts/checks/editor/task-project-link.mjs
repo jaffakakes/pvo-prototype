@@ -331,7 +331,7 @@ try {
   );
   assert.deepEqual(errors, []);
   console.log(
-    "Task/project link browser check passed: real local save/reload, exact media, rename/Undo, copy, project navigation, account privacy, late response rejection, and failed-restore recovery. Account and assistant HTTP are fixtures; no live task API exists yet.",
+    "Task/project link browser check passed: real local save/reload, exact media, rename/Undo, copy, project navigation, account privacy, late response rejection, and failed-restore recovery. Account and assistant HTTP are fixtures; this check does not exercise the saved task API.",
   );
   await context.close();
 } finally {

@@ -6,4 +6,5 @@ export {
   replayTaskCreation,
 } from "./record.js";
 export { transitionTask } from "./transitions.js";
+export { parseTaskProposal, taskProposalSchema } from "./proposal.js";
 export { parseTaskReference } from "./reference.js";
