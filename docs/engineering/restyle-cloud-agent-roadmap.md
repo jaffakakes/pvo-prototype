@@ -1,6 +1,6 @@
 # Restyle cloud agent implementation roadmaps
 
-Status: implementation started, 5 October 2026. **1A is in progress:** basic hosting and cleanup passed; the Linux workspace test requires account access. See the [infrastructure evidence](restyle-cloud-infrastructure-proof.md). Unchecked items remain proposed work.
+Status: implementation started, 5 October 2026. **1A passed:** a real Linux workspace built a service that kept working after the workspace was deleted. **Next: 1B, saved tasks and follow-up questions.** See the [infrastructure evidence](restyle-cloud-infrastructure-proof.md). Unchecked items remain proposed work.
 
 Start with [Roadmap 1](restyle-cloud-agent-roadmaps/01-first-working-component.md). It delivers the first complete version: ask for a component, let the agent build a new backend, try it, and share something that keeps working after its temporary computer shuts down.
 
@@ -83,6 +83,6 @@ Production promotion follows dev → preprod → prod. After successful deployme
 
 ## Start here
 
-The first implementation task is **1A in Roadmap 1**. Its output is evidence that the chosen workspace and hosting can run, plus the limits and access required to use them. Buying infrastructure alone does not complete it, and it does not yet prove that the agent can build a feature.
+**Continue with 1B in Roadmap 1:** save the agent’s task, questions, answers, progress, and resource references. The completed 1A proof establishes that the workspace and independent hosting run in the account. Model-driven generation and the finished component journey remain later steps.
 
 Use completion checks to judge progress. Calendar estimates would depend on the provider access, implementation results, and integration difficulties discovered in these steps.

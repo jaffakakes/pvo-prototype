@@ -25,7 +25,7 @@ export async function checkInfrastructure(read) {
           "Retry the account check after resolving the network or response failure.";
       if (capability === "platformDispatch" && response.codes.includes(10121)) {
         next =
-          "Workers for Platforms access is unavailable. Review the paid plan or evaluate Dynamic Workers.";
+          "Optional Workers for Platforms dispatch is unavailable. The selected proof uses Dynamic Workers; verify that by deployment.";
       }
       return {
         capability,
@@ -41,7 +41,9 @@ export async function checkInfrastructure(read) {
     checkedAt: new Date().toISOString(),
     readOnly: true,
     checks,
-    readyForOriginalProviderProof: checks.every((check) => check.available),
+    readyForWorkspaceProof: checks
+      .filter((check) => check.capability !== "platformDispatch")
+      .every((check) => check.available),
     // Listing a resource is not proof that deployment or command execution works.
     liveWorkspaceProofPassed: false,
     workspaceIndependentHostingPassed: false,
@@ -64,7 +66,7 @@ if (
       createAccountReader({ accountId, token }),
     );
     console.log(JSON.stringify(report, null, 2));
-    if (!report.readyForOriginalProviderProof) process.exitCode = 1;
+    if (!report.readyForWorkspaceProof) process.exitCode = 1;
   } catch (error) {
     console.error(error.message);
     process.exitCode = 1;

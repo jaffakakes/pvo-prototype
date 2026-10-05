@@ -12,14 +12,14 @@ Use two demonstrations: a dinner RSVP with a capacity rule, and an equipment req
 
 Build this before committing to a provider-specific implementation.
 
-**Progress, 5 October 2026:** account checks and a disposable hosting test are implemented. Hosting and cleanup passed; the workspace-to-service test remains blocked by the account plan. See [results, costs, limits, and remaining work](../restyle-cloud-infrastructure-proof.md). The full completion checks below remain unchecked.
+**Progress, 5 October 2026:** **1A passed.** A real Linux workspace wrote and tested a service, saved its output, and was deleted. The separately hosted service still worked. Runtime limits, failure/timeout cleanup, and removal of all proof resources passed. See [results, costs, limits, and remaining work](../restyle-cloud-infrastructure-proof.md). These limits apply to the controlled infrastructure proof; product task, service, and spending controls remain in later steps.
 
-- [ ] Check the actual account can run an isolated development workspace and separately deploy a small live service. Cloudflare is the initial candidate described in the architecture; confirm current access, pricing, limits, and runtime support.
-- [ ] Choose numeric limits for build duration, concurrent workspaces, memory, runtime processing, package downloads, requests, stored data, and spending. Put enforcement in the platform.
-- [ ] Create one disposable workspace, run a small program, save its output outside the workspace, and stop it.
-- [ ] Deploy a separate temporary test service and call its stable address after the workspace has stopped.
-- [ ] Record required platform credentials, where they will be held, the runtime selected, and the observed results. Keep credentials outside prompts and generated code.
-- [ ] Remove the disposable resources and verify cleanup.
+- [x] Check the actual account can run an isolated development workspace and separately deploy a small live service. Cloudflare is the initial candidate described in the architecture; confirm current access, pricing, limits, and runtime support.
+- [x] Choose numeric limits for build duration, concurrent workspaces, memory, runtime processing, package downloads, requests, stored data, and spending. Put enforcement in the platform.
+- [x] Create one disposable workspace, run a small program, save its output outside the workspace, and stop it.
+- [x] Deploy a separate temporary test service and call its stable address after the workspace has stopped.
+- [x] Record required platform credentials, where they will be held, the runtime selected, and the observed results. Keep credentials outside prompts and generated code.
+- [x] Remove the disposable resources and verify cleanup.
 
 **Finished when:** a real test proves the workshop can stop while the separately hosted service continues working, and you can account for and remove every resource created.
 

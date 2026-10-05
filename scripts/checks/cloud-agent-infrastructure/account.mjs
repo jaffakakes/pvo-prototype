@@ -62,6 +62,8 @@ export function createAccountReader({ accountId, token, fetchImpl = fetch }) {
           ? body.errors.map((error) => error.code).filter(Number.isInteger)
           : [],
         result: response.ok && body.success === true ? body.result : undefined,
+        resultInfo:
+          response.ok && body.success === true ? body.result_info : undefined,
       };
     } catch {
       return { ok: false, status: null, codes: [] };

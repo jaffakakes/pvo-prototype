@@ -28,7 +28,7 @@ test("preflight is read-only and does not mistake unavailable access for a worki
     report.checks.map((check) => check.available),
     [true, false, false],
   );
-  assert.equal(report.readyForOriginalProviderProof, false);
+  assert.equal(report.readyForWorkspaceProof, false);
   assert.equal(report.liveWorkspaceProofPassed, false);
   assert.equal(report.workspaceIndependentHostingPassed, false);
   assert.equal(JSON.stringify(report).includes("private-token"), false);
@@ -50,7 +50,23 @@ test("successful listings still do not count as a completed live proof", async (
     codes: [],
     result: path === "workers/subdomain" ? { subdomain: "test" } : [],
   }));
-  assert.equal(report.readyForOriginalProviderProof, true);
+  assert.equal(report.readyForWorkspaceProof, true);
+  assert.equal(report.workspaceIndependentHostingPassed, false);
+});
+
+test("the chosen workspace proof does not require the optional dispatch subscription", async () => {
+  const report = await checkInfrastructure(async (path) =>
+    path === "workers/dispatch/namespaces"
+      ? { ok: false, status: 403, codes: [10121] }
+      : {
+          ok: true,
+          status: 200,
+          codes: [],
+          result: path === "workers/subdomain" ? { subdomain: "test" } : [],
+        },
+  );
+  assert.equal(report.readyForWorkspaceProof, true);
+  assert.equal(report.liveWorkspaceProofPassed, false);
   assert.equal(report.workspaceIndependentHostingPassed, false);
 });
 
@@ -68,7 +84,7 @@ test("malformed responses and transport errors fail closed without disclosing er
       fetchImpl,
     });
     const report = await checkInfrastructure(read);
-    assert.equal(report.readyForOriginalProviderProof, false);
+    assert.equal(report.readyForWorkspaceProof, false);
     assert.equal(JSON.stringify(report).includes("private-token"), false);
   }
 });
