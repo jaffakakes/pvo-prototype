@@ -125,13 +125,17 @@ body {
   border-radius: 9px;
 }`,
   choice: `choice {
-  background: #15151C;
+  background: transparent;
+  border-width: 0;
+  box-shadow: none;
+  padding: 0;
+  gap: 7px;
   color: #F2F0E9;
-  border-radius: 14px;
 }
 prompt {
   font-size: 19px;
   font-weight: 800;
+  text-align: center;
 }
 option {
   background: #A78BFA;
