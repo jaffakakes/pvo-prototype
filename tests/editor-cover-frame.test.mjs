@@ -14,7 +14,7 @@ const { captureCoverFrame } = await import(
   `data:text/javascript;base64,${Buffer.from(bundled.outputFiles[0].text).toString("base64")}`
 );
 
-function canvasHarness({ failBlob = false } = {}) {
+function canvasHarness({ failBlob = false, blobMode = "webp" } = {}) {
   const events = [];
   const canvases = [];
   const createCanvas = () => {
@@ -75,10 +75,18 @@ function canvasHarness({ failBlob = false } = {}) {
       width: 0,
       height: 0,
       getContext: () => ctx,
-      toBlob: (callback) =>
-        callback(
-          failBlob ? null : new Blob(["RIFF....WEBP"], { type: "image/webp" }),
-        ),
+      toBlob: (callback, requestedType) => {
+        events.push(["encode", requestedType, id]);
+        if (failBlob) return callback(null);
+        const type =
+          blobMode === "png" ||
+          (blobMode === "large-png" && requestedType === "image/webp")
+            ? "image/png"
+            : requestedType;
+        const bytes =
+          blobMode === "large-png" && id === 0 ? 5 * 1024 * 1024 + 1 : 16;
+        callback(new Blob([new Uint8Array(bytes)], { type }));
+      },
     };
     canvases.push(canvas);
     return canvas;
@@ -170,7 +178,12 @@ async function capture(input, at, options = {}) {
       );
     else {
       const blob = await captureCoverFrame(input, "9:16", at);
-      assert.equal(blob.type, "image/webp");
+      assert.equal(
+        blob.type,
+        options.blobMode === "png" || options.blobMode === "large-png"
+          ? "image/png"
+          : "image/webp",
+      );
       assert.deepEqual([canvases[0].width, canvases[0].height], [1080, 1920]);
     }
     return events;
@@ -178,6 +191,26 @@ async function capture(input, at, options = {}) {
     globalThis.document = previous;
   }
 }
+
+test("cover capture accepts PNG returned for a WebP request on iPhone browsers", async () => {
+  const events = await capture(scene([], ["video"]), 0, { blobMode: "png" });
+  assert.deepEqual(
+    events.filter(([kind]) => kind === "encode"),
+    [["encode", "image/webp", 0]],
+  );
+});
+
+test("oversized PNG cover is scaled before export", async () => {
+  const events = await capture(scene([], ["video"]), 0, {
+    blobMode: "large-png",
+  });
+  const encodes = events.filter(([kind]) => kind === "encode");
+  assert.deepEqual(
+    encodes.map(([, type]) => type),
+    ["image/webp", "image/png"],
+  );
+  assert.notEqual(encodes[0][2], encodes[1][2]);
+});
 
 test("cover frame includes all four visual component types in authored layer order", async () => {
   const components = [
