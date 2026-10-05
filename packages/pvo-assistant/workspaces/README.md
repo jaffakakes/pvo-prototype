@@ -12,13 +12,15 @@ Saving requires the expected current revision. Operation identifiers replay thei
 
 ## Execution and cleanup
 
+The saved-task runner must supply an execution claim with its ID, generation and expiry. New writes/starts/commands reject absent, expired, changed or revoked claims. Suspending a claim records its revocation even before a delayed request arrives. A newer claim may restore the same saved source; a delayed suspension of an older claim cannot stop that newer session.
+
 The server journals an action and its compute reservation before an external effect. There is at most one active action. A start restores authoritative saved files to a fresh computer. `check` runs Node syntax checking on one source/test file; `test` runs at most eight declared test files. These requests cannot specify a shell, environment, provider identity or credentials. Generated tests can execute arbitrary code inside the isolated computer and are untrusted feedback.
 
 | Bound | Value |
 | --- | --- |
 | Operations, including saves | 64 per task |
 | Computer sessions | 4 per task |
-| Session lifetime | 120 seconds |
+| Session lifetime | At most 120 seconds, also capped by the task claim expiry |
 | Startup/restoration | 20 seconds |
 | Command time | 15 seconds |
 | Combined stdout/stderr | 16 KiB of valid UTF-8 |
@@ -34,4 +36,4 @@ Source and receipts remain until the task retention deadline, including after St
 
 `server/assistant/workspaces/` owns private Cloudflare Durable Object storage, the global reservation journal, identity hashing and native Container effects. The Container starts without outbound Internet, has no platform bindings and receives only validated source files. Restoring checks filesystem containment and rejects existing files/symlinks. Timeout/failure/Stop destroys the whole computer, including descendants.
 
-The main app has not advertised or connected these workspace tools yet. Task claim/usage integration, the model builder, external trusted test gate and real provider acceptance remain in [Roadmap 1C](../../../docs/engineering/restyle-cloud-agent-roadmaps/1c-generated-services.md). Local tests use real workerd/SQLite for persistence with controlled Container effects; the actual restore program also runs in disposable local directories. Those tests are not evidence of a real hosted Container run.
+The main app has not advertised or connected these workspace tools yet. Task coordinator/usage integration, the model builder, external trusted test gate and real provider acceptance remain in [Roadmap 1C](../../../docs/engineering/restyle-cloud-agent-roadmaps/1c-generated-services.md). Local tests use real workerd/SQLite for persistence with controlled Container effects; the actual restore program also runs in disposable local directories. Those tests are not evidence of a real hosted Container run.

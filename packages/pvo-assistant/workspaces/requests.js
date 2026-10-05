@@ -8,7 +8,11 @@ import {
   time,
 } from "../tasks/validation.js";
 import { TASK_LIMITS } from "../tasks/limits.js";
-import { parseServiceFiles, parseServiceFilePath } from "../services/index.js";
+import {
+  parseServiceFiles,
+  parseServiceFilePath,
+  serializeServiceFiles,
+} from "../services/index.js";
 import { WORKSPACE_LIMITS as limits } from "./contract.js";
 
 export function parseWorkspaceSave(value) {
@@ -110,4 +114,31 @@ export function workspaceCommandArguments(command) {
     command.kind === "check" ? "--check" : "--test",
     ...command.paths,
   ];
+}
+
+export function parseWorkspaceOperationId(value) {
+  id(value, "Workspace operation ID");
+  return value;
+}
+
+export function serializeWorkspaceRequest(kind, value) {
+  if (kind === "save") {
+    const request = parseWorkspaceSave(value);
+    return JSON.stringify([
+      kind,
+      request.expectedRevision,
+      serializeServiceFiles(request.files),
+    ]);
+  }
+  requireTask(
+    ["start", "command"].includes(kind),
+    "Unsupported workspace operation.",
+  );
+  const request = parseWorkspaceRun(value, kind === "command");
+  return JSON.stringify([
+    kind,
+    request.revision,
+    request.digest,
+    request.command ? [request.command.kind, request.command.paths] : null,
+  ]);
 }

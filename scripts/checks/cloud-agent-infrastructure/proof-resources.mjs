@@ -66,7 +66,15 @@ export async function prepareResources(accountId) {
     return results;
   }
 
-  async function prepare(kind, { entrypoint, bindings, loaderBinding } = {}) {
+  async function prepare(
+    kind,
+    {
+      entrypoint,
+      bindings,
+      loaderBinding,
+      containerClassName = "Workspace",
+    } = {},
+  ) {
     const name = `restyle-${kind}-proof-${id}`;
     assert.equal(
       (await read(`workers/scripts/${name}/settings`)).status,
@@ -88,7 +96,7 @@ export async function prepareResources(accountId) {
       attempted: false,
       removed: false,
     };
-    const className = kind === "workspace" ? "Workspace" : "Release";
+    const className = kind === "workspace" ? containerClassName : "Release";
     const ownedBindings = bindings ?? [
       {
         name: kind === "workspace" ? "WORKSPACE" : "RELEASE",
@@ -118,7 +126,10 @@ export async function prepareResources(accountId) {
           {
             type: "durable-object",
             storage: "sqlite",
-            ...(kind === "workspace" ? { container: name } : {}),
+            ...(kind === "workspace" &&
+            binding.class_name === containerClassName
+              ? { container: name }
+              : {}),
           },
         ]),
       ),

@@ -58,3 +58,5 @@ The existing 1B inactive-release adapter has smaller diagnostic input/output lim
 Exercise owner/task isolation; concurrent starts; lost start/command replies; actual process failure; startup/command timeouts; bounded output; Stop during restoration and execution; restart from saved files; stale snapshots; wrong source/agreement digests; generated attempts to forge a pass; malformed outputs; and cleanup failure/recovery. Distinguish fake adapter tests, real local workerd persistence and actual provider evidence.
 
 Before any new paid acceptance run, record exact resource names, count, lifetime, call bounds, expected charges and cleanup responsibility. The approved US$15 recovery batch is already complete; do not silently reuse its approval for a new Container/model batch. Complete local code and tests first so any remaining spending decision is concrete.
+
+The [workspace provider verification plan](../restyle-workspace-provider-proof.md) records the prepared disposable diagnostic, limits, proposed test ceiling and cleanup procedure. It has not been run against the real provider.

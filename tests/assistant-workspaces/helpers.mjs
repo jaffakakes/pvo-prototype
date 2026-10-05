@@ -6,6 +6,11 @@ import { bundleWorkerModules } from "../worker-bundle.helpers.mjs";
 import { workspaceResourceId } from "../../server/assistant/workspaces/identity.js";
 
 export const NOW = Date.UTC(2100, 0, 1);
+export const executionGrant = (generation = 1) => ({
+  id: `claim-${generation}`,
+  generation,
+  expiresAt: NOW + 60_000,
+});
 export async function identity(taskId = "task-one", ownerId = "owner-one") {
   const value = {
     ownerId,
@@ -36,6 +41,7 @@ export async function workspaceFixture(
       contents: `
     import { AssistantWorkspace } from './server/assistant/workspaces/coordinator.js';
     import { WorkspaceBudget } from './server/assistant/workspaces/budget.js';
+    import { workspaceProvider } from './server/assistant/tasks/workspaceProvider.js';
     export class TestBudget extends WorkspaceBudget {
       now() { return this.clock ?? Date.UTC(2100,0,1); }
       setTime(now) { this.clock=now; }
@@ -71,16 +77,21 @@ export async function workspaceFixture(
       inspect() { return {state:this.journal.state(),vm:this.vm(),actions:this.ctx.storage.sql.exec('SELECT body FROM workspace_actions').toArray().map(row=>JSON.parse(row.body))}; }
     }
     export default {async fetch(request,env) {
-      const {action,identity,input,now,budget=false}=await request.json();
+      const {action,identity,input,now,execution,budget=false,viaProvider=false}=await request.json();
       const stub=budget ? env.WORKSPACE_BUDGET.getByName('global') : env.WORKSPACES.getByName(identity.resourceId);
       try {
         let result;
-        if(action==='time') result=await stub.setTime(now);
+        if(viaProvider) {
+          const provider=workspaceProvider({...env,ASSISTANT_WORKSPACES:env.WORKSPACES});
+          if(['save','start','execute'].includes(action)) result=await provider.operate(identity,action==='execute'?'command':action,input,execution);
+          else result=await provider[action](identity,input);
+        }
+        else if(action==='time') result=await stub.setTime(now);
         else if(action==='inspect') result=await stub.inspect();
         else if(action==='alarm') result=await stub.sweep();
         else if(action==='crash') result=await stub.crash();
         else if(budget) result=await stub[action](input);
-        else result=await stub[action](identity,input);
+        else result=await stub[action](identity,input,execution);
         return Response.json({result:result??null});
       } catch(error) {return Response.json({error:error.message},{status:409});}
     }};
@@ -112,7 +123,13 @@ export async function workspaceFixture(
       async call(action, identity, input, extra = {}) {
         const response = await mf.dispatchFetch("https://workspaces.test", {
           method: "POST",
-          body: JSON.stringify({ action, identity, input, ...extra }),
+          body: JSON.stringify({
+            action,
+            identity,
+            input,
+            execution: executionGrant(),
+            ...extra,
+          }),
         });
         return { status: response.status, ...(await response.json()) };
       },

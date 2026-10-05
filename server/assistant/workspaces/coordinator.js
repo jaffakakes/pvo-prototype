@@ -13,6 +13,11 @@ import {
   workspaceWakeup,
   parseWorkspaceSave,
   parseWorkspaceRun,
+  parseWorkspaceGrant,
+  authorizeWorkspaceExecution,
+  revokeWorkspaceGrant,
+  parseWorkspaceOperationId,
+  serializeWorkspaceRequest,
 } from "../../../packages/pvo-assistant/workspaces/index.js";
 import { serializeServiceFiles } from "../../../packages/pvo-assistant/services/index.js";
 import { TASK_LIMITS } from "../../../packages/pvo-assistant/tasks/index.js";
@@ -88,6 +93,8 @@ export class AssistantWorkspace extends DurableObject {
       cleanupRequired: state.cleanupRequired,
       cleanupAttempts: state.cleanupAttempts,
       active: state.active,
+      grant: state.grant,
+      revokedThrough: state.revokedThrough,
       lease: state.lease,
       source: state.contentExpired ? null : this.journal.source(),
     };
@@ -95,6 +102,11 @@ export class AssistantWorkspace extends DurableObject {
   async lookup(value) {
     await this.owned(value);
     return this.observation();
+  }
+  async receipt(value, operationId) {
+    const id = parseWorkspaceOperationId(operationId);
+    await this.owned(value);
+    return this.journal.state().contentExpired ? null : this.journal.action(id);
   }
 
   prior(id, digest) {
@@ -109,14 +121,11 @@ export class AssistantWorkspace extends DurableObject {
       fail("workspace_operation_limit");
     return null;
   }
-  async save(value, input) {
+  async save(value, input, execution) {
     const request = parseWorkspaceSave(input);
+    const grant = parseWorkspaceGrant(execution);
     const digest = await contentDigest(
-      JSON.stringify([
-        "save",
-        request.expectedRevision,
-        serializeServiceFiles(request.files),
-      ]),
+      serializeWorkspaceRequest("save", request),
     );
     const sourceDigest = await contentDigest(
       serializeServiceFiles(request.files),
@@ -125,7 +134,11 @@ export class AssistantWorkspace extends DurableObject {
     const receipt = this.transaction(() => {
       const prior = this.prior(request.id, digest);
       if (prior) return prior;
-      let state = this.journal.state();
+      let state = authorizeWorkspaceExecution(
+        this.journal.state(),
+        grant,
+        this.now(),
+      );
       if (request.expectedRevision !== state.sourceRevision)
         fail("workspace_source_conflict");
       const source = {
@@ -151,22 +164,18 @@ export class AssistantWorkspace extends DurableObject {
     await this.cleanup();
     return receipt;
   }
-  async start(value, input) {
-    return this.run(value, input, "start");
+  async start(value, input, execution) {
+    return this.run(value, input, "start", execution);
   }
-  async execute(value, input) {
-    return this.run(value, input, "command");
+  async execute(value, input, execution) {
+    return this.run(value, input, "command", execution);
   }
 
-  async run(value, input, kind) {
+  async run(value, input, kind, execution) {
     const request = parseWorkspaceRun(input, kind === "command");
+    const grant = parseWorkspaceGrant(execution);
     const digest = await contentDigest(
-      JSON.stringify([
-        kind,
-        request.revision,
-        request.digest,
-        request.command ? [request.command.kind, request.command.paths] : null,
-      ]),
+      serializeWorkspaceRequest(kind, request),
     );
     await this.owned(value);
     const intent = this.transaction(() => {
@@ -185,11 +194,14 @@ export class AssistantWorkspace extends DurableObject {
         )
       )
         fail("workspace_file_missing");
-      const state = beginWorkspaceAction(this.journal.state(), {
-        id: request.id,
-        kind,
-        now: this.now(),
-      });
+      const state = beginWorkspaceAction(
+        authorizeWorkspaceExecution(this.journal.state(), grant, this.now()),
+        {
+          id: request.id,
+          kind,
+          now: this.now(),
+        },
+      );
       const receipt = {
         id: request.id,
         kind,
@@ -287,6 +299,23 @@ export class AssistantWorkspace extends DurableObject {
     this.transaction(() => {
       if (!this.journal.state().closed)
         this.interrupt(true, "workspace_stopped");
+    });
+    await this.schedule();
+    await this.cleanup();
+    return this.observation();
+  }
+  async suspend(value, generation) {
+    await this.owned(value);
+    this.transaction(() => {
+      const state = revokeWorkspaceGrant(this.journal.state(), generation);
+      this.journal.saveState(state);
+      if (
+        state.grant &&
+        state.grant.generation <= state.revokedThrough &&
+        !state.cleanupRequired &&
+        (state.active || state.lease)
+      )
+        this.interrupt(false, "workspace_claim_revoked");
     });
     await this.schedule();
     await this.cleanup();

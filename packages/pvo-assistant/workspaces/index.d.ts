@@ -47,6 +47,8 @@ export type WorkspaceState = {
   generation: number;
   sourceRevision: number;
   sessions: number;
+  grant: WorkspaceGrant | null;
+  revokedThrough: number;
   active: WorkspaceAction | null;
   lease: WorkspaceLease | null;
   cleanupRequired: boolean;
@@ -114,3 +116,72 @@ export function workspaceWakeup(
   state: WorkspaceState,
   now: number,
 ): number | null;
+export type WorkspaceGrant = {
+  id: string;
+  generation: number;
+  expiresAt: number;
+};
+export function parseWorkspaceGrant(value: unknown): WorkspaceGrant;
+export function authorizeWorkspaceExecution(
+  state: WorkspaceState,
+  grant: WorkspaceGrant,
+  now: number,
+): WorkspaceState;
+export function assertWorkspaceGrant(state: WorkspaceState, now: number): void;
+export function revokeWorkspaceGrant(
+  state: WorkspaceState,
+  generation: number,
+): WorkspaceState;
+export function parseWorkspaceOperationId(value: unknown): string;
+export type WorkspaceOperationKind = "save" | "start" | "command";
+export function serializeWorkspaceRequest(
+  kind: WorkspaceOperationKind,
+  value: unknown,
+): string;
+export type WorkspaceReceipt = { id: string; digest: string } & (
+  | { kind: WorkspaceOperationKind; status: "pending"; result: null }
+  | {
+      kind: WorkspaceOperationKind;
+      status: "interrupted";
+      result: {
+        code:
+          | "workspace_stopped"
+          | "workspace_claim_revoked"
+          | "workspace_execution_interrupted"
+          | "workspace_budget_exhausted"
+          | "workspace_provider_unavailable"
+          | "workspace_output_limit";
+      };
+    }
+  | {
+      kind: "save";
+      status: "completed";
+      result: { revision: number; digest: string };
+    }
+  | {
+      kind: "start";
+      status: "completed";
+      result: { revision: number; digest: string; deadlineAt: number };
+    }
+  | {
+      kind: "command";
+      status: "completed";
+      result: { stdout: string; stderr: string; exitCode: number };
+    }
+);
+export type WorkspaceObservation = Pick<
+  WorkspaceState,
+  | "identity"
+  | "closed"
+  | "cleanupRequired"
+  | "cleanupAttempts"
+  | "active"
+  | "grant"
+  | "revokedThrough"
+  | "lease"
+> & { source: WorkspaceSnapshot | null };
+export function parseWorkspaceReceipt(value: unknown): WorkspaceReceipt;
+export function parseWorkspaceObservation(
+  value: unknown,
+  expected: WorkspaceIdentity,
+): WorkspaceObservation;

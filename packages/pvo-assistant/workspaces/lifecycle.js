@@ -3,6 +3,7 @@ import {
   parseWorkspaceIdentity,
   serializeWorkspaceIdentity,
 } from "./contract.js";
+import { assertWorkspaceGrant } from "./grants.js";
 
 function requireWorkspace(condition, code) {
   if (!condition)
@@ -16,6 +17,8 @@ export function newWorkspace(identity, now) {
     generation: 0,
     sourceRevision: 0,
     sessions: 0,
+    grant: null,
+    revokedThrough: 0,
     active: null,
     lease: null,
     cleanupRequired: false,
@@ -40,6 +43,7 @@ export function assertWorkspaceOpen(state, now) {
   );
   requireWorkspace(!state.cleanupRequired, "workspace_cleanup_required");
   requireWorkspace(!state.active, "workspace_busy");
+  assertWorkspaceGrant(state, now);
 }
 
 export function advanceWorkspaceSource(state, revision, now) {
@@ -77,6 +81,7 @@ export function beginWorkspaceAction(state, { id, kind, now }) {
   const deadlineAt = Math.min(
     now + (kind === "start" ? limits.startupMs : limits.commandMs),
     state.identity.deadlineAt,
+    state.grant.expiresAt,
     state.lease?.deadlineAt ?? Infinity,
   );
   return {
@@ -94,6 +99,7 @@ export function beginWorkspaceAction(state, { id, kind, now }) {
             deadlineAt: Math.min(
               now + limits.sessionMs,
               state.identity.deadlineAt,
+              state.grant.expiresAt,
             ),
             expiresAt: state.identity.deadlineAt,
           }
@@ -103,6 +109,7 @@ export function beginWorkspaceAction(state, { id, kind, now }) {
 }
 
 export function assertWorkspaceAction(state, action, now) {
+  assertWorkspaceGrant(state, now);
   requireWorkspace(
     !state.closed &&
       state.active?.id === action.id &&

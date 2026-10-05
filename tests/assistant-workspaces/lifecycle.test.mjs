@@ -12,12 +12,13 @@ import {
   workspaceWakeup,
   WORKSPACE_LIMITS,
   parseWorkspaceRun,
+  authorizeWorkspaceExecution,
 } from "../../packages/pvo-assistant/workspaces/index.js";
 import {
   parseServiceFiles,
   serializeServiceFiles,
 } from "../../packages/pvo-assistant/services/index.js";
-import { identity, NOW, files, command } from "./helpers.mjs";
+import { identity, NOW, files, command, executionGrant } from "./helpers.mjs";
 
 test("draft source accepts partial/empty files while rejecting unsafe and overlarge contents", () => {
   assert.deepEqual(parseServiceFiles([]), []);
@@ -35,7 +36,11 @@ test("draft source accepts partial/empty files while rejecting unsafe and overla
 
 test("action intent retains a stable, bounded reservation before any provider effect", async () => {
   let state = advanceWorkspaceSource(
-    newWorkspace(await identity(), NOW),
+    authorizeWorkspaceExecution(
+      newWorkspace(await identity(), NOW),
+      executionGrant(),
+      NOW,
+    ),
     1,
     NOW,
   );
@@ -45,7 +50,7 @@ test("action intent retains a stable, bounded reservation before any provider ef
     now: NOW,
   });
   assert.equal(state.lease.id, `${state.identity.resourceId}-1`);
-  assert.equal(state.lease.deadlineAt, NOW + WORKSPACE_LIMITS.sessionMs);
+  assert.equal(state.lease.deadlineAt, executionGrant().expiresAt);
   assert.throws(
     () =>
       beginWorkspaceAction(state, { id: "duplicate", kind: "start", now: NOW }),
