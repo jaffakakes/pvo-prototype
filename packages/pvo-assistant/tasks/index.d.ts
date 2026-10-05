@@ -106,6 +106,13 @@ export type TaskCommand =
     }
   | { kind: "reserve_usage"; modelTurns: number; toolCalls: number }
   | {
+      kind: "reconcile_usage";
+      operationId: string;
+      modelTurns: number;
+      toolCalls: number;
+      consumed: boolean;
+    }
+  | {
       kind: "settle_usage";
       modelTurns: number;
       toolCalls: number;

@@ -29,7 +29,7 @@ Build this before committing to a provider-specific implementation.
 
 ## 1B. Save the task and its questions
 
-**Progress:** 1B.01–1B.03 verified: the [shared contract](../../../packages/pvo-assistant/tasks/README.md) and account-scoped local draft association exist. Owned server task storage and operations are now verified. Next are 1B.04/1B.05; the runner, task UI, and full milestone acceptance remain incomplete.
+**Progress:** 1B.01–1B.03 verified: the [shared contract](../../../packages/pvo-assistant/tasks/README.md) and account-scoped local draft association exist. Owned server task storage and operations are now verified. 1B.05 is also verified: durable planning wakeups, claims, reservations and cancellation. It was implemented before 1B.04 to establish real server execution for request routing. Next are 1B.04 and 1B.06; task routing/UI and the full milestone acceptance remain incomplete.
 
 The task record is the agent's notebook. It must be saved on the server. Follow the [detailed 1B implementation plan](1b-saved-tasks.md) for contracts, build order, and failure tests.
 
@@ -37,7 +37,7 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 - [x] **1B.02** Keep the local draft linked to that identity without requiring the whole video project to be uploaded. A project copy needs an explicit decision about whether it shares or creates a service.
 - [x] **1B.03** Add authenticated create, read, answer, resume, and stop operations. Check ownership on every operation.
 - [ ] **1B.04** Run cloud-building work through a saved server task that can continue across separate requests. Preserve ordinary editor edits through the current editing command path.
-- [ ] **1B.05** Add a background authoring runner with saved checkpoints, wakeups, bounded retries, and one active worker owning each task step. Its lifetime must not depend on an open HTTP request or browser tab. Viewer jobs in Roadmap 3 are a separate responsibility.
+- [x] **1B.05** Add a background authoring runner with saved checkpoints, wakeups, bounded retries, and one active worker owning each task step. Its lifetime must not depend on an open HTTP request or browser tab. Viewer jobs in Roadmap 3 are a separate responsibility.
 - [ ] **1B.06** Add a small progress view in the existing assistant conversation. Start with “Working,” “Needs your answer,” “Ready,” “Stopped,” and “Failed,” with a specific reason.
 - [ ] **1B.07** Save prepared component changes while the editor is closed. Apply them on return only after checking the current local project.
 - [ ] **1B.08** Record completed steps so restarting a task cannot repeat a deployment or other completed action.

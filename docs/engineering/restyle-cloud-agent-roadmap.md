@@ -2,7 +2,7 @@
 
 **Continuing with Claude Code or Codex:** read [current progress](restyle-cloud-agent-progress.md), then the [handoff/restart guide](restyle-cloud-agent-handoff.md). Every checklist item now has a stable task ID. After each verified task, check it off and save its evidence and exact next action. Root [AGENTS.md](../../AGENTS.md) and [CLAUDE.md](../../CLAUDE.md) require this workflow.
 
-Status: implementation in progress, 5 October 2026. **1A passed:** a real Linux workspace built a service that kept working after the workspace was deleted. **1B.01–1B.03 passed:** shared task rules, local project links and durable owned task operations are implemented and tested. **Next: 1B.04/1B.05, saved authoring execution and backend intent routing.** See [current evidence](restyle-cloud-agent-progress.md) and the [infrastructure proof](restyle-cloud-infrastructure-proof.md). Unchecked items remain proposed work.
+Status: implementation in progress, 5 October 2026. **1A passed:** a real Linux workspace built a service that kept working after the workspace was deleted. **1B.01–1B.03 passed:** shared task rules, local project links and durable owned task operations are implemented and tested. **1B.05 also passed:** saved planning survives browser/worker closure. **Next: 1B.04 and 1B.06, request routing and task progress in the editor.** See [current evidence](restyle-cloud-agent-progress.md) and the [infrastructure proof](restyle-cloud-infrastructure-proof.md). Unchecked items remain proposed work.
 
 Start with [Roadmap 1](restyle-cloud-agent-roadmaps/01-first-working-component.md). It delivers the first complete version: ask for a component, let the agent build a new backend, try it, and share something that keeps working after its temporary computer shuts down.
 
@@ -23,7 +23,7 @@ Every roadmap contains ordered implementation steps, relevant code areas, and ob
 
 ## Delivery sequence and completion gates
 
-Use the numbered tasks in the linked guide as the detailed checklist. The phase order is a dependency plan, not a calendar estimate. 1A is complete; 1B has its first three tasks complete. A checked implementation task does not automatically mean its PR is merged or its feature is released.
+Use the numbered tasks in the linked guide as the detailed checklist. The phase order is a dependency plan, not a calendar estimate. 1A is complete; 1B.01–1B.03 and 1B.05 are complete. A checked implementation task does not automatically mean its PR is merged or its feature is released.
 
 | Phase | Deliverable | Depends on | Evidence needed to finish |
 | --- | --- | --- | --- |
@@ -114,6 +114,6 @@ Production promotion follows dev → preprod → prod. After successful deployme
 
 ## Start here
 
-**Continue with 1B.04/1B.05 in Roadmap 1:** execute saved work independently of the browser and route backend-building requests into it. Task rules, local associations and durable owned server storage are implemented; the runner and complete editor journey still need connecting. The completed 1A proof establishes that the workspace and independent hosting run in the account. Model-driven generation remains later work.
+**Continue with 1B.04 and 1B.06 in Roadmap 1:** route backend-building requests into saved work and show their progress/questions. Task rules, local associations and durable owned server storage are implemented; the planning runner exists; the complete editor journey still needs connecting. The completed 1A proof establishes that the workspace and independent hosting run in the account. Model-driven generation remains later work.
 
 Use completion checks to judge progress. Calendar estimates would depend on the provider access, implementation results, and integration difficulties discovered in these steps.

@@ -4,13 +4,13 @@
 
 **Plain-English result:** Restyle remembers what you asked it to build, what it has already done, and what answer it needs from you. Closing the editor does not erase the task. Returning to it resumes the same work.
 
-This milestone is in progress. **1B.01–1B.03 are implemented:** the [shared task contract](../../../packages/pvo-assistant/tasks/README.md) defines records, limits, and pure transitions; local draft checkpoints retain scoped task locators. Owned server storage and routes are verified; the runner and task UI remain planned. Keep completion markers in Roadmap 1; record decisions and evidence in the progress log.
+This milestone is in progress. **1B.01–1B.03 are implemented:** the [shared task contract](../../../packages/pvo-assistant/tasks/README.md) defines records, limits, and pure transitions; local draft checkpoints retain scoped task locators. Owned server storage and routes are verified; the planning runner (1B.05) is also verified; editor intent routing and task UI remain planned. Keep completion markers in Roadmap 1; record decisions and evidence in the progress log.
 
 ## First useful change
 
 Completed **1B.01: the shared task record and its rules** answers: “What is a valid saved task, and what changes are allowed?” Its pure functions and tests need no cloud deployment or UI. The record carries trusted owner metadata, a server project identity, and the original project fingerprint.
 
-The local project association in **1B.02** is also complete. **1B.03** now resolves owned server projects and preserves real tasks across storage restart. Continue with **1B.04/1B.05**, the saved runner and backend intent routing. Prove each layer through its public boundary before connecting the next.
+The local project association in **1B.02** is also complete. **1B.03** now resolves owned server projects and preserves real tasks across storage restart. The saved runner in **1B.05** is now verified. Continue with **1B.04** backend intent routing and **1B.06** task presentation. Prove each layer through its public boundary before connecting the next.
 
 ## Suggested source ownership
 
@@ -102,6 +102,8 @@ These routes are implemented. Read the [server contract](../../../server/assista
 **Verification:** two separate authenticated owners, anonymous access, cross-origin writes, missing storage, duplicate creates, oversized input, repeated answers, invalid question IDs, and true storage restart. Unavailable bindings must return an accurate unavailable result, not an in-memory success.
 
 ## 1B.04 and 1B.05 — Run work independently of the browser
+
+**1B.05 is implemented and verified ahead of 1B.04.** Durable alarms, claims, checkpoints, bounded planning, private inference journals, cancellation and quota settlement run in the server coordinator. Read the [runner contract](../../../server/assistant/tasks/README.md#saved-planning-runner-1b05). Tests use controlled planning responses with real local workerd storage/alarms; no live generated workspace or editor task UI is claimed. 1B.04 remains unchecked.
 
 Route only backend-building requests into the new saved-task path. Keep ordinary editing on the existing atomic editor command path. Availability should depend on actual server capabilities.
 

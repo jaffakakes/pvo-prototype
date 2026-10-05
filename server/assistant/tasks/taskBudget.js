@@ -1,0 +1,33 @@
+import { HttpError } from "../../http.js";
+import { creationDigest } from "./input.js";
+
+export async function taskBudgetIdentity(task, operationId, now) {
+  const day = new Date(now).toISOString().slice(0, 10);
+  return {
+    day,
+    client: await creationDigest(["owner", day, task.ownerId]),
+    key: await creationDigest(["task", task.ownerId, task.id, operationId]),
+  };
+}
+
+function budget(env, identity) {
+  if (!env.ASSISTANT_BUDGET)
+    throw new HttpError(503, "The assistant budget is unavailable.");
+  return env.ASSISTANT_BUDGET.getByName(`assistant:${identity.day}`);
+}
+
+export async function reserveTaskBudget(env, identity) {
+  if (!(await budget(env, identity).reserve(identity.client, identity.key)))
+    throw new HttpError(429, "The assistant has reached its usage limit.");
+}
+
+export async function settleTaskBudget(env, identity, consumed) {
+  if (
+    !(await budget(env, identity).settle(
+      identity.client,
+      identity.key,
+      consumed,
+    ))
+  )
+    throw new Error("Task inference reservation could not be reconciled");
+}
