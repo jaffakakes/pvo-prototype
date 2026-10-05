@@ -1,0 +1,89 @@
+.panel {
+  border: 2px solid var(--q14);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.panel p {
+  margin: 8px 0;
+}
+.heading,
+.actions,
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.heading {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding-block: 3px;
+  background: var(--surface);
+  justify-content: space-between;
+}
+.heading span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.request {
+  font-weight: 700;
+  white-space: pre-wrap;
+}
+.answer {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+.answer label {
+  font-weight: 700;
+  white-space: pre-wrap;
+}
+.answer textarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  resize: vertical;
+  color: var(--text);
+  background: var(--input);
+  border: 1px solid var(--q14);
+  border-radius: 8px;
+  padding: 8px;
+  font: inherit;
+}
+.panel button {
+  color: var(--text);
+  background: var(--input);
+  border: 1px solid var(--q14);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+}
+.panel button:disabled {
+  opacity: 0.55;
+}
+.choices button[aria-pressed="true"] {
+  outline: 2px solid var(--accent);
+}
+.hint {
+  color: var(--muted);
+  font-size: 11px;
+}
+.actions:not(:empty) {
+  margin-top: 10px;
+}
+
+.history {
+  margin-top: 12px;
+}
+.history dt {
+  font-weight: 700;
+}
+.history dd {
+  margin: 4px 0 12px;
+  white-space: pre-wrap;
+}

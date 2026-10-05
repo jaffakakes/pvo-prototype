@@ -1,3 +1,4 @@
+import { taskStorageAvailable } from "./availability.js";
 import { TASK_LIMITS } from "../../../packages/pvo-assistant/tasks/index.js";
 import { getAccountSession } from "../../auth/sessions.js";
 import { checkOrigin, HttpError, json, readJson } from "../../http.js";
@@ -19,13 +20,7 @@ export function isTaskRoute(path) {
 
 export async function assistantTaskRoute(request, env, config) {
   const url = new URL(request.url);
-  if (
-    !config.origin ||
-    url.origin !== config.origin ||
-    !env.DB ||
-    !env.SESSION_SECRET ||
-    typeof env.ASSISTANT_TASKS?.getByName !== "function"
-  )
+  if (!taskStorageAvailable(env, config, url.origin))
     throw new HttpError(
       503,
       "Saved assistant tasks are unavailable. Please try again later.",

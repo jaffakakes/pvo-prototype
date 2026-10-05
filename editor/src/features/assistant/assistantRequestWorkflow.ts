@@ -1,3 +1,4 @@
+import type { TaskProposal } from "../../../../packages/pvo-assistant/tasks/index.js";
 import { AssistantServiceError } from "../../domain/assistant/failure";
 import type {
   AssistantAnswer,
@@ -26,6 +27,7 @@ type RequestInput = {
 };
 
 export type AssistantRequestCompletion = {
+  savedTaskId?: string;
   planned: NativeBatch | null;
   applied: AppliedAssistantChange | null;
   answer: AssistantAnswer;
@@ -53,6 +55,15 @@ type RequestAdapters = {
     signal: AbortSignal,
   ): Promise<{ available: boolean; capabilities: { editing: boolean } }>;
   task: Pick<NativeTaskAdapters, "turn" | "observe" | "prepare" | "playhead">;
+  saveTask?(
+    input: {
+      project: ProjectSnapshot;
+      request: string;
+      proposal: TaskProposal;
+    },
+    signal: AbortSignal,
+    guard: () => void,
+  ): Promise<{ id: string }>;
   advancedEditingEnabled(): boolean;
   apply(batch: NativeBatch): AppliedAssistantChange | null;
   feedback(prompt: string): RequestFeedback;
@@ -167,6 +178,23 @@ export function createAssistantRequestWorkflow(adapters: RequestAdapters) {
         signal,
       );
       assertCurrent();
+      let savedTaskId: string | undefined;
+      if (result.cloudTask) {
+        if (!adapters.saveTask)
+          throw new Error("Saved tasks are unavailable in this editor.");
+        feedback.progress("Saving your task…");
+        const task = await adapters.saveTask(
+          {
+            project: original.project,
+            request: prompt,
+            proposal: result.cloudTask,
+          },
+          signal,
+          assertCurrent,
+        );
+        assertCurrent();
+        savedTaskId = task.id;
+      }
       const planned = result.batch;
       let applied = null;
       if (planned) {
@@ -186,6 +214,7 @@ export function createAssistantRequestWorkflow(adapters: RequestAdapters) {
         applying = false;
       }
       feedback.completed({
+        savedTaskId,
         planned,
         applied,
         history: result.history,

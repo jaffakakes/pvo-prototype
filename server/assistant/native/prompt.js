@@ -35,27 +35,91 @@ PVO source, when necessary, is declarative Structure/Style/Logic, never HTML/JS.
 
 Be useful and concise. Answer-only questions use message and omit answer. If the creator requests BOTH edits and a substantive textual answer, complete the edits in the working copy and include the requested information in answer on the final successful response. That final response must have empty operations and observations and no blocked flag. Keep message a brief completion explanation. Instructions to tell, quote, summarize or explain something in the reply request a substantive answer even without a question mark. For a request containing edits plus that information, message alone is insufficient: the edit completion message is not the displayed answer. Put the actual requested information in answer, including observed timestamps and speech when requested; do not hide it in message or drop it into a summary. Answer must be nonblank and at most 8000 characters, grounded in available evidence. Omit answer from ordinary edit confirmations, intermediate operation/observation steps and blocked responses. Substantive answers appear in the creator's existing answer card. For editing requests, provide a brief plain-language explanation alongside the concrete operations; the message never substitutes for the operations. Do not mention operation names, JSON, schema fields, modes or internal observation machinery. Answers should give the requested information directly. For unsupported capabilities, explain the specific limit and offer an available next step. The tool list is exhaustive. If no operation can establish the requested property and context does not expose its current value (for example visual layer stacking order), do not claim it is already correct or report success. Return blocked with the specific missing capability, without unrelated edits. Never substitute unrelated edits or claim unsupported work is done.`;
 
-export function nativeMessages(request, observations, { wordTiming = false, animation = false, objectTracking = false } = {}) {
+import { savedTaskInstructions } from "./savedTaskPrompt.js";
+
+export function nativeMessages(
+  request,
+  observations,
+  {
+    wordTiming = false,
+    animation = false,
+    objectTracking = false,
+    savedTasks = false,
+  } = {},
+) {
   // Use the actual current scene ID so examples cannot introduce a fictional target.
-  const editExample = { message: "A centered title for the first three seconds.", operations: [
-    { kind: "text.add", sceneId: request.project.currentSceneId, text: "HELLO", start: 0, end: 3, x: 50, y: 50 },
-  ], observations: [] };
-  const answerExample = { message: "I can edit text, clips, scenes, audio and components.", operations: [], observations: [] };
+  const editExample = {
+    message: "A centered title for the first three seconds.",
+    operations: [
+      {
+        kind: "text.add",
+        sceneId: request.project.currentSceneId,
+        text: "HELLO",
+        start: 0,
+        end: 3,
+        x: 50,
+        y: 50,
+      },
+    ],
+    observations: [],
+  };
+  const answerExample = {
+    message: "I can edit text, clips, scenes, audio and components.",
+    operations: [],
+    observations: [],
+  };
   const mixedAnswerExample = {
-    message: "The title is ready.", operations: [], observations: [],
+    message: "The title is ready.",
+    operations: [],
+    observations: [],
     answer: "At 1.2–2.4 seconds, the speaker says: Welcome to the studio.",
   };
-  const transcriptActionExample = { message: "A caption using the supplied spoken sentence.", operations: [
-    { kind: "text.add", sceneId: request.project.currentSceneId, text: "The lantern turns green at dusk.", start: 0, end: 3 },
-  ], observations: [] };
-  const createChoiceExample = { message: "Preparing the mood choice.", operations: [
-    { kind: "component.add", sceneId: request.project.currentSceneId, componentType: "choice", at: 0, duration: 3 },
-  ], observations: [] };
-  const fillChoiceExample = { message: "Setting the choice wording.", operations: [
-    { kind: "component.content", sceneId: request.project.currentSceneId, componentId: "browser-generated-choice-id",
-      changes: { prompt: "Choose a mood", optionLabels: ["Calm", "Energetic"] } },
-  ], observations: [] };
-  const finishChoiceExample = { message: "The mood choice is ready.", operations: [], observations: [] };
+  const transcriptActionExample = {
+    message: "A caption using the supplied spoken sentence.",
+    operations: [
+      {
+        kind: "text.add",
+        sceneId: request.project.currentSceneId,
+        text: "The lantern turns green at dusk.",
+        start: 0,
+        end: 3,
+      },
+    ],
+    observations: [],
+  };
+  const createChoiceExample = {
+    message: "Preparing the mood choice.",
+    operations: [
+      {
+        kind: "component.add",
+        sceneId: request.project.currentSceneId,
+        componentType: "choice",
+        at: 0,
+        duration: 3,
+      },
+    ],
+    observations: [],
+  };
+  const fillChoiceExample = {
+    message: "Setting the choice wording.",
+    operations: [
+      {
+        kind: "component.content",
+        sceneId: request.project.currentSceneId,
+        componentId: "browser-generated-choice-id",
+        changes: {
+          prompt: "Choose a mood",
+          optionLabels: ["Calm", "Energetic"],
+        },
+      },
+    ],
+    observations: [],
+  };
+  const finishChoiceExample = {
+    message: "The mood choice is ready.",
+    operations: [],
+    observations: [],
+  };
   const examples = `
 Response-shape examples only; these are not additional creator requests. Use the actual latest prompt's content and target IDs, never copy example wording into an unrelated edit.
 If the latest prompt asks "Add HELLO as centered text from 0 to 3 seconds in the current scene" in plan or edit mode, return this shape, even when an earlier question said "answer only":
@@ -74,8 +138,32 @@ After the next metadata confirms that wording, finish without repeating the crea
 ${JSON.stringify(finishChoiceExample)}
 The ID "browser-generated-choice-id" exists only in this hypothetical example. In real requests use the actual ID returned in the current project; never copy this example ID or invent a numeric replacement.`;
   return [
-    { role: "system", content: instructions + examples + webInstructions + wordTimingInstructions(wordTiming) + animationInstructions(animation) + trackingInstructions(objectTracking && animation) },
-    { role: "user", content: JSON.stringify({ history: request.history, project: request.project, observations, ...(request.execution ? { execution: request.execution } : {}), mode: request.mode, prompt: request.prompt }) },
+    {
+      role: "system",
+      content:
+        instructions +
+        savedTaskInstructions(
+          savedTasks &&
+            request.mode !== "ask" &&
+            !request.execution?.receipts?.length,
+        ) +
+        examples +
+        webInstructions +
+        wordTimingInstructions(wordTiming) +
+        animationInstructions(animation) +
+        trackingInstructions(objectTracking && animation),
+    },
+    {
+      role: "user",
+      content: JSON.stringify({
+        history: request.history,
+        project: request.project,
+        observations,
+        ...(request.execution ? { execution: request.execution } : {}),
+        mode: request.mode,
+        prompt: request.prompt,
+      }),
+    },
     { role: "user", content: currentTask(request) },
   ];
 }
@@ -84,25 +172,55 @@ function currentComponentValues(request) {
   const values = [];
   let size = 2;
   let omitted = false;
-  const scenes = [...request.project.scenes].sort((left, right) =>
-    Number(right.id === request.project.currentSceneId) - Number(left.id === request.project.currentSceneId));
-  for (const scene of scenes) for (const component of scene.components) {
-    const editableContentKeys = { tooltip: ["text"], card: ["title", "body", "buttonLabels"],
-      choice: ["prompt", "optionLabels"], form: ["heading", "submitLabel"] }[component.type];
-    const authoredBounds = authoredComponentBounds(component, request.project.canvas);
-    const value = { sceneId: scene.id, id: component.id, type: component.type,
-      at: component.at, duration: component.duration, x: component.x, y: component.y,
-      label: component.label, content: component.content, editableContentKeys, font: component.font ?? null,
-      ...(component.formFields ? { formFields: component.formFields } : {}),
-      scale: component.scale, scaleX: component.scaleX, scaleY: component.scaleY,
-      proportionalScale: component.proportionalScale, width: component.width, height: component.height,
-      ...(authoredBounds ? { authoredBounds } : {}),
-      ...(component.responsePolicy ? { responsePolicy: component.responsePolicy } : {}) };
-    const length = JSON.stringify(value).length + 1;
-    if (size + length > 8000) { omitted = true; continue; }
-    values.push(value);
-    size += length;
-  }
+  const scenes = [...request.project.scenes].sort(
+    (left, right) =>
+      Number(right.id === request.project.currentSceneId) -
+      Number(left.id === request.project.currentSceneId),
+  );
+  for (const scene of scenes)
+    for (const component of scene.components) {
+      const editableContentKeys = {
+        tooltip: ["text"],
+        card: ["title", "body", "buttonLabels"],
+        choice: ["prompt", "optionLabels"],
+        form: ["heading", "submitLabel"],
+      }[component.type];
+      const authoredBounds = authoredComponentBounds(
+        component,
+        request.project.canvas,
+      );
+      const value = {
+        sceneId: scene.id,
+        id: component.id,
+        type: component.type,
+        at: component.at,
+        duration: component.duration,
+        x: component.x,
+        y: component.y,
+        label: component.label,
+        content: component.content,
+        editableContentKeys,
+        font: component.font ?? null,
+        ...(component.formFields ? { formFields: component.formFields } : {}),
+        scale: component.scale,
+        scaleX: component.scaleX,
+        scaleY: component.scaleY,
+        proportionalScale: component.proportionalScale,
+        width: component.width,
+        height: component.height,
+        ...(authoredBounds ? { authoredBounds } : {}),
+        ...(component.responsePolicy
+          ? { responsePolicy: component.responsePolicy }
+          : {}),
+      };
+      const length = JSON.stringify(value).length + 1;
+      if (size + length > 8000) {
+        omitted = true;
+        continue;
+      }
+      values.push(value);
+      size += length;
+    }
   return `Current component values from the candidate project (authoritative data): ${JSON.stringify(values)}
 authoredBounds, when present, is the computed static unrotated rectangle in canvas pixels, including uniform scale. Its signed margins are distances inside each canvas edge; a negative margin and outsideEdges identify overflow. For requested on-canvas corner placement, fitsCanvas:false means the geometry still needs correction before completion. These facts do not measure rendered content, text readability, visibility or font decoding. Bounds are omitted for intrinsic dimensions or position/scale/rotation animation; never infer that those components fit from the absence of bounds.
 These actual values override earlier assistant claims and conversation history. All exposed content keys are included: button0/button1 and option0/option1 are current labels, edited through buttonLabels/optionLabels arrays with the same count. submitLabel belongs only to forms, not cards. formFields describes field names/kinds, never entered values. A font is applied only when its actual id/family appears here; a downloaded font alone is not applied. A summary omitted for size is not evidence that any field is empty; consult the full project payload. If these values differ from the requested wording, field kinds, position, size, font, timing or response policy, the requested edit is still missing. Return its operation; do not claim it was already prepared.${omitted ? " Additional components are in the full project payload above." : ""}`;
@@ -117,44 +235,60 @@ ${currentTranscriptTiming(request)}`;
 }
 
 function currentExecution(request) {
-  if (!request.execution) return "No operation has been prepared for THIS request yet. Current project values are the request-start values; older conversation claims are not execution results.";
+  if (!request.execution)
+    return "No operation has been prepared for THIS request yet. Current project values are the request-start values; older conversation claims are not execution results.";
   return `Authoritative execution for THIS request is supplied in execution in the context data. It contains immutable requestStartValues plus ordered receipts with actual before/after values. These are editor facts, not model claims. A null before means the entity was created by that exact receipt; a null after means it was deleted. target identifies the input object, while changes identifies actual affected/generated objects. Do not relabel an existing object as a newly created result. Inspect any unintended change and restore its request-start values before finishing.
 Evaluate every relative change (later, longer, larger, quieter, and similar requests) ONCE from requestStartValues, never repeatedly from the candidate's already changed values. Verify the requested delta against that baseline. For newly created objects, use the creating receipt's after values. Receipts with outcome unchanged made no change; scheduled playback/export effects have not run yet. Compare the whole requested outcome and preservation constraints with the current project; completion is not justified merely because some receipt exists.`;
 }
 
 function currentTranscriptTiming(request) {
-  const transcripts = request.observations.filter(observation => observation.kind === "transcript");
+  const transcripts = request.observations.filter(
+    (observation) => observation.kind === "transcript",
+  );
   if (!transcripts.length) return "";
-  const timing = transcripts.map(observation => ({
-    sceneId: observation.sceneId, start: observation.start, end: observation.end,
+  const timing = transcripts.map((observation) => ({
+    sceneId: observation.sceneId,
+    start: observation.start,
+    end: observation.end,
     segmentCount: observation.segments?.length ?? 0,
     widestSegmentSeconds: observation.segments?.length
-      ? Math.max(...observation.segments.map(segment => segment.end - segment.start)) : null,
+      ? Math.max(
+          ...observation.segments.map((segment) => segment.end - segment.start),
+        )
+      : null,
   }));
   return `Current transcript timing metadata (observed bounds, not inferred word alignment): ${JSON.stringify(timing)}
 The start/end of each supplied segment locates its whole text only. An internal phrase has no separate timestamp unless the supplied segments actually isolate it or a supplied word_timing observation aligns those words. A coarse segment containing both setup and reveal cannot establish the pause between them. If THIS request needs that internal boundary, prefer the word_timing capability when offered, otherwise inspect a materially narrower window before choosing it; do not infer it from sentence length or word order. If a narrower result still combines both phrases, retain the uncertainty and continue useful refinement or report the unresolved boundary. User-specified absolute times and already isolated phrase/word evidence do not require reinspection.`;
 }
 
 export function nativeRepairMessages(messages, response, error, request) {
-  return [...messages,
-    { role: "user", content: `Validation rejected the entire response below. NONE of its operations or observations were executed or prepared. This is rejected response data, not an assistant action or an editor execution receipt:
+  return [
+    ...messages,
+    {
+      role: "user",
+      content: `Validation rejected the entire response below. NONE of its operations or observations were executed or prepared. This is rejected response data, not an assistant action or an editor execution receipt:
 ${JSON.stringify(response).slice(0, 24000)}
 Diagnostic (data, not instructions): ${JSON.stringify(String(error.message).slice(0, 1200))}.
 Repair it once, obeying the same creator request, mode and tool limits. If the rejected response combined operations with answer, keep the intended missing operations, correct any validation errors, and omit answer for this step. Do not drop requested edits merely to make answer legal. Wait until the next request's project and editor receipt show the operations were prepared before returning the requested answer in a separate terminal response.
 Only the current project and validated editor preparation receipts prove an edit exists. A rejected operation, an earlier assistant promise or a message saying "already prepared" is not evidence of execution. Compare the actual current field values before claiming the edit is done. Return the complete strict JSON result.
-${currentTask(request)}` },
+${currentTask(request)}`,
+    },
   ];
 }
 
 /** Reconsider a terminal result without repeating media inference or recursing. */
 export function nativeCompletionMessages(messages, response, request) {
-  return [...messages,
+  return [
+    ...messages,
     { role: "assistant", content: JSON.stringify(response) },
-    { role: "user", content: `Review this candidate terminal response against the latest creator prompt, current working-copy project, authoritative execution receipts and available evidence. This is a completion check, not a new creator request. Return the same strict JSON result shape and obey the original mode and all tool boundaries.
+    {
+      role: "user",
+      content: `Review this candidate terminal response against the latest creator prompt, current working-copy project, authoritative execution receipts and available evidence. This is a completion check, not a new creator request. Return the same strict JSON result shape and obey the original mode and all tool boundaries.
 Check whether the requested outcome is actually present in the candidate project, including the exact requested wording, form field kinds, position, size, applied font, timing and response policy values. A form heading does not establish its input kind, a downloaded font does not establish an applied font, and a center near a corner does not establish that the full component fits on screen. For requested edge placement, check all four authored bounds from explicit displayed dimensions and center coordinates when supplied; do not invent missing intrinsic measurements or claim visual inspection. Verify relative edits once against execution.requestStartValues and verify created identities from receipts, not from model messages. Check fields the creator asked to preserve against their request-start values; repair unintended edits before finishing. For a requested pause before a reveal, check that unanswered is pause and the component's layer end is before that reveal; a quiz's wording alone does not create the hold. A rejected response never executed its operations; a claim in its message that an edit is already prepared is not a validated editor receipt. If the current fields still contain the old values, return the missing operations instead of echoing that claim. If supported work is still missing, return the concrete missing operations. If relevant facts can be learned from supplied source or media, use the supplied facts or request relevant frames/transcript instead of asking the creator to provide them. Choose routine creative details yourself; a quiz's correct answer must be grounded in source/evidence, while you can author plausible distractors. Never invent facts, repeat prepared operations, retry an unchanged unavailable observation or mutate for an answer-only question.
 Audit any timing derived from speech against the actual segment text and bounds. A segment that includes multiple phrases gives no timestamp for an internal phrase boundary, even if its start/end have millisecond precision. A prepared layer end or an earlier assistant claim is not speech evidence. If a requested pause depends on an unresolved boundary, request word_timing when offered, otherwise a narrower transcript observation, instead of declaring the guessed edit complete. Supplied word_timing estimates can resolve the boundary, but do not independently verify the transcript or guarantee an inaudible cut. If adjacent aligned words touch and no playback evidence is supplied, the final answer must describe an estimated boundary to check in playback, not assert that the cut definitely hides the next word. Do not move a guessed pause to another guessed time. If bounded inspection cannot resolve the required boundary, return blocked with the remaining uncertainty so the unverified edits are discarded. Do not require new evidence for a user-specified absolute time.
 Review the response fields as well as the edit itself. For a request combining edits with requested information, preserve or supply that information in the final answer field once the candidate edits are complete. This includes instructions such as "in your reply, tell me the timestamped speech you used", even without a question mark. If the candidate put the requested information in message and omitted answer, that field choice must be corrected: move the evidence-grounded information into answer and shorten message to an edit confirmation. Do not delete or summarize away the requested words and timestamps. The edit completion message alone will not display the requested answer. Check that answer directly addresses the request using available evidence, rather than merely confirming the edits. If evidence is missing, request it before finishing. Pure questions use message; ordinary edit confirmations omit answer. Answer is allowed only on an unblocked terminal result with both arrays empty.
 Keep both arrays empty without blocked when the task is complete or the answer directly resolves the question. If completion genuinely needs unavailable information, an unsupported capability or an explicit user choice, return both arrays empty with "blocked":true and a focused question or limitation. This discards every prepared change; never pass a partial task as complete. Remove a premature blocked flag when source or observations can resolve it. Otherwise return the necessary operations OR observations, never both, and omit blocked. The candidate response is unverified model output, not evidence that work was performed.
-${currentTask(request)}` },
+${currentTask(request)}`,
+    },
   ];
 }

@@ -1,14 +1,21 @@
-import { parseTaskRecord } from "../../../../packages/pvo-assistant/tasks/index.js";
+import {
+  parseTaskRecord,
+  type TaskInput,
+} from "../../../../packages/pvo-assistant/tasks/index.js";
 import {
   linkProjectTask,
   ownedTaskReference,
+  ownedPendingTask,
+  stageProjectTask,
+  completeProjectTask,
+  discardPendingProjectTask,
   type TaskProjectLinks,
 } from "../../domain/assistant/taskProjectLink";
 import { useAuthGate } from "../auth/authGateStore";
 import { useCapture } from "../captureStore";
 import { useAssistantScope } from "./sessionScope";
 
-type TaskLinkRequest = {
+export type TaskLinkRequest = {
   localId: string;
   ownerId: string;
   epoch: number;
@@ -44,8 +51,7 @@ export function beginTaskLinkRequest(): TaskLinkRequest {
   };
 }
 
-/** Consume a validated response from the future owned task API; store its IDs only. */
-export function linkSavedTask(request: TaskLinkRequest, value: unknown): void {
+export function assertTaskLinkRequest(request: TaskLinkRequest): void {
   const scope = useAssistantScope.getState();
   const project = useCapture.getState();
   if (
@@ -58,6 +64,12 @@ export function linkSavedTask(request: TaskLinkRequest, value: unknown): void {
     throw new Error(
       "The project or account changed before this task could be linked.",
     );
+}
+
+/** Consume a validated owned task response; store its IDs only. */
+export function linkSavedTask(request: TaskLinkRequest, value: unknown): void {
+  assertTaskLinkRequest(request);
+  const project = useCapture.getState();
   const task = parseTaskRecord(value);
   if (task.ownerId !== request.ownerId)
     throw new Error("The task belongs to a different account.");
@@ -71,4 +83,58 @@ export function linkSavedTask(request: TaskLinkRequest, value: unknown): void {
     },
   );
   project.patch({ assistantTaskLinks });
+}
+
+export function currentPendingTask() {
+  const scope = useAssistantScope.getState();
+  return ownedPendingTask(
+    useCapture.getState().assistantTaskLinks,
+    scope.localId,
+    scope.ownerId,
+  );
+}
+
+export function stageSavedTask(
+  request: TaskLinkRequest,
+  input: TaskInput,
+): TaskLinkRequest {
+  assertTaskLinkRequest(request);
+  useCapture.getState().patch({
+    assistantTaskLinks: stageProjectTask(request.links, request.localId, {
+      ownerId: request.ownerId,
+      input,
+    }),
+  });
+  return beginTaskLinkRequest();
+}
+
+export function finishSavedTask(
+  request: TaskLinkRequest,
+  value: unknown,
+): TaskLinkRequest {
+  assertTaskLinkRequest(request);
+  if (!request.links) throw new Error("No task submission is pending.");
+  const task = parseTaskRecord(value);
+  useCapture.getState().patch({
+    assistantTaskLinks: completeProjectTask(
+      request.links,
+      request.ownerId,
+      task,
+    ),
+  });
+  return beginTaskLinkRequest();
+}
+
+export function discardExpiredTaskSubmission(
+  request: TaskLinkRequest,
+  operationId: string,
+): void {
+  assertTaskLinkRequest(request);
+  if (!request.links) throw new Error("No pending task submission.");
+  const assistantTaskLinks = discardPendingProjectTask(
+    request.links,
+    request.ownerId,
+    operationId,
+  );
+  useCapture.getState().patch({ assistantTaskLinks });
 }

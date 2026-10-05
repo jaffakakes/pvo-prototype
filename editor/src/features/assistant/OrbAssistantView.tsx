@@ -11,17 +11,28 @@ import styles from "./OrbAssistant.module.css";
 import quickStyles from "./AssistantQuickActions.module.css";
 import desktopStyles from "./OrbAssistantDesktop.module.css";
 
-export type AssistantPhase = "idle" | "typing" | "listening" | "working" | "review";
+export type AssistantPhase =
+  "idle" | "typing" | "listening" | "working" | "review";
 export type AssistantPlacement = "workspace" | "toolbar" | "floating";
 
-export type OrbGestureHandlers = Pick<ButtonHTMLAttributes<HTMLButtonElement>,
-  "onClick" | "onPointerDown" | "onPointerUp" | "onPointerCancel" |
-  "onLostPointerCapture" | "onKeyDown" | "onKeyUp" | "onBlur" | "onContextMenu">;
+export type OrbGestureHandlers = Pick<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  | "onClick"
+  | "onPointerDown"
+  | "onPointerUp"
+  | "onPointerCancel"
+  | "onLostPointerCapture"
+  | "onKeyDown"
+  | "onKeyUp"
+  | "onBlur"
+  | "onContextMenu"
+>;
 
 export interface OrbAssistantViewProps {
   phase: AssistantPhase;
   threadOpen?: boolean;
   exchangeCount?: number;
+  hasSavedTask?: boolean;
   onOpenThread?(): void;
   target: PvoComponent | null;
   clipCount: number;
@@ -51,32 +62,64 @@ export interface OrbAssistantViewProps {
 }
 
 export function OrbAssistantView({
-  phase, threadOpen = false, exchangeCount = 0, onOpenThread, target, clipCount, duration, ratio, voiceSide = "right", draft, onDraftChange, transcript, progress, answer, suggestions,
-  voicePhase, voiceMode, onStartVoice,
-  disabled = false, toolbarHeight = 100,
-  orbRef, orbHandlers, onSubmit, onClose, onDone, onEditRequest, onSuggestion,
-  placement = "workspace", availableHeight = 500,
+  phase,
+  threadOpen = false,
+  exchangeCount = 0,
+  hasSavedTask = false,
+  onOpenThread,
+  target,
+  clipCount,
+  duration,
+  ratio,
+  voiceSide = "right",
+  draft,
+  onDraftChange,
+  transcript,
+  progress,
+  answer,
+  suggestions,
+  voicePhase,
+  voiceMode,
+  onStartVoice,
+  disabled = false,
+  toolbarHeight = 100,
+  orbRef,
+  orbHandlers,
+  onSubmit,
+  onClose,
+  onDone,
+  onEditRequest,
+  onSuggestion,
+  placement = "workspace",
+  availableHeight = 500,
 }: OrbAssistantViewProps) {
   const active = phase !== "idle";
-  const dismissible = !threadOpen && (phase === "typing" || phase === "listening");
+  const dismissible =
+    !threadOpen && (phase === "typing" || phase === "listening");
   const targetLabel = target ? `${target.type} ${fmt(target.at)}` : "project";
   const workingLabel = progress || "Reading your project…";
   const startingVoice = phase === "listening" && voicePhase === "starting";
-  const transcribingVoice = phase === "listening" && voicePhase === "transcribing";
+  const transcribingVoice =
+    phase === "listening" && voicePhase === "transcribing";
   const cancellableVoice = startingVoice || transcribingVoice;
   const tapVoice = phase === "listening" && voiceMode === "tap";
   const voiceLabels: Record<VoicePhase, string> = {
     idle: "Sending…",
     starting: "Starting microphone…",
-    listening: placement === "toolbar" ? "Listening…" : `Listening · ${targetLabel}`,
+    listening:
+      placement === "toolbar" ? "Listening…" : `Listening · ${targetLabel}`,
     ready: "Ready to send",
     transcribing: "Transcribing…",
   };
-  const voiceHint = startingVoice ? "Allow microphone access when asked."
-    : transcribingVoice ? "Turning your recording into words · Esc to cancel"
-    : tapVoice ? "Tap Send when you're done · Esc to cancel"
-      : "Let go to send · you can undo changes";
-  let orbLabel = "Restyle assistant — tap to type, hold to speak, let go to send";
+  const voiceHint = startingVoice
+    ? "Allow microphone access when asked."
+    : transcribingVoice
+      ? "Turning your recording into words · Esc to cancel"
+      : tapVoice
+        ? "Tap Send when you're done · Esc to cancel"
+        : "Let go to send · you can undo changes";
+  let orbLabel =
+    "Restyle assistant — tap to type, hold to speak, let go to send";
   let orbTitle: string | undefined;
   if (phase === "working") {
     orbLabel = "Stop request";
@@ -90,74 +133,198 @@ export function OrbAssistantView({
     "--assistant-available-height": `${availableHeight}px`,
   } as CSSProperties;
 
-  return <div className={`orbAssistant ${styles.root} ${quickStyles.root} ${desktopStyles.root}`} data-assistant-phase={phase}
-    data-has-target={!!target} data-voice-side={voiceSide} data-voice-phase={voicePhase}
-    data-placement={placement} data-thread-open={threadOpen} style={rootStyle}>
-    {dismissible && <button type="button" className={styles.dismissArea}
-      data-assistant-dismiss-area aria-label="Close assistant" tabIndex={-1} onClick={onClose} />}
+  return (
+    <div
+      className={`orbAssistant ${styles.root} ${quickStyles.root} ${desktopStyles.root}`}
+      data-assistant-phase={phase}
+      data-has-target={!!target}
+      data-voice-side={voiceSide}
+      data-voice-phase={voicePhase}
+      data-placement={placement}
+      data-thread-open={threadOpen}
+      style={rootStyle}
+    >
+      {dismissible && (
+        <button
+          type="button"
+          className={styles.dismissArea}
+          data-assistant-dismiss-area
+          aria-label="Close assistant"
+          tabIndex={-1}
+          onClick={onClose}
+        />
+      )}
 
-    {phase === "typing" && !threadOpen && <>
-      <AssistantContext component={target} clipCount={clipCount} duration={duration} />
-      <form className={styles.composer} data-assistant-composer onSubmit={event => {
-        event.preventDefault();
-        if (!disabled && draft.trim()) onSubmit();
-      }}>
-        <input aria-label="Describe a change" autoComplete="off" autoFocus
-          disabled={disabled} maxLength={2000}
-          onChange={event => onDraftChange(event.currentTarget.value)}
-          placeholder="Ask anything…" value={draft} />
-        <button type="button" aria-label="Start voice input"
-          title="Speak a request" disabled={disabled} onClick={onStartVoice}>
-          <Icon name="microphone" size={18} />
-        </button>
-        <button type="submit" aria-label="Send request" disabled={disabled || !draft.trim()}>
-          <Icon name="arrow" size={20} />
-        </button>
-      </form>
-      {!target && placement !== "toolbar" && <div className={quickStyles.quickActions} aria-label="Whole edit suggestions">
-        {[`Fit to ${ratio}`, "Add a title", "Summarize video"].map(suggestion => <button
-          type="button" key={suggestion} disabled={disabled} onClick={() => onSuggestion(suggestion)}>
-          <span aria-hidden="true">✦</span>{suggestion}
-        </button>)}
-      </div>}
-    </>}
+      {phase === "typing" && !threadOpen && (
+        <>
+          <AssistantContext
+            component={target}
+            clipCount={clipCount}
+            duration={duration}
+          />
+          <form
+            className={styles.composer}
+            data-assistant-composer
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!disabled && draft.trim()) onSubmit();
+            }}
+          >
+            <input
+              aria-label="Describe a change"
+              autoComplete="off"
+              autoFocus
+              disabled={disabled}
+              maxLength={2000}
+              onChange={(event) => onDraftChange(event.currentTarget.value)}
+              placeholder="Ask anything…"
+              value={draft}
+            />
+            <button
+              type="button"
+              aria-label="Start voice input"
+              title="Speak a request"
+              disabled={disabled}
+              onClick={onStartVoice}
+            >
+              <Icon name="microphone" size={18} />
+            </button>
+            <button
+              type="submit"
+              aria-label="Send request"
+              disabled={disabled || !draft.trim()}
+            >
+              <Icon name="arrow" size={20} />
+            </button>
+          </form>
+          {!target && placement !== "toolbar" && (
+            <div
+              className={quickStyles.quickActions}
+              aria-label="Whole edit suggestions"
+            >
+              {[`Fit to ${ratio}`, "Add a title", "Summarize video"].map(
+                (suggestion) => (
+                  <button
+                    type="button"
+                    key={suggestion}
+                    disabled={disabled}
+                    onClick={() => onSuggestion(suggestion)}
+                  >
+                    <span aria-hidden="true">✦</span>
+                    {suggestion}
+                  </button>
+                ),
+              )}
+            </div>
+          )}
+        </>
+      )}
 
-    {!threadOpen && (phase === "listening" || phase === "working") && <div className={styles.liveBubble} data-assistant-live>
-      <div className={styles.liveHeading} data-assistant-live-heading
-        role="status" aria-live="polite" aria-atomic="true"
-        title={phase === "working" ? workingLabel : voiceHint}>
-        {phase === "listening" ? voiceLabels[voicePhase] : workingLabel}
-      </div>
-      <p role={phase === "listening" ? "status" : undefined}
-        aria-live={phase === "listening" ? "polite" : undefined} data-assistant-live-content>
-        {phase === "listening" ? transcript || (cancellableVoice ? "" : "What would you like to change?") : draft}
-        {phase === "listening" && voicePhase === "listening" && <span className={styles.cursor} aria-hidden="true" />}
-      </p>
-      <span className={styles.status} data-assistant-live-status>
-        {phase === "listening"
-          ? voiceHint
-          : "Request in progress · tap Stop to cancel"}
-      </span>
-    </div>}
+      {!threadOpen && (phase === "listening" || phase === "working") && (
+        <div className={styles.liveBubble} data-assistant-live>
+          <div
+            className={styles.liveHeading}
+            data-assistant-live-heading
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            title={phase === "working" ? workingLabel : voiceHint}
+          >
+            {phase === "listening" ? voiceLabels[voicePhase] : workingLabel}
+          </div>
+          <p
+            role={phase === "listening" ? "status" : undefined}
+            aria-live={phase === "listening" ? "polite" : undefined}
+            data-assistant-live-content
+          >
+            {phase === "listening"
+              ? transcript ||
+                (cancellableVoice ? "" : "What would you like to change?")
+              : draft}
+            {phase === "listening" && voicePhase === "listening" && (
+              <span className={styles.cursor} aria-hidden="true" />
+            )}
+          </p>
+          <span className={styles.status} data-assistant-live-status>
+            {phase === "listening"
+              ? voiceHint
+              : "Request in progress · tap Stop to cancel"}
+          </span>
+        </div>
+      )}
 
-    {phase === "review" && answer && <AssistantReview answer={answer} suggestions={suggestions}
-      disabled={disabled} onDone={onDone} onEditRequest={onEditRequest} onSuggestion={onSuggestion} />}
+      {phase === "review" && answer && (
+        <AssistantReview
+          answer={answer}
+          suggestions={suggestions}
+          disabled={disabled}
+          onDone={onDone}
+          onEditRequest={onEditRequest}
+          onSuggestion={onSuggestion}
+        />
+      )}
 
-    <button {...orbHandlers} ref={orbRef} type="button" className={styles.orb}
-      aria-label={orbLabel} title={orbTitle}
-      aria-disabled={phase === "review" || undefined} aria-expanded={active || threadOpen}
-      aria-busy={phase === "working" || cancellableVoice} disabled={disabled} data-assistant-orb>
-      {phase === "working" ? <span className={styles.stopLabel} aria-hidden="true" data-assistant-stop>
-        <span className={styles.stopIcon} />Stop
-      </span> : tapVoice || transcribingVoice ? <span className={styles.stopLabel} aria-hidden="true">
-        <Icon name={cancellableVoice ? "close" : "arrow"} size={16} />{cancellableVoice ? "Cancel" : "Send"}
-      </span> : <img src="restyle-mark.png" alt="" draggable={false} />}
-      <span className={styles.orbRing} aria-hidden="true" data-assistant-orb-ring />
-    </button>
-    {exchangeCount > 0 && phase === "idle" && !threadOpen && onOpenThread && <button type="button"
-      className={styles.threadCount} aria-label={`Open Restyle thread, ${exchangeCount} ${exchangeCount === 1 ? "exchange" : "exchanges"}`}
-      title="Open Restyle thread" onClick={onOpenThread}>
-      {Math.min(exchangeCount, 9)}{exchangeCount > 9 ? "+" : ""}
-    </button>}
-  </div>;
+      <button
+        {...orbHandlers}
+        ref={orbRef}
+        type="button"
+        className={styles.orb}
+        aria-label={orbLabel}
+        title={orbTitle}
+        aria-disabled={phase === "review" || undefined}
+        aria-expanded={active || threadOpen}
+        aria-busy={phase === "working" || cancellableVoice}
+        disabled={disabled}
+        data-assistant-orb
+      >
+        {phase === "working" ? (
+          <span
+            className={styles.stopLabel}
+            aria-hidden="true"
+            data-assistant-stop
+          >
+            <span className={styles.stopIcon} />
+            Stop
+          </span>
+        ) : tapVoice || transcribingVoice ? (
+          <span className={styles.stopLabel} aria-hidden="true">
+            <Icon name={cancellableVoice ? "close" : "arrow"} size={16} />
+            {cancellableVoice ? "Cancel" : "Send"}
+          </span>
+        ) : (
+          <img src="restyle-mark.png" alt="" draggable={false} />
+        )}
+        <span
+          className={styles.orbRing}
+          aria-hidden="true"
+          data-assistant-orb-ring
+        />
+      </button>
+      {(exchangeCount > 0 || hasSavedTask) &&
+        phase === "idle" &&
+        !threadOpen &&
+        onOpenThread && (
+          <button
+            type="button"
+            className={styles.threadCount}
+            aria-label={
+              hasSavedTask
+                ? "Open saved task"
+                : `Open Restyle thread, ${exchangeCount} ${exchangeCount === 1 ? "exchange" : "exchanges"}`
+            }
+            title="Open Restyle thread"
+            onClick={onOpenThread}
+          >
+            {hasSavedTask ? (
+              "•"
+            ) : (
+              <>
+                {Math.min(exchangeCount, 9)}
+                {exchangeCount > 9 ? "+" : ""}
+              </>
+            )}
+          </button>
+        )}
+    </div>
+  );
 }
