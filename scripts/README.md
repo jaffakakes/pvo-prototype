@@ -163,3 +163,7 @@ A suite is a collection of existing behavioral checks, not a guarantee that ever
 `npm run check:browser -- editor assistant-web` uses real editor orchestration with mocked assistant/web endpoints. It verifies a general design search and clickable sourced answer without project edits, then a six-round independent-foundry font search/read/import/save/apply/verify workflow, real font decoding, private-byte exclusion and single-step Undo/Redo. It requires Vite, Chrome and generated WASM.
 
 `npm run check:browser -- editor assistant-phone-form` uses the original phone-form request with mocked inference and real editor orchestration. On desktop and phone viewports it checks compiled telephone input, actual entry/submission, custom colors and a saved font, visible lower-right bounds, and one Undo/Redo for creation, placement and typography. It requires Vite, Chrome and generated WASM; it does not test the live model's choice of operations.
+
+## Cloud agent infrastructure proof
+
+The [Roadmap 1A evidence](../docs/engineering/restyle-cloud-infrastructure-proof.md) records account access, costs, limits, and cleanup. `scripts/checks/cloud-agent-infrastructure/preflight.mjs <account-id>` performs read-only checks. `hosting-proof.mjs <account-id> --run` creates, verifies, and deletes one disposable Worker; it can consume the account allowance and keeps a private cleanup journal. It does not activate a paid plan or deploy the Restyle application.

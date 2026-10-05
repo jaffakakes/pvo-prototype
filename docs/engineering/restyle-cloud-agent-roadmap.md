@@ -1,0 +1,88 @@
+# Restyle cloud agent implementation roadmaps
+
+Status: implementation started, 5 October 2026. **1A is in progress:** basic hosting and cleanup passed; the Linux workspace test requires account access. See the [infrastructure evidence](restyle-cloud-infrastructure-proof.md). Unchecked items remain proposed work.
+
+Start with [Roadmap 1](restyle-cloud-agent-roadmaps/01-first-working-component.md). It delivers the first complete version: ask for a component, let the agent build a new backend, try it, and share something that keeps working after its temporary computer shuts down.
+
+The [architecture document](restyle-cloud-agent-architecture.md) explains the idea. These roadmaps turn it into smaller pieces of work you can implement and verify.
+
+## The four roadmaps
+
+| Order | What you will have when finished | Implementation guide |
+| --- | --- | --- |
+| 1 | An agent that builds a working component and a real hosted backend, with saved progress and basic management controls. | [Build the first working component](restyle-cloud-agent-roadmaps/01-first-working-component.md) |
+| 2 | An agent that researches outside services, asks useful questions, helps connect accounts, and continues with the chosen approach. | [Research and connect outside services](restyle-cloud-agent-roadmaps/02-research-and-connections.md) |
+| 3 | Features that continue working after a viewer closes the video, with reliable messages, callbacks, schedules, and honest status updates. | [Support work that takes time](restyle-cloud-agent-roadmaps/03-background-work.md) |
+| 4 | An agent that updates and repairs existing features, with richer controls and additional runtimes when needed. | [Maintain and expand the system](restyle-cloud-agent-roadmaps/04-maintenance-and-expansion.md) |
+
+The first roadmap uses Restyle-owned storage so you can prove code generation and hosting without first needing a restaurant or messaging account. It must generate different rules for different requests. The product remains a general builder.
+
+Every roadmap contains ordered implementation steps, relevant code areas, and observable checks. Treat each step as a focused change or small group of pull requests. The roadmap is finished only when its complete demonstration works.
+
+## The order inside the first roadmap
+
+1. **1A: Check the infrastructure.** Prove that a temporary computer and a separate hosted service can actually run in the chosen account.
+2. **1B: Save the task.** Keep requests, follow-up answers, progress, and project identity across reloads.
+3. **1C: Give the agent a workshop.** Let it write and test new backend code in an isolated workspace.
+4. **1D: Host the finished work.** Add owned services, stable addresses, saved records, usage limits, and management controls.
+5. **1E: Connect PVO.** Attach a verified service to a component and support both downloaded files and published links.
+6. **1F: Prove the whole flow.** Run the complete journey with two different generated features and the workspace switched off.
+
+Work on the workspace and hosting can overlap once their input and output agreement is defined. Connect the whole flow before expanding the system to more providers or runtimes.
+
+## Rules that apply from the first release
+
+- Every task, workspace, service, and saved record belongs to a creator and project.
+- Follow-up questions and completed work survive closing the editor.
+- Test execution is enforced by the server. Editing a browser field cannot turn a test into a live action.
+- Time, request, storage, and spending limits are enforced outside generated code.
+- The creator can stop a build, inspect a service, pause it, and delete it.
+- Repeated submission of the same action does not create another logical operation.
+- The component and its service are checked together before activation.
+- Undoing an editor change does not undo an external message or reservation.
+- A public component address grants only its intended viewer operation; it never grants creator administration.
+
+These are working requirements for the first release. They should not be postponed to a later polish phase.
+
+## What already exists
+
+Restyle already has the editor assistant, public web research, account services, PVO requests, approved request hosts, response state, response templates, publishing, and reply collection.
+
+The cloud workspace, durable authoring task, generated service deployment, and automatic service attachment are new capabilities. The current assistant rejects new or changed network effects. Extending it requires a validated attachment operation as well as model instructions.
+
+The current Logic authoring language exposes less than the broader PVO format. Reuse the existing response machinery and add only the controls needed by a real interaction.
+
+A downloaded PVO and a published Restyle link are separate delivery routes. Both need a working service connection. Downloading a connected PVO must not require creating a public Restyle publication.
+
+## How to implement each step
+
+Start from current origin/dev on a focused branch, following the [release workflow](environments.md). Keep platform source changes separate from the generated services owned by individual creators.
+
+Use one current contract across source, tests, fixtures, and documentation. Avoid legacy parsing, dual formats, and compatibility paths. Keep domain rules separate from UI, network calls, and provider adapters. The [coding standard](coding-standards.md) and [architecture](architecture.md) apply throughout.
+
+For each step, record:
+
+- What works for the creator now.
+- The source changes and resources created.
+- Checks that passed, checks that failed, and anything not checked.
+- The remaining dependency before the next step can work.
+
+Use the relevant checks, rather than running every suite after every edit:
+
+| Change | Required verification |
+| --- | --- |
+| Server or shared JavaScript behavior | Focused behavior tests, then npm run check before merging. |
+| Editor behavior | npm run check:editor, relevant behavior tests, and the affected browser journey. |
+| Compiler or Logic changes | Rust tests and formatting, rebuild WASM, and verify the compiler/player browser path. |
+| Hosted infrastructure | A real controlled provider test in addition to local fixtures; record the resulting service and cleanup. |
+| Documentation only | Check links, content, and consistency. |
+
+Follow [scripts/README.md](../../scripts/README.md) for prerequisites and exact commands. App changes must reach the active beta through the documented build and release process: preserve generated output, rebuild, copy to the server's actual output directory, and verify the served service-worker revision. Do not force a reload over an editing session.
+
+Production promotion follows dev → preprod → prod. After successful deployment and live verification, perform the required branch cleanup from [AGENTS.md](../../AGENTS.md).
+
+## Start here
+
+The first implementation task is **1A in Roadmap 1**. Its output is evidence that the chosen workspace and hosting can run, plus the limits and access required to use them. Buying infrastructure alone does not complete it, and it does not yet prove that the agent can build a feature.
+
+Use completion checks to judge progress. Calendar estimates would depend on the provider access, implementation results, and integration difficulties discovered in these steps.

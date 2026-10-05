@@ -1,0 +1,67 @@
+# Roadmap 2: research and connect outside services
+
+[Roadmap overview](../restyle-cloud-agent-roadmap.md) · [Architecture](../restyle-cloud-agent-architecture.md)
+
+**Outcome:** the creator can describe a goal involving an outside service. The agent checks what is possible, asks for a missing decision or connection, and builds the agreed flow.
+
+**Depends on:** Roadmap 1's saved tasks, questions, ownership, workspace, live services, and test/live separation. Provider research can begin earlier, but real connections must use these boundaries.
+
+Use a restaurant journey as one demonstration. Its actual booking route must come from research. The demonstration can end in a real integration or a manual step chosen by the creator; the component must describe that outcome accurately.
+
+## 2A. Research the required capability
+
+- [ ] Extend the existing public web tools with structured evidence: source URL, time checked, supported operation, access requirements, uncertainty, and what still needs testing.
+- [ ] Let the agent inspect the creator's available connection names and permissions without seeing credentials.
+- [ ] Record whether the next operation is available, needs account setup, needs new adapter code, requires a manual step, or remains unverified.
+- [ ] Check actual integration documentation and available access. A booking button on a website does not establish permission to use a private API.
+- [ ] Ask a focused follow-up only when the evidence or creator's intent is insufficient. Continue independent work while waiting.
+- [ ] Save the chosen outcome. Reuse prior answers until the creator changes the request or new evidence invalidates them.
+
+**Finished when:** given examples with online booking, phone-only booking, and no bookings, the agent explains the actual options and follows the creator's choice. Fixture tests cover each branch; a real researched service verifies that the tools also work outside fixtures.
+
+**Where to start:** [web tools](../../../server/web/routes.js), [web research design](../web-search.md), and [assistant web instructions](../../../server/assistant/native/webPrompt.js).
+
+## 2B. Connect one external account securely
+
+- [ ] Choose one real integration for the first implementation based on accessible account and test support. Document the exact operations it enables.
+- [ ] Build the required secure connection flow: provider sign-in or a private key-entry screen. Save a connection reference in the task.
+- [ ] Keep credentials in the server's protected connection store. Exclude them from model context, workspace files, PVO files, diagnostics, and public URLs.
+- [ ] Add a controlled server adapter that attaches credentials only for approved destinations and operations. An arbitrary URL in generated code cannot receive them.
+- [ ] Provide connection status, reconnect, and disconnect operations. Check creator ownership and scope on every call.
+- [ ] Continue the saved task after account setup without repeating answered questions or completed deployments.
+
+**Finished when:** connect, reload, resume, expire, reconnect, and revoke an account. Each state has a usable next step, and another creator cannot invoke the connection.
+
+**Where to start:** [account identity](../../../server/identity.js), [HTTP helpers](../../../server/http.js), and the focused service/task owners introduced in Roadmap 1. Give connection storage and provider-specific calls their own responsibilities.
+
+## 2C. Let generated services use the connection
+
+- [ ] Give the service an approved connection reference and an agreed operation. Keep final access enforcement outside generated code.
+- [ ] Allow the agent to generate a new integration adapter when research establishes a usable service. Validate its destinations, methods, inputs, returned data, and requested permissions before registering it.
+- [ ] Keep generated integration code isolated. It calls the controlled connection interface; only trusted platform code attaches credentials. Generated code cannot inspect the resulting private headers or secret-bearing logs. An unfamiliar authentication method needs a separately reviewed platform adapter before that connection becomes available.
+- [ ] Test against a provider's test environment or a controlled account. Keep normal Try separated from real effects.
+- [ ] Store a request receipt before any external write. Use the provider's duplicate-prevention mechanism where available and save its result.
+- [ ] If the provider's outcome is unclear, retain “needs checking” and inspect the existing action. Do not retry a potentially completed booking or message blindly.
+- [ ] Keep operations that need prolonged waiting, callbacks, or repeated status checks unavailable for live use until Roadmap 3 supplies that lifecycle.
+
+**Finished when:** a component uses the connected service through a deployed backend, the workspace is off, and revoked permission blocks further calls. Report exactly what was verified: a provider accepting a message is not proof that it was delivered.
+
+This should remain extensible to researched services. The first integration provides a worked example of the connection contract; its brand does not define the whole feature.
+
+## 2D. Make manual alternatives useful
+
+- [ ] Let the agent propose an explicit change of outcome when automation is unavailable: collect RSVPs, prepare a call brief, provide a supported booking link, or prepare a message draft.
+- [ ] Save the creator's choice before changing the component's promise.
+- [ ] Add required form fields through existing component commands. Explain what collected data will be used for.
+- [ ] Record manual follow-up as pending until a person marks it completed or an actual service result confirms completion.
+- [ ] Preserve automatic and manual steps in the same saved task so returning later does not lose context.
+
+**Finished when:** a creator can choose a manual call and still receive a useful component and guest list. Neither the editor nor the viewer claims a table is booked from an RSVP alone.
+
+## Complete this roadmap
+
+Demonstrate a researched request, a saved follow-up question, secure account setup, a connected component, an expired connection, and a creator-chosen manual alternative.
+
+Use existing [assistant tests](../../../tests/native-assistant-server.test.mjs) and new focused tests for the connection boundary. Browser checks must cover setup/resume and the component's actual result. A mocked API proves local handling; a controlled provider check proves the real account connection.
+
+Next: [Roadmap 3 — background work](03-background-work.md).
