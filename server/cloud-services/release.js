@@ -5,6 +5,8 @@ import {
   INACTIVE_SERVICE_LIMITS,
   parseServiceIdentity,
   sameServiceIdentity,
+  parseServicePublication,
+  serializeServicePublication,
 } from "../../packages/pvo-assistant/releases/index.js";
 import {
   serviceResourceId,
@@ -17,7 +19,7 @@ export class ServiceRelease extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     ctx.storage.sql.exec(
-      "CREATE TABLE IF NOT EXISTS release (id INTEGER PRIMARY KEY CHECK (id = 1), identity TEXT NOT NULL, source TEXT, probes INTEGER NOT NULL DEFAULT 0)",
+      "CREATE TABLE IF NOT EXISTS release (id INTEGER PRIMARY KEY CHECK (id = 1), identity TEXT NOT NULL, body TEXT, probes INTEGER NOT NULL DEFAULT 0)",
     );
   }
   now() {
@@ -25,7 +27,7 @@ export class ServiceRelease extends DurableObject {
   }
   row() {
     return this.ctx.storage.sql
-      .exec("SELECT identity, source, probes FROM release WHERE id = 1")
+      .exec("SELECT identity, body, probes FROM release WHERE id = 1")
       .toArray()[0];
   }
 
@@ -37,18 +39,16 @@ export class ServiceRelease extends DurableObject {
         409,
         "Service ownership or immutable contents conflict.",
       );
-    if (this.now() >= identity.expiresAt && stored.source !== null) {
-      this.ctx.storage.sql.exec(
-        "UPDATE release SET source = NULL WHERE id = 1",
-      );
-      stored.source = null;
+    if (this.now() >= identity.expiresAt && stored.body !== null) {
+      this.ctx.storage.sql.exec("UPDATE release SET body = NULL WHERE id = 1");
+      stored.body = null;
     }
     return stored;
   }
   observation(identity, row) {
     return {
       identity,
-      state: !row ? "missing" : row.source === null ? "deleted" : "available",
+      state: !row ? "missing" : row.body === null ? "deleted" : "available",
     };
   }
   async verifyIdentity(value) {
@@ -65,21 +65,22 @@ export class ServiceRelease extends DurableObject {
   }
   async publish(value) {
     const publication = await verifyServicePublication(value);
-    const { identity, source } = publication;
+    const { identity } = publication;
+    const body = serializeServicePublication(publication);
     return this.ctx.storage.transaction(async () => {
       let current = this.current(identity);
       if (!current) {
         if (identity.expiresAt > this.now() + TASK_LIMITS.lifetimeMs)
           throw new HttpError(400, "Inactive service lifetime exceeded.");
         this.ctx.storage.sql.exec(
-          "INSERT INTO release (id, identity, source) VALUES (1, ?, ?)",
+          "INSERT INTO release (id, identity, body) VALUES (1, ?, ?)",
           JSON.stringify(identity),
-          this.now() < identity.expiresAt ? source : null,
+          this.now() < identity.expiresAt ? body : null,
         );
         current = this.row();
-      } else if (current.source !== null && current.source !== source)
+      } else if (current.body !== null && current.body !== body)
         throw new HttpError(409, "Published source cannot be replaced.");
-      if (current.source !== null)
+      if (current.body !== null)
         await this.ctx.storage.setAlarm(identity.expiresAt);
       return this.observation(identity, current);
     });
@@ -90,7 +91,7 @@ export class ServiceRelease extends DurableObject {
       this.current(identity);
       // Retain a tiny tombstone even when publish has not arrived yet. Late calls cannot resurrect it.
       this.ctx.storage.sql.exec(
-        "INSERT INTO release (id, identity, source) VALUES (1, ?, NULL) ON CONFLICT(id) DO UPDATE SET source = NULL",
+        "INSERT INTO release (id, identity, body) VALUES (1, ?, NULL) ON CONFLICT(id) DO UPDATE SET body = NULL",
         JSON.stringify(identity),
       );
       await this.ctx.storage.deleteAlarm();
@@ -101,21 +102,22 @@ export class ServiceRelease extends DurableObject {
     const identity = await this.verifyIdentity(value);
     const publication = this.ctx.storage.transactionSync(() => {
       const row = this.current(identity);
-      if (!row || row.source === null)
+      if (!row || row.body === null)
         throw new HttpError(404, "Inactive service is unavailable.");
       if (row.probes >= INACTIVE_SERVICE_LIMITS.probes)
         throw new HttpError(429, "Inactive service probe limit reached.");
       this.ctx.storage.sql.exec(
         "UPDATE release SET probes = probes + 1 WHERE id = 1",
       );
-      return { identity, source: row.source };
+      return parseServicePublication(JSON.parse(row.body));
     });
     const result = await probeInactiveService(
       this.env.SERVICE_LOADER,
       publication,
       input,
+      this.now(),
     );
-    if (this.current(identity)?.source === null)
+    if (this.current(identity)?.body === null)
       throw new HttpError(410, "Inactive service was cancelled.");
     return result;
   }

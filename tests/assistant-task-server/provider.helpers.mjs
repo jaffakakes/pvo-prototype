@@ -1,6 +1,6 @@
 import { saved, path, expectStatus } from "./helpers.mjs";
-export const source =
-  "export default { async fetch(request) { return Response.json({ answer: (await request.json()).value * 2 }); } };";
+import { checkedFixture } from "../service-hosting/fixtures.mjs";
+export const checked = await checkedFixture();
 export const guard = (task) => ({
   expectedRevision: task.revision,
   claim: { id: task.claim.id, generation: task.generation },
@@ -9,7 +9,7 @@ export async function publishing(fixture) {
   let task = await saved(fixture);
   for (const command of [
     { kind: "claim", claimId: "planner", leaseMs: 60000 },
-    { kind: "checkpoint", stepId: "publish" },
+    { kind: "checkpoint", stepId: "host" },
     { kind: "claim", claimId: "publisher", leaseMs: 60000 },
   ]) {
     const response = await fixture.control({
@@ -26,7 +26,7 @@ export const publish = (fixture, task) =>
   fixture.control({
     action: "publish",
     id: task.id,
-    source,
+    checked,
     guard: guard(task),
   });
 export const current = async (fixture, task) =>

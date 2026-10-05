@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { taskFixture, saved, path, NOW, expectStatus } from "./helpers.mjs";
 import {
-  source,
+  checked,
   guard,
   publishing,
   publish,
@@ -20,7 +20,7 @@ test("completed publication survives restart and a new claim without another pro
     const row = response.body;
     assert.equal(row.outcome, "completed");
     assert.equal(
-      row.source,
+      row.publication,
       null,
       "Settled coordinator records do not retain another source copy",
     );
@@ -35,10 +35,10 @@ test("completed publication survives restart and a new claim without another pro
     const probe = await fixture.control({
       action: "provider-probe",
       identity: row.identity,
-      input: { value: 21 },
+      input: { operation: "join", input: { name: "Alice" } },
     });
     expectStatus(probe, 200);
-    assert.equal(JSON.parse(probe.body.body).answer, 42);
+    assert.equal(JSON.parse(probe.body.body).result, "accepted");
     await fixture.control({ action: "time", now: NOW + 60000 });
     await fixture.control({
       action: "step",

@@ -2,7 +2,7 @@
 
 **Continuing with Claude Code or Codex:** read [current progress](restyle-cloud-agent-progress.md), then the [handoff/restart guide](restyle-cloud-agent-handoff.md). Every checklist item now has a stable task ID. After each verified task, check it off and save its evidence and exact next action. Root [AGENTS.md](../../AGENTS.md) and [CLAUDE.md](../../CLAUDE.md) require this workflow.
 
-Status: implementation in progress, **6 October 2026**. **1A, 1B and 1C are verified complete (25/121 tasks).** Real infrastructure, saved tasks, task-owned workspaces, general model construction/repair, scoped research and independent behavior validation are implemented and checked. **Next: 1D.01/1D.02, owned services and inactive releases.** The complete generated-component live journey remains 1F; beta delivery, remote integration and production are separate states. See [current evidence](restyle-cloud-agent-progress.md), the [infrastructure proof](restyle-cloud-infrastructure-proof.md) and the [provider recovery proof](restyle-cloud-provider-recovery-proof.md). Unchecked items remain work to do.
+Status: implementation in progress, **6 October 2026**. **1A, 1B and 1C are verified complete (27/121 tasks, including 1D.01/1D.02).** Real infrastructure, saved tasks, task-owned workspaces, general model construction/repair, scoped research and independent behavior validation are implemented and checked. **Next: 1D.03–1D.05, stable addresses, durable service data and saved action receipts.** The complete generated-component live journey remains 1F; beta delivery, remote integration and production are separate states. See [current evidence](restyle-cloud-agent-progress.md), the [infrastructure proof](restyle-cloud-infrastructure-proof.md) and the [provider recovery proof](restyle-cloud-provider-recovery-proof.md). Unchecked items remain work to do.
 
 Start with [Roadmap 1](restyle-cloud-agent-roadmaps/01-first-working-component.md). It delivers the first complete version: ask for a component, let the agent build a new backend, try it, and share something that keeps working after its temporary computer shuts down.
 
@@ -29,7 +29,7 @@ Use the numbered tasks in the linked guide as the detailed checklist. The phase 
 | --- | --- | --- | --- |
 | **1A — complete** | Real workshop and independent hosting | Account access | Service works after workshop deletion; limits and cleanup verified |
 | **1B — complete** | Saved tasks, questions, progress, resumable authoring | Existing accounts; 1A adapters for provider recovery checks | Close browser, restart runner, answer later, stop safely, and recover one existing deployment |
-| **1C — in progress** | Agent writes, tests, and repairs backend code | 1B task/receipt model and 1A runtime | Two different generated services pass trusted tests; invalid code cannot bypass the gate |
+| **1C — complete** | Agent writes, tests, and repairs backend code | 1B task/receipt model and 1A runtime | Two different generated services pass trusted tests; invalid code cannot bypass the gate |
 | 1D | Owned services, records, quotas, pause/delete | 1B records and 1C immutable artifacts | Duplicate and competing submissions behave correctly; isolation and cleanup hold |
 | 1E | Verified service attached to component | 1C/1D receipts and existing editor/player boundaries | Try uses test permissions; file export and publication both use the correct live service |
 | 1F | First complete product release | 1B–1E gates | Two natural-language demonstrations; restart/failure checks; beta and authorized release evidence |

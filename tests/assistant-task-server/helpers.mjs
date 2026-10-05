@@ -29,6 +29,7 @@ export async function taskFixture({
       resolveDir: process.cwd(),
       contents: `
     export { TestBudget, TestWorkspace } from './tests/assistant-workspaces/controlled-worker.js';
+    import { installCheckedDiagnostic } from "./scripts/checks/cloud-agent-recovery/checked-fixture.js";
     import { taskResearchTools } from "./server/assistant/builder/researchTools.js";
     import { publicResearch } from "./server/assistant/builder/researchProvider.js";
     import { reconcileTaskWorkspaces } from './server/assistant/tasks/workspaceRunner.js';
@@ -36,9 +37,9 @@ export async function taskFixture({
     import { reconcileTaskServices } from "./server/assistant/tasks/providerRunner.js";
     export class TestServiceRelease extends ServiceRelease {
       constructor(ctx, env) { super(ctx, env); ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS calls (id INTEGER PRIMARY KEY CHECK (id=1), count INTEGER NOT NULL)"); }
-      now() { return Date.UTC(2100, 0, 1); }
+      now() { return this.env.CONTROLLED_PLAN ? Date.now() : Date.UTC(2100, 0, 1); }
       async publish(value) { this.ctx.storage.sql.exec("INSERT INTO calls (id,count) VALUES (1,1) ON CONFLICT(id) DO UPDATE SET count=count+1"); return super.publish(value); }
-      stats() { return { calls: this.ctx.storage.sql.exec("SELECT count FROM calls").toArray()[0]?.count ?? 0, sourcePresent: !!this.row()?.source }; }
+      stats() { return { calls: this.ctx.storage.sql.exec("SELECT count FROM calls").toArray()[0]?.count ?? 0, sourcePresent: !!this.row()?.body }; }
     }
     import { savedTaskPlanningAvailable } from "./server/assistant/tasks/availability.js";
     import { handleRequest } from "./server/index.js";
@@ -95,6 +96,12 @@ export async function taskFixture({
         };
         return Object.fromEntries(["operate", "receipt", "lookup", "suspend", "stop"].map(action => [action, (...args) => call(action, ...args)]));
       }
+      async publishFixture(ownerId,id,checked,guard) {
+        const claimed=await this.claimForOperation(ownerId,id,guard);
+        await installCheckedDiagnostic(this,claimed,checked);
+        return this.publishService(ownerId,id,guard);
+      }
+      serviceCatalog() { return this.services.services().map(service=>({service,releases:this.services.releases(service.identity.serviceId)})); }
       async runValidationCase(artifact, index, signal) {
         const control = async phase => {
           if (!this.env.VALIDATION_CONTROL) return;
@@ -165,7 +172,9 @@ export async function taskFixture({
           if (action === "workspace-status") return json(await stub.workspaceStatus(args.identity));
           if (action === "disable-workspaces") { await stub.disableWorkspaces(); return json({ ok: true }); }
           if (action === "disable-provider") { await stub.disableProvider(); return json({ ok: true }); }
-          if (action === "publish") return json(await stub.publishService(owner.id, args.id, args.source, args.guard));
+          if (action === "publish") return json(await stub.publishFixture(owner.id, args.id, args.checked, args.guard));
+          if (action === "publish-unchecked") return json(await stub.publishService(owner.id,args.id,args.guard));
+          if (action === "service-catalog") return json(await stub.serviceCatalog());
           if (action === "provider-reconcile") return json(await stub.reconcileProviders());
           if (action === "provider-rows") return json(await stub.providerRows());
           if (action === "provider-status") return json(await stub.providerStatus(args.identity));

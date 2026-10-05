@@ -1,3 +1,4 @@
+import { checkedFixture } from "../service-hosting/fixtures.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { create } from "../assistant-tasks/fixtures.mjs";
@@ -12,7 +13,7 @@ test("provider wire data is strictly validated and RPC resources are disposed ev
   const { identity } = await prepareServicePublication(
     create(),
     "publish",
-    "export default {};",
+    await checkedFixture(),
   );
   for (const change of [
     {},
@@ -60,18 +61,20 @@ test("release identity is derived from the saved task and source bytes have a to
   const first = await prepareServicePublication(
     task,
     "publish",
-    "export default {};",
+    await checkedFixture(),
   );
   const same = await prepareServicePublication(
     task,
     "publish",
-    "export default {};",
+    await checkedFixture(),
   );
   assert.deepEqual(first, same);
   const changed = await prepareServicePublication(
     task,
     "publish",
-    "export default { changed: true };",
+    await checkedFixture(
+      "export function execute(){return {result:null,state:null};}",
+    ),
   );
   assert.equal(
     changed.identity.resourceId,
@@ -82,11 +85,22 @@ test("release identity is derived from the saved task and source bytes have a to
   const foreign = await prepareServicePublication(
     { ...task, ownerId: "other" },
     "publish",
-    first.source,
+    { artifact: first.artifact, report: first.report },
   );
   assert.notEqual(foreign.identity.resourceId, first.identity.resourceId);
   assert.throws(() =>
-    parseServicePublication({ ...first, source: "é".repeat(1024 * 1024) }),
+    parseServicePublication({
+      ...first,
+      artifact: {
+        ...first.artifact,
+        package: {
+          ...first.artifact.package,
+          files: [
+            { path: "src/service.mjs", content: "é".repeat(1024 * 1024) },
+          ],
+        },
+      },
+    }),
   );
   assert.throws(() =>
     parseServicePublication({ ...first, credential: "not-allowed" }),

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { taskFixture, path, NOW, expectStatus } from "./helpers.mjs";
 import {
-  source,
+  checked,
   guard,
   publishing,
   publish,
@@ -77,7 +77,10 @@ test("concurrent publication and reconciliation wakeups cannot duplicate an effe
       await fixture.control({
         action: "publish",
         id: task.id,
-        source: source + "\n// changed",
+        checked: {
+          ...checked,
+          report: { ...checked.report, status: "failed" },
+        },
         guard: guard(fresh),
       }),
       409,
@@ -85,7 +88,7 @@ test("concurrent publication and reconciliation wakeups cannot duplicate an effe
     expectStatus(
       await fixture.request("/__test", {
         session: fixture.otherCookie,
-        body: { action: "publish", id: task.id, source, guard: guard(fresh) },
+        body: { action: "publish", id: task.id, checked, guard: guard(fresh) },
       }),
       409,
     );

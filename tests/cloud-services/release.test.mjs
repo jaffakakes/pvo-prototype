@@ -1,3 +1,5 @@
+import { checkedFixture } from "../service-hosting/fixtures.mjs";
+import { dinnerSource } from "../service-validation/fixtures.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -7,19 +9,21 @@ import { Miniflare, convertV4MiniflareOptions } from "miniflare";
 import { bundleWorkerModules } from "../worker-bundle.helpers.mjs";
 import {
   prepareServicePublication,
-  serviceDigest,
   serviceResourceId,
 } from "../../server/cloud-services/releaseContract.js";
 import { createTask } from "../../packages/pvo-assistant/tasks/index.js";
 import { input } from "../assistant-tasks/fixtures.mjs";
 const NOW = Date.UTC(2100, 0, 1);
-const source = `export default { async fetch(request, env) {
-  const input = await request.json();
-  if (input.big) return new Response('x'.repeat(5000));
-  let blocked = false; try { await fetch('https://example.com'); } catch { blocked = true; }
-  return Response.json({ value: input.value * 2, blocked, env: Object.keys(env), authorization: request.headers.get('authorization') });
-} };`;
-const publication = () =>
+const source = `import {env} from 'cloudflare:workers';
+${dinnerSource.replace("export function execute", "function rules")}
+export async function execute(value) {
+  if (Object.keys(env).length) throw new Error('Unexpected binding');
+  let blocked=false; try { await fetch('https://example.com'); } catch {blocked=true;}
+  if (!blocked) throw new Error('Unexpected network access');
+  if (value.input?.name === 'overflow') return {result:'x'.repeat(70000),state:value.state};
+  return rules(value);
+}`;
+const publication = async () =>
   prepareServicePublication(
     createTask(input(), {
       id: "task",
@@ -28,7 +32,7 @@ const publication = () =>
       inputDigest: "a".repeat(64),
     }),
     "publish-one",
-    source,
+    await checkedFixture(source),
   );
 let modules;
 async function fixture() {
@@ -40,7 +44,7 @@ async function fixture() {
     export class TestRelease extends ServiceRelease {
       now() { return this.clock ?? Date.UTC(2100, 0, 1); }
       async expire(now) { this.clock = now; await this.alarm(); }
-      inspect() { const row=this.row(); return { sourcePresent: !!row?.source, probes: row?.probes ?? 0 }; }
+      inspect() { const row=this.row(); return { sourcePresent: !!row?.body, probes: row?.probes ?? 0 }; }
     }
     export default { async fetch(request, env) {
       const { action, target, publication, identity, input, now } = await request.json();
@@ -116,18 +120,19 @@ test("immutable inactive release survives a provider restart, stays isolated and
     );
     const result = await f.call("probe", {
       identity: value.identity,
-      input: { value: 21 },
+      input: { operation: "join", input: { name: "Alice" } },
     });
     assert.equal(result.status, 200);
     assert.deepEqual(JSON.parse(result.body.body), {
-      value: 42,
-      blocked: true,
-      env: [],
-      authorization: null,
+      result: "accepted",
+      state: { capacity: 1, guests: ["Alice"] },
     });
     const probes = await Promise.all(
       Array.from({ length: 25 }, () =>
-        f.call("probe", { identity: value.identity, input: { value: 3 } }),
+        f.call("probe", {
+          identity: value.identity,
+          input: { operation: "join", input: { name: "Bob" } },
+        }),
       ),
     );
     assert.equal(probes.filter((result) => result.status === 200).length, 19);
@@ -193,13 +198,8 @@ test("ownership, contents, lifetimes and runtime limits remain checked at the pr
       ).status,
       409,
     );
-    const changed = {
-      identity: {
-        ...value.identity,
-        sourceDigest: await serviceDigest("different"),
-      },
-      source: "different",
-    };
+    const changed = structuredClone(value);
+    changed.artifact.package.files[0].content += "\n// changed source";
     assert.equal(
       (await f.call("publish", { publication: changed })).status,
       409,
@@ -208,11 +208,25 @@ test("ownership, contents, lifetimes and runtime limits remain checked at the pr
       (
         await f.call("probe", {
           identity: value.identity,
-          input: { big: true },
+          input: { operation: "join", input: { name: "overflow" } },
         })
       ).status,
       409,
     );
+    for (const override of [
+      { mode: "live" },
+      { state: { capacity: 99, guests: [] } },
+      { now: 1 },
+    ])
+      assert.equal(
+        (
+          await f.call("probe", {
+            identity: value.identity,
+            input: { operation: "join", input: { name: "Alice" }, ...override },
+          })
+        ).status,
+        409,
+      );
     await f.call("expire", { identity: value.identity, now: NOW });
     assert.equal(
       (await f.call("lookup", { identity: value.identity })).body.state,

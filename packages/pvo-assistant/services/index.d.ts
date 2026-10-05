@@ -153,6 +153,11 @@ export function parseServiceTestReport(
   agreement: ServiceAgreement,
   identity: ServiceTestIdentity,
 ): ServiceTestReport;
+export function serializeServiceTestReport(
+  value: unknown,
+  agreement: ServiceAgreement,
+  identity: ServiceTestIdentity,
+): string;
 export function newServiceTestReport(
   agreement: ServiceAgreement,
   identity: ServiceTestIdentity,

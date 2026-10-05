@@ -1,11 +1,27 @@
-# Inactive service release contract
+# Owned services and inactive releases
 
-The public `index.js` / `index.d.ts` entry points define strict data exchanged by the task journal and trusted hosting adapter. They perform no provider effects. This is an inactive JavaScript release, not a public operation or a deployment-ready service package.
+The public `index.js` / `index.d.ts` entry points define the strict data and pure catalog decisions shared by task journals and trusted hosting adapters. SQL, hashing, runtime execution and provider effects stay in `server/cloud-services/`.
 
-A release identity contains `resourceId`, `ownerId`, `projectId`, `taskId`, `operationId`, exact `sourceDigest` and `expiresAt`. Ownership comes from the saved task. The server derives the resource ID from owner/project/task/operation, hashes source bytes, and validates both again before publication. A changed source under the same identity is a conflict.
+## Ownership and immutable contents
 
-Publication contains exactly `identity` and `source`, with a 1 MiB total JSON limit. An observation contains exactly `identity` and `state`: `missing`, `available` or `deleted`. It must match the full recorded identity. Missing is not proof that an in-flight publish cannot arrive. Only a cancellation tombstone closes that identity against late publication. Transport failures have no observation state.
+A service has a stable `serviceId`, creator, project, description and lifecycle timestamps. The initial service ID is derived from the saved task's owner/project/task identity. Each publication attempt has a separate `resourceId` derived from that service and its task/operation identity. Retrying an uncertain attempt looks up the original release before another attempt can be admitted.
 
-Private probes have 4 KiB input/output, 20 total attempts, a 15-second deadline, 50 ms generated-code CPU and zero subrequests. Generated code receives no credentials or platform bindings. Local workerd verifies the byte/quota/network boundaries; actual CPU enforcement requires the provider proof.
+A release binds `agreementDigest`, `sourceDigest`, `packageDigest` and `reportDigest`, plus its owner/project/task/operation IDs and inactive expiry. Publication contains exactly `identity`, `artifact` and `report`; the artifact contains the agreement, multi-module package and three test digests. The server rehashes all canonical bytes. A changed owner or contents under the same identity conflicts.
 
-The current inactive expiry is the originating task's deadline. Cancellation removes source and retains the small identity tombstone. Later activation and public service storage belong to Roadmap 1D.
+Shape validation alone cannot approve a release. The trusted task host selects the immutable artifact and completed passed report from its own storage. Neither a browser request nor a model tool can supply publication bytes or assert that tests passed. Missing, failed or partial reports cannot enter hosting. There is one current checked-package contract; source-string publications are rejected.
+
+## Saved catalog and provider lifecycle
+
+The owner-scoped catalog records intent before publication: the service, release, runtime, operation names, audiences and read/write permissions. It retains metadata beyond task pruning. Artifact/report bytes are stored separately in the per-release provider, independently of the temporary workspace and task artifact store.
+
+Initial limits are eight non-deleted services per owner, eight new services per UTC day, 64 retained service identities and four releases per service. Exact intent replay works at the limit; deletion does not reset the daily budget. These are bounded initial product limits, not a billing guarantee. New releases begin pending and become inactive only after an actual provider observation. A missing observation is not proof that an in-flight publication cannot arrive. Cancellation retains a tombstone which blocks late publication.
+
+The initial inactive expiry is the originating task's deadline. Expiry/cancellation removes artifact bytes. The owner catalog retains deleted metadata. Failed provider cleanup remains journaled and holds task retention until reconciled. Stop cannot turn a late release into an attached component.
+
+## Private inactive checks
+
+An inactive probe accepts only `{operation,input}`. Trusted code supplies the agreement's initial test state and current time on every probe; this slice has no durable live state or activation flag. Caller-supplied mode/state/time is rejected. No public HTTP operation route exists yet.
+
+Generated code runs through the same isolated package runtime as independent validation: fresh explicit modules, empty bindings, no outbound network, zero subrequests, 50 ms generated-code CPU, two-second invocation deadline and 64 KiB input/reply limits. Publication JSON is bounded to 2 MiB and the underlying package/field limits also apply. Each release permits 20 probe attempts. Some runtime-provided Node APIs exist; they grant no platform files, credentials or network access. Actual provider CPU enforcement is historical proof evidence, separate from the current local checked-package tests.
+
+Successful hosting advances the saved task to `attach`; that later stage currently reports unavailable. Stable routes, durable test/live records, activation, update/rollback and component attachment remain Roadmap 1D/1E work. Local workerd checks and static beta delivery do not mean the cloud product has been deployed.

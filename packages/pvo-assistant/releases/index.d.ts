@@ -1,28 +1,43 @@
-export type ServiceReleaseIdentity = {
+import type {
+  ServiceAgreement,
+  ServicePackage,
+  ServiceTestIdentity,
+  ServiceTestReport,
+} from "../services/index.js";
+export type ServiceReleaseIdentity = ServiceTestIdentity & {
   resourceId: string;
+  serviceId: string;
   ownerId: string;
   projectId: string;
   taskId: string;
   operationId: string;
-  sourceDigest: string;
+  reportDigest: string;
   expiresAt: number;
 };
-export type ServicePublication = {
+export type CheckedService = {
+  artifact: {
+    agreement: ServiceAgreement;
+    package: ServicePackage;
+    identity: ServiceTestIdentity;
+  };
+  report: ServiceTestReport;
+};
+export type ServicePublication = CheckedService & {
   identity: ServiceReleaseIdentity;
-  source: string;
 };
 export type ServiceObservation = {
   identity: ServiceReleaseIdentity;
   state: "missing" | "available" | "deleted";
 };
 export const INACTIVE_SERVICE_LIMITS: Readonly<{
-  sourceBytes: number;
+  publicationBytes: number;
   inputBytes: number;
   outputBytes: number;
   probes: number;
   cpuMs: number;
   probeMs: number;
 }>;
+export function parseCheckedService(value: unknown): CheckedService;
 export function parseServiceIdentity(value: unknown): ServiceReleaseIdentity;
 export function parseServicePublication(value: unknown): ServicePublication;
 export function parseServiceObservation(
@@ -35,4 +50,56 @@ export function sameServiceIdentity(
 ): boolean;
 export function serializeServiceIdentity(value: unknown): string;
 
-export function parseServiceSource(value: unknown): string;
+export function serializeServicePublication(value: unknown): string;
+export function parseInactiveProbe(value: unknown): {
+  operation: string;
+  input: unknown;
+};
+export const SERVICE_CATALOG_LIMITS: Readonly<{
+  active: number;
+  identities: number;
+  daily: number;
+  releases: number;
+}>;
+export type OwnedService = {
+  identity: Pick<ServiceReleaseIdentity, "serviceId" | "ownerId" | "projectId">;
+  description: string;
+  state: "inactive" | "deleted";
+  createdAt: number;
+  updatedAt: number;
+};
+export type OwnedRelease = {
+  identity: ServiceReleaseIdentity;
+  runtime: ServicePackage["runtime"];
+  permissions: Array<
+    Pick<ServiceAgreement["operations"][number], "name" | "audience" | "access">
+  >;
+  state: "pending" | "inactive" | "deleted";
+  createdAt: number;
+  updatedAt: number;
+};
+export function parseOwnedService(value: unknown): OwnedService;
+export function parseOwnedRelease(value: unknown): OwnedRelease;
+
+export function planOwnedPublication(
+  task: import("../tasks/index.js").TaskRecord,
+  value: ServicePublication,
+  snapshot: {
+    service: OwnedService | null;
+    prior: OwnedRelease | null;
+    services: OwnedService[];
+    releases: OwnedRelease[];
+  },
+  now: number,
+): { service: OwnedService; release: OwnedRelease };
+export function observeOwnedRelease(
+  release: OwnedRelease | null,
+  identity: ServiceReleaseIdentity,
+  state: ServiceObservation["state"],
+  now: number,
+): OwnedRelease;
+export function expireOwnedService(
+  service: OwnedService,
+  releases: OwnedRelease[],
+  now: number,
+): OwnedService;

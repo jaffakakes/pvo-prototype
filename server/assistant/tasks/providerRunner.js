@@ -9,13 +9,24 @@ import { hasCurrentClaim } from "./executionClaim.js";
 const callMs = (coordinator) => coordinator.providerTimeoutMs();
 
 /** Persist intent/dispatch before the provider effect. Uncertain writes are never retried here. */
-export async function publishTaskService(coordinator, claimed, source) {
+export async function publishTaskService(coordinator, claimed) {
   const provider = coordinator.serviceProvider();
   if (!provider) throw new Error("Service publication is unavailable.");
+  const builder = coordinator.builders.get(claimed.id);
+  const saved = coordinator.artifacts.verified(claimed.id, builder.round);
+  if (
+    !saved ||
+    builder.reviewFeedback?.report?.status !== "passed" ||
+    builder.agreement?.digest !== saved.artifact.identity.agreementDigest
+  )
+    throw Object.assign(
+      new Error("Hosting requires the task's independently checked package."),
+      { code: "invalid_result" },
+    );
   const publication = await prepareServicePublication(
     claimed,
     `service-${claimed.retries}`,
-    source,
+    { artifact: saved.artifact, report: saved.report },
   );
   const inputDigest = await serviceIntentDigest(publication.identity);
   let row = await coordinator.transaction(() =>

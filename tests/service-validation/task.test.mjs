@@ -34,15 +34,15 @@ test(
         () => current(f, task),
         (value) => value.state === "failed",
       );
-      assert.equal(end.stepId, "host", JSON.stringify(end));
+      assert.equal(end.stepId, "attach", JSON.stringify(end));
       assert.equal(
         end.failure.code,
         "provider_unavailable",
-        "Hosting is a separate unfinished step",
+        "Attachment is a separate unfinished step",
       );
       assert.equal(end.result, null);
       assert.equal(end.usage.modelTurns, 6);
-      assert.equal(end.usage.toolCalls, 7); // two writes, two captures, three cases (first fails)
+      assert.equal(end.usage.toolCalls, 8); // two writes, two captures, three cases (first fails)
       assert.equal(end.usage.reservedToolCalls, 0);
       const stored = await validation(f, task);
       assert.equal(stored.artifacts.length, 2);
@@ -129,11 +129,11 @@ test(
         () => current(f, task),
         (value) => value.state === "failed",
       );
-      assert.equal(end.stepId, "host", JSON.stringify(end));
+      assert.equal(end.stepId, "attach", JSON.stringify(end));
       const after = await validation(f, task);
       assert.deepEqual(executions, [0, 1, 1]);
       assert.equal(end.retries, 1);
-      assert.equal(end.usage.toolCalls, 5);
+      assert.equal(end.usage.toolCalls, 6);
       assert.equal(end.usage.reservedToolCalls, 0);
       assert.equal(after.artifacts[0].report.status, "passed");
       assert.equal(
@@ -224,7 +224,7 @@ test(
         () => current(f, task),
         (value) => value.state === "failed",
       );
-      assert.equal(end.stepId, "host", JSON.stringify(end));
+      assert.equal(end.stepId, "attach", JSON.stringify(end));
       const stored = await validation(f, task);
       assert.equal(stored.artifacts.length, 1);
       assert.equal(stored.artifacts[0].report.status, "passed");
