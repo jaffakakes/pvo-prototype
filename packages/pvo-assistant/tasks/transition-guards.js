@@ -53,3 +53,10 @@ export function requireSettledUsage(task) {
     "Usage reservations must be settled first.",
   );
 }
+
+/** Assert the trusted adapter may start an effect without changing the task. */
+export function assertTaskExecution(task, guard) {
+  validateGuard(task, guard);
+  requireRunningClaim(task, guard);
+  requireTask(guard.now < task.deadlineAt, "Task deadline has passed.");
+}

@@ -1,3 +1,8 @@
+import {
+  authoringInput,
+  prepareAuthoringResponse,
+  finishAuthoringAttempt,
+} from "../builder/inference.js";
 import { withAssistantDeadline } from "../deadline.js";
 import { creationDigest } from "./input.js";
 import {
@@ -18,11 +23,8 @@ export async function runAuthoringStep(coordinator, claimed) {
       operationId,
       coordinator.now(),
     );
-    const digest = await creationDigest({
-      input: claimed.input,
-      questions: claimed.questions,
-      stepId: claimed.stepId,
-    });
+    const input = authoringInput(coordinator, claimed);
+    const digest = await creationDigest(input);
     attempt = await coordinator.transaction(() =>
       coordinator.attempts.begin(claimed, identity, digest, coordinator.now()),
     );
@@ -44,7 +46,13 @@ export async function runAuthoringStep(coordinator, claimed) {
             throw new DOMException("Task stopped", "AbortError");
           // No await separates this last cancellation check from invoking the read-only planner.
           invoked = true;
-          command = await coordinator.plan(claimed, signal);
+          const response = await coordinator.plan(claimed, signal, input);
+          command = await prepareAuthoringResponse(
+            coordinator,
+            claimed,
+            response,
+            input,
+          );
         },
         coordinator.stepTimeoutMs(),
         controller.signal,
@@ -54,7 +62,8 @@ export async function runAuthoringStep(coordinator, claimed) {
       code = stepFailureCode(error, controller.signal);
     }
     await coordinator.transaction(() =>
-      coordinator.attempts.finish(
+      finishAuthoringAttempt(
+        coordinator,
         claimed,
         attempt,
         command,
