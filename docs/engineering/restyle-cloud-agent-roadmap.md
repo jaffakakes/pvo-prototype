@@ -2,7 +2,7 @@
 
 **Continuing with Claude Code or Codex:** read [current progress](restyle-cloud-agent-progress.md), then the [handoff/restart guide](restyle-cloud-agent-handoff.md). Every checklist item now has a stable task ID. After each verified task, check it off and save its evidence and exact next action. Root [AGENTS.md](../../AGENTS.md) and [CLAUDE.md](../../CLAUDE.md) require this workflow.
 
-Status: implementation started, 5 October 2026. **1A passed:** a real Linux workspace built a service that kept working after the workspace was deleted. **Next: 1B, saved tasks and follow-up questions.** See the [infrastructure evidence](restyle-cloud-infrastructure-proof.md). Unchecked items remain proposed work.
+Status: implementation in progress, 5 October 2026. **1A passed:** a real Linux workspace built a service that kept working after the workspace was deleted. **1B.01 passed:** shared task records and lifecycle rules are implemented and tested. **Next: 1B.02, link tasks to local projects.** See [current evidence](restyle-cloud-agent-progress.md) and the [infrastructure proof](restyle-cloud-infrastructure-proof.md). Unchecked items remain proposed work.
 
 Start with [Roadmap 1](restyle-cloud-agent-roadmaps/01-first-working-component.md). It delivers the first complete version: ask for a component, let the agent build a new backend, try it, and share something that keeps working after its temporary computer shuts down.
 
@@ -23,12 +23,12 @@ Every roadmap contains ordered implementation steps, relevant code areas, and ob
 
 ## Delivery sequence and completion gates
 
-Use the numbered tasks in the linked guide as the detailed checklist. The phase order is a dependency plan, not a calendar estimate. Only 1A is verified complete. A checked implementation task does not automatically mean its PR is merged or its feature is released.
+Use the numbered tasks in the linked guide as the detailed checklist. The phase order is a dependency plan, not a calendar estimate. 1A is complete; 1B has its first task complete. A checked implementation task does not automatically mean its PR is merged or its feature is released.
 
 | Phase | Deliverable | Depends on | Evidence needed to finish |
 | --- | --- | --- | --- |
 | **1A — complete** | Real workshop and independent hosting | Account access | Service works after workshop deletion; limits and cleanup verified |
-| **1B — next** | Saved tasks, questions, progress, resumable authoring | Existing accounts; 1A adapters for provider recovery checks | Close browser, restart runner, answer later, stop safely, and recover one existing deployment |
+| **1B — in progress** | Saved tasks, questions, progress, resumable authoring | Existing accounts; 1A adapters for provider recovery checks | Close browser, restart runner, answer later, stop safely, and recover one existing deployment |
 | 1C | Agent writes, tests, and repairs backend code | 1B task/receipt model and 1A runtime | Two different generated services pass trusted tests; invalid code cannot bypass the gate |
 | 1D | Owned services, records, quotas, pause/delete | 1B records and 1C immutable artifacts | Duplicate and competing submissions behave correctly; isolation and cleanup hold |
 | 1E | Verified service attached to component | 1C/1D receipts and existing editor/player boundaries | Try uses test permissions; file export and publication both use the correct live service |
@@ -114,6 +114,6 @@ Production promotion follows dev → preprod → prod. After successful deployme
 
 ## Start here
 
-**Continue with 1B in Roadmap 1:** save the agent’s task, questions, answers, progress, and resource references. The completed 1A proof establishes that the workspace and independent hosting run in the account. Model-driven generation and the finished component journey remain later steps.
+**Continue with 1B.02 in Roadmap 1:** link a local draft to its owned server project/task identity through existing persistence commands. The task format and pure rules are implemented in 1B.01; storage, the runner, and the editor journey still need connecting. The completed 1A proof establishes that the workspace and independent hosting run in the account. Model-driven generation remains later work.
 
 Use completion checks to judge progress. Calendar estimates would depend on the provider access, implementation results, and integration difficulties discovered in these steps.

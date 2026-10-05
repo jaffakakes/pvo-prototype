@@ -4,21 +4,21 @@
 
 **Plain-English result:** Restyle remembers what you asked it to build, what it has already done, and what answer it needs from you. Closing the editor does not erase the task. Returning to it resumes the same work.
 
-This is the next implementation milestone. This document is a proposed build plan, not evidence that any of these APIs, fields, or folders already exist. Keep completion markers in Roadmap 1; record decisions and evidence in the progress log.
+This milestone is in progress. **1B.01 is implemented:** the [shared task contract](../../../packages/pvo-assistant/tasks/README.md) defines records, limits, and pure transitions. Storage, routes, runner, and editor integration below remain planned. Keep completion markers in Roadmap 1; record decisions and evidence in the progress log.
 
 ## First useful change
 
-Start with **1B.01: the shared task record and its rules**. Read the current assistant contract and account/session boundary. Write a small set of pure validation and state-transition functions plus their meaningful tests. The first change should answer: “What is a valid saved task, and what changes are allowed?” It does not need a new cloud deployment or UI.
+Completed **1B.01: the shared task record and its rules** answers: “What is a valid saved task, and what changes are allowed?” Its pure functions and tests need no cloud deployment or UI. The record carries trusted owner metadata, a server project identity, and the original project fingerprint.
 
-Then make one real task survive storage restart before adding orchestration or progress screens. Prove each layer through its public boundary before connecting the next.
+Continue with **1B.02: the local project association**. Then make one real task survive storage restart in 1B.03 before adding orchestration or progress screens. Prove each layer through its public boundary before connecting the next.
 
 ## Suggested source ownership
 
-Use these locations after checking the current branch. New names are proposals; create files only when implementing their responsibility.
+Use these locations after checking the current branch. The shared task module exists; the other new names are proposals. Create files only when implementing their responsibility.
 
 | Responsibility | Existing code to inspect | Proposed home for new code |
 | --- | --- | --- |
-| Shared task input, output, validation, pure transitions | [assistant package](../../../packages/pvo-assistant/native/index.js) and [types](../../../packages/pvo-assistant/native/index.d.ts) | A focused `packages/pvo-assistant/tasks/` public entry point |
+| Shared task input, output, validation, pure transitions | [assistant package](../../../packages/pvo-assistant/native/index.js) and [types](../../../packages/pvo-assistant/native/index.d.ts) | Implemented: [tasks public entry point](../../../packages/pvo-assistant/tasks/index.js) and [contract](../../../packages/pvo-assistant/tasks/README.md) |
 | Authentication and route guards | [account sessions](../../../server/auth/sessions.js), [reply routes](../../../server/replies/routes.js), [HTTP helpers](../../../server/http.js) | `server/assistant/tasks/routes.js`; thin entry wiring |
 | Saved task and step storage | [assistant budget object](../../../server/assistant/budget.js), existing repository adapters | Focused storage/coordinator modules beside the task routes |
 | Background authoring loop | [current model workflow](../../../server/assistant/native/service.js), [budget reservation](../../../server/assistant/quota.js) | Task runner and effect adapters, separate from HTTP and domain rules |
@@ -31,39 +31,39 @@ Shared task rules must not import React, Zustand, editor stores, Worker bindings
 
 ## 1B.01 — Define the record and legal changes
 
-Agree one current shape and export its runtime validator and types from the same shared owner. Include the following responsibilities; final field names should follow nearby conventions.
+Implemented through `packages/pvo-assistant/tasks/index.js` and `index.d.ts`. The [contract guide](../../../packages/pvo-assistant/tasks/README.md) records the exact API, field bounds, and adapter obligations; use that single current contract when implementing the following layers.
 
 | Information | Purpose and rule |
 | --- | --- |
-| Task identity | Server-issued stable ID; repeated creation with the same client operation key returns the same task |
-| Owner | Derived from the authenticated server session; callers cannot assign another owner |
+| Task identity | Trusted adapter supplies a stable ID; duplicate-create validation compares owner, creation key, digest, and actual input. Atomic lookup/creation belongs to storage |
+| Owner | Separate trusted metadata; future routes derive it from the authenticated server session, never a caller's input fields |
 | Project identity | Links to an owned project association; a local numeric project ID alone is not globally unique |
 | Request and examples | Original goal and expected behavior cases saved before code generation |
 | Bounded context | Component/source context and project fingerprint required for the task; no whole-video upload by default |
 | State and step | Saved state plus the next resumable step; state is distinct from the text shown in the UI |
-| Questions and answers | Stable question IDs, answer revisions, answered/unanswered state; private account keys are not answers |
+| Questions and answers | Immutable question IDs/prompts, revision 0 before an answer and 1 afterward, duplicate-answer keys; corrections use a new question |
 | Step receipts | Operation ID, input digest, outcome, artifact/provider references, and whether reconciliation is needed |
-| Prepared result | Validated proposed component changes and the project fingerprint they were prepared against |
+| Prepared result | Bounded artifact reference and original project fingerprint; artifact validation, persistence, and editor application follow later |
 | Revision and execution ownership | Monotonic revision and a claimed execution generation so an old worker cannot commit after Stop or takeover |
 | Bounds and timestamps | Created/updated times, retry count, deadline, next wakeup, and usage reservations |
 | Errors | Sanitized operation context and a useful recovery classification; secrets and private payloads stay out |
 
-Define byte/count limits for every variable-length field and collection, plus retained task/result lifetime. Do not add unbounded conversation or tool-output arrays. Choose values from the existing context/model limits and record the decision before implementing storage. The 1A fixture's 20 calls and 60 seconds are diagnostic limits, not automatically the product's final policy.
+Byte/count limits for every variable-length field and collection, deadline, retention, retry count, and usage reservations are fixed in `TASK_LIMITS` and explained in the contract guide. These include 128 KiB input, 256 KiB task records, a 24-hour build deadline, and seven-day retention from creation. Storage/coordinator code must enforce the associated expiry and deletion policy. The 1A fixture's 20 calls and 60 seconds remain diagnostic limits.
 
-Suggested initial states:
+Implemented states:
 
 | State | Meaning | Allowed next states |
 | --- | --- | --- |
-| `queued` | Saved, waiting for its next run | `running`, `stopped` |
+| `queued` | Waiting for its next run | `running`, `stopped`, or deadline expiry to `failed` |
 | `running` | A current execution claim owns a step | `queued`, `waiting_for_answer`, `ready`, `failed`, `stopped` |
-| `waiting_for_answer` | A saved question needs the creator | `queued` after a valid answer, or `stopped` |
+| `waiting_for_answer` | A question needs the creator | `queued` after a valid answer, `stopped`, or deadline expiry to `failed` |
 | `ready` | A validated result is saved for the editor | Terminal for this build attempt |
-| `failed` | Work stopped with a recorded reason | `queued` only after explicit resume of a recoverable failure |
+| `failed` | Work stopped with a recorded reason | `queued` after explicit resume of a recoverable failure within its bounds, or `stopped` |
 | `stopped` | Creator cancelled further work | Terminal; continuing creates a new linked attempt if needed |
 
-Keep reconciliation pending in a specific step receipt. Never move an uncertain side effect straight back to an unrecorded new attempt. Treat an already prepared `ready` result's application receipt separately from its build state.
+Reconciliation is tracked in each operation receipt. Uncertain effects block new intents and normal step completion. Coordinator bookkeeping can settle an existing receipt after Stop or expiry without restarting the task. No receipt update itself calls a provider. Treat an already prepared `ready` result's application receipt separately from its build state.
 
-**Verification:** malformed/oversized records rejected; invalid transitions rejected; stale revisions cannot update a record; duplicate operation IDs with changed payloads rejected; secret-like connection fields are excluded from the task contract. Record the final contract decisions in the evidence log.
+**Verified:** malformed/oversized records and illegal transitions rejected; owner/revision/claim conflicts rejected; duplicate creation/answer/receipt conflicts rejected; secret-like connection fields excluded. Tests also cover usage reservations, interrupted receipts, cancellation, deadline expiry, due wakeups, and public TypeScript declarations. The progress log records exact results. This is pure contract evidence; authenticated storage concurrency and real provider recovery remain unverified until the later tasks.
 
 ## 1B.02 — Link the notebook to the local draft
 

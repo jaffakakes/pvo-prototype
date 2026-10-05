@@ -1,5 +1,7 @@
 # PVO assistant contract
 
+The [saved authoring-task contract](tasks/README.md) defines bounded task records and pure lifecycle rules for the cloud agent. It has its own public `tasks/index.js` entry point; persistent storage and editor integration are later work.
+
 `native/index.js` and `native/index.d.ts` expose the shared JSON request, result, observation and operation contract for the editor and assistant service. The parsers reject unknown fields and unsupported operations, preserve exact source strings, and return isolated clones. `native/schema.js` defines the canonical shape and bounds. The root declarations contain common PVO source and compiler-policy context types.
 
 The project context contains bounded scene, clip, text, audio, selection and component metadata. It excludes media URLs, file paths, request destinations and request payloads. Media observations are explicit bounded frame, transcript or word-timing results. Request-bearing components expose safe content and design; applying an appearance change reconstructs private source only in the editor.
