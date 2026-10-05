@@ -56,7 +56,7 @@
       "properties": {
         "asset_id": { "type": "string", "minLength": 1 },
         "at": { "type": "number", "minimum": 0 },
-        "type": { "const": "image/webp" }
+        "type": { "enum": ["image/webp", "image/png"] }
       },
       "additionalProperties": true
     },

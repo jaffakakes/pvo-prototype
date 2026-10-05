@@ -53,7 +53,11 @@ test("cover upload sends only the frozen WebP Blob to the owned publication", as
   assert.equal(calls[0].options.body, poster);
   assert.equal(calls[0].options.credentials, "same-origin");
   assert.equal(calls[0].options.headers["Content-Type"], "image/webp");
-  await assert.rejects(client.uploadPoster(reservation.id, new Blob(["wrong"], { type: "image/png" })), /cover/);
+  const png = new Blob(["png"], { type: "image/png" });
+  await client.uploadPoster(reservation.id, png);
+  assert.equal(calls[1].options.body, png);
+  assert.equal(calls[1].options.headers["Content-Type"], "image/png");
+  await assert.rejects(client.uploadPoster(reservation.id, new Blob(["wrong"], { type: "image/jpeg" })), /cover/);
 });
 
 test("publishing URLs reject external origins, blob URLs and mismatched identifiers", () => {
