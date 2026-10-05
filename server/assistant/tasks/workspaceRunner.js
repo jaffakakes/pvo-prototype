@@ -11,18 +11,35 @@ export async function runWorkspaceOperation(
   kind,
   request,
 ) {
+  return runJournaledWorkspaceOperation(
+    coordinator,
+    claimed,
+    kind,
+    request.id,
+    await contentDigest(serializeWorkspaceRequest(kind, request)),
+    (provider, identity, grant) =>
+      provider.operate(identity, kind, request, grant),
+  );
+}
+
+/** Shared claim/usage fencing for private workspace operations, including bounded source reads. */
+export async function runJournaledWorkspaceOperation(
+  coordinator,
+  claimed,
+  kind,
+  operationId,
+  inputDigest,
+  invoke,
+) {
   const provider = coordinator.workspaceProvider();
   if (!provider) throw new Error("Workspace provider is unavailable.");
-  const inputDigest = await contentDigest(
-    serializeWorkspaceRequest(kind, request),
-  );
   const identity = await prepareWorkspaceIdentity(claimed);
   let row = await coordinator.transaction(() =>
     coordinator.workspaces.begin(
       claimed,
       identity,
       kind,
-      request.id,
+      operationId,
       inputDigest,
       coordinator.now(),
     ),
@@ -47,7 +64,7 @@ export async function runWorkspaceOperation(
             )
           )
             throw new Error("Workspace claim is no longer current.");
-          return provider.operate(identity, kind, request, row.grant);
+          return invoke(provider, identity, row.grant);
         },
         Math.max(
           1,

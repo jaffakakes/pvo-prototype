@@ -50,12 +50,12 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 
 ## 1C. Let the agent write and test backend code
 
-**Progress: 1C.01/02/03/09 verified.** The [service contract](../../../packages/pvo-assistant/services/README.md) defines the saved agreement and source package. Task-owned workspaces now restore saved code, reconcile missing replies without repeating commands, and enforce Stop/deadline cleanup. Full local checks (1,263 tests), task restart/RPC checks and the [native Container proof](../restyle-workspace-provider-proof.md) passed; all disposable resources were removed. The model cannot use the workshop until **1C.04/1C.05** connect its tools and builder loop. Follow the [1C implementation plan](1c-generated-services.md).
+**Progress: 1C.01/02/03/04/09 verified.** The [service contract](../../../packages/pvo-assistant/services/README.md) defines the saved agreement and source package. Task-owned workspaces now restore saved code, reconcile missing replies without repeating commands, and enforce Stop/deadline cleanup. Full local checks (1,263 tests), task restart/RPC checks and the [native Container proof](../restyle-workspace-provider-proof.md) passed; all disposable resources were removed. Seven bounded task-owned tools are now verified with a total of 1,272 passing tests. **1C.05** must connect them to the model builder loop. Follow the [1C implementation plan](1c-generated-services.md).
 
 - [x] **1C.01** Agree on a small service package: source files, locked dependencies, runtime target, supported operations, input/result descriptions, and tests. An operation means one thing the component can ask the service to do.
 - [x] **1C.02** Start one isolated workspace per task. Restore files from saved source when resuming.
 - [x] **1C.03** Give resource creation a stable task identifier. If a create response is lost, look up the existing workspace or deployment before creating another.
-- [ ] **1C.04** Expose bounded tools for reading/writing workspace files, running commands, and reading test results. Advertise each tool to the model only when its adapter is available.
+- [x] **1C.04** Expose bounded tools for reading/writing workspace files, running commands, and reading test results. Advertise each tool to the model only when its adapter is available.
 - [ ] **1C.05** Connect those tools to the planner's loop. The agent must use actual command and test results to correct its code; a successful-looking message is not a completion receipt.
 - [ ] **1C.06** Allow the minimum research and package access needed. Exclude platform administration credentials and other creators' data.
 - [ ] **1C.07** Run tests and produce a saved source bundle with an exact content identifier and test report.

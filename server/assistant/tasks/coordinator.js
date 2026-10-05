@@ -1,3 +1,4 @@
+import { taskWorkspaceTools } from "../builder/taskTools.js";
 import { WorkspaceOperations } from "./workspaceOperations.js";
 import { workspaceProvider } from "./workspaceProvider.js";
 import {
@@ -179,11 +180,25 @@ export class AssistantTasks extends DurableObject {
 
   /** Private builder capability: the task selects ownership and the current execution grant. */
   async workspaceOperation(ownerId, id, kind, request, guard) {
+    const claimed = await this.claimForOperation(ownerId, id, guard);
+    return runWorkspaceOperation(this, claimed, kind, request);
+  }
+
+  workspaceToolDefinitions() {
+    return taskWorkspaceTools(this, null).definitions;
+  }
+
+  async workspaceTool(ownerId, id, tool, operationId, guard) {
+    const claimed = await this.claimForOperation(ownerId, id, guard);
+    return taskWorkspaceTools(this, claimed).execute(tool, operationId);
+  }
+
+  async claimForOperation(ownerId, id, guard) {
     taskId(ownerId);
     taskId(id);
     if (!guard || !Number.isSafeInteger(guard.expectedRevision) || !guard.claim)
       throw new HttpError(409, "A current execution claim is required.");
-    const claimed = await this.transaction(() => {
+    return this.transaction(() => {
       this.repository.bindOwner(ownerId);
       const task = this.repository.read(id, this.now());
       assertTaskExecution(task, {
@@ -194,7 +209,6 @@ export class AssistantTasks extends DurableObject {
       });
       return task;
     });
-    return runWorkspaceOperation(this, claimed, kind, request);
   }
 
   serviceProvider() {
