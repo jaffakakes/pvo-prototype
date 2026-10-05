@@ -7,7 +7,7 @@ import {
   SERVICE_TEST_LIMITS,
 } from "../../../packages/pvo-assistant/services/index.js";
 import { withAssistantDeadline } from "../deadline.js";
-import { executeServicePackage } from "./packageExecution.js";
+import { executeServicePackage } from "../../cloud-services/packageExecution.js";
 
 /** Expected values and comparison authority never cross into generated code. */
 export async function runServiceCase(

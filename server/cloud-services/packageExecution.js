@@ -1,8 +1,8 @@
 import {
   parseServicePackage,
   SERVICE_TEST_LIMITS as limits,
-} from "../../../packages/pvo-assistant/services/index.js";
-import { withAssistantDeadline } from "../deadline.js";
+} from "../../packages/pvo-assistant/services/index.js";
+import { withAssistantDeadline } from "../assistant/deadline.js";
 
 function failure(code) {
   return Object.assign(

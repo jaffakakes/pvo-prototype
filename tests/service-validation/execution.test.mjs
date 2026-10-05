@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { executeServicePackage } from "../../server/assistant/validation/packageExecution.js";
+import { executeServicePackage } from "../../server/cloud-services/packageExecution.js";
 import { runServiceCase } from "../../server/assistant/validation/cases.js";
 import { packageFor, dinnerAgreement } from "./fixtures.mjs";
 const loader = (fetch) => ({
