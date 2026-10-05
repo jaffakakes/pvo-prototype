@@ -24,9 +24,7 @@ export async function prepareAuthoringResponse(
   try {
     const decision = parseBuilderDecision(response, {
       hasAgreement: input.build.agreement !== null,
-      available: coordinator
-        .workspaceToolDefinitions()
-        .map((tool) => tool.kind),
+      available: coordinator.builderToolDefinitions().map((tool) => tool.kind),
     });
     const agreementDigest =
       decision.kind === "agreement"

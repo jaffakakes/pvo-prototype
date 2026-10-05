@@ -1,3 +1,4 @@
+import { parseBuilderResearch } from "./research.js";
 import {
   boundedJson,
   choice,
@@ -26,6 +27,7 @@ export const BUILDER_LIMITS = Object.freeze({
 });
 const fields = {
   agreement: ["agreement"],
+  research: ["calls"],
   ask: ["prompt", "choices"],
   tools: ["calls", "review"],
   review: ["revision", "digest", "entrypoint", "tests"],
@@ -37,7 +39,9 @@ export function parseBuilderDecision(value, { hasAgreement, available }) {
   object(value, ["kind", ...(fields[kind] ?? [])], "Builder decision");
   choice(
     kind,
-    hasAgreement ? ["ask", "tools", "review"] : ["ask", "agreement"],
+    hasAgreement
+      ? ["ask", "tools", "research", "review"]
+      : ["ask", "agreement", "research"],
     "Builder stage",
   );
   if (kind === "agreement") parseServiceAgreement(value.agreement);
@@ -47,6 +51,17 @@ export function parseBuilderDecision(value, { hasAgreement, available }) {
     for (const item of value.choices)
       text(item, TASK_LIMITS.choiceBytes, "Builder choice");
     unique(value.choices, "Builder choices");
+  }
+  if (kind === "research") {
+    list(value.calls, 2, "Public research batch");
+    requireTask(value.calls.length > 0, "Research must request evidence.");
+    for (const call of value.calls) {
+      const parsed = parseBuilderResearch(call);
+      requireTask(
+        available.includes(parsed.kind),
+        "Public research is unavailable.",
+      );
+    }
   }
   if (kind === "tools") {
     list(value.calls, BUILDER_LIMITS.batchCalls, "Builder tool batch");

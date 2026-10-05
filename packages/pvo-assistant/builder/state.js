@@ -1,3 +1,4 @@
+import { BUILDER_RESEARCH_KINDS } from "./research.js";
 import {
   boundedJson,
   choice,
@@ -53,7 +54,7 @@ export function parseBuilderState(value) {
   if (value.decision !== null) {
     parseBuilderDecision(value.decision, {
       hasAgreement: value.decision.kind !== "agreement",
-      available: BUILDER_TOOL_KINDS,
+      available: [...BUILDER_TOOL_KINDS, ...BUILDER_RESEARCH_KINDS],
     });
     requireTask(value.round > 0, "A decision needs a saved round.");
     if (value.decision.kind === "agreement")
@@ -73,8 +74,9 @@ export function parseBuilderState(value) {
       value.round === 0 && value.agreement === null,
       "Builder initialization is incomplete.",
     );
-  const calls =
-    value.decision?.kind === "tools" ? value.decision.calls.length : 0;
+  const calls = ["tools", "research"].includes(value.decision?.kind)
+    ? value.decision.calls.length
+    : 0;
   integer(value.cursor, calls, "Tool batch cursor");
   if (value.claimGeneration !== null)
     integer(
@@ -109,7 +111,11 @@ export function parseBuilderState(value) {
   for (const item of value.feedback) {
     object(item, ["operationId", "kind", "result"], "Saved tool feedback");
     id(item.operationId, "Feedback operation ID");
-    choice(item.kind, BUILDER_TOOL_KINDS, "Feedback tool kind");
+    choice(
+      item.kind,
+      [...BUILDER_TOOL_KINDS, ...BUILDER_RESEARCH_KINDS],
+      "Feedback tool kind",
+    );
   }
   boundedJson(value.feedback, BUILDER_LIMITS.feedbackBytes, "Tool feedback");
   integer(value.omittedFeedback, TASK_LIMITS.toolCalls, "Omitted feedback");
@@ -130,7 +136,10 @@ export function builderStage(value) {
       state.decision.review !== null)
   )
     return "review";
-  if (state.decision?.kind === "tools" && state.batchEnd === null)
+  if (
+    ["tools", "research"].includes(state.decision?.kind) &&
+    state.batchEnd === null
+  )
     return "tools";
   return "model";
 }
@@ -143,7 +152,7 @@ export function acceptBuilderDecision(value, decision, agreementDigest) {
   );
   decision = parseBuilderDecision(decision, {
     hasAgreement: state.agreement !== null,
-    available: BUILDER_TOOL_KINDS,
+    available: [...BUILDER_TOOL_KINDS, ...BUILDER_RESEARCH_KINDS],
   });
   const agreement =
     decision.kind === "agreement"

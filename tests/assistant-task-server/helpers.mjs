@@ -21,12 +21,15 @@ export async function taskFixture({
   workspaces = false,
   workspaceControl = null,
   workspaceEffects = async () => Response.json({}),
+  researchFetch = null,
 } = {}) {
   modules ??= bundleWorkerModules({
     stdin: {
       resolveDir: process.cwd(),
       contents: `
     export { TestBudget, TestWorkspace } from './tests/assistant-workspaces/controlled-worker.js';
+    import { taskResearchTools } from "./server/assistant/builder/researchTools.js";
+    import { publicResearch } from "./server/assistant/builder/researchProvider.js";
     import { reconcileTaskWorkspaces } from './server/assistant/tasks/workspaceRunner.js';
     import { ServiceRelease } from "./server/cloud-services/release.js";
     import { reconcileTaskServices } from "./server/assistant/tasks/providerRunner.js";
@@ -91,6 +94,9 @@ export async function taskFixture({
         };
         return Object.fromEntries(["operate", "receipt", "lookup", "suspend", "stop"].map(action => [action, (...args) => call(action, ...args)]));
       }
+      researchProvider() { return this.env.RESEARCH ? publicResearch({ fetch: (url, init) => this.env.RESEARCH.fetch(url, init) }) : super.researchProvider(); }
+      async researchTool(ownerId, id, tool, operationId, guard) { return taskResearchTools(this, await this.claimForOperation(ownerId,id,guard)).execute(tool,operationId); }
+      researchRows() { return this.research.entries(); }
       builderState(id) { return this.builders.get(id); }
       disableWorkspaces() { this.workspacesDisabled = true; }
       async reconcileWorkspaces() { await reconcileTaskWorkspaces(this); return this.workspaceRows(); }
@@ -134,6 +140,8 @@ export async function taskFixture({
         const { action, ...args } = await request.json();
         const stub = env.ASSISTANT_TASKS.getByName("owner:" + owner.id);
         try {
+          if (action === "research-tool") return json(await stub.researchTool(owner.id,args.id,args.tool,args.operationId,args.guard));
+          if (action === "research-rows") return json(await stub.researchRows());
           if (action === "builder-state") return json(await stub.builderState(args.id));
           if (action === "workspace-tools") return json(await stub.workspaceToolDefinitions());
           if (action === "workspace-tool") return json(await stub.workspaceTool(owner.id, args.id, args.tool, args.operationId, args.guard));
@@ -178,10 +186,11 @@ export async function taskFixture({
         BROKEN: broken,
         CONTROLLED_PLAN: Boolean(planner),
       },
-      ...(planner || providerControl || workspaces
+      ...(planner || providerControl || workspaces || researchFetch
         ? {
             serviceBindings: {
               ...(planner ? { PLANNER: planner } : {}),
+              ...(researchFetch ? { RESEARCH: researchFetch } : {}),
               ...(workspaces ? { CONTROL: workspaceEffects } : {}),
               ...(workspaceControl
                 ? { WORKSPACE_CONTROL: workspaceControl }

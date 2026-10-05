@@ -1,3 +1,4 @@
+import { BUILDER_RESEARCH_KINDS } from "./research.js";
 import { SERVICE_PACKAGE_LIMITS as service } from "../services/index.js";
 import { TASK_LIMITS } from "../tasks/index.js";
 import { WORKSPACE_LIMITS } from "../workspaces/index.js";
@@ -97,18 +98,32 @@ export function builderDecisionSchema(hasAgreement, definitions) {
     entrypoint: string(160),
     tests: array(string(160), service.tests, 1),
   });
+  const research = definitions.filter((tool) =>
+    BUILDER_RESEARCH_KINDS.includes(tool.kind),
+  );
+  const workspace = definitions.filter(
+    (tool) => !BUILDER_RESEARCH_KINDS.includes(tool.kind),
+  );
+  const researchChoices = research.length
+    ? [
+        object({
+          kind: { const: "research" },
+          calls: array({ anyOf: research.map((tool) => tool.schema) }, 2, 1),
+        }),
+      ]
+    : [];
   return structuredClone({
     $defs: { data: dataDescription },
     anyOf: hasAgreement
       ? [
           ask,
-          ...(definitions.length
+          ...(workspace.length
             ? [
                 object({
                   kind: { const: "tools" },
                   review: { anyOf: [{ type: "null" }, review] },
                   calls: array(
-                    { anyOf: definitions.map((tool) => tool.schema) },
+                    { anyOf: workspace.map((tool) => tool.schema) },
                     BUILDER_LIMITS.batchCalls,
                     1,
                   ),
@@ -116,7 +131,12 @@ export function builderDecisionSchema(hasAgreement, definitions) {
               ]
             : []),
           review,
+          ...researchChoices,
         ]
-      : [ask, object({ kind: { const: "agreement" }, agreement })],
+      : [
+          ask,
+          object({ kind: { const: "agreement" }, agreement }),
+          ...researchChoices,
+        ],
   });
 }
