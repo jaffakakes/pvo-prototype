@@ -1,3 +1,4 @@
+import { claimNextTask } from "./scheduling.js";
 import { TaskResearch } from "../builder/researchJournal.js";
 import { publicResearch } from "../builder/researchProvider.js";
 import { taskBuilderTools } from "../builder/taskToolsRegistry.js";
@@ -16,11 +17,7 @@ import { serviceProvider } from "./serviceProvider.js";
 import { publishTaskService, reconcileTaskServices } from "./providerRunner.js";
 
 import { TaskResults } from "./results.js";
-import {
-  transitionTask,
-  assertTaskExecution,
-  TASK_LIMITS,
-} from "../../../packages/pvo-assistant/tasks/index.js";
+import { assertTaskExecution } from "../../../packages/pvo-assistant/tasks/index.js";
 import { TaskAttempts } from "./attempts.js";
 import { planSavedTask, savedPlannerAvailable } from "./planner.js";
 import { runAuthoringStep, settleAuthoringBudgets } from "./runner.js";
@@ -285,120 +282,7 @@ export class AssistantTasks extends DurableObject {
   }
 
   claimNext() {
-    const now = this.now();
-    this.noteTerminal(now);
-    this.repository.maintain(now, this.heldTasks());
-    for (const [id, controller] of this.active) {
-      const task = this.attempts.task(id);
-      if (!task || task.state !== "running" || task.claim.expiresAt <= now)
-        controller.abort();
-    }
-    this.attempts.recover(now);
-    this.research.recover(now);
-    this.noteTerminal(now);
-    this.repository.maintain(now, this.heldTasks());
-    this.attempts.prune();
-    this.results.prune();
-    this.builders.prune(now);
-    for (let task of this.repository.records()) {
-      if (task.state === "running" && task.claim.expiresAt <= now) {
-        const recovered = transitionTask(
-          task,
-          { kind: "recover" },
-          {
-            ownerId: task.ownerId,
-            expectedRevision: task.revision,
-            now,
-            claim: null,
-          },
-        );
-        this.repository.save(recovered, task.revision);
-        task = recovered;
-      }
-      if (
-        task.state === "failed" &&
-        task.failure.code === "reconciliation_required" &&
-        task.stepId === "build" &&
-        this.builders.stage(task.id) === "tools" &&
-        now < task.deadlineAt &&
-        task.retries < TASK_LIMITS.retries &&
-        !this.awaiting(task.id) &&
-        !task.usage.reservedModelTurns &&
-        !task.usage.reservedToolCalls &&
-        !task.operations.some((operation) =>
-          ["unknown", "planned"].includes(operation.status),
-        ) &&
-        this.workspaces.link(task.id)?.cleaned
-      ) {
-        try {
-          task = this.repository.update(
-            task.id,
-            { kind: "resume" },
-            {
-              ownerId: task.ownerId,
-              expectedRevision: task.revision,
-              now,
-              claim: null,
-            },
-          );
-        } catch (error) {
-          if (!(error instanceof HttpError) || error.status !== 429)
-            throw error;
-          continue; // Keep the retry until active-task capacity becomes available.
-        }
-      }
-      if (
-        task.state !== "queued" ||
-        task.nextRunAt > now ||
-        this.awaiting(task.id)
-      )
-        continue;
-      const claimed = this.repository.update(
-        task.id,
-        { kind: "claim", claimId: randomId(), leaseMs: this.leaseMs() },
-        {
-          ownerId: task.ownerId,
-          expectedRevision: task.revision,
-          now,
-          claim: null,
-        },
-      );
-      const tools =
-        claimed.stepId === "build" &&
-        this.builders.stage(claimed.id) !== "model";
-      let code = null;
-      if (
-        claimed.operations.some((operation) =>
-          ["unknown", "planned"].includes(operation.status),
-        ) ||
-        claimed.usage.reservedModelTurns ||
-        claimed.usage.reservedToolCalls
-      )
-        code = "reconciliation_required";
-      else if (
-        !["plan", "build"].includes(claimed.stepId) ||
-        (claimed.stepId === "build" && !this.workspaceProvider()) ||
-        (!tools && !this.plannerAvailable())
-      )
-        code = "provider_unavailable";
-      else if (!tools && claimed.usage.modelTurns >= TASK_LIMITS.modelTurns)
-        code = "budget_exceeded";
-      if (code) {
-        this.repository.update(
-          claimed.id,
-          { kind: "fail", failure: { code, stepId: claimed.stepId } },
-          {
-            ownerId: claimed.ownerId,
-            expectedRevision: claimed.revision,
-            now,
-            claim: { id: claimed.claim.id, generation: claimed.generation },
-          },
-        );
-        continue;
-      }
-      return claimed;
-    }
-    return null;
+    return claimNextTask(this);
   }
 
   async scheduleMaintenance(now) {

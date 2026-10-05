@@ -208,6 +208,7 @@
   "server/assistant/tasks/results.js",
   "server/assistant/tasks/routes.js",
   "server/assistant/tasks/runner.js",
+  "server/assistant/tasks/scheduling.js",
   "server/assistant/tasks/serviceProvider.js",
   "server/assistant/tasks/taskBudget.js",
   "server/assistant/tasks/workspaceOperations.js",
