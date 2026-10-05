@@ -82,3 +82,7 @@ Questions, source, and artifact references are private task data, not an automat
 `node --test tests/assistant-tasks/*.test.mjs` covers validation and byte/count limits, JSON round-trip, unchanged inputs, legal lifecycle changes, owner/revision/lease conflicts, question and creation replays, bounded usage, effect intent/uncertainty/settlement, cancellation, expiry, and the public TypeScript declarations. Tests use injected time and effects represented as data; no provider calls occur.
 
 Server task storage, HTTP authentication, atomic compare-and-swap, hashing, alarms, provider reconciliation, artifact validation, and editor result application are not implemented here. Local draft locators are handled by 1B.02; continue with [storage and owned routes in 1B.03](../../../docs/engineering/restyle-cloud-agent-roadmaps/1b-saved-tasks.md#1b03--store-the-task-and-expose-owned-operations). A saved locator does not mean the task itself is already running on a server.
+
+### Interrupted usage bookkeeping
+
+`reconcile_usage` is a trusted coordinator command with `{operationId, modelTurns, toolCalls, consumed}`. It requires a null claim guard, no running worker, an existing settled operation and no remaining uncertain operations. It can settle already reserved usage after Stop or expiry; it cannot reserve new work or restart a task. Storage adapters must atomically journal whether that operation's reservation has already been settled. There is no HTTP/model route for this command. Worker-owned usage still uses `settle_usage` under its live claim.

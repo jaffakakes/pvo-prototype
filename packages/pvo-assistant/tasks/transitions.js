@@ -29,6 +29,7 @@ const fields = {
   record_operation: ["operation"],
   reserve_usage: ["modelTurns", "toolCalls"],
   settle_usage: ["modelTurns", "toolCalls", "consumed"],
+  reconcile_usage: ["operationId", "modelTurns", "toolCalls", "consumed"],
 };
 const workerCommands = [
   "checkpoint",
@@ -59,11 +60,17 @@ export function transitionTask(value, command, guard) {
     );
   requireTask(
     !["ready", "stopped"].includes(task.state) ||
-      command.kind === "reconcile_operation",
+      ["reconcile_operation", "reconcile_usage"].includes(command.kind),
     "This task attempt is terminal.",
   );
   if (
-    !["stop", "recover", "expire", "reconcile_operation"].includes(command.kind)
+    ![
+      "stop",
+      "recover",
+      "expire",
+      "reconcile_operation",
+      "reconcile_usage",
+    ].includes(command.kind)
   )
     requireTask(guard.now < task.deadlineAt, "Task deadline has passed.");
   task.updatedAt = guard.now;
@@ -174,6 +181,18 @@ function applyCommand(task, command, guard) {
     }
     case "reserve_usage":
     case "settle_usage":
+      updateUsage(task, command);
+      break;
+    case "reconcile_usage":
+      id(command.operationId, "Reconciled operation ID");
+      requireTask(
+        task.state !== "running" &&
+          !hasUnsettledOperations(task.operations) &&
+          task.operations.some(
+            (operation) => operation.id === command.operationId,
+          ),
+        "Usage reconciliation requires a settled operation and no active worker.",
+      );
       updateUsage(task, command);
       break;
   }

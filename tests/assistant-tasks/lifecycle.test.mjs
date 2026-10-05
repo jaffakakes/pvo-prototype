@@ -3,6 +3,7 @@ import test from "node:test";
 import { TASK_LIMITS } from "../../packages/pvo-assistant/tasks/index.js";
 import {
   create,
+  hash,
   claim,
   command,
   question,
@@ -280,4 +281,80 @@ test("deadline expiry records a terminal reason even while queued or awaiting an
     assert.equal(expired.claim, null);
     assert.deepEqual(expired.questions, task.questions);
   }
+});
+
+test("only a settled journal permits trusted usage reconciliation after Stop", () => {
+  let task = claim(create());
+  task = command(task, { kind: "reserve_usage", modelTurns: 1, toolCalls: 0 });
+  const receipt = {
+    id: "inference",
+    stepId: task.stepId,
+    inputDigest: hash,
+    status: "planned",
+    resources: [],
+    artifact: null,
+    failure: null,
+    createdAt: task.updatedAt + 1,
+    updatedAt: task.updatedAt + 1,
+  };
+  task = command(task, { kind: "record_operation", operation: receipt });
+  assert.throws(() =>
+    command(
+      task,
+      {
+        kind: "reconcile_usage",
+        operationId: "inference",
+        modelTurns: 1,
+        toolCalls: 0,
+        consumed: false,
+      },
+      { claim: null },
+    ),
+  );
+  task = command(task, { kind: "stop" }, { claim: null });
+  assert.throws(() =>
+    command(task, {
+      kind: "reconcile_usage",
+      operationId: "inference",
+      modelTurns: 1,
+      toolCalls: 0,
+      consumed: false,
+    }),
+  );
+  task = command(task, {
+    kind: "reconcile_operation",
+    operation: {
+      ...task.operations[0],
+      status: "absent",
+      updatedAt: task.updatedAt + 1,
+    },
+  });
+  assert.throws(() =>
+    command(task, {
+      kind: "reconcile_usage",
+      operationId: "missing",
+      modelTurns: 1,
+      toolCalls: 0,
+      consumed: false,
+    }),
+  );
+  task = command(task, {
+    kind: "reconcile_usage",
+    operationId: "inference",
+    modelTurns: 1,
+    toolCalls: 0,
+    consumed: false,
+  });
+  assert.equal(task.state, "stopped");
+  assert.equal(task.usage.modelTurns, 0);
+  assert.equal(task.usage.reservedModelTurns, 0);
+  assert.throws(() =>
+    command(task, {
+      kind: "reconcile_usage",
+      operationId: "inference",
+      modelTurns: 1,
+      toolCalls: 0,
+      consumed: false,
+    }),
+  );
 });

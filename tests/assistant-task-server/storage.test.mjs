@@ -55,7 +55,7 @@ test("owned project resolution, concurrent creation replay and complete storage 
     assert.equal(list.headers.get("access-control-allow-origin"), null);
     assert.equal(
       (await fixture.control({ action: "inspect" })).body.alarm,
-      task.deadlineAt,
+      task.nextRunAt + 10,
     );
   } finally {
     await fixture.close();

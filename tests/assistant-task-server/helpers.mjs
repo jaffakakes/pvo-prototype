@@ -12,17 +12,29 @@ export const NOW = Date.UTC(2100, 0, 1);
 const SECRET = "test-saved-task-session-secret-not-for-production";
 let modules;
 
-export async function taskFixture({ storage = true, broken = false } = {}) {
+export async function taskFixture({
+  storage = true,
+  broken = false,
+  planner = null,
+} = {}) {
   modules ??= bundleWorkerModules({
     stdin: {
       resolveDir: process.cwd(),
       contents: `
     import { handleRequest } from "./server/index.js";
+    export { AssistantBudget } from "./server/assistant/budget.js";
     import { AssistantTasks } from "./server/assistant/tasks/coordinator.js";
     import { getAccountSession } from "./server/auth/sessions.js";
     import { HttpError, json } from "./server/http.js";
     export class TestTasks extends AssistantTasks {
-      now() { return this.clock ?? Date.UTC(2100, 0, 1); }
+      now() { return this.clock ?? (this.env.CONTROLLED_PLAN ? Date.now() : Date.UTC(2100, 0, 1)); }
+      plannerAvailable() { return this.env.CONTROLLED_PLAN ? true : super.plannerAvailable(); }
+      stepTimeoutMs() { return this.env.CONTROLLED_PLAN ? 1000 : super.stepTimeoutMs(); }
+      leaseMs() { return this.env.CONTROLLED_PLAN ? 1500 : super.leaseMs(); }
+      async plan(task, signal) {
+        if (!this.env.CONTROLLED_PLAN) return super.plan(task, signal);
+        return (await this.env.PLANNER.fetch("https://planner.test/", { method: "POST", body: JSON.stringify(task), signal })).json();
+      }
       setTime(now) { this.clock = now; }
       async inspect() { return { alarm: await this.ctx.storage.getAlarm(), records: this.repository.records(),
         identities: this.ctx.storage.sql.exec("SELECT COUNT(*) AS count FROM tasks").one().count }; }
@@ -73,11 +85,21 @@ export async function taskFixture({ storage = true, broken = false } = {}) {
         PUBLIC_ORIGIN: ORIGIN,
         SESSION_SECRET: SECRET,
         BROKEN: broken,
+        CONTROLLED_PLAN: Boolean(planner),
       },
+      ...(planner ? { serviceBindings: { PLANNER: planner } } : {}),
       ...(storage
         ? {
             durableObjects: {
               ASSISTANT_TASKS: { className: "TestTasks", useSQLite: true },
+              ...(planner
+                ? {
+                    ASSISTANT_BUDGET: {
+                      className: "AssistantBudget",
+                      useSQLite: true,
+                    },
+                  }
+                : {}),
             },
           }
         : {}),

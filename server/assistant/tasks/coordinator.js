@@ -1,3 +1,10 @@
+import {
+  transitionTask,
+  TASK_LIMITS,
+} from "../../../packages/pvo-assistant/tasks/index.js";
+import { TaskAttempts } from "./attempts.js";
+import { planSavedTask, savedPlannerAvailable } from "./planner.js";
+import { runAuthoringStep, settleAuthoringBudgets } from "./runner.js";
 import { DurableObject } from "cloudflare:workers";
 import { HttpError } from "../../http.js";
 import { randomId } from "../../identity.js";
@@ -16,6 +23,8 @@ export class AssistantTasks extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.repository = new TaskRepository(ctx.storage.sql);
+    this.attempts = new TaskAttempts(ctx.storage.sql, this.repository);
+    this.active = new Map();
   }
 
   now() {
@@ -38,7 +47,7 @@ export class AssistantTasks extends DurableObject {
     const digest =
       operation.kind === "create" ? await creationDigest(input) : null;
     // SQL state and its next alarm commit together. No provider/network effects occur here.
-    return this.ctx.storage.transaction(async () => {
+    const result = await this.ctx.storage.transaction(async () => {
       const now = this.now();
       const repository = this.repository;
       repository.bindOwner(ownerId);
@@ -80,19 +89,127 @@ export class AssistantTasks extends DurableObject {
       await this.scheduleMaintenance(now);
       return result;
     });
+    if (operation.kind === "stop" && result.task?.state === "stopped")
+      this.active.get(operation.id)?.abort();
+    return result;
+  }
+
+  stepTimeoutMs() {
+    return 45000;
+  }
+  leaseMs() {
+    return 60000;
+  }
+  plannerAvailable() {
+    return savedPlannerAvailable(this.env);
+  }
+  plan(task, signal) {
+    return planSavedTask(task, this.env, signal);
+  }
+
+  async transaction(operation) {
+    return this.ctx.storage.transaction(async () => {
+      const result = operation();
+      await this.scheduleMaintenance(this.now());
+      return result;
+    });
+  }
+
+  claimNext() {
+    const now = this.now();
+    this.repository.maintain(now);
+    for (const [id, controller] of this.active) {
+      const task = this.attempts.task(id);
+      if (!task || task.state !== "running" || task.claim.expiresAt <= now)
+        controller.abort();
+    }
+    this.attempts.recover(now);
+    this.repository.maintain(now);
+    this.attempts.prune();
+    for (let task of this.repository.records()) {
+      if (task.state === "running" && task.claim.expiresAt <= now) {
+        const recovered = transitionTask(
+          task,
+          { kind: "recover" },
+          {
+            ownerId: task.ownerId,
+            expectedRevision: task.revision,
+            now,
+            claim: null,
+          },
+        );
+        this.repository.save(recovered, task.revision);
+        task = recovered;
+      }
+      if (task.state !== "queued" || task.nextRunAt > now) continue;
+      const claimed = this.repository.update(
+        task.id,
+        { kind: "claim", claimId: randomId(), leaseMs: this.leaseMs() },
+        {
+          ownerId: task.ownerId,
+          expectedRevision: task.revision,
+          now,
+          claim: null,
+        },
+      );
+      let code = null;
+      if (
+        claimed.operations.some((operation) =>
+          ["unknown", "planned"].includes(operation.status),
+        ) ||
+        claimed.usage.reservedModelTurns ||
+        claimed.usage.reservedToolCalls
+      )
+        code = "reconciliation_required";
+      else if (claimed.stepId !== "plan" || !this.plannerAvailable())
+        code = "provider_unavailable";
+      else if (claimed.usage.modelTurns >= TASK_LIMITS.modelTurns)
+        code = "budget_exceeded";
+      if (code) {
+        this.repository.update(
+          claimed.id,
+          { kind: "fail", failure: { code, stepId: claimed.stepId } },
+          {
+            ownerId: claimed.ownerId,
+            expectedRevision: claimed.revision,
+            now,
+            claim: { id: claimed.claim.id, generation: claimed.generation },
+          },
+        );
+        continue;
+      }
+      return claimed;
+    }
+    return null;
   }
 
   async scheduleMaintenance(now) {
-    const next = this.repository.nextMaintenance(now);
-    if (next === null) await this.ctx.storage.deleteAlarm();
-    else await this.ctx.storage.setAlarm(next);
+    const times = [
+      this.repository.nextMaintenance(now),
+      this.attempts.nextBudgetWakeup(),
+      ...this.repository
+        .records()
+        .flatMap((task) =>
+          task.state === "queued"
+            ? [task.nextRunAt]
+            : task.state === "running"
+              ? [task.claim.expiresAt]
+              : [],
+        ),
+    ].filter((time) => time !== null);
+    if (!times.length) await this.ctx.storage.deleteAlarm();
+    else
+      await this.ctx.storage.setAlarm(Math.max(now + 10, Math.min(...times)));
   }
 
   async alarm() {
-    await this.ctx.storage.transaction(async () => {
-      const now = this.now();
-      this.repository.maintain(now);
-      await this.scheduleMaintenance(now);
-    });
+    // Durable wakeups run independently of HTTP requests. Each invocation owns at most two steps.
+    for (let index = 0; index < 2; index++) {
+      const claimed = await this.transaction(() => this.claimNext());
+      if (!claimed) break;
+      await runAuthoringStep(this, claimed);
+    }
+    await settleAuthoringBudgets(this);
+    await this.transaction(() => this.attempts.prune());
   }
 }

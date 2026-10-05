@@ -1,34 +1,133 @@
 import { DurableObject } from "cloudflare:workers";
 
-// One object coordinates a single UTC day's bounded beta inference allowance.
-// No prompts, project data, provider payloads, or raw addresses are stored here.
+const validKey = (key) => typeof key === "string" && /^[a-f0-9]{64}$/.test(key);
+
+// One object coordinates a UTC day's inference allowance across foreground and saved work.
 export class AssistantBudget extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
-    ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS counts (key TEXT PRIMARY KEY, total INTEGER NOT NULL, minute INTEGER NOT NULL, burst INTEGER NOT NULL)");
+    ctx.storage.sql
+      .exec(`CREATE TABLE IF NOT EXISTS counts (key TEXT PRIMARY KEY, total INTEGER NOT NULL, minute INTEGER NOT NULL, burst INTEGER NOT NULL);
+      CREATE TABLE IF NOT EXISTS reservations (id TEXT PRIMARY KEY, client TEXT NOT NULL, minute INTEGER NOT NULL, state TEXT NOT NULL)`);
   }
 
-  async reserve(key) {
-    if (!/^[a-f0-9]{64}$/.test(key)) return false;
+  async reserve(key, operationKey = null) {
+    if (!validKey(key) || (operationKey !== null && !validKey(operationKey)))
+      return false;
     const now = Date.now();
-    const minute = Math.floor(now / 60_000);
+    const minute = Math.floor(now / 60000);
     const accepted = this.ctx.storage.transactionSync(() => {
       const sql = this.ctx.storage.sql;
-      const global = sql.exec("SELECT total FROM counts WHERE key = 'global'").toArray()[0];
-      const client = sql.exec("SELECT total, minute, burst FROM counts WHERE key = ?", key).toArray()[0];
+      if (operationKey) {
+        const prior = sql
+          .exec(
+            "SELECT client, state FROM reservations WHERE id = ?",
+            operationKey,
+          )
+          .toArray()[0];
+        if (prior) return prior.client === key && prior.state !== "released";
+        if (
+          sql.exec("SELECT COUNT(*) AS count FROM reservations").one().count >=
+          4096
+        )
+          return false;
+      }
+      const global = sql
+        .exec("SELECT total FROM counts WHERE key = 'global'")
+        .toArray()[0];
+      const client = sql
+        .exec("SELECT total, minute, burst FROM counts WHERE key = ?", key)
+        .toArray()[0];
       const burst = client?.minute === minute ? client.burst : 0;
-      // One supported task can make six model turns plus six metered observations.
-      // Let that task finish within a minute without increasing either daily cap.
-      if ((global?.total ?? 0) >= 60 || (client?.total ?? 0) >= 20 || burst >= 12) return false;
-      sql.exec("INSERT OR REPLACE INTO counts (key, total, minute, burst) VALUES ('global', ?, ?, 0)", (global?.total ?? 0) + 1, minute);
-      sql.exec("INSERT OR REPLACE INTO counts (key, total, minute, burst) VALUES (?, ?, ?, ?)", key, (client?.total ?? 0) + 1, minute, burst + 1);
+      if (
+        (global?.total ?? 0) >= 60 ||
+        (client?.total ?? 0) >= 20 ||
+        burst >= 12
+      )
+        return false;
+      sql.exec(
+        "INSERT OR REPLACE INTO counts (key, total, minute, burst) VALUES ('global', ?, ?, 0)",
+        (global?.total ?? 0) + 1,
+        minute,
+      );
+      sql.exec(
+        "INSERT OR REPLACE INTO counts (key, total, minute, burst) VALUES (?, ?, ?, ?)",
+        key,
+        (client?.total ?? 0) + 1,
+        minute,
+        burst + 1,
+      );
+      if (operationKey)
+        sql.exec(
+          "INSERT INTO reservations (id, client, minute, state) VALUES (?, ?, ?, 'reserved')",
+          operationKey,
+          key,
+          minute,
+        );
       return true;
     });
-    if (accepted && await this.ctx.storage.getAlarm() === null) {
-      const nextDay = Math.floor(now / 86_400_000) * 86_400_000 + 86_400_000;
-      await this.ctx.storage.setAlarm(nextDay + 3_600_000);
-    }
+    if (accepted) await this.scheduleExpiry(now);
     return accepted;
+  }
+
+  async settle(key, operationKey, consumed) {
+    if (
+      !validKey(key) ||
+      !validKey(operationKey) ||
+      typeof consumed !== "boolean"
+    )
+      return false;
+    const result = this.ctx.storage.transactionSync(() => {
+      const sql = this.ctx.storage.sql;
+      const reservation = sql
+        .exec(
+          "SELECT client, minute, state FROM reservations WHERE id = ?",
+          operationKey,
+        )
+        .toArray()[0];
+      // A cancelled reservation may reach this object before its delayed reserve call.
+      if (!reservation) {
+        if (consumed) return false;
+        if (
+          sql.exec("SELECT COUNT(*) AS count FROM reservations").one().count <
+          4096
+        )
+          sql.exec(
+            "INSERT INTO reservations (id, client, minute, state) VALUES (?, ?, 0, 'released')",
+            operationKey,
+            key,
+          );
+        return true;
+      }
+      if (reservation.client !== key) return false;
+      const state = consumed ? "consumed" : "released";
+      if (reservation.state !== "reserved") return reservation.state === state;
+      sql.exec(
+        "UPDATE reservations SET state = ? WHERE id = ?",
+        state,
+        operationKey,
+      );
+      if (!consumed) {
+        sql.exec(
+          "UPDATE counts SET total = MAX(0, total - 1) WHERE key = 'global'",
+        );
+        sql.exec(
+          "UPDATE counts SET total = MAX(0, total - 1), burst = MAX(0, burst - CASE WHEN minute = ? THEN 1 ELSE 0 END) WHERE key = ?",
+          reservation.minute,
+          key,
+        );
+      }
+      return true;
+    });
+    await this.scheduleExpiry(Date.now());
+    return result;
+  }
+
+  async scheduleExpiry(now) {
+    if ((await this.ctx.storage.getAlarm()) === null) {
+      const nextDay = Math.floor(now / 86400000) * 86400000 + 86400000;
+      await this.ctx.storage.setAlarm(nextDay + 3600000);
+    }
   }
 
   async alarm() {

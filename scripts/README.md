@@ -169,3 +169,7 @@ A suite is a collection of existing behavioral checks, not a guarantee that ever
 ## Cloud agent infrastructure proof
 
 The [Roadmap 1A evidence](../docs/engineering/restyle-cloud-infrastructure-proof.md) records account access, costs, limits, and cleanup. `scripts/checks/cloud-agent-infrastructure/preflight.mjs <account-id>` performs read-only checks. `workspace-proof.mjs <account-id> --run` creates a bounded Linux workspace, saves and independently hosts its output, tests limits, and verifies cleanup of both deployments and storage. `hosting-proof.mjs <account-id> --run` remains a smaller one-Worker check. Both can consume the account allowance and keep private cleanup journals under `.wrangler/cloud-agent-infrastructure/`. It does not activate a paid plan or deploy the Restyle application.
+
+### Saved-task server lifetime
+
+`node scripts/checks/cloud-agent-tasks/browser-lifetime.mjs` launches local workerd/D1/SQLite and a fresh Chromium context. It creates an authenticated saved task, closes the browser during a controlled planning step, and recovers the same question in a new context. Requires built language WASM, installed dependencies and Chrome (`CHROME_PATH` can override the executable). It disposes its local runtime/storage and never calls a real model or cloud provider. This checks server lifetime; the editor task UI is a separate later journey.
