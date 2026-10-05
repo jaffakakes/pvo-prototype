@@ -1,6 +1,8 @@
 # Roadmap 4: maintain and expand what was built
 
 [Roadmap overview](../restyle-cloud-agent-roadmap.md) · [Architecture](../restyle-cloud-agent-architecture.md)
+Task IDs are stable. Checked items are verified work; update their evidence and the [handoff progress log](../restyle-cloud-agent-progress.md) whenever a task finishes.
+
 
 **Outcome:** a creator can ask Restyle to change or fix an existing connected component. The agent understands what is already deployed and can make a tested update.
 
@@ -10,12 +12,12 @@ Core ownership, spending limits, pause/delete controls, and release recovery alr
 
 ## 4A. Let the agent inspect and repair an existing feature
 
-- [ ] Give it a scoped view of the deployed source, component connection, release history, sanitized errors, job status, and connection availability.
-- [ ] Identify the failing stage before changing code: component input, gateway validation, backend rule, external account, provider, or result display.
-- [ ] Reuse the existing project and service identity. A repair should not create a duplicate guest list, account connection, or service unless the requested change requires it.
-- [ ] Reproduce the failure with safe test data in a workspace.
-- [ ] Change the smallest relevant part and add a meaningful regression check.
-- [ ] Report the verified outcome and any remaining external dependency.
+- [ ] **4A.01** Give it a scoped view of the deployed source, component connection, release history, sanitized errors, job status, and connection availability.
+- [ ] **4A.02** Identify the failing stage before changing code: component input, gateway validation, backend rule, external account, provider, or result display.
+- [ ] **4A.03** Reuse the existing project and service identity. A repair should not create a duplicate guest list, account connection, or service unless the requested change requires it.
+- [ ] **4A.04** Reproduce the failure with safe test data in a workspace.
+- [ ] **4A.05** Change the smallest relevant part and add a meaningful regression check.
+- [ ] **4A.06** Report the verified outcome and any remaining external dependency.
 
 **Finished when:** a broken connection and a backend rule bug produce different correct repairs. The agent preserves existing records and does not repeat completed viewer actions.
 
@@ -23,13 +25,13 @@ Use the current [Try diagnostics design](../try-debugger-plan.md) and [notificat
 
 ## 4B. Update a working service without breaking shared components
 
-- [ ] Build a new inactive release from retained source and the requested change.
-- [ ] Identify every recorded active component connection and export that points to the service. Forwarded or downloaded copies may still use those addresses even when Restyle cannot count the viewers. Test the update against the recorded agreements.
-- [ ] Check that the new code can use the current saved records. Define a specific data-change task if that cannot be guaranteed; do not silently rewrite or discard records.
-- [ ] Keep the active release unchanged while tests run.
-- [ ] Switch only the verified service/component connection as one recorded release action. Preserve the prior release for recovery while it remains safe to run against current records.
-- [ ] Test a failed update and restore service availability without replaying external writes.
-- [ ] Explain what editor Undo can restore and which live changes require a separate reversal.
+- [ ] **4B.01** Build a new inactive release from retained source and the requested change.
+- [ ] **4B.02** Identify every recorded active component connection and export that points to the service. Forwarded or downloaded copies may still use those addresses even when Restyle cannot count the viewers. Test the update against the recorded agreements.
+- [ ] **4B.03** Check that the new code can use the current saved records. Define a specific data-change task if that cannot be guaranteed; do not silently rewrite or discard records.
+- [ ] **4B.04** Keep the active release unchanged while tests run.
+- [ ] **4B.05** Switch only the verified service/component connection as one recorded release action. Preserve the prior release for recovery while it remains safe to run against current records.
+- [ ] **4B.06** Test a failed update and restore service availability without replaying external writes.
+- [ ] **4B.07** Explain what editor Undo can restore and which live changes require a separate reversal.
 
 **Finished when:** the creator asks to change the RSVP capacity rule, the update works for the intended shared component, and a deliberately broken replacement leaves the prior release working.
 
@@ -37,19 +39,23 @@ These are deployed code releases using one current platform/PVO contract. Do not
 
 ## 4C. Improve service management
 
-- [ ] Show which projects and published components use each service and which account connections they need.
-- [ ] Add useful views of remaining quotas, approximate cost, recent results, and failures.
-- [ ] Surface expiring credentials and limits through the existing status surfaces. Keep unresolved problems visible after dismissing a notice.
-- [ ] Let creators inspect retained data and choose the allowed cleanup action.
-- [ ] Explain the effects of pause and deletion on new submissions, accepted jobs, and stored records before applying the selected operation.
-- [ ] Verify periodic cleanup removes only abandoned resources and expired records covered by the agreed retention rule.
-- [ ] Add operational checks that detect a service whose published component still points to a missing release.
+- [ ] **4C.01** Show which projects and published components use each service and which account connections they need.
+- [ ] **4C.02** Add useful views of remaining quotas, approximate cost, recent results, and failures.
+- [ ] **4C.03** Surface expiring credentials and limits through the existing status surfaces. Keep unresolved problems visible after dismissing a notice.
+- [ ] **4C.04** Let creators inspect retained data and choose the allowed cleanup action.
+- [ ] **4C.05** Explain the effects of pause and deletion on new submissions, accepted jobs, and stored records before applying the selected operation.
+- [ ] **4C.06** Verify periodic cleanup removes only abandoned resources and expired records covered by the agreed retention rule.
+- [ ] **4C.07** Add operational checks that detect a service whose published component still points to a missing release.
 
 **Finished when:** a creator can determine why a feature stopped, restore its connection, control its cost, and retire it without guessing what remains active.
 
 ## 4D. Expand capabilities when a real request needs them
 
 Implement these as separate follow-on tasks. Each needs a concrete demonstration.
+
+- [ ] **4D.01** Choose one real request that requires an additional capability and record its expected behavior and access needs.
+- [ ] **4D.02** Implement that capability through focused adapters and shared contracts; keep creator ownership, limits, and lifecycle controls intact.
+- [ ] **4D.03** Verify its concrete demonstration, failure/recovery behavior, and affected Try/export/player path; record the evidence before calling it available.
 
 | Capability | Evidence that it is needed | Proof before calling it ready |
 | --- | --- | --- |

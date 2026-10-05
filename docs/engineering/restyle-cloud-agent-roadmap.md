@@ -1,5 +1,7 @@
 # Restyle cloud agent implementation roadmaps
 
+**Continuing with Claude Code or Codex:** read [current progress](restyle-cloud-agent-progress.md), then the [handoff/restart guide](restyle-cloud-agent-handoff.md). Every checklist item now has a stable task ID. After each verified task, check it off and save its evidence and exact next action. Root [AGENTS.md](../../AGENTS.md) and [CLAUDE.md](../../CLAUDE.md) require this workflow.
+
 Status: implementation started, 5 October 2026. **1A passed:** a real Linux workspace built a service that kept working after the workspace was deleted. **Next: 1B, saved tasks and follow-up questions.** See the [infrastructure evidence](restyle-cloud-infrastructure-proof.md). Unchecked items remain proposed work.
 
 Start with [Roadmap 1](restyle-cloud-agent-roadmaps/01-first-working-component.md). It delivers the first complete version: ask for a component, let the agent build a new backend, try it, and share something that keeps working after its temporary computer shuts down.
@@ -18,6 +20,33 @@ The [architecture document](restyle-cloud-agent-architecture.md) explains the id
 The first roadmap uses Restyle-owned storage so you can prove code generation and hosting without first needing a restaurant or messaging account. It must generate different rules for different requests. The product remains a general builder.
 
 Every roadmap contains ordered implementation steps, relevant code areas, and observable checks. Treat each step as a focused change or small group of pull requests. The roadmap is finished only when its complete demonstration works.
+
+## Delivery sequence and completion gates
+
+Use the numbered tasks in the linked guide as the detailed checklist. The phase order is a dependency plan, not a calendar estimate. Only 1A is verified complete. A checked implementation task does not automatically mean its PR is merged or its feature is released.
+
+| Phase | Deliverable | Depends on | Evidence needed to finish |
+| --- | --- | --- | --- |
+| **1A — complete** | Real workshop and independent hosting | Account access | Service works after workshop deletion; limits and cleanup verified |
+| **1B — next** | Saved tasks, questions, progress, resumable authoring | Existing accounts; 1A adapters for provider recovery checks | Close browser, restart runner, answer later, stop safely, and recover one existing deployment |
+| 1C | Agent writes, tests, and repairs backend code | 1B task/receipt model and 1A runtime | Two different generated services pass trusted tests; invalid code cannot bypass the gate |
+| 1D | Owned services, records, quotas, pause/delete | 1B records and 1C immutable artifacts | Duplicate and competing submissions behave correctly; isolation and cleanup hold |
+| 1E | Verified service attached to component | 1C/1D receipts and existing editor/player boundaries | Try uses test permissions; file export and publication both use the correct live service |
+| 1F | First complete product release | 1B–1E gates | Two natural-language demonstrations; restart/failure checks; beta and authorized release evidence |
+| 2A | Research and saved capability decisions | 1B saved questions; existing web tools | Online, phone-only, and no-booking examples produce truthful available options |
+| 2B | One secure account connection | 2A access decision and owner records | Connect, reload, expire, reconnect, revoke; another owner cannot use it |
+| 2C | Generated integration through controlled credentials | 1D and 2B; Roadmap 3 for long-running effects | Live supported operation; revocation and unknown-outcome handling |
+| 2D | Useful manual alternatives | 1B questions and 2A research | Chosen manual step stays pending; RSVP is never labelled a confirmed booking |
+| 3A | Durable viewer jobs | 1D action identities; 2B for external connections | Browser/worker restarts preserve one logical job and an accurate result |
+| 3B | Provider callbacks and schedules | 3A reliable jobs | Invalid/duplicate/out-of-order events handled; cancelled schedules do not start |
+| 3C | Truthful pending/final component status | 3A/3B and 1E attachment | Private receipt access, safe refresh, correct Try/export/player behavior |
+| 3D | Real acceptance-triggered automation | 2C and 3A–3C | Supported provider path works with browsers closed; uncertain outcomes are reconciled |
+| 4A | Scoped diagnosis and repair | Retained source and service/task records | Correctly distinguish code faults and account faults; preserve saved records |
+| 4B | Tested updates and recovery | 1D releases, 1E attachments, 4A diagnosis | Good replacement works; broken replacement leaves prior release available |
+| 4C | Better service management | 1D basic controls; 2/3 for connected work | Creator can identify failure, control usage, and retire resources safely |
+| 4D | Additional capability justified by a request | Existing ownership/lifecycle gates | One concrete new capability meets the same isolation, recovery, and truthful-result checks |
+
+For the next milestone, use the [detailed 1B implementation plan](restyle-cloud-agent-roadmaps/1b-saved-tasks.md). Later milestones already contain their task breakdowns in Roadmaps 1–4; expand a task's implementation notes when starting it without renumbering or resetting completed work.
 
 ## The order inside the first roadmap
 
@@ -66,6 +95,8 @@ For each step, record:
 - The source changes and resources created.
 - Checks that passed, checks that failed, and anything not checked.
 - The remaining dependency before the next step can work.
+
+Write those facts into the [progress log](restyle-cloud-agent-progress.md), not only the conversation. Mark the matching numbered checkbox complete only after its checks pass. For partial work, keep it unchecked and name the remaining action. The [handoff procedure](restyle-cloud-agent-handoff.md#how-completion-must-be-recorded) defines the required update and interruption checkpoint.
 
 Use the relevant checks, rather than running every suite after every edit:
 

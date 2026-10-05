@@ -1,6 +1,8 @@
 # Roadmap 3: support work that takes time
 
 [Roadmap overview](../restyle-cloud-agent-roadmap.md) · [Architecture](../restyle-cloud-agent-architecture.md)
+Task IDs are stable. Checked items are verified work; update their evidence and the [handoff progress log](../restyle-cloud-agent-progress.md) whenever a task finishes.
+
 
 **Outcome:** a viewer can start an action, close the video, and have the service finish it. Restyle can show the recorded outcome when it becomes available.
 
@@ -10,12 +12,12 @@ Keep these viewer jobs separate from the authoring task that builds the componen
 
 ## 3A. Save and run background jobs
 
-- [ ] Define one job record: service owner, service release, operation, authorized viewer reference, action identifier, input reference, current state, attempt count, and provider receipt.
-- [ ] Save the accepted job before acknowledging the request. Return a receipt meaning “request received.”
-- [ ] Add a worker that picks up saved work, records progress, and resumes after a crash. Ensure only one worker can claim the same pending attempt.
-- [ ] Use duplicate prevention both inside Restyle and at the provider boundary where supported. Accept that some uncertain external outcomes need reconciliation or human review.
-- [ ] Separate retryable failures from final failures and unknown outcomes. Use bounded retries and delays; never guess that an external write failed merely because its response was lost.
-- [ ] Add job lifetime, retention, usage limits, and creator inspection. Define what pause does to already accepted work and tell the creator.
+- [ ] **3A.01** Define one job record: service owner, service release, operation, authorized viewer reference, action identifier, input reference, current state, attempt count, and provider receipt.
+- [ ] **3A.02** Save the accepted job before acknowledging the request. Return a receipt meaning “request received.”
+- [ ] **3A.03** Add a worker that picks up saved work, records progress, and resumes after a crash. Ensure only one worker can claim the same pending attempt.
+- [ ] **3A.04** Use duplicate prevention both inside Restyle and at the provider boundary where supported. Accept that some uncertain external outcomes need reconciliation or human review.
+- [ ] **3A.05** Separate retryable failures from final failures and unknown outcomes. Use bounded retries and delays; never guess that an external write failed merely because its response was lost.
+- [ ] **3A.06** Add job lifetime, retention, usage limits, and creator inspection. Define what pause does to already accepted work and tell the creator.
 
 **Finished when:** close every browser and restart the job worker during processing. The job still finishes once, or remains in an accurate unresolved state requiring a specific next step.
 
@@ -23,12 +25,12 @@ Keep these viewer jobs separate from the authoring task that builds the componen
 
 ## 3B. Accept provider updates and schedules
 
-- [ ] Support a callback, often called a webhook: an outside service reports that a booking, message, or other operation changed state.
-- [ ] Verify who sent the callback before changing a job. Reject invalid messages and ignore already processed event identifiers.
-- [ ] Match each callback to an existing owned job. An unknown provider identifier must not create arbitrary work.
-- [ ] Handle repeated or out-of-order updates without moving a completed job back to an earlier state.
-- [ ] When callbacks are unavailable, check the existing provider operation at a bounded interval.
-- [ ] For scheduled work, store the intended time and timezone, the service release, its limits, and its cancellation state. The server starts it even if the creator's device is off.
+- [ ] **3B.01** Support a callback, often called a webhook: an outside service reports that a booking, message, or other operation changed state.
+- [ ] **3B.02** Verify who sent the callback before changing a job. Reject invalid messages and ignore already processed event identifiers.
+- [ ] **3B.03** Match each callback to an existing owned job. An unknown provider identifier must not create arbitrary work.
+- [ ] **3B.04** Handle repeated or out-of-order updates without moving a completed job back to an earlier state.
+- [ ] **3B.05** When callbacks are unavailable, check the existing provider operation at a bounded interval.
+- [ ] **3B.06** For scheduled work, store the intended time and timezone, the service release, its limits, and its cancellation state. The server starts it even if the creator's device is off.
 
 **Finished when:** duplicate, invalid, delayed, and reordered provider events produce the correct saved status. Cancelled schedules never start a new external action.
 
@@ -36,13 +38,13 @@ Start with one real provider path. Add scheduling only after the job and outcome
 
 ## 3C. Show the real result in the component
 
-- [ ] Define the common result states needed by the first interaction: received, pending, confirmed, failed, and needs checking.
-- [ ] Store a receipt the viewer is allowed to inspect. Publicly guessing a job ID must not expose someone else's private booking or contact details.
-- [ ] Reuse existing PVO response state and templates for immediate results.
-- [ ] Add a bounded way for a supported player to refresh a pending receipt. Stop listeners or status checks when the view is removed; the server job continues.
-- [ ] If a guest must return later or from another device, implement an appropriate receipt link or identity check. Define recovery before promising it.
-- [ ] Make labels reflect actual evidence: “message accepted by sender,” “delivered,” and “reservation confirmed” are separate outcomes.
-- [ ] Update the shared contract, compiler only if needed, editor preview, export, and standalone player together. Maintain one current contract.
+- [ ] **3C.01** Define the common result states needed by the first interaction: received, pending, confirmed, failed, and needs checking.
+- [ ] **3C.02** Store a receipt the viewer is allowed to inspect. Publicly guessing a job ID must not expose someone else's private booking or contact details.
+- [ ] **3C.03** Reuse existing PVO response state and templates for immediate results.
+- [ ] **3C.04** Add a bounded way for a supported player to refresh a pending receipt. Stop listeners or status checks when the view is removed; the server job continues.
+- [ ] **3C.05** If a guest must return later or from another device, implement an appropriate receipt link or identity check. Define recovery before promising it.
+- [ ] **3C.06** Make labels reflect actual evidence: “message accepted by sender,” “delivered,” and “reservation confirmed” are separate outcomes.
+- [ ] **3C.07** Update the shared contract, compiler only if needed, editor preview, export, and standalone player together. Maintain one current contract.
 
 **Finished when:** the viewer sees receipt → pending → actual result. Closing or reopening the video does not duplicate the action, and the displayed status matches the server record.
 
@@ -50,11 +52,11 @@ Start with one real provider path. Add scheduling only after the job and outcome
 
 ## 3D. Demonstrate a useful automation
 
-- [ ] Build an acceptance flow that records the reply and triggers a message through a real supported connection.
-- [ ] Test the normal path, sender offline, expired credentials, provider timeout after acceptance, duplicate click, duplicate callback, and cancelled work.
-- [ ] Confirm that ordinary Try cannot send live messages.
-- [ ] Confirm that deleting a local component does not erase evidence of previously performed actions.
-- [ ] Verify that a creator can inspect failures and safely resume only work that remains unfinished.
+- [ ] **3D.01** Build an acceptance flow that records the reply and triggers a message through a real supported connection.
+- [ ] **3D.02** Test the normal path, sender offline, expired credentials, provider timeout after acceptance, duplicate click, duplicate callback, and cancelled work.
+- [ ] **3D.03** Confirm that ordinary Try cannot send live messages.
+- [ ] **3D.04** Confirm that deleting a local component does not erase evidence of previously performed actions.
+- [ ] **3D.05** Verify that a creator can inspect failures and safely resume only work that remains unfinished.
 
 For iMessage, the existing feature is a fixed-message Mac test bridge. General messaging requires its own sender availability, account ownership, queue behavior, and truthful status handling. Do not treat a cloud VM as an iMessage sender without implementing a real connected sending path.
 
