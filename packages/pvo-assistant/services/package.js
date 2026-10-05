@@ -4,22 +4,11 @@ import {
   list,
   object,
   requireTask as requireService,
-  text,
   unique,
 } from "../tasks/validation.js";
 import { SERVICE_PACKAGE_LIMITS as limits, SERVICE_RUNTIME } from "./limits.js";
 import { canonicalJson } from "./json.js";
-
-export function parseServiceFilePath(value) {
-  text(value, 160, "Service file path");
-  requireService(
-    /^(src|tests)\/(?:[a-z0-9][a-z0-9_-]*\/)*[a-z0-9][a-z0-9_.-]*\.mjs$/.test(
-      value,
-    ) && !value.includes(".."),
-    "Service files need unambiguous relative .mjs paths under src/ or tests/.",
-  );
-  return value;
-}
+import { parseServiceFilePath, parseServiceFiles } from "./files.js";
 
 /** No executable scripts, credentials, hosted address or test-pass claims in this envelope. */
 export function parseServicePackage(value) {
@@ -48,14 +37,8 @@ export function parseServicePackage(value) {
   // This initial target has a closed, empty lock. A later package adapter must
   // enforce resolution, integrity and network policy before accepting packages.
   list(value.dependencies, 0, "Locked service dependencies");
-  list(value.files, limits.files, "Service files");
-  for (const file of value.files) {
-    object(file, ["path", "content"], "Service file");
-    parseServiceFilePath(file.path);
-    text(file.content, limits.fileBytes, "Service file content", true);
-  }
+  parseServiceFiles(value.files);
   const paths = value.files.map((file) => file.path);
-  unique(paths, "Service file paths");
   requireService(
     paths.includes(value.entrypoint),
     "Service entry point is missing.",

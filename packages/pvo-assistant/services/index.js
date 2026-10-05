@@ -6,8 +6,12 @@ export {
   parseServiceReply,
 } from "./agreement.js";
 export {
-  parseServiceFilePath,
   parseServicePackage,
   serializeServicePackage,
   matchServicePackage,
 } from "./package.js";
+export {
+  parseServiceFilePath,
+  parseServiceFiles,
+  serializeServiceFiles,
+} from "./files.js";

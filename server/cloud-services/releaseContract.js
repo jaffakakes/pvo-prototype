@@ -5,13 +5,8 @@ import {
   serializeServiceIdentity,
 } from "../../packages/pvo-assistant/releases/index.js";
 
-export async function serviceDigest(value) {
-  const bytes = new TextEncoder().encode(value);
-  const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
-  return Array.from(hash, (byte) => byte.toString(16).padStart(2, "0")).join(
-    "",
-  );
-}
+import { contentDigest as serviceDigest } from "../contentDigest.js";
+export { serviceDigest };
 
 export const serviceIntentDigest = (identity) =>
   serviceDigest(serializeServiceIdentity(identity));

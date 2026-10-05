@@ -96,6 +96,8 @@ export function parseServiceReply(
   value: unknown,
 ): ServiceReply;
 export function parseServiceFilePath(value: unknown): string;
+export function parseServiceFiles(value: unknown): ServiceSourceFile[];
+export function serializeServiceFiles(value: unknown): string;
 export function parseServicePackage(value: unknown): ServicePackage;
 export function serializeServicePackage(value: unknown): string;
 export function matchServicePackage(

@@ -6,6 +6,8 @@
 
 **1C.01 is verified.** The shared contract has a behavior agreement and a separate source package. Each operation declares its inputs, result, audience and storage access. Ordered examples describe expected results and state changes. The source package refers to the exact saved agreement digest. Contract parsing cannot grant permissions or mark a service ready.
 
+A private workspace core is now locally verified in `packages/pvo-assistant/workspaces/` and `server/assistant/workspaces/`: durable source/receipts, stable resource identity, bounded commands, global compute reservations and cleanup. See the [workspace contract](../../../packages/pvo-assistant/workspaces/README.md). Saved-task claim/revocation integration, model wiring and actual provider acceptance remain pending.
+
 The remaining numbered tasks are unchecked. This document records implementation decisions to carry into their code and tests; it is not evidence that a workspace or model-driven build already exists.
 
 ## What the creator should experience

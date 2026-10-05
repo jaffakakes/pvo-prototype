@@ -180,6 +180,8 @@ The [desktop editor](desktop-editor.md) uses the approved Library / Player / Ins
 
 Clip sound remains attached until the user selects **Extract audio**. `domain/audio/` owns independent source ranges and timeline positions; `domain/scenes/duration` determines the full authored duration from video, audio and explicit visual-layer ends. `state/editing/audioCommands` commits extraction, timing gestures, split/delete and history. Optional `Scene.audioClips` preserves compatibility with older projects, while `Clip.audioDetached` prevents the source video from also playing its sound. Extracted layers retain their media reference when the video is edited or deleted. Checkpoints, history, scene duplication, ID recovery and export snapshots include these references. The shared audio bar serves both timelines. `infrastructure/audio/audioLayerPlayer` owns preview/export audio elements and cleanup; rendered video and PVO scene media include the mix, with black frames when any authored layer extends beyond the video.
 
+The cloud build workspace has a separate ownership boundary. `packages/pvo-assistant/workspaces/` owns pure lifecycle and bounded input contracts. `server/assistant/workspaces/` owns stable task identity, SQLite source/receipt storage, global compute reservations and native Container effects. Generated files and command output never grant readiness. These private adapters are not advertised as model tools until saved-task claims and the builder are connected. See the [workspace contract](../../packages/pvo-assistant/workspaces/README.md).
+
 ## Player and SDK organization
 
 ```text
