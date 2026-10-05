@@ -29,7 +29,7 @@ Build this before committing to a provider-specific implementation.
 
 ## 1B. Save the task and its questions
 
-**Progress:** 1B.01–1B.06 are verified: shared task rules, local association, authenticated durable storage, background planning, native request handoff and the saved task card. Next is 1B.07 result storage/application; provider receipts/reconciliation and the full milestone acceptance remain incomplete. Arbitrary workspace generation remains 1C.
+**Progress:** 1B.01–1B.07 are verified: shared task rules, local association, durable storage/planning, native handoff, task UI and immutable prepared results with guarded apply-once receipts. Next is 1B.08/1B.09 provider receipts/reconciliation; full milestone acceptance remains incomplete. Arbitrary workspace generation remains 1C.
 
 The task record is the agent's notebook. It must be saved on the server. Follow the [detailed 1B implementation plan](1b-saved-tasks.md) for contracts, build order, and failure tests.
 
@@ -39,7 +39,7 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 - [x] **1B.04** Run cloud-building work through a saved server task that can continue across separate requests. Preserve ordinary editor edits through the current editing command path.
 - [x] **1B.05** Add a background authoring runner with saved checkpoints, wakeups, bounded retries, and one active worker owning each task step. Its lifetime must not depend on an open HTTP request or browser tab. Viewer jobs in Roadmap 3 are a separate responsibility.
 - [x] **1B.06** Add a small progress view in the existing assistant conversation. Start with “Working,” “Needs your answer,” “Ready,” “Stopped,” and “Failed,” with a specific reason.
-- [ ] **1B.07** Save prepared component changes while the editor is closed. Apply them on return only after checking the current local project.
+- [x] **1B.07** Save prepared component changes while the editor is closed. Apply them on return only after checking the current local project.
 - [ ] **1B.08** Record completed steps so restarting a task cannot repeat a deployment or other completed action.
 - [ ] **1B.09** Reconcile interrupted steps with provider resource records before retrying. A deployed service whose reply was lost must be recovered and recorded.
 - [ ] **1B.10** Pass the saved-task acceptance matrix, record test and browser evidence, and verify the new beta revision for the completed app changes.

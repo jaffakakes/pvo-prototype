@@ -14,6 +14,7 @@ All responses are private (`Cache-Control: no-store`), with no cross-origin read
 | `POST /api/assistant/tasks` | Valid shared `TaskInput` with resolved project ID | `{task,created}`; 201 for new, 200 for exact replay |
 | `GET /api/assistant/tasks?project=ID&limit=20&before=ID` | Owned project required; optional limit 1–20 and opaque cursor | `{tasks,next}`; descending opaque ID, `next:null` at end |
 | `GET /api/assistant/tasks/:id` | None | `{task}` |
+| `GET /api/assistant/tasks/:id/result` | None; owned ready task required | Canonical prepared-result JSON bytes, matching the saved artifact size and SHA-256 |
 | `POST /api/assistant/tasks/:id/answers` | `{expectedRevision,questionId,questionRevision:0,operationId,value}` | `{task}` |
 | `POST /api/assistant/tasks/:id/resume` | `{expectedRevision}` | `{task}` |
 | `POST /api/assistant/tasks/:id/stop` | `{expectedRevision}` | `{task}` |
@@ -58,4 +59,17 @@ The browser lifetime check is `node scripts/checks/cloud-agent-tasks/browser-lif
 
 The native assistant route offers `cloudTask` only when this task storage, the metered planner, a signed current account, and the supporting client are present. The browser header is a contract opt-in, not authorization. Ordinary anonymous native editing remains available. The model supplies bounded behavior examples; trusted editor/server adapters create all identities and retain the original creator request.
 
-The editor persists the exact creation input before sending it and replays that input after an uncertain response. Progress polling is disposable and never keeps the server running; Stop is a distinct authenticated mutation. Answers refresh the task before submission, reuse an operation identity for a repeated answer, and respect already committed answers from other tabs. Live service generation and application of prepared artifacts remain later milestones.
+The editor persists the exact creation input before sending it and replays that input after an uncertain response. Progress polling is disposable and never keeps the server running; Stop is a distinct authenticated mutation. Answers refresh the task before submission, reuse an operation identity for a repeated answer, and respect already committed answers from other tabs. Live service generation remains a later milestone. Prepared component results use the owned storage and guarded application path below.
+
+
+## Prepared results and application (1B.07)
+
+`completePreparedResult` is a private coordinator capability for the trusted runner. It derives owner/project/task/base identity from the saved task, allows only the [prepared component contract](../../../packages/pvo-assistant/results/README.md), and hashes canonical UTF-8 JSON. After hashing, it rechecks the current execution revision, claim and deadline. One SQLite transaction writes both ready state and immutable artifact bytes. A failed artifact write rolls the task transition back. Exact completed replays return the existing result; changed contents conflict. No browser or model tool can complete a task directly.
+
+One artifact per retained task is bounded to 1 MiB. SQLite's [2 MB string/BLOB/row limit](https://developers.cloudflare.com/durable-objects/platform/limits/) accommodates this payload. Result contents are deleted with settled task content. Owned GET returns 409 before ready, 404 for absent/expired/other-owner tasks, and 503 if an expected artifact is unavailable. It uses the same signed account session as task reads.
+
+The editor hashes its starting project using persisted media asset IDs after a successful local save; browser Blob URLs change on reload and are not durable identity. Applying downloads bounded bytes, verifies their digest and ownership, compares the current saved project fingerprint, and runs every proposed change through native preparation/compiler checks. Changed drafts retain both their edits and the server result. Reconciliation of those differences is not automatic in this slice.
+
+One store/history update contains the complete validated project change and an application receipt. IndexedDB checkpoints persist both together. Receipts contain IDs and artifact metadata only, stay outside Undo/Redo, survive new task links, and are stripped from independent copies. The bounded 64-receipt history rejects another application at capacity instead of evicting replay protection. A failed final save retains in-memory replay protection and uses the existing persistent save-error surface; retry cannot insert another component.
+
+`npm run check:browser -- editor saved-results` closes the actual editor before controlled completion, restarts local workerd, reopens real IndexedDB media, applies through real compilation, verifies reload/Undo/Redo/duplicate protection and keeps a newer draft edit. Native planning output and trusted completion are fixtures: the product builder still awaits 1C. Service attachment still awaits its later validated receipt contract.

@@ -37,7 +37,7 @@ Creator-facing routes may expose only their named operations after authenticatio
 | `queued` | Coordinator claims due work; creator stops it; coordinator expires it at its deadline |
 | `running` | Worker checkpoints to `queued`, asks a question, completes, or fails; creator stops it; coordinator recovers an expired claim or expires the task |
 | `waiting_for_answer` | Creator answers to queue the same task, stops it, or coordinator expires it |
-| `ready` | Build attempt is terminal; applying the prepared result is a separate later editor operation |
+| `ready` | Build attempt is terminal; applying the prepared result is a separate guarded editor operation |
 | `failed` | Creator resumes a retryable failure before its deadline and retry limit, or stops it |
 | `stopped` | Build attempt is terminal; no new work or result may start |
 
@@ -45,7 +45,7 @@ An already due queued wakeup may precede the latest bookkeeping update; reconcil
 
 Each new question starts at revision 0 with `answer: null`. Answering stores an operation ID and timestamp and advances its revision to 1. Prompts are immutable; a correction needs a new question identity. Choices are suggestions; a bounded free-text answer is allowed. Exactly one unanswered question is permitted while waiting. Stopped or deadline-expired tasks may retain that unanswered question.
 
-Prepared results contain an artifact reference and the original project fingerprint. Artifact contents and trusted validation reports belong in later owned storage. The contract checks reference shape and fingerprint consistency; it does not compile generated source or prove its behavior. Existing project fingerprints are opaque change tokens, not SHA-256 strings. The editor must recheck its current draft before applying a result.
+Prepared results contain an artifact reference and the original project fingerprint. Prepared component artifact contents use the separate [results contract](../results/README.md) and owned server storage. Trusted build validation reports remain a later builder responsibility. The contract checks reference shape and fingerprint consistency; it does not compile generated source or prove its behavior. Existing project fingerprints are opaque change tokens, not SHA-256 strings. The editor must recheck its current draft before applying a result.
 
 ## Effect receipts and usage
 

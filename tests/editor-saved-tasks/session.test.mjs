@@ -11,6 +11,7 @@ function fixture() {
   let task = createTask(
     api.cloudTaskInput(project(), "Build it", proposal, {
       projectId: "project",
+      fingerprint: "saved-fingerprint",
       operationId: "create",
     }),
     { id: "task", ownerId: "owner", now, inputDigest: "a".repeat(64) },

@@ -1,3 +1,5 @@
+import type { ProjectSnapshot } from "../../domain/project/model";
+import { remapProjectMedia } from "../../domain/project/mediaReferences";
 import type { PersistenceSnapshot } from "./checkpoint";
 import {
   captureCheckpoint,
@@ -31,6 +33,7 @@ export type ProjectPersistence = {
   discardSavedProject(): Promise<void>;
   schedule(state: PersistenceSnapshot): void;
   flush(): Promise<void>;
+  storedProject(project: ProjectSnapshot): ProjectSnapshot;
   dispose(): Promise<void>;
   getStatus(): ProjectPersistenceStatus;
   subscribeStatus(listener: () => void): () => void;
@@ -376,6 +379,18 @@ export function createProjectPersistence(
     discardSavedProject,
     schedule,
     flush,
+    storedProject: (project) => {
+      if (disposed || status.dirty || status.phase === "error")
+        throw new Error("Save this project before preparing a cloud task.");
+      for (const scene of project.scenes)
+        for (const clip of [...scene.clips, ...(scene.audioClips ?? [])]) {
+          if (!clip.url) continue;
+          const id = assetIdByUrl.get(clip.url);
+          if (!id || !knownAssetIds?.has(id))
+            throw new Error("This project's media has not been saved yet.");
+        }
+      return remapProjectMedia(project, assetIdByUrl);
+    },
     dispose: async () => {
       document.removeEventListener("visibilitychange", onHidden);
       window.removeEventListener("pagehide", onPageHide);

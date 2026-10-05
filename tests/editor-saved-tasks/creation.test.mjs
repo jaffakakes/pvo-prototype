@@ -34,6 +34,7 @@ function fixture() {
       };
       return scope;
     },
+    fingerprint: () => "saved-fingerprint",
     async flush() {
       saved = structuredClone(scope);
     },
@@ -178,6 +179,7 @@ test("account/project changes and concurrent submissions cannot attach late rece
 test("pending requests cannot be overwritten, reassigned, or completed by an unrelated receipt", () => {
   const input = api.cloudTaskInput(project(), "Build it", proposal, {
     projectId: "project",
+    fingerprint: "saved-fingerprint",
     operationId: "create",
   });
   const links = api.stageProjectTask(null, "draft", {

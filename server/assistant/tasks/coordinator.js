@@ -1,3 +1,4 @@
+import { TaskResults } from "./results.js";
 import {
   transitionTask,
   TASK_LIMITS,
@@ -23,6 +24,7 @@ export class AssistantTasks extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.repository = new TaskRepository(ctx.storage.sql);
+    this.results = new TaskResults(ctx.storage.sql);
     this.attempts = new TaskAttempts(ctx.storage.sql, this.repository);
     this.active = new Map();
   }
@@ -39,7 +41,7 @@ export class AssistantTasks extends DurableObject {
       input = creationInput(operation.input);
     else if (operation.kind === "list")
       input = taskListInput(new URLSearchParams(operation.query));
-    else if (operation.kind === "read") taskId(operation.id);
+    else if (["read", "result"].includes(operation.kind)) taskId(operation.id);
     else if (["answers", "resume", "stop"].includes(operation.kind)) {
       taskId(operation.id);
       input = creatorCommand(operation.kind, operation.input);
@@ -52,6 +54,7 @@ export class AssistantTasks extends DurableObject {
       const repository = this.repository;
       repository.bindOwner(ownerId);
       repository.maintain(now);
+      this.results.prune();
       let result;
       try {
         result = this.ctx.storage.transactionSync(() => {
@@ -71,6 +74,10 @@ export class AssistantTasks extends DurableObject {
               return repository.list(input, now);
             case "read":
               return { task: repository.read(operation.id, now) };
+            case "result":
+              return {
+                body: this.results.read(repository.read(operation.id, now)),
+              };
             default:
               return {
                 task: repository.update(operation.id, input.command, {
@@ -92,6 +99,46 @@ export class AssistantTasks extends DurableObject {
     if (operation.kind === "stop" && result.task?.state === "stopped")
       this.active.get(operation.id)?.abort();
     return result;
+  }
+
+  /** Private runner capability: never exposed as a browser command or model tool. */
+  async completePreparedResult(ownerId, id, operations, guard) {
+    taskId(ownerId);
+    taskId(id);
+    if (!guard || !Number.isSafeInteger(guard.expectedRevision) || !guard.claim)
+      throw new HttpError(409, "A current execution claim is required.");
+    this.repository.bindOwner(ownerId);
+    const original = this.repository.read(id, this.now());
+    const encoded = await this.results.encode(original, operations);
+    return this.transaction(() =>
+      this.ctx.storage.transactionSync(() => {
+        const task = this.repository.read(id, this.now());
+        if (task.state === "ready") {
+          if (this.results.read(task) !== encoded.body)
+            throw new HttpError(409, "A completed result cannot be replaced.");
+          return task;
+        }
+        // Recheck the actual owner, revision, deadline and execution generation after hashing.
+        const next = this.repository.update(
+          id,
+          {
+            kind: "complete",
+            result: {
+              artifact: encoded.artifact,
+              baseFingerprint: task.input.context.fingerprint,
+            },
+          },
+          {
+            ownerId,
+            expectedRevision: guard.expectedRevision,
+            claim: guard.claim,
+            now: this.now(),
+          },
+        );
+        this.results.save(next, encoded);
+        return next;
+      }),
+    );
   }
 
   stepTimeoutMs() {
@@ -126,6 +173,7 @@ export class AssistantTasks extends DurableObject {
     this.attempts.recover(now);
     this.repository.maintain(now);
     this.attempts.prune();
+    this.results.prune();
     for (let task of this.repository.records()) {
       if (task.state === "running" && task.claim.expiresAt <= now) {
         const recovered = transitionTask(

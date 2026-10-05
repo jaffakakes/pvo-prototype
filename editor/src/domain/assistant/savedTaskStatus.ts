@@ -34,7 +34,7 @@ export function savedTaskStatus(task: TaskRecord, now: number) {
       ? "Planning is saved. Building hosted services is not available yet."
       : failureMessages[task.failure.code]
     : task.state === "ready"
-      ? "The result is saved. Applying cloud results is not available yet."
+      ? "Your result is saved."
       : task.state === "stopped"
         ? uncertain
           ? "Further work was stopped. An earlier action still needs its outcome checked."

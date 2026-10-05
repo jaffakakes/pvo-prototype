@@ -4,13 +4,13 @@
 
 **Plain-English result:** Restyle remembers what you asked it to build, what it has already done, and what answer it needs from you. Closing the editor does not erase the task. Returning to it resumes the same work.
 
-This milestone is in progress. **1B.01–1B.03 are implemented:** the [shared task contract](../../../packages/pvo-assistant/tasks/README.md) defines records, limits, and pure transitions; local draft checkpoints retain scoped task locators. Owned server storage and routes are verified; the planning runner (1B.05) is also verified; editor intent routing and task UI remain planned. Keep completion markers in Roadmap 1; record decisions and evidence in the progress log.
+This milestone is in progress. **1B.01–1B.07 are verified:** the [shared task contract](../../../packages/pvo-assistant/tasks/README.md), local association, owned storage, planning runner, native handoff, task UI and guarded prepared-result application are implemented. Provider reconciliation and full milestone acceptance remain. Keep completion markers in Roadmap 1; record decisions and evidence in the progress log.
 
 ## First useful change
 
 Completed **1B.01: the shared task record and its rules** answers: “What is a valid saved task, and what changes are allowed?” Its pure functions and tests need no cloud deployment or UI. The record carries trusted owner metadata, a server project identity, and the original project fingerprint.
 
-The local project association in **1B.02** is also complete. **1B.03** now resolves owned server projects and preserves real tasks across storage restart. The saved runner in **1B.05** is now verified. Continue with **1B.04** backend intent routing and **1B.06** task presentation. Prove each layer through its public boundary before connecting the next.
+The local project association in **1B.02** is also complete. **1B.03** now resolves owned server projects and preserves real tasks across storage restart. The saved runner in **1B.05** is now verified. **1B.04/1B.06** request routing and task presentation and **1B.07** result application are also complete. Continue with **1B.08/1B.09** provider journals and reconciliation. Prove each layer through its public boundary before connecting the next.
 
 ## Suggested source ownership
 
@@ -128,19 +128,19 @@ In 1B, use a small controlled authoring step to prove the lifecycle. Arbitrary m
 
 ## 1B.06 — Show progress in the existing assistant
 
-The saved task card lives in the existing assistant thread and has an entry button after reload even when session exchanges are empty. It shows “Working,” “Needs your answer,” “Ready,” “Stopped,” and “Failed” from saved state, bounded failure reasons, previous saved answers, suggested answers plus free text, and explicit Stop/Resume controls. The build checkpoint honestly reports unavailable until 1C; ready-result application waits for 1B.07. Command failures use the card; project-save failures retain their existing recovery surface.
+The saved task card lives in the existing assistant thread and has an entry button after reload even when session exchanges are empty. It shows “Working,” “Needs your answer,” “Ready,” “Stopped,” and “Failed” from saved state, bounded failure reasons, previous saved answers, suggested answers plus free text, and explicit Stop/Resume controls. The build checkpoint honestly reports unavailable until 1C; ready results offer explicit guarded application in 1B.07. Command failures use the card; project-save failures retain their existing recovery surface.
 
 The task session reads owned progress through a disposable adapter. Disconnect polling/listeners on unmount or account change; this must not cancel the server task. A separate Stop command cancels it. An expired session should offer sign-in and preserve the ability to recover the owned task afterward.
 
 **Verified:** actual editor + real IndexedDB/workerd/D1/SQLite recover one task after a lost creation response and page closure; a saved question can be answered, stopped, and recovered after reload. Signed-out content is hidden behind sign-in; another account cannot see the task. Desktop and two phone layouts passed, including saved-task entry with an empty session thread. Unit regressions cover immediate cancelled-remount recovery, stale reads/commands, failed pending and receipt saves, duplicate answers, expiry and account/project guards. Controlled model and HTTP bridge fixtures are explicit; no real generated service is claimed.
 
-## 1B.07 — Keep the result safe until it can be applied
+## 1B.07 — Save and apply a prepared result
 
-Save prepared changes on the server with their owner, task, project identity, and starting fingerprint. On editor return, run existing command validation and fingerprint checks before applying the entire batch as one history operation.
+**Verified.** The [prepared result contract](../../../packages/pvo-assistant/results/README.md) permits bounded component operations only. The owned SQLite coordinator saves immutable canonical bytes and ready state in one transaction. Its authenticated result GET survives full runtime restart and expires with task content. Only a trusted current worker can complete a result; Stop, stale claims and write failures prevent publication.
 
-If the draft has changed, keep the result available and explain that it needs reconciliation. Do not overwrite the creator's newer edits. Save a result/application identity so replaying a response cannot apply it twice. Component service attachment still waits for the validated receipt contract in 1E.
+The editor uses persisted media IDs for its saved starting fingerprint, so reopening an unchanged video draft remains a match. It verifies downloaded size/digest and task ownership, then uses existing native preparation/compiler/commit checks. One complete history update and its apply-once receipt are checkpointed together. Receipts remain outside Undo/Redo and copies drop them. Changed drafts and failed preparation preserve the current project and saved result. Save failures keep the existing persistent recovery surface.
 
-**Verification:** close before completion; reopen unchanged and apply once; reopen after another edit and retain that edit; duplicate completion responses; wrong-project result; Undo through the existing history boundary.
+**Verified browser scenarios:** close before controlled completion; full workerd restart; reopen with restored real media and apply once; duplicate application after reload/Undo; Redo; reopen after another edit and preserve it. Shared/server tests additionally cover wrong account/project, immutable replacement, stale completion, atomic storage rollback, byte integrity and retention. This does not claim the later live workspace builder or automatic conflict reconciliation. Component service attachment still waits for 1E.
 
 ## 1B.08 and 1B.09 — Recover completed effects
 

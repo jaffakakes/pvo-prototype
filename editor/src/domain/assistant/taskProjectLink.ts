@@ -1,4 +1,8 @@
 import {
+  parseTaskApplication,
+  type TaskApplication,
+} from "../../../../packages/pvo-assistant/results/index.js";
+import {
   parseTaskReference,
   parseTaskInput,
   replayTaskCreation,
@@ -11,6 +15,7 @@ export type TaskProjectLinks = {
   localId: string;
   accounts: TaskReference[];
   pending?: PendingTaskCreation[];
+  applied?: TaskApplication[];
 };
 
 export type PendingTaskCreation = { ownerId: string; input: TaskInput };
@@ -27,7 +32,7 @@ export function parseTaskProjectLinks(
   const links = value as Record<string, unknown>;
   if (
     Object.keys(links).some(
-      (key) => !["localId", "accounts", "pending"].includes(key),
+      (key) => !["localId", "accounts", "pending", "applied"].includes(key),
     ) ||
     !Object.hasOwn(links, "localId") ||
     !Object.hasOwn(links, "accounts") ||
@@ -80,7 +85,38 @@ export function parseTaskProjectLinks(
   );
   if (!owners.size || owners.size > MAX_TASK_LINK_ACCOUNTS)
     throw new Error("Saved task account limit exceeded.");
-  return { localId, accounts, ...(pending ? { pending } : {}) };
+  let applied: TaskApplication[] | undefined;
+  if (Object.hasOwn(links, "applied")) {
+    if (
+      !Array.isArray(links.applied) ||
+      !links.applied.length ||
+      links.applied.length > 64
+    )
+      throw new Error("Saved result application limit exceeded.");
+    applied = Array.from(links.applied, parseTaskApplication);
+    if (
+      new Set(applied.map((item) => `${item.ownerId}:${item.taskId}`)).size !==
+      applied.length
+    )
+      throw new Error("A saved result can only be applied once.");
+    for (const item of applied)
+      if (
+        !accounts.some(
+          (account) =>
+            account.ownerId === item.ownerId &&
+            account.projectId === item.projectId,
+        )
+      )
+        throw new Error(
+          "An applied result belongs to a different account or project.",
+        );
+  }
+  return {
+    localId,
+    accounts,
+    ...(pending ? { pending } : {}),
+    ...(applied ? { applied } : {}),
+  };
 }
 
 export function taskLinksForProject(
@@ -123,6 +159,7 @@ export function linkProjectTask(
         incoming,
       ],
       ...(current?.pending ? { pending: current.pending } : {}),
+      ...(current?.applied ? { applied: current.applied } : {}),
     },
     localId,
   );
@@ -154,6 +191,7 @@ export function stageProjectTask(
       localId,
       accounts: current?.accounts ?? [],
       pending: [...(current?.pending ?? []), pending],
+      ...(current?.applied ? { applied: current.applied } : {}),
     },
     localId,
   );
@@ -179,6 +217,7 @@ export function completeProjectTask(
   return {
     localId: next.localId,
     accounts: next.accounts,
+    ...(next.applied ? { applied: next.applied } : {}),
     ...(remaining.length ? { pending: remaining } : {}),
   };
 }
@@ -198,8 +237,42 @@ export function discardPendingProjectTask(
     {
       localId: links.localId,
       accounts: links.accounts,
+      ...(links.applied ? { applied: links.applied } : {}),
       ...(pending.length ? { pending } : {}),
     },
+    links.localId,
+  );
+}
+
+/** Old receipts stay outside Undo; reaching the bound must never evict replay protection. */
+export function recordTaskApplication(
+  links: TaskProjectLinks,
+  value: TaskApplication,
+): TaskProjectLinks {
+  const receipt = parseTaskApplication(value);
+  const reference = ownedTaskReference(links, links.localId, receipt.ownerId);
+  if (
+    !reference ||
+    reference.taskId !== receipt.taskId ||
+    reference.projectId !== receipt.projectId
+  )
+    throw new Error("This result is no longer the draft's current saved task.");
+  const previous = links.applied?.find(
+    (item) =>
+      item.ownerId === receipt.ownerId && item.taskId === receipt.taskId,
+  );
+  if (previous) {
+    if (
+      previous.projectId !== receipt.projectId ||
+      previous.artifact.id !== receipt.artifact.id ||
+      previous.artifact.sha256 !== receipt.artifact.sha256 ||
+      previous.artifact.bytes !== receipt.artifact.bytes
+    )
+      throw new Error("This task's result does not match its applied receipt.");
+    return links;
+  }
+  return parseTaskProjectLinks(
+    { ...links, applied: [...(links.applied ?? []), receipt] },
     links.localId,
   );
 }

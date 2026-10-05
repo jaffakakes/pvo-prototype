@@ -1,3 +1,4 @@
+import { SavedTaskResult } from "./SavedTaskResult";
 import { useId, useState } from "react";
 import {
   TASK_LIMITS,
@@ -121,6 +122,9 @@ export function SavedTaskPanel() {
               ))}
           </dl>
         </details>
+      )}
+      {session.task?.state === "ready" && !session.signedOut && (
+        <SavedTaskResult task={session.task} />
       )}
       <div className={styles.actions}>
         {session.signedOut ? (

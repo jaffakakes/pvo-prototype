@@ -6,6 +6,16 @@ export const api = await import(
         resolveDir: process.cwd(),
         contents: `
     export * from './editor/src/domain/assistant/taskProjectLink.ts';
+    export * from './editor/src/domain/project/mediaReferences.ts';
+    export * from './editor/src/domain/assistant/native/context.ts';
+    export * from './editor/src/domain/assistant/native/batch.ts';
+    export * from './editor/src/features/assistant/saved-tasks/applicationWorkflow.ts';
+    export * from './editor/src/state/assistant/taskProjectCommands.ts';
+    export * from './editor/src/state/assistant/taskResultCommands.ts';
+    export * from './editor/src/infrastructure/assistant/savedResultTransport.ts';
+    export { useCapture } from './editor/src/state/captureStore.ts';
+    export { useAuthGate } from './editor/src/state/auth/authGateStore.ts';
+    export { useEditorPreferences } from './editor/src/state/preferences/editorPreferences.ts';
     export * from './editor/src/domain/assistant/cloudTaskInput.ts';
     export * from './editor/src/features/assistant/saved-tasks/creationWorkflow.ts';
     export * from './editor/src/features/assistant/saved-tasks/taskSession.ts';

@@ -1,4 +1,8 @@
-import { saveProjectBeforeUpdate } from "../../../app/projectAutosave";
+import { nativeProjectFingerprint } from "../../../domain/assistant/native/context";
+import {
+  saveProjectBeforeUpdate,
+  persistedProjectSnapshot,
+} from "../../../app/projectAutosave";
 import {
   createSavedTask,
   readSavedTask,
@@ -19,6 +23,8 @@ export const savedTaskCreation = createSavedTaskWorkflow({
   stage: stageSavedTask,
   finish: finishSavedTask,
   flush: saveProjectBeforeUpdate,
+  fingerprint: (project) =>
+    nativeProjectFingerprint(persistedProjectSnapshot(project)),
   resolve: resolveTaskProject,
   create: createSavedTask,
   read: async (reference, signal) => {

@@ -51,6 +51,8 @@ export async function taskFixture({
           return next;
         });
       }
+      failResultWrite() { this.ctx.storage.sql.exec("CREATE TRIGGER reject_result BEFORE INSERT ON task_results BEGIN SELECT RAISE(ABORT, 'storage failure'); END;"); }
+      resultCount() { return this.ctx.storage.sql.exec("SELECT COUNT(*) AS count FROM task_results").one().count; }
       async sweep() { await this.alarm(); return this.inspect(); }
     }
     export default { async fetch(request, env) {
@@ -66,6 +68,9 @@ export async function taskFixture({
           if (action === "time") { await stub.setTime(args.now); return json({ ok: true }); }
           if (action === "inspect") return json(await stub.inspect());
           if (action === "sweep") return json(await stub.sweep());
+          if (action === "fail-result-write") { await stub.failResultWrite(); return json({ ok: true }); }
+          if (action === "results") return json({ count: await stub.resultCount() });
+          if (action === "complete") return json(await stub.completePreparedResult(owner.id, args.id, args.operations, args.guard));
           if (action === "step") return json(await stub.step(owner.id, args.id, args.command, args.expectedRevision));
           return new Response(null, { status: 404 });
         } catch { return json({ error: "Test step conflict" }, 409); }
