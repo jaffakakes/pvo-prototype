@@ -8,35 +8,35 @@ Last checkpoint: **5 October 2026**. Recheck Git and provider state before relyi
 
 | Field | Current value |
 | --- | --- |
-| Latest completed product milestone | **1A — infrastructure proof**; tasks 1A.01 through 1A.06 verified |
-| Next implementation task | **1B.01 — define the saved-task contract and legal state changes** |
-| Next document to follow | [Detailed 1B implementation plan](restyle-cloud-agent-roadmaps/1b-saved-tasks.md) |
-| First concrete action | Inspect the existing assistant contract, account sessions, and project identity; implement bounded shared task validation and pure state-transition tests |
-| Product work in progress | None; 1B implementation has not started |
-| Partial source changes | None left from 1A |
-| Implementation checkout | `/Users/christinasmacbook/.codex/worktrees/restyle-cloud-infrastructure-proof/pvo-prototype` |
-| Current documentation/1A branch | `feature/restyle-cloud-infrastructure-proof` |
-| Last tested implementation commit | `86945592255b3ba55f5b94ab3136ad7e9f71ed50` |
-| Handoff documents | Updated in the documentation commit containing this checkpoint; discover the latest hash with `git log -1` |
-| Review/integration | [PR #80](https://github.com/jaffakakes/pvo-prototype/pull/80) open, ready for review, targets `dev`; not merged at this checkpoint |
-| CI evidence | `test` and `promotion` passed for implementation commit `8694559`; a later docs push may have separate checks |
-| Beta/production | No cloud-builder application feature has been released; 1A changed diagnostics and docs only |
-| Cloud resources | All disposable resources from both full proofs and earlier hosting checks were removed and absence verified |
-| Active task-owned processes | None recorded; inspect actual process/worktree state before reusing or stopping anything |
+| Latest completed milestone | **1A — infrastructure proof**; 1B overall remains in progress |
+| Latest completed task | **1B.01 — shared saved-task contract and legal state changes** |
+| Next implementation task | **1B.02 — link the notebook to the local draft** |
+| Next document to follow | [Detailed 1B implementation plan](restyle-cloud-agent-roadmaps/1b-saved-tasks.md#1b02--link-the-notebook-to-the-local-draft) |
+| First concrete action | Inspect local project checkpoint/persistence, duplication, and account-switch commands; define the minimal owned server-project/task link and its lifecycle |
+| Product work in progress | No unfinished source implementation in this slice; storage, routes, background runner, and UI remain unimplemented |
+| Partial source changes | None after this batch is committed; inspect Git before continuing |
+| Implementation checkout | `/Users/christinasmacbook/.codex/worktrees/restyle-saved-task-contract/pvo-prototype` |
+| Current implementation branch | `feature/restyle-saved-task-contract`, based on `origin/dev` at `e8e044c` |
+| Tested source | `949b9f344874c13aecbfa8a22b234a52caa3b649`; `packages/pvo-assistant/tasks/`, `tests/assistant-tasks/`, and the adopted formatting list |
+| Review/integration | [PR #81](https://github.com/jaffakakes/pvo-prototype/pull/81) open against `dev`; 1B.01 committed and pushed. Prior PR #80 merged into `dev` at `e8e044c` |
+| CI evidence | 1B.01 [test run](https://github.com/jaffakakes/pvo-prototype/actions/runs/37328881452) in progress at this checkpoint; local `npm run check` passed with 1,131 tests. Inspect latest PR checks before integration |
+| Beta/production | No new app behavior or deployment in 1B.01; its shared module has no application consumer yet |
+| Cloud resources | No resources created for 1B.01. All disposable 1A resources were removed and absence verified |
+| Active task-owned processes | Verification completed; no task server or provider process started |
 | Access | Workers Paid enabled; native Containers and Dynamic Workers proven; optional dispatch unavailable and unnecessary |
-| Immediate access blocker | None for task-contract work |
-| Integration dependency | Check PR #80 before dependent provider work; start new implementation from current `origin/dev` under the release workflow |
-| Existing user changes | Desktop checkout has pending generated `dist/` changes; preserve them. Its readable docs, new CLAUDE.md, and updated AGENTS.md handoff instructions are deliberate local copies backed by this PR |
+| Immediate access blocker | None for 1B.02 |
+| Integration dependency | Integrate the 1B.01 PR into `dev` through the normal process before branching for its dependent 1B.02 implementation |
+| Existing user changes | Desktop checkout has pending generated `dist/` changes; preserved. Its readable docs, CLAUDE.md, and AGENTS.md instructions are deliberate local snapshots |
 
 ### The next working session
 
 1. Read root instructions, this checkpoint, and the [restart guide](restyle-cloud-agent-handoff.md).
-2. Inspect working directory, `git status`, worktrees, current remote refs, and PR #80. Do not redo completed 1A simply because another checkout lacks its files.
-3. Read [1B.01](restyle-cloud-agent-roadmaps/1b-saved-tasks.md#1b01--define-the-record-and-legal-changes), [native assistant contract](../../packages/pvo-assistant/native/index.d.ts), [account sessions](../../server/auth/sessions.js), and [thread store](../../editor/src/state/assistant/threadStore.ts).
-4. Define owner/project/task identity, state transitions, field bounds, duplicate-operation rules, and stale-revision behavior. Record chosen values before storage/UI work. Add pure behavior tests in a focused test file.
-5. Verify that slice, check **1B.01** only if its full criteria pass, then update this checkpoint to **1B.02** or the concrete remaining part of 1B.01.
+2. Inspect working directory, `git status`, worktrees, remote refs, and the current PR. Do not redo completed 1A or 1B.01 because another checkout lacks its files.
+3. Read [1B.02](restyle-cloud-agent-roadmaps/1b-saved-tasks.md#1b02--link-the-notebook-to-the-local-draft), the [implemented task contract](../../packages/pvo-assistant/tasks/README.md), [local persistence](../../editor/src/infrastructure/projectPersistence/index.ts), [project session actions](../../editor/src/state/project/sessionActions.ts), and [thread store](../../editor/src/state/assistant/threadStore.ts).
+4. Define how a local draft keeps an owned server project association and task reference without uploading its media. A rename preserves identity; a copy gets a distinct association by default; account/project switches must clear private visible data and reject late responses.
+5. Implement through existing persistence and named commands, add meaningful lifecycle tests, run affected editor/browser checks, and deliver app changes through the beta procedure. Mark **1B.02** only after its criteria pass, then record the exact next task.
 
-No cloud deployment is needed for the first contract slice. The rest of 1B includes real persistence, owned routes, background execution, editor return/reload behavior, reconciliation, browser verification, and beta delivery. Designing the record alone does not complete 1B.
+No cloud deployment was needed for 1B.01. The rest of 1B includes real persistence, owned routes, background execution, editor return/reload behavior, reconciliation, browser verification, and beta delivery. Defining the record does not make a task survive closing the editor.
 
 ## Decisions already made
 
@@ -54,13 +54,16 @@ No cloud deployment is needed for the first contract slice. The rest of 1B inclu
 | Record unknown external outcomes | A timed-out request may have succeeded; reconcile before retrying a booking, message, or deployment |
 | Update progress after each verified task | This user explicitly requested a handoff that another coding agent can resume |
 
-Open design choices for **1B.01–1B.05**: exact shared field names and limits, task/project indexing, storage/coordinator layout, retry and retention policy, model budget reservation, and the minimal saved-task UI. The detailed 1B plan offers a starting design; these are not yet implemented contracts.
+The [1B.01 contract](../../packages/pvo-assistant/tasks/README.md) now fixes shared fields, byte/count limits, task deadlines/retention, retries, claims, receipts, and per-task usage reservations. Open choices for **1B.02–1B.05** are the project association lifecycle, task/project index, storage/coordinator layout, account-wide budget integration, and minimal saved-task UI. Later routes and storage names in the detailed plan remain proposals.
 
 ## Verification and known limits
 
 | Evidence | Result |
 | --- | --- |
-| `npm run check` at `8694559` | Passed: 518 JavaScript source modules, 703 dependency-boundary modules, 129 adopted formatting files, 1,108 Node tests |
+| `npm run check` for 1B.01 | Passed: 531 JavaScript source modules, 712 dependency-boundary modules, 144 adopted formatting files, 1,131 Node tests, including 23 saved-task tests |
+| `npm run build:language` for test prerequisites | Passed; generated ignored WASM bindings in the isolated implementation checkout |
+| Contract-only verification limits | No storage restart, HTTP ownership, provider reconciliation, or real editor journey claimed; these require later adapters |
+| `npm run check` at `8694559` (1A history) | Passed: 518 JavaScript source modules, 703 dependency-boundary modules, 129 adopted formatting files, 1,108 Node tests |
 | Focused infrastructure/runtime tests | Eight passed, including persistence across runtime restart, immutable release, isolation, concurrent quota, expiry, and deadline cleanup |
 | First full provider proof | 5 Oct, 13:08:07–13:09:38 UTC; passed; cleanup verified |
 | Final provider proof | 5 Oct, 13:13:45–13:15:06 UTC; passed; source hashes matched the final tested Worker sources; cleanup verified |
@@ -95,6 +98,19 @@ Append new entries here after verified tasks. Keep old evidence when requirement
 - **Verification:** local Markdown links/anchors, unique task IDs, unchanged completed-task set, existing source references, and factual Git/PR state checked. This is documentation work; no product tests or cloud deployments were rerun for it.
 - **Commit:** the documentation commit containing this entry; PR #80.
 - **Next:** 1B.01 remains unimplemented and unchecked.
+
+### 2026-10-05 — 1B.01 complete
+
+- **Plain-English outcome:** the agent now has a defined notebook format and rules for updating it. It can represent the original request, follow-up answers, progress, completed/uncertain actions, and a prepared result. The notebook is not yet connected to a database or the editor.
+- **Contract:** `packages/pvo-assistant/tasks/index.js` and `index.d.ts`; focused modules for record validation, nested content, operation receipts, limits, guards, and transitions. Owner metadata comes from trusted adapters; inputs cannot assign an owner. Clocks, identifiers, hashes, authorization, and effects remain outside the domain module.
+- **Chosen bounds:** 128 KiB input / 256 KiB record, 16 questions / 64 receipts, 1 MiB referenced artifacts, 24-hour task deadline, seven-day retention from creation, 60-second claims, three retries, six model turns / 24 tool calls including reservations. Full field limits and semantics are in the contract guide.
+- **Recovery rules:** reject changed duplicate input and stale revisions/claims; keep uncertain effects and reserved usage across interruptions; prevent another intent before reconciliation; retain unanswered questions after cancellation/expiry; allow trusted bookkeeping of existing effects after Stop without restarting work. Due queued wakeups remain due when their receipts are reconciled.
+- **Files:** `packages/pvo-assistant/tasks/`, `packages/pvo-assistant/README.md`, `tests/assistant-tasks/`, `scripts/checks/formatting-scope.json`, and the cloud-agent roadmap/progress/handoff documents. No app consumer, static-copy, or package publication-list change was needed for this unused shared module.
+- **Checks:** `npm run build:language` passed for existing WASM prerequisites. Final `npm run check` passed: 531 JavaScript modules, 712 dependency modules, 144 formatting files, and 1,131 tests. The total includes 23 saved-task cases covering bounded validation, lifecycle, uncertainty, cancellation, expiry, wakeups, and public TypeScript declarations. The earlier standalone saved-task run passed 22 cases before the final queued-wakeup regression was added. Documentation verification passed: 98 local links across seven changed Markdown files, 121 unique roadmap IDs, and only 1B.01 newly checked. `git diff --check` passed.
+- **Not run:** app build/beta delivery, browser journey, real cloud proof, and storage tests; this slice has no app integration, provider changes, or persistence. No production release. Full 1B acceptance remains unchecked.
+- **Resources/workspace:** no cloud resources or service processes created. Desktop generated output preserved; changes built and checked in the isolated focused worktree. Temporary dependency symlink used only for checks and removed afterward; run `npm ci` when resuming.
+- **Integration:** prior PR #80 merged into `dev` at `e8e044cc97f7ad4b35a03e846b32b377e01d3d1d`; this focused branch starts there. Source and completion evidence are committed at `949b9f344874c13aecbfa8a22b234a52caa3b649`. [PR #81](https://github.com/jaffakakes/pvo-prototype/pull/81) is open against `dev`; a following documentation commit records its URL. Implementation is complete; review/merge and later app releases are separate.
+- **Next:** **1B.02**, persist the minimal local-draft association with an owned server project/task identity. Inspect project persistence, duplication, and account-switch behavior first. Resolve the 1B.01 integration dependency before starting its implementation branch.
 
 ## Template for the next evidence entry
 

@@ -29,9 +29,11 @@ Build this before committing to a provider-specific implementation.
 
 ## 1B. Save the task and its questions
 
+**Progress:** 1B.01 verified. The [shared contract](../../../packages/pvo-assistant/tasks/README.md) exists; next is 1B.02. Storage, runner, UI, and the full milestone acceptance remain incomplete.
+
 The task record is the agent's notebook. It must be saved on the server. Follow the [detailed 1B implementation plan](1b-saved-tasks.md) for contracts, build order, and failure tests.
 
-- [ ] **1B.01** Define one shared task contract: owner, project identity, original request, expected behavior examples, bounded component context, project fingerprint, current step, questions, answers, completed tool results, and resource references.
+- [x] **1B.01** Define one shared task contract: owner, project identity, original request, expected behavior examples, bounded component context, project fingerprint, current step, questions, answers, completed tool results, and resource references.
 - [ ] **1B.02** Keep the local draft linked to that identity without requiring the whole video project to be uploaded. A project copy needs an explicit decision about whether it shares or creates a service.
 - [ ] **1B.03** Add authenticated create, read, answer, resume, and stop operations. Check ownership on every operation.
 - [ ] **1B.04** Run cloud-building work through a saved server task that can continue across separate requests. Preserve ordinary editor edits through the current editing command path.

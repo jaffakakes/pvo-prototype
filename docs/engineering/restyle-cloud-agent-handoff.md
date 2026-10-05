@@ -32,7 +32,7 @@ At the initial handoff on **5 October 2026**:
 | Integration base at handoff | `origin/dev` at `19cd06516a959c5b7bfb7779c9ee8bb86106e271` |
 | Desktop checkout | `/Users/christinasmacbook/Desktop/pvo-prototype`, detached, with existing pending `dist/` changes |
 
-These are a dated snapshot. Fetch and inspect current state; do not assume the branch is still open, missing, or unmerged. Updated handoff documents can be committed after the tested implementation commit.
+These are the initial snapshot. **Update after 1B.01:** PR #80 is merged into `dev` at `e8e044c`. The active contract branch is `feature/restyle-saved-task-contract`, in `/Users/christinasmacbook/.codex/worktrees/restyle-saved-task-contract/pvo-prototype`. Read the progress checkpoint for its current PR and commit. Fetch and inspect current state before continuing; updated handoff documents can be committed after the tested implementation commit.
 
 Start with read-only checks:
 
@@ -45,13 +45,13 @@ git log -5 --oneline
 gh pr view 80 --json state,headRefName,headRefOid,baseRefName,statusCheckRollup
 ```
 
-On this Mac, open the implementation checkout to inspect the actual 1A code. The Desktop copies make documentation easy to open; they do not mean the Desktop checkout contains the implementation. Preserve existing generated assets and other agents' work.
+On this Mac, open the current implementation checkout named in the progress file to inspect the actual code. The Desktop copies make documentation easy to open; they do not mean the Desktop checkout contains the implementation. Preserve existing generated assets and other agents' work.
 
 The authoritative progress is the version on the active implementation branch, then the integration branch after merge. Desktop copies are readable snapshots. At a handoff on this Mac, refresh those copies only after checking that they have not been edited independently; otherwise preserve both changes and reconcile them. When the working branch changes, update the checkpoint's branch and checkout instead of treating this initial path as permanent.
 
-On another machine, clone the repository normally and fetch its branches. Inspect PR #80 to find the latest branch or merged successor. The committed code, checklists, and recorded evidence are sufficient to resume; ignored local receipts may be absent. Missing private logs are not a reason to recreate already completed paid resources.
+On another machine, clone the repository normally and fetch its branches. Inspect the PR named in the current progress file to find the latest branch or merged successor. The committed code, checklists, and recorded evidence are sufficient to resume; ignored local receipts may be absent. Missing private logs are not a reason to recreate already completed paid resources.
 
-Follow the [branch workflow](environments.md) for new implementation: use current `origin/dev` and a focused branch. If required 1A changes have not entered `dev`, record and resolve that integration dependency through the normal PR process. Do not silently treat the feature branch as production or accumulate later milestones there. Contract design and source inspection for 1B can proceed while that dependency is resolved.
+Follow the [branch workflow](environments.md) for new implementation: use current `origin/dev` and a focused branch. If a required prior slice has not entered `dev`, record and resolve that integration dependency through the normal PR process. Do not silently treat a feature branch as production or accumulate later milestones there.
 
 ## What has actually been completed
 
@@ -59,7 +59,7 @@ Follow the [branch workflow](environments.md) for new implementation: use curren
 
 The implementation uses native Cloudflare Containers for the workshop and Dynamic Workers for the hosted service. The user enabled Workers Paid. Optional Workers for Platforms dispatch is not required. The proof is a fixed diagnostic under `scripts/checks/cloud-agent-infrastructure/`; it is not the product's model-driven builder.
 
-**1B onward remains unimplemented.** Restyle's editor cannot yet ask this new workshop to build a feature. The current assistant thread is session-only, and its native editing path rejects new or changed network effects. A prompt change alone will not enable backend attachment.
+**1B.01 is implemented and verified:** bounded task records, pure state transitions, question/receipt replay rules, execution claims, reservations, cancellation, and expiry. Read [the contract](../../packages/pvo-assistant/tasks/README.md). **Next is 1B.02; 1B overall remains incomplete.** There is no task storage, background runner, or new editor UI yet. Restyle's editor cannot yet ask this workshop to build a feature. The current assistant thread is session-only, and its native editing path rejects new or changed network effects. A prompt change alone will not enable backend attachment.
 
 The [evidence document](restyle-cloud-infrastructure-proof.md) records exact resources, costs, limits, and known verification limits. Its local receipts are supplementary; the repository document is the portable summary.
 
