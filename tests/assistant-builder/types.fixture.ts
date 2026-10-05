@@ -1,5 +1,13 @@
 import {
   type BuilderTool,
+  type BuilderDecision,
+  type BuilderState,
+  newBuilderState,
+  builderStage,
+  acceptBuilderDecision,
+  beginBuilderBatch,
+  nextBuilderTool,
+  recordBuilderTool,
   type BuilderReadResult,
   parseBuilderTool,
   parseBuilderReadResult,
@@ -27,3 +35,18 @@ const check: BuilderTool = {
   path: "src/service.mjs",
 };
 void [tool, result, definitions, shell, write, check];
+
+const initial: BuilderState = newBuilderState();
+const question: BuilderDecision = {
+  kind: "ask",
+  prompt: "Which date?",
+  choices: [],
+};
+const saved: BuilderState = acceptBuilderDecision(initial, question, null);
+const stage: "model" | "tools" | "review" = builderStage(saved);
+const batch = beginBuilderBatch(saved, 3);
+const position = nextBuilderTool(batch);
+if (position) recordBuilderTool(batch, position, { status: "completed" });
+// @ts-expect-error model decisions cannot approve deployment
+const deployment: BuilderDecision = { kind: "complete", ready: true };
+void [stage, deployment];

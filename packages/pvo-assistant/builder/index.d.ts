@@ -45,3 +45,87 @@ export function parseBuilderReadResult(
   value: unknown,
 ): BuilderReadResult;
 export function serializeBuilderTool(value: unknown): string;
+export type BuilderDecision =
+  | {
+      kind: "agreement";
+      agreement: import("../services/index.js").ServiceAgreement;
+    }
+  | { kind: "ask"; prompt: string; choices: string[] }
+  | {
+      kind: "tools";
+      calls: BuilderTool[];
+      review: Extract<BuilderDecision, { kind: "review" }> | null;
+    }
+  | {
+      kind: "review";
+      revision: number;
+      digest: string;
+      entrypoint: string;
+      tests: string[];
+    };
+export const BUILDER_LIMITS: Readonly<{
+  batchCalls: number;
+  decisionBytes: number;
+  feedbackBytes: number;
+  promptBytes: number;
+}>;
+export function parseBuilderDecision(
+  value: unknown,
+  stage: { hasAgreement: boolean; available: readonly BuilderTool["kind"][] },
+): BuilderDecision;
+export function builderDecisionSchema(
+  hasAgreement: boolean,
+  definitions: ReturnType<typeof builderToolDefinitions>,
+): object;
+
+export type BuilderState = {
+  round: number;
+  agreement: {
+    digest: string;
+    body: import("../services/index.js").ServiceAgreement;
+  } | null;
+  decision: BuilderDecision | null;
+  cursor: number;
+  claimGeneration: number | null;
+  batchEnd: "completed" | "failed" | "interrupted" | null;
+  feedback: Array<{
+    operationId: string;
+    kind: BuilderTool["kind"];
+    result: unknown;
+  }>;
+  omittedFeedback: number;
+};
+export type BuilderPosition = {
+  round: number;
+  index: number;
+  operationId: string;
+  tool: BuilderTool;
+};
+export function newBuilderState(): BuilderState;
+export function parseBuilderState(value: unknown): BuilderState;
+export function builderStage(value: BuilderState): "model" | "tools" | "review";
+export function acceptBuilderDecision(
+  value: BuilderState,
+  decision: BuilderDecision,
+  agreementDigest: string | null,
+): BuilderState;
+export function beginBuilderBatch(
+  value: BuilderState,
+  generation: number,
+): BuilderState;
+export function nextBuilderTool(value: BuilderState): BuilderPosition | null;
+export function recordBuilderTool(
+  value: BuilderState,
+  position: BuilderPosition,
+  result: unknown,
+  halt?: boolean,
+): BuilderState;
+export function interruptBuilderBatch(value: BuilderState): BuilderState;
+export function builderContext(value: BuilderState): {
+  agreement: BuilderState["agreement"];
+  round: number;
+  lastDecision: unknown;
+  batchEnd: BuilderState["batchEnd"];
+  feedback: BuilderState["feedback"];
+  omittedFeedback: number;
+};

@@ -126,6 +126,7 @@ export class TaskAttempts {
       toolCalls: 0,
       consumed: attempt.dispatched,
     });
+    let accepted = false;
     if (current) {
       try {
         apply(
@@ -133,6 +134,7 @@ export class TaskAttempts {
             ? { kind: "fail", failure: { code, stepId: task.stepId } }
             : command,
         );
+        accepted = !code;
       } catch {
         apply({
           kind: "fail",
@@ -142,6 +144,7 @@ export class TaskAttempts {
     }
     this.tasks.save(task, revision);
     this.write({ ...attempt, finished: true, budgetRetryAt: now });
+    return accepted;
   }
 
   recover(now) {

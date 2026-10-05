@@ -1,3 +1,6 @@
+import { TaskBuilders } from "../builder/repository.js";
+import { planSavedBuild } from "../builder/planner.js";
+import { runBuilderBatch } from "../builder/runner.js";
 import { taskWorkspaceTools } from "../builder/taskTools.js";
 import { WorkspaceOperations } from "./workspaceOperations.js";
 import { workspaceProvider } from "./workspaceProvider.js";
@@ -40,6 +43,7 @@ export class AssistantTasks extends DurableObject {
     this.providers = new ProviderOperations(ctx.storage.sql, this.repository);
     this.workspaces = new WorkspaceOperations(ctx.storage.sql, this.repository);
     this.attempts = new TaskAttempts(ctx.storage.sql, this.repository);
+    this.builders = new TaskBuilders(ctx.storage.sql, this.repository);
     this.active = new Map();
   }
 
@@ -70,6 +74,7 @@ export class AssistantTasks extends DurableObject {
       this.noteTerminal(now);
       repository.maintain(now, this.heldTasks());
       this.results.prune();
+      this.builders.prune(now);
       let result;
       try {
         result = this.ctx.storage.transactionSync(() => {
@@ -246,7 +251,15 @@ export class AssistantTasks extends DurableObject {
   plannerAvailable() {
     return savedPlannerAvailable(this.env);
   }
-  plan(task, signal) {
+  plan(task, signal, input) {
+    if (task.stepId === "build")
+      return planSavedBuild(
+        task,
+        input.build,
+        this.workspaceToolDefinitions(),
+        this.env,
+        signal,
+      );
     return planSavedTask(task, this.env, signal);
   }
 
@@ -273,6 +286,7 @@ export class AssistantTasks extends DurableObject {
     this.repository.maintain(now, this.heldTasks());
     this.attempts.prune();
     this.results.prune();
+    this.builders.prune(now);
     for (let task of this.repository.records()) {
       if (task.state === "running" && task.claim.expiresAt <= now) {
         const recovered = transitionTask(
@@ -287,6 +301,38 @@ export class AssistantTasks extends DurableObject {
         );
         this.repository.save(recovered, task.revision);
         task = recovered;
+      }
+      if (
+        task.state === "failed" &&
+        task.failure.code === "reconciliation_required" &&
+        task.stepId === "build" &&
+        this.builders.stage(task.id) === "tools" &&
+        now < task.deadlineAt &&
+        task.retries < TASK_LIMITS.retries &&
+        !this.awaiting(task.id) &&
+        !task.usage.reservedModelTurns &&
+        !task.usage.reservedToolCalls &&
+        !task.operations.some((operation) =>
+          ["unknown", "planned"].includes(operation.status),
+        ) &&
+        this.workspaces.link(task.id)?.cleaned
+      ) {
+        try {
+          task = this.repository.update(
+            task.id,
+            { kind: "resume" },
+            {
+              ownerId: task.ownerId,
+              expectedRevision: task.revision,
+              now,
+              claim: null,
+            },
+          );
+        } catch (error) {
+          if (!(error instanceof HttpError) || error.status !== 429)
+            throw error;
+          continue; // Keep the retry until active-task capacity becomes available.
+        }
       }
       if (
         task.state !== "queued" ||
@@ -304,6 +350,9 @@ export class AssistantTasks extends DurableObject {
           claim: null,
         },
       );
+      const tools =
+        claimed.stepId === "build" &&
+        this.builders.stage(claimed.id) !== "model";
       let code = null;
       if (
         claimed.operations.some((operation) =>
@@ -313,9 +362,13 @@ export class AssistantTasks extends DurableObject {
         claimed.usage.reservedToolCalls
       )
         code = "reconciliation_required";
-      else if (claimed.stepId !== "plan" || !this.plannerAvailable())
+      else if (
+        !["plan", "build"].includes(claimed.stepId) ||
+        (claimed.stepId === "build" && !this.workspaceProvider()) ||
+        (!tools && !this.plannerAvailable())
+      )
         code = "provider_unavailable";
-      else if (claimed.usage.modelTurns >= TASK_LIMITS.modelTurns)
+      else if (!tools && claimed.usage.modelTurns >= TASK_LIMITS.modelTurns)
         code = "budget_exceeded";
       if (code) {
         this.repository.update(
@@ -366,13 +419,19 @@ export class AssistantTasks extends DurableObject {
     for (let index = 0; index < 2; index++) {
       const claimed = await this.transaction(() => this.claimNext());
       if (!claimed) break;
-      await runAuthoringStep(this, claimed);
+      if (
+        claimed.stepId === "build" &&
+        this.builders.stage(claimed.id) !== "model"
+      )
+        await runBuilderBatch(this, claimed);
+      else await runAuthoringStep(this, claimed);
     }
     await settleAuthoringBudgets(this);
     await this.transaction(() => {
       this.attempts.prune();
       this.providers.prune();
       this.workspaces.prune(this.now());
+      this.builders.prune(this.now());
     });
   }
 }

@@ -47,9 +47,9 @@ export async function taskFixture({
       plannerAvailable() { return this.env.CONTROLLED_PLAN ? true : super.plannerAvailable(); }
       stepTimeoutMs() { return this.env.CONTROLLED_PLAN ? 1000 : super.stepTimeoutMs(); }
       leaseMs() { return this.env.CONTROLLED_PLAN ? 1500 : super.leaseMs(); }
-      async plan(task, signal) {
-        if (!this.env.CONTROLLED_PLAN) return super.plan(task, signal);
-        return (await this.env.PLANNER.fetch("https://planner.test/", { method: "POST", body: JSON.stringify(task), signal })).json();
+      async plan(task, signal, input) {
+        if (!this.env.CONTROLLED_PLAN) return super.plan(task, signal, input);
+        return (await this.env.PLANNER.fetch("https://planner.test/", { method: "POST", body: JSON.stringify({ ...task, builderContext: input?.build ?? null }), signal })).json();
       }
       providerTimeoutMs() { return 500; }
       serviceProvider() {
@@ -91,6 +91,7 @@ export async function taskFixture({
         };
         return Object.fromEntries(["operate", "receipt", "lookup", "suspend", "stop"].map(action => [action, (...args) => call(action, ...args)]));
       }
+      builderState(id) { return this.builders.get(id); }
       disableWorkspaces() { this.workspacesDisabled = true; }
       async reconcileWorkspaces() { await reconcileTaskWorkspaces(this); return this.workspaceRows(); }
       workspaceRows() { return { operations: this.workspaces.entries(), links: this.workspaces.links() }; }
@@ -133,6 +134,7 @@ export async function taskFixture({
         const { action, ...args } = await request.json();
         const stub = env.ASSISTANT_TASKS.getByName("owner:" + owner.id);
         try {
+          if (action === "builder-state") return json(await stub.builderState(args.id));
           if (action === "workspace-tools") return json(await stub.workspaceToolDefinitions());
           if (action === "workspace-tool") return json(await stub.workspaceTool(owner.id, args.id, args.tool, args.operationId, args.guard));
           if (action === "workspace") return json(await stub.workspaceOperation(owner.id, args.id, args.kind, args.request, args.guard));

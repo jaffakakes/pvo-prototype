@@ -3,7 +3,10 @@ import { AssistantWorkspace } from "../../server/assistant/workspaces/coordinato
 import { WorkspaceBudget } from "../../server/assistant/workspaces/budget.js";
 export class TestBudget extends WorkspaceBudget {
   now() {
-    return this.clock ?? Date.UTC(2100, 0, 1);
+    return (
+      this.clock ??
+      (this.env.CONTROLLED_PLAN ? Date.now() : Date.UTC(2100, 0, 1))
+    );
   }
   setTime(now) {
     this.clock = now;
@@ -27,7 +30,10 @@ export class TestWorkspace extends AssistantWorkspace {
     );
   }
   now() {
-    return this.clock ?? Date.UTC(2100, 0, 1);
+    return (
+      this.clock ??
+      (this.env.CONTROLLED_PLAN ? Date.now() : Date.UTC(2100, 0, 1))
+    );
   }
   setTime(now) {
     this.clock = now;
