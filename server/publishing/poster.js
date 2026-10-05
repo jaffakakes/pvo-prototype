@@ -9,9 +9,19 @@ export function isWebp(bytes) {
   return text.startsWith("RIFF") && text.slice(8, 12) === "WEBP";
 }
 
+export function isPng(bytes) {
+  const signature = [137, 80, 78, 71, 13, 10, 26, 10];
+  return bytes.length >= signature.length && signature.every((value, index) => bytes[index] === value);
+}
+
+export function isPosterImage(bytes, type) {
+  return type === "image/webp" ? isWebp(bytes) : type === "image/png" && isPng(bytes);
+}
+
 async function readPoster(request) {
   const type = request.headers.get("Content-Type")?.split(";", 1)[0].trim().toLowerCase();
-  if (type !== "image/webp") throw new HttpError(415, "The cover must be a WebP image.");
+  if (type !== "image/webp" && type !== "image/png")
+    throw new HttpError(415, "The cover must be a WebP or PNG image.");
   const declared = request.headers.get("Content-Length");
   if (declared !== null && (!Number.isSafeInteger(Number(declared)) || Number(declared) > MAX_POSTER_BYTES))
     throw new HttpError(413, "The cover image is too large.");
@@ -36,18 +46,18 @@ async function readPoster(request) {
   const bytes = new Uint8Array(size);
   let offset = 0;
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
-  if (!isWebp(bytes)) throw new HttpError(415, "The cover image is not a WebP file.");
-  return bytes;
+  if (!isPosterImage(bytes, type)) throw new HttpError(415, "The cover image does not match its image type.");
+  return { bytes, type };
 }
 
 /** A ready publication may receive one immutable owner-uploaded poster. */
 export async function uploadPoster(request, env, publication) {
   if (publication.status !== "ready") throw new HttpError(409, "Upload the exported file before its cover.");
-  const bytes = await readPoster(request);
+  const { bytes, type } = await readPoster(request);
   const key = posterKey(publication.id);
   const saved = await env.MEDIA.put(key, bytes, {
     onlyIf: { etagDoesNotMatch: "*" },
-    httpMetadata: { contentType: "image/webp" },
+    httpMetadata: { contentType: type },
   });
   if (!saved && !await env.MEDIA.head(key))
     throw new HttpError(503, "The cover image could not be saved. Please retry.");

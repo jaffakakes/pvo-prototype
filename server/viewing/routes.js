@@ -37,7 +37,7 @@ export async function readPoster(request, env, id) {
     : await env.MEDIA.get(posterKey(id));
   if (!object) return notFound();
   return new Response(request.method === "HEAD" ? null : object.body, { headers: {
-    "Content-Type": "image/webp", "Content-Length": String(object.size),
+    "Content-Type": object.httpMetadata?.contentType || "image/webp", "Content-Length": String(object.size),
     "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff",
   } });
 }

@@ -84,10 +84,27 @@ export async function captureCoverFrame(scene: Scene, ratio: Ratio, at: number, 
           paintCoverComponent(context, width, height, component, time);
       },
     });
-    const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/webp", .9));
-    if (!blob || !blob.size || blob.type !== "image/webp")
-      throw new Error("This browser could not create the cover image.");
-    return blob;
+    const maxBytes = 5 * 1024 * 1024;
+    const encode = (source: HTMLCanvasElement, type: string) =>
+      new Promise<Blob | null>(resolve => source.toBlob(resolve, type, .9));
+    const webp = await encode(canvas, "image/webp");
+    if (webp?.type === "image/webp" && webp.size > 0 && webp.size <= maxBytes) return webp;
+    // Safari may return PNG for an unsupported WebP request. Keep that image when it fits;
+    // otherwise scale the same painted frame before encoding a smaller PNG.
+    if (webp?.type === "image/png" && webp.size > 0 && webp.size <= maxBytes) return webp;
+    for (const shortEdge of [768, 540, 360]) {
+      signal?.throwIfAborted();
+      const scaled = document.createElement("canvas");
+      const scale = shortEdge / Math.min(width, height);
+      scaled.width = Math.round(width * scale);
+      scaled.height = Math.round(height * scale);
+      const scaledContext = scaled.getContext("2d");
+      if (!scaledContext) break;
+      scaledContext.drawImage(canvas, 0, 0, scaled.width, scaled.height);
+      const png = await encode(scaled, "image/png");
+      if (png?.type === "image/png" && png.size > 0 && png.size <= maxBytes) return png;
+    }
+    throw new Error("This browser could not create the cover image.");
   } finally {
     fonts.dispose();
     video?.pause();

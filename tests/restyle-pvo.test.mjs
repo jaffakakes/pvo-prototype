@@ -87,5 +87,22 @@ test("a selected WebP cover is an independently referenced PVO poster asset", as
   assert.match(validatePvo({ ...manifest, poster: { ...manifest.poster, asset_id: "video" } }).errors.join(" "), /separate/);
   await assert.rejects(packPvoProject({ manifest, assets: [
     { id: "video", blob: video }, { id: "poster", blob: new Blob(["image"], { type: "image/png" }) },
-  ] }), /WebP image/);
+  ] }), /match its declared image type/);
+});
+
+test("a PNG cover can be packaged and inspected with its declared image type", async () => {
+  const manifest = {
+    spec_version: "0.1-prototype",
+    scenes: [{ id: "main", start: 0, end: 1, asset_id: "video" }],
+    components: [],
+    media: [{ id: "video", asset_id: "video", type: "video/mp4" }],
+    poster: { asset_id: "poster", at: 0, type: "image/png" },
+  };
+  const file = await packPvoProject({ manifest, assets: [
+    { id: "video", blob: new Blob(["video"], { type: "video/mp4" }) },
+    { id: "poster", blob: new Blob(["png"], { type: "image/png" }) },
+  ] });
+  const result = await readPvoProject(file);
+  assert.equal(result.validation.valid, true);
+  assert.equal(result.manifest.poster.type, "image/png");
 });
