@@ -133,6 +133,8 @@ export async function taskFixture({
         const { action, ...args } = await request.json();
         const stub = env.ASSISTANT_TASKS.getByName("owner:" + owner.id);
         try {
+          if (action === "workspace-tools") return json(await stub.workspaceToolDefinitions());
+          if (action === "workspace-tool") return json(await stub.workspaceTool(owner.id, args.id, args.tool, args.operationId, args.guard));
           if (action === "workspace") return json(await stub.workspaceOperation(owner.id, args.id, args.kind, args.request, args.guard));
           if (action === "workspace-rows") return json(await stub.workspaceRows());
           if (action === "workspace-reconcile") return json(await stub.reconcileWorkspaces());

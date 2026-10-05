@@ -4,9 +4,9 @@
 
 ## Current implementation
 
-**1C.01/1C.02/1C.03/1C.09 are verified.** The shared contract has a behavior agreement and a separate source package. Each operation declares its inputs, result, audience and storage access. Ordered examples describe expected results and state changes. The source package refers to the exact saved agreement digest. Contract parsing cannot grant permissions or mark a service ready.
+**1C.01/1C.02/1C.03/1C.04/1C.09 are verified.** The shared contract has a behavior agreement and a separate source package. Each operation declares its inputs, result, audience and storage access. Ordered examples describe expected results and state changes. The source package refers to the exact saved agreement digest. Contract parsing cannot grant permissions or mark a service ready.
 
-The workspace core and saved-task integration are verified in `packages/pvo-assistant/workspaces/` and `server/assistant/workspaces/`: durable source/receipts, stable resource identity, bounded commands, global compute reservations and cleanup. See the [workspace contract](../../../packages/pvo-assistant/workspaces/README.md). Actual native Container acceptance has passed and cleanup is verified. Saved-task claim/revocation, operation/usage journals and Stop/deadline cleanup now pass local restart/RPC tests. Model tool advertising and construction remain pending.
+The workspace core and saved-task integration are verified in `packages/pvo-assistant/workspaces/` and `server/assistant/workspaces/`: durable source/receipts, stable resource identity, bounded commands, global compute reservations and cleanup. See the [workspace contract](../../../packages/pvo-assistant/workspaces/README.md). Actual native Container acceptance has passed and cleanup is verified. Saved-task claim/revocation, operation/usage journals and Stop/deadline cleanup now pass local restart/RPC tests. Seven task-owned bounded tool definitions/adapters are also verified. Model construction remains pending.
 
 The remaining numbered tasks are unchecked. This document records decisions for their code and tests; the model-driven build and independent test approval are still unfinished.
 
@@ -60,3 +60,15 @@ Exercise owner/task isolation; concurrent starts; lost start/command replies; ac
 Before any new paid acceptance run, record exact resource names, count, lifetime, call bounds, expected charges and cleanup responsibility. The approved US$15 recovery batch is already complete; do not silently reuse its approval for a new Container/model batch. Complete local code and tests first so any remaining spending decision is concrete.
 
 The [workspace provider verification plan](../restyle-workspace-provider-proof.md) records the prepared disposable diagnostic, limits, proposed test ceiling and cleanup procedure. The first approved real provider run passed on 5 October 2026; all disposable resources were removed and their absence verified. The evidence records the exact source, bundle and resources.
+
+## 1C.05 continuation notes
+
+The [builder tools](../../../packages/pvo-assistant/builder/README.md) are implemented. `taskWorkspaceTools(coordinator, claimed)` supplies availability-filtered definitions and metered invocation; `AssistantTasks.workspaceTool` is a guarded private entry point used by tests. No model-driven batch is connected yet.
+
+Persist a separate immutable agreement before generated source. Save each model response and its planned tool IDs before dispatch; the model must not choose owner/grant/operation IDs. Store batch position and actual feedback durably. The task workspace journal already reconciles lost replies; consume its saved receipt instead of replaying a command. A recovered read with no saved result is unknown and may be read again only under a new tool ID/current claim.
+
+Keep inference and computer execution in separate claimed stages: the existing model deadline is 45 seconds and claims last 60 seconds. A tool batch that starts a computer must run its dependent checks under the same current claim; ending a claim suspends that workspace. Do not checkpoint between start and its dependent command and then expect the old computer to remain available. The workspace allows four sessions, each task six model turns and 24 tools. At most one operation is active, so persist feedback before each following effect and stop when any bound is reached.
+
+`TaskAttempts` currently accepts plan/ask checkpoint commands and accounts one inference per generation. Extend its response persistence/finish boundary explicitly for the builder; do not disguise arbitrary model JSON as a task command. Pending builder artifacts need bounded storage and retention. Preserve shared foreground/background inference budgets, Stop and late-result fencing. Keep generated code and test output as untrusted data in model prompts.
+
+The later trusted test gate must hash the exact saved agreement/source, validate the package, and run its saved cases outside the writable computer. Passing Node tests alone must never yield a deployable result. The current native provider batch is complete; do not spend on another Container/model run until local implementation/tests and a concrete bounded acceptance plan are ready.

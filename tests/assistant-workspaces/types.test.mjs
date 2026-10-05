@@ -16,6 +16,7 @@ test("workspace declarations keep commands and lifecycle state typed at the publ
       "--target",
       "es2022",
       "tests/assistant-workspaces/types.fixture.ts",
+      "tests/assistant-builder/types.fixture.ts",
     ],
     {
       cwd: fileURLToPath(new URL("../../", import.meta.url)),

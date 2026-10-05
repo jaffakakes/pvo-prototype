@@ -29,3 +29,5 @@ The [inactive release contract](releases/README.md) defines owned provider ident
 The [generated service contract](services/README.md) defines the behavior agreement, bounded source package and validated invocation/reply used by the cloud workshop. It does not execute code or grant deployment readiness.
 
 The [temporary workspace contract](workspaces/README.md) defines bounded draft files, operation inputs and recovery rules. Private server adapters own its actual storage, compute reservations and Container lifecycle. Workspace tools are not yet connected to the model builder.
+
+The [builder tool contract](builder/README.md) defines the bounded file/command views supplied by the saved-task workspace adapter. Availability and operation/usage receipts belong to trusted server code; model-driven construction and release approval are separate steps.
