@@ -30,7 +30,7 @@ The top-level object contains:
 
 - `spec_version`: currently `0.1-prototype`.
 - `media`: packaged media IDs, names, and MIME types.
-- `poster`: an optional WebP asset ID and selected time in seconds on the initial scene. The asset is separate from video media and is packaged in the same file.
+- `poster`: an optional WebP or PNG asset ID and selected time in seconds on the initial scene. The asset is separate from video media and is packaged in the same file.
 - `playback`: the main timeline plus each possible outcome timeline.
 - `initial_scene`: scene entered first.
 - `canvas`: the authored display ratio and its numeric width/height relationship.

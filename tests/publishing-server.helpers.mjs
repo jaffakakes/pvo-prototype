@@ -69,7 +69,7 @@ export async function tinyPvo(poster = null) {
   const manifest = { spec_version: "0.1-prototype", scenes: [{ id: "main", start: 0, end: 1 }], components: [],
     media: [{ id: "video", asset_id: "video", type: "video/mp4" }],
     playback: { initial_timeline: "main", timelines: [{ id: "main", clips: [{ id: "clip", asset_id: "video", scene: "main", start: 0, end: 1 }] }] } };
-  if (poster) manifest.poster = { asset_id: "poster", at: .5, type: "image/webp" };
+  if (poster) manifest.poster = { asset_id: "poster", at: .5, type: poster.type };
   return packPvoProject({ manifest, assets: [
     { id: "video", blob: tinyMp4() },
     ...(poster ? [{ id: "poster", blob: poster }] : []),

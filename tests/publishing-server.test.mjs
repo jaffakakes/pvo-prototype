@@ -158,6 +158,27 @@ test("published PVO poster bytes must decode as a WebP signature", async () => {
   } finally { await f.close(); }
 });
 
+test("PNG covers keep their content type through upload and published PVO validation", async () => {
+  const png = new Blob([new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 0])], { type: "image/png" });
+  const f = await workerFixture();
+  try {
+    const file = tinyMp4();
+    const { body } = await reserve(f, file);
+    assert.equal((await upload(f, body.id, file)).status, 200);
+    const put = blob => f.request(`/api/publications/${body.id}/poster`, {
+      method: "PUT", body: blob, headers: { "Content-Type": blob.type },
+    });
+    assert.equal((await put(new Blob(["bad PNG"], { type: "image/png" }))).status, 415);
+    assert.equal((await put(png)).status, 200);
+    const served = await f.request(`/poster/${body.id}`, { session: null });
+    assert.equal(served.headers.get("Content-Type"), "image/png");
+    assert.deepEqual(new Uint8Array(await served.arrayBuffer()), new Uint8Array(await png.arrayBuffer()));
+    const pvo = await tinyPvo(png);
+    const reservation = await reserve(f, pvo);
+    assert.equal((await upload(f, reservation.body.id, pvo)).status, 200);
+  } finally { await f.close(); }
+});
+
 test("quota reservations are atomic across concurrent requests and reclaimed after expiry", async () => {
   const file = tinyMp4();
   const f = await workerFixture({ OWNER_STORAGE_BYTES: String(file.size), TOTAL_STORAGE_BYTES: String(file.size) });
