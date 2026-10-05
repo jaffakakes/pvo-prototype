@@ -5,6 +5,7 @@ import { validPublicationId } from "./identity.js";
 import { publishingRoute } from "./publishing/routes.js";
 import { cleanupPublications } from "./publishing/cleanup.js";
 import { nativeAssistantRoute } from "./assistant/native/routes.js";
+import { assistantTaskRoute, isTaskRoute } from "./assistant/tasks/routes.js";
 import { fontsRoute } from "./fonts/routes.js";
 import { webRoute } from "./web/routes.js";
 import { imessageRoute } from "./imessage/routes.js";
@@ -24,6 +25,7 @@ export async function handleRequest(request, env) {
     if (url.pathname.startsWith("/api/web/")) return await webRoute(request);
     if (url.pathname.startsWith("/api/imessage/")) return await imessageRoute(request, env);
     if (url.pathname.startsWith("/api/fonts/")) return await fontsRoute(request);
+    if (isTaskRoute(url.pathname)) return await assistantTaskRoute(request, env, config);
     if (url.pathname.startsWith("/api/assistant/")) return await nativeAssistantRoute(request, env, config);
     if (url.pathname === "/api/auth" || url.pathname.startsWith("/api/auth/"))
       return await authRoute(request, env, config);

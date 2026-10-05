@@ -4,13 +4,13 @@
 
 **Plain-English result:** Restyle remembers what you asked it to build, what it has already done, and what answer it needs from you. Closing the editor does not erase the task. Returning to it resumes the same work.
 
-This milestone is in progress. **1B.01 and 1B.02 are implemented:** the [shared task contract](../../../packages/pvo-assistant/tasks/README.md) defines records, limits, and pure transitions; local draft checkpoints retain scoped task locators. Server storage, routes, runner, and task UI below remain planned. Keep completion markers in Roadmap 1; record decisions and evidence in the progress log.
+This milestone is in progress. **1B.01–1B.03 are implemented:** the [shared task contract](../../../packages/pvo-assistant/tasks/README.md) defines records, limits, and pure transitions; local draft checkpoints retain scoped task locators. Owned server storage and routes are verified; the runner and task UI remain planned. Keep completion markers in Roadmap 1; record decisions and evidence in the progress log.
 
 ## First useful change
 
 Completed **1B.01: the shared task record and its rules** answers: “What is a valid saved task, and what changes are allowed?” Its pure functions and tests need no cloud deployment or UI. The record carries trusted owner metadata, a server project identity, and the original project fingerprint.
 
-The local project association in **1B.02** is also complete. Continue with **1B.03:** resolve the owned server project and make a real task survive storage restart before adding orchestration or progress screens. Prove each layer through its public boundary before connecting the next.
+The local project association in **1B.02** is also complete. **1B.03** now resolves owned server projects and preserves real tasks across storage restart. Continue with **1B.04/1B.05**, the saved runner and backend intent routing. Prove each layer through its public boundary before connecting the next.
 
 ## Suggested source ownership
 
@@ -83,7 +83,7 @@ Reload and rename preserve the association; ordinary Undo leaves it unchanged. R
 
 Resolve the first owned server project before task creation; a fresh local draft has no server project ID yet. Scope lookup to the authenticated owner plus local draft identity, return a server-issued project ID, and verify ownership again when creating/listing tasks. An account switch must never reuse another owner's association. A local locator alone is not proof that a server project exists.
 
-Choose and document one storage/coordinator design. A SQLite Durable Object can own task state and atomic step claims, with a deliberate owned task index for listing/recovery. Reuse current account identity; do not build a second authentication system. Keep provider registration and application bindings separate from domain rules.
+The implemented design uses one SQLite Durable Object per authenticated owner for project associations, tasks, indexes, atomic state changes and retention alarms. Reuse current account identity; do not build a second authentication system. Keep provider registration and application bindings separate from domain rules.
 
 Proposed HTTP surface:
 
@@ -97,7 +97,7 @@ Proposed HTTP surface:
 | Resume | `POST /api/assistant/tasks/:id/resume` | Reconcile unresolved effects before authorizing a retry |
 | Stop | `POST /api/assistant/tasks/:id/stop` | Revoke the execution generation and schedule release of owned active resources |
 
-These names are proposals, not existing routes. Use the repository's same-origin/CSRF protection and account-session helpers. Apply ownership checks on every operation and avoid disclosing another account's task existence or contents. Cloud building requires an owner; ordinary anonymous assistant use should retain its existing behavior.
+These routes are implemented. Read the [server contract](../../../server/assistant/tasks/README.md) for exact envelopes, status codes, capacity and retention policy. Use the repository's same-origin/CSRF protection and account-session helpers. Apply ownership checks on every operation and avoid disclosing another account's task existence or contents. Cloud building requires an owner; ordinary anonymous assistant use should retain its existing behavior.
 
 **Verification:** two separate authenticated owners, anonymous access, cross-origin writes, missing storage, duplicate creates, oversized input, repeated answers, invalid question IDs, and true storage restart. Unavailable bindings must return an accurate unavailable result, not an in-memory success.
 
