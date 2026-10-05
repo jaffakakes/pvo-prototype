@@ -55,11 +55,11 @@ export async function exportPvo(state: ExportSnapshot, onPct: (progress: number)
     done += sceneDuration;
   }
   if (poster) {
-    if (poster.type !== "image/webp" || !poster.size || poster.size > 5 * 1024 * 1024)
-      throw new Error("The selected cover frame could not be packaged as a WebP image.");
-    assets.push({ id: "poster", name: "images/cover.webp", type: "image/webp", blob: poster });
+    if (!["image/webp", "image/png"].includes(poster.type) || !poster.size || poster.size > 5 * 1024 * 1024)
+      throw new Error("The selected cover frame could not be packaged as an image.");
+    assets.push({ id: "poster", name: `images/cover.${poster.type === "image/png" ? "png" : "webp"}`, type: poster.type, blob: poster });
   }
-  const manifest = buildPvoManifest(state, rendered, languages, poster ? "poster" : undefined);
+  const manifest = buildPvoManifest(state, rendered, languages, poster ? { id: "poster", type: poster.type as "image/png" | "image/webp" } : undefined);
   for (const scene of scenes)
     for (const component of scene.components) {
       const base = `components/${component.id}`;
