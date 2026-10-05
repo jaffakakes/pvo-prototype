@@ -1,6 +1,6 @@
 # Provider recovery proof — 1B.08 and 1B.09
 
-Status: **prepared, not run on Cloudflare**. See [current progress](restyle-cloud-agent-progress.md). Local workerd exercises the actual coordinator journal and release adapter; this does not replace the live acceptance.
+Status: **passed on Cloudflare, cleanup verified**, 5 October 2026. See [current progress](restyle-cloud-agent-progress.md). The live run used source commit `6e0f78b6c490a5c782692f6a95dee76584141522`; documentation-only authorization updates were pending when it ran.
 
 ## Planned resources and bounds
 
@@ -26,8 +26,21 @@ The entry point is `node scripts/checks/cloud-agent-recovery/run.mjs <account-id
 
 ## Spending decision
 
-**New authorization pending.** The earlier US$1 authorization covered completed 1A. Proposed ceiling for this disposable verification batch: **US$15 of additional test charges**, at most two runs under the resource bounds above. Expected metered use is much smaller and may fall entirely within the existing included allowance. No new subscription is needed.
+**Approved by the user on 5 October 2026:** “yes the 15$ test-budget approval i grant it continue”. The earlier US$1 authorization covered completed 1A. Authorized ceiling for this disposable verification batch: **US$15 of additional test charges**, at most two runs under the resource bounds above. Expected metered use is much smaller and may fall entirely within the existing included allowance. No new subscription is needed.
 
 Cloudflare lists dynamic creation at $0.002 per unique worker/day beyond the included allocation, with standard request/CPU rates. Durable Objects include monthly compute/storage allocations, but billable usage is rounded upward; crossing a duration billing increment can add $12.50. This is why a tiny resource estimate alone cannot promise a sub-dollar invoice change. No account-wide billing cap or invoice reading is claimed. Sources: [Dynamic Workers pricing](https://developers.cloudflare.com/dynamic-workers/pricing/), [Durable Objects pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/).
 
 If cleanup fails, the local journal keeps names, IDs and private cleanup access; reconcile those exact resources before any new run. Provider-enforced expiry removes inactive source, but the namespace/Worker deletion must still be verified.
+
+## Verified live result
+
+- Run: **2026-10-05 19:33:02–19:33:26 UTC**, first authorized run; no second run needed.
+- Worker: `restyle-recovery-proof-49472bcac72b2061c484b0e2`. Two coordinator objects, two inactive releases, no Container/application. The driver made **16 diagnostic calls**, plus bounded deployment/health/cleanup requests.
+- Actual production adapters passed coordinator reset after create/before receipt, durable recovery, unavailable lookup without invented absence, original identity reuse under a new claim, one recorded tool charge, successful isolated execution, 4 KiB output bound, **actual 50 ms CPU enforcement**, Stop and cancellation before late publish.
+- Exact Worker bundle SHA-256: `b6f8ed61f63527e44f8cd73ccee294dc39b1491f0b7633cc4a1dca70c8b8a1ff`.
+- Source deletion verified for `release-fcde8474884c14c554607b49520e1988aa5afccdc36b45e7476789f99d6417b1` and `release-d1b6824fbf62fcc1a1393d2e3caa104f0c679e8667586e526d0725d3e85c4afa`.
+- Worker absence and removal of namespaces `4c019ba99df44c90a4f77abe3339f457` and `8071cbfb04fa4192909ac7d1154231fd` verified at **19:33:26 UTC**. No container applications existed. Private proof secret file removed after successful cleanup.
+- Local supplemental journal: `.wrangler/cloud-agent-infrastructure/workspace-dVQLsh/report.json`. Keep it private; this portable record is sufficient for a future agent.
+- Cost evidence is resource use, not an invoice. The approved US$15 bound applied to this verification batch. No remaining proof resources are running.
+
+This proves recovery for the implemented inactive service provider. It does not claim the later model-driven builder, active viewer service, external booking/message provider or production release.
