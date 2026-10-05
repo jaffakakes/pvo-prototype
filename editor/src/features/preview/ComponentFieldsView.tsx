@@ -30,7 +30,8 @@ export function ComponentFieldsView({ component, unit, trying, selectedPart, onR
   });
   const button = (index: number) => part(`button:${index}`,
     appearance ? { ...appearance.buttons[index], height: "auto" } : undefined);
-  const whole = part("whole", appearance?.whole);
+  const whole = part("whole", component.type === "choice" && appearance
+    ? { ...appearance.whole, padding: 0 } : appearance?.whole);
   const noteText = fields.text || "Tap to learn more";
   if (component.type === "tooltip") return <div {...whole} className={`${cx("compTooltip")} ${styles.part}`}>
     {!appearance && <i />}

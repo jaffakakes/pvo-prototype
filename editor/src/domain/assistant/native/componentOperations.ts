@@ -13,6 +13,7 @@ import type { ComponentFields, ProjectSnapshot, PvoComponent, Scene } from "../.
 import { sceneDuration } from "../../scenes/duration";
 import { validateAssistantContext } from "../context";
 import type { NativePreparation } from "./types";
+import { patchAssistantStyle } from "./stylePatch";
 
 type ComponentOperation = Extract<NativeOperation, { kind: "component.add" | "component.update" | "component.content" | "component.style" | "component.source" | "component.delete" }>;
 
@@ -60,12 +61,16 @@ export async function applyComponentOperation(project: ProjectSnapshot, scene: S
     }, scene);
   }
   if (operation.kind === "component.content") next = changeComponent(original, { fields: contentFields(original, operation.changes) }, scene);
-  const source = operation.kind === "component.style"
-    ? { ...componentLanguageSource(original), style: operation.style }
-    : operation.kind === "component.source" || operation.kind === "component.add" ? operation.source : undefined;
+  let originalCompiled: Awaited<ReturnType<NativePreparation["compile"]>> | undefined;
+  let source = operation.kind === "component.source" || operation.kind === "component.add" ? operation.source : undefined;
+  if (operation.kind === "component.style") {
+    const current = componentLanguageSource(original);
+    originalCompiled = await options.compile(original.type, current);
+    source = { ...current, style: patchAssistantStyle(current.style, operation.style, originalCompiled.structure) };
+  }
   if (source) next = { ...next, code: { custom: true, pvoTouched: true, pvoLiteral: true, pvo: { ...source } } };
   if (source || operation.kind === "component.content" || operation.kind === "component.add") {
-    const originalCompiled = await options.compile(original.type, componentLanguageSource(original));
+    originalCompiled ??= await options.compile(original.type, componentLanguageSource(original));
     const nextSource = componentLanguageSource(next);
     const compiled = await options.compile(next.type, nextSource);
     validateEditableLanguage(compiled);

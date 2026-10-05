@@ -13,11 +13,13 @@ import type { ComponentType, PvoComponent, Scene } from "../project/model";
 const has = (value: object, key: PropertyKey) => Object.prototype.hasOwnProperty.call(value, key);
 
 export function createDefaultComponent(id: string, type: ComponentType, scene: Scene, at: number): PvoComponent {
+  const look = createLook("bold", type === "choice" ? 2 : type === "tooltip" ? 0 : 1);
+  if (type === "choice") look.whole = { ...look.whole, bg: "none", border: "none" };
   return {
     id, type, sceneId: scene.id, at: clampComponentStart(at, 3, total(scene.clips)), dur: 3,
     x: 50, y: type === "tooltip" ? 28 : 60, fields: defaultFields(type),
     ...(type === "tooltip" ? {} : { responsePolicy: { ...DEFAULT_RESPONSE_POLICY } }),
-    look: createLook("bold", type === "choice" ? 2 : type === "tooltip" ? 0 : 1),
+    look,
   };
 }
 

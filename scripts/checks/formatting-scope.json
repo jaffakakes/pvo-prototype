@@ -1,6 +1,7 @@
 [
   "editor/src/app/projectAutosave.ts",
   "editor/src/domain/assistant/cloudTaskInput.ts",
+  "editor/src/domain/assistant/native/stylePatch.ts",
   "editor/src/domain/assistant/savedTaskStatus.ts",
   "editor/src/domain/assistant/taskProjectLink.ts",
   "editor/src/domain/clips/trim.ts",
@@ -146,6 +147,7 @@
   "scripts/checks/cloud-agent-workspaces/proof-worker.js",
   "scripts/checks/cloud-agent-workspaces/run.mjs",
   "scripts/checks/dependencies.mjs",
+  "scripts/checks/editor/assistant-style-design.mjs",
   "scripts/checks/editor/camera-flash.mjs",
   "scripts/checks/editor/component-size.mjs",
   "scripts/checks/editor/cover-layout.mjs",
@@ -266,6 +268,7 @@
   "tests/local-render-auth.test.mjs",
   "tests/local-reply-boxes.test.mjs",
   "tests/native-assistant-server.test.mjs",
+  "tests/native-assistant-style-patch.test.mjs",
   "tests/player-animation-interaction.test.mjs",
   "tests/player-request-lifecycle.test.mjs",
   "tests/player-response-policy.test.mjs",
