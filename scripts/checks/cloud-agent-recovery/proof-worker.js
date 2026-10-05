@@ -56,15 +56,31 @@ export class ProofTasks extends AssistantTasks {
     const provider = super.serviceProvider();
     return {
       ...provider,
-      publish: async (publication) => {
-        if (this.delayPublication)
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-        const result = await provider.publish(publication);
-        if (this.crashAfterPublication)
-          this.ctx.abort(
-            "Controlled crash after provider create, before receipt",
-          );
-        return result;
+      publish: (publication) => {
+        const effect = (async () => {
+          if (this.delayPublication) {
+            let release;
+            const gate = new Promise((resolve) => {
+              release = resolve;
+            });
+            this.releasePublication = release;
+            const timeout = setTimeout(release, 15000);
+            try {
+              await gate;
+            } finally {
+              clearTimeout(timeout);
+            }
+          }
+          const result = await provider.publish(publication);
+          if (this.crashAfterPublication)
+            this.ctx.abort(
+              "Controlled crash after provider create, before receipt",
+            );
+          return result;
+        })();
+        // Retain the deliberately delayed remote effect after the caller observes Stop.
+        this.ctx.waitUntil(effect);
+        return effect;
       },
       lookup: (identity) => {
         if (this.failLookup) throw new Error("Controlled lookup outage");
@@ -147,6 +163,7 @@ export class ProofTasks extends AssistantTasks {
       input: { expectedRevision: task.revision },
     });
     await reconcileTaskServices(this);
+    this.releasePublication?.();
     return this.snapshot();
   }
   async replay() {
@@ -182,6 +199,7 @@ export class ProofTasks extends AssistantTasks {
   async cleanup() {
     for (const row of this.providers.entries())
       await super.serviceProvider().cancel(row.identity);
+    this.releasePublication?.();
     await this.ctx.storage.deleteAlarm();
     return this.snapshot();
   }

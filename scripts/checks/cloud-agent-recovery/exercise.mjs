@@ -88,8 +88,12 @@ export async function exerciseRecovery(
   assert.equal(cancelled.row.cancelled, true);
   assert.equal(cancelled.row.outcome, "absent");
   expect(await pending, 200);
-  await new Promise((resolve) => setTimeout(resolve, 1200));
-  const late = await status("cancel");
+  let late;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    late = await status("cancel");
+    if (late.calls === 1) break;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
   assert.equal(late.calls, 1);
   assert.equal(late.provider.state, "deleted");
   assert.equal(late.task.state, "stopped");
