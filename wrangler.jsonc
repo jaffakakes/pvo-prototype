@@ -9,13 +9,15 @@
     "bindings": [
       { "name": "RELEASES", "class_name": "ReleaseChannel" },
       { "name": "ASSISTANT_BUDGET", "class_name": "AssistantBudget" },
+      { "name": "ASSISTANT_TASKS", "class_name": "AssistantTasks" },
       { "name": "IMESSAGE_TEST_QUEUE", "class_name": "IMessageTestQueue" }
     ]
   },
   "migrations": [
     { "tag": "release-channel-v1", "new_sqlite_classes": ["ReleaseChannel"] },
     { "tag": "assistant-budget-v1", "new_sqlite_classes": ["AssistantBudget"] },
-    { "tag": "imessage-test-queue-v1", "new_sqlite_classes": ["IMessageTestQueue"] }
+    { "tag": "imessage-test-queue-v1", "new_sqlite_classes": ["IMessageTestQueue"] },
+    { "tag": "assistant-tasks-v1", "new_sqlite_classes": ["AssistantTasks"] }
   ],
   "compatibility_date": "2026-09-27",
   "observability": { "enabled": true, "traces": { "enabled": true } },
