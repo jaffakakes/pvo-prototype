@@ -12,6 +12,11 @@ export type TaskFailureCode =
 export type TaskFailure = { code: TaskFailureCode; stepId: string };
 export type TaskArtifact = { id: string; sha256: string; bytes: number };
 export type TaskResult = { artifact: TaskArtifact; baseFingerprint: string };
+export type TaskReference = {
+  ownerId: string;
+  projectId: string;
+  taskId: string;
+};
 export type TaskContext = {
   fingerprint: string;
   components: Array<{
@@ -136,6 +141,7 @@ export const TASK_FAILURES: Readonly<
   Record<TaskFailureCode, Readonly<{ retryable: boolean }>>
 >;
 export function parseTaskInput(value: unknown): TaskInput;
+export function parseTaskReference(value: unknown): TaskReference;
 export function parseTaskRecord(value: unknown): TaskRecord;
 export function createTask(
   input: unknown,

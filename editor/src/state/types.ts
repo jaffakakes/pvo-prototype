@@ -1,5 +1,6 @@
 import { type TextStyle } from "../../../packages/pvo-text-runtime/index.js";
 import type { AudioClip } from "../domain/audio/model";
+import type { TaskProjectLinks } from "../domain/assistant/taskProjectLink";
 import { type LayerId } from "../domain/layers/model";
 import type { ExportQuality } from "../domain/publishing/model";
 import type {
@@ -56,6 +57,7 @@ export type OverlayUpdateOptions = {
 export type CaptureState = {
   localId: string | null;
   projectName: string;
+  assistantTaskLinks: TaskProjectLinks | null;
   screen: "camera" | "editor";
   recording: boolean;
   importing: boolean;

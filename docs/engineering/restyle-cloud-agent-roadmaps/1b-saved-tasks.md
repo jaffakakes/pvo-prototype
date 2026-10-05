@@ -4,13 +4,13 @@
 
 **Plain-English result:** Restyle remembers what you asked it to build, what it has already done, and what answer it needs from you. Closing the editor does not erase the task. Returning to it resumes the same work.
 
-This milestone is in progress. **1B.01 is implemented:** the [shared task contract](../../../packages/pvo-assistant/tasks/README.md) defines records, limits, and pure transitions. Storage, routes, runner, and editor integration below remain planned. Keep completion markers in Roadmap 1; record decisions and evidence in the progress log.
+This milestone is in progress. **1B.01 and 1B.02 are implemented:** the [shared task contract](../../../packages/pvo-assistant/tasks/README.md) defines records, limits, and pure transitions; local draft checkpoints retain scoped task locators. Server storage, routes, runner, and task UI below remain planned. Keep completion markers in Roadmap 1; record decisions and evidence in the progress log.
 
 ## First useful change
 
 Completed **1B.01: the shared task record and its rules** answers: “What is a valid saved task, and what changes are allowed?” Its pure functions and tests need no cloud deployment or UI. The record carries trusted owner metadata, a server project identity, and the original project fingerprint.
 
-Continue with **1B.02: the local project association**. Then make one real task survive storage restart in 1B.03 before adding orchestration or progress screens. Prove each layer through its public boundary before connecting the next.
+The local project association in **1B.02** is also complete. Continue with **1B.03:** resolve the owned server project and make a real task survive storage restart before adding orchestration or progress screens. Prove each layer through its public boundary before connecting the next.
 
 ## Suggested source ownership
 
@@ -67,13 +67,21 @@ Reconciliation is tracked in each operation receipt. Uncertain effects block new
 
 ## 1B.02 — Link the notebook to the local draft
 
-The current editor thread uses `localId` and stores its visible conversation in memory. Keep an owned server project association and task reference through the existing local checkpoint/persistence path. Persist the minimal link without copying media to the server.
+Implementation stores an optional `assistantTaskLinks` field beside the existing local checkpoint, outside the scene snapshot and Undo history. It contains the draft's `localId` and up to eight account entries: `{ ownerId, projectId, taskId }`. No field means no association. This is one current optional contract; there is no alternate schema, migration, or second storage location. Only identifiers are added; project media remains in its existing local Blob store.
 
-Define these behaviors explicitly: reload restores the link; account switch clears visible private task data; a different local project cannot inherit an old task; project duplication starts a distinct association by default unless an explicit sharing operation is chosen. A project rename should preserve identity.
+The [shared task reference parser](../../../packages/pvo-assistant/tasks/reference.js) uses the same bounded IDs as 1B.01. The [editor domain rules](../../../editor/src/domain/assistant/taskProjectLink.ts) enforce draft binding, unique accounts, and the entry limit. Each account can update its current task within the same server project; silently switching that association to another server project is rejected. Account entries are retained locally when signing out so the same creator can recover their locator later. They grant no server access.
 
-**Verification:** save/reload, duplicate, switch project, switch account, and local draft recovery. Check existing editor persistence behavior is preserved.
+The [named link commands](../../../editor/src/state/assistant/taskProjectCommands.ts) capture account/project scope before a future authenticated request and consume its validated task record afterward. They reject a wrong owner, project/account switches (including switching away and back), and a response superseded by a newer association. They save IDs only, not the returned task's request, answers, source, or artifacts. The future task adapter must use the authenticated 1B.03 routes, flush the local project before task creation, and flush the new association before claiming it is durably linked. Existing save-failure status/retry handles a failed local write; it must not cause blind task recreation.
+
+The [assistant session scope](../../../editor/src/state/assistant/sessionScope.ts) clears the visible conversation/composer when the account or local project changes. Native assistant requests also check that scope around asynchronous work, so late answers/errors cannot repopulate the new account. Anonymous ordinary editing remains available. Cloud task creation and private task reads still require the future server authorization boundary.
+
+Reload and rename preserve the association; ordinary Undo leaves it unchanged. Replacing the local project identity clears it. The [atomic saved-project copy adapter](../../../editor/src/infrastructure/projectPersistence/copyProject.ts) creates a distinct local checkpoint, shares only local Blob references, and strips all authoring-task associations. It refuses to overwrite another saved project. Copying obtains a new server association when a later owned task is created; it does not copy, create, or delete a hosted service. No project-copy UI or service-sharing choice is added in this slice; callers have one defined independent-copy operation. Service attachment/lifecycle rules remain 1D/1E work.
+
+**Verification:** Node tests cover validation, checkpoint round trips, rename/Undo, account visibility, stale replies, and copy policy. The `task-project-link` browser check exercises real IndexedDB save/reload, exact media bytes, link-only autosave, named copy, project navigation, mocked account switches/expiry, a delayed native assistant response, and actual failed-restore recovery. The progress checkpoint records final check/build/beta results. It does not claim a live server task or real third-party account integration: account/assistant HTTP responses are fixtures until the task routes exist.
 
 ## 1B.03 — Store the task and expose owned operations
+
+Resolve the first owned server project before task creation; a fresh local draft has no server project ID yet. Scope lookup to the authenticated owner plus local draft identity, return a server-issued project ID, and verify ownership again when creating/listing tasks. An account switch must never reuse another owner's association. A local locator alone is not proof that a server project exists.
 
 Choose and document one storage/coordinator design. A SQLite Durable Object can own task state and atomic step claims, with a deliberate owned task index for listing/recovery. Reuse current account identity; do not build a second authentication system. Keep provider registration and application bindings separate from domain rules.
 
@@ -81,6 +89,7 @@ Proposed HTTP surface:
 
 | Operation | Suggested route | Required behavior |
 | --- | --- | --- |
+| Resolve owned project | `POST /api/assistant/projects` | Authenticate and idempotently resolve/create the owner's project association for a local draft; return its server-issued ID |
 | Create | `POST /api/assistant/tasks` | Authenticate, validate bounds, reserve capacity, atomically save before responding; creation key prevents duplicates |
 | List owned tasks | `GET /api/assistant/tasks?project=…` | Authenticated, bounded pagination, owner/project filters enforced by server |
 | Read | `GET /api/assistant/tasks/:id` | Return the owned public task view and revision |

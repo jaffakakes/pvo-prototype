@@ -6,10 +6,15 @@ import { cloneScenes } from "../../domain/project/snapshot";
 import { normalizeSceneTree } from "../../domain/scenes/rules";
 import { assertSceneAnimation } from "../../domain/animation/validation";
 import { remapTrackingMediaReferences } from "../../domain/animation/trackingPersistence";
+import {
+  parseTaskProjectLinks,
+  type TaskProjectLinks,
+} from "../../domain/assistant/taskProjectLink";
 
 export type RestoredProject = {
   localId?: string;
   projectName?: string;
+  assistantTaskLinks: TaskProjectLinks | null;
   project: ProjectSnapshot;
   past: ProjectSnapshot[];
   future: ProjectSnapshot[];
@@ -32,6 +37,7 @@ export type PersistenceSnapshot = ProjectSnapshot &
   ResumePosition & {
     localId: string | null;
     projectName: string;
+    assistantTaskLinks: TaskProjectLinks | null;
     past: ProjectSnapshot[];
     future: ProjectSnapshot[];
     playing: boolean;
@@ -40,6 +46,8 @@ export type PersistenceSnapshot = ProjectSnapshot &
 export type StoredCheckpoint = {
   localId?: string;
   projectName?: string;
+  /** Absent means this draft has no linked task. This metadata is outside Undo history. */
+  assistantTaskLinks?: TaskProjectLinks;
   version: 3;
   savedAt: number;
   project: ProjectSnapshot;
@@ -67,6 +75,14 @@ export function captureCheckpoint(state: PersistenceSnapshot): CheckpointDraft {
     version: 3,
     localId: state.localId ?? undefined,
     projectName: state.projectName,
+    ...(state.assistantTaskLinks
+      ? {
+          assistantTaskLinks: parseTaskProjectLinks(
+            state.assistantTaskLinks,
+            state.localId,
+          ),
+        }
+      : {}),
     project: cloneProject(state),
     past: state.past.map(cloneProject),
     future: state.future.map(cloneProject),
@@ -94,7 +110,9 @@ function allScenes(checkpoint: CheckpointProjects): Scene[][] {
   ];
 }
 
-function assertCheckpointComponentContracts(checkpoint: CheckpointProjects): void {
+function assertCheckpointComponentContracts(
+  checkpoint: CheckpointProjects,
+): void {
   for (const scenes of allScenes(checkpoint)) {
     for (const scene of scenes) {
       if (!Array.isArray(scene.components))
@@ -107,8 +125,11 @@ function assertCheckpointComponentContracts(checkpoint: CheckpointProjects): voi
 function assertCheckpointFonts(checkpoint: CheckpointProjects): void {
   for (const scenes of allScenes(checkpoint)) {
     for (const scene of scenes) {
-      for (const component of scene.components) if (component.font !== undefined) validateFontAsset(component.font);
-      for (const text of scene.texts) if (text.style?.fontAsset !== undefined) validateFontAsset(text.style.fontAsset);
+      for (const component of scene.components)
+        if (component.font !== undefined) validateFontAsset(component.font);
+      for (const text of scene.texts)
+        if (text.style?.fontAsset !== undefined)
+          validateFontAsset(text.style.fontAsset);
     }
   }
 }
@@ -122,7 +143,8 @@ export function referencedMedia(checkpoint: CheckpointDraft): string[] {
   const urls = new Set<string>();
   for (const scenes of allScenes(checkpoint))
     for (const scene of scenes)
-      for (const clip of [...scene.clips, ...(scene.audioClips ?? [])]) if (clip.url) urls.add(clip.url);
+      for (const clip of [...scene.clips, ...(scene.audioClips ?? [])])
+        if (clip.url) urls.add(clip.url);
   return [...urls];
 }
 
@@ -134,9 +156,14 @@ function remapProject(
     ...project,
     scenes: normalizeSceneTree(project.scenes).map((scene) => ({
       ...scene,
-      ...(scene.audioClips ? { audioClips: scene.audioClips.map(clip => ({
-        ...clip, url: clip.url ? (urlMap.get(clip.url) ?? null) : null,
-      })) } : {}),
+      ...(scene.audioClips
+        ? {
+            audioClips: scene.audioClips.map((clip) => ({
+              ...clip,
+              url: clip.url ? (urlMap.get(clip.url) ?? null) : null,
+            })),
+          }
+        : {}),
       clips: scene.clips.map((clip) => ({
         ...clip,
         url: clip.url ? (urlMap.get(clip.url) ?? null) : null,
@@ -175,6 +202,13 @@ export function restoreCheckpoint(
   return {
     localId: record.localId,
     projectName: record.projectName,
+    assistantTaskLinks:
+      record.assistantTaskLinks === undefined
+        ? null
+        : parseTaskProjectLinks(
+            record.assistantTaskLinks,
+            record.localId ?? null,
+          ),
     project: remapProject(record.project, urlMap),
     past: record.past.map((item) => remapProject(item, urlMap)),
     future: record.future.map((item) => remapProject(item, urlMap)),
@@ -197,6 +231,8 @@ export function validateCheckpoint(
       (typeof value.projectName !== "string" || value.projectName.length > 120))
   )
     throw new Error("Saved project identity is invalid.");
+  if (value.assistantTaskLinks !== undefined)
+    parseTaskProjectLinks(value.assistantTaskLinks, value.localId ?? null);
   if (
     value.version !== 3 ||
     !value.project ||
@@ -216,15 +252,18 @@ export function validateCheckpoint(
     !value.assetIds.every(
       (id) => typeof id === "string" && id.startsWith("asset:"),
     ) ||
-    [value.project, ...value.past, ...value.future].some((project) =>
-      !Number.isFinite(project.coverAt) || project.coverAt < 0)
+    [value.project, ...value.past, ...value.future].some(
+      (project) => !Number.isFinite(project.coverAt) || project.coverAt < 0,
+    )
   )
     throw new Error("Saved project data is incomplete.");
   try {
     assertCheckpointComponentContracts(value as StoredCheckpoint);
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
-    throw new Error(`Saved component response policy is not supported: ${detail}`);
+    throw new Error(
+      `Saved component response policy is not supported: ${detail}`,
+    );
   }
   try {
     assertCheckpointFonts(value as StoredCheckpoint);
@@ -234,12 +273,27 @@ export function validateCheckpoint(
   }
   for (const scenes of allScenes(value as StoredCheckpoint)) {
     for (const scene of scenes) {
-      if (scene.audioClips !== undefined && (!Array.isArray(scene.audioClips) || scene.audioClips.some(clip =>
-        !clip || !Number.isSafeInteger(clip.id) || typeof clip.name !== "string"
-        || (clip.url !== null && typeof clip.url !== "string") || typeof clip.muted !== "boolean"
-        || ![clip.in, clip.out, clip.start, clip.speed, clip.srcDur].every(Number.isFinite)
-        || clip.start < 0 || clip.in < 0 || clip.out <= clip.in || clip.out > clip.srcDur
-        || clip.speed < .25 || clip.speed > 4)))
+      if (
+        scene.audioClips !== undefined &&
+        (!Array.isArray(scene.audioClips) ||
+          scene.audioClips.some(
+            (clip) =>
+              !clip ||
+              !Number.isSafeInteger(clip.id) ||
+              typeof clip.name !== "string" ||
+              (clip.url !== null && typeof clip.url !== "string") ||
+              typeof clip.muted !== "boolean" ||
+              ![clip.in, clip.out, clip.start, clip.speed, clip.srcDur].every(
+                Number.isFinite,
+              ) ||
+              clip.start < 0 ||
+              clip.in < 0 ||
+              clip.out <= clip.in ||
+              clip.out > clip.srcDur ||
+              clip.speed < 0.25 ||
+              clip.speed > 4,
+          ))
+      )
         throw new Error("Saved audio layer data is invalid.");
     }
   }
@@ -248,4 +302,32 @@ export function validateCheckpoint(
   const available = new Set(value.assetIds);
   if (needed.some((url) => !available.has(url)))
     throw new Error("Saved project video is missing.");
+}
+
+/** A copy keeps local content/media history, and obtains its own server association later. */
+export function copyProjectCheckpoint(
+  record: StoredCheckpoint,
+  localId: string,
+  projectName: string,
+  savedAt: number,
+): StoredCheckpoint {
+  validateCheckpoint(record);
+  if (
+    !localId ||
+    localId === record.localId ||
+    !Number.isSafeInteger(savedAt) ||
+    savedAt < 0
+  )
+    throw new Error(
+      "A project copy needs a distinct local identity and a valid save time.",
+    );
+  const copy: StoredCheckpoint = {
+    ...structuredClone(record),
+    localId,
+    projectName,
+    savedAt,
+  };
+  delete copy.assistantTaskLinks;
+  validateCheckpoint(copy);
+  return copy;
 }

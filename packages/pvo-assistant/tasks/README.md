@@ -9,6 +9,7 @@ Import through `packages/pvo-assistant/tasks/index.js`; [index.d.ts](index.d.ts)
 | Function | Responsibility |
 | --- | --- |
 | `parseTaskInput(value)` | Validate the creation operation key, server project ID, original request, expected behavior examples, and bounded component context |
+| `parseTaskReference(value)` | Validate a private `{ ownerId, projectId, taskId }` locator with the same bounded IDs; it carries no authorization or task contents |
 | `createTask(input, metadata)` | Create a queued record using a trusted owner, new task ID, timestamp, and input digest |
 | `parseTaskRecord(value)` | Validate a complete stored record, including consistency between its state, claims, questions, receipts, and result |
 | `replayTaskCreation(task, input, metadata)` | Check an existing task found by owner and creation operation ID; reject changed input or digest and return the same record |
@@ -20,7 +21,7 @@ Trusted adapters supply IDs, nondecreasing millisecond timestamps, and lowercase
 
 ## Ownership and concurrency
 
-Creation input cannot carry an owner. A server adapter must derive `ownerId` from the existing account session and verify that `projectId` belongs to that account. A local editor `localId` is not a server project identity. Project association is the next task, 1B.02.
+Creation input cannot carry an owner. A server adapter must derive `ownerId` from the existing account session and verify that `projectId` belongs to that account. A local editor `localId` is not a server project identity. [1B.02](../../../docs/engineering/restyle-cloud-agent-roadmaps/1b-saved-tasks.md#1b02--link-the-notebook-to-the-local-draft) adds a local draft association that consumes this contract; the owned server routes remain 1B.03 work.
 
 Every transition requires `{ ownerId, expectedRevision, now, claim }`. The owner and revision must match the stored task, and `now` cannot move backward. Each change increments the revision. An exact receipt or answer replay returns the original record without advancing it; it still requires the current guard. After a revision conflict, the adapter must reload and evaluate replay against the latest record.
 
@@ -80,4 +81,4 @@ Questions, source, and artifact references are private task data, not an automat
 
 `node --test tests/assistant-tasks/*.test.mjs` covers validation and byte/count limits, JSON round-trip, unchanged inputs, legal lifecycle changes, owner/revision/lease conflicts, question and creation replays, bounded usage, effect intent/uncertainty/settlement, cancellation, expiry, and the public TypeScript declarations. Tests use injected time and effects represented as data; no provider calls occur.
 
-Storage, HTTP authentication, atomic compare-and-swap, hashing, alarms, provider reconciliation, artifact validation, and editor application are not implemented here. Continue at [1B.02](../../../docs/engineering/restyle-cloud-agent-roadmaps/1b-saved-tasks.md#1b02--link-the-notebook-to-the-local-draft), then implement storage and owned routes in 1B.03. Module existence does not mean a task already survives closing the editor.
+Server task storage, HTTP authentication, atomic compare-and-swap, hashing, alarms, provider reconciliation, artifact validation, and editor result application are not implemented here. Local draft locators are handled by 1B.02; continue with [storage and owned routes in 1B.03](../../../docs/engineering/restyle-cloud-agent-roadmaps/1b-saved-tasks.md#1b03--store-the-task-and-expose-owned-operations). A saved locator does not mean the task itself is already running on a server.

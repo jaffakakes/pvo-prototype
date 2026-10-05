@@ -7,14 +7,21 @@ import {
 } from "../infrastructure/projectPersistence";
 import { restore } from "../state/project/history";
 import { useCapture } from "../state/captureStore";
-import { notify, resolveNotification } from "../state/notifications/notificationStore";
+import {
+  notify,
+  resolveNotification,
+} from "../state/notifications/notificationStore";
 import { createProjectAutosaveController } from "./projectAutosaveController";
 
-const persistence = createProjectPersistence(new URL(location.href).searchParams.get("project") ?? undefined);
+const persistence = createProjectPersistence(
+  new URL(location.href).searchParams.get("project") ?? undefined,
+);
 
 function hydrateProject(saved: RestoredProject): void {
   const state = useCapture.getState();
-  advanceUidPast(highestProjectId([saved.project, ...saved.past, ...saved.future]));
+  advanceUidPast(
+    highestProjectId([saved.project, ...saved.past, ...saved.future]),
+  );
   const position = {
     ...state,
     screen: saved.screen,
@@ -25,8 +32,16 @@ function hydrateProject(saved: RestoredProject): void {
     exportFormat: saved.exportFormat,
   };
   useCapture.setState({
-    localId: saved.localId ?? (hasUnfinishedWork({ ...saved.project, hasHistory: saved.past.length > 0 || saved.future.length > 0 }) ? crypto.randomUUID() : null),
+    localId:
+      saved.localId ??
+      (hasUnfinishedWork({
+        ...saved.project,
+        hasHistory: saved.past.length > 0 || saved.future.length > 0,
+      })
+        ? crypto.randomUUID()
+        : null),
     projectName: saved.projectName ?? "Untitled edit",
+    assistantTaskLinks: saved.assistantTaskLinks,
     ...restore(position, saved.project),
     past: saved.past,
     future: saved.future,
@@ -42,7 +57,7 @@ const autosave = createProjectAutosaveController({
     console.error(`Restyle project storage (${kind}):`, error);
     notify(kind, { scope: "project" });
   },
-  recovered: kind => resolveNotification(kind, "project"),
+  recovered: (kind) => resolveNotification(kind, "project"),
 });
 
 export const startProjectAutosave = autosave.start;

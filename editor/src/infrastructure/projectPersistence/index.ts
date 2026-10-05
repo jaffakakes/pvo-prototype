@@ -53,12 +53,14 @@ type ProjectMarkers = Pick<
   | "quality"
   | "localId"
   | "projectName"
+  | "assistantTaskLinks"
 > & { t: number };
 
 function markers(state: PersistenceSnapshot): ProjectMarkers {
   return {
     localId: state.localId,
     projectName: state.projectName,
+    assistantTaskLinks: state.assistantTaskLinks,
     scenes: state.scenes,
     past: state.past,
     future: state.future,
@@ -84,7 +86,8 @@ function shouldQueue(
   if (!previous) return true;
   if (
     current.localId !== previous.localId ||
-    current.projectName !== previous.projectName
+    current.projectName !== previous.projectName ||
+    current.assistantTaskLinks !== previous.assistantTaskLinks
   )
     return true;
   if (
@@ -107,7 +110,10 @@ function shouldQueue(
   return !state.playing && current.t !== previous.t;
 }
 
-function contextualError(operation: "load" | "save" | "discard", error: unknown): Error {
+function contextualError(
+  operation: "load" | "save" | "discard",
+  error: unknown,
+): Error {
   const detail = error instanceof Error ? error.message : String(error);
   return new Error(
     `Could not ${operation} the Restyle project in browser storage: ${detail}`,
@@ -203,7 +209,12 @@ export function createProjectPersistence(
         const savedAt = Date.now();
         const record = storeCheckpoint(draft, assetIdByUrl, savedAt);
         if (target !== revision) continue;
-        await writeProjectCheckpoint(database, record, newMedia, isProjectDiscarded());
+        await writeProjectCheckpoint(
+          database,
+          record,
+          newMedia,
+          isProjectDiscarded(),
+        );
         savedRevision = target;
         knownAssetIds = await listProjectMediaIds(database);
         const wanted = new Set(urls);
