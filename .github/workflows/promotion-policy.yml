@@ -13,12 +13,17 @@ jobs:
     name: promotion
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Validate promotion route
         env:
           BASE_REF: ${{ github.base_ref }}
           BASE_REPO: ${{ github.event.pull_request.base.repo.full_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_REF: ${{ github.head_ref }}
           HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           case "$BASE_REF" in
             dev)
@@ -32,9 +37,24 @@ jobs:
               esac
               ;;
             preprod)
-              if [ "$HEAD_REF" != "dev" ] || [ "$HEAD_REPO" != "$BASE_REPO" ]; then
-                echo "::error::Only this repository's dev branch can be promoted to preprod."
+              if [ "$HEAD_REPO" != "$BASE_REPO" ]; then
+                echo "::error::Only branches in this repository can be promoted to preprod."
                 exit 1
+              fi
+              if [ "$HEAD_REF" != "dev" ]; then
+                case "$HEAD_REF" in
+                  hotfix/*)
+                    PROD_SHA=$(git rev-parse origin/prod)
+                    if [ "$(git rev-parse "$BASE_SHA^{tree}")" != "$(git rev-parse "$PROD_SHA^{tree}")" ] || ! git merge-base --is-ancestor "$PROD_SHA" "$HEAD_SHA"; then
+                      echo "::error::An isolated hotfix must start from the current prod commit while preprod matches prod."
+                      exit 1
+                    fi
+                    ;;
+                  *)
+                    echo "::error::Only dev or an isolated prod-based hotfix can be promoted to preprod."
+                    exit 1
+                    ;;
+                esac
               fi
               ;;
             prod)
