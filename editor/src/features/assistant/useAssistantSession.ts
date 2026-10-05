@@ -6,6 +6,7 @@ import {
   useAssistant,
 } from "../../state/assistant/assistantStore";
 import { setAssistantThreadOpen } from "../../state/assistant/threadStore";
+import { useAssistantScope } from "../../state/assistant/sessionScope";
 import { useCapture } from "../../state/captureStore";
 import { projectSnapshot } from "../../state/project/history";
 import {
@@ -32,6 +33,7 @@ export function useAssistantSession({
 }: { inspectorVisible?: boolean } = {}) {
   const state = useAssistant();
   const capture = useCapture();
+  const scopeEpoch = useAssistantScope((scope) => scope.epoch);
   const target =
     capture.components.find((component) => component.id === capture.selComp) ??
     null;
@@ -47,12 +49,13 @@ export function useAssistantSession({
     capture.ex !== "running" &&
     !capture.playheadPick &&
     sheetAllows(capture.sheet);
-  const projectId = useRef(capture.localId);
+  const activeScope = useRef(scopeEpoch);
   const voiceContext = useMemo(
     () =>
-      `${capture.localId}:${nativeProjectFingerprint(projectSnapshot(capture))}`,
+      `${scopeEpoch}:${capture.localId}:${nativeProjectFingerprint(projectSnapshot(capture))}`,
     [
       capture.localId,
+      scopeEpoch,
       capture.scenes,
       capture.currentSceneId,
       capture.ratio,
@@ -125,16 +128,15 @@ export function useAssistantSession({
     [],
   );
   useEffect(() => {
-    const changedProject =
-      projectId.current !== null && projectId.current !== capture.localId;
-    if (!available || changedProject) {
+    const changedScope = activeScope.current !== scopeEpoch;
+    if (!available || changedScope) {
       workflow.cancel();
       setAssistantThreadOpen(false);
-      resetAssistant({ preserveConversation: !changedProject });
+      resetAssistant({ preserveConversation: !changedScope });
       playback.current = null;
     }
-    projectId.current = capture.localId;
-  }, [available, capture.localId]);
+    activeScope.current = scopeEpoch;
+  }, [available, scopeEpoch]);
   const open = () => {
     if (!available || state.phase === "review") return;
     pause();

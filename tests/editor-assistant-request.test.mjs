@@ -34,6 +34,7 @@ const edit = {
 
 function fixture(responses = [edit, done]) {
   let localId = "project-one";
+  let scope = 0;
   let project = {
     currentSceneId: "main",
     ratio: "9:16",
@@ -58,6 +59,7 @@ function fixture(responses = [edit, done]) {
   const traces = [];
   let exchange = 0;
   const adapters = {
+    requestScope: () => scope,
     capture: () => ({
       localId,
       project,
@@ -138,6 +140,9 @@ function fixture(responses = [edit, done]) {
     replaceProject: () => {
       localId = "project-two";
     },
+    changeAccount: () => {
+      scope++;
+    },
   };
 }
 
@@ -155,6 +160,46 @@ test("a project request validates privately and applies the completed batch once
       .filter((event) => event.stage === "application")
       .map((event) => event.status),
     ["started", "completed"],
+  );
+});
+
+test("account changes reject late answers even after returning to the same account", async () => {
+  const response = deferred();
+  const entered = deferred();
+  const f = fixture([
+    () => {
+      entered.resolve();
+      return response.promise;
+    },
+  ]);
+  const pending = f.submit("Private request");
+  await entered.promise;
+  f.changeAccount();
+  f.changeAccount();
+  response.resolve(edit);
+  await pending;
+  assert.equal(f.applications.length, 0);
+  assert.equal(
+    f.events.filter((event) => ["completed", "failed"].includes(event.kind))
+      .length,
+    0,
+  );
+});
+
+test("an old account's availability failure cannot repopulate the new account's composer", async () => {
+  const availability = deferred();
+  const f = fixture();
+  f.adapters.availability = async () => {
+    await availability.promise;
+    throw new Error("Old account is unavailable");
+  };
+  const pending = f.submit("Private request");
+  f.changeAccount();
+  availability.resolve();
+  await pending;
+  assert.deepEqual(
+    f.events.map((event) => event.kind),
+    ["started"],
   );
 });
 

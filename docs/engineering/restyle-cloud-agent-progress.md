@@ -9,34 +9,35 @@ Last checkpoint: **5 October 2026**. Recheck Git and provider state before relyi
 | Field | Current value |
 | --- | --- |
 | Latest completed milestone | **1A — infrastructure proof**; 1B overall remains in progress |
-| Latest completed task | **1B.01 — shared saved-task contract and legal state changes** |
-| Next implementation task | **1B.02 — link the notebook to the local draft** |
-| Next document to follow | [Detailed 1B implementation plan](restyle-cloud-agent-roadmaps/1b-saved-tasks.md#1b02--link-the-notebook-to-the-local-draft) |
-| First concrete action | Inspect local project checkpoint/persistence, duplication, and account-switch commands; define the minimal owned server-project/task link and its lifecycle |
-| Product work in progress | No unfinished source implementation in this slice; storage, routes, background runner, and UI remain unimplemented |
-| Partial source changes | None after this batch is committed; inspect Git before continuing |
-| Implementation checkout | `/Users/christinasmacbook/.codex/worktrees/restyle-saved-task-contract/pvo-prototype` |
-| Current implementation branch | `feature/restyle-saved-task-contract`, based on `origin/dev` at `e8e044c` |
-| Tested source | `949b9f344874c13aecbfa8a22b234a52caa3b649`; `packages/pvo-assistant/tasks/`, `tests/assistant-tasks/`, and the adopted formatting list |
-| Review/integration | [PR #81](https://github.com/jaffakakes/pvo-prototype/pull/81) open against `dev`; 1B.01 committed and pushed. Prior PR #80 merged into `dev` at `e8e044c` |
-| CI evidence | 1B.01 [test run](https://github.com/jaffakakes/pvo-prototype/actions/runs/37328881452) in progress at this checkpoint; local `npm run check` passed with 1,131 tests. Inspect latest PR checks before integration |
-| Beta/production | No new app behavior or deployment in 1B.01; its shared module has no application consumer yet |
-| Cloud resources | No resources created for 1B.01. All disposable 1A resources were removed and absence verified |
-| Active task-owned processes | Verification completed; no task server or provider process started |
-| Access | Workers Paid enabled; native Containers and Dynamic Workers proven; optional dispatch unavailable and unnecessary |
-| Immediate access blocker | None for 1B.02 |
-| Integration dependency | Integrate the 1B.01 PR into `dev` through the normal process before branching for its dependent 1B.02 implementation |
-| Existing user changes | Desktop checkout has pending generated `dist/` changes; preserved. Its readable docs, CLAUDE.md, and AGENTS.md instructions are deliberate local snapshots |
+| Latest completed task | **1B.02 — link the notebook to the local draft** |
+| Next implementation task | **1B.03 — store tasks and expose authenticated owned operations** |
+| Next document to follow | [Detailed 1B implementation plan](restyle-cloud-agent-roadmaps/1b-saved-tasks.md#1b03--store-the-task-and-expose-owned-operations) |
+| First concrete action | Design owned server-project resolution and the durable task/index coordinator; reuse account sessions and the 1B.01 transition contract |
+| Product work in progress | 1B.02 implementation and beta verification complete; server task storage/routes, background runner, and cloud-task UI remain unimplemented |
+| Partial source changes | None after this verified batch is committed; if interrupted during delivery, inspect Git and finish its commit/push/PR |
+| Implementation checkout | `/Users/christinasmacbook/.codex/worktrees/restyle-task-project-link/pvo-prototype` |
+| Current implementation branch | `feature/restyle-task-project-link`, based on `origin/dev` at `2013da2` |
+| Tested source | The implementation commit containing this entry; source, Node/browser tests, and documentation in this same batch |
+| Review/integration | Prior PR #81 merged into `dev` at `2013da2bd61a30912af749bb08980e5c00640580`; new 1B.02 PR publication next |
+| CI evidence | 1B.01 final-head checks passed before merge. 1B.02 local checks passed; its CI has not yet started |
+| Beta | Delivered and verified at port 4173: **`restyle-editor-shell-8e25ded02bf27bd6`**; existing editor sessions were not forcibly reloaded |
+| Production | No production promotion or deployment performed |
+| Cloud resources | None created for 1B.02; earlier disposable 1A resources remain removed |
+| Active task-owned processes | None. Temporary Vite at port 5196 stopped; original beta server continues unchanged |
+| Local backup | `/Users/christinasmacbook/.codex/backups/restyle-task-project-link-f7osnzgu/` contains `before-dist`, `built-dist`, and `delivery.json` |
+| Access blocker | None for local design of 1B.03; inspect actual bindings/access before provisioning storage |
+| Integration dependency | Integrate the verified 1B.02 PR into `dev` through the normal process before branching for dependent 1B.03 implementation |
+| Existing user changes | Desktop pending generated output backed up before beta delivery; 71 old hashed editor assets retained for open sessions. Other source changes preserved |
 
 ### The next working session
 
-1. Read root instructions, this checkpoint, and the [restart guide](restyle-cloud-agent-handoff.md).
-2. Inspect working directory, `git status`, worktrees, remote refs, and the current PR. Do not redo completed 1A or 1B.01 because another checkout lacks its files.
-3. Read [1B.02](restyle-cloud-agent-roadmaps/1b-saved-tasks.md#1b02--link-the-notebook-to-the-local-draft), the [implemented task contract](../../packages/pvo-assistant/tasks/README.md), [local persistence](../../editor/src/infrastructure/projectPersistence/index.ts), [project session actions](../../editor/src/state/project/sessionActions.ts), and [thread store](../../editor/src/state/assistant/threadStore.ts).
-4. Define how a local draft keeps an owned server project association and task reference without uploading its media. A rename preserves identity; a copy gets a distinct association by default; account/project switches must clear private visible data and reject late responses.
-5. Implement through existing persistence and named commands, add meaningful lifecycle tests, run affected editor/browser checks, and deliver app changes through the beta procedure. Mark **1B.02** only after its criteria pass, then record the exact next task.
+1. Read root instructions, this checkpoint, and the [restart guide](restyle-cloud-agent-handoff.md). Inspect Git, worktrees, remote refs, and the current PR; finish publishing this verified slice if interrupted before its PR is recorded.
+2. Read [1B.03](restyle-cloud-agent-roadmaps/1b-saved-tasks.md#1b03--store-the-task-and-expose-owned-operations), [shared task contract](../../packages/pvo-assistant/tasks/README.md), [local link commands](../../editor/src/state/assistant/taskProjectCommands.ts), [account sessions](../../server/auth/sessions.js), and [existing budget object](../../server/assistant/budget.js).
+3. Define how an authenticated owner resolves/creates a server project for a local draft before creating the first task. Browser IDs and stored locators are lookup hints, never permission. Specify the owned project/task index, atomic task creation/revision updates, retention, and missing-binding behavior.
+4. Implement persistent create/read/list/answer/resume/stop operations with current ownership and CSRF boundaries. Prove duplicate keys, two owners, stale revisions, malformed inputs, and a true storage restart. Preserve the existing anonymous ordinary editor assistant. Running the authoring loop remains 1B.04/1B.05.
+5. Record cloud resources before creation and cleanup afterward. Add real route/storage tests, run applicable checks, and deliver app changes through the beta procedure. Mark **1B.03** only when its full criteria pass, then record the next exact task.
 
-No cloud deployment was needed for 1B.01. The rest of 1B includes real persistence, owned routes, background execution, editor return/reload behavior, reconciliation, browser verification, and beta delivery. Defining the record does not make a task survive closing the editor.
+A local checkpoint now remembers a task locator supplied by a validated response. There is still no server task API or background builder. The 1B.02 browser check uses account/task fixtures with real local storage; it does not complete the full 1B close-the-editor build journey.
 
 ## Decisions already made
 
@@ -54,12 +55,15 @@ No cloud deployment was needed for 1B.01. The rest of 1B includes real persisten
 | Record unknown external outcomes | A timed-out request may have succeeded; reconcile before retrying a booking, message, or deployment |
 | Update progress after each verified task | This user explicitly requested a handoff that another coding agent can resume |
 
-The [1B.01 contract](../../packages/pvo-assistant/tasks/README.md) now fixes shared fields, byte/count limits, task deadlines/retention, retries, claims, receipts, and per-task usage reservations. Open choices for **1B.02–1B.05** are the project association lifecycle, task/project index, storage/coordinator layout, account-wide budget integration, and minimal saved-task UI. Later routes and storage names in the detailed plan remain proposals.
+The [1B.01 contract](../../packages/pvo-assistant/tasks/README.md) now fixes shared fields, byte/count limits, task deadlines/retention, retries, claims, receipts, and per-task usage reservations. 1B.02 fixes the local project association lifecycle: per-account locators, reload/rename preservation, independent copies, and account/project scope invalidation. Open choices for **1B.03–1B.05** are owned server-project resolution, task/project indexing, storage/coordinator layout, account-wide budget integration, and minimal saved-task UI. Later routes and storage names in the detailed plan remain proposals.
 
 ## Verification and known limits
 
 | Evidence | Result |
 | --- | --- |
+| `npm run check` for 1B.02 | Passed: 534 JavaScript modules, 717 dependency-boundary modules, 156 adopted formatting files, 1,141 Node tests |
+| Editor and browser checks for 1B.02 | `npm run check:editor`, focused 29 tests, `task-project-link`, and `assistant-thread` at desktop and two phone sizes passed |
+| Build and beta for 1B.02 | `npm run build` passed; served release/HTML/service worker and fresh-browser activated worker verified at `restyle-editor-shell-8e25ded02bf27bd6` |
 | `npm run check` for 1B.01 | Passed: 531 JavaScript source modules, 712 dependency-boundary modules, 144 adopted formatting files, 1,131 Node tests, including 23 saved-task tests |
 | `npm run build:language` for test prerequisites | Passed; generated ignored WASM bindings in the isolated implementation checkout |
 | Contract-only verification limits | No storage restart, HTTP ownership, provider reconciliation, or real editor journey claimed; these require later adapters |
@@ -111,6 +115,19 @@ Append new entries here after verified tasks. Keep old evidence when requirement
 - **Resources/workspace:** no cloud resources or service processes created. Desktop generated output preserved; changes built and checked in the isolated focused worktree. Temporary dependency symlink used only for checks and removed afterward; run `npm ci` when resuming.
 - **Integration:** prior PR #80 merged into `dev` at `e8e044cc97f7ad4b35a03e846b32b377e01d3d1d`; this focused branch starts there. Source and completion evidence are committed at `949b9f344874c13aecbfa8a22b234a52caa3b649`. [PR #81](https://github.com/jaffakakes/pvo-prototype/pull/81) is open against `dev`; a following documentation commit records its URL. Implementation is complete; review/merge and later app releases are separate.
 - **Next:** **1B.02**, persist the minimal local-draft association with an owned server project/task identity. Inspect project persistence, duplication, and account-switch behavior first. Resolve the 1B.01 integration dependency before starting its implementation branch.
+
+### 2026-10-05 — 1B.02 complete
+
+- **Plain-English outcome:** a local draft can remember which account, server project, and task belong together. Reloading/renaming preserves that link; a project copy gets no inherited task link. Switching accounts clears the visible assistant conversation and rejects delayed responses from the previous scope.
+- **Source:** `domain/assistant/taskProjectLink.ts` owns local rules; `state/assistant/taskProjectCommands.ts` guards receipt attachment; `state/assistant/sessionScope.ts` invalidates account/project scope. Local checkpoint/autosave code persists locators, and `infrastructure/projectPersistence/copyProject.ts` atomically copies a named local checkpoint without associations or media uploads. Shared `parseTaskReference` uses the existing bounded IDs.
+- **Contract decisions:** optional checkpoint `assistantTaskLinks = { localId, accounts: [{ ownerId, projectId, taskId }] }`; absent means unlinked. Maximum eight account entries, one current task/server-project association per account. Links stay outside scene snapshots, Undo, and exports. Other owners' IDs remain stored for later return but are not exposed by the current-owner selector. Server authorization is still mandatory in 1B.03. Copying strips all authoring-task links; no service copy/delete or new copy UI is claimed.
+- **Checks:** focused `node --test tests/editor-task-project-link.test.mjs tests/editor-assistant-request.test.mjs tests/editor-project-persistence.test.mjs` passed 29 tests. Final `npm run check` passed 1,141 tests plus 534 JavaScript, 717 dependency, and 156 formatting checks. `npm run check:editor` and `npm run build` passed. Build retained its existing large-chunk warning. Documentation verification passed: 137 local links across ten Markdown files, 121 unique task IDs, and only 1B.02 newly checked. `git diff --check` passed.
+- **Browser evidence:** `EDITOR_URL=http://127.0.0.1:5196/ npm run check:browser -- editor task-project-link` passed real IndexedDB saves, link-only autosave, exact video-byte restoration, rename/Undo, independent copy with overwrite rejection, project navigation, account switch/expiry, delayed-response rejection, and recovery after a temporary storage-open failure. `assistant-thread` passed at 1440×900, 390×844, and 320×693. Initial new-browser assertions exposed a polling mistake in the test (asynchronous predicates returned before storage finished); corrected to synchronous state predicates, then the full new journey passed. No unresolved test failure remains.
+- **Limits of evidence:** account and assistant HTTP are fixtures; no live server task, server ownership enforcement, hosted build, or third-party account action was exercised. Those interfaces do not yet exist. No production release.
+- **Beta:** actual server serves `/Users/christinasmacbook/Desktop/pvo-prototype/dist/`. Delivered assets before HTML/service worker/release marker; retained 71 existing hashed assets. Verified served HTML, release JSON, service-worker revision, and a fresh browser's successful UI load and activated service worker: **`restyle-editor-shell-8e25ded02bf27bd6`**. No forced reload of the user's session.
+- **Backup/cleanup:** 188 pre-existing beta files and the new 124-file build are preserved under `/Users/christinasmacbook/.codex/backups/restyle-task-project-link-f7osnzgu/`; `delivery.json` records paths, hashes, and revisions. Task Vite stopped. Temporary dependency symlink removed; generated changes in the isolated implementation checkout were restored after preserving the build. No cloud resources created.
+- **Code / delivery:** this implementation commit includes source, checks, and roadmap evidence. Prior PR #81 merged at `2013da2`; this task uses a new focused branch. Its commit/push/PR publication is the remaining delivery action at this checkpoint.
+- **Next:** **1B.03**. Start with owned server-project resolution and durable task/index storage, then authenticated task operations and true restart tests. Integrate this slice first through its PR.
 
 ## Template for the next evidence entry
 

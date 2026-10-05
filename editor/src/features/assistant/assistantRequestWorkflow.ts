@@ -43,6 +43,7 @@ type RequestFeedback = {
 };
 
 type RequestAdapters = {
+  requestScope(): unknown;
   capture(): {
     localId: string | null;
     project: ProjectSnapshot;
@@ -77,6 +78,7 @@ export function createAssistantRequestWorkflow(adapters: RequestAdapters) {
     const prompt = input.prompt.trim();
     if (!prompt || active) return;
     const original = adapters.capture();
+    const originalScope = adapters.requestScope();
     const fingerprint = nativeProjectFingerprint(original.project);
     const controller = new AbortController();
     const feedback = adapters.feedback(prompt);
@@ -88,6 +90,7 @@ export function createAssistantRequestWorkflow(adapters: RequestAdapters) {
     let message = "";
     let applying = false;
     const assertCurrent = () => {
+      if (adapters.requestScope() !== originalScope) controller.abort();
       signal.throwIfAborted();
       const latest = adapters.capture();
       if (
@@ -106,7 +109,7 @@ export function createAssistantRequestWorkflow(adapters: RequestAdapters) {
       try {
         availability = await adapters.availability(signal);
       } catch {
-        signal.throwIfAborted();
+        assertCurrent();
         throw new AssistantServiceError(503);
       }
       assertCurrent();
@@ -195,6 +198,7 @@ export function createAssistantRequestWorkflow(adapters: RequestAdapters) {
         hasAnswer: Boolean(result.answer),
       });
     } catch (error) {
+      if (adapters.requestScope() !== originalScope) controller.abort();
       if (applying)
         trace({
           stage: "application",

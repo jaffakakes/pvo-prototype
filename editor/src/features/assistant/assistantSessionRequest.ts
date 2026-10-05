@@ -23,6 +23,7 @@ import { readSavedFonts } from "../../infrastructure/fonts/library";
 import { uid } from "../../infrastructure/ids";
 import { applyAssistantChanges } from "../../state/assistant/applyChanges";
 import { useAssistant } from "../../state/assistant/assistantStore";
+import { useAssistantScope } from "../../state/assistant/sessionScope";
 import { notifyAssistantApplied } from "../../state/assistant/nativeAppliedNotification";
 import {
   completeAssistantExchange,
@@ -53,6 +54,7 @@ type SessionEffects = {
 /** Compose existing editor effects at the request boundary, outside React rendering. */
 export function createAssistantSessionRequest(effects: SessionEffects) {
   return createAssistantRequestWorkflow({
+    requestScope: () => useAssistantScope.getState().epoch,
     capture: () => {
       const current = useCapture.getState();
       return {
