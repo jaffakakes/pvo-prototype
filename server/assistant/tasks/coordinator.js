@@ -1,3 +1,6 @@
+import { TaskResearch } from "../builder/researchJournal.js";
+import { publicResearch } from "../builder/researchProvider.js";
+import { taskBuilderTools } from "../builder/taskToolsRegistry.js";
 import { TaskBuilders } from "../builder/repository.js";
 import { planSavedBuild } from "../builder/planner.js";
 import { runBuilderBatch } from "../builder/runner.js";
@@ -44,6 +47,7 @@ export class AssistantTasks extends DurableObject {
     this.workspaces = new WorkspaceOperations(ctx.storage.sql, this.repository);
     this.attempts = new TaskAttempts(ctx.storage.sql, this.repository);
     this.builders = new TaskBuilders(ctx.storage.sql, this.repository);
+    this.research = new TaskResearch(ctx.storage.sql, this.repository);
     this.active = new Map();
   }
 
@@ -75,6 +79,7 @@ export class AssistantTasks extends DurableObject {
       repository.maintain(now, this.heldTasks());
       this.results.prune();
       this.builders.prune(now);
+      this.research.prune(now);
       let result;
       try {
         result = this.ctx.storage.transactionSync(() => {
@@ -189,6 +194,13 @@ export class AssistantTasks extends DurableObject {
     return runWorkspaceOperation(this, claimed, kind, request);
   }
 
+  researchProvider() {
+    return publicResearch();
+  }
+  builderToolDefinitions() {
+    return taskBuilderTools(this, null).definitions;
+  }
+
   workspaceToolDefinitions() {
     return taskWorkspaceTools(this, null).definitions;
   }
@@ -256,7 +268,7 @@ export class AssistantTasks extends DurableObject {
       return planSavedBuild(
         task,
         input.build,
-        this.workspaceToolDefinitions(),
+        this.builderToolDefinitions(),
         this.env,
         signal,
       );
@@ -282,6 +294,7 @@ export class AssistantTasks extends DurableObject {
         controller.abort();
     }
     this.attempts.recover(now);
+    this.research.recover(now);
     this.noteTerminal(now);
     this.repository.maintain(now, this.heldTasks());
     this.attempts.prune();
@@ -392,6 +405,7 @@ export class AssistantTasks extends DurableObject {
     const times = [
       this.repository.nextMaintenance(now),
       this.attempts.nextBudgetWakeup(),
+      this.research.nextWakeup(now),
       this.providers.nextWakeup(),
       this.workspaces.nextWakeup(),
       ...this.repository
@@ -432,6 +446,7 @@ export class AssistantTasks extends DurableObject {
       this.providers.prune();
       this.workspaces.prune(this.now());
       this.builders.prune(this.now());
+      this.research.prune(this.now());
     });
   }
 }

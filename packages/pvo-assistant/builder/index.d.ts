@@ -46,6 +46,7 @@ export function parseBuilderReadResult(
 ): BuilderReadResult;
 export function serializeBuilderTool(value: unknown): string;
 export type BuilderDecision =
+  | { kind: "research"; calls: BuilderResearch[] }
   | {
       kind: "agreement";
       agreement: import("../services/index.js").ServiceAgreement;
@@ -71,11 +72,18 @@ export const BUILDER_LIMITS: Readonly<{
 }>;
 export function parseBuilderDecision(
   value: unknown,
-  stage: { hasAgreement: boolean; available: readonly BuilderTool["kind"][] },
+  stage: {
+    hasAgreement: boolean;
+    available: readonly (BuilderTool["kind"] | BuilderResearch["kind"])[];
+  },
 ): BuilderDecision;
 export function builderDecisionSchema(
   hasAgreement: boolean,
-  definitions: ReturnType<typeof builderToolDefinitions>,
+  definitions: Array<{
+    kind: BuilderTool["kind"] | BuilderResearch["kind"];
+    description: string;
+    schema: object;
+  }>,
 ): object;
 
 export type BuilderState = {
@@ -90,7 +98,7 @@ export type BuilderState = {
   batchEnd: "completed" | "failed" | "interrupted" | null;
   feedback: Array<{
     operationId: string;
-    kind: BuilderTool["kind"];
+    kind: BuilderTool["kind"] | BuilderResearch["kind"];
     result: unknown;
   }>;
   omittedFeedback: number;
@@ -99,7 +107,7 @@ export type BuilderPosition = {
   round: number;
   index: number;
   operationId: string;
-  tool: BuilderTool;
+  tool: BuilderTool | BuilderResearch;
 };
 export function newBuilderState(): BuilderState;
 export function parseBuilderState(value: unknown): BuilderState;
@@ -129,3 +137,55 @@ export function builderContext(value: BuilderState): {
   feedback: BuilderState["feedback"];
   omittedFeedback: number;
 };
+
+export type BuilderResearch =
+  { kind: "web_search"; query: string } | { kind: "web_read"; url: string };
+export const BUILDER_RESEARCH_KINDS: readonly BuilderResearch["kind"][];
+export const BUILDER_RESEARCH_LIMITS: Readonly<{
+  calls: number;
+  queryBytes: number;
+  urlBytes: number;
+  resultBytes: number;
+  textBytes: number;
+}>;
+export type BuilderResearchResult =
+  | {
+      kind: BuilderResearch["kind"];
+      status: "unknown" | "unavailable";
+      result: null;
+    }
+  | {
+      kind: "web_search";
+      status: "completed";
+      result: {
+        query: string;
+        results: Array<{ title: string; url: string; snippet: string }>;
+        source: string;
+        retrievedAt: string;
+      };
+    }
+  | {
+      kind: "web_read";
+      status: "completed";
+      result: {
+        url: string;
+        title: string;
+        text: string;
+        links: Array<{ title: string; url: string }>;
+        retrievedAt: string;
+        truncated: boolean;
+      };
+    };
+export function parseBuilderResearch(value: unknown): BuilderResearch;
+export function serializeBuilderResearch(value: unknown): string;
+export function parseBuilderResearchResult(
+  tool: BuilderResearch,
+  value: unknown,
+): BuilderResearchResult;
+export function builderResearchDefinitions(
+  available: readonly BuilderResearch["kind"][],
+): Array<{
+  kind: BuilderResearch["kind"];
+  description: string;
+  schema: object;
+}>;

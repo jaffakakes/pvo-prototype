@@ -1,5 +1,6 @@
 import { TASK_LIMITS } from "../../../packages/pvo-assistant/tasks/index.js";
-import { taskWorkspaceTools } from "./taskTools.js";
+import { taskBuilderTools } from "./taskToolsRegistry.js";
+import { BUILDER_RESEARCH_KINDS } from "../../../packages/pvo-assistant/builder/index.js";
 import {
   hasCurrentClaim,
   taskClaim,
@@ -10,6 +11,7 @@ function haltBatch(result) {
   return (
     result?.status === "interrupted" ||
     result?.status === "unknown" ||
+    result?.status === "unavailable" ||
     result?.status === "pending" ||
     (result?.kind === "command" && result.result?.exitCode !== 0)
   );
@@ -46,6 +48,21 @@ export async function runBuilderBatch(coordinator, claimed) {
     await coordinator.transaction(() => {
       while (coordinator.builders.next(claimed.id)) {
         const position = coordinator.builders.next(claimed.id);
+        if (BUILDER_RESEARCH_KINDS.includes(position.tool.kind)) {
+          const row = coordinator.research.get(
+            claimed.id,
+            position.operationId,
+          );
+          if (!row?.settled) break;
+          coordinator.builders.recoveredFeedback(
+            claimed,
+            position,
+            row.result,
+            haltBatch(row.result),
+            coordinator.now(),
+          );
+          continue;
+        }
         const row = coordinator.workspaces.get(
           `${claimed.id}_${position.operationId}`,
         );
@@ -76,7 +93,7 @@ export async function runBuilderBatch(coordinator, claimed) {
     });
     return;
   }
-  const tools = taskWorkspaceTools(coordinator, claimed);
+  const tools = taskBuilderTools(coordinator, claimed);
   try {
     for (let position; (position = coordinator.builders.next(claimed.id));) {
       if (!coordinator.builders.current(claimed, coordinator.now())) return;
@@ -103,7 +120,9 @@ export async function runBuilderBatch(coordinator, claimed) {
     await fail(
       coordinator,
       claimed,
-      error?.code === "reconciliation_required" ? error.code : "invalid_result",
+      ["reconciliation_required", "budget_exceeded"].includes(error?.code)
+        ? error.code
+        : "invalid_result",
     );
   }
 }

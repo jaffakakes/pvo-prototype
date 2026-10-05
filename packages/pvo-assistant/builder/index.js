@@ -19,3 +19,12 @@ export {
   interruptBuilderBatch,
   builderContext,
 } from "./state.js";
+
+export {
+  BUILDER_RESEARCH_KINDS,
+  BUILDER_RESEARCH_LIMITS,
+  parseBuilderResearch,
+  serializeBuilderResearch,
+  parseBuilderResearchResult,
+  builderResearchDefinitions,
+} from "./research.js";

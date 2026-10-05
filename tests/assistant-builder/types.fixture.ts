@@ -1,5 +1,9 @@
 import {
   type BuilderTool,
+  type BuilderResearch,
+  type BuilderResearchResult,
+  parseBuilderResearch,
+  parseBuilderResearchResult,
   type BuilderDecision,
   type BuilderState,
   newBuilderState,
@@ -50,3 +54,20 @@ if (position) recordBuilderTool(batch, position, { status: "completed" });
 // @ts-expect-error model decisions cannot approve deployment
 const deployment: BuilderDecision = { kind: "complete", ready: true };
 void [stage, deployment];
+
+const research: BuilderResearch = parseBuilderResearch({});
+const evidence: BuilderResearchResult = parseBuilderResearchResult(
+  research,
+  {},
+);
+const researchDecision: BuilderDecision = {
+  kind: "research",
+  calls: [research],
+};
+const privateRead: BuilderResearch = {
+  kind: "web_read",
+  url: "https://public.com",
+  // @ts-expect-error research cannot carry a private authorization header
+  headers: {},
+};
+void [evidence, researchDecision, privateRead];
