@@ -64,10 +64,10 @@ export function createPublishingClient(options: Options = {}) {
       return result;
     },
     async uploadPoster(id: string, poster: Blob, signal?: AbortSignal) {
-      if (poster.type !== "image/webp" || !poster.size || poster.size > 5 * 1024 * 1024)
+      if (!["image/webp", "image/png"].includes(poster.type) || !poster.size || poster.size > 5 * 1024 * 1024)
         throw new Error("The selected cover could not be shared. Choose another frame and export again.");
       await json(`/api/publications/${encodeURIComponent(id)}/poster`, {
-        method: "PUT", headers: { "Content-Type": "image/webp" }, body: poster,
+        method: "PUT", headers: { "Content-Type": poster.type }, body: poster,
       }, signal);
     },
     async list(signal?: AbortSignal) {

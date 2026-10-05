@@ -24,7 +24,9 @@ feature/*, fix/*, hotfix/*, chore/*, docs/*
 | `prod` | Production history only. It accepts promotions from `preprod`. | A successful push starts the production Cloudflare workflow. |
 | `main` | Legacy branch retained temporarily for history. Do not target it with new work. | None. |
 
-Start each change from the latest `dev` branch and use one of the approved prefixes (`feature/`, `fix/`, `hotfix/`, `chore/`, `docs/`, or `codex/`). Open a pull request back to `dev`. Promote with a merge-commit `dev → preprod` pull request, verify the release candidate, then open a merge-commit `preprod → prod` pull request. The promotion policy rejects shortcuts into `preprod` or `prod`. Resolve a promotion conflict on a new work branch entering `dev`, then promote again; do not create a one-off fix on `preprod` or `prod`.
+Start each change from the latest `dev` branch and use one of the approved prefixes (`feature/`, `fix/`, `hotfix/`, `chore/`, `docs/`, or `codex/`). Open a pull request back to `dev`. Promote with a merge-commit `dev → preprod` pull request, verify the release candidate, then open a merge-commit `preprod → prod` pull request. The promotion policy rejects shortcuts into `preprod` or `prod`. Resolve a promotion conflict on a new work branch entering `dev`, then promote again.
+
+When `dev` contains unrelated unfinished work, an isolated production fix may use `hotfix/*` from the current `prod` commit. Merge the same fix into `dev` first. The hotfix may enter `preprod` through a merge-commit pull request only while `preprod` still equals `prod`; then promote `preprod → prod` normally. Do not include unfinished `dev` work or commit directly on `preprod` or `prod`.
 
 Protected branches require pull requests and the repository's `test` and `promotion` checks. They reject force pushes and deletion. No approving review is required while the repository has one maintainer; the pull request and passing checks remain mandatory.
 

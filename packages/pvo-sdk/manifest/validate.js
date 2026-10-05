@@ -34,8 +34,8 @@ export function validatePvo(manifest) {
     const poster = manifest.poster;
     if (!poster || typeof poster !== "object" || Array.isArray(poster)
       || typeof poster.asset_id !== "string" || !poster.asset_id
-      || poster.type !== "image/webp" || !Number.isFinite(poster.at) || poster.at < 0)
-      errors.push("poster must reference a WebP asset and a nonnegative time.");
+      || !["image/webp", "image/png"].includes(poster.type) || !Number.isFinite(poster.at) || poster.at < 0)
+      errors.push("poster must reference a WebP or PNG asset and a nonnegative time.");
     else if (ids.assets.has(poster.asset_id))
       errors.push("poster.asset_id must be separate from video media.");
   }
