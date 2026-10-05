@@ -50,7 +50,7 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 
 ## 1C. Let the agent write and test backend code
 
-**Progress: 1C.01 verified.** The [service contract](../../../packages/pvo-assistant/services/README.md) defines a saved behavior agreement, bounded source/test package, exact content identity and invocation/result rules. Fifteen focused tests and the full local check pass. The agent cannot yet generate/execute these packages; next are **1C.02/1C.03**.
+**Progress: 1C.01 verified.** The [service contract](../../../packages/pvo-assistant/services/README.md) defines a saved behavior agreement, bounded source/test package, exact content identity and invocation/result rules. Fifteen focused tests and the full local check pass. Follow the [1C workshop implementation plan](1c-generated-services.md) for the remaining adapters and test gate. The agent cannot yet generate/execute these packages; next are **1C.02/1C.03**.
 
 - [x] **1C.01** Agree on a small service package: source files, locked dependencies, runtime target, supported operations, input/result descriptions, and tests. An operation means one thing the component can ask the service to do.
 - [ ] **1C.02** Start one isolated workspace per task. Restore files from saved source when resuming.

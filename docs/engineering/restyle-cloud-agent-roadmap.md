@@ -46,7 +46,7 @@ Use the numbered tasks in the linked guide as the detailed checklist. The phase 
 | 4C | Better service management | 1D basic controls; 2/3 for connected work | Creator can identify failure, control usage, and retire resources safely |
 | 4D | Additional capability justified by a request | Existing ownership/lifecycle gates | One concrete new capability meets the same isolation, recovery, and truthful-result checks |
 
-For the next milestone, use the [detailed 1B implementation plan](restyle-cloud-agent-roadmaps/1b-saved-tasks.md). Later milestones already contain their task breakdowns in Roadmaps 1–4; expand a task's implementation notes when starting it without renumbering or resetting completed work.
+For the current milestone, use the [1C workshop implementation plan](restyle-cloud-agent-roadmaps/1c-generated-services.md). The completed [1B implementation plan](restyle-cloud-agent-roadmaps/1b-saved-tasks.md) retains its acceptance evidence. Later milestones already contain their task breakdowns in Roadmaps 1–4; expand a task's implementation notes when starting it without renumbering or resetting completed work.
 
 ## The order inside the first roadmap
 
