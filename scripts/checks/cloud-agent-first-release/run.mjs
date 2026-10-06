@@ -1,47 +1,29 @@
 import { readFile, writeFile } from "node:fs/promises";
-import { homedir } from "node:os";
-import { resolve } from "node:path";
 import { prepareResources } from "../cloud-agent-infrastructure/proof-resources.mjs";
 import { exerciseAuthoring } from "./exercise.mjs";
 import { scenarios } from "./scenarios.js";
+import { readRunpodKey } from "./credentials.mjs";
 
 const accountId = process.argv[2];
 if (
-  process.argv[3] !== "--run-approved-15-usd" ||
+  process.argv[3] !== "--run-approved-10-usd" ||
   process.argv.length !== 4 ||
   !/^[a-f0-9]{32}$/.test(accountId ?? "")
 ) {
   console.error(
-    "Usage (only after fresh approval): node scripts/checks/cloud-agent-first-release/run.mjs <account-id> --run-approved-15-usd",
+    "Usage (only after replacement approval): node scripts/checks/cloud-agent-first-release/run.mjs <account-id> --run-approved-10-usd",
   );
   process.exit(1);
 }
-async function modelKey() {
-  if (process.env.RUNPOD_API_KEY?.trim())
-    return process.env.RUNPOD_API_KEY.trim();
-  try {
-    const config = await readFile(
-      resolve(homedir(), ".runpod/config.toml"),
-      "utf8",
-    );
-    const match = /^\s*apikey\s*=\s*"([^"\r\n]+)"\s*$/m.exec(config);
-    if (match?.[1]) return match[1];
-  } catch {
-    /* Never print private configuration. */
-  }
-  throw new Error(
-    "Supply RUNPOD_API_KEY privately or configure the Runpod CLI.",
-  );
-}
-const apiKey = await modelKey();
+const apiKey = await readRunpodKey();
 const resources = await prepareResources(accountId);
 const { report, save } = resources;
 const expiresAt = Date.now() + 90 * 60_000;
 report.purpose =
   "1F natural-language acceptance preparation: actual Runpod Kimi planning and Cloudflare tools, no production deployment";
 report.limits = {
-  approvedUsd: 15,
-  reservedModelUsd: 13,
+  approvedUsd: 10,
+  reservedModelUsd: 8,
   infrastructureAllowanceUsd: 2,
   deployments: 1,
   containerApplications: 1,

@@ -2,11 +2,11 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
-## Latest scope: 1F acceptance preparation
+## Latest scope: 1F live failure diagnosed; adapter repaired
 
-**All 1E is verified; 1F.01 is in progress. 47/134 tasks complete; 87 remain.** Active checkout: `feature/restyle-first-release`, `/Users/christinasmacbook/.codex/worktrees/restyle-first-release/pvo-prototype`. It starts from fetched `origin/dev` `cc2193e` with prerequisite `04c4383` from draft #104. Read the top [progress checkpoint](restyle-cloud-agent-progress.md) and [1F acceptance plan](restyle-first-release-acceptance.md) before running anything paid. Earlier checkpoints are history.
+**All 1E is verified; 1F.01 is in progress. 47/134 tasks complete; 87 remain.** Active checkout: `feature/restyle-first-release`, `/Users/christinasmacbook/.codex/worktrees/restyle-first-release/pvo-prototype`. It starts from fetched `origin/dev` `cc2193e` with prerequisite `04c4383` from draft #104. Preparation is `caa06cd` in [draft #105](https://github.com/jaffakakes/pvo-prototype/pull/105); the following documentation checkpoint records verified combined beta `restyle-editor-shell-224680dc85bbb5ca`. Read the top [progress checkpoint](restyle-cloud-agent-progress.md) and [1F acceptance plan](restyle-first-release-acceptance.md) before running anything paid. Earlier checkpoints are history.
 
-The new disposable harness uses the real planning/build/attachment functions and records conservative model spending. Local preparation and dry-run success do not prove a live demonstration. All 1F checkboxes remain unchecked. A fresh maximum US$15 approval has been requested for one disposable deployment; inspect the latest progress for its response before spending. Prior approvals cannot be reused. Production promotion remains separate.
+The new disposable harness uses the real planning/build/attachment functions and records conservative model spending. The approved single deployment failed on its first Runpod request and was fully removed. Subsequent model-only diagnosis found that the actual planner schema returns HTTP 500 while JSON mode with the schema in trusted instructions works. The repaired Runpod adapter retains all local validation boundaries. See [actual run and repair](restyle-first-release-acceptance.md#actual-run-and-repair--6-october-2026) for portable evidence, costs and cleanup. Both complete demonstrations and all 1F checkboxes remain unchecked. The US$15 authorization covered one deployment, now consumed; a replacement needs approval. Do not repeat secure key setup: the user already supplied it privately. Production promotion remains separate.
 
 ## Preserved planning decision: consolidated Containers
 
