@@ -31,7 +31,7 @@ try {
     entrypoint: "scripts/checks/cloud-agent-recovery/proof-worker.js",
     bindings: [
       { name: "PROOF_TASKS", class_name: "ProofTasks" },
-      { name: "SERVICE_RELEASES", class_name: "ProofRelease" },
+      { name: "SERVICE_HOSTS", class_name: "ProofRelease" },
     ],
     loaderBinding: "SERVICE_LOADER",
   });

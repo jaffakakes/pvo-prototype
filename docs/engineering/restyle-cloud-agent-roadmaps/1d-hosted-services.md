@@ -10,7 +10,7 @@ The platform decides who may call each action, checks its data, runs the program
 
 ## Current checkpoint and ownership
 
-All of 1C is verified. **1D.01/1D.02 are verified complete.** Next is stable routing, durable state and action receipts in **1D.03–1D.05**. The active hosting checkout starts from current dev `4bc9f9e` and combines the verified validation prerequisite `f7dac2c` (source `98dd960`, draft #96). Checked-package hosting, owner metadata and the trusted task-host stage pass local SQLite/runtime integration and the full 1,320-test behavior suite. No new paid calls or resources.
+All of 1C is verified. **1D.01–1D.05 are verified complete.** Next is creator controls and active-service lifecycle in **1D.06/1D.07**. The active hosting checkout starts from current dev `4bc9f9e` and combines the verified validation prerequisite `f7dac2c` (source `98dd960`, draft #96). Checked-package hosting, owner metadata and the trusted task-host stage pass local SQLite/runtime integration and the full 1,320-test behavior suite. No new paid calls or resources.
 
 Keep shared service/release rules in `packages/pvo-assistant/services/` and `releases/`, SQL/runtime adapters in `server/cloud-services/`, and task admission/receipts in the existing focused task modules. The owner-scoped task coordinator can retain a separate service catalog beyond task retention; generated code cannot access it. The immutable release provider must retain its own artifact bytes independently of the builder/workspace.
 
@@ -37,7 +37,7 @@ Before marking the two items complete, exercise actual local SQLite/provider/run
 
 Do not infer production deployment from local test success or beta assets. Use the current release workflow, keep unrelated releases intact, and record implementation/PR/beta/production separately.
 
-## Next implementation: 1D.03–1D.05
+## Implemented slice: 1D.03–1D.05
 
 Use one durable object per stable service identity for release storage, selected release and data. This keeps the service address independent of any release and allows data plus action receipt to commit in one SQLite transaction. Evolve the currently undeployed single-release object into that current contract; do not add a distributed directory whose registration could disagree with publication. The provider journal already records both service and release identities before effects. Preserve its original-identity lookup and cancellation behavior while changing the binding's service selection. Extract release storage without behavior changes first, then implement the new service behavior separately.
 
@@ -48,3 +48,12 @@ Use one durable object per stable service identity for release storage, selected
 - Bound queued calls, per-day execution attempts, state bytes, receipt count and retained receipt bytes outside generated code. Exact replay cannot reapply a mutation; full receipt capacity rejects new actions instead of silently dropping deduplication records. Activation/pause/delete and active retention remain explicit 1D.06/07 work before any live route is enabled.
 
 Required checks: full runtime restart and lost HTTP reply; two distinct IDs competing for the last place; overlapping equipment dates; matching replay/changed-input conflict; malformed input before execution; private operation rejection; test/live and owner/service isolation; stale in-flight completion after lifecycle change; bounded queue/data/receipt limits. Update the shared declarations, provider adapter, diagnostic/test fixtures and deployment bindings together. No cloud resource is created merely by adding its declaration.
+
+
+### Verification and next step
+
+The current `HostedService` class and `SERVICE_HOSTS` binding implement the single per-service ownership boundary above. No old single-release binding/schema is retained; these product declarations have not been deployed. Public HTTP and authenticated Try routes, pure authority/usage rules, serialized isolated execution and atomic SQL state/receipts are implemented. Limits and exact route contracts are documented in the [hosting package](../../../packages/pvo-assistant/hosting/README.md).
+
+Full local checks passed 1,330 behavior tests, syntax/dependency/format gates. A final expiry-cleanup fix then passed 36 focused cases, including the new regression. Concurrent dinner/equipment requests, same-ID replay, full restart, runtime reply rejection, Stop, queue/data/receipt budgets, namespace/owner/private-operation isolation and independent release cancellation are covered by actual workerd/SQLite. Live-mode tests deliberately seed an active record through a test-only setup; no production activation API, live lifetime or live provider acceptance is claimed yet.
+
+Next **1D.06/1D.07**: implement authenticated inspection/activation/pause/delete with exact command receipts and optimistic revisions. Make the hosted object the authority for lifecycle; keep the owner catalog synchronized without granting caller/model authority. Active and paused releases retain source/live data independently of task expiry; task Stop/abandoned cleanup may only close inactive authoring resources. Deletion removes source/data while preserving bounded tombstones and uncertainty bookkeeping. Prove restart/lost-control replies, lifecycle changes during an action, wrong owner, quotas and inactive cleanup before checking these tasks. Then implement **1D.08** safe replacement/rollback against current live state.

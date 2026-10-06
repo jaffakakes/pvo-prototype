@@ -14,9 +14,8 @@ async function observation(call, identity) {
 
 /** Private Cloudflare binding, selected from saved identity rather than model URLs. */
 export function serviceProvider(env) {
-  if (typeof env.SERVICE_RELEASES?.getByName !== "function") return null;
-  const stub = (identity) =>
-    env.SERVICE_RELEASES.getByName(identity.resourceId);
+  if (typeof env.SERVICE_HOSTS?.getByName !== "function") return null;
+  const stub = (identity) => env.SERVICE_HOSTS.getByName(identity.serviceId);
   return {
     publish(publication) {
       return observation(

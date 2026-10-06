@@ -12,9 +12,8 @@ import {
 } from "../service-validation/fixtures.mjs";
 
 /** Synthetic trusted receipt for contract/storage tests, never product or live acceptance evidence. */
-export async function checkedFixture(source) {
-  const agreement = dinnerAgreement(),
-    pkg = packageFor(source);
+export async function checkedFixture(source, agreement = dinnerAgreement()) {
+  const pkg = packageFor(source);
   pkg.agreementDigest = await contentDigest(
     serializeServiceAgreement(agreement),
   );
@@ -23,11 +22,13 @@ export async function checkedFixture(source) {
     sourceDigest: await contentDigest(serializeServiceFiles(pkg.files)),
     packageDigest: await contentDigest(serializeServicePackage(pkg)),
   };
-  const report = appendServiceCaseResult(
-    newServiceTestReport(agreement, identity),
-    agreement,
-    identity,
-    { id: "capacity", status: "passed", completedSteps: 4, failure: null },
-  );
+  let report = newServiceTestReport(agreement, identity);
+  for (const scenario of agreement.cases)
+    report = appendServiceCaseResult(report, agreement, identity, {
+      id: scenario.id,
+      status: "passed",
+      completedSteps: scenario.steps.length,
+      failure: null,
+    });
   return { artifact: { agreement, package: pkg, identity }, report };
 }

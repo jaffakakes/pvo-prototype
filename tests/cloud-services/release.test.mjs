@@ -23,7 +23,7 @@ export async function execute(value) {
   if (value.input?.name === 'overflow') return {result:'x'.repeat(70000),state:value.state};
   return rules(value);
 }`;
-const publication = async () =>
+const publication = async (operationId = "publish-one") =>
   prepareServicePublication(
     createTask(input(), {
       id: "task",
@@ -31,7 +31,7 @@ const publication = async () =>
       now: NOW,
       inputDigest: "a".repeat(64),
     }),
-    "publish-one",
+    operationId,
     await checkedFixture(source),
   );
 let modules;
@@ -40,22 +40,25 @@ async function fixture() {
     stdin: {
       resolveDir: process.cwd(),
       contents: `
-    import { ServiceRelease } from './server/cloud-services/release.js';
-    export class TestRelease extends ServiceRelease {
+    import { HostedService } from './server/cloud-services/host.js';
+    export class TestRelease extends HostedService {
       now() { return this.clock ?? Date.UTC(2100, 0, 1); }
+      setClock(now) {this.clock=now;}
       async expire(now) { this.clock = now; await this.alarm(); }
-      inspect() { const row=this.store.row(); return { sourcePresent: !!row?.body, probes: row?.probes ?? 0 }; }
+      inspect(identity) { const row=this.store.row(identity.resourceId); return { sourcePresent: !!row?.body, probes: row?.probes ?? 0, testReleaseId:this.store.service()?.testReleaseId, records:this.ctx.storage.sql.exec("SELECT COUNT(*) AS count FROM service_data").one().count, receipts:this.ctx.storage.sql.exec("SELECT COUNT(*) AS count FROM service_actions").one().count }; }
     }
     export default { async fetch(request, env) {
       const { action, target, publication, identity, input, now } = await request.json();
-      const stub = env.SERVICE_RELEASES.getByName(target ?? identity?.resourceId ?? publication?.identity.resourceId);
+      const stub = env.SERVICE_HOSTS.getByName(target ?? identity?.serviceId ?? publication?.identity.serviceId);
       try {
+        if (action === 'clock') {await stub.setClock(now);return Response.json({ok:true});}
+        if (action === 'act') return Response.json(await stub.invoke(identity.serviceId,{kind:'creator',ownerId:identity.ownerId,mode:'test'},input));
         if (action === 'publish') return Response.json(await stub.publish(publication));
         if (action === 'lookup') return Response.json(await stub.lookup(identity));
         if (action === 'cancel') return Response.json(await stub.cancel(identity));
         if (action === 'probe') return Response.json(await stub.probe(identity, input));
         if (action === 'expire') { await stub.expire(now); return Response.json({ ok: true }); }
-        return Response.json(await stub.inspect());
+        return Response.json(await stub.inspect(identity));
       } catch { return Response.json({ error: 'provider operation rejected' }, { status: 409 }); }
     } };
   `,
@@ -68,7 +71,7 @@ async function fixture() {
     modules: bundled,
     compatibilityDate: "2026-10-03",
     durableObjects: {
-      SERVICE_RELEASES: { className: "TestRelease", useSQLite: true },
+      SERVICE_HOSTS: { className: "TestRelease", useSQLite: true },
     },
     workerLoaders: { SERVICE_LOADER: {} },
     isolatedResourcePersistencePath: persistence,
@@ -183,7 +186,7 @@ test("ownership, contents, lifetimes and runtime limits remain checked at the pr
       assert.equal(
         (
           await f.call(action, {
-            target: value.identity.resourceId,
+            target: value.identity.serviceId,
             identity: foreign,
             input: {},
           })
@@ -245,6 +248,102 @@ test("ownership, contents, lifetimes and runtime limits remain checked at the pr
       (await f.call("inspect", { identity: value.identity })).body
         .sourcePresent,
       false,
+    );
+  } finally {
+    await f.close();
+  }
+});
+
+test("one stable service retains independent immutable releases and an old retry cannot replace its selected version", async () => {
+  const f = await fixture();
+  try {
+    const first = await publication("one"),
+      second = await publication("two");
+    assert.equal(first.identity.serviceId, second.identity.serviceId);
+    assert.notEqual(first.identity.resourceId, second.identity.resourceId);
+    assert.equal(
+      (await f.call("publish", { publication: first })).body.state,
+      "available",
+    );
+    assert.equal(
+      (await f.call("publish", { publication: second })).body.state,
+      "available",
+    );
+    assert.equal(
+      (await f.call("publish", { publication: first })).body.state,
+      "available",
+    );
+    assert.equal(
+      (await f.call("inspect", { identity: second.identity })).body
+        .testReleaseId,
+      second.identity.resourceId,
+    );
+    await f.call("cancel", { identity: first.identity });
+    await f.restart();
+    assert.equal(
+      (await f.call("publish", { publication: first })).body.state,
+      "deleted",
+    );
+    assert.equal(
+      (await f.call("lookup", { identity: second.identity })).body.state,
+      "available",
+    );
+    const reply = await f.call("probe", {
+      identity: second.identity,
+      input: { operation: "join", input: { name: "Alice" } },
+    });
+    assert.equal(reply.status, 200);
+    assert.equal(JSON.parse(reply.body.body).result, "accepted");
+    for (const id of ["three", "four"])
+      assert.equal(
+        (await f.call("publish", { publication: await publication(id) }))
+          .status,
+        200,
+      );
+    assert.equal(
+      (await f.call("publish", { publication: await publication("five") }))
+        .status,
+      409,
+    );
+    assert.equal(
+      (await f.call("lookup", { identity: second.identity })).body.state,
+      "available",
+    );
+  } finally {
+    await f.close();
+  }
+});
+
+test("a delayed repeat publication after expiry removes test records even when it clears the last alarm", async () => {
+  const f = await fixture(),
+    value = await publication();
+  try {
+    await f.call("publish", { publication: value });
+    const result = await f.call("act", {
+      identity: value.identity,
+      input: { actionId: "saved", operation: "join", input: { name: "Alice" } },
+    });
+    assert.equal(result.body.ok, true);
+    assert.equal(
+      (await f.call("inspect", { identity: value.identity })).body.receipts,
+      1,
+    );
+    await f.call("clock", {
+      identity: value.identity,
+      now: value.identity.expiresAt + 1,
+    });
+    assert.equal(
+      (await f.call("publish", { publication: value })).body.state,
+      "deleted",
+    );
+    const status = (await f.call("inspect", { identity: value.identity })).body;
+    assert.equal(status.sourcePresent, false);
+    assert.equal(status.records, 0);
+    assert.equal(status.receipts, 0);
+    await f.restart();
+    assert.equal(
+      (await f.call("publish", { publication: value })).body.state,
+      "deleted",
     );
   } finally {
     await f.close();

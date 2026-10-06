@@ -10,7 +10,7 @@
       { "name": "RELEASES", "class_name": "ReleaseChannel" },
       { "name": "ASSISTANT_BUDGET", "class_name": "AssistantBudget" },
       { "name": "ASSISTANT_TASKS", "class_name": "AssistantTasks" },
-      { "name": "SERVICE_RELEASES", "class_name": "ServiceRelease" },
+      { "name": "SERVICE_HOSTS", "class_name": "HostedService" },
       { "name": "ASSISTANT_WORKSPACES", "class_name": "AssistantWorkspace" },
       { "name": "WORKSPACE_BUDGET", "class_name": "WorkspaceBudget" },
       { "name": "IMESSAGE_TEST_QUEUE", "class_name": "IMessageTestQueue" }
@@ -21,7 +21,7 @@
     { "tag": "assistant-budget-v1", "new_sqlite_classes": ["AssistantBudget"] },
     { "tag": "imessage-test-queue-v1", "new_sqlite_classes": ["IMessageTestQueue"] },
     { "tag": "assistant-tasks-v1", "new_sqlite_classes": ["AssistantTasks"] },
-    { "tag": "service-releases-v1", "new_sqlite_classes": ["ServiceRelease"] },
+    { "tag": "service-hosts-v1", "new_sqlite_classes": ["HostedService"] },
     { "tag": "assistant-workspaces-v1", "new_sqlite_classes": ["AssistantWorkspace", "WorkspaceBudget"] }
   ],
   "containers": [{ "name": "restyle-agent-workspaces", "class_name": "AssistantWorkspace", "scheduling_policy": "durable_object" }],

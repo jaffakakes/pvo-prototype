@@ -1,7 +1,7 @@
 import { installCheckedDiagnostic } from "./checked-fixture.js";
 import { recoveryCheckedService } from "./checked-service.js";
 import { AssistantTasks } from "../../../server/assistant/tasks/coordinator.js";
-import { ServiceRelease } from "../../../server/cloud-services/release.js";
+import { HostedService } from "../../../server/cloud-services/host.js";
 import { reconcileTaskServices } from "../../../server/assistant/tasks/providerRunner.js";
 import {
   taskClaim,
@@ -9,7 +9,7 @@ import {
 } from "../../../server/assistant/tasks/executionClaim.js";
 import { authorize, mark } from "../cloud-agent-infrastructure/proof-http.js";
 
-export class ProofRelease extends ServiceRelease {
+export class ProofRelease extends HostedService {
   constructor(ctx, env) {
     super(ctx, env);
     ctx.storage.sql.exec(
@@ -22,12 +22,12 @@ export class ProofRelease extends ServiceRelease {
     );
     return super.publish(value);
   }
-  inspect() {
+  inspect(identity) {
     return {
       calls:
         this.ctx.storage.sql.exec("SELECT count FROM proof_calls").toArray()[0]
           ?.count ?? 0,
-      sourcePresent: this.store.row()?.body != null,
+      sourcePresent: this.store.row(identity.resourceId)?.body != null,
     };
   }
 }
@@ -134,7 +134,7 @@ export class ProofTasks extends AssistantTasks {
     const row = rows[0];
     const task = this.repository.records()[0];
     const release = row
-      ? this.env.SERVICE_RELEASES.getByName(row.identity.resourceId)
+      ? this.env.SERVICE_HOSTS.getByName(row.identity.serviceId)
       : null;
     return {
       instanceId: this.instanceId,
@@ -143,7 +143,7 @@ export class ProofTasks extends AssistantTasks {
         ? { ...row, publication: row.publication === null ? null : "retained" }
         : null,
       provider: row ? await super.serviceProvider().lookup(row.identity) : null,
-      calls: release ? (await release.inspect()).calls : 0,
+      calls: release ? (await release.inspect(row.identity)).calls : 0,
     };
   }
   async reconcile(failLookup) {
@@ -184,8 +184,8 @@ export class ProofTasks extends AssistantTasks {
     const { identity } = this.providers.entries()[0];
     try {
       return {
-        result: await this.env.SERVICE_RELEASES.getByName(
-          identity.resourceId,
+        result: await this.env.SERVICE_HOSTS.getByName(
+          identity.serviceId,
         ).probe(identity, {
           operation: "double",
           input: {

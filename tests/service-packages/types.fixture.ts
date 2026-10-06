@@ -94,3 +94,18 @@ publication.identity = {
   expiresAt: 1,
 };
 void planOwnedPublication;
+
+const { parseServiceAction, newHostedService, serviceCallScope } =
+  await import("../../packages/pvo-assistant/hosting/index.js");
+const serviceAction = parseServiceAction({});
+serviceAction.actionId = "retry-this-exact-action";
+// @ts-expect-error Request JSON cannot select live authority.
+serviceAction.mode = "live";
+const hostRecord = newHostedService(publication.identity, 1);
+serviceCallScope(hostRecord, {
+  kind: "creator",
+  ownerId: "owner",
+  mode: "test",
+});
+// @ts-expect-error Public callers have no creator grant.
+serviceCallScope(hostRecord, { kind: "public", ownerId: "owner" });

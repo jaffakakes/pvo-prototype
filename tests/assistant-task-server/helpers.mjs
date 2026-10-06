@@ -23,6 +23,7 @@ export async function taskFixture({
   workspaceEffects = async () => Response.json({}),
   researchFetch = null,
   validationControl = null,
+  hostControl = null,
 } = {}) {
   modules ??= bundleWorkerModules({
     stdin: {
@@ -33,13 +34,21 @@ export async function taskFixture({
     import { taskResearchTools } from "./server/assistant/builder/researchTools.js";
     import { publicResearch } from "./server/assistant/builder/researchProvider.js";
     import { reconcileTaskWorkspaces } from './server/assistant/tasks/workspaceRunner.js';
-    import { ServiceRelease } from "./server/cloud-services/release.js";
+    import { HostedService } from "./server/cloud-services/host.js";
     import { reconcileTaskServices } from "./server/assistant/tasks/providerRunner.js";
-    export class TestServiceRelease extends ServiceRelease {
-      constructor(ctx, env) { super(ctx, env); ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS calls (id INTEGER PRIMARY KEY CHECK (id=1), count INTEGER NOT NULL)"); }
+    export class TestHostedService extends HostedService {
+      constructor(ctx, env) { super(ctx, env); ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS calls (id TEXT PRIMARY KEY, count INTEGER NOT NULL)"); }
       now() { return this.env.CONTROLLED_PLAN ? Date.now() : Date.UTC(2100, 0, 1); }
-      async publish(value) { this.ctx.storage.sql.exec("INSERT INTO calls (id,count) VALUES (1,1) ON CONFLICT(id) DO UPDATE SET count=count+1"); return super.publish(value); }
-      stats() { return { calls: this.ctx.storage.sql.exec("SELECT count FROM calls").toArray()[0]?.count ?? 0, sourcePresent: !!this.store.row()?.body }; }
+      async publish(value) { this.ctx.storage.sql.exec("INSERT INTO calls (id,count) VALUES (?,1) ON CONFLICT(id) DO UPDATE SET count=count+1",value.identity.resourceId); return super.publish(value); }
+      async executePackage(source,invocation,signal) {
+        if(this.env.HOST_CONTROL) await this.env.HOST_CONTROL.fetch('https://control.test',{method:'POST',body:JSON.stringify({phase:'before',invocation})});
+        return super.executePackage(source,invocation,signal);
+      }
+      diagnostic(action) {
+        if(action==='enable-live') {const value=this.store.service();this.store.saveService({...value,state:'active',liveReleaseId:value.testReleaseId,revision:value.revision+1});}
+        return {service:this.store.service(),data:this.ctx.storage.sql.exec('SELECT namespace,body,version FROM service_data').toArray(),receipts:this.ctx.storage.sql.exec('SELECT namespace,id,body FROM service_actions').toArray(),usage:this.ctx.storage.sql.exec('SELECT * FROM service_usage').toArray()};
+      }
+      stats(identity) { return { calls: this.ctx.storage.sql.exec("SELECT count FROM calls WHERE id=?",identity.resourceId).toArray()[0]?.count ?? 0, sourcePresent: !!this.store.row(identity.resourceId)?.body }; }
     }
     import { savedTaskPlanningAvailable } from "./server/assistant/tasks/availability.js";
     import { handleRequest } from "./server/index.js";
@@ -129,8 +138,13 @@ export async function taskFixture({
       disableProvider() { this.providerDisabled = true; }
       async reconcileProviders() { await this.transaction(() => this.providers.noteTerminal(this.now())); await reconcileTaskServices(this); return this.providers.entries(); }
       providerRows() { return this.providers.entries(); }
-      async providerStatus(identity) { const stub=this.env.SERVICE_RELEASES.getByName(identity.resourceId); return { observation: await stub.lookup(identity), stats: await stub.stats() }; }
-      async providerProbe(identity, input) { return this.env.SERVICE_RELEASES.getByName(identity.resourceId).probe(identity, input); }
+      async hostDiagnostic(ownerId,identity,action) {
+        this.repository.bindOwner(ownerId);
+        if(identity.ownerId!==ownerId) throw new Error('Wrong diagnostic owner');
+        return this.env.SERVICE_HOSTS.getByName(identity.serviceId).diagnostic(action);
+      }
+      async providerStatus(identity) { const stub=this.env.SERVICE_HOSTS.getByName(identity.serviceId); return { observation: await stub.lookup(identity), stats: await stub.stats(identity) }; }
+      async providerProbe(identity, input) { return this.env.SERVICE_HOSTS.getByName(identity.serviceId).probe(identity, input); }
       setTime(now) { this.clock = now; }
       async inspect() { return { alarm: await this.ctx.storage.getAlarm(), records: this.repository.records(),
         identities: this.ctx.storage.sql.exec("SELECT COUNT(*) AS count FROM tasks").one().count }; }
@@ -177,6 +191,7 @@ export async function taskFixture({
           if (action === "service-catalog") return json(await stub.serviceCatalog());
           if (action === "provider-reconcile") return json(await stub.reconcileProviders());
           if (action === "provider-rows") return json(await stub.providerRows());
+          if (action === "host-diagnostic") return json(await stub.hostDiagnostic(owner.id,args.identity,args.kind));
           if (action === "provider-status") return json(await stub.providerStatus(args.identity));
           if (action === "provider-probe") return json(await stub.providerProbe(args.identity, args.input));
           if (action === "time") { await stub.setTime(args.now); return json({ ok: true }); }
@@ -213,7 +228,8 @@ export async function taskFixture({
       providerControl ||
       workspaces ||
       researchFetch ||
-      validationControl
+      validationControl ||
+      hostControl
         ? {
             serviceBindings: {
               ...(planner ? { PLANNER: planner } : {}),
@@ -226,6 +242,7 @@ export async function taskFixture({
                 ? { WORKSPACE_CONTROL: workspaceControl }
                 : {}),
               ...(providerControl ? { PROVIDER_CONTROL: providerControl } : {}),
+              ...(hostControl ? { HOST_CONTROL: hostControl } : {}),
             },
           }
         : {}),
@@ -248,8 +265,8 @@ export async function taskFixture({
                 : {}),
               ...(services
                 ? {
-                    SERVICE_RELEASES: {
-                      className: "TestServiceRelease",
+                    SERVICE_HOSTS: {
+                      className: "TestHostedService",
                       useSQLite: true,
                     },
                   }

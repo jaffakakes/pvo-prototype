@@ -14,7 +14,7 @@ test("the deployable recovery diagnostic exercises production journals and RPC i
       compatibilityDate: "2026-10-03",
       durableObjects: {
         PROOF_TASKS: { className: "ProofTasks", useSQLite: true },
-        SERVICE_RELEASES: { className: "ProofRelease", useSQLite: true },
+        SERVICE_HOSTS: { className: "ProofRelease", useSQLite: true },
       },
       workerLoaders: { SERVICE_LOADER: {} },
       bindings: {

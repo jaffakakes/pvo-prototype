@@ -68,15 +68,15 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 
 ## 1D. Run the finished service and manage its data
 
-**Progress: 1D.01/1D.02 verified.** Owned catalog records and independently stored checked-package releases are connected to the trusted task host. Releases start inactive; private probes use only platform-supplied initial test state and time. Ownership/digests, restart, Stop, limits and retention pass local workerd checks. All 1,320 behavior tests pass at concurrency two after the initial run hit temporary disk-full errors. Stable addresses and durable records remain **1D.03–1D.05**; activation and component attachment remain later work. See [hosting details](1d-hosted-services.md).
+**Progress: 1D.01–1D.05 verified.** The stable service object retains checked releases, independently owned test/live records and atomic action receipts. Real HTTP/workerd tests cover concurrent capacity/overlap decisions, replay/restart, malformed/private/foreign requests, count/byte/queue limits and Stop/expiry. The full 1,330-test suite passed, followed by 36 focused checks after the final expiry cleanup fix. **1D.06/1D.07 are next:** creator controls and active-service lifecycle. Initial services remain inactive; live-mode tests use an explicit trusted activation fixture until those controls are implemented. Beta delivery and production availability are separate. See [hosting details](1d-hosted-services.md).
 
 **Current implementation:** start with [the 1D ownership and hosting notes](1d-hosted-services.md); all 1D tasks remain unchecked.
 
 - [x] **1D.01** Add owned service and release records. Link each release to its exact source bundle, test result, runtime, operations, and storage permissions.
 - [x] **1D.02** Deploy releases inactive. Separate test data and permissions from live data and permissions.
-- [ ] **1D.03** Create a stable Restyle address that routes to the recorded release. Validate input and ownership before generated code runs.
-- [ ] **1D.04** Provide durable service storage with boundaries between creators and between services. Include atomic updates: checking and taking the last place must happen as one protected operation. The same protection applies to overlapping equipment bookings.
-- [ ] **1D.05** Add a saved action identifier and result record. Retrying the same action returns its prior result; reusing that identifier with different input is rejected.
+- [x] **1D.03** Create a stable Restyle address that routes to the recorded release. Validate input and ownership before generated code runs.
+- [x] **1D.04** Provide durable service storage with boundaries between creators and between services. Include atomic updates: checking and taking the last place must happen as one protected operation. The same protection applies to overlapping equipment bookings.
+- [x] **1D.05** Add a saved action identifier and result record. Retrying the same action returns its prior result; reusing that identifier with different input is rejected.
 - [ ] **1D.06** Implement creator controls to inspect, activate, pause, and delete services, with limits enforced outside the generated program.
 - [ ] **1D.07** Clean up abandoned inactive releases and failed deployments. Retain active services until an explicit lifecycle action stops them.
 - [ ] **1D.08** Keep the prior active release available during an update. Returning to it must be safe for the current stored records.
