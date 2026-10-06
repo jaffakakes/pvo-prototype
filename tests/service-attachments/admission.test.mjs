@@ -11,6 +11,7 @@ import { prepareServiceAttachmentReceipt } from "../../packages/pvo-assistant/at
 import { checkedFixture } from "../service-hosting/fixtures.mjs";
 import { create, now } from "../assistant-tasks/fixtures.mjs";
 import { attachment } from "./fixtures.mjs";
+import { planTaskAttachment } from "../../server/assistant/attachments/planner.js";
 
 initSync({
   module: new WebAssembly.Module(
@@ -316,4 +317,43 @@ test("form mapping cannot smuggle state templates or use a non-form control's fi
   card.command.connection.target = "join";
   card.command.component.source.logic = `on press(join) { ${actionSource(requestAction(card))} }`;
   await rejected(project(), card, /Only form/);
+});
+
+test("the attachment planner's request example compiles and keeps field bindings declarative", async () => {
+  let instructions;
+  await planTaskAttachment(
+    create(),
+    {
+      releaseId: "release-one",
+      url: "https://example.invalid/actions",
+      operations: [],
+    },
+    {},
+    new AbortController().signal,
+    null,
+    {
+      generate: async (request) => {
+        instructions = request.messages[0].content;
+        return { content: JSON.stringify(attachment("release-one")) };
+      },
+    },
+  );
+  const logic = instructions
+    .split("\n")
+    .find((line) => line.startsWith("on submit { request("));
+  assert.ok(logic);
+  const compiled = await compilePvoComponent("form", {
+    structure:
+      '<form><heading>Join</heading><field name="guest" kind="name" label="Name"/><submit>Join</submit></form>',
+    style: "",
+    logic,
+  });
+  assert.equal(compiled.rules.length, 1);
+  const serialized = logic.slice("on submit { request(".length, -"); }".length);
+  const action = JSON.parse(serialized);
+  assert.equal(typeof action.body, "string");
+  assert.deepEqual(JSON.parse(action.body).input, {
+    kind: "object",
+    fields: [{ name: "name", value: { kind: "field", name: "guest" } }],
+  });
 });
