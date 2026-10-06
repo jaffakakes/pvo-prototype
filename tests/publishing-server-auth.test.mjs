@@ -238,7 +238,7 @@ test("apex sign-in is canonical while existing workers.dev publication links rem
     const account = await f.mf.dispatchFetch(`${origin}/api/auth/session`, { headers: { Cookie: cookie } });
     assert.equal((await account.json()).user.name, "Creator");
     const publishing = await f.mf.dispatchFetch(`${origin}/api/publishing`, { headers: { Cookie: cookie } });
-    assert.deepEqual(await publishing.json(), { available: true, hasSession: true, maxBytes: 52428800 });
+    assert.deepEqual(await publishing.json(), { available: true, hasSession: true, maxBytes: 671088640000 });
     const legacyAccount = await f.mf.dispatchFetch(`${legacyOrigin}/api/auth/session`, { headers: { Cookie: cookie } });
     assert.deepEqual(await legacyAccount.json(), { available: false, clerkAvailable: false,
       clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: null });

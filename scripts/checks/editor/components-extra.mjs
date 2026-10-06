@@ -12,6 +12,11 @@ const context = await browser.newContext({ viewport: { width: 430, height: 932 }
 const page = await context.newPage();
 const pageErrors = [];
 page.on("pageerror", error => pageErrors.push(error.message));
+await page.route("**/api/auth/session", route => route.fulfill({ contentType: "application/json",
+  body: JSON.stringify({ available: true, clerkAvailable: false, clerkPublishableKey: null,
+    canLinkEmail: false, emailLinked: false, user: { id: "components-extra-check", name: "Components extra check" } }) }));
+await page.route("**/api/renders", route => route.fulfill({ contentType: "application/json",
+  body: JSON.stringify({ available: false, maxSourceBytes: 0, maxSources: 0, formats: [] }) }));
 
 async function drag(locator, dx) {
   const box = await locator.boundingBox();
@@ -120,41 +125,25 @@ try {
   if (await page.getByRole("button", { name: "Stop trying", exact: true }).count())
     await page.getByRole("button", { name: "Stop trying", exact: true }).click();
 
-  // Flat export must remain a playable video, not a PVO package or an overlay burn-in.
+  // Interactive components are packaged in the single PVO export.
   await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
-  await page.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Flat video" }).click();
+  await page.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Export and create link" }).click();
   const exportDialog = page.locator("dialog[data-state]");
-  const format = exportDialog.getByRole("combobox", { name: "Export format" });
-  assert.deepEqual(await format.locator("option").evaluateAll(options => options.map(option => option.value)),
-    ["video", "pvo"], "Export format switch is missing with components");
-  await format.selectOption("video");
-  await exportDialog.getByRole("button", { name: /Export video/ }).click();
+  assert.equal(await exportDialog.getByRole("combobox", { name: "Export format" }).count(), 0);
+  await exportDialog.getByRole("button", { name: /Export and share/ }).click();
   await page.locator('dialog[data-state="done"]').waitFor({ timeout: 60000 });
+  const share = page.getByRole("dialog", { name: "Share export", exact: true });
+  await share.waitFor();
   const [download] = await Promise.all([
     page.waitForEvent("download", { timeout: 15000 }),
-    exportDialog.getByRole("button", { name: /Download/ }).click(),
+    share.locator("[data-download-again]").click(),
   ]);
-  assert.match(download.suggestedFilename(), /\.(webm|mp4)$/, "Flat export has the wrong filename");
+  assert.match(download.suggestedFilename(), /\.pvo$/, "Interactive export has the wrong filename");
   const bytes = await readFile(await download.path());
   assert(bytes.length > 1024, "Flat export is unexpectedly empty");
-  assert.notEqual(bytes.subarray(0, 8).toString(), "PVOPACK1", "Flat export is a PVO container");
-  const sample = await page.locator('[data-export-preview] video[data-visible="true"]').evaluate(async video => {
-    video.muted = true;
-    if (video.readyState < 1) await new Promise((resolve, reject) => { video.onloadedmetadata = resolve; video.onerror = reject; });
-    video.currentTime = Math.min(.7, Math.max(.1, video.duration / 3));
-    await new Promise((resolve, reject) => { video.onseeked = resolve; video.onerror = reject; });
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0);
-    const [r, g, b] = ctx.getImageData(Math.round(canvas.width * .15), Math.round(canvas.height * .2), 1, 1).data;
-    return { width: canvas.width, height: canvas.height, luminance: (r + g + b) / 3 };
-  });
-  assert(sample.width > 0 && sample.height > 0, "Flat export is not decodable video");
-  assert(sample.luminance > 65, `Card appears to have been burned into the flat video: ${JSON.stringify(sample)}`);
+  assert.equal(bytes.subarray(0, 8).toString(), "PVOPACK1", "Export must be a PVO container");
   assert.deepEqual(pageErrors, [], "Uncaught browser errors occurred");
-  console.log(JSON.stringify({ card: "fields, move, trim, undo, redo, jump", form: "fields, pause, submit", export: download.suggestedFilename(), sample }, null, 2));
+  console.log(JSON.stringify({ card: "fields, move, trim, undo, redo, jump", form: "fields, pause, submit", export: download.suggestedFilename() }, null, 2));
 } finally {
   await browser.close();
 }

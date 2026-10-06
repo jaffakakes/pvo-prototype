@@ -14,7 +14,7 @@ export const initial = () => {
     ratio: "9:16" as Ratio, coverAt: 0, allowedDomains: [], recordingInto: null,
     layers: ["video"] as LayerId[], sel: -1, selComp: null, selText: null, selAudio: null, t: 0, playing: false, trim: null, orb: false, tryMode: null, playheadPick: null,
     sheet: null, ratioMenu: false, draft: "", tColor: 2,
-    exportFormat: "video" as const,
+    exportFormat: "pvo" as const,
     quality: "1080p" as const, ex: "idle" as const, exPct: 0, exUrl: null, exName: "",
     past: [] as ProjectSnapshot[], future: [] as ProjectSnapshot[],
   };

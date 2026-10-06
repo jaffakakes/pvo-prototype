@@ -37,10 +37,10 @@ try {
       const preview = await page.locator(".pvVideo").evaluate(video => ({ fit: getComputedStyle(video).objectFit, width: video.parentElement.clientWidth, height: video.parentElement.clientHeight }));
       if (preview.fit !== "cover" || Math.abs(preview.width / preview.height - expected.width / expected.height) > .03) throw new Error(`${expected.ratio} preview mismatch: ${JSON.stringify(preview)}`);
       await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
-      await page.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Flat video" }).click();
+      await page.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Export and create link" }).click();
       await page.locator('dialog[data-state="setup"]').getByRole("radiogroup", { name: "Export quality" })
         .getByRole("radio", { name: /^720p/ }).click();
-      await page.locator('dialog[data-state="setup"]').getByRole("button", { name: /Export video/ }).click();
+      await page.locator('dialog[data-state="setup"]').getByRole("button", { name: /Export and share/ }).click();
       await page.locator('dialog[data-state="done"]').waitFor({ timeout: 45000 });
       const dimensions = await page.locator('[data-export-preview] video[data-visible="true"]')
         .evaluate(video => [video.videoWidth, video.videoHeight]);

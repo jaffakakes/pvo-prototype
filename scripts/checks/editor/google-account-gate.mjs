@@ -106,11 +106,11 @@ async function checkAccountGate(phone) {
   const beginExport = async () => {
     if (phone) {
       await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
-      await page.getByRole("button", { name: "Flat video", exact: true }).click();
+      await page.getByRole("button", { name: "Export and create link", exact: true }).click();
     } else await page.getByRole("banner").getByRole("button", { name: "Export", exact: true }).click();
     await exportSheet.waitFor();
   };
-  const start = () => exportSheet.getByRole("button", { name: /Export video/ }).click();
+  const start = () => exportSheet.getByRole("button", { name: /Export and share/ }).click();
   const chooseQuality = () => exportSheet.getByRole("radiogroup", { name: "Export quality" })
     .getByRole("radio", { name: /^720p/ }).click();
   const verifyGate = async () => {

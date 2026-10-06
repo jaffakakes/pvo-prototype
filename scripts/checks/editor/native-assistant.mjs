@@ -35,7 +35,7 @@ await context.route("**/api/assistant/turn", async route => {
   if (await finishAssistantVerification(route, request)) return;
   const question = request.prompt === "Describe this project";
   const operations = question ? [] : request.prompt === "Prepare export"
-    ? [{ kind: "export.prepare", format: "video" }]
+    ? [{ kind: "export.prepare", format: "pvo" }]
     : [{ kind: "text.add", sceneId: "main", text: "Summer sale", start: 2, end: 5 },
       { kind: "clip.trim", sceneId: "main", clipId: request.project.scenes[0].clips[0].id, sourceIn: 1, sourceOut: 10 },
       { kind: "scene.update", sceneId: "main", changes: { musicGain: 0.25, clipGain: 0.4 } }];

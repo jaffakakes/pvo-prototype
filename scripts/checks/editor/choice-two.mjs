@@ -33,13 +33,15 @@ try {
 
   await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
   await page.getByRole("dialog", { name: "More" })
-    .getByRole("button", { name: "Interactive (.pvo)", exact: true }).click();
+    .getByRole("button", { name: "Export and create link", exact: true }).click();
   const exportDialog = page.locator("dialog[data-state]");
-  await exportDialog.getByRole("button", { name: /Export \.pvo/ }).click();
+  await exportDialog.getByRole("button", { name: /Export and share/ }).click();
   await page.locator('dialog[data-state="done"]').waitFor({ timeout: 60000 });
+  const share = page.getByRole("dialog", { name: "Share export", exact: true });
+  await share.waitFor();
   const [download] = await Promise.all([
     page.waitForEvent("download", { timeout: 15000 }),
-    exportDialog.getByRole("button", { name: /Download/ }).click(),
+    share.locator("[data-download-again]").click(),
   ]);
   const decoded = await readPvoProject(new Blob([await readFile(await download.path())]));
   assert.equal(decoded.validation.valid, true, JSON.stringify(decoded.validation.errors));

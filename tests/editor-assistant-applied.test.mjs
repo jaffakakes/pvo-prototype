@@ -131,7 +131,7 @@ test("playback and export effects follow the one validated edit without adding h
   try {
     reset();
     const batch = await prepare([...operations, { kind: "playback.seek", sceneId: "main", time: 2 },
-      { kind: "export.prepare", format: "video" }]);
+      { kind: "export.prepare", format: "pvo" }]);
     const receipt = api.applyAssistantChanges(batch);
     assert.ok(receipt);
     assert.equal(state().past.length, 1);
@@ -140,7 +140,7 @@ test("playback and export effects follow the one validated edit without adding h
     assert.equal(state().sheet, "export", "Assistant prepares export settings before the render-time account check");
     assert.equal(api.useAuthGate.getState().source, null);
     assert.equal(state().sheet, "export");
-    assert.equal(state().exportFormat, "video");
+    assert.equal(state().exportFormat, "pvo");
     assert.equal(state().past.length, 1, "Opening export does not add history");
 
     reset();

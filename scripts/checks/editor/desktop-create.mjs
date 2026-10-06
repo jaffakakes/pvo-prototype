@@ -274,7 +274,7 @@ async function run(width) {
     await page.getByRole("button", { name: "Export", exact: true }).click();
     const exportDialog = page.getByRole("dialog", { name: "Export", exact: true });
     await exportDialog.waitFor();
-    await exportDialog.getByRole("button", { name: /Export video/ }).click();
+    await exportDialog.getByRole("button", { name: /Export and share/ }).click();
     const auth = page.getByRole("dialog", { name: "Create a free account to export", exact: true });
     await auth.waitFor();
     const popup = page.waitForEvent("popup");
