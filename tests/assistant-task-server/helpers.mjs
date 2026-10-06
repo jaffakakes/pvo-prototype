@@ -56,7 +56,11 @@ export async function taskFixture({
     }
     import { savedTaskPlanningAvailable } from "./server/assistant/tasks/availability.js";
     import { handleRequest } from "./server/index.js";
-    export { AssistantBudget } from "./server/assistant/budget.js";
+    import { AssistantBudget } from "./server/assistant/budget.js";
+    export class TestAssistantBudget extends AssistantBudget {
+      now() { return this.clock ?? this.env.CONTROLLED_CLOCK ?? Date.now(); }
+      setTime(now) { this.clock = now; }
+    }
     import { AssistantTasks } from "./server/assistant/tasks/coordinator.js";
     import { getAccountSession } from "./server/auth/sessions.js";
     import { HttpError, json } from "./server/http.js";
@@ -180,6 +184,7 @@ export async function taskFixture({
         if(enabled) this.ctx.storage.sql.exec("CREATE TRIGGER reject_history BEFORE INSERT ON task_operation_history BEGIN SELECT RAISE(ABORT, 'controlled archive failure'); END; CREATE TRIGGER reject_questions BEFORE INSERT ON task_question_history BEGIN SELECT RAISE(ABORT, 'controlled question failure'); END;");
         else this.ctx.storage.sql.exec("DROP TRIGGER reject_history; DROP TRIGGER reject_questions;");
       }
+      attemptRows() { return this.attempts.entries(); }
       async inspect() { return { alarm: await this.ctx.storage.getAlarm(), records: this.repository.records(),
         identities: this.ctx.storage.sql.exec("SELECT COUNT(*) AS count FROM tasks").one().count }; }
       async step(ownerId, id, command, expectedRevision) {
@@ -230,12 +235,17 @@ export async function taskFixture({
           if (action === "host-diagnostic") return json(await stub.hostDiagnostic(owner.id,args.identity,args.kind));
           if (action === "provider-status") return json(await stub.providerStatus(args.identity));
           if (action === "provider-probe") return json(await stub.providerProbe(args.identity, args.input));
-          if (action === "time") { await stub.setTime(args.now); return json({ ok: true }); }
+          if (action === "time") {
+            await stub.setTime(args.now);
+            if (env.ASSISTANT_BUDGET) await env.ASSISTANT_BUDGET.getByName("assistant:" + new Date(args.now).toISOString().slice(0,10)).setTime(args.now);
+            return json({ ok: true });
+          }
           if (action === "pause-planning") {await stub.pausePlanning();return json({ok:true});}
           if (action === "evidence-context") return json(await stub.evidenceContext(owner.id,args.id));
           if (action === "select-evidence") return json(await stub.selectEvidence(owner.id,args.id,args.request));
           if (action === "operation-history") return json(await stub.operationHistory(owner.id,args.id,args.after));
           if (action === "history-write-failure") {await stub.historyWriteFailure(args.enabled);return json({ok:true});}
+          if (action === "attempt-rows") return json(await stub.attemptRows());
           if (action === "inspect") return json(await stub.inspect());
           if (action === "sweep") return json(await stub.sweep());
           if (action === "fail-result-write") { await stub.failResultWrite(); return json({ ok: true }); }
@@ -316,7 +326,7 @@ export async function taskFixture({
               ...(planner
                 ? {
                     ASSISTANT_BUDGET: {
-                      className: "AssistantBudget",
+                      className: "TestAssistantBudget",
                       useSQLite: true,
                     },
                   }

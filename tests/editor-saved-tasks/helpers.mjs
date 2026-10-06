@@ -20,6 +20,7 @@ export const api = await import(
     export * from './editor/src/domain/assistant/cloudTaskInput.ts';
     export * from './editor/src/features/assistant/saved-tasks/creationWorkflow.ts';
     export * from './editor/src/features/assistant/saved-tasks/taskSession.ts';
+    export * from './editor/src/domain/assistant/savedTaskStatus.ts';
     export * from './editor/src/infrastructure/assistant/savedTaskTransport.ts';
     export * from './editor/src/infrastructure/projectPersistence/checkpoint.ts';
     export { initial } from './editor/src/state/project/initial.ts';

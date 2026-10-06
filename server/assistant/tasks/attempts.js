@@ -107,7 +107,7 @@ export class TaskAttempts {
     return true;
   }
 
-  finish(claimed, attempt, command, code, now) {
+  finish(claimed, attempt, command, code, now, wait = null) {
     const saved = this.get(attempt.id);
     if (!saved || saved.finished) return;
     let task = this.task(attempt.taskId);
@@ -149,12 +149,12 @@ export class TaskAttempts {
     let accepted = false;
     if (current) {
       try {
-        apply(
-          code
-            ? { kind: "fail", failure: { code, stepId: task.stepId } }
-            : command,
-        );
-        accepted = !code;
+        let next = command;
+        if (code)
+          next = { kind: "fail", failure: { code, stepId: task.stepId } };
+        if (wait) next = { kind: "wait", ...wait };
+        apply(next);
+        accepted = !code && !wait;
       } catch {
         apply({
           kind: "fail",

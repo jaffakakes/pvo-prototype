@@ -20,7 +20,9 @@ test("a committed Stop prevents inference even before its cancellation signal is
     now: () => claimed.updatedAt,
     stepTimeoutMs: () => 1000,
     env: {
-      ASSISTANT_BUDGET: { getByName: () => ({ reserve: async () => true }) },
+      ASSISTANT_BUDGET: {
+        getByName: () => ({ reserveTask: async () => ({ accepted: true }) }),
+      },
     },
     transaction: async (operation) => operation(),
     attempts: {

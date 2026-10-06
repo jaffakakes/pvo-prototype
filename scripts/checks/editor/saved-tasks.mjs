@@ -3,6 +3,7 @@ import { chromium } from "playwright-core";
 import {
   taskFixture,
   ORIGIN,
+  NOW,
   path,
 } from "../../../tests/assistant-task-server/helpers.mjs";
 import { installAssistantAvailabilityFixture } from "./assistant-fixture.mjs";
@@ -217,6 +218,40 @@ try {
       .value,
     "Friday",
   );
+  // A trusted quota denial changes the existing task to a saved wait. The browser
+  // renders the real owned record after restart and offers Stop, without creating a goal.
+  await fixture.control({ action: "time", now: NOW });
+  for (const command of [
+    { kind: "resume" },
+    { kind: "claim", claimId: "capacity-check", leaseMs: 60000 },
+    { kind: "wait", reason: "model_allowance", nextRunAt: NOW + 3600000 },
+  ]) {
+    const response = await fixture.control({
+      action: "step",
+      id: createdTask.id,
+      command,
+    });
+    assert.equal(response.status, 200, JSON.stringify(response.body));
+  }
+  await fixture.restart();
+  await fixture.control({ action: "time", now: NOW });
+  await page.reload();
+  await ready(page, localId);
+  await page
+    .getByRole("button", { name: "Open saved task", exact: true })
+    .click();
+  await page
+    .locator("[data-saved-task]")
+    .getByText("Waiting", { exact: true })
+    .waitFor();
+  await page.getByText(/The current model allowance is used/).waitFor();
+  assert.equal(
+    await page.locator("[data-saved-task] time").getAttribute("datetime"),
+    new Date(NOW + 3600000).toISOString(),
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: "/tmp/restyle-saved-task-wait-phone.png" });
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.getByRole("button", { name: "Stop task", exact: true }).click();
   await page
     .locator("[data-saved-task]")
@@ -313,7 +348,7 @@ try {
   }
   assert.deepEqual(errors, []);
   console.log(
-    "Saved-task editor: real IndexedDB + real workerd/D1/SQLite; lost response/page closure/replay, question, answer, Stop, reload, account isolation, desktop and phone passed. Model output and HTTP bridge are fixtures.",
+    "Saved-task editor: real IndexedDB + real workerd/D1/SQLite; lost response/page closure/replay, question, answer, saved capacity wait/restart/reset time, Stop, reload, account isolation, desktop and phone passed. Model output and HTTP bridge are fixtures.",
   );
 } catch (error) {
   const page = context.pages()[0];
