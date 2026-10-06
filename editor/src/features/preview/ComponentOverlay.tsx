@@ -1,3 +1,4 @@
+import { TryServiceRecovery } from "./TryServiceRecovery";
 import { fontFamily } from "../../../../packages/pvo-fonts/index.js";
 import { useAppliedFont } from "./useAppliedFont";
 import {
@@ -104,6 +105,9 @@ export function ComponentOverlay({
               : null
           }
         />
+      )}
+      {trying && component.serviceConnection && (
+        <TryServiceRecovery component={component} />
       )}
       {trying && <TryFeedback componentId={component.id} />}
       {located && (

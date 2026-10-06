@@ -82,7 +82,9 @@ export function createSavedTaskWorkflow(adapters: CreationAdapters) {
           guard();
           if (
             task &&
-            ["queued", "running", "waiting_for_answer"].includes(task.state)
+            ["queued", "running", "waiting_for_answer", "waiting"].includes(
+              task.state,
+            )
           )
             throw new Error(
               "Finish or stop the current saved task before starting another.",

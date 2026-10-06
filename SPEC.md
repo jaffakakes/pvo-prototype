@@ -150,7 +150,10 @@ For a component with `response_policy`, the player dispatches its authored actio
 
 Restart clears captured responses and runtime state, then returns to the first clip of the main timeline.
 
-Restyle packages carry `restyle_capture` for presentation: canvas positions, sizes, looks, animation, text layers and each scene's layer order. They declare no playback actions of their own. Restyle exports response timing and unanswered behavior through the standard `response_policy`; routes remain explicit actions.
+Restyle packages carry `restyle_capture` for presentation: canvas positions, sizes, looks, animation, text layers and each scene's layer order. Playback routes remain standard actions. Restyle exports response timing and unanswered behavior through the standard `response_policy`; routes remain explicit actions.
+
+A Restyle service connection uses `components[].restyle_capture.service_connection`, containing exactly `origin`, `serviceId`, `releaseId`, `operation`, `event`, `target` and `input`. Its [closed descriptor and submission contract](packages/pvo-assistant/attachments/README.md) belongs to the service attachment package. It carries no creator account, credential, private receipt or readiness permission. The Restyle player admits it against the actual compiled/declared control and request before host-owned invocation; ordinary SDK validation alone is insufficient. The service still checks live activation and input on each call. Playback destinations remain the component's standard request success/error actions. Normal editor projection and activation-on-delivery are pending roadmap 1E.06–09.
+
 
 At a component's layer end, the reference editor and player require its animated center to be on canvas and its animation opacity and both scale factors to exceed `0.000001` before pausing for an unanswered response. A component below video is eligible when the video has faded or its transformed opaque rectangle no longer covers that center. Coverage accounts for translation, scaling, rotation and canvas aspect ratio. This is a conservative center test, not pixel-level testing of every button, transparent region or other overlay. Motion updates retain component DOM and sandbox state. Zero-opacity or collapsed components cannot receive input.
 

@@ -6,7 +6,7 @@ Task IDs are stable. Checked items are verified work; update their evidence and 
 
 **Outcome:** the creator can describe a goal involving an outside service. The agent checks what is possible, asks for a missing decision or connection, and builds the agreed flow.
 
-**Depends on:** Roadmap 1's saved tasks, questions, ownership, workspace, live services, and test/live separation. Provider research can begin earlier, but real connections must use these boundaries.
+**Depends on:** Roadmap 1's saved tasks, questions, ownership, workspace, live services and test/live separation, followed by [1G Containers](1g-containers.md) for the planned product sequence. Integrations extend that same Node.js service and management system. Provider research can begin earlier, but real connections must use these boundaries.
 
 Use a restaurant journey as one demonstration. Its actual booking route must come from research. The demonstration can end in a real integration or a manual step chosen by the creator; the component must describe that outcome accurately.
 

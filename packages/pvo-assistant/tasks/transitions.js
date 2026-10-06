@@ -1,4 +1,9 @@
 import { TASK_FAILURES, TASK_LIMITS as limits } from "./limits.js";
+import {
+  checkpointTaskOperations,
+  checkpointTaskQuestions,
+  checkpointTaskQuestionBytes,
+} from "./checkpoint.js";
 import { parseTaskRecord } from "./record.js";
 import { object, id, integer, requireTask, text } from "./validation.js";
 import {
@@ -17,6 +22,7 @@ import {
 const fields = {
   claim: ["claimId", "leaseMs"],
   checkpoint: ["stepId"],
+  wait: ["reason", "nextRunAt"],
   ask: ["question"],
   answer: ["questionId", "questionRevision", "operationId", "value"],
   complete: ["result"],
@@ -24,7 +30,6 @@ const fields = {
   resume: [],
   stop: [],
   recover: [],
-  expire: [],
   reconcile_operation: ["operation"],
   record_operation: ["operation"],
   reserve_usage: ["modelTurns", "toolCalls"],
@@ -33,6 +38,7 @@ const fields = {
 };
 const workerCommands = [
   "checkpoint",
+  "wait",
   "ask",
   "complete",
   "fail",
@@ -63,20 +69,13 @@ export function transitionTask(value, command, guard) {
       ["reconcile_operation", "reconcile_usage"].includes(command.kind),
     "This task attempt is terminal.",
   );
-  if (
-    ![
-      "stop",
-      "recover",
-      "expire",
-      "reconcile_operation",
-      "reconcile_usage",
-    ].includes(command.kind)
-  )
-    requireTask(guard.now < task.deadlineAt, "Task deadline has passed.");
+  checkpointTaskOperations(task, command.operation?.id ?? command.operationId);
+  checkpointTaskQuestions(task, command.questionId);
   task.updatedAt = guard.now;
   const replay = applyCommand(task, command, guard);
   if (replay) return parseTaskRecord(value);
   task.revision++;
+  checkpointTaskQuestionBytes(task, command.questionId);
   return parseTaskRecord(task);
 }
 
@@ -84,17 +83,20 @@ function applyCommand(task, command, guard) {
   switch (command.kind) {
     case "claim": {
       requireTask(
-        task.state === "queued" && guard.now >= task.nextRunAt,
+        ["queued", "waiting"].includes(task.state) &&
+          task.nextRunAt !== null &&
+          guard.now >= task.nextRunAt,
         "Task cannot be claimed yet.",
       );
       id(command.claimId, "Claim ID");
       integer(command.leaseMs, limits.leaseMs, "Claim duration", 1);
       task.state = "running";
+      task.wait = null;
       task.generation++;
       task.claim = {
         id: command.claimId,
         claimedAt: guard.now,
-        expiresAt: Math.min(guard.now + command.leaseMs, task.deadlineAt),
+        expiresAt: guard.now + command.leaseMs,
       };
       task.nextRunAt = null;
       break;
@@ -108,6 +110,20 @@ function applyCommand(task, command, guard) {
       );
       task.stepId = command.stepId;
       finishClaim(task, "queued");
+      break;
+    case "wait":
+      requireSettledUsage(task);
+      requireTask(
+        !hasUnsettledOperations(task.operations),
+        "Reconcile unfinished operations before waiting.",
+      );
+      requireTask(
+        command.nextRunAt === null || command.nextRunAt > guard.now,
+        "A scheduled wait must wake in the future.",
+      );
+      finishClaim(task, "waiting");
+      task.wait = { reason: command.reason };
+      task.nextRunAt = command.nextRunAt;
       break;
     case "ask":
       validateQuestion(command.question);
@@ -134,10 +150,11 @@ function applyCommand(task, command, guard) {
       break;
     case "resume":
       requireTask(
-        task.state === "failed" && TASK_FAILURES[task.failure.code].retryable,
+        (task.state === "failed" &&
+          TASK_FAILURES[task.failure.code].retryable) ||
+          task.state === "waiting",
         "Task failure cannot be resumed.",
       );
-      requireTask(task.retries < limits.retries, "Task retry limit reached.");
       task.retries++;
       task.failure = null;
       finishClaim(task, "queued");
@@ -149,16 +166,6 @@ function applyCommand(task, command, guard) {
       break;
     case "recover":
       recoverClaim(task, guard.now);
-      break;
-    case "expire":
-      requireTask(
-        ["queued", "running", "waiting_for_answer"].includes(task.state) &&
-          guard.now >= task.deadlineAt,
-        "Only an unfinished task past its deadline can expire.",
-      );
-      preserveUncertainOperations(task, guard.now);
-      task.failure = { code: "deadline_exceeded", stepId: task.stepId };
-      finishClaim(task, "failed");
       break;
     case "reconcile_operation":
       requireTask(
@@ -240,21 +247,17 @@ function recoverClaim(task, now) {
     "Only an expired execution claim can be recovered.",
   );
   preserveUncertainOperations(task, now);
-  if (now >= task.deadlineAt || task.retries >= limits.retries) {
-    task.failure = {
-      code: now >= task.deadlineAt ? "deadline_exceeded" : "budget_exceeded",
-      stepId: task.stepId,
-    };
-    finishClaim(task, "failed");
-  } else {
-    task.retries++;
-    finishClaim(task, "queued");
-  }
+  task.retries++;
+  finishClaim(task, "queued");
 }
 
 function updateUsage(task, command) {
-  integer(command.modelTurns, limits.modelTurns, "Model turn reservation");
-  integer(command.toolCalls, limits.toolCalls, "Tool call reservation");
+  integer(
+    command.modelTurns,
+    Number.MAX_SAFE_INTEGER,
+    "Model turn reservation",
+  );
+  integer(command.toolCalls, Number.MAX_SAFE_INTEGER, "Tool call reservation");
   requireTask(
     command.modelTurns + command.toolCalls > 0,
     "A usage change must reserve or settle work.",

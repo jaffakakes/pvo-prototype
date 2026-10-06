@@ -1,3 +1,4 @@
+import type { TryServiceRequest } from "./createTryServiceRequests";
 import {
   createPvoRuntime,
   PVO_SPEC_VERSION,
@@ -39,6 +40,14 @@ type Host = {
 export function createTryRuntimeBridge(host: Host) {
   let runtime: PvoRuntime | null = null;
   let unsubscribe: (() => void) | null = null;
+  let serviceRequests = new WeakMap<object, TryServiceRequest>();
+
+  function bindServiceRequest(interaction: object, request: TryServiceRequest) {
+    serviceRequests.set(interaction, request);
+    return () => {
+      serviceRequests.delete(interaction);
+    };
+  }
 
   function current(): PvoRuntime | null {
     return runtime;
@@ -69,6 +78,7 @@ export function createTryRuntimeBridge(host: Host) {
 
   function clearConnection(): void {
     runtime = null;
+    serviceRequests = new WeakMap();
     const disconnect = unsubscribe;
     unsubscribe = null;
     disconnect?.();
@@ -86,7 +96,8 @@ export function createTryRuntimeBridge(host: Host) {
     const onDiagnostic = host.diagnosticObserver?.();
     const onState = host.diagnosticStateObserver?.();
     const interactionId = (context: Record<string, unknown>) => {
-      const diagnostic = context.diagnostic as { interactionId?: string } | undefined;
+      const diagnostic = context.diagnostic as
+        { interactionId?: string } | undefined;
       return diagnostic?.interactionId;
     };
     try {
@@ -111,10 +122,14 @@ export function createTryRuntimeBridge(host: Host) {
             if (component)
               recordPlaybackResult(
                 context,
-                host.applyPlaybackOutcome(component, {
-                  kind: "scene",
-                  sceneId,
-                }, interactionId(context)),
+                host.applyPlaybackOutcome(
+                  component,
+                  {
+                    kind: "scene",
+                    sceneId,
+                  },
+                  interactionId(context),
+                ),
               );
           },
           seek: (time, context) => {
@@ -123,7 +138,11 @@ export function createTryRuntimeBridge(host: Host) {
             if (component)
               recordPlaybackResult(
                 context,
-                host.applyPlaybackOutcome(component, { kind: "time", t: time }, interactionId(context)),
+                host.applyPlaybackOutcome(
+                  component,
+                  { kind: "time", t: time },
+                  interactionId(context),
+                ),
               );
           },
           custom: (name, _payload, context) => {
@@ -132,15 +151,31 @@ export function createTryRuntimeBridge(host: Host) {
             if (name === "restyle_continue" && component)
               recordPlaybackResult(
                 context,
-                host.applyPlaybackOutcome(component, { kind: "continue" }, interactionId(context)),
+                host.applyPlaybackOutcome(
+                  component,
+                  { kind: "continue" },
+                  interactionId(context),
+                ),
               );
           },
           request: ({ url, ...options }, context) => {
+            const interaction = context.previewInteraction;
+            const serviceRequest =
+              interaction && typeof interaction === "object"
+                ? serviceRequests.get(interaction)
+                : undefined;
+            if (serviceRequest)
+              return serviceRequest({ url, ...options }, options.signal);
             const component = componentFromContext(context);
-            if (component?.type === "form" && component.fields.formSubmitMode === "collect"
-              && component.fields.destination === url) {
+            if (
+              component?.type === "form" &&
+              component.fields.formSubmitMode === "collect" &&
+              component.fields.destination === url
+            ) {
               // Trying a video must not deliver a real reply to its creator inbox.
-              return Promise.resolve(Response.json({ accepted: true, preview: true }));
+              return Promise.resolve(
+                Response.json({ accepted: true, preview: true }),
+              );
             }
             return host.request(url, {
               ...options,
@@ -179,5 +214,5 @@ export function createTryRuntimeBridge(host: Host) {
     }
   }
 
-  return { current, isCurrent, start, stop };
+  return { current, isCurrent, start, stop, bindServiceRequest };
 }

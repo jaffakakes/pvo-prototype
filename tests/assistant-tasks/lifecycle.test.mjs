@@ -107,47 +107,44 @@ test("Stop invalidates late worker results while preserving questions and previo
   assert.equal(command(waiting, { kind: "stop" }).questions[0].answer, null);
 });
 
-test("claim recovery is delayed until expiry, bounded, and cannot extend the task deadline", () => {
+test("expired workers resume the same goal after many retries and days while fencing old claims", () => {
   let task = claim(create());
   assert.throws(
     () => command(task, { kind: "recover" }, { claim: null }),
     /expired/,
   );
-  for (let index = 0; index < TASK_LIMITS.retries; index++) {
+  for (let index = 0; index < 10; index++) {
     const old = task;
     task = command(
       task,
       { kind: "recover" },
-      { now: task.claim.expiresAt, claim: null },
+      {
+        now: task.updatedAt + 2 * 86400000,
+        claim: null,
+      },
     );
     assert.equal(task.state, "queued");
+    assert.equal(task.expiresAt, null);
+    assert.equal(task.retries, index + 1);
     task = claim(task);
     assert.throws(
       () =>
         command(
           task,
           { kind: "checkpoint", stepId: "build" },
-          { claim: { id: old.claim.id, generation: old.generation } },
+          {
+            claim: { id: old.claim.id, generation: old.generation },
+          },
         ),
       /stale/,
     );
   }
-  task = command(
-    task,
-    { kind: "recover" },
-    { now: task.claim.expiresAt, claim: null },
+  const finished = command(task, { kind: "complete", result: result() });
+  assert.equal(finished.finishedAt, finished.updatedAt);
+  assert.equal(
+    finished.expiresAt,
+    finished.finishedAt + TASK_LIMITS.retentionMs,
   );
-  assert.equal(task.state, "failed");
-  assert.equal(task.failure.code, "budget_exceeded");
-  const expired = claim(create());
-  const failed = command(
-    expired,
-    { kind: "recover" },
-    { now: expired.deadlineAt, claim: null },
-  );
-  assert.equal(failed.failure.code, "deadline_exceeded");
-  assert.throws(() => command(failed, { kind: "resume" }), /deadline/);
-  assert.equal(command(failed, { kind: "stop" }).state, "stopped");
 });
 
 test("failures have fixed classifications and only retryable failures can resume", () => {
@@ -190,29 +187,29 @@ test("usage is reserved before consumption and unfinished reservations prevent s
       }),
     /not reserved/,
   );
-  task = command(task, { kind: "reserve_usage", modelTurns: 6, toolCalls: 24 });
-  assert.throws(
-    () => command(task, { kind: "reserve_usage", modelTurns: 1, toolCalls: 0 }),
-    /range/,
-  );
+  task = command(task, {
+    kind: "reserve_usage",
+    modelTurns: 101,
+    toolCalls: 101,
+  });
   assert.throws(
     () => command(task, { kind: "complete", result: result() }),
     /reservations/,
   );
   task = command(task, {
     kind: "settle_usage",
-    modelTurns: 5,
-    toolCalls: 20,
+    modelTurns: 100,
+    toolCalls: 100,
     consumed: true,
   });
   task = command(task, {
     kind: "settle_usage",
     modelTurns: 1,
-    toolCalls: 4,
+    toolCalls: 1,
     consumed: false,
   });
-  assert.equal(task.usage.modelTurns, 5);
-  assert.equal(task.usage.toolCalls, 20);
+  assert.equal(task.usage.modelTurns, 100);
+  assert.equal(task.usage.toolCalls, 100);
   assert.throws(
     () =>
       command(task, {
@@ -261,26 +258,21 @@ test("prepared results must refer to the original project snapshot and cannot sm
   );
 });
 
-test("deadline expiry records a terminal reason even while queued or awaiting an answer", () => {
-  const waiting = command(claim(create()), {
+test("an answer can resume a goal weeks later with the original input and question", () => {
+  const initial = create();
+  const waiting = command(claim(initial), {
     kind: "ask",
     question: question(),
   });
-  for (const task of [create(), waiting, claim(create())]) {
-    assert.throws(
-      () => command(task, { kind: "expire" }, { claim: null }),
-      /past its deadline/,
-    );
-    const expired = command(
-      task,
-      { kind: "expire" },
-      { now: task.deadlineAt, claim: null },
-    );
-    assert.equal(expired.state, "failed");
-    assert.equal(expired.failure.code, "deadline_exceeded");
-    assert.equal(expired.claim, null);
-    assert.deepEqual(expired.questions, task.questions);
-  }
+  const resumed = command(waiting, answer(), {
+    now: initial.createdAt + 30 * 86400000,
+  });
+  assert.equal(resumed.state, "queued");
+  assert.equal(resumed.expiresAt, null);
+  assert.deepEqual(resumed.input, initial.input);
+  assert.equal(resumed.questions[0].answer.value, "Friday");
+  const stopped = command(resumed, { kind: "stop" });
+  assert.equal(stopped.expiresAt, stopped.finishedAt + TASK_LIMITS.retentionMs);
 });
 
 test("only a settled journal permits trusted usage reconciliation after Stop", () => {
