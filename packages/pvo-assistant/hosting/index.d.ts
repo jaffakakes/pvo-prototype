@@ -124,3 +124,9 @@ export function planServiceControl(
   now: number,
 ): HostedServiceRecord;
 export function parseHostedSummary(value: unknown): HostedServiceSummary;
+
+export function prepareReleaseActivation(
+  previous: ServiceAgreement | null,
+  candidate: ServiceAgreement,
+  state: unknown,
+): import("../services/index.js").ServiceJson;

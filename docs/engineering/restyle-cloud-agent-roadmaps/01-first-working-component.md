@@ -68,7 +68,7 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 
 ## 1D. Run the finished service and manage its data
 
-**Progress: 1D.01–1D.07 verified.** Checked services have stable addresses, atomic test/live records and exact action replay. Signed creator controls and the account-level service manager inspect, activate, pause/resume and delete services. Activated source/data survives task Stop, deadline, pruning and full restart; unrelated inactive versions still expire. Full local checks pass 1,337 tests, editor TypeScript and the real HTTP/workerd browser manager journey. **Next: 1D.08, safe version replacement and rollback.** Local implementation, beta delivery and production availability remain separate. See [hosting details](1d-hosted-services.md).
+**Progress: all of 1D is verified.** Checked services have stable addresses, atomic test/live records, exact action replay, creator controls and an independent active lifetime. Version selection validates current live state and the existing client interface before switching. Safe rollback retains current records/receipts; incompatible or expired versions cannot displace the working program. Full local checks pass **1,343 tests**, editor TypeScript and the actual service-manager browser journey. **Next: 1E.01/1E.02, a verified component attachment command and both validation boundaries.** Local implementation, beta delivery and production remain separate. See [hosting details](1d-hosted-services.md).
 
 **Current implementation:** see [the 1D ownership and hosting notes](1d-hosted-services.md); unchecked items below remain incomplete.
 
@@ -79,7 +79,7 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 - [x] **1D.05** Add a saved action identifier and result record. Retrying the same action returns its prior result; reusing that identifier with different input is rejected.
 - [x] **1D.06** Implement creator controls to inspect, activate, pause, and delete services, with limits enforced outside the generated program.
 - [x] **1D.07** Clean up abandoned inactive releases and failed deployments. Retain active services until an explicit lifecycle action stops them.
-- [ ] **1D.08** Keep the prior active release available during an update. Returning to it must be safe for the current stored records.
+- [x] **1D.08** Keep the prior active release available during an update. Returning to it must be safe for the current stored records.
 
 **Finished when:** test and live records stay separate; one creator cannot access another's private operations; repeated submissions do not create duplicate replies; two different guests cannot both claim the last place; pause blocks new work; deletion follows the documented retention rule.
 

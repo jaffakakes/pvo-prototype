@@ -36,13 +36,15 @@ async function request(
   });
   if (!response.ok)
     throw new ServiceRequestError(
-      response.status === 401
-        ? "Sign in again to manage your services."
-        : response.status === 409
-          ? "This service changed. Refresh its status before trying again."
-          : response.status === 429
-            ? "This service has reached its current limit."
-            : "Couldn’t complete this request. Retry the same action.",
+      response.status === 422
+        ? "This version is incompatible with the existing service. Its current version is unchanged."
+        : response.status === 401
+          ? "Sign in again to manage your services."
+          : response.status === 409
+            ? "This service changed. Refresh its status before trying again."
+            : response.status === 429
+              ? "This service has reached its current limit."
+              : "Couldn’t complete this request. Retry the same action.",
       response.status >= 400 && response.status < 500,
     );
   return response.json();

@@ -174,3 +174,8 @@ export function inspectServiceReply(
   expected: ServiceReply,
   actual: unknown,
 ): { code: "invalid_reply" | "mismatch"; detail: string } | null;
+
+export function parseServiceState(
+  agreement: ServiceAgreement,
+  value: unknown,
+): ServiceJson;

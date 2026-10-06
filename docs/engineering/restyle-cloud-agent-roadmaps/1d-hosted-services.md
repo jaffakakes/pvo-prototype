@@ -10,7 +10,7 @@ The platform decides who may call each action, checks its data, runs the program
 
 ## Current checkpoint and ownership
 
-All of 1C is verified. **1D.01–1D.07 are verified complete.** Next is safe replacement and rollback in **1D.08**. The active hosting checkout starts from current dev `4bc9f9e` and combines the verified validation prerequisite `f7dac2c` (source `98dd960`, draft #96). Checked-package hosting, owner metadata and the trusted task-host stage pass local SQLite/runtime integration and the full 1,320-test behavior suite. No new paid calls or resources.
+All of 1C is verified. **All of 1D is verified complete.** Next is attachment in **1E.01/1E.02**. The active hosting checkout starts from current dev `4bc9f9e` and combines the verified validation prerequisite `f7dac2c` (source `98dd960`, draft #96). Checked-package hosting, owner metadata and the trusted task-host stage pass local SQLite/runtime integration and the full 1,320-test behavior suite. No new paid calls or resources.
 
 Keep shared service/release rules in `packages/pvo-assistant/services/` and `releases/`, SQL/runtime adapters in `server/cloud-services/`, and task admission/receipts in the existing focused task modules. The owner-scoped task coordinator can retain a separate service catalog beyond task retention; generated code cannot access it. The immutable release provider must retain its own artifact bytes independently of the builder/workspace.
 
@@ -68,8 +68,15 @@ Activated/paused source, records and action receipts outlive task Stop/deadline/
 Verified: 1,337 full behavior tests, 702 syntax/832 dependency/371 formatting files, strict editor TypeScript, actual local HTTP/workerd/SQLite lifecycle with restart/concurrency/retention/deletion, and the real editor manager journey (lost response, page reload, exact retry, pause/resume, account switch, delete confirmation, desktop/phone). No paid provider/model call or deployed product Worker. Next: 1D.08, preserving current records and the last working program during replacement and rollback.
 
 
-## Next slice: 1D.08 safe replacement and rollback
+## Verified slice: 1D.08 safe replacement and rollback
 
 The stable service object already retains up to four immutable checked versions. Evolve the creator activation command to choose another known version only after the current live state passes that version's data agreement and its operation interface remains compatible with existing clients. Validate before changing any source pointer, receipt or records. Preserve the previous checked bytes and all current live data/action receipts; returning to an earlier version is the same guarded command, never a restore of old data. If no live record has been written yet, preserve the current active version's initial state when replacing it. Avoid granting the model a publication or compatibility bypass.
 
-Add pure state/operation compatibility validation, then host control integration and owned version choices in the existing panel. Test an accepted update, missing/expired/unchecked version, incompatible operation or live state, safe rollback that keeps later viewer records, rejected rollback, exact replay after restart and a version change while an action is in flight. Keep 1D.08 unchecked until this is verified. This slice supplies the safe host/version mechanism; later roadmap 4B connects authoring a new task to an already attached service. No new paid run is implied.
+Add pure state/operation compatibility validation, then host control integration and owned version choices in the existing panel. Test an accepted update, missing/expired/unchecked version, incompatible operation or live state, safe rollback that keeps later viewer records, rejected rollback, exact replay after restart and a version change while an action is in flight. 1D.08 is now verified by the evidence below. This slice supplies the safe host/version mechanism; later roadmap 4B connects authoring a new task to an already attached service. No new paid run is implied.
+
+
+### 1D.08 verification
+
+Live records are initialized at first activation and validated against every candidate before changing the selected version. Exact operation names/audience/access/input/result shapes remain compatible with existing clients; descriptions and ordering can change. Source/report identity remains immutable, previous code is retained, and rollback keeps current records/action receipts. The same revision/receipt command powers the manager's known-version buttons. Unsafe state/interface changes, missing and expired versions return an honest failure without changing the working service.
+
+All **1,343** repository tests pass, along with **705 syntax**, **833 dependency**, **374 formatting** files and strict editor TypeScript. Six update cases include valid update/rollback, rejected interface/state change, original-state preservation before any viewer call, exact replay after restart, an in-flight execution fence, and expiry. The actual editor browser journey chooses versions and returns without losing a viewer record. Controlled checked publications isolate host mechanisms; later 4B owns authoring a new task against an existing service. No paid cloud/model call, remote CI polling or production change. Next: 1E.01/1E.02.

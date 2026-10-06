@@ -1,3 +1,4 @@
+import { dinnerSource } from "../../../tests/service-validation/fixtures.mjs";
 import assert from "node:assert/strict";
 import { chromium } from "playwright-core";
 import {
@@ -6,6 +7,8 @@ import {
   publicCall,
   action,
   expectStatus,
+  version,
+  status,
 } from "../../../tests/service-actions/helpers.mjs";
 import { ORIGIN } from "../../../tests/assistant-task-server/helpers.mjs";
 import { installAssistantAvailabilityFixture } from "./assistant-fixture.mjs";
@@ -110,6 +113,34 @@ try {
     (await publicCall(fixture, service, action("live", "Viewer"))).body.result,
     "accepted",
   );
+  const candidate = await version(fixture, service, {
+    source: dinnerSource + "\n// A new checked version.",
+  });
+  await page
+    .getByRole("button", { name: "Refresh services", exact: true })
+    .click();
+  await page.getByText("Service details", { exact: true }).click();
+  await page
+    .getByRole("button", { name: "Use version 2", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Use version 1", exact: true })
+    .waitFor();
+  assert.equal(
+    (await status(fixture, service)).body.summary.service.liveReleaseId,
+    candidate.identity.resourceId,
+  );
+  await page
+    .getByRole("button", { name: "Use version 1", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Use version 2", exact: true })
+    .waitFor();
+  assert.equal(
+    (await publicCall(fixture, service, action("after-rollback", "Viewer")))
+      .body.result,
+    "already_joined",
+  );
   await page
     .getByRole("button", { name: "Pause service", exact: true })
     .click();
@@ -178,7 +209,7 @@ try {
   await page.screenshot({ path: "/tmp/restyle-services-desktop.png" });
   assert.deepEqual(errors, []);
   console.log(
-    "Service manager passed: real HTTP/workerd/SQLite lifecycle, lost activation response and reload, exact retry, pause/resume, owner switch, explicit deletion, desktop and phone. No paid resources.",
+    "Service manager passed: real HTTP/workerd/SQLite lifecycle, lost activation response and reload, exact retry, checked version selection/rollback without losing records, pause/resume, owner switch, explicit deletion, desktop and phone. No paid resources.",
   );
 } catch (error) {
   await page

@@ -115,3 +115,15 @@ export function parseServiceReply(agreement, invocation, value) {
   validateReply(parseServiceAgreement(agreement), invocation, value);
   return structuredClone(value);
 }
+
+/** Validate retained records against a checked version without changing those records. */
+export function parseServiceState(agreement, value) {
+  const checked = parseServiceAgreement(agreement);
+  boundedValue(
+    checked.state.schema,
+    value,
+    limits.stateBytes,
+    "Saved service state",
+  );
+  return structuredClone(value);
+}

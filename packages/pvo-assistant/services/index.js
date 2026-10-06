@@ -4,6 +4,7 @@ export {
   serializeServiceAgreement,
   parseServiceInvocation,
   parseServiceReply,
+  parseServiceState,
 } from "./agreement.js";
 export {
   parseServicePackage,

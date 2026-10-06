@@ -46,4 +46,15 @@ Each service admits at most eight simultaneous/waiting calls. Each test-release/
 
 Usage and state rules live in the shared package; trusted adapters persist them before execution and commit accepted state/results atomically. Runtime invocation remains bounded to two seconds and 50 ms generated-code CPU, with fresh modules and no outbound capabilities. These implementation limits are not a provider billing guarantee.
 
-Safe replacement/rollback and component attachment are later roadmap work. Local SQLite/workerd evidence and a beta build do not mean the cloud service is deployed.
+Component attachment and later update-authoring workflows remain roadmap work. Local SQLite/workerd evidence and a beta build do not mean the cloud service is deployed.
+
+
+## Updating and returning to a version
+
+Activation can choose any available or retained checked version owned by the same service. Before switching, trusted code validates the **current** live records against that version's state schema/byte limits and compares operation names, audience, storage access, inputs and results with the active version. Descriptions and field/operation ordering may differ; changing the client interface is rejected in this initial update path. Generated source and caller flags cannot waive these checks.
+
+Live records are initialized from the first activated agreement, independently of test records. Another version's initial values never overwrite them, even when no viewer action has happened. The selected release, retained bytes and control receipt commit atomically after validation; failure leaves the existing program, records and receipts unchanged. The prior working bytes remain retained, and version choices are shown under **Service details** in the manager.
+
+Returning to a previous version runs the same checks against today's records. It never restores earlier data or removes later viewer actions. A narrower old schema can therefore prevent rollback after newer records have accumulated. Existing action IDs still replay their original results across version changes. Changing versions fences an execution already in flight; an uncommitted action can retry against the newly selected version without duplicating a saved change.
+
+This is the checked host/version mechanism. The later update-authoring roadmap connects a new authoring task to an existing attached service. The current four-version bound includes retained identities/tombstones; it is not an unlimited release history. No actual provider deployment is implied by local tests.

@@ -127,3 +127,10 @@ planServiceControl(
   { kind: "pause", actionId: "saved", expectedRevision: 0, ownerId: "foreign" },
   2,
 );
+
+const { parseServiceState } =
+  await import("../../packages/pvo-assistant/services/index.js");
+const { prepareReleaseActivation } =
+  await import("../../packages/pvo-assistant/hosting/index.js");
+parseServiceState(agreement, agreement.state.initial);
+prepareReleaseActivation(agreement, agreement, agreement.state.initial);

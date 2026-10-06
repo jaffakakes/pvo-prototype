@@ -141,10 +141,15 @@ export function useServices() {
       }
     }
   };
-  const control = (item: ManagedService, kind: ServiceControl["kind"]) => {
+  const control = (
+    item: ManagedService,
+    kind: ServiceControl["kind"],
+    selectedReleaseId?: string,
+  ) => {
     if (pending.current || !item.summary) return;
     const service = item.summary.service;
-    const releaseId = service.liveReleaseId ?? service.testReleaseId;
+    const releaseId =
+      selectedReleaseId ?? service.liveReleaseId ?? service.testReleaseId;
     if (kind === "activate" && !releaseId) return;
     const base = {
       actionId: crypto.randomUUID(),

@@ -23,6 +23,12 @@ export class ServiceActionStore {
       ? { state: JSON.parse(row.body), version: row.version }
       : { state: structuredClone(initial), version: 0 };
   }
+  initializeLive(state) {
+    this.sql.exec(
+      "INSERT INTO service_data(namespace,body,version) VALUES('live',?,0) ON CONFLICT(namespace) DO NOTHING",
+      JSON.stringify(state),
+    );
+  }
   receipt(namespace, id) {
     const row = this.sql
       .exec(
