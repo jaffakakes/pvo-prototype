@@ -34,6 +34,7 @@ import { compilePvoComponent } from "../../../packages/pvo-language/worker.js";
 import { planTaskAttachment } from "../attachments/planner.js";
 import { HttpError } from "../../http.js";
 import { randomId } from "../../identity.js";
+import { TaskProgress } from "./progress.js";
 import { TaskRepairs } from "./repairs.js";
 import { TaskEvidence } from "./evidence.js";
 import { TaskRepository } from "./repository.js";
@@ -67,6 +68,7 @@ export class AssistantTasks extends DurableObject {
       this.repository,
     );
     this.artifacts = new ServiceArtifacts(ctx.storage.sql, this.repository);
+    this.progress = new TaskProgress(ctx.storage.sql);
     this.repairs = new TaskRepairs(ctx.storage.sql);
     this.evidence = new TaskEvidence(ctx.storage.sql);
     this.active = new Map();
@@ -102,6 +104,7 @@ export class AssistantTasks extends DurableObject {
       this.results.prune();
       this.evidence.prune();
       this.repairs.prune();
+      this.progress.prune();
       this.builders.prune(now);
       this.research.prune(now);
       this.validation.prune(now);
@@ -400,6 +403,7 @@ export class AssistantTasks extends DurableObject {
       this.attempts.prune();
       this.evidence.prune();
       this.repairs.prune();
+      this.progress.prune();
       this.providers.prune();
       this.workspaces.prune(this.now());
       this.builders.prune(this.now());

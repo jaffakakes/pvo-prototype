@@ -57,3 +57,10 @@ No-progress help for authoring now requires an identical complete rejected propo
 
 
 Expired-host recovery `10ad867` is delivered in combined beta `fc88f2b588e355dc`; build/types/27 focused checks/both browser journeys/Worker dry run passed. Existing sessions were not reloaded. Next: conservative detection of unchanged tool/research outcomes and repeated independent review of the same failing source, while preserving changing evidence and new answers as progress. 1B.14 remains unchecked; no product deployment or paid calls.
+
+
+### 2026-10-06 — 1B.14 complete
+
+Marked **1B.14 complete**, now **40/126**. Actual rejected proposals, tool/research outcomes, independent review reports and history selections drive durable repair/progress decisions. Changing source/evidence/answers allow continued work; identical unchanged evidence yields a saved help question before another inference. IDs, counters, times and model notes cannot pretend to be useful progress. These are conservative repeated-evidence checks, not a proof that every possible loop can be recognized. Completion still depends on real validation and owned hosting.
+
+**1,408 full tests**, 748 syntax/861 dependency/419 formatting checks and strict editor types pass. Runtime tests cover repeated versus changed source, actual failed reviews followed by repair, research/history loops, restart, creator answers, private cleanup and storage failure without duplicated tools. Source verified; combined beta delivery next. **Next numbered task: 1B.15**, one combined long-running controlled journey across the removed ceilings, interruptions, waits and uncertain effects. No paid run authorized or executed.

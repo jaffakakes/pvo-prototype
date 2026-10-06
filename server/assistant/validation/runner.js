@@ -1,3 +1,4 @@
+import { reviewProgressEvidence } from "../tasks/progressEvidence.js";
 import {
   SERVICE_TEST_LIMITS,
   SERVICE_TEST_POLICY,
@@ -41,6 +42,12 @@ function completeReport(coordinator, claimed, state, report, error = null) {
     )
   )
     return;
+  coordinator.progress.observe(
+    coordinator.validation.task(claimed.id),
+    "reviews",
+    state.round,
+    reviewProgressEvidence(state, report, error),
+  );
   checkpoint(
     coordinator,
     claimed,

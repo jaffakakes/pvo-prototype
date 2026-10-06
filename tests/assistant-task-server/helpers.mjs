@@ -193,6 +193,15 @@ export async function taskFixture({
       async providerStatus(identity) { const stub=this.env.SERVICE_HOSTS.getByName(identity.serviceId); return { observation: await stub.lookup(identity), stats: await stub.stats(identity) }; }
       async providerProbe(identity, input) { return this.env.SERVICE_HOSTS.getByName(identity.serviceId).probe(identity, input); }
       setTime(now) { this.clock = now; }
+      progressContext(ownerId,id) {
+        this.repository.bindOwner(ownerId);
+        return this.progress.context(this.repository.read(id,this.now()));
+      }
+      progressCount() { return this.ctx.storage.sql.exec("SELECT COUNT(*) AS count FROM task_progress").one().count; }
+      progressWriteFailure(enabled) {
+        if(enabled) this.ctx.storage.sql.exec("CREATE TRIGGER reject_progress BEFORE INSERT ON task_progress BEGIN SELECT RAISE(ABORT, 'controlled progress failure'); END;");
+        else this.ctx.storage.sql.exec("DROP TRIGGER reject_progress;");
+      }
       evidenceContext(ownerId,id) {
         this.repository.bindOwner(ownerId);
         return this.evidence.context(this.repository.read(id,this.now()));
@@ -278,6 +287,9 @@ export async function taskFixture({
             return json({ ok: true });
           }
           if (action === "pause-planning") {await stub.pausePlanning();return json({ok:true});}
+          if (action === "progress-context") return json(await stub.progressContext(owner.id,args.id));
+          if (action === "progress-count") return json(await stub.progressCount());
+          if (action === "progress-write-failure") {await stub.progressWriteFailure(args.enabled);return json({ok:true});}
           if (action === "evidence-context") return json(await stub.evidenceContext(owner.id,args.id));
           if (action === "select-evidence") return json(await stub.selectEvidence(owner.id,args.id,args.request));
           if (action === "operation-history") return json(await stub.operationHistory(owner.id,args.id,args.after));

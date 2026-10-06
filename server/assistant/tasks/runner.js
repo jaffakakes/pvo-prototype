@@ -2,6 +2,7 @@ import { recoverExpiredAttachment } from "../attachments/recovery.js";
 import { AuthoringRepairError } from "./repairFeedback.js";
 import {
   authoringInput,
+  askForProgressHelp,
   prepareAuthoringResponse,
   finishAuthoringAttempt,
 } from "./authoringResponse.js";
@@ -25,6 +26,12 @@ export async function runAuthoringStep(coordinator, claimed) {
       (await coordinator.transaction(() =>
         recoverExpiredAttachment(coordinator, claimed),
       ))
+    )
+      return;
+    if (
+      await coordinator.transaction(() =>
+        askForProgressHelp(coordinator, claimed),
+      )
     )
       return;
     const operationId = `inference-${claimed.generation}`;

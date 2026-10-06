@@ -1,3 +1,4 @@
+import { taskClaim, transitionGuard } from "./executionClaim.js";
 import { transitionTask } from "../../../packages/pvo-assistant/tasks/index.js";
 import { AuthoringRepairError } from "./repairFeedback.js";
 import { parseBuilderDecision } from "../../../packages/pvo-assistant/builder/index.js";
@@ -14,6 +15,7 @@ export function authoringInput(coordinator, task) {
     evidence: {
       ...coordinator.evidence.context(task),
       repair: coordinator.repairs.context(task),
+      progress: coordinator.progress.context(task),
     },
     stepId: task.stepId,
     ...(task.stepId === "attach"
@@ -157,9 +159,18 @@ export function finishAuthoringAttempt(
   );
   if (result?.repaired) coordinator.repairs.save(claimed.id, repair.record);
   const accepted = result?.accepted;
-  if (accepted && !response?.evidence) coordinator.repairs.clear(claimed.id);
-  if (accepted && response?.evidence)
+  if (accepted && !response?.evidence) {
+    coordinator.repairs.clear(claimed.id);
+    coordinator.progress.clear(claimed.id, "history");
+  }
+  if (accepted && response?.evidence) {
     coordinator.evidence.save(claimed.id, response.evidence);
+    const { notes: _notes, ...selection } = response.evidence;
+    coordinator.progress.observe(claimed, "history", claimed.generation, {
+      stepId: claimed.stepId,
+      selection,
+    });
+  }
   if (accepted && !response?.evidence && claimed.stepId === "attach")
     coordinator.results.save(
       coordinator.attempts.task(claimed.id),
@@ -167,4 +178,21 @@ export function finishAuthoringAttempt(
     );
   if (accepted && prepared)
     coordinator.builders.write(claimed.id, prepared.state);
+}
+
+/** Request help before another inference when saved execution has repeated the same evidence unchanged. */
+export function askForProgressHelp(coordinator, claimed) {
+  const now = coordinator.now();
+  if (!coordinator.attempts.current(claimed, now)) return false;
+  const task = coordinator.attempts.task(claimed.id);
+  const round =
+    task.stepId === "build" ? coordinator.builders.get(task.id).round : null;
+  const question = coordinator.progress.question(task, round);
+  if (!question) return false;
+  coordinator.repository.update(
+    task.id,
+    { kind: "ask", question },
+    transitionGuard(task, now, taskClaim(task)),
+  );
+  return true;
 }
