@@ -417,5 +417,6 @@
   "server/assistant/attachments/recovery.js",
   "server/assistant/tasks/progress.js",
   "server/assistant/tasks/progressEvidence.js",
-  "tests/assistant-task-server/progress.test.mjs"
+  "tests/assistant-task-server/progress.test.mjs",
+  "tests/service-attachments/task.helpers.mjs"
 ]

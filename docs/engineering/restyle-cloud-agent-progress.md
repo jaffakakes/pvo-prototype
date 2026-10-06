@@ -770,3 +770,10 @@ Shared prompt projection now fits valid large accumulated context into a finite 
 - **Exact next 1B.15:** one controlled saved-goal acceptance journey with at least 65 distinct source writes, more than four workspace sessions, model/capacity waits, a 30-day clock advance across missing/expired spending permission, full worker restart, a lost inference and a lost successful publication response, then an independently checked hosted component at Ready. Assert original goal/agreement/source/answers, archived receipts, conservative usage, single publication and ownership. Use actual workerd/SQLite/compiler/checker with controlled model/VM effects; no cloud creation or paid calls. Existing browser and Stop/replay acceptance remain part of the combined matrix.
 - **Preparation:** extract the reusable attachment proposal/setup fixture from the 492-line attachment lifecycle test into a focused test helper as a separate behavior-neutral commit before adding the combined test. Source instructions require keeping that extraction separate from behavior changes. No 1B.15 source edits yet; keep its box unchecked. Current source is clean except the known dependency symlink.
 - **Roadmap:** 40/126 complete, 86 remaining. After 1B.15, continue 1E.04 runtime invocation. No paid authorization carried forward from the completed US$1/US$15 proof batches.
+
+
+### 2026-10-06 — 1B.15 fixture preparation verified
+
+- Extracted the existing attachment proposal and setup into `tests/service-attachments/task.helpers.mjs`, preserving its behavior and public test flow. The eight attachment lifecycle cases pass; syntax (749 modules), dependency boundaries (861 modules) and adopted formatting (420 files) pass. Log: `/tmp/restyle-acceptance-extraction.log`.
+- Test-only structural preparation is committed separately from the combined acceptance test. No app code changed; the delivered `7c4dc779c558fb31` beta remains current. No resources or paid calls.
+- **1B.15 remains unchecked.** Next: implement the combined controlled saved-goal journey described in the previous checkpoint, reusing the extracted proposal.
