@@ -134,3 +134,22 @@ const { prepareReleaseActivation } =
   await import("../../packages/pvo-assistant/hosting/index.js");
 parseServiceState(agreement, agreement.state.initial);
 prepareReleaseActivation(agreement, agreement, agreement.state.initial);
+
+const attachments =
+  await import("../../packages/pvo-assistant/attachments/index.js");
+const attachment = attachments.parseServiceAttachmentCommand({});
+const attachmentReceipt = attachments.parseServiceAttachmentReceipt({});
+const verifiedAttachment = attachments.matchServiceAttachment(
+  attachment,
+  attachmentReceipt,
+  { ownerId: "owner", projectId: "project", taskId: "task" },
+  0,
+);
+const publicAudience: "public" = verifiedAttachment.receipt.operation.audience;
+// @ts-expect-error A model proposal cannot supply an address.
+attachment.connection.url = "https://invented.example";
+// @ts-expect-error A source-changing native operation cannot receive readiness authority.
+attachment.component.receipt = attachmentReceipt;
+// @ts-expect-error Input bindings cannot execute expressions.
+attachment.connection.input = { kind: "expression", code: "run()" };
+void publicAudience;
