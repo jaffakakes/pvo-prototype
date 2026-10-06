@@ -140,15 +140,19 @@ export type WorkspaceReceipt = { id: string; digest: string } & (
   | {
       kind: WorkspaceOperationKind;
       status: "interrupted";
-      result: {
-        code:
-          | "workspace_stopped"
-          | "workspace_claim_revoked"
-          | "workspace_execution_interrupted"
-          | "workspace_budget_exhausted"
-          | "workspace_provider_unavailable"
-          | "workspace_output_limit";
-      };
+      result:
+        | {
+            code:
+              | "workspace_stopped"
+              | "workspace_claim_revoked"
+              | "workspace_execution_interrupted"
+              | "workspace_provider_unavailable"
+              | "workspace_output_limit";
+          }
+        | {
+            code: "workspace_capacity" | "workspace_allowance";
+            retryAt: number;
+          };
     }
   | {
       kind: "save";

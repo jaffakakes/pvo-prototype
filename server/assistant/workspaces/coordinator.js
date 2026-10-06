@@ -218,8 +218,19 @@ export class AssistantWorkspace extends DurableObject {
           if (kind === "start") {
             const budget = this.budget();
             if (!budget) fail("workspace_provider_unavailable");
-            if (!(await budget.reserve(intent.lease)))
-              fail("workspace_budget_exhausted");
+            const reservation = await budget.reserve(intent.lease);
+            if (!reservation.accepted) {
+              if (
+                ["workspace_capacity", "workspace_allowance"].includes(
+                  reservation.reason,
+                )
+              )
+                throw Object.assign(
+                  new Error("Workspace capacity is unavailable."),
+                  { code: reservation.reason, retryAt: reservation.retryAt },
+                );
+              fail("workspace_execution_interrupted");
+            }
             this.current(intent.action);
             if (!(await provider.absent())) fail("workspace_cleanup_required");
             this.current(intent.action);
@@ -260,13 +271,14 @@ export class AssistantWorkspace extends DurableObject {
         const state = this.journal.state();
         if (state.active?.generation !== intent.action.generation) return;
         const code = [
-          "workspace_budget_exhausted",
+          "workspace_capacity",
+          "workspace_allowance",
           "workspace_provider_unavailable",
           "workspace_output_limit",
         ].includes(error.code)
           ? error.code
           : "workspace_execution_interrupted";
-        this.interrupt(false, code);
+        this.interrupt(false, code, error.retryAt);
       });
     }
     await this.schedule();
@@ -276,7 +288,7 @@ export class AssistantWorkspace extends DurableObject {
   current(action) {
     assertWorkspaceAction(this.journal.state(), action, this.now());
   }
-  interrupt(close, code = "workspace_execution_interrupted") {
+  interrupt(close, code = "workspace_execution_interrupted", retryAt = null) {
     const state = this.journal.state();
     if (state.active) {
       const receipt = this.journal.action(state.active.id);
@@ -284,7 +296,9 @@ export class AssistantWorkspace extends DurableObject {
         this.journal.saveAction({
           ...receipt,
           status: "interrupted",
-          result: { code },
+          result: ["workspace_capacity", "workspace_allowance"].includes(code)
+            ? { code, retryAt }
+            : { code },
         });
     }
     this.journal.saveState(interruptWorkspace(state, this.now(), close));

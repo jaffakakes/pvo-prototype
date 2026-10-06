@@ -17,7 +17,9 @@ async function lease(number, now = NOW, expiresAt = NOW + 86_400_000) {
 }
 const result = (response) => {
   assert.equal(response.status, 200, JSON.stringify(response));
-  return response.result;
+  return response.result && typeof response.result === "object"
+    ? response.result.accepted
+    : response.result;
 };
 
 test("global workspace reservations survive restart, cap concurrent owners and never infer cleanup from time", async () => {
@@ -35,8 +37,15 @@ test("global workspace reservations survive restart, cap concurrent owners and n
       call("reserve", c),
     ]);
     assert.equal(concurrent.filter((x) => result(x)).length, 2);
-    const accepted = [a, b, c].filter((_, i) => concurrent[i].result);
-    const rejected = [a, b, c].find((_, i) => !concurrent[i].result);
+    assert.ok(
+      concurrent.some(
+        (response) =>
+          response.result.reason === "workspace_capacity" &&
+          response.result.retryAt === NOW + 30000,
+      ),
+    );
+    const accepted = [a, b, c].filter((_, i) => concurrent[i].result.accepted);
+    const rejected = [a, b, c].find((_, i) => !concurrent[i].result.accepted);
     await f.restart();
     assert.equal(result(await call("reserve", accepted[0])), true);
     result(await call("time", null, { now: NOW + limits.sessionMs + 1 }));
@@ -72,7 +81,11 @@ test("release-before-reserve tombstones and daily usage prevent delayed resurrec
       assert.equal(result(await call("reserve", current)), true);
       result(await call("release", current));
     }
-    assert.equal(result(await call("reserve", await lease(100))), false);
+    assert.deepEqual((await call("reserve", await lease(100))).result, {
+      accepted: false,
+      reason: "workspace_allowance",
+      retryAt: NOW + 86_400_000,
+    });
     const tomorrow = NOW + 86_400_000;
     result(await call("time", null, { now: tomorrow }));
     result(await call("alarm"));

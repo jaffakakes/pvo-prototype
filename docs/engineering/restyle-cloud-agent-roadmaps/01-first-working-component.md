@@ -46,11 +46,11 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 
 ### Goal continuation correction — 6 October 2026
 
-The user wants the agent to keep working toward the goal, with no fixed model-turn ceiling. The goal-wide model/tool/session/recovery/research/source/review cutoffs and age deadline are removed. Durable history, byte-aware checkpoints and retrievable bounded inference context pass 1,384 local tests. Capacity/spending waits and progress-driven repair remain in 1B.13–1B.15. Follow [the goal-continuation implementation plan](1b-goal-continuation.md) before proceeding to 1E.04.
+The user wants the agent to keep working toward the goal, with no fixed model-turn ceiling. The goal-wide model/tool/session/recovery/research/source/review cutoffs and age deadline are removed. Durable history, byte-aware checkpoints, retrievable inference context and saved capacity/spending waits pass 1,393 local tests. 1B.13 is complete; progress-driven repair and combined acceptance remain in 1B.14/1B.15. Follow [the goal-continuation implementation plan](1b-goal-continuation.md) before proceeding to 1E.04.
 
 - [x] **1B.11** Separate the saved goal from short execution periods. Preserve its objective, current plan, questions, source and receipts across work periods without a fixed goal-wide model/tool/session count or automatic 24-hour abandonment.
 - [x] **1B.12** Keep the notebook bounded by checkpointing settled history into owned durable records. Preserve every unknown external outcome and replay identity; full history or retention must not silently end or erase active goals.
-- [ ] **1B.13** Pause and resume for actual spending permission or temporarily unavailable capacity. Show the reason and next action; a rate limit or expired work lease must not become a permanently failed goal. Keep Stop authoritative.
+- [x] **1B.13** Pause and resume for actual spending permission or temporarily unavailable capacity. Show the reason and next action; a rate limit or expired work lease must not become a permanently failed goal. Keep Stop authoritative.
 - [ ] **1B.14** Continue from actual progress and validation feedback. Repair unsuccessful work, detect repeated attempts that add no useful evidence, and ask a concrete question when necessary. Finish only after the requested result is verified.
 - [ ] **1B.15** Verify continuation beyond the former model/tool/workspace bounds, interrupted checkpoints, waiting/approved budget, Stop/resume and missing external outcomes with local controlled effects. Update the beta and portable handoff; new paid acceptance needs its own approval.
 

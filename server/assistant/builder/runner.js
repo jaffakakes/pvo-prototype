@@ -16,6 +16,28 @@ function haltBatch(result) {
   );
 }
 
+function capacityWait(coordinator, claimed, result, tool) {
+  if (
+    tool.kind !== "workspace_start" ||
+    result?.status !== "interrupted" ||
+    !["workspace_capacity", "workspace_allowance"].includes(result.result?.code)
+  )
+    return false;
+  const task = coordinator.builders.task(claimed.id),
+    now = coordinator.now();
+  if (!hasCurrentClaim(task, claimed, now)) return false;
+  coordinator.repository.update(
+    task.id,
+    {
+      kind: "wait",
+      reason: result.result.code,
+      nextRunAt: Math.max(now + 1000, result.result.retryAt),
+    },
+    transitionGuard(task, now, taskClaim(task)),
+  );
+  return true;
+}
+
 function checkpoint(coordinator, claimed) {
   const task = coordinator.builders.task(claimed.id),
     now = coordinator.now();
@@ -85,6 +107,7 @@ export async function runBuilderBatch(coordinator, claimed) {
           haltBatch(result),
           coordinator.now(),
         );
+        if (capacityWait(coordinator, claimed, result, position.tool)) return;
       }
       if (coordinator.builders.stage(claimed.id) === "tools")
         coordinator.builders.interrupt(claimed, coordinator.now());
@@ -97,15 +120,17 @@ export async function runBuilderBatch(coordinator, claimed) {
     for (let position; (position = coordinator.builders.next(claimed.id));) {
       if (!coordinator.builders.current(claimed, coordinator.now())) return;
       const result = await tools.execute(position.tool, position.operationId);
-      const saved = await coordinator.transaction(() =>
-        coordinator.builders.feedback(
+      const saved = await coordinator.transaction(() => {
+        const accepted = coordinator.builders.feedback(
           claimed,
           position,
           result,
           haltBatch(result),
           coordinator.now(),
-        ),
-      );
+        );
+        if (accepted) capacityWait(coordinator, claimed, result, position.tool);
+        return accepted;
+      });
       if (!saved) return;
     }
     await coordinator.transaction(() => checkpoint(coordinator, claimed));

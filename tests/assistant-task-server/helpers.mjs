@@ -26,6 +26,7 @@ export async function taskFixture({
   researchFetch = null,
   validationControl = null,
   hostControl = null,
+  spending = true,
 } = {}) {
   modules ??= bundleWorkerModules({
     stdin: {
@@ -61,12 +62,23 @@ export async function taskFixture({
       now() { return this.clock ?? this.env.CONTROLLED_CLOCK ?? Date.now(); }
       setTime(now) { this.clock = now; }
     }
+    import { taskSpendingAllowed } from "./server/assistant/tasks/spending.js";
     import { AssistantTasks } from "./server/assistant/tasks/coordinator.js";
     import { getAccountSession } from "./server/auth/sessions.js";
     import { HttpError, json } from "./server/http.js";
     export class TestTasks extends AssistantTasks {
+      constructor(ctx, env) { super(ctx,env);ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS test_spending (id INTEGER PRIMARY KEY, body TEXT NOT NULL)"); }
       now() { return this.clock ?? this.env.CONTROLLED_CLOCK ?? (this.env.CONTROLLED_PLAN ? Date.now() : Date.UTC(2100, 0, 1)); }
       plannerAvailable() { return this.planningPaused ? false : this.env.CONTROLLED_PLAN ? true : super.plannerAvailable(); }
+      spendingAllowed(task, capability) {
+        if (this.env.CONTROLLED_SPENDING) return true;
+        const encoded = this.ctx.storage.sql.exec("SELECT body FROM test_spending WHERE id=1").toArray()[0]?.body ?? "[]";
+        return taskSpendingAllowed({ASSISTANT_TASK_SPENDING:encoded},task.ownerId,capability,this.now());
+      }
+      grantSpending(ownerId, grants) {
+        this.repository.bindOwner(ownerId);
+        this.ctx.storage.sql.exec("INSERT INTO test_spending (id,body) VALUES (1,?) ON CONFLICT(id) DO UPDATE SET body=excluded.body",JSON.stringify(grants));
+      }
       pausePlanning() { this.planningPaused = true; }
       stepTimeoutMs() { return this.env.CONTROLLED_PLAN ? 1000 : super.stepTimeoutMs(); }
       leaseMs() { return this.env.CONTROLLED_PLAN ? 1500 : super.leaseMs(); }
@@ -217,6 +229,11 @@ export async function taskFixture({
           if (action === "research-tool") return json(await stub.researchTool(owner.id,args.id,args.tool,args.operationId,args.guard));
           if (action === "research-rows") return json(await stub.researchRows());
           if (action === "builder-state") return json(await stub.builderState(args.id));
+          if (action === "workspace-budget") {
+            const budget = env.WORKSPACE_BUDGET.getByName("global");
+            await budget.setTime(args.now);
+            return json(await budget[args.method](args.lease));
+          }
           if (action === "workspace-tools") return json(await stub.workspaceToolDefinitions());
           if (action === "workspace-tool") return json(await stub.workspaceTool(owner.id, args.id, args.tool, args.operationId, args.guard));
           if (action === "workspace") return json(await stub.workspaceOperation(owner.id, args.id, args.kind, args.request, args.guard));
@@ -235,6 +252,7 @@ export async function taskFixture({
           if (action === "host-diagnostic") return json(await stub.hostDiagnostic(owner.id,args.identity,args.kind));
           if (action === "provider-status") return json(await stub.providerStatus(args.identity));
           if (action === "provider-probe") return json(await stub.providerProbe(args.identity, args.input));
+          if (action === "grant-spending") { await stub.grantSpending(owner.id,args.grants); return json({ok:true}); }
           if (action === "time") {
             await stub.setTime(args.now);
             if (env.ASSISTANT_BUDGET) await env.ASSISTANT_BUDGET.getByName("assistant:" + new Date(args.now).toISOString().slice(0,10)).setTime(args.now);
@@ -275,6 +293,7 @@ export async function taskFixture({
         BROKEN: broken,
         CONTROLLED_PLAN: Boolean(planner),
         CONTROLLED_CLOCK: clock,
+        CONTROLLED_SPENDING: spending,
       },
       ...(planner ||
       providerControl ||

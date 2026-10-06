@@ -5,6 +5,7 @@ import { ServiceArtifacts } from "../validation/artifacts.js";
 import { ServiceValidationJournal } from "../validation/journal.js";
 import { runServiceValidation } from "../validation/runner.js";
 import { runServiceCase } from "../validation/cases.js";
+import { taskSpendingAllowed } from "./spending.js";
 import { claimNextTask } from "./scheduling.js";
 import { TaskResearch } from "../builder/researchJournal.js";
 import { publicResearch } from "../builder/researchProvider.js";
@@ -302,6 +303,9 @@ export class AssistantTasks extends DurableObject {
   }
   leaseMs() {
     return 60000;
+  }
+  spendingAllowed(task, capability) {
+    return taskSpendingAllowed(this.env, task.ownerId, capability, this.now());
   }
   plannerAvailable() {
     return savedPlannerAvailable(this.env);

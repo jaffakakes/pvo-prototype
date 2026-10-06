@@ -31,6 +31,8 @@ export class WorkspaceBudget extends DurableObject {
   async reserve(value) {
     const lease = parseWorkspaceLease(value);
     const now = this.now();
+    const allowed = { accepted: true };
+    const denied = (reason, retryAt) => ({ accepted: false, reason, retryAt });
     const accepted = this.ctx.storage.transactionSync(() => {
       this.prune(now);
       const sql = this.ctx.storage.sql;
@@ -43,14 +45,17 @@ export class WorkspaceBudget extends DurableObject {
       if (prior) {
         if (!sameLease(JSON.parse(prior.body), lease))
           throw new Error("Workspace lease conflict.");
-        return !prior.released && now < lease.deadlineAt;
+        return !prior.released && now < lease.deadlineAt
+          ? allowed
+          : denied("lease_closed", null);
       }
-      if (lease.startedAt > now || now >= lease.deadlineAt) return false;
+      if (lease.startedAt > now || now >= lease.deadlineAt)
+        return denied("lease_closed", null);
       if (
         sql.exec("SELECT COUNT(*) AS count FROM workspace_grants").one()
           .count >= 4096
       )
-        return false;
+        return denied("workspace_capacity", now + 30000);
       if (
         sql
           .exec(
@@ -58,13 +63,14 @@ export class WorkspaceBudget extends DurableObject {
           )
           .one().count >= limits.concurrent
       )
-        return false;
+        return denied("workspace_capacity", now + 30000);
       const day = Math.floor(now / DAY);
       const used =
         sql
           .exec("SELECT count FROM workspace_usage WHERE day=?", day)
           .toArray()[0]?.count ?? 0;
-      if (used >= limits.dailySessions) return false;
+      if (used >= limits.dailySessions)
+        return denied("workspace_allowance", (day + 1) * DAY);
       sql.exec(
         "INSERT INTO workspace_grants (id,body,released,expires) VALUES (?,?,0,?)",
         lease.id,
@@ -75,7 +81,7 @@ export class WorkspaceBudget extends DurableObject {
         "INSERT INTO workspace_usage (day,count) VALUES (?,1) ON CONFLICT(day) DO UPDATE SET count=count+1",
         day,
       );
-      return true;
+      return allowed;
     });
     await this.schedule();
     return accepted;
