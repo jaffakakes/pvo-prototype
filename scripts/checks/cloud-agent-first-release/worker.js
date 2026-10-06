@@ -11,13 +11,24 @@ import { diagnosticApi } from "./api.js";
 export { AcceptanceTasks } from "./tasks.js";
 export { AcceptanceControl } from "./control.js";
 export { AcceptanceBudget as AssistantBudget } from "./budget.js";
-export { WorkspaceBudget } from "../../../server/assistant/workspaces/budget.js";
+export { AcceptanceWorkspaceBudget as WorkspaceBudget } from "./budget.js";
 export { HostedService } from "../../../server/cloud-services/host.js";
 
 export class AcceptanceWorkspace extends AssistantWorkspace {
   isAbsent() {
     return this.provider().absent();
   }
+}
+
+// Health has no creator input or provider call. Retain its platform failure for
+// the authenticated operator, with configured credentials removed before clipping.
+function startupFailure(error, env, phase) {
+  let message =
+    error instanceof Error ? error.message : "Unknown startup failure";
+  for (const [key, value] of Object.entries(env))
+    if (/KEY|TOKEN|SECRET/.test(key) && typeof value === "string" && value)
+      message = message.replaceAll(value, "[redacted]");
+  return { phase, message: message.slice(0, 2048) };
 }
 
 export default {
@@ -29,10 +40,12 @@ export default {
       const denied = authorize(request, env);
       if (denied) return mark(denied, env);
     }
-    const ledger = env.PROOF_CONTROL.getByName("global");
     const tasks = (subject) =>
       env.ASSISTANT_TASKS.getByName(`owner:${proofOwner(env, subject)}`);
+    let phase = "control_binding";
     try {
+      const ledger = env.PROOF_CONTROL.getByName("global");
+      phase = "admission";
       if (request.method === "DELETE" && url.pathname === "/") {
         const stopped = [];
         for (const subject of Object.keys(scenarios))
@@ -46,7 +59,8 @@ export default {
         return mark(new Response("Acceptance has ended", { status: 429 }), env);
       if (publicAction)
         return hostedServiceRoute(request, env, { origin: url.origin });
-      if (request.method === "GET" && url.pathname === "/health")
+      if (request.method === "GET" && url.pathname === "/health") {
+        phase = "budget";
         return mark(
           Response.json({
             ready: true,
@@ -57,6 +71,7 @@ export default {
           }),
           env,
         );
+      }
       if (request.method === "GET" && url.pathname === "/usage")
         return mark(Response.json(await ledger.report()), env);
       const [, subject, action] = url.pathname.split("/");
@@ -88,11 +103,16 @@ export default {
             : await stub.manageServices(ownerId, input);
       } else return mark(new Response(null, { status: 404 }), env);
       return mark(Response.json(result), env);
-    } catch {
+    } catch (error) {
       // Request bodies and provider exception text may contain private data.
       return mark(
         Response.json(
-          { error: "acceptance_operation_failed" },
+          {
+            error: "acceptance_operation_failed",
+            ...(request.method === "GET" && url.pathname === "/health"
+              ? { startup: startupFailure(error, env, phase) }
+              : {}),
+          },
           { status: 503 },
         ),
         env,

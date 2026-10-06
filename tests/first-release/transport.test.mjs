@@ -1,7 +1,48 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { acceptanceTransport } from "../../scripts/checks/cloud-agent-first-release/transport.mjs";
+import {
+  acceptanceReady,
+  acceptanceTransport,
+} from "../../scripts/checks/cloud-agent-first-release/transport.mjs";
 import { exerciseAuthoring } from "../../scripts/checks/cloud-agent-first-release/exercise.mjs";
+
+test("startup retains a private diagnosis and survives a repair past the old thirty-second window", async () => {
+  let now = 0;
+  const records = [];
+  const call = acceptanceTransport(
+    async () =>
+      now < 60000
+        ? {
+            status: 503,
+            data: {
+              startup: {
+                phase: "budget",
+                message: "Simulated unavailable binding",
+              },
+            },
+          }
+        : { status: 200, marker: "owned-proof", data: { ready: true } },
+    {
+      expiresAt: 90000,
+      now: () => now,
+      wait: async (ms) => {
+        now += ms;
+      },
+      record: async (kind, detail) => records.push({ kind, ...detail }),
+    },
+  );
+  await acceptanceReady(call, "owned-proof");
+  assert.ok(now >= 60000 && now < 90000);
+  assert.equal(records[0].startup.phase, "budget");
+  assert.equal(records[0].startup.message, "Simulated unavailable binding");
+  await assert.rejects(
+    acceptanceReady(
+      async () => ({ status: 200, marker: "other", data: { ready: true } }),
+      "owned-proof",
+    ),
+    /did not become ready/,
+  );
+});
 
 test("a lost answer reply and a transient status failure recover the same task without repeating its effect", async () => {
   let answered = false,

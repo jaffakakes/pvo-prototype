@@ -19,6 +19,9 @@ export class WorkspaceBudget extends DurableObject {
   now() {
     return Date.now();
   }
+  dailySessionLimit() {
+    return limits.dailySessions;
+  }
   prune(now) {
     const sql = this.ctx.storage.sql;
     // An expired but unconfirmed resource still occupies its slot.
@@ -69,7 +72,7 @@ export class WorkspaceBudget extends DurableObject {
         sql
           .exec("SELECT count FROM workspace_usage WHERE day=?", day)
           .toArray()[0]?.count ?? 0;
-      if (used >= limits.dailySessions)
+      if (used >= this.dailySessionLimit())
         return denied("workspace_allowance", (day + 1) * DAY);
       sql.exec(
         "INSERT INTO workspace_grants (id,body,released,expires) VALUES (?,?,0,?)",
