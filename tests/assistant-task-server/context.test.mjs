@@ -252,3 +252,51 @@ test("the full frozen agreement remains retrievable in bounded fragments", async
     await f.close();
   }
 });
+
+test("a bounded repair conversation ends with local rejection feedback and never promotes it into system instructions", () => {
+  const proposal = JSON.stringify({
+    kind: "tools",
+    calls: [
+      {
+        kind: "workspace_read",
+        revision: 1,
+        path: "src/service.mjs",
+        offset: 0,
+        digest: "wrong-extra-field",
+      },
+    ],
+    review: null,
+  });
+  const repair = {
+    check: "builder_response",
+    message: "workspace_read accepts only kind, revision, path, offset",
+    proposal: { text: proposal, truncated: false },
+  };
+  const input = {
+    input: { context: { components: [] }, examples: [] },
+    evidence: { repair },
+  };
+  const messages = authoringMessages(
+    "Trusted platform instructions",
+    input,
+    8192,
+  );
+  assert.deepEqual(
+    messages.map((message) => message.role),
+    ["system", "user", "assistant", "user"],
+  );
+  assert.equal(messages[0].content, "Trusted platform instructions");
+  assert.equal(messages[2].content, proposal);
+  assert.deepEqual(JSON.parse(messages[3].content).localValidation, {
+    check: repair.check,
+    message: repair.message,
+  });
+  assert.ok(Buffer.byteLength(JSON.stringify(messages)) <= 8192);
+  assert.equal(input.evidence.repair.proposal.text, proposal);
+  input.evidence.repair.proposal.truncated = true;
+  assert.equal(
+    authoringMessages("Trusted platform instructions", input, 8192).length,
+    3,
+    "An incomplete proposal remains marked as truncated context",
+  );
+});
