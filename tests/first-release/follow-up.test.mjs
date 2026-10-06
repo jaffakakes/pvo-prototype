@@ -113,3 +113,90 @@ test("local reviewed answers reject a stale task or question identity", async ()
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test("camera-only acceptance resumes an interrupted inference and recovers a worker restart on the same task", async () => {
+  let phase = "interrupted",
+    reads = 0;
+  const effects = [],
+    checks = [];
+  const current = () => ({
+    task: {
+      id: "saved-camera",
+      revision: phase === "interrupted" ? 4 : 8,
+      state:
+        phase === "interrupted"
+          ? "failed"
+          : phase === "restarted"
+            ? "ready"
+            : "running",
+      stepId: "build",
+      failure: phase === "interrupted" ? { code: "interrupted" } : null,
+      questions: [],
+    },
+    build: {
+      agreement: { digest: "same-agreement" },
+      feedback: [{ kind: "workspace_write", result: { status: "completed" } }],
+    },
+    result: {},
+    services: [{}],
+    workspaces: [{ absent: true }],
+  });
+  await exerciseAuthoring(
+    async (path, method, body) => {
+      assert.ok(path.startsWith("/equipment/"));
+      if (path.endsWith("/begin")) return { status: 200, data: current() };
+      if (path.endsWith("/command")) {
+        assert.equal(body.kind, "resume");
+        assert.equal(body.id, "saved-camera");
+        assert.equal(body.input.expectedRevision, 4);
+        effects.push("resume");
+        phase = "building";
+        // Resume committed, but its reply was lost. A fresh read must precede further effects.
+        throw new Error("lost reply");
+      }
+      if (path.endsWith("/restart")) {
+        assert.ok(reads >= 2);
+        effects.push("restart");
+        phase = "restarted";
+        return { status: 503, data: {} };
+      }
+      reads++;
+      return { status: 200, data: current() };
+    },
+    async () => {},
+    {
+      subjects: ["equipment"],
+      restartAfterSource: true,
+      expiresAt: Date.now() + 10000,
+      pollMs: 1,
+      record: async (check) => checks.push(check),
+    },
+  );
+  assert.deepEqual(effects, ["resume", "restart"]);
+  assert.ok(checks.includes("authoring_restarted_during_build"));
+});
+
+for (const state of ["stopped", "failed"]) {
+  test(`acceptance does not automatically revive ${state} work without a retryable inference failure`, async () => {
+    const snapshot = {
+      task: {
+        id: "camera",
+        state,
+        revision: 1,
+        questions: [],
+        failure: { code: "invalid_result" },
+      },
+    };
+    await assert.rejects(
+      exerciseAuthoring(
+        async (path) => {
+          assert.ok(!path.endsWith("/command"));
+          return { status: 200, data: snapshot };
+        },
+        async () => {},
+        { subjects: ["equipment"], expiresAt: Date.now() + 1000 },
+      ),
+      new RegExp(`task ${state}`),
+    );
+  });
+}

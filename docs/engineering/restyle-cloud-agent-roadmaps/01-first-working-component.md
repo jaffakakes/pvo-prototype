@@ -115,7 +115,7 @@ The user wants the agent to keep working toward the goal, with no fixed model-tu
 
 ## 1F. Verify the complete first release
 
-**In progress:** [live acceptance evidence](../restyle-first-release-acceptance.md). The dinner example completed actual model generation, independent validation, hosting, attachment, Try, interrupted delivery, separate downloaded/published viewers, last-seat races and local removal. **1F.04 and 1F.06 are verified** from that live run. Camera booking and remaining recovery/release checks continue. The fifth diagnostic is active; four older deployments are deleted. The user authorized continuing until 1F passes and removed the US$15 ceiling; keep resource cleanup and truthful evidence.
+**In progress:** [live acceptance evidence](../restyle-first-release-acceptance.md). The dinner example completed actual model generation, independent validation, hosting, attachment, Try, interrupted delivery, separate downloaded/published viewers, last-seat races and local removal. **1F.04 and 1F.06 are verified** from that live run. Camera booking and remaining recovery/release checks continue. All five diagnostics are deleted with verified cleanup. Camera hit a retryable model timeout; the runner now resumes saved work and can rerun only camera. The user authorized continuing until 1F passes and removed the US$15 ceiling; keep resource cleanup and truthful evidence.
 
 - [ ] **1F.01** Run both demonstration requests from ordinary natural-language prompts.
 - [ ] **1F.02** Include a follow-up question, stop/resume, and one invalid generated program that the agent repairs from real test feedback.

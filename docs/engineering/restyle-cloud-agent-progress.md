@@ -2,9 +2,20 @@
 
 **Read this first when continuing.** Update this file after every verified task and before stopping. The [numbered roadmap checkboxes](restyle-cloud-agent-roadmap.md) are the authoritative completion list; this file holds the evidence and exact continuation point. Follow the [handoff procedure](restyle-cloud-agent-handoff.md).
 
-Last checkpoint: **6 October 2026**. Recheck Git and provider state before relying on the dated operational details below.
+Last checkpoint: **7 October 2026**. Recheck Git and provider state before relying on the dated operational details below.
 
-## Current checkpoint — 1F startup diagnosis, 6 October 2026
+## Current checkpoint — camera acceptance recovery, 7 October 2026
+
+**49/134 complete; 1F.04/06 remain verified, all other 1F tasks remain unchecked.** Continue in `feature/restyle-first-release` at `/Users/christinasmacbook/.codex/worktrees/restyle-first-release/pvo-prototype`, draft #105. Latest pushed product repair is `fff2e28`, after `b56077c` and `22df55d`.
+
+- **Cloud resources:** all five diagnostic runs are now deleted with verified absence. Fifth journal `workspace-ZmaGwt/report.json` ended **2026-10-06T22:59:16.765Z**. Its dinner journey passed completely. Camera fixed its missing descriptions but then an AI call reached the 45-second request timeout; the old driver treated this retryable failure as terminal and cleaned up. No camera source or accepted agreement was completed. The waiting side restart probe collected no evidence.
+- **Usage:** fifth run recorded 53 model attempts: 52 known HTTP 200 responses, estimated US$0.457361; one unknown response retains US$0.275. It admitted 488 diagnostic requests. Five-run known token estimate totals US$1.093064; six unknown calls retain US$1.65; five infrastructure allowances total US$10 as estimates, not invoices. The user's removed US$15 ceiling remains removed.
+- **Verified runner repair in this batch:** retry interrupted/unavailable inference through explicit Resume, read saved status after uncertain replies, preserve task identity, and select only the unfinished camera scenario. Restart the authoring worker after actual saved camera source. A separate real-account API check creates and stops a task, then verifies Resume cannot revive Stop. **12 focused tests pass**, including actual local Worker/SQLite cancellation and lost-reply/restart recovery (`/tmp/restyle-1f-resume-runner-tests.log`). Product validation and production capacity are unchanged. Changed files: diagnostic `exercise.mjs`, `run.mjs`, new `cancellation.mjs`, two regression suites, formatting scope and this documentation batch.
+- **Exact next action:** after committing this checkpoint, keep owned Vite 5318 running and launch `node scripts/checks/cloud-agent-first-release/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-approved-1f --scenario=equipment`. Record its new journal; never reuse a consumed deployment. Inspect generated agreement/component before writing reviewed test inputs. Finish camera/restart/Stop, resource accounting, final source/types/browser checks and beta delivery. No further spending approval is needed for necessary 1F completion work.
+- **Release/beta:** current actual beta remains `restyle-editor-shell-aa2c2df171a90f09` with `79c949b`; subsequent planner/schema/context fixes need final combined build/delivery. Preserve port 4173 and unrelated work. No GitHub Actions polling or production claim. Keep unreleased branches.
+
+## Previous checkpoint — 1F startup diagnosis, 6 October 2026
+
 
 **1F.04/06 verified; 1F incomplete. 49/134 complete, 85 remain.** Source checkout `feature/restyle-first-release`, `/Users/christinasmacbook/.codex/worktrees/restyle-first-release/pvo-prototype`, [draft #105](https://github.com/jaffakakes/pvo-prototype/pull/105). Pushed startup-recovery checkpoint **`eb54887`** follows `5e29fa3`, `e8f6c11`, `7779d8e` and `053df2d`.
 

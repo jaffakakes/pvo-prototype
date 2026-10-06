@@ -8,15 +8,18 @@ import { openCreatorJourney } from "./browser.mjs";
 import { checkGeneratedDelivery } from "./delivery.mjs";
 import { reviewedInputs, reviewedAnswer } from "./review-inputs.mjs";
 import { acceptanceReady, acceptanceTransport } from "./transport.mjs";
+import { checkCancellation } from "./cancellation.mjs";
 
 const accountId = process.argv[2];
 if (
   process.argv[3] !== "--run-approved-1f" ||
-  process.argv.length !== 4 ||
+  ![4, 5].includes(process.argv.length) ||
+  (process.argv[4] !== undefined &&
+    process.argv[4] !== "--scenario=equipment") ||
   !/^[a-f0-9]{32}$/.test(accountId ?? "")
 ) {
   console.error(
-    "Usage (only with 1F completion authorization): node scripts/checks/cloud-agent-first-release/run.mjs <account-id> --run-approved-1f",
+    "Usage (only with 1F completion authorization): node scripts/checks/cloud-agent-first-release/run.mjs <account-id> --run-approved-1f [--scenario=equipment]",
   );
   process.exit(1);
 }
@@ -54,7 +57,10 @@ report.limits = {
   requestLimit: 2000,
   expiresAt,
 };
-report.scenarios = scenarios;
+const subjects = process.argv[4] ? ["equipment"] : Object.keys(scenarios);
+report.scenarios = Object.fromEntries(
+  subjects.map((subject) => [subject, scenarios[subject]]),
+);
 await save();
 let resource, journey;
 const record = async (check, detail) => {
@@ -141,6 +147,8 @@ try {
       signal: controller.signal,
       start: journey.start,
       record,
+      subjects,
+      restartAfterSource: true,
       answerQuestion: async (subject, question, snapshot, answers) => {
         if (answers === 0) return scenarios[subject].answer;
         const file = `${dirname(resources.reportFile)}/${subject}-answer-${answers + 1}.json`;
@@ -178,6 +186,10 @@ try {
       },
     },
   );
+  await checkCancellation(call, record, {
+    expiresAt,
+    signal: controller.signal,
+  });
   report.authoringPassed = true;
 } catch (error) {
   report.failure = error.message;
