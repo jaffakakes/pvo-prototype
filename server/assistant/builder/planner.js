@@ -27,6 +27,7 @@ export async function planSavedBuild(
   env,
   signal,
   evidence = null,
+  models = nativeModels(env),
 ) {
   const hasAgreement = context.agreement !== null;
   if (
@@ -52,7 +53,7 @@ export async function planSavedBuild(
     },
     BUILDER_LIMITS.promptBytes,
   );
-  const response = await nativeModels(env).generate(
+  const response = await models.generate(
     {
       messages,
       schema: withEvidenceSchema(

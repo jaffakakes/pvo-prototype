@@ -192,3 +192,7 @@ The [Roadmap 1A evidence](../docs/engineering/restyle-cloud-infrastructure-proof
 
 
 `npm run check:browser -- player service-submissions` starts and closes its own local static/HTTP/Worker fixtures and a disposable persistent Chromium profile. It exercises an actual compiled connected form, public preflight and cookie omission, lost successful replies, browser/server restart, empty-form recovery, saved-result replay and a distinct next action. It needs built PVO WASM and Chrome (`CHROME_PATH` overrides the macOS default), and creates no cloud resources. The PVO is a constructed fixture; normal export activation is separately pending 1E.06–09.
+
+## First-release cloud-agent acceptance
+
+The [1F acceptance plan](../docs/engineering/restyle-first-release-acceptance.md) describes the real-model disposable diagnostic, required fresh spending approval, cost/resource bounds and cleanup command. `scripts/checks/cloud-agent-first-release/run.mjs` starts ordinary saved goals using the actual production planners and hosting gates. Its local tests use no external network. This is separate from production deployment and from the full browser/recovery release gate; follow the current progress checkpoint before running it.
