@@ -38,15 +38,15 @@ export async function taskFixture({
     import { reconcileTaskServices } from "./server/assistant/tasks/providerRunner.js";
     export class TestHostedService extends HostedService {
       constructor(ctx, env) { super(ctx, env); ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS calls (id TEXT PRIMARY KEY, count INTEGER NOT NULL)"); }
-      now() { return this.env.CONTROLLED_PLAN ? Date.now() : Date.UTC(2100, 0, 1); }
+      now() { return this.clock ?? (this.env.CONTROLLED_PLAN ? Date.now() : Date.UTC(2100, 0, 1)); }
+      setTime(now) { this.clock=now; }
       async publish(value) { this.ctx.storage.sql.exec("INSERT INTO calls (id,count) VALUES (?,1) ON CONFLICT(id) DO UPDATE SET count=count+1",value.identity.resourceId); return super.publish(value); }
       async executePackage(source,invocation,signal) {
         if(this.env.HOST_CONTROL) await this.env.HOST_CONTROL.fetch('https://control.test',{method:'POST',body:JSON.stringify({phase:'before',invocation})});
         return super.executePackage(source,invocation,signal);
       }
       diagnostic(action) {
-        if(action==='enable-live') {const value=this.store.service();this.store.saveService({...value,state:'active',liveReleaseId:value.testReleaseId,revision:value.revision+1});}
-        return {service:this.store.service(),data:this.ctx.storage.sql.exec('SELECT namespace,body,version FROM service_data').toArray(),receipts:this.ctx.storage.sql.exec('SELECT namespace,id,body FROM service_actions').toArray(),usage:this.ctx.storage.sql.exec('SELECT * FROM service_usage').toArray()};
+        return {controls:this.ctx.storage.sql.exec('SELECT COUNT(*) AS count FROM service_controls').one().count,service:this.store.service(),data:this.ctx.storage.sql.exec('SELECT namespace,body,version FROM service_data').toArray(),receipts:this.ctx.storage.sql.exec('SELECT namespace,id,body FROM service_actions').toArray(),usage:this.ctx.storage.sql.exec('SELECT * FROM service_usage').toArray()};
       }
       stats(identity) { return { calls: this.ctx.storage.sql.exec("SELECT count FROM calls WHERE id=?",identity.resourceId).toArray()[0]?.count ?? 0, sourcePresent: !!this.store.row(identity.resourceId)?.body }; }
     }
@@ -141,7 +141,9 @@ export async function taskFixture({
       async hostDiagnostic(ownerId,identity,action) {
         this.repository.bindOwner(ownerId);
         if(identity.ownerId!==ownerId) throw new Error('Wrong diagnostic owner');
-        return this.env.SERVICE_HOSTS.getByName(identity.serviceId).diagnostic(action);
+        const stub=this.env.SERVICE_HOSTS.getByName(identity.serviceId);
+        await stub.setTime(this.now());
+        return stub.diagnostic(action);
       }
       async providerStatus(identity) { const stub=this.env.SERVICE_HOSTS.getByName(identity.serviceId); return { observation: await stub.lookup(identity), stats: await stub.stats(identity) }; }
       async providerProbe(identity, input) { return this.env.SERVICE_HOSTS.getByName(identity.serviceId).probe(identity, input); }

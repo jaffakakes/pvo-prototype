@@ -9,6 +9,7 @@ import {
   call,
   publicCall,
   inspect,
+  control,
   deferred,
   current,
 } from "./helpers.mjs";
@@ -147,8 +148,7 @@ test(
         (await call(f, two, action("same-id"))).body.result,
         "accepted",
       );
-      // Test-only trusted lifecycle fixture: product activation/control routes are a later slice.
-      await inspect(f, one, "enable-live");
+      expectStatus(await control(f, one, "activate"), 200);
       const live = await publicCall(f, one, action("same-id", "Bob"));
       expectStatus(live, 200);
       assert.equal(live.headers.get("Access-Control-Allow-Origin"), "*");

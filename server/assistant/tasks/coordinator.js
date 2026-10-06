@@ -1,3 +1,4 @@
+import { manageHostedServices } from "../../cloud-services/management.js";
 import { ServiceCatalog } from "../../cloud-services/catalog.js";
 import { runHostingStep } from "../hosting/runner.js";
 import { ServiceArtifacts } from "../validation/artifacts.js";
@@ -242,6 +243,10 @@ export class AssistantTasks extends DurableObject {
       });
       return task;
     });
+  }
+
+  manageServices(ownerId, operation) {
+    return manageHostedServices(this, ownerId, operation);
   }
 
   serviceProvider() {

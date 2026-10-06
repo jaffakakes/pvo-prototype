@@ -1,3 +1,4 @@
+import { refreshOwnedServices } from "../../cloud-services/management.js";
 import {
   prepareServicePublication,
   serviceIntentDigest,
@@ -29,6 +30,7 @@ export async function publishTaskService(coordinator, claimed) {
     { artifact: saved.artifact, report: saved.report },
   );
   const inputDigest = await serviceIntentDigest(publication.identity);
+  await refreshOwnedServices(coordinator);
   let row = await coordinator.transaction(() =>
     coordinator.providers.begin(
       claimed,
@@ -111,7 +113,7 @@ export async function reconcileTaskServices(coordinator) {
       );
       // Stop may have arrived during the lookup. Read the committed cancellation state again.
       row = coordinator.providers.get(candidate.id);
-      if (row.cancelRequested && !row.cancelled) {
+      if (row.cancelRequested && !row.cancelled && !row.retained) {
         const cancelled = await withAssistantDeadline(
           () => provider.cancel(row.identity),
           callMs(coordinator),

@@ -16,7 +16,19 @@ An action contains exactly `{actionId,operation,input}`. IDs are bounded opaque 
 - `POST /api/services/{serviceId}/actions` admits only an active service's public operation surface. Its CORS permits exported-file/public-player calls and does not grant cookie-based creator permissions. Public requests never gain creator access from a cookie.
 - Public and private replies contain only `{actionId,result}`. Entire saved state, owner IDs, source and platform reports are not returned with an action.
 
-Product activation is a later control step. The initial service starts inactive, so its public route rejects calls. Local live-mode isolation tests explicitly set up a trusted active record; this is not a live cloud/product activation claim.
+A service starts inactive. Creator controls below activate its checked release; local live-mode tests use the real activation API. No live cloud/product deployment is implied.
+
+## Creator controls and lifetime
+
+`GET /api/services` lists the signed-in owner's services across projects; `GET /api/services/{serviceId}` inspects one. `POST /activate`, `/pause` and `/delete` under that service require the owner's signed session and exact editor origin. The command contains only `kind`, `actionId`, `expectedRevision`, plus `releaseId` for activation. `POST /operate` runs a creator operation against active live records; `/try` always uses separate test records. Public `/actions` never borrows creator permissions from a cookie.
+
+The hosted object atomically commits lifecycle, selected release and a small control receipt. Concurrent stale revisions fail. The latest 64 control receipts replay exact commands; an unchanged command older than that window fails its original revision check. Replay returns the original receipt with **current** service status. Control receipt trimming never evicts viewer action receipts. Pause/delete remain available even when action storage is full.
+
+Activation retains the checked source independently of the build task. Pause blocks live calls and keeps source/data; creator Try remains separate. Task Stop/deadline cleanup can remove only inactive releases, returning `retained` for an activated release rather than falsely reporting deletion. The provider journal then discharges its inactive-cleanup obligation without retaining a finished task forever. Other abandoned releases still expire. The hosted lifecycle is authoritative; the owner catalog is a revision-fenced, conservatively refreshed index for ownership and quotas. An unavailable provider never proves deletion or frees capacity.
+
+Explicit service deletion removes every source bundle, test/live state, action result and usage record. Bounded identities, digest references and small control receipts remain as tombstones; delayed publication cannot revive the service. Editor Undo and local component/project deletion do not delete a service or undo viewer submissions. Active and paused source/data otherwise remain until explicit deletion, within the fixed storage bounds.
+
+In **More → Cloud services → Manage services**, creators inspect, activate, pause/resume and explicitly confirm deletion. The account-scoped panel saves an unresolved control in browser storage before sending. Reload retries the same ID/revision; an account change discards in-flight presentation and cannot show another owner's records. A lost reply does not grant permission to invent a second action.
 
 ## Saved state, replay and concurrency
 
@@ -34,4 +46,4 @@ Each service admits at most eight simultaneous/waiting calls. Each test-release/
 
 Usage and state rules live in the shared package; trusted adapters persist them before execution and commit accepted state/results atomically. Runtime invocation remains bounded to two seconds and 50 ms generated-code CPU, with fresh modules and no outbound capabilities. These implementation limits are not a provider billing guarantee.
 
-Creator controls, active lifetime, safe replacement/rollback and component attachment are later roadmap work. Local SQLite/workerd evidence and a beta build do not mean the cloud service is deployed.
+Safe replacement/rollback and component attachment are later roadmap work. Local SQLite/workerd evidence and a beta build do not mean the cloud service is deployed.

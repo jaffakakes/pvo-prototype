@@ -1,3 +1,6 @@
+import { ServiceControlStore } from "./controlStore.js";
+import { inspectHostedService, controlHostedService } from "./control.js";
+import { hostedReply } from "./rpcReply.js";
 import { ServiceActionStore } from "./actionStore.js";
 import { ServiceCallQueue } from "./callQueue.js";
 import { invokeHostedAction } from "./invocation.js";
@@ -22,6 +25,7 @@ export class HostedService extends DurableObject {
     this.store = new ServiceReleaseStore(ctx.storage.sql);
     this.actions = new ServiceActionStore(ctx.storage.sql);
     this.calls = new ServiceCallQueue();
+    this.controls = new ServiceControlStore(ctx.storage.sql);
   }
   now() {
     return Date.now();
@@ -54,10 +58,11 @@ export class HostedService extends DurableObject {
     const identity = await this.verifyIdentity(value);
     return this.ctx.storage.transaction(async () => {
       this.store.cancel(identity, this.now());
-      this.actions.clearTest(identity.resourceId);
-      this.calls.cancel(identity.resourceId);
       await this.scheduleExpiry();
-      return { identity, state: "deleted" };
+      return this.store.observation(
+        identity,
+        this.store.row(identity.resourceId),
+      );
     });
   }
   async probe(value, input) {
@@ -85,32 +90,22 @@ export class HostedService extends DurableObject {
       signal,
     );
   }
-  async invoke(serviceId, authority, input) {
-    try {
-      return {
-        ok: true,
-        value: await invokeHostedAction(this, serviceId, authority, input),
-      };
-    } catch (error) {
-      const codes = {
-        unavailable: 404,
-        forbidden: 403,
-        invalid_input: 400,
-        action_conflict: 409,
-        state_changed: 409,
-        budget_exceeded: 429,
-        busy: 429,
-        invalid_result: 502,
-      };
-      const status = codes[error?.code] ?? 502;
-      return {
-        ok: false,
-        status,
-        error: codes[error?.code]
-          ? error.message
-          : "This service could not complete the action. Retry the same action.",
-      };
-    }
+  invoke(serviceId, authority, input) {
+    return hostedReply(() =>
+      invokeHostedAction(this, serviceId, authority, input),
+    );
+  }
+  inspect(serviceId, ownerId) {
+    return hostedReply(() =>
+      this.ctx.storage.transactionSync(() =>
+        inspectHostedService(this, serviceId, ownerId),
+      ),
+    );
+  }
+  control(serviceId, ownerId, input) {
+    return hostedReply(() =>
+      controlHostedService(this, serviceId, ownerId, input),
+    );
   }
   cleanupDeletedReleases() {
     for (const id of this.store.deletedIds()) {

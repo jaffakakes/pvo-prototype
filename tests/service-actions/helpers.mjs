@@ -60,3 +60,21 @@ export const inspect = async (f, service, kind = "inspect") =>
       kind,
     })
   ).body;
+
+export const status = (f, service, options = {}) =>
+  f.request(`/api/services/${service.identity.serviceId}`, options);
+export async function control(f, service, kind, options = {}) {
+  const current = await status(f, service);
+  expectStatus(current, 200);
+  const body = {
+    kind,
+    actionId: randomUUID(),
+    expectedRevision: current.body.summary.service.revision,
+    ...(kind === "activate" ? { releaseId: service.identity.resourceId } : {}),
+    ...options.body,
+  };
+  return f.request(`/api/services/${service.identity.serviceId}/${kind}`, {
+    ...options,
+    body,
+  });
+}

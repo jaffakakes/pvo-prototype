@@ -28,7 +28,7 @@ export async function runHostingStep(coordinator, claimed) {
           row.settled &&
           row.outcome === "completed" &&
           !row.cancelled &&
-          !row.cancelRequested,
+          (!row.cancelRequested || row.retained),
       );
     if (!retained && claimed.usage.toolCalls >= TASK_LIMITS.toolCalls)
       throw Object.assign(new Error("Task tool limit reached."), {
@@ -39,9 +39,10 @@ export async function runHostingStep(coordinator, claimed) {
     if (
       row.outcome !== "completed" ||
       row.cancelled ||
-      row.cancelRequested ||
-      coordinator.services.release(row.identity.resourceId)?.state !==
-        "inactive"
+      (row.cancelRequested && !row.retained) ||
+      !["inactive", "retained"].includes(
+        coordinator.services.release(row.identity.resourceId)?.state,
+      )
     )
       throw Object.assign(new Error("Inactive service is unavailable."), {
         code: "execution_failed",

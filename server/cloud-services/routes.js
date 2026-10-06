@@ -2,7 +2,8 @@ import { getAccountSession } from "../auth/sessions.js";
 import { checkOrigin, HttpError, json, readJson } from "../http.js";
 import { HOSTED_SERVICE_LIMITS } from "../../packages/pvo-assistant/hosting/index.js";
 
-const servicePath = /^\/api\/services\/(service-[a-f0-9]{64})\/(try|actions)$/;
+const servicePath =
+  /^\/api\/services\/(service-[a-f0-9]{64})(?:\/(try|operate|actions|activate|pause|delete))?$/;
 export const isServiceRoute = (path) =>
   path === "/api/services" || path.startsWith("/api/services/");
 function cors(response) {
@@ -12,13 +13,33 @@ function cors(response) {
   response.headers.set("Access-Control-Max-Age", "600");
   return response;
 }
+async function rpc(call) {
+  let result;
+  try {
+    const raw = await call();
+    try {
+      const { [Symbol.dispose]: dispose, ...data } = raw;
+      result = data;
+    } finally {
+      raw?.[Symbol.dispose]?.();
+    }
+  } catch {
+    throw new HttpError(
+      503,
+      "This service could not respond. Retry the same action.",
+    );
+  }
+  if (!result.ok) throw new HttpError(result.status, result.error);
+  return result.value;
+}
 export async function hostedServiceRoute(request, env, config) {
   const url = new URL(request.url),
     match = servicePath.exec(url.pathname),
-    publicCall = match?.[2] === "actions";
+    publicCall = match?.[2] === "actions",
+    list = url.pathname === "/api/services";
   const finish = (response) => (publicCall ? cors(response) : response);
   try {
-    if (!match || url.search)
+    if ((!match && !list) || url.search)
       throw new HttpError(404, "This service operation is unavailable.");
     if (
       config.origin !== url.origin ||
@@ -32,37 +53,65 @@ export async function hostedServiceRoute(request, env, config) {
           headers: { "Cache-Control": "no-store" },
         }),
       );
-    if (request.method !== "POST")
-      throw new HttpError(405, "This service operation requires POST.");
-    let authority = { kind: "public" };
-    if (!publicCall) {
-      checkOrigin(request, config.origin);
-      const owner = await getAccountSession(request, env);
-      if (!owner) throw new HttpError(401, "Sign in to try this service.");
-      authority = { kind: "creator", ownerId: owner.id, mode: "test" };
-    }
-    const input = await readJson(request, HOSTED_SERVICE_LIMITS.requestBytes);
-    let result;
-    try {
-      const raw = await env.SERVICE_HOSTS.getByName(match[1]).invoke(
-        match[1],
-        authority,
-        input,
-      );
-      try {
-        const { [Symbol.dispose]: dispose, ...data } = raw;
-        result = data;
-      } finally {
-        raw?.[Symbol.dispose]?.();
-      }
-    } catch {
+    const reading = list || !match?.[2];
+    if (request.method !== (reading ? "GET" : "POST"))
       throw new HttpError(
-        503,
-        "This service could not respond. Retry the same action.",
+        405,
+        reading
+          ? "This service operation requires GET."
+          : "This service operation requires POST.",
+      );
+    let owner;
+    if (!publicCall) {
+      if (!reading) checkOrigin(request, config.origin);
+      owner = await getAccountSession(request, env);
+      if (!owner) throw new HttpError(401, "Sign in to manage this service.");
+    }
+    const kind = match?.[2],
+      id = match?.[1];
+    const input = reading
+      ? null
+      : await readJson(request, HOSTED_SERVICE_LIMITS.requestBytes);
+    if (["try", "operate", "actions"].includes(kind)) {
+      const authority = publicCall
+        ? { kind: "public" }
+        : {
+            kind: "creator",
+            ownerId: owner.id,
+            mode: kind === "try" ? "test" : "live",
+          };
+      return finish(
+        json(
+          await rpc(() =>
+            env.SERVICE_HOSTS.getByName(id).invoke(id, authority, input),
+          ),
+        ),
       );
     }
-    if (!result.ok) throw new HttpError(result.status, result.error);
-    return finish(json(result.value));
+    if (typeof env.ASSISTANT_TASKS?.getByName !== "function")
+      throw new HttpError(503, "Service management is unavailable.");
+    if (!reading && input?.kind !== kind)
+      throw new HttpError(
+        400,
+        "The service control does not match this operation.",
+      );
+    const operation = list
+      ? { kind: "list" }
+      : reading
+        ? { kind: "read", id }
+        : { kind: "control", id, input };
+    const result = await rpc(() =>
+      env.ASSISTANT_TASKS.getByName(`owner:${owner.id}`).manageServices(
+        owner.id,
+        operation,
+      ),
+    );
+    if (result.control) {
+      if (!result.control.ok)
+        throw new HttpError(result.control.status, result.control.error);
+      return json(result.control.value);
+    }
+    return json(result);
   } catch (error) {
     return finish(
       json(

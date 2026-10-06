@@ -29,7 +29,14 @@ function timestamps(value) {
 export function parseOwnedService(value) {
   object(
     value,
-    ["identity", "description", "state", "createdAt", "updatedAt"],
+    [
+      "identity",
+      "description",
+      "state",
+      "hostRevision",
+      "createdAt",
+      "updatedAt",
+    ],
     "Owned service",
   );
   object(
@@ -39,7 +46,13 @@ export function parseOwnedService(value) {
   );
   for (const key of Object.keys(value.identity)) id(value.identity[key], key);
   text(value.description, 2048, "Service description");
-  choice(value.state, ["inactive", "deleted"], "Owned service state");
+  choice(
+    value.state,
+    ["inactive", "active", "paused", "deleted"],
+    "Owned service state",
+  );
+  if (value.hostRevision !== null)
+    integer(value.hostRevision, Number.MAX_SAFE_INTEGER, "Hosted revision");
   timestamps(value);
   return structuredClone(value);
 }
@@ -56,7 +69,7 @@ export function parseOwnedRelease(value) {
   );
   choice(
     value.state,
-    ["pending", "inactive", "deleted"],
+    ["pending", "inactive", "retained", "deleted"],
     "Owned release state",
   );
   list(

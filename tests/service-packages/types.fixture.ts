@@ -109,3 +109,21 @@ serviceCallScope(hostRecord, {
 });
 // @ts-expect-error Public callers have no creator grant.
 serviceCallScope(hostRecord, { kind: "public", ownerId: "owner" });
+
+const { parseServiceControl, planServiceControl, parseHostedSummary } =
+  await import("../../packages/pvo-assistant/hosting/index.js");
+const control = parseServiceControl({});
+planServiceControl(hostRecord, control, 2);
+parseHostedSummary({});
+planServiceControl(
+  hostRecord,
+  // @ts-expect-error Activation must choose an exact checked release.
+  { kind: "activate", actionId: "saved", expectedRevision: 0 },
+  2,
+);
+planServiceControl(
+  hostRecord,
+  // @ts-expect-error Caller-owned data cannot select a control authority.
+  { kind: "pause", actionId: "saved", expectedRevision: 0, ownerId: "foreign" },
+  2,
+);

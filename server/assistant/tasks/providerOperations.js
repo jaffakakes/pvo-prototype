@@ -7,7 +7,7 @@ import {
 } from "./executionClaim.js";
 
 const pending = (row) =>
-  !row.settled || (row.cancelRequested && !row.cancelled);
+  !row.settled || (row.cancelRequested && !row.cancelled && !row.retained);
 const resource = (row) => ({ kind: "service", id: row.identity.resourceId });
 
 /** Durable provider intent and recovery state. No provider call occurs inside this journal. */
@@ -130,6 +130,7 @@ export class ProviderOperations {
       outcome: null,
       cancelRequested: false,
       cancelled: false,
+      retained: false,
       attempts: 0,
       nextAt: task.claim.expiresAt,
     };
@@ -187,7 +188,8 @@ export class ProviderOperations {
     const tasks = new Map(this.tasks.records().map((task) => [task.id, task]));
     for (const row of this.entries()) {
       const task = tasks.get(row.taskId);
-      if (!task || row.cancelRequested || row.cancelled) continue;
+      if (!task || row.cancelRequested || row.cancelled || row.retained)
+        continue;
       if (
         task.state !== "stopped" &&
         !(now >= task.deadlineAt && task.state !== "ready")
@@ -213,7 +215,11 @@ export class ProviderOperations {
       // Failed tasks still owe cleanup at their deadline, even after normal
       // lookup retries have ended. Retention is a separate, later deadline.
       const deadline =
-        task && task.state !== "ready" && !row.cancelRequested && !row.cancelled
+        task &&
+        task.state !== "ready" &&
+        !row.cancelRequested &&
+        !row.cancelled &&
+        !row.retained
           ? [task.deadlineAt]
           : [];
       if (!pending(row) || row.nextAt === null) return deadline;
@@ -266,13 +272,16 @@ export class ProviderOperations {
     };
     row = {
       ...row,
-      hadResource: row.hadResource || observation.state === "available",
+      hadResource:
+        row.hadResource ||
+        ["available", "retained"].includes(observation.state),
     };
     if (observation.state === "missing") row.cancelRequested = true;
     if (task.state === "stopped" || now >= task.deadlineAt)
       row.cancelRequested = true;
     const complete =
       observation.state === "deleted" ||
+      observation.state === "retained" ||
       (observation.state === "available" && !row.cancelRequested);
     if (!row.settled) {
       const prior = task.operations.find(
@@ -307,10 +316,12 @@ export class ProviderOperations {
     }
     if (
       observation.state === "deleted" ||
+      observation.state === "retained" ||
       (observation.state === "available" && !row.cancelRequested)
     )
       this.services.observe(row.identity, observation.state, now);
     if (observation.state === "deleted") row.cancelled = true;
+    if (observation.state === "retained") row.retained = true;
     row.nextAt = pending(row) ? now : null;
     if (task.revision !== revision) this.tasks.save(task, revision);
     this.write(row);

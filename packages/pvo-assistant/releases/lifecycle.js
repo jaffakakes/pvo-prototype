@@ -54,6 +54,7 @@ export function planOwnedPublication(task, value, snapshot, now) {
       },
       description: artifact.agreement.description,
       state: "inactive",
+      hostRevision: null,
       createdAt: now,
       updatedAt: now,
     };
@@ -77,12 +78,17 @@ export function planOwnedPublication(task, value, snapshot, now) {
 export function observeOwnedRelease(release, identity, state, now) {
   if (!release || !sameServiceIdentity(release.identity, identity))
     throw new Error("Unknown owned release observation.");
-  if (state === "missing" || release.state === "deleted") return release;
-  if (state !== "available" && state !== "deleted")
+  if (
+    state === "missing" ||
+    release.state === "deleted" ||
+    (release.state === "retained" && state === "available")
+  )
+    return release;
+  if (!["available", "retained", "deleted"].includes(state))
     throw new Error("Unsupported release observation.");
   return parseOwnedRelease({
     ...release,
-    state: state === "available" ? "inactive" : "deleted",
+    state: state === "available" ? "inactive" : state,
     updatedAt: now,
   });
 }
