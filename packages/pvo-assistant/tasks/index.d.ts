@@ -168,3 +168,5 @@ export function transitionTask(
   command: TaskCommand,
   guard: TaskGuard,
 ): TaskRecord;
+
+export function assertTaskExecution(task: TaskRecord, guard: TaskGuard): void;

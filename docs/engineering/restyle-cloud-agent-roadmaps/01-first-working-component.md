@@ -29,7 +29,7 @@ Build this before committing to a provider-specific implementation.
 
 ## 1B. Save the task and its questions
 
-**Progress:** 1B.01–1B.07 are verified: shared task rules, local association, durable storage/planning, native handoff, task UI and immutable prepared results with guarded apply-once receipts. Next is 1B.08/1B.09 provider receipts/reconciliation; full milestone acceptance remains incomplete. Arbitrary workspace generation remains 1C.
+**Progress: 1B is verified complete.** Saved tasks, planning, questions, prepared results and provider recovery pass the local/browser acceptance matrix and the [actual Cloudflare proof](../restyle-cloud-provider-recovery-proof.md). Source is in PR #87; integration and production delivery are separate. The following 1C.01 contract is now verified; integration and provider construction remain separate. Arbitrary workspace generation remains 1C.
 
 The task record is the agent's notebook. It must be saved on the server. Follow the [detailed 1B implementation plan](1b-saved-tasks.md) for contracts, build order, and failure tests.
 
@@ -40,9 +40,9 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 - [x] **1B.05** Add a background authoring runner with saved checkpoints, wakeups, bounded retries, and one active worker owning each task step. Its lifetime must not depend on an open HTTP request or browser tab. Viewer jobs in Roadmap 3 are a separate responsibility.
 - [x] **1B.06** Add a small progress view in the existing assistant conversation. Start with “Working,” “Needs your answer,” “Ready,” “Stopped,” and “Failed,” with a specific reason.
 - [x] **1B.07** Save prepared component changes while the editor is closed. Apply them on return only after checking the current local project.
-- [ ] **1B.08** Record completed steps so restarting a task cannot repeat a deployment or other completed action.
-- [ ] **1B.09** Reconcile interrupted steps with provider resource records before retrying. A deployed service whose reply was lost must be recovered and recorded.
-- [ ] **1B.10** Pass the saved-task acceptance matrix, record test and browser evidence, and verify the new beta revision for the completed app changes.
+- [x] **1B.08** Record completed steps so restarting a task cannot repeat a deployment or other completed action.
+- [x] **1B.09** Reconcile interrupted steps with provider resource records before retrying. A deployed service whose reply was lost must be recovered and recorded.
+- [x] **1B.10** Pass the saved-task acceptance matrix, record test and browser evidence, and verify the new beta revision for the completed app changes.
 
 **Finished when:** close the editor during an active build and while a question is pending. The build continues, or waits for the saved answer, and the same task resumes on return. Restarting its worker reconciles completed effects before retrying and creates no duplicate deployment. A different account cannot read or answer it. Stopping the task prevents new work from starting.
 
@@ -50,15 +50,17 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 
 ## 1C. Let the agent write and test backend code
 
-- [ ] **1C.01** Agree on a small service package: source files, locked dependencies, runtime target, supported operations, input/result descriptions, and tests. An operation means one thing the component can ask the service to do.
-- [ ] **1C.02** Start one isolated workspace per task. Restore files from saved source when resuming.
-- [ ] **1C.03** Give resource creation a stable task identifier. If a create response is lost, look up the existing workspace or deployment before creating another.
-- [ ] **1C.04** Expose bounded tools for reading/writing workspace files, running commands, and reading test results. Advertise each tool to the model only when its adapter is available.
-- [ ] **1C.05** Connect those tools to the planner's loop. The agent must use actual command and test results to correct its code; a successful-looking message is not a completion receipt.
-- [ ] **1C.06** Allow the minimum research and package access needed. Exclude platform administration credentials and other creators' data.
+**Progress: 1C.01/02/03/04/05/06/09 verified.** The [service contract](../../../packages/pvo-assistant/services/README.md) defines the saved agreement and source package. Task-owned workspaces now restore saved code, reconcile missing replies without repeating commands, and enforce Stop/deadline cleanup. Full local checks (1,263 tests), task restart/RPC checks and the [native Container proof](../restyle-workspace-provider-proof.md) passed; all disposable resources were removed. Seven bounded task-owned tools and their durable model builder loop are now verified with a total of **1,293 passing tests**. The loop freezes requirements before source, repairs actual command failures and recovers lost replies. Controlled local model/provider tests are distinct from the later natural-language live acceptance. Public research is now bounded, cited and saved without a VM; dependency access stays at the current empty lock. Next is **1C.07/1C.08** independent validation. Follow the [1C implementation plan](1c-generated-services.md).
+
+- [x] **1C.01** Agree on a small service package: source files, locked dependencies, runtime target, supported operations, input/result descriptions, and tests. An operation means one thing the component can ask the service to do.
+- [x] **1C.02** Start one isolated workspace per task. Restore files from saved source when resuming.
+- [x] **1C.03** Give resource creation a stable task identifier. If a create response is lost, look up the existing workspace or deployment before creating another.
+- [x] **1C.04** Expose bounded tools for reading/writing workspace files, running commands, and reading test results. Advertise each tool to the model only when its adapter is available.
+- [x] **1C.05** Connect those tools to the planner's loop. The agent must use actual command and test results to correct its code; a successful-looking message is not a completion receipt.
+- [x] **1C.06** Allow the minimum research and package access needed. Exclude platform administration credentials and other creators' data.
 - [ ] **1C.07** Run tests and produce a saved source bundle with an exact content identifier and test report.
 - [ ] **1C.08** Check the requested behavior using cases saved before generation, alongside platform-owned validation of isolation and input/output rules. Deployment readiness comes from the trusted test runner, not a success file or claim written by generated code.
-- [ ] **1C.09** On Stop, timeout, or failure, terminate running commands, release the workspace, and preserve completed source and results.
+- [x] **1C.09** On Stop, timeout, or failure, terminate running commands, release the workspace, and preserve completed source and results.
 
 **Finished when:** the agent generates and tests both demonstration services from their requests. A restart restores its saved work. Invalid code fails the test gate, and model claims cannot bypass that gate.
 
