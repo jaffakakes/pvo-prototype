@@ -1,8 +1,12 @@
 import { readFile, writeFile } from "node:fs/promises";
+import { dirname } from "node:path";
 import { prepareResources } from "../cloud-agent-infrastructure/proof-resources.mjs";
 import { exerciseAuthoring } from "./exercise.mjs";
 import { scenarios } from "./scenarios.js";
 import { readRunpodKey } from "./credentials.mjs";
+import { openCreatorJourney } from "./browser.mjs";
+import { checkGeneratedDelivery } from "./delivery.mjs";
+import { reviewedInputs } from "./review-inputs.mjs";
 
 const accountId = process.argv[2];
 if (
@@ -16,6 +20,14 @@ if (
   process.exit(1);
 }
 const apiKey = await readRunpodKey();
+const sourceUrl = process.env.EDITOR_URL || "http://127.0.0.1:5318/";
+const sourceOrigin = new URL(sourceUrl);
+if (
+  sourceOrigin.protocol !== "http:" ||
+  sourceOrigin.hostname !== "127.0.0.1" ||
+  !(await fetch(sourceUrl)).ok
+)
+  throw new Error("Start the isolated local editor before the paid run");
 const resources = await prepareResources(accountId);
 const { report, save } = resources;
 const expiresAt = Date.now() + 90 * 60_000;
@@ -38,7 +50,16 @@ report.limits = {
 };
 report.scenarios = scenarios;
 await save();
-let resource;
+let resource, journey;
+const record = async (check, detail) => {
+  report.checks.push({
+    check,
+    observedAt: new Date().toISOString(),
+    ...detail,
+  });
+  await save();
+  console.log(`Acceptance: ${check}`);
+};
 const controller = new AbortController();
 const stop = () =>
   controller.abort(
@@ -80,8 +101,16 @@ try {
   });
   await resources.deploy(resource);
   await resources.ready(resource);
+  const call = (...args) => resources.call(resource, ...args);
+  journey = await openCreatorJourney({
+    origin: resource.url,
+    sourceUrl,
+    proofId: resources.id,
+    call,
+    record,
+  });
   await exerciseAuthoring(
-    (...args) => resources.call(resource, ...args),
+    call,
     async (subject, snapshot) => {
       (report.snapshots ??= []).push({
         subject,
@@ -93,13 +122,38 @@ try {
         `${subject}: ${snapshot.task.state}, ${snapshot.task.stepId}, revision ${snapshot.task.revision}`,
       );
     },
-    { expiresAt, signal: controller.signal },
+    {
+      expiresAt,
+      signal: controller.signal,
+      start: journey.start,
+      record,
+      onReady: async (subject, snapshot) => {
+        const directory = dirname(resources.reportFile);
+        const file = `${directory}/${subject}-inputs.json`;
+        await record("awaiting_reviewed_delivery_inputs", { subject, file });
+        const plan = await reviewedInputs(file, {
+          expiresAt,
+          signal: controller.signal,
+        });
+        await record("reviewed_delivery_inputs", { subject, plan });
+        await checkGeneratedDelivery({
+          journey,
+          subject,
+          snapshot,
+          plan,
+          record,
+          directory,
+          call,
+        });
+      },
+    },
   );
   report.authoringPassed = true;
 } catch (error) {
   report.failure = error.message;
   process.exitCode = 1;
 } finally {
+  await journey?.close().catch(() => {});
   if (resource?.attempted) {
     try {
       report.usage = (await resources.call(resource, "/usage")).data;

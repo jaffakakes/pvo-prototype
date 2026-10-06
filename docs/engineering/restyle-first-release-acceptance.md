@@ -70,17 +70,17 @@ The private receipt is `.wrangler/cloud-agent-infrastructure/workspace-bb37Ww/re
 
 The [Runpod adapter](../../server/assistant/native/runpod.js) now uses the successful JSON format. [Regression coverage](../../tests/first-release/model-planning.test.mjs) exercises the actual adapter and all three saved planners' validation boundaries; native editing, image evidence, cancellation, truncation and credential protection remain covered by the existing provider suite. Read progress for final check and delivery results.
 
-**The one-deployment authorization is consumed.** Complete local preparation and obtain approval for any replacement deployment before running it. Do not interpret the unused dollar ceiling as approval for an unspecified additional deployment. Keep both failed evidence and the original 1F checkboxes.
+**The first one-deployment authorization is consumed.** The separately approved replacement is recorded below. Do not interpret the unused dollar ceiling as approval for an unspecified additional deployment. Keep both failed evidence and the original 1F checkboxes.
 
-## Prepared replacement — approval pending
+## Prepared replacement — approved
 
-The corrected driver is prepared for **one replacement deployment, up to US$10: US$8 model reservations plus US$2 infrastructure allowance**, with the same two goals, resource count, 90-minute window, admission controls and verified deletion. No replacement has been launched or approved at this checkpoint. The current command and ledger enforce the reduced allowance; the old US$15 command is no longer accepted.
+The corrected driver is prepared for **one replacement deployment, up to US$10: US$8 model reservations plus US$2 infrastructure allowance**, with the same two goals, resource count, 90-minute window, admission controls and verified deletion. The user approved this replacement by saying “yeah just finish 1f” after the reduced plan was explained. No replacement has been launched at this checkpoint. The current command and ledger enforce the reduced allowance; the old US$15 command is no longer accepted.
 
-This fits the original US$15 ceiling conservatively: retain **US$2.75** for all previous model requests and the entire previous **US$2 infrastructure allowance**, then reserve **US$10** for the replacement, totaling **US$14.75**. This is planning allowance, not billed spend or an account-wide cap. Ask for permission to replace the failed deployment, not another US$15 budget. It tests authoring through checked attachment and workshop shutdown; the remaining browser/recovery matrix is still required afterward.
+This fits the original US$15 ceiling conservatively: retain **US$2.75** for all previous model requests and the entire previous **US$2 infrastructure allowance**, then reserve **US$10** for the replacement, totaling **US$14.75**. This is planning allowance, not billed spend or an account-wide cap. This permission is recorded; do not ask again for the same replacement. The prepared driver now keeps this same deployment alive for the browser, recovery and viewer matrix below.
 
 ## Run and recover
 
-Current prepared invocation, from the active checkout; **only after replacement-deployment approval**:
+Current prepared invocation, from the active checkout; for the approved replacement:
 
 ```sh
 node scripts/checks/cloud-agent-first-release/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-approved-10-usd
@@ -102,7 +102,15 @@ node scripts/checks/cloud-agent-first-release/cleanup.mjs 84880ccf8f98bb789d58cb
 
 Use the exact recorded journal path. Recovery cannot deploy or create a resource. It verifies the account, random owned names and private paths, reconciles provider records, and preserves credentials only when cleanup is unresolved.
 
-The current driver covers real authoring through a saved attachment and verifies the workshop is absent. **It does not yet execute the full browser/recovery matrix below.** Implement the remaining driver/browser controls locally before expanding paid acceptance. The live authoring run may expose generation or provider defects; preserve the failed evidence and fix the actual issue rather than inserting a prepared program.
+The driver starts real saved tasks from the editor, closes the creator during authoring, applies the saved result after reopening, runs Try, exports with a lost activation reply, retries an interrupted publication upload, and loads the downloaded/uploaded bytes in a separate viewer. Local reviewed input files select form values and expected outcomes after inspecting the actual generated contract; they cannot replace generated code. The same deployment remains under its original expiry and allowance. The live authoring run may expose generation or provider defects; preserve the failed evidence and fix the actual issue rather than inserting a prepared program.
+
+## Diagnostic fixtures and deliberate failures
+
+The editor uses two synthetic account sessions and a controlled foreground handoff. Actual saved planning, agreement, generated source, independent validation, hosting and attachment use the configured model and cloud provider. The private bridge signs diagnostic sessions and calls production task/service routes; it does not use the production login database. Publication storage is controlled: normal export UI uploads exact PVO bytes, and the real published player loads those bytes while calling the real hosted service. This proves delivery integration, not production R2 availability.
+
+For dinner only, the harness appends a declared startup error to the first model-written service module. The generated tests remain unchanged; the model must repair the error using actual tool feedback. It then injects a hosting failure before dispatch, and on a subsequent real successful publication restarts the authoring worker before its receipt is saved. These faults are private test adapters, not production behavior. Evidence must show repair and reconciliation, not just injection.
+
+Stop is terminal in the current contract. Its cancellation behavior is checked separately from Resume of a retryable failure; this milestone does not promise that a stopped goal can be revived. The published-viewer, capacity/overlap races, cross-owner access, test/live authority and local-removal assertions use the generated service contract.
 
 ## Remaining acceptance matrix
 

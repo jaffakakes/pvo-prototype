@@ -6,16 +6,26 @@ import { scenarios } from "./scenarios.js";
 export async function exerciseAuthoring(
   call,
   checkpoint,
-  { expiresAt, pollMs = 3000, signal } = {},
+  {
+    expiresAt,
+    pollMs = 3000,
+    signal,
+    start,
+    onReady,
+    record = async () => {},
+  } = {},
 ) {
   signal?.throwIfAborted();
   for (const [subject, scenario] of Object.entries(scenarios)) {
     signal?.throwIfAborted();
-    const started = await call(`/${subject}/begin`, "POST");
+    const started = start
+      ? await start(subject)
+      : await call(`/${subject}/begin`, "POST");
     assert.equal(started.status, 200, `${subject}: task creation failed`);
     assert.ok(started.data.task?.id, `${subject}: missing saved task`);
     let revision = -1,
-      answered = false;
+      answered = false,
+      retriedHosting = false;
     while (Date.now() < expiresAt) {
       signal?.throwIfAborted();
       const response = await call(`/${subject}/status`);
@@ -36,6 +46,23 @@ export async function exerciseAuthoring(
           `${subject}: workspace is still running`,
         );
         break;
+      }
+      if (
+        task.state === "failed" &&
+        task.stepId === "host" &&
+        !retriedHosting &&
+        snapshot.faults?.some((f) => f.id === "hosting_unavailable")
+      ) {
+        const response = await call(`/${subject}/command`, "POST", {
+          kind: "resume",
+          id: task.id,
+          input: { expectedRevision: task.revision },
+        });
+        assert.equal(response.status, 200);
+        assert.ok(response.data.task);
+        retriedHosting = true;
+        await record("failed_hosting_resumed", { subject, taskId: task.id });
+        continue;
       }
       const question = task.questions.find((q) => q.answer === null);
       if (question) {
@@ -58,15 +85,21 @@ export async function exerciseAuthoring(
         });
         assert.equal(answer.status, 200);
         assert.ok(answer.data.task, `${subject}: answer was not saved`);
+        await record("creator_question_answered", {
+          subject,
+          taskId: task.id,
+          question: question.prompt,
+          answer: scenario.answer,
+        });
         answered = true;
       }
       assert.ok(
         !["failed", "stopped"].includes(task.state),
         `${subject}: task ${task.state}; inspect its checkpoint`,
       );
-      if (task.wait)
+      if (task.wait?.reason === "spending_permission")
         throw new Error(
-          `${subject}: task awaits capacity or permission; inspect its checkpoint`,
+          `${subject}: task awaits permission; inspect its checkpoint`,
         );
       await pause(pollMs, undefined, { signal });
     }
@@ -77,5 +110,6 @@ export async function exerciseAuthoring(
       `${subject}: acceptance time window ended`,
     );
     await checkpoint(subject, final.data);
+    if (onReady) await onReady(subject, final.data);
   }
 }
