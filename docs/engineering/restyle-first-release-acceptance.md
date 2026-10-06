@@ -136,6 +136,13 @@ The builder repeated passing tests until it reached the default twelve daily wor
 
 The completed fifth run recorded **53 model calls**, 52 known HTTP 200 responses estimated at **US$0.457361**, one unknown response reserved at US$0.275, and 488 admitted diagnostic HTTP requests. Runner recovery now explicitly resumes retryable inference failures while retaining task identity; Stop remains terminal. Twelve focused regressions pass, including actual local account routes/SQLite Stop and uncertain Resume recovery. The camera-only runner also restarts authoring after saved source, then requires the same task to finish. These runner checks are not yet live-camera acceptance evidence.
 
+
+### 7 October — newly deployed address propagation
+
+Camera-only run `790268ad4e8badd432336362` (`workspace-i92vUH/report.json`) ran **2026-10-06T23:07:06.877Z–23:07:30.989Z**. It ended before creating a task because the new address did not return the required application identity/readiness; subsequent diagnostic cleanup request returned unmarked HTTP 404. No model/workshop/task was started by the runner. Usage was unavailable. Worker, one application and all six namespaces were removed with verified absence; secrets removed. This is a startup diagnostic failure, not failed camera behavior.
+
+Readiness now waits for an unmarked platform 404 under the same run deadline. Wrong application identity, authentication errors and marked application errors still fail. Five transport regressions pass in `/tmp/restyle-1f-route-propagation-tests.log`. Continue with a fresh camera-only journal under the user's existing completion authorization; do not revive a consumed resource.
+
 ## Run and recover
 
 Invocation from the active checkout, under the recorded completion authorization:

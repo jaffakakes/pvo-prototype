@@ -121,7 +121,11 @@ try {
       record,
     },
   );
-  await acceptanceReady(call, resources.id);
+  await acceptanceReady(call, resources.id, {
+    expiresAt,
+    signal: controller.signal,
+    record,
+  });
   journey = await openCreatorJourney({
     origin: resource.url,
     sourceUrl,

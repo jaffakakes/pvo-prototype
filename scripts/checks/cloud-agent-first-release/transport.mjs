@@ -72,12 +72,35 @@ export function acceptanceTransport(
 }
 
 /** Startup uses the same bounded recovery as subsequent read-only calls. */
-export async function acceptanceReady(call, proofId) {
-  const response = await call("/health");
+export async function acceptanceReady(
+  call,
+  proofId,
+  {
+    expiresAt = Date.now() + 30000,
+    signal,
+    record = async () => {},
+    now = Date.now,
+    wait = (milliseconds) => pause(milliseconds, undefined, { signal }),
+  } = {},
+) {
+  let response;
+  do {
+    signal?.throwIfAborted();
+    response = await call("/health");
+    // A newly created workers.dev route can still return the platform's 404.
+    // Only wait for propagation when there is no application identity at all.
+    if (response.status !== 404 || response.marker != null) break;
+    await record("diagnostic_route_propagation", { status: response.status });
+    const remaining = expiresAt - now();
+    if (remaining <= 0) break;
+    await wait(Math.min(2000, remaining));
+  } while (now() < expiresAt);
   if (
     response.status !== 200 ||
     response.marker !== proofId ||
     response.data?.ready !== true
   )
-    throw new Error("The approved diagnostic did not become ready.");
+    throw new Error(
+      `The approved diagnostic did not become ready (HTTP ${response.status}, matching identity: ${response.marker === proofId}).`,
+    );
 }
