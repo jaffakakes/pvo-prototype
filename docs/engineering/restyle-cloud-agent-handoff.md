@@ -154,3 +154,5 @@ Current beta caution: the concurrent publishing task's `restyle-editor-shell-c48
 
 
 Latest creator-controls checkpoint: **1D.06/1D.07 verified**, **32/121 complete**. Full local checks pass **1,337 tests**, strict editor TypeScript and the actual service-manager browser journey. Activated services survive authoring Stop/deadline/pruning; controls use atomic receipts/revisions and deletion clears program/records. Source/evidence are committed together on the hosting branch (#97). Next **1D.08**, then 1E attachment. The combined beta must preserve publishing `3e0cb14` and UI `43ea3fa`; current served publishing beta is `dcb3a55ad94ea198` until the delivery checkpoint in progress says otherwise. No new cloud spend or production release.
+
+Creator-controls delivery: source **`08083f9`**, combined **`dd10ec1`**, served beta **`82416b474cd98dbd`**, preserving publishing `3e0cb14`. Build/types/57 focused cases/two browser journeys/Worker dry run passed. Backup and exact next **1D.08** action are in progress. No product Worker deployment.
