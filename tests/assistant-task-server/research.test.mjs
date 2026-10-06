@@ -131,7 +131,13 @@ test(
       planner: async (request) => {
         const task = await request.json();
         return Response.json(
-          plan(task) ?? (reads < 8 ? research([read, read]) : ask()),
+          plan(task) ??
+            (reads < 8
+              ? research([
+                  read,
+                  { ...read, url: `https://public.com/details-${reads}` },
+                ])
+              : ask()),
         );
       },
     });

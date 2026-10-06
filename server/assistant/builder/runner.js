@@ -1,3 +1,4 @@
+import { batchProgressEvidence } from "../tasks/progressEvidence.js";
 import { taskBuilderTools } from "./taskToolsRegistry.js";
 import { BUILDER_RESEARCH_KINDS } from "../../../packages/pvo-assistant/builder/index.js";
 import {
@@ -36,6 +37,19 @@ function capacityWait(coordinator, claimed, result, tool) {
     transitionGuard(task, now, taskClaim(task)),
   );
   return true;
+}
+
+function recordProgress(coordinator, claimed) {
+  const now = coordinator.now();
+  if (!coordinator.builders.current(claimed, now)) return;
+  const state = coordinator.builders.get(claimed.id);
+  if (!["completed", "failed"].includes(state.batchEnd)) return;
+  coordinator.progress.observe(
+    coordinator.builders.task(claimed.id),
+    "tools",
+    state.round,
+    batchProgressEvidence(state),
+  );
 }
 
 function checkpoint(coordinator, claimed) {
@@ -82,6 +96,7 @@ export async function runBuilderBatch(coordinator, claimed) {
             haltBatch(row.result),
             coordinator.now(),
           );
+          recordProgress(coordinator, claimed);
           continue;
         }
         const row = coordinator.workspaces.get(
@@ -108,6 +123,7 @@ export async function runBuilderBatch(coordinator, claimed) {
           coordinator.now(),
         );
         if (capacityWait(coordinator, claimed, result, position.tool)) return;
+        recordProgress(coordinator, claimed);
       }
       if (coordinator.builders.stage(claimed.id) === "tools")
         coordinator.builders.interrupt(claimed, coordinator.now());
@@ -128,7 +144,11 @@ export async function runBuilderBatch(coordinator, claimed) {
           haltBatch(result),
           coordinator.now(),
         );
-        if (accepted) capacityWait(coordinator, claimed, result, position.tool);
+        if (
+          accepted &&
+          !capacityWait(coordinator, claimed, result, position.tool)
+        )
+          recordProgress(coordinator, claimed);
         return accepted;
       });
       if (!saved) return;
@@ -139,7 +159,11 @@ export async function runBuilderBatch(coordinator, claimed) {
     await fail(
       coordinator,
       claimed,
-      ["reconciliation_required", "budget_exceeded"].includes(error?.code)
+      [
+        "reconciliation_required",
+        "budget_exceeded",
+        "execution_failed",
+      ].includes(error?.code)
         ? error.code
         : "invalid_result",
     );

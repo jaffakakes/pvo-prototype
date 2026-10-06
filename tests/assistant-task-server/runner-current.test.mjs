@@ -11,6 +11,7 @@ test("a committed Stop prevents inference even before its cancellation signal is
   const coordinator = {
     active: new Map(),
     repairs: { context: () => null },
+    progress: { context: () => [], question: () => null },
     evidence: {
       context: () => ({
         archivedQuestions: 0,
@@ -38,6 +39,7 @@ test("a committed Stop prevents inference even before its cancellation signal is
         return true;
       },
       current: () => current,
+      task: () => claimed,
       finish(_claimed, attempt, command, code) {
         receipt = { attempt, command, code };
       },
