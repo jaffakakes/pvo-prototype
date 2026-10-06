@@ -179,3 +179,5 @@ export function parseServiceState(
   agreement: ServiceAgreement,
   value: unknown,
 ): ServiceJson;
+
+export function parseServiceOperation(value: unknown): ServiceOperation;

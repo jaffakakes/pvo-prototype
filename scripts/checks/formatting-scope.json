@@ -123,6 +123,7 @@
   "packages/pvo-assistant/services/json.js",
   "packages/pvo-assistant/services/limits.js",
   "packages/pvo-assistant/services/operation.js",
+  "packages/pvo-assistant/services/operationSchema.js",
   "packages/pvo-assistant/services/package.js",
   "packages/pvo-assistant/services/testing.js",
   "packages/pvo-assistant/services/values.js",
