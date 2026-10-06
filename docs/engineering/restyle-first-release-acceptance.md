@@ -155,6 +155,10 @@ Run `1c47fd9fd5a361e2943e514e` (`workspace-H0uUcC/report.json`) ran **2026-10-06
 
 The next diagnostic `6b5ec15e583982b750fc7b69` (`workspace-r4WODH/report.json`) exposed an error in the newly added readiness probe: task lists require a project query. It returned HTTP 400 before authoring. No model calls; cleanup verified. Replaced that invalid probe with a missing-task read, whose expected HTTP 404 proves the owned coordinator is reachable. The actual local Worker/browser test validates this route in `/tmp/restyle-1f-camera-route-preflight.log`.
 
+### Active camera completion run
+
+Run `7091340c288b3f81a60f4bcf` began **2026-10-06T23:16:16.846Z** from `aeff505`; journal `workspace-75tyAM/report.json`, Worker/Container `restyle-workspace-proof-7091340c288b3f81a60f4bcf`. Readiness and real browser submission passed. Camera task `8gChbmCMnNvRIvtviOCrZA` continued planning/build after creator closure at 23:16:38 UTC. Its namespace/application identities are recorded before task execution in the private journal. Cleanup is pending for this active run only; all nine preceding diagnostics are removed. Existing completion authorization remains in effect.
+
 ## Run and recover
 
 Invocation from the active checkout, under the recorded completion authorization:
