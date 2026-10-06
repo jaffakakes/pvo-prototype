@@ -8,7 +8,7 @@ The earlier steps built the parts. This milestone asks the real AI to put them t
 
 The temporary workshop writes and tests the code. The separately hosted service keeps the saved RSVPs or bookings and answers viewers after the workshop stops. Publishing makes that checked service available to its connected component; it does not share a plugin or install something for other creators.
 
-**Status, 6 October 2026:** both approved diagnostic deployments are removed. The first exposed a model request-format issue, now repaired; the replacement reached the actual model but exposed the driver’s one-question assumption, also repaired locally. Neither demonstration reached generated source. All 1F tasks remain unchecked. One further corrected run is prepared, awaiting approval. This is no public product deployment; beta delivery is recorded separately in progress.
+**Status, 6 October 2026:** both approved diagnostic deployments are removed. The first exposed a model request-format issue, now repaired; the replacement reached the actual model but exposed the driver’s one-question assumption, also repaired locally. Neither demonstration reached generated source. All 1F tasks remain unchecked. The further corrected run is now approved. This is no public product deployment; beta delivery is recorded separately in progress.
 
 ## Implementation and evidence boundary
 
@@ -41,7 +41,7 @@ At the prices checked on 6 October, Kimi K2.6 costs **US$0.95 per million input 
 
 Cloudflare bills active instances for memory, CPU and disk. The existing `lite` instance has 256 MiB memory, 1/16 vCPU and 2 GB disk. Even a batch crossing UTC midnight is constrained by the existing daily workspace allowance; record actual starts and destruction evidence. Request/storage/hosting charges and existing account activity are separate from the model estimate. Do not describe this harness as an account-wide dollar cap. [Container pricing](https://developers.cloudflare.com/containers/platform/pricing/), [instance limits](https://developers.cloudflare.com/containers/platform/limits/).
 
-No new goal-wide model-turn ceiling is introduced. Existing daily account capacity remains enforced. A capacity/permission wait leaves the goal saved; a diagnostic that stops at that point has not passed the milestone. Do not bypass the capacity control to make a demonstration pass.
+No new goal-wide model-turn ceiling is introduced. Default daily account capacity remains enforced. A capacity/permission wait leaves the goal saved; a diagnostic that stops at that point has not passed the milestone. The separately approved isolated-test policy below permits continuation under the same dollar budget without changing production capacity.
 
 ## Actual run and repair — 6 October 2026
 
@@ -86,15 +86,17 @@ Cleanup was verified at **20:32:50.848 UTC**. Worker, Container application `9f1
 
 The repaired driver saves every additional question and waits for a local reviewed answer tied to the exact task/question/revision, keeping the deployment within its existing deadline. Two regression tests verify a second question can wait and continue the same task, and stale answers are rejected. Builder instructions now explicitly use saved answers when the original request calls that information unknown. No arbitrary per-goal question/model limit is added.
 
-## Next corrected run — awaiting approval
+## Next corrected run — approved
 
-Prepared scope: **one further disposable deployment, up to US$9.50**, consisting of **US$7.50 model reservations and US$2 infrastructure allowance**, with the same two goals, resources, 90-minute expiry and verified deletion. This is not approved yet: the prior approvals each covered one deployment, and both deployments are removed. Do not execute until the user approves this concrete run.
+**Approved capacity adjustment, 6 October:** the user answered “Use the approved dollar budget” after the same dinner task paused at the existing 20-call daily allowance. For this one existing deployment, `PROOF_SPENDING_POLICY=settled-usage` enables a diagnostic-only daily allowance up to the existing 4,096-entry reservation-storage bound. The 12/minute burst limit, exact replay accounting, original 90-minute expiry, US$7.50 model allowance and US$2 infrastructure allowance remain. Every model call first reserves US$0.275; a returned valid usage report settles its estimated token cost, while missing/unknown usage retains the entire reservation. Existing counts and the spending ledger survive this same-resource update. Product default capacity is unchanged. Four SQLite/restart/budget tests passed; no additional deployment is authorized by this adjustment.
+
+Prepared scope: **one further disposable deployment, up to US$9.50**, consisting of **US$7.50 model reservations and US$2 infrastructure allowance**, with the same two goals, resources, 90-minute expiry and verified deletion. The user approved this concrete run by saying “continue until finished” after its US$9.50 scope was explained. The two earlier deployments are removed. Do not ask again for this same approved run.
 
 Across both finished runs and model diagnosis, five HTTP-500 calls retain their full **US$1.375** unknown-usage reservation. All eight successful calls reported usage, estimated **US$0.007989** in total. Retaining both earlier US$2 infrastructure allowances and adding this US$9.50 proposal gives **US$14.882989**, within the original US$15 total. This uses returned usage to settle known successful calls; unknown calls remain fully reserved. It remains an estimate, not an invoice or an account-wide billing cap.
 
 ## Run and recover
 
-Prepared invocation, from the active checkout; **only after approval of the next corrected run**:
+Prepared invocation, from the active checkout; **for the now-approved corrected run**:
 
 ```sh
 node scripts/checks/cloud-agent-first-release/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-approved-9-50-usd
@@ -117,6 +119,20 @@ node scripts/checks/cloud-agent-first-release/cleanup.mjs 84880ccf8f98bb789d58cb
 Use the exact recorded journal path. Recovery cannot deploy or create a resource. It verifies the account, random owned names and private paths, reconciles provider records, and preserves credentials only when cleanup is unresolved.
 
 The driver starts real saved tasks from the editor, closes the creator during authoring, applies the saved result after reopening, runs Try, exports with a lost activation reply, retries an interrupted publication upload, and loads the downloaded/uploaded bytes in a separate viewer. Local reviewed input files select form values and expected outcomes after inspecting the actual generated contract; they cannot replace generated code. The same deployment remains under its original expiry and allowance. The live authoring run may expose generation or provider defects; preserve the failed evidence and fix the actual issue rather than inserting a prepared program.
+
+## Local review files for the continuing agent
+
+Start the isolated editor first: `node_modules/.bin/vite --config editor/vite.config.ts --host 127.0.0.1 --port 5318 --strictPort`. The driver checks this address before preparing any resource. Do not use the production/beta server as this diagnostic source.
+
+The private journal names a local file when the driver waits for an additional answer. Inspect the saved question and original scenario. Resolve it from the already approved scenario when possible; ask the user only for genuinely missing information. Write the exact task/question/revision from that checkpoint with a plain answer, for example:
+
+```json
+{"taskId":"ID_FROM_JOURNAL","questionId":"question-2","questionRevision":0,"value":"Use exactly two seats, as already specified."}
+```
+
+The driver refuses a stale identity and resumes the same task. It waits only within the existing approved expiry; waiting does not grant extra time or spending.
+
+After each task reaches ready, inspect its real generated agreement, source and component fields, then write the journal's `dinner-inputs.json` or `equipment-inputs.json`. The object requires `resultPath` (array of result keys, or empty for a primitive), `testFields`, `viewerFields`, `publishedFields`, `publishedExpected`, `accepted`, `rejected`, `cases` (objects with `input`, `expected`, optional HTTP `status`), and exactly two `raceInputs`. These are test inputs and expectations, never replacement generated source. Dinner must leave one seat for two distinct competing guests; camera must check invalid/overlapping/adjacent dates and then two competing requests for a free interval. The published form must submit a fresh rejected request after capacity is full or an interval occupied, so repeating it with a new action after local removal verifies retained records. Do not choose expectations that excuse incorrect generated behavior.
 
 ## Diagnostic fixtures and deliberate failures
 

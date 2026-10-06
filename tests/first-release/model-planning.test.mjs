@@ -97,3 +97,98 @@ for (const example of cases) {
     }
   });
 }
+
+test("builder repair receives the actual local agreement failure, while provider errors stay outside feedback", async () => {
+  const agreement = dinnerAgreement();
+  agreement.state.schema.fields.push({
+    name: "fullAt",
+    description: "Optional timestamp",
+    schema: { type: "null" },
+  });
+  agreement.state.initial.fullAt = null;
+  for (const entry of agreement.cases) {
+    entry.initialState.fullAt = null;
+    for (const step of entry.steps) step.expected.state.fullAt = null;
+  }
+  agreement.cases[0].steps[0].expected.state.fullAt = 1000;
+  const proposed = { kind: "agreement", agreement };
+  const run = (models) =>
+    planSavedBuild(task(), { agreement: null }, [], {}, signal(), null, models);
+  await assert.rejects(run(modelsFor(proposed)), (error) => {
+    assert.equal(error.code, "invalid_result");
+    assert.match(
+      error.feedback.message,
+      /Proposed service state.fullAt must be null/,
+    );
+    assert.deepEqual(JSON.parse(error.feedback.proposal.text), proposed);
+    return true;
+  });
+  for (const entry of agreement.cases)
+    for (const step of entry.steps) step.expected.state.fullAt = null;
+  assert.deepEqual(await run(modelsFor(proposed)), proposed);
+  const providerError = new Error("private provider failure");
+  await assert.rejects(
+    run({
+      generate: async () => {
+        throw providerError;
+      },
+    }),
+    (error) => error === providerError && !error.feedback,
+  );
+});
+
+test("an accepted agreement stays authoritative while stale repair history is present", async () => {
+  const agreement = dinnerAgreement();
+  const decision = {
+    kind: "tools",
+    calls: [{ kind: "workspace_list" }],
+    review: null,
+  };
+  const context = { agreement: { digest: "a".repeat(64), body: agreement } };
+  const evidence = {
+    repair: {
+      message: "Builder stage is unsupported.",
+      proposal: {
+        text: JSON.stringify({ kind: "agreement", agreement }),
+        truncated: false,
+      },
+    },
+  };
+  let request;
+  const models = {
+    generate: async (value) => {
+      request = value;
+      return { content: JSON.stringify(decision) };
+    },
+  };
+  assert.deepEqual(
+    await planSavedBuild(
+      task(),
+      context,
+      [{ kind: "workspace_list", description: "List saved source" }],
+      {},
+      signal(),
+      evidence,
+      models,
+    ),
+    decision,
+  );
+  assert.match(request.messages[0].content, /already accepted and immutable/);
+  assert.deepEqual(
+    JSON.parse(request.messages[1].content).build.agreement,
+    context.agreement,
+  );
+  assert.deepEqual(JSON.parse(request.messages[1].content).evidence, evidence);
+  await assert.rejects(
+    planSavedBuild(
+      task(),
+      context,
+      [],
+      {},
+      signal(),
+      evidence,
+      modelsFor({ kind: "agreement", agreement }),
+    ),
+    { code: "invalid_result" },
+  );
+});

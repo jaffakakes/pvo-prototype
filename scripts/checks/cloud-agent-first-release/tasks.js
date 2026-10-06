@@ -115,6 +115,9 @@ export class AcceptanceTasks extends AssistantTasks {
     return {
       task: task ?? null,
       build: task ? this.builders.get(task.id) : null,
+      repair: task ? this.repairs.current(task.id) : null,
+      evidence: task ? this.evidence.context(task) : null,
+      progress: task ? this.progress.context(task) : null,
       workspaces,
       services: this.services.services(),
       validations: this.validation.entries(),

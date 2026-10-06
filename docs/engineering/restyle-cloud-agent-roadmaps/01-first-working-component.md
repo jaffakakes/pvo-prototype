@@ -115,7 +115,7 @@ The user wants the agent to keep working toward the goal, with no fixed model-tu
 
 ## 1F. Verify the complete first release
 
-**In progress:** [live acceptance plan, run evidence, repairs and cleanup](../restyle-first-release-acceptance.md). Both approved diagnostic deployments are removed. The repaired model connection works; a second run exposed a one-question assumption in the test driver, now repaired locally. Both complete demonstrations remain unfinished. A further corrected run is awaiting approval; all checkboxes below remain unverified.
+**In progress:** [live acceptance plan, run evidence, repairs and cleanup](../restyle-first-release-acceptance.md). Both approved diagnostic deployments are removed. The repaired model connection works; a second run exposed a one-question assumption in the test driver, now repaired locally. Both complete demonstrations remain unfinished. The corrected run is now approved; all checkboxes below remain unverified.
 
 - [ ] **1F.01** Run both demonstration requests from ordinary natural-language prompts.
 - [ ] **1F.02** Include a follow-up question, stop/resume, and one invalid generated program that the agent repairs from real test feedback.

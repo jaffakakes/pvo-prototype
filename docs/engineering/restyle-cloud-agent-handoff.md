@@ -2,13 +2,15 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
-## Latest scope: 1F extra-question repair after a cleaned-up test run
+## Latest scope: 1F corrected live test in progress
 
-**All 1E is verified; 1F remains incomplete. 47/134 tasks complete; 87 remain.** Active checkout: `feature/restyle-first-release`, `/Users/christinasmacbook/.codex/worktrees/restyle-first-release/pvo-prototype`, [draft #105](https://github.com/jaffakakes/pvo-prototype/pull/105). Expanded harness **`7d083e1`** is pushed; subsequent repaired-driver/prompt/evidence files are pending. Read the latest [progress checkpoint](restyle-cloud-agent-progress.md) and [acceptance evidence](restyle-first-release-acceptance.md).
+**All 1E is verified; 1F remains incomplete. 47/134 tasks complete; 87 remain.** Active checkout: `feature/restyle-first-release`, `/Users/christinasmacbook/.codex/worktrees/restyle-first-release/pvo-prototype`, [draft #105](https://github.com/jaffakakes/pvo-prototype/pull/105). Read the latest [progress checkpoint](restyle-cloud-agent-progress.md) and [acceptance evidence](restyle-first-release-acceptance.md) before doing anything paid.
 
-The first deployment failed on model request format and was removed. The repaired adapter then worked: all three calls in the approved replacement succeeded. That replacement stopped because the test driver allowed only one follow-up question; its resources were also fully deleted. The driver is now being repaired to wait for reviewed additional answers. Neither demonstration reached generated code. Both consumed deployment authorizations and cleanup receipts remain preserved. A further run up to US$9.50 is prepared within the original US$15 total, **awaiting approval**. Do not repeat secure key entry, recreate resources without approval, or mark preparation as complete acceptance.
+The one corrected US$9.50 run is active: Worker/Container `restyle-workspace-proof-351ca14c55ee303131312f13`, private journal `.wrangler/cloud-agent-infrastructure/workspace-jW2ZkA/report.json`, start **6 October 21:21:50 UTC**, original expiry **22:51:50 UTC**. Do not launch another deployment or restart its driver. Vite 5318 is active. The dinner task has its accepted agreement and is still generating code. It exposed missing validation detail and unclear stage guidance; both are repaired locally and being updated on the same Worker. No live generated component has passed yet.
 
-The existing served beta is **`restyle-editor-shell-2cf84e70cbd2f0ff`** from combined **`4c9ed23`**. The new prompt clarification needs checked beta delivery. Production promotion is separate. Current checked-in product services use Dynamic Workers; Node.js Containers remains 1G.
+The user separately approved **“Use the approved dollar budget”** after the saved task reached the 20-call daily allowance. The isolated diagnostic now preserves the same dollar ceiling and expiry, settles known token usage, keeps full reservations for unknown outcomes and retains the twelve-per-minute limit. Production daily capacity is unchanged. The same task resumed without resetting its counts. The two earlier deployments remain deleted with preserved receipts. No further key entry is needed.
+
+The served beta is **`restyle-editor-shell-057d697c83aa2d77`** from combined **`14d164f`**. The current live-test repairs still need the combined build and guarded beta delivery. Production promotion is separate; no GitHub Actions polling. Current product hosting uses Dynamic Workers; Node.js Containers remains 1G.
 
 ## Preserved planning decision: consolidated Containers
 

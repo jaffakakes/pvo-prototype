@@ -35,7 +35,7 @@ export async function checkGeneratedDelivery({
     base,
   );
   assert.ok(
-    [403, 404, 410, 503].includes(other.status),
+    [403, 404, 410].includes(other.status),
     "Another owner must not read the service",
   );
 
@@ -67,7 +67,7 @@ export async function checkGeneratedDelivery({
     "POST",
     tryBody,
   );
-  assert.ok([403, 404, 410, 503].includes(foreignTry.status));
+  assert.ok([403, 404, 410].includes(foreignTry.status));
   const forged = await api(
     base + `/releases/${identity.resourceId}/try`,
     "POST",
@@ -166,7 +166,7 @@ export async function checkGeneratedDelivery({
     bytes,
     publication,
   );
-  let viewerAction, firstResult;
+  let viewerAction, firstResult, publishedAction;
   try {
     const actionReply = viewer.page.waitForResponse(
       (response) =>
@@ -249,6 +249,7 @@ export async function checkGeneratedDelivery({
     assert.equal(published.status(), 200);
     assert.equal((await published.request().allHeaders()).cookie, undefined);
     const publishedResult = await published.json();
+    publishedAction = published.request().postDataJSON();
     expectResult(publishedResult, plan.publishedExpected);
     await record("published_viewer", {
       subject,
@@ -289,6 +290,18 @@ export async function checkGeneratedDelivery({
   });
   assert.equal(retainedReply.status, 200);
   assert.deepEqual(await retainedReply.json(), firstResult);
+  const afterRemoval = await fetch(journey.origin + base + "/actions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ...publishedAction,
+      actionId: `acceptance-after-removal-${subject}`,
+    }),
+    signal: AbortSignal.timeout(15000),
+  });
+  assert.equal(afterRemoval.status, 200);
+  const retainedRecords = await afterRemoval.json();
+  expectResult(retainedRecords, plan.publishedExpected);
   await reopened.evaluate(() =>
     window.resultProbe.useCapture.getState().patch({ sheet: "more" }),
   );
@@ -305,6 +318,7 @@ export async function checkGeneratedDelivery({
   await record("local_removal_keeps_hosted_service", {
     subject,
     summary: retained.body.summary,
+    retainedRecords,
   });
   await reopened.screenshot({
     path: `${directory}/${subject}-service-management.png`,
