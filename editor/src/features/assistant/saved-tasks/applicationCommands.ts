@@ -4,7 +4,7 @@ import {
   saveProjectBeforeUpdate,
 } from "../../../app/projectAutosave";
 import { nativeProjectFingerprint } from "../../../domain/assistant/native/context";
-import { prepareNativeBatch } from "../../../domain/assistant/native/batch";
+import { prepareSavedResult } from "../../../domain/assistant/savedResultPreparation";
 import { readSavedTask } from "../../../infrastructure/assistant/savedTaskTransport";
 import { readSavedResult } from "../../../infrastructure/assistant/savedResultTransport";
 import { uid } from "../../../infrastructure/ids";
@@ -28,7 +28,9 @@ export const applySavedTaskResult = createTaskApplicationWorkflow({
   read: readSavedTask,
   result: readSavedResult,
   prepare: (project, result, signal) =>
-    prepareNativeBatch(project, result.operations, {
+    prepareSavedResult(project, result, {
+      origin: window.location.origin,
+      now: Date.now(),
       signal,
       compile: compilePvoComponent,
       createId: uid,

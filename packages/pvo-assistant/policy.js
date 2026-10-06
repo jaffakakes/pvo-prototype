@@ -46,7 +46,7 @@ function sameAction(left, right) {
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
-function usesTypedFormValues(structure) {
+export function usesTypedFormValues(structure) {
   return structure.heading !== undefined || structure.waiting !== undefined
     || structure.fields.some(field => field.label !== undefined || field.kind === "number");
 }

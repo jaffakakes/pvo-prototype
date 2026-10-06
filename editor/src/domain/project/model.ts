@@ -95,6 +95,8 @@ export type ComponentFields = {
   outcome?: Outcome;
 };
 export type PvoComponent = {
+  /** Checked service metadata travels with the component through save and history. */
+  serviceConnection?: import("../../../../packages/pvo-assistant/attachments/index.js").ComponentServiceConnection;
   id: string;
   type: ComponentType;
   sceneId: string;
