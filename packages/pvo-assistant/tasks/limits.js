@@ -17,10 +17,8 @@ export const TASK_LIMITS = Object.freeze({
   operations: 64,
   resources: 8,
   artifactBytes: 1024 * 1024,
-  lifetimeMs: 24 * 60 * 60_000,
   retentionMs: 7 * 24 * 60 * 60_000,
   leaseMs: 60_000,
-  retries: 3,
   toolCalls: 24,
 });
 
@@ -41,5 +39,4 @@ export const TASK_FAILURES = Object.freeze({
   execution_failed: Object.freeze({ retryable: true }),
   invalid_result: Object.freeze({ retryable: false }),
   budget_exceeded: Object.freeze({ retryable: false }),
-  deadline_exceeded: Object.freeze({ retryable: false }),
 });

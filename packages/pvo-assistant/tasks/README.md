@@ -32,22 +32,22 @@ Every transition requires `{ ownerId, expectedRevision, now, claim }`. The owner
 
 A worker also needs a matching claim ID and execution generation whose lease has not expired. Claim/release/recovery increments the generation so a delayed result from an earlier worker is rejected. Stop removes the claim immediately in the returned record. **The storage adapter must atomically persist with the expected revision before performing effects.** These pure checks alone cannot serialize two callers or interrupt a command already executing.
 
-Creator-facing routes may expose only their named operations after authentication. `claim`, `recover`, `expire`, and `reconcile_operation` are trusted coordinator commands; worker commands require a current claim. Do not accept an arbitrary `TaskCommand` union from a browser or generated model output. The owner field and `claim: null` are not authorization by themselves.
+Creator-facing routes may expose only their named operations after authentication. `claim`, `recover`, and `reconcile_operation` are trusted coordinator commands; worker commands require a current claim. Do not accept an arbitrary `TaskCommand` union from a browser or generated model output. The owner field and `claim: null` are not authorization by themselves.
 
 ## States and commands
 
 | State | What can happen next |
 | --- | --- |
-| `queued` | Coordinator claims due work; creator stops it; coordinator expires it at its deadline |
-| `running` | Worker checkpoints to `queued`, asks a question, completes, or fails; creator stops it; coordinator recovers an expired claim or expires the task |
-| `waiting_for_answer` | Creator answers to queue the same task, stops it, or coordinator expires it |
+| `queued` | Coordinator claims due work; creator stops it |
+| `running` | Worker checkpoints to `queued`, asks a question, completes, or fails; creator stops it; coordinator recovers an expired claim |
+| `waiting_for_answer` | Creator answers to queue the same task or stops it |
 | `ready` | Build attempt is terminal; applying the prepared result is a separate guarded editor operation |
-| `failed` | Creator resumes a retryable failure before its deadline and retry limit, or stops it |
+| `failed` | Creator resumes a retryable failure after reconciliation, or stops it |
 | `stopped` | Build attempt is terminal; no new work or result may start |
 
-An already due queued wakeup may precede the latest bookkeeping update; reconciliation must not silently postpone it. `recover` preserves unknown effects, queues another attempt within the retry/deadline bounds, or records a terminal failure. `expire` handles queued, running, and waiting tasks at the deadline. It retains any unanswered question as history. There is no timer in this module: the coordinator must arrange wakeups, expiry, and eventual deletion.
+An already due queued wakeup may precede the latest bookkeeping update; reconciliation must not silently postpone it. `recover` preserves unknown effects and queues another worker without a goal-wide retry ceiling. The goal retains its original request, answers, current step, source and receipts. There is no timer in this module: the coordinator arranges worker wakeups and terminal-content deletion. No goal-age deadline ends unfinished work.
 
-Each new question starts at revision 0 with `answer: null`. Answering stores an operation ID and timestamp and advances its revision to 1. Prompts are immutable; a correction needs a new question identity. Choices are suggestions; a bounded free-text answer is allowed. Exactly one unanswered question is permitted while waiting. Stopped or deadline-expired tasks may retain that unanswered question.
+Each new question starts at revision 0 with `answer: null`. Answering stores an operation ID and timestamp and advances its revision to 1. Prompts are immutable; a correction needs a new question identity. Choices are suggestions; a bounded free-text answer is allowed. Exactly one unanswered question is permitted while waiting. Stopped tasks may retain that unanswered question.
 
 Prepared results contain an artifact reference and the original project fingerprint. Prepared component artifact contents use the separate [results contract](../results/README.md) and owned server storage. Trusted build validation reports remain a later builder responsibility. The contract checks reference shape and fingerprint consistency; it does not compile generated source or prove its behavior. Existing project fingerprints are opaque change tokens, not SHA-256 strings. The editor must recheck its current draft before applying a result.
 
@@ -57,9 +57,9 @@ Before an effect, a worker records an empty `planned` intent with a unique opera
 
 The same operation ID cannot change its input digest, step, or creation time. Settled receipts are immutable, exact repeats are harmless, and known resource references cannot be discarded. A new attempt requires a distinct operation ID. One unsettled effect blocks another fresh intent, a normal checkpoint, a question, or completion. History is bounded and never silently evicted to make room for more work.
 
-Stop, deadline expiry, and claim recovery convert still-planned receipts to `unknown`. A trusted coordinator can use `reconcile_operation` to update an existing receipt when the task is no longer running, including after Stop or expiry. It cannot create another operation or restart the task. The adapter must verify the actual provider outcome and resource ownership before supplying that update. Persist intended provider targets separately, keyed by the stable task/operation identity, before making the request; this generic reference contract does not contain provider credentials or arbitrary provider payloads.
+Stop and claim recovery convert still-planned receipts to `unknown`. A trusted coordinator can use `reconcile_operation` to update an existing receipt when the task is no longer running, including after Stop. It cannot create another operation or restart the task. The adapter must verify the actual provider outcome and resource ownership before supplying that update. Persist intended provider targets separately, keyed by the stable task/operation identity, before making the request; this generic reference contract does not contain provider credentials or arbitrary provider payloads.
 
-`reserve_usage` holds model/tool capacity before calls. `settle_usage` accounts for consumed capacity or returns an unused reservation. Used plus reserved capacity must fit the per-task limits. Normal checkpoints, questions, and completion require settled reservations. Failures, interruptions, and Stop preserve uncertain reservations. They must not automatically refund a call that may already have run. Account-wide money/capacity accounting, terminal reservation reconciliation, and resource cleanup are later adapter responsibilities; these counters are not a global spending cap.
+`reserve_usage` holds model/tool capacity before calls. `settle_usage` accounts for consumed capacity or returns an unused reservation. Model counts are accounting, not a goal-wide turn ceiling. The prototype tool allowance remains until checkpoint compaction in 1B.12. Normal checkpoints, questions, and completion require settled reservations. Failures, interruptions, and Stop preserve uncertain reservations. They must not automatically refund a call that may already have run. Account-wide money/capacity accounting, terminal reservation reconciliation, and resource cleanup are later adapter responsibilities; these counters are not a global spending cap.
 
 ## Bounds and private data
 
@@ -74,8 +74,8 @@ Stop, deadline expiry, and claim recovery convert still-planned receipts to `unk
 | Question / choice / answer | 2,000 / 200 / 4,000 UTF-8 bytes |
 | Operation receipts / resource references per receipt | 64 / 8 |
 | Artifact | Opaque ID, SHA-256 digest, positive size at most 1 MiB; contents stored separately |
-| Build deadline / retained task lifetime | 24 hours / 7 days from creation |
-| Execution lease / retries including recovery | At most 60 seconds / 3 |
+| Goal lifetime / finished-content retention | Unfinished goals do not expire; Ready or Stop sets `finishedAt`, then `expiresAt = finishedAt + 7 days` |
+| Execution lease / retries including recovery | At most 60 seconds per worker / accounted without a goal-wide ceiling |
 | Model-turn accounting | Nonnegative safe integers; no fixed per-task turn cutoff |
 | Used plus reserved tool calls | 24 (prototype resource control; goal continuation redesign pending) |
 
@@ -85,7 +85,7 @@ Questions, source, and artifact references are private task data, not an automat
 
 ## Verification and next layer
 
-`node --test tests/assistant-tasks/*.test.mjs` covers validation and byte/count limits, JSON round-trip, unchanged inputs, legal lifecycle changes, owner/revision/lease conflicts, question and creation replays, bounded usage, effect intent/uncertainty/settlement, cancellation, expiry, and the public TypeScript declarations. Tests use injected time and effects represented as data; no provider calls occur.
+`node --test tests/assistant-tasks/*.test.mjs` covers validation and byte/count limits, JSON round-trip, unchanged inputs, legal lifecycle changes, owner/revision/lease conflicts, question and creation replays, bounded usage, effect intent/uncertainty/settlement, cancellation, long goal lifetimes, terminal retention, and the public TypeScript declarations. Tests use injected time and effects represented as data; no provider calls occur.
 
 Server task storage, HTTP authentication, atomic compare-and-swap, hashing, alarms, provider reconciliation, artifact validation, and editor result application are not implemented here. Local draft locators are handled by 1B.02; continue with [storage and owned routes in 1B.03](../../../docs/engineering/restyle-cloud-agent-roadmaps/1b-saved-tasks.md#1b03--store-the-task-and-expose-owned-operations). A saved locator does not mean the task itself is already running on a server.
 

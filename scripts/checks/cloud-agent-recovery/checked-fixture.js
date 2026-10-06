@@ -11,7 +11,12 @@ import { prepareServicePublication } from "../../../server/cloud-services/releas
 
 /** Diagnostic-only trusted setup. Product hosting always consumes the actual builder's saved validation result. */
 export async function installCheckedDiagnostic(coordinator, claimed, checked) {
-  await prepareServicePublication(claimed, "diagnostic-check", checked);
+  await prepareServicePublication(
+    claimed,
+    "diagnostic-check",
+    checked,
+    coordinator.now() + 86_400_000,
+  );
   return coordinator.transaction(() => {
     if (!coordinator.builders.current(claimed, coordinator.now()))
       throw new Error("Diagnostic claim changed.");

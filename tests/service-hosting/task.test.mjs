@@ -78,7 +78,11 @@ test(
         result: "accepted",
         state: { capacity: 1, guests: ["Alice"] },
       });
-      await f.control({ action: "time", now: task.expiresAt + 1 });
+      const stopped = await f.request(path(task) + "/stop", {
+        body: { expectedRevision: (await current(f, task)).revision },
+      });
+      expectStatus(stopped, 200);
+      await f.control({ action: "time", now: stopped.body.task.expiresAt + 1 });
       await f.control({ action: "sweep" });
       const retained = await catalog(f);
       assert.equal(retained[0].service.state, "deleted");

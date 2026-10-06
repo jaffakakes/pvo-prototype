@@ -1,7 +1,4 @@
-import {
-  transitionTask,
-  TASK_LIMITS,
-} from "../../../packages/pvo-assistant/tasks/index.js";
+import { transitionTask } from "../../../packages/pvo-assistant/tasks/index.js";
 import { HttpError } from "../../http.js";
 import { randomId } from "../../identity.js";
 
@@ -45,8 +42,6 @@ export function claimNextTask(coordinator) {
       ((task.stepId === "build" &&
         coordinator.builders.stage(task.id) === "tools") ||
         task.stepId === "host") &&
-      now < task.deadlineAt &&
-      task.retries < TASK_LIMITS.retries &&
       !coordinator.awaiting(task.id) &&
       !task.usage.reservedModelTurns &&
       !task.usage.reservedToolCalls &&

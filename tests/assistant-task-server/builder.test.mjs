@@ -357,7 +357,10 @@ test(
         (await status(fixture, owned.links[0].identity)).stats.vm.running,
         false,
       );
-      await fixture.control({ action: "time", now: task.expiresAt + 1 });
+      await fixture.control({
+        action: "time",
+        now: (await fixture.request(path(task))).body.task.expiresAt + 1,
+      });
       await fixture.control({ action: "sweep" });
       assert.equal(
         (await state(fixture, task)).agreement,

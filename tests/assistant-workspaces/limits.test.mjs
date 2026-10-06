@@ -72,11 +72,11 @@ test("new saves cannot grow the operation journal past its cap, but exact receip
   }
 });
 
-test("editing and restoring cannot reset a task's computer session cap", async () => {
+test("successive workers continue beyond the former four-session cutoff", async () => {
   const f = await workspaceFixture();
   const who = await identity();
   try {
-    for (let n = 0; n < limits.sessions; n++) {
+    for (let n = 0; n < 8; n++) {
       const source = ok(
         await f.call("save", who, {
           id: `save-${n}`,
@@ -92,16 +92,16 @@ test("editing and restoring cannot reset a task's computer session cap", async (
     const source = ok(
       await f.call("save", who, {
         id: "final-save",
-        expectedRevision: limits.sessions,
+        expectedRevision: 8,
         files: files(),
       }),
     ).result;
     assert.equal(
-      (await f.call("start", who, { id: "too-many", ...source })).status,
-      409,
+      ok(await f.call("start", who, { id: "next-session", ...source })).status,
+      "completed",
     );
-    assert.equal(ok(await f.call("inspect", who)).vm.starts, limits.sessions);
-    assert.equal(ok(await f.call("inspect", who)).vm.running, false);
+    assert.equal(ok(await f.call("inspect", who)).vm.starts, 9);
+    assert.equal(ok(await f.call("inspect", who)).vm.running, true);
   } finally {
     await f.close();
   }

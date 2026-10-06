@@ -5,8 +5,6 @@ export type WorkspaceIdentity = {
   ownerId: string;
   projectId: string;
   taskId: string;
-  deadlineAt: number;
-  expiresAt: number;
 };
 export type WorkspaceSnapshot = {
   revision: number;
@@ -15,7 +13,8 @@ export type WorkspaceSnapshot = {
 };
 export const WORKSPACE_LIMITS: Readonly<{
   operations: number;
-  sessions: number;
+  reservationMs: number;
+  retentionMs: number;
   sessionMs: number;
   commandMs: number;
   startupMs: number;
@@ -56,6 +55,7 @@ export type WorkspaceState = {
   cleanupAttempts: number;
   nextCleanupAt: number | null;
   contentExpired: boolean;
+  contentExpiresAt: number | null;
 };
 export type WorkspaceSave = {
   id: string;
@@ -75,10 +75,7 @@ export function parseWorkspaceRun(
 ): WorkspaceRun & { command: WorkspaceCommand };
 export function parseWorkspaceLease(value: unknown): WorkspaceLease;
 export function workspaceCommandArguments(command: WorkspaceCommand): string[];
-export function newWorkspace(
-  identity: WorkspaceIdentity,
-  now: number,
-): WorkspaceState;
+export function newWorkspace(identity: WorkspaceIdentity): WorkspaceState;
 export function assertWorkspaceOwner(
   state: WorkspaceState,
   identity: WorkspaceIdentity,
@@ -188,7 +185,6 @@ export function parseWorkspaceObservation(
 ): WorkspaceObservation;
 export function workspaceTaskCleanup(
   task: TaskRecord | null | undefined,
-  identity: WorkspaceIdentity,
   grant: WorkspaceGrant,
   now: number,
 ): "stop" | "suspend" | null;

@@ -190,7 +190,10 @@ export class TaskResearch {
   prune(now) {
     for (const row of this.entries()) {
       const task = this.task(row.taskId);
-      if (row.settled && (!task || task.expiresAt <= now))
+      if (
+        row.settled &&
+        (!task || (task.expiresAt !== null && task.expiresAt <= now))
+      )
         this.sql.exec("DELETE FROM task_research WHERE id=?", row.id);
     }
   }

@@ -118,7 +118,7 @@ export async function taskFixture({
       async publishVersion(ownerId,id,checked,operationId) {
         this.repository.bindOwner(ownerId);
         const task=this.repository.read(id,this.now());
-        const publication=await prepareServicePublication(task,operationId,checked);
+        const publication=await prepareServicePublication(task,operationId,checked,this.now()+86_400_000);
         await this.transaction(()=>this.services.intent(task,publication,this.now()));
         const result=await this.env.SERVICE_HOSTS.getByName(publication.identity.serviceId).publish(publication);
         await this.transaction(()=>this.services.observe(publication.identity,result.state,this.now()));

@@ -46,7 +46,7 @@ test("owned source and immutable receipts survive full workerd restart with comp
       409,
     );
     assert.equal(
-      (await f.call("lookup", { ...who, expiresAt: who.expiresAt - 1 })).status,
+      (await f.call("lookup", { ...who, taskId: "foreign-task" })).status,
       409,
     );
     assert.equal(
@@ -143,7 +143,11 @@ test("Stop creates a tombstone before initialization and preserves existing sour
       (await f.call("start", who, { id: "late", ...source })).status,
       409,
     );
-    ok(await f.call("time", who, null, { now: who.expiresAt }));
+    ok(
+      await f.call("time", who, null, {
+        now: ok(await f.call("inspect", who)).state.contentExpiresAt,
+      }),
+    );
     assert.equal(ok(await f.call("lookup", who)).source, null);
     assert.equal(ok(await f.call("inspect", who)).actions.length, 0);
     assert.equal(
@@ -228,7 +232,11 @@ test("cleanup failure retains capacity and source, retries with backoff, then st
       ok(await f.call("inspect", who, null, { budget: true }))[0].released,
       false,
     );
-    ok(await f.call("time", who, null, { now: who.expiresAt }));
+    ok(
+      await f.call("time", who, null, {
+        now: ok(await f.call("inspect", who)).state.contentExpiresAt,
+      }),
+    );
     ok(await f.call("alarm", who));
     const expired = ok(await f.call("lookup", who));
     assert.equal(expired.source, null);

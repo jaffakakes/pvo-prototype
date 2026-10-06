@@ -51,6 +51,7 @@ export async function resolveTaskAttachment(coordinator, claimed, value) {
     task,
     row.identity.operationId,
     { artifact: saved.artifact, report: saved.report },
+    row.identity.expiresAt,
   );
   if (!sameServiceIdentity(publication.identity, row.identity))
     throw new Error(

@@ -57,8 +57,6 @@ export class WorkspaceProof extends AssistantWorkspace {
         ownerId: `proof-${this.env.PROOF_ID}`,
         projectId: "workspace-proof",
         taskId: subject,
-        deadlineAt: Number(this.env.PROOF_EXPIRES_AT),
-        expiresAt: Number(this.env.PROOF_EXPIRES_AT) + 3600000,
       };
       identity = { ...base, resourceId: await workspaceResourceId(base) };
       await this.ctx.storage.put("proof-identity", identity);

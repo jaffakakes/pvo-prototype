@@ -45,13 +45,14 @@ test("owner catalog enforces service/daily/release caps and immutable ownership 
   try {
     const checked = await checkedFixture(),
       task = create(),
-      now = task.deadlineAt - 1000,
+      now = task.createdAt + 86_400_000 - 1000,
       publications = [];
     for (let i = 0; i < 4; i++) {
       const publication = await prepareServicePublication(
         task,
         `release-${i}`,
         checked,
+        task.createdAt + 86_400_000,
       );
       publications.push(publication);
       assert.equal((await call({ task, publication, now })).status, 200);
@@ -69,6 +70,7 @@ test("owner catalog enforces service/daily/release caps and immutable ownership 
             task,
             "release-4",
             checked,
+            task.createdAt + 86_400_000,
           ),
           now,
         })
@@ -81,6 +83,7 @@ test("owner catalog enforces service/daily/release caps and immutable ownership 
       await checkedFixture(
         "export function execute(){return {result:null,state:null};}",
       ),
+      task.createdAt + 86_400_000,
     );
     assert.equal((await call({ task, publication: changed, now })).status, 409);
     assert.equal(
@@ -103,6 +106,7 @@ test("owner catalog enforces service/daily/release caps and immutable ownership 
               next,
               "release",
               checked,
+              next.createdAt + 86_400_000,
             ),
             now,
           })
@@ -119,6 +123,7 @@ test("owner catalog enforces service/daily/release caps and immutable ownership 
             ninth,
             "release",
             checked,
+            ninth.createdAt + 86_400_000,
           ),
           now,
         })
@@ -130,12 +135,12 @@ test("owner catalog enforces service/daily/release caps and immutable ownership 
         action: "observe",
         identity: publication.identity,
         state: "deleted",
-        now: task.deadlineAt,
+        now: task.createdAt + 86_400_000,
       });
     const fresh = createTask(ninth.input, {
       id: ninth.id,
       ownerId: ninth.ownerId,
-      now: task.deadlineAt,
+      now: task.createdAt + 86_400_000,
       inputDigest: ninth.creationDigest,
     });
     assert.equal(
@@ -146,8 +151,9 @@ test("owner catalog enforces service/daily/release caps and immutable ownership 
             fresh,
             "release",
             checked,
+            fresh.createdAt + 86_400_000,
           ),
-          now: task.deadlineAt,
+          now: task.createdAt + 86_400_000,
         })
       ).status,
       429,

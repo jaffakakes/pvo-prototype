@@ -10,6 +10,7 @@ import {
 import { parseServiceIdentity, sameServiceIdentity } from "./identity.js";
 
 export const INACTIVE_SERVICE_LIMITS = Object.freeze({
+  lifetimeMs: 24 * 60 * 60_000,
   publicationBytes: 2 * 1024 * 1024,
   inputBytes: SERVICE_TEST_LIMITS.invocationBytes,
   outputBytes: SERVICE_TEST_LIMITS.replyBytes,

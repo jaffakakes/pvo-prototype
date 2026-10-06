@@ -206,7 +206,10 @@ test(
           await fixture.control({ action: "time", now });
         } else assert.equal(links[0].nextAt, null);
       }
-      await fixture.control({ action: "time", now: task.expiresAt + 1 });
+      await fixture.control({
+        action: "time",
+        now: (await fixture.request(path(task))).body.task.expiresAt + 1,
+      });
       const swept = await fixture.control({ action: "sweep" });
       expectStatus(swept, 200);
       assert.equal(swept.body.alarm, null);
@@ -225,28 +228,37 @@ test(
 );
 
 test(
-  "task deadline closes the workspace and confirmed cleanup allows retention removal",
+  "a month-old goal retains source after worker cleanup and Stop starts terminal retention",
   options,
   async () => {
     const fixture = await taskFixture({ workspaces: true });
     try {
       const task = await building(fixture);
       const { identity } = await prepare(fixture, task, files());
-      await fixture.control({ action: "time", now: task.deadlineAt });
+      await fixture.control({ action: "time", now: NOW + 30 * 86400000 });
       expectStatus(await fixture.control({ action: "sweep" }), 200);
       const observed = await status(fixture, identity);
-      assert.equal(observed.observation.closed, true);
+      assert.equal(observed.observation.closed, false);
       assert.equal(observed.stats.vm.running, false);
+      assert.deepEqual(observed.observation.source.files, files());
       assert.equal((await rows(fixture)).links[0].cleaned, true);
-      assert.equal(
-        (await current(fixture, task)).failure.code,
-        "deadline_exceeded",
-      );
-      await fixture.control({ action: "time", now: task.expiresAt + 1 });
+      const fresh = await current(fixture, task);
+      assert.equal(fresh.expiresAt, null);
+      const stopped = await fixture.request(path(task) + "/stop", {
+        body: { expectedRevision: fresh.revision },
+      });
+      expectStatus(stopped, 200);
+      expectStatus(await fixture.control({ action: "sweep" }), 200);
+      assert.equal((await status(fixture, identity)).observation.closed, true);
+      await fixture.control({
+        action: "time",
+        now: stopped.body.task.expiresAt + 1,
+      });
       const expired = await fixture.control({ action: "sweep" });
       expectStatus(expired, 200);
       assert.equal(expired.body.records.length, 0);
       assert.deepEqual(await rows(fixture), { operations: [], links: [] });
+      assert.equal((await status(fixture, identity)).observation.source, null);
     } finally {
       await fixture.close();
     }

@@ -16,8 +16,6 @@ export async function identity(taskId = "task-one", ownerId = "owner-one") {
     ownerId,
     projectId: "project-one",
     taskId,
-    deadlineAt: NOW + 86_400_000,
-    expiresAt: NOW + 7 * 86_400_000,
   };
   return { ...value, resourceId: await workspaceResourceId(value) };
 }

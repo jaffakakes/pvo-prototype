@@ -1,11 +1,6 @@
 /** Decide which task claim must be fenced off before a workspace can be used again. */
-export function workspaceTaskCleanup(task, identity, grant, now) {
-  if (
-    !task ||
-    ["stopped", "ready"].includes(task.state) ||
-    now >= identity.deadlineAt
-  )
-    return "stop";
+export function workspaceTaskCleanup(task, grant, now) {
+  if (!task || ["stopped", "ready"].includes(task.state)) return "stop";
   if (
     task.state !== "running" ||
     task.generation !== grant.generation ||

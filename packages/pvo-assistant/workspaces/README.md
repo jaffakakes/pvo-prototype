@@ -4,7 +4,7 @@ This package defines source snapshots, operation inputs, bounds and pure lifecyc
 
 ## Identity and source
 
-A workspace belongs to one owner, project and saved task. Trusted server code derives `workspace-<SHA-256>` from those identifiers. Source changes, retries and computer restarts keep that identity. Deadline and retention are frozen when first stored. Another identity, or a changed deadline for the same identity, is rejected.
+A workspace belongs to one owner, project and saved task. Trusted server code derives `workspace-<SHA-256>` from those identifiers. Source changes, retries and computer restarts keep that identity. Identity contains only those ownership identifiers. Worker deadlines and source retention are separate; continuing a goal cannot alter its workspace identity.
 
 A draft snapshot holds a revision, digest and bounded `{path, content}` files. Drafts can be incomplete or empty. The [service package contract](../services/README.md) defines the accepted `src/` and `tests/` paths and file limits. A complete service package needs its agreement, entry point and tests; a workspace snapshot alone does not satisfy that contract.
 
@@ -18,8 +18,8 @@ The server journals an action and its compute reservation before an external eff
 
 | Bound | Value |
 | --- | --- |
-| Operations, including saves | 64 per task |
-| Computer sessions | 4 per task |
+| Operations, including saves | 64 in the current notebook; 1B.12 replaces this goal-ending bound with durable checkpointing |
+| Computer sessions | Counted without a goal-wide ceiling; capacity admission still applies |
 | Session lifetime | At most 120 seconds, also capped by the task claim expiry |
 | Startup/restoration | 20 seconds |
 | Command time | 15 seconds |
@@ -30,7 +30,7 @@ The server journals an action and its compute reservation before an external eff
 
 Stop closes the identity before shutdown. An interrupted start/command never silently repeats. A coordinator restart destroys a retained computer, then a new explicit operation may restore the saved source. A source edit also discards the existing computer. Failed shutdown keeps its reservation occupied; time passing alone does not prove that a computer was removed. An explicit trusted reconciliation can retry an exhausted cleanup batch.
 
-Source and receipts remain until the task retention deadline, including after Stop. Small identity/tombstone and unresolved cleanup records remain after private content expires. Finished operation receipts are historical results; replaying an old successful start does not recreate a stopped computer.
+Source and receipts remain while the goal is unfinished. Closing the workspace after Ready/Stop starts seven-day content retention. Session expiry only removes the computer; it preserves saved source for a later worker. Reservation identities have their own 24-hour retention, and an unconfirmed deletion keeps its capacity occupied beyond that period. Small identity/tombstone and unresolved cleanup records remain after private content expires. Finished operation receipts are historical results; replaying an old successful start does not recreate a stopped computer.
 
 ## Implementation and verification boundary
 

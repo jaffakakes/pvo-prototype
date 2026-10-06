@@ -1,3 +1,4 @@
+import { TASK_LIMITS } from "./limits.js";
 import { object, requireTask, time, integer, id } from "./validation.js";
 
 export function validateGuard(task, guard) {
@@ -42,6 +43,10 @@ export function requireRunningClaim(task, guard) {
 
 export function finishClaim(task, state) {
   task.state = state;
+  if (["ready", "stopped"].includes(state)) {
+    task.finishedAt = task.updatedAt;
+    task.expiresAt = task.finishedAt + TASK_LIMITS.retentionMs;
+  }
   task.claim = null;
   task.generation++;
   task.nextRunAt = state === "queued" ? task.updatedAt : null;
@@ -58,5 +63,4 @@ export function requireSettledUsage(task) {
 export function assertTaskExecution(task, guard) {
   validateGuard(task, guard);
   requireRunningClaim(task, guard);
-  requireTask(guard.now < task.deadlineAt, "Task deadline has passed.");
 }

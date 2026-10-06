@@ -7,8 +7,7 @@ export type TaskFailureCode =
   | "reconciliation_required"
   | "execution_failed"
   | "invalid_result"
-  | "budget_exceeded"
-  | "deadline_exceeded";
+  | "budget_exceeded";
 export type TaskFailure = { code: TaskFailureCode; stepId: string };
 export type TaskArtifact = { id: string; sha256: string; bytes: number };
 export type TaskResult = { artifact: TaskArtifact; baseFingerprint: string };
@@ -81,8 +80,8 @@ export type TaskRecord = {
   usage: TaskUsage;
   createdAt: number;
   updatedAt: number;
-  deadlineAt: number;
-  expiresAt: number;
+  finishedAt: number | null;
+  expiresAt: number | null;
   nextRunAt: number | null;
 };
 export type TaskGuard = {
@@ -105,7 +104,7 @@ export type TaskCommand =
     }
   | { kind: "complete"; result: TaskResult }
   | { kind: "fail"; failure: TaskFailure }
-  | { kind: "resume" | "stop" | "recover" | "expire" }
+  | { kind: "resume" | "stop" | "recover" }
   | {
       kind: "record_operation" | "reconcile_operation";
       operation: TaskOperation;
@@ -143,10 +142,8 @@ export const TASK_LIMITS: Readonly<{
   operations: number;
   resources: number;
   artifactBytes: number;
-  lifetimeMs: number;
   retentionMs: number;
   leaseMs: number;
-  retries: number;
   toolCalls: number;
 }>;
 export const TASK_STATES: readonly TaskState[];

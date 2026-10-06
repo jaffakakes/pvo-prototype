@@ -84,7 +84,11 @@ test(
       assert.deepEqual(other.body, { attempts: [], artifacts: [] });
       await f.restart();
       assert.deepEqual(await validation(f, task), stored);
-      await f.control({ action: "time", now: task.expiresAt + 1 });
+      const stopped = await f.request(path(task) + "/stop", {
+        body: { expectedRevision: (await current(f, task)).revision },
+      });
+      expectStatus(stopped, 200);
+      await f.control({ action: "time", now: stopped.body.task.expiresAt + 1 });
       await f.control({ action: "sweep" });
       assert.deepEqual(await validation(f, task), {
         attempts: [],

@@ -3,7 +3,6 @@ import {
   parseHostedService,
   selectTestRelease,
 } from "../../packages/pvo-assistant/hosting/index.js";
-import { TASK_LIMITS } from "../../packages/pvo-assistant/tasks/index.js";
 import {
   INACTIVE_SERVICE_LIMITS,
   SERVICE_CATALOG_LIMITS,
@@ -108,7 +107,7 @@ export class ServiceReleaseStore {
       throw new HttpError(410, "This service has been deleted.");
     let current = this.current(identity, now);
     if (!current) {
-      if (identity.expiresAt > now + TASK_LIMITS.lifetimeMs)
+      if (identity.expiresAt > now + INACTIVE_SERVICE_LIMITS.lifetimeMs)
         throw new HttpError(400, "Inactive service lifetime exceeded.");
       this.requireCapacity();
       const service = this.bind(identity, now);

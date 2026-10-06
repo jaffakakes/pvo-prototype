@@ -89,7 +89,10 @@ export class ServiceArtifacts {
     for (const { task_id: id } of this.sql
       .exec("SELECT DISTINCT task_id FROM task_service_artifacts")
       .toArray())
-      if (!tasks.has(id) || tasks.get(id).expiresAt <= now)
+      if (
+        !tasks.has(id) ||
+        (tasks.get(id).expiresAt !== null && tasks.get(id).expiresAt <= now)
+      )
         this.sql.exec("DELETE FROM task_service_artifacts WHERE task_id=?", id);
   }
 }

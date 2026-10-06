@@ -85,9 +85,7 @@ export class WorkspaceOperations {
     if (
       identity.ownerId !== task.ownerId ||
       identity.projectId !== task.input.projectId ||
-      identity.taskId !== task.id ||
-      identity.deadlineAt !== task.deadlineAt ||
-      identity.expiresAt !== task.expiresAt
+      identity.taskId !== task.id
     )
       throw new Error("Workspace intent does not belong to its saved task.");
     const id = `${task.id}_${operationId}`;
@@ -280,7 +278,7 @@ export class WorkspaceOperations {
   noteTerminal(now) {
     for (const link of this.links()) {
       const task = this.task(link.taskId);
-      const mode = workspaceTaskCleanup(task, link.identity, link.grant, now);
+      const mode = workspaceTaskCleanup(task, link.grant, now);
       if (!mode || link.mode === "stop" || link.mode === mode) continue;
       this.saveLink({
         ...link,
@@ -363,7 +361,6 @@ export class WorkspaceOperations {
   }
   nextWakeup() {
     const times = this.links().flatMap((link) => [
-      ...(link.mode !== "stop" ? [link.identity.deadlineAt] : []),
       ...(waiting(link)
         ? link.nextAt === null
           ? []
@@ -387,9 +384,10 @@ export class WorkspaceOperations {
     return times.length ? Math.min(...times) : null;
   }
   prune(now) {
-    const tasks = new Set(this.tasks.records().map((task) => task.id));
+    const tasks = new Map(this.tasks.records().map((task) => [task.id, task]));
     for (const row of this.entries()) {
-      if (row.identity.expiresAt <= now && row.receipt)
+      const task = tasks.get(row.taskId);
+      if (task?.expiresAt !== null && task?.expiresAt <= now && row.receipt)
         this.write({ ...row, receipt: null });
       if (row.settled && !tasks.has(row.taskId))
         this.sql.exec("DELETE FROM workspace_operations WHERE id=?", row.id);

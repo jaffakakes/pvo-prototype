@@ -35,7 +35,8 @@ test("creation takes identity from trusted metadata and returns detached exact s
   );
   assert.equal(task.state, "queued");
   assert.equal(task.ownerId, ownerId);
-  assert.equal(task.deadlineAt, now + TASK_LIMITS.lifetimeMs);
+  assert.equal(task.finishedAt, null);
+  assert.equal(task.expiresAt, null);
   const copy = parseTaskRecord(task);
   copy.input.examples[0].expected = "different";
   assert.notDeepEqual(copy, task);

@@ -1,6 +1,5 @@
 import {
   TASK_FAILURES,
-  TASK_LIMITS,
   type TaskRecord,
 } from "../../../../packages/pvo-assistant/tasks/index.js";
 
@@ -12,10 +11,9 @@ const failureMessages = {
   execution_failed: "The current step could not be completed.",
   invalid_result: "The result did not pass validation.",
   budget_exceeded: "This task reached its work limit.",
-  deadline_exceeded: "This task reached its time limit.",
 };
 
-export function savedTaskStatus(task: TaskRecord, now: number) {
+export function savedTaskStatus(task: TaskRecord) {
   const label = {
     queued: "Working",
     running: "Working",
@@ -52,9 +50,7 @@ export function savedTaskStatus(task: TaskRecord, now: number) {
       task.state === "failed" &&
       !!task.failure &&
       !buildUnavailable &&
-      TASK_FAILURES[task.failure.code].retryable &&
-      now < task.deadlineAt &&
-      task.retries < TASK_LIMITS.retries,
+      TASK_FAILURES[task.failure.code].retryable,
     question:
       task.state === "waiting_for_answer"
         ? (task.questions.find((item) => item.answer === null) ?? null)

@@ -100,7 +100,14 @@ test(
         body: { action: "research-rows" },
       });
       assert.deepEqual(foreign.body, []);
-      await fixture.control({ action: "time", now: task.expiresAt + 1 });
+      const stopped = await fixture.request(path(task) + "/stop", {
+        body: { expectedRevision: waiting.revision },
+      });
+      expectStatus(stopped, 200);
+      await fixture.control({
+        action: "time",
+        now: stopped.body.task.expiresAt + 1,
+      });
       await fixture.control({ action: "sweep" });
       assert.deepEqual(await researchRows(fixture), []);
     } finally {

@@ -24,7 +24,6 @@ const fields = {
   resume: [],
   stop: [],
   recover: [],
-  expire: [],
   reconcile_operation: ["operation"],
   record_operation: ["operation"],
   reserve_usage: ["modelTurns", "toolCalls"],
@@ -63,16 +62,6 @@ export function transitionTask(value, command, guard) {
       ["reconcile_operation", "reconcile_usage"].includes(command.kind),
     "This task attempt is terminal.",
   );
-  if (
-    ![
-      "stop",
-      "recover",
-      "expire",
-      "reconcile_operation",
-      "reconcile_usage",
-    ].includes(command.kind)
-  )
-    requireTask(guard.now < task.deadlineAt, "Task deadline has passed.");
   task.updatedAt = guard.now;
   const replay = applyCommand(task, command, guard);
   if (replay) return parseTaskRecord(value);
@@ -94,7 +83,7 @@ function applyCommand(task, command, guard) {
       task.claim = {
         id: command.claimId,
         claimedAt: guard.now,
-        expiresAt: Math.min(guard.now + command.leaseMs, task.deadlineAt),
+        expiresAt: guard.now + command.leaseMs,
       };
       task.nextRunAt = null;
       break;
@@ -137,7 +126,6 @@ function applyCommand(task, command, guard) {
         task.state === "failed" && TASK_FAILURES[task.failure.code].retryable,
         "Task failure cannot be resumed.",
       );
-      requireTask(task.retries < limits.retries, "Task retry limit reached.");
       task.retries++;
       task.failure = null;
       finishClaim(task, "queued");
@@ -149,16 +137,6 @@ function applyCommand(task, command, guard) {
       break;
     case "recover":
       recoverClaim(task, guard.now);
-      break;
-    case "expire":
-      requireTask(
-        ["queued", "running", "waiting_for_answer"].includes(task.state) &&
-          guard.now >= task.deadlineAt,
-        "Only an unfinished task past its deadline can expire.",
-      );
-      preserveUncertainOperations(task, guard.now);
-      task.failure = { code: "deadline_exceeded", stepId: task.stepId };
-      finishClaim(task, "failed");
       break;
     case "reconcile_operation":
       requireTask(
@@ -240,16 +218,8 @@ function recoverClaim(task, now) {
     "Only an expired execution claim can be recovered.",
   );
   preserveUncertainOperations(task, now);
-  if (now >= task.deadlineAt || task.retries >= limits.retries) {
-    task.failure = {
-      code: now >= task.deadlineAt ? "deadline_exceeded" : "budget_exceeded",
-      stepId: task.stepId,
-    };
-    finishClaim(task, "failed");
-  } else {
-    task.retries++;
-    finishClaim(task, "queued");
-  }
+  task.retries++;
+  finishClaim(task, "queued");
 }
 
 function updateUsage(task, command) {

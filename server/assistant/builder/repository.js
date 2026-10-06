@@ -125,7 +125,10 @@ export class TaskBuilders {
     for (const { task_id: id } of this.sql
       .exec("SELECT task_id FROM task_builders")
       .toArray())
-      if (!tasks.has(id) || tasks.get(id).expiresAt <= now)
+      if (
+        !tasks.has(id) ||
+        (tasks.get(id).expiresAt !== null && tasks.get(id).expiresAt <= now)
+      )
         this.sql.exec("DELETE FROM task_builders WHERE task_id=?", id);
   }
 }
