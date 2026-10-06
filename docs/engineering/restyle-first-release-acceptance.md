@@ -8,7 +8,7 @@ The earlier steps built the parts. This milestone asks the real AI to put them t
 
 The temporary workshop writes and tests the code. The separately hosted service keeps the saved RSVPs or bookings and answers viewers after the workshop stops. Publishing makes that checked service available to its connected component; it does not share a plugin or install something for other creators.
 
-**Status, 6 October 2026:** both approved diagnostic deployments are removed. The first exposed a model request-format issue, now repaired; the replacement reached the actual model but exposed the driver’s one-question assumption, also repaired locally. Neither demonstration reached generated source. All 1F tasks remain unchecked. The further corrected run is now approved. This is no public product deployment; beta delivery is recorded separately in progress.
+**Status, 7 October 2026: 1F.01–1F.07 passed.** Both live model-generated components completed the real editor/Try/export/viewer/recovery journey. All ten diagnostic Workers, ten Container applications and sixty namespaces are deleted with verified absence; secrets removed. **1F.08 remains unchecked** until final beta and normal release promotion are verified. The user removed the US$15 completion ceiling; earlier approval limits below are preserved history. No public product deployment is claimed yet.
 
 ## Implementation and evidence boundary
 
@@ -155,9 +155,33 @@ Run `1c47fd9fd5a361e2943e514e` (`workspace-H0uUcC/report.json`) ran **2026-10-06
 
 The next diagnostic `6b5ec15e583982b750fc7b69` (`workspace-r4WODH/report.json`) exposed an error in the newly added readiness probe: task lists require a project query. It returned HTTP 400 before authoring. No model calls; cleanup verified. Replaced that invalid probe with a missing-task read, whose expected HTTP 404 proves the owned coordinator is reachable. The actual local Worker/browser test validates this route in `/tmp/restyle-1f-camera-route-preflight.log`.
 
-### Active camera completion run
+### Camera completion and cleanup — verified
 
-Run `7091340c288b3f81a60f4bcf` began **2026-10-06T23:16:16.846Z** from `aeff505`; journal `workspace-75tyAM/report.json`, Worker/Container `restyle-workspace-proof-7091340c288b3f81a60f4bcf`. Readiness and real browser submission passed. Camera task `8gChbmCMnNvRIvtviOCrZA` continued planning/build after creator closure at 23:16:38 UTC. Its namespace/application identities are recorded before task execution in the private journal. Cleanup is pending for this active run only; all nine preceding diagnostics are removed. Existing completion authorization remains in effect.
+Run `7091340c288b3f81a60f4bcf` ran **2026-10-06T23:16:16.846Z–23:26:54.107Z** from `aeff505`, with same-resource planner clarification `45cb01b`. Journal `workspace-75tyAM/report.json`; Worker/Container `restyle-workspace-proof-7091340c288b3f81a60f4bcf`. Camera task `8gChbmCMnNvRIvtviOCrZA`, project `dej_FhuRyiVYDuI-Bt0CiQ`, was created through the real editor and continued after creator closure. A 45-second model interruption explicitly resumed that same saved task. After source was saved, the test deliberately restarted authoring; the same source revision/digest survived and completed, with one source-write receipt and one hosted release.
+
+**Generated evidence:** source revision 1, digest `adb9f5f1ecd1d85d68d62ab0cc29cc98710b7f4ba7477ace5ebbc66309e04a0a`; `src/index.mjs` and `tests/index.test.mjs`; ten generated Node tests passed, followed by ten independent frozen-agreement cases. Agreement `a5b43995527112547b9ab11649760aba225bb17ce2b4139d2682d596e0ed2a01`, package `5a63cfe06d7307e7ec7ad2c34af712a819671db4d6a79b4d909e59e028d803ec`, report `d8ae5fb68adf10942da438339b3e1d4400a623ef3d3ca16f1b54c3caa47899fc`. Service `service-bb9a68ca5a513b49feb9166cbda5fb4b5f736ab54118bd654df074cdea1c5f89`; release `release-5e11d733b34081eeefd8ff05b6b2b78b99cd5853dfceca6bec21194bb4f05c73`. These are deleted diagnostic identities, not ongoing product servers.
+
+**Actual delivery matrix passed:** apply saved component after reopening; Try with isolated test data; wrong-account read/Try rejection and forged live-mode rejection; interrupted committed activation then exact prepared-file/identity retry after authoring restart; interrupted publication upload then byte-identical retry; downloaded and published PVOs in separate cookie-free viewers while creator closed/workshop absent. Camera accepts free dates, rejects a fresh duplicate and overlap, accepts an adjacent return-day booking, rejects equal/reversed/nonexistent/bad-format dates and an empty name without consuming dates, then accepts valid dates after those failures. Two distinct overlapping requests race for a free interval: exactly one succeeds. Local removal retains hosted records and service management, including the Undo explanation. The separate cancellation task was stopped through actual account routes; Resume returned 409 and the saved task remained stopped.
+
+**1F.02 evidence spans runs:** the third run contains the declared injected startup exception, real test exit 1, model repair from that feedback and four passing Node tests. The fifth contains the necessary dinner seat question/answer. The tenth contains real interrupted-inference Resume and terminal Stop. Stop is terminal; this evidence does not claim a stopped task can be revived.
+
+**Cleanup:** all six namespace IDs are absent: `d508b84c6bde43c88b434265c1c95205`, `b3fc872a728645cbb297a32e805c416c`, `d90a509a83e340b0a6d0196ff57a2678`, `0526ee2d858148cea20aad500270519e`, `3c8e68c84368402ab88889c6e869bda5`, `83409649f31645aba0b6847497a0985c`. The first was also the Container application ID; that application and the Worker are absent. All private deployment secret files were removed. No cloud resource remains running for this milestone.
+
+### Resource accounting for 1F.07
+
+| Evidence | Recorded result |
+| --- | --- |
+| Ten resource journals | All ten Workers, ten Container applications and sixty namespaces removed/absence verified |
+| Deployed-run model attempts | 151; 1,089,918 reported input tokens, 55,362 output tokens; US$1.256944 known token estimate; five unknown responses |
+| Additional model-only diagnosis | Nine further calls beyond the first deployed request; 2,863 input / 114 output tokens, US$0.003178 known estimate; four unknown responses |
+| Combined model accounting | 160 attempts; 1,092,781 reported input / 55,476 output tokens; **US$1.260122 known estimate** plus **US$2.475 retained reservations for nine unknown calls** |
+| Tenth run | 18 model attempts, 95,965 input / 18,971 output tokens, US$0.167058 known estimate, three unknown reservations; 229 diagnostic HTTP admissions |
+| Workshop receipts across runs | 21 completed start receipts, one interrupted/denied start, six completed source writes; one real failing test command and twenty successful test commands. These are observed tool receipts, not a claim about billed execution seconds. |
+| HTTP admission | 1,286 recorded admissions across nine journals; the unpropagated sixth run has no usage response and is not counted as zero |
+| Limits | Individual 6,000-output-token calls; metered dollar reservations; two concurrent workshops, 120-second instance/15-second command bounds; 2,000 HTTP admissions and 90-minute cleanup deadline per deployment. Diagnostic daily capacity is 4,096 under explicit authorization; production defaults unchanged. |
+| Infrastructure estimate | Ten US$2 operational allowances, **US$20 reserved estimate**, not measured billing. No provider invoice was read; unknown calls remain reserved. The removed US$15 ceiling is not reinstated. |
+
+Source checks passed 1,489 tests and strict editor types; the subsequent exact-schema prompt clarification passed twelve planner/agreement tests. Final beta/promotion is 1F.08. Preserve the earlier failures and private receipts; do not recreate completed paid proofs solely because those private files are unavailable on another machine.
 
 ## Run and recover
 
@@ -207,19 +231,19 @@ For dinner only, the harness appends a declared startup error to the first model
 
 Stop is terminal in the current contract. Its cancellation behavior is checked separately from Resume of a retryable failure; this milestone does not promise that a stopped goal can be revived. The published-viewer, capacity/overlap races, cross-owner access, test/live authority and local-removal assertions use the generated service contract.
 
-## Remaining acceptance matrix
+## Acceptance matrix
 
 These are evidence requirements, not a second set of completion checkboxes. Update the original numbered roadmap only after verification.
 
-| Roadmap ID | Required evidence still to collect |
+| Roadmap ID | Evidence / current state |
 | --- | --- |
-| 1F.01 | Both ordinary requests generate code, pass independent cases and return usable connected components with the real configured model/provider |
-| 1F.02 | Necessary question/answer, Stop/resume, an invalid program rejected by actual tests and a model repair driven by that feedback; identify deliberate fault injection if used |
-| 1F.03 | Close creator during work, restart authoring worker, recover saved progress and external effects without a duplicate deployment |
+| 1F.01 | **Passed:** both ordinary requests generated code, passed independent cases and returned connected components using the actual model/provider |
+| 1F.02 | **Passed:** dinner clarification and declared injected test failure/model repair; camera retryable Resume; separate terminal Stop |
+| 1F.03 | **Passed:** camera creator closed during build, explicit authoring restart after saved source, same task/source and one hosted release completed |
 | 1F.04 | **Passed for generated dinner:** workshops absent, creator closed, separate cookie-free downloaded/published viewers used the real hosted service |
-| 1F.05 | Exact retry and distinct simultaneous last-seat/overlap submissions; wrong owner, test/live separation, failed hosting and interrupted export |
+| 1F.05 | **Passed:** dinner last-seat/camera overlap races, exact retries, owner/test authority, failed dinner hosting and interrupted activation/export/publication |
 | 1F.06 | **Passed for generated dinner:** local removal retained the manageable live service and records; actual UI showed the correct Undo explanation |
-| 1F.07 | Actual model tokens/unknown calls, workshop sessions, service calls, configured limits, dated cost estimate and verified deletion of every diagnostic resource |
+| 1F.07 | **Passed:** recorded usage/reservations/limits above; all ten diagnostic resource groups removed |
 | 1F.08 | Relevant source/types/browser/provider checks, actual combined beta delivery and authorized normal release promotion; preserve the user's exclusion of GitHub Actions polling |
 
 The existing controlled browser checks remain useful regression coverage. They cannot substitute for the real-model/provider evidence above. No task becomes complete merely because this plan or a runnable harness exists.

@@ -115,15 +115,15 @@ The user wants the agent to keep working toward the goal, with no fixed model-tu
 
 ## 1F. Verify the complete first release
 
-**In progress:** [live acceptance evidence](../restyle-first-release-acceptance.md). The dinner example completed actual model generation, independent validation, hosting, attachment, Try, interrupted delivery, separate downloaded/published viewers, last-seat races and local removal. **1F.04 and 1F.06 are verified** from that live run. Camera booking and remaining recovery/release checks continue. All five diagnostics are deleted with verified cleanup. Camera hit a retryable model timeout; the runner now resumes saved work and can rerun only camera. The user authorized continuing until 1F passes and removed the US$15 ceiling; keep resource cleanup and truthful evidence.
+**1F.01–1F.07 verified; 1F.08 release remains.** [Live acceptance evidence](../restyle-first-release-acceptance.md) records both ordinary requests, real model-written programs, independent validation, hosting, actual editor/Try/download/publication viewers, races, recovery and cleanup. Dinner passed in the fifth run; camera passed in the tenth. All ten diagnostic deployments are removed. Full source checks (1,489 tests) and strict types pass; final beta/promotion evidence is recorded separately. Preserve the earlier failed evidence. The user's removed US$15 ceiling remains removed; no further paid acceptance run is needed merely to repeat these passed checks.
 
-- [ ] **1F.01** Run both demonstration requests from ordinary natural-language prompts.
-- [ ] **1F.02** Include a follow-up question, stop/resume, and one invalid generated program that the agent repairs from real test feedback.
-- [ ] **1F.03** Close the editor during an active build and restart the authoring worker. Verify saved work continues and completed effects are recovered.
+- [x] **1F.01** Run both demonstration requests from ordinary natural-language prompts.
+- [x] **1F.02** Include a follow-up question, stop/resume, and one invalid generated program that the agent repairs from real test feedback.
+- [x] **1F.03** Close the editor during an active build and restart the authoring worker. Verify saved work continues and completed effects are recovered.
 - [x] **1F.04** Shut down the workspace and close Restyle. Use the finished component from a separate viewer session.
-- [ ] **1F.05** Exercise duplicate submissions and distinct simultaneous submissions competing for the last place or overlapping equipment dates. Also check wrong-account access, test/live separation, a failed deployment, and an interrupted export.
+- [x] **1F.05** Exercise duplicate submissions and distinct simultaneous submissions competing for the last place or overlapping equipment dates. Also check wrong-account access, test/live separation, a failed deployment, and an interrupted export.
 - [x] **1F.06** Remove a local component and check that a published copy's service is still manageable. Explain that editor Undo does not reverse saved viewer actions.
-- [ ] **1F.07** Record the actual resource use and confirm the configured limits and cleanup work.
+- [x] **1F.07** Record the actual resource use and confirm the configured limits and cleanup work.
 - [ ] **1F.08** Complete the relevant source checks and real browser/provider checks, then release through the active beta and normal promotion process.
 
 **Release gate:** all six phases, 1A–1F, pass. A mock provider, a temporary VM URL, or generated source alone does not prove this roadmap is finished.
