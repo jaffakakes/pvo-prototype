@@ -193,3 +193,42 @@ test("different rejected proposals keep repairing even when the checker reports 
     await f.close();
   }
 });
+
+test("a complete saved repair larger than the old preview reaches the next inference without history paging", async () => {
+  const proposed = { ...invalid, extra: "x".repeat(7000) };
+  const calls = [];
+  const f = await taskFixture({
+    clock: NOW,
+    planner: async (request) => {
+      calls.push(await request.json());
+      return Response.json(
+        calls.length === 1
+          ? proposed
+          : {
+              kind: "ask",
+              question: {
+                id: "needed",
+                revision: 0,
+                prompt: "Which date?",
+                choices: [],
+                answer: null,
+              },
+            },
+      );
+    },
+  });
+  try {
+    await f.control({ action: "time", now: NOW });
+    const task = await saved(f);
+    await f.control({ action: "sweep" });
+    await f.control({ action: "sweep" });
+    assert.equal((await current(f, task)).state, "waiting_for_answer");
+    assert.equal(
+      calls[1].evidenceContext.repair.proposal.text,
+      JSON.stringify(proposed),
+    );
+    assert.equal(calls[1].evidenceContext.repair.proposal.truncated, false);
+  } finally {
+    await f.close();
+  }
+});
