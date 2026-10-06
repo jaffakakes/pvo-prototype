@@ -6,12 +6,12 @@ import { readRunpodKey } from "./credentials.mjs";
 
 const accountId = process.argv[2];
 if (
-  process.argv[3] !== "--run-approved-15-usd" ||
+  process.argv[3] !== "--run-approved-10-usd" ||
   process.argv.length !== 4 ||
   !/^[a-f0-9]{32}$/.test(accountId ?? "")
 ) {
   console.error(
-    "Usage (only after fresh approval): node scripts/checks/cloud-agent-first-release/run.mjs <account-id> --run-approved-15-usd",
+    "Usage (only after replacement approval): node scripts/checks/cloud-agent-first-release/run.mjs <account-id> --run-approved-10-usd",
   );
   process.exit(1);
 }
@@ -22,8 +22,8 @@ const expiresAt = Date.now() + 90 * 60_000;
 report.purpose =
   "1F natural-language acceptance preparation: actual Runpod Kimi planning and Cloudflare tools, no production deployment";
 report.limits = {
-  approvedUsd: 15,
-  reservedModelUsd: 13,
+  approvedUsd: 10,
+  reservedModelUsd: 8,
   infrastructureAllowanceUsd: 2,
   deployments: 1,
   containerApplications: 1,

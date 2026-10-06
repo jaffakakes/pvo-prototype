@@ -8,7 +8,7 @@ The earlier steps built the parts. This milestone asks the real AI to put them t
 
 The temporary workshop writes and tests the code. The separately hosted service keeps the saved RSVPs or bookings and answers viewers after the workshop stops. Publishing makes that checked service available to its connected component; it does not share a plugin or install something for other creators.
 
-**Status, 6 October 2026:** local preparation only. All 1F tasks remain unchecked. Local diagnostic tests and a Wrangler deployment dry run pass. No paid inference, cloud resource creation or public product deployment is claimed by those checks. The separate combined beta rebuild/delivery is recorded in progress; it does not establish live 1F acceptance.
+**Status, 6 October 2026:** the one approved deployment failed on its first model request and was fully removed. Model-only diagnosis identified a request-format incompatibility; the corrected adapter obtains the expected dinner question. Both complete demonstrations and all 1F tasks remain unchecked. This is no public product deployment. The separate beta build is recorded in progress.
 
 ## Implementation and evidence boundary
 
@@ -43,12 +43,47 @@ Cloudflare bills active instances for memory, CPU and disk. The existing `lite` 
 
 No new goal-wide model-turn ceiling is introduced. Existing daily account capacity remains enforced. A capacity/permission wait leaves the goal saved; a diagnostic that stops at that point has not passed the milestone. Do not bypass the capacity control to make a demonstration pass.
 
+## Actual run and repair — 6 October 2026
+
+The approved deployment began at **19:46:58 UTC**. Dinner reached its first planning request, which returned Runpod HTTP 500 without token usage. The task reported `provider_unavailable`. No workshop ran, service was generated or component was saved; camera never started.
+
+Cleanup was verified at **19:47:34 UTC**. Worker/Container name: `restyle-workspace-proof-d15104867c0daf6485ad7750`. The Container application and all six namespaces were verified absent, as was the Worker; the local deployment secret file was deleted. Namespace IDs:
+
+```text
+35abae26ad884f96a9829c30338ce4e1
+01415a9ff4174b7099c3569bc67489b4
+ba485a620ee44597b0033d143f2d3e70
+dccdc9c743c8435aa1530eda34498b2e
+96895a9a2bab4560995dea04b2b0cd1a
+5a99b4b46c55438e8418dd85c3e28054
+```
+
+The private receipt is `.wrangler/cloud-agent-infrastructure/workspace-bb37Ww/report.json`; its `modelDiagnostics` also records the subsequent model-only investigation. No replacement deployment was made. Missing this private file on another machine does not justify recreating the resources.
+
+| Observation | Evidence / consequence |
+| --- | --- |
+| Original planning format | Exact `json_schema` request failed both from the Worker and directly. Adding a root object type or replacing `const` with `enum` also returned HTTP 500. A tiny schema succeeded; this is not evidence that all structured output is unsupported. |
+| Corrected Runpod format | `json_object`, with the complete authoritative schema in a trusted system message, returned HTTP 200 and asked how many seats the dinner table has. Thinking remains disabled; a separate tiny request without that setting failed. These observations do not establish a provider-wide outage. |
+| Acceptance authority | Native, task, builder and attachment validators still reject malformed replies, fabricated readiness/receipts/ownership and wrong-stage tools. The configured provider does not change and there is no automatic wire-format fallback. |
+| Diagnostic replay correction | A post-reservation task snapshot initially caused the diagnostic's question validation to reject valid output. The product runner passes its pre-reservation claimed task. Reconstructing that local claim and replaying the unchanged live response through the actual planner passed, with no extra paid call or product-state mutation. This was diagnostic setup, not a product planner defect. |
+| Recorded usage | **10** total model requests: five HTTP 500 with unknown usage and five HTTP 200. Reported successes total **2,863 input / 114 output tokens**, estimated **US$0.003178** at the cited rates. Conservative reservations retain **US$2.75** across all ten calls, including unknown responses. Neither figure is an invoice. Cloud diagnostic admission count: **5**; workshop starts: **0**. |
+
+The [Runpod adapter](../../server/assistant/native/runpod.js) now uses the successful JSON format. [Regression coverage](../../tests/first-release/model-planning.test.mjs) exercises the actual adapter and all three saved planners' validation boundaries; native editing, image evidence, cancellation, truncation and credential protection remain covered by the existing provider suite. Read progress for final check and delivery results.
+
+**The one-deployment authorization is consumed.** Complete local preparation and obtain approval for any replacement deployment before running it. Do not interpret the unused dollar ceiling as approval for an unspecified additional deployment. Keep both failed evidence and the original 1F checkboxes.
+
+## Prepared replacement — approval pending
+
+The corrected driver is prepared for **one replacement deployment, up to US$10: US$8 model reservations plus US$2 infrastructure allowance**, with the same two goals, resource count, 90-minute window, admission controls and verified deletion. No replacement has been launched or approved at this checkpoint. The current command and ledger enforce the reduced allowance; the old US$15 command is no longer accepted.
+
+This fits the original US$15 ceiling conservatively: retain **US$2.75** for all previous model requests and the entire previous **US$2 infrastructure allowance**, then reserve **US$10** for the replacement, totaling **US$14.75**. This is planning allowance, not billed spend or an account-wide cap. Ask for permission to replace the failed deployment, not another US$15 budget. It tests authoring through checked attachment and workshop shutdown; the remaining browser/recovery matrix is still required afterward.
+
 ## Run and recover
 
-From the active checkout, after approval:
+Current prepared invocation, from the active checkout; **only after replacement-deployment approval**:
 
 ```sh
-node scripts/checks/cloud-agent-first-release/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-approved-15-usd
+node scripts/checks/cloud-agent-first-release/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-approved-10-usd
 ```
 
 Use privately supplied `RUNPOD_API_KEY` or a nonempty `apikey` in the Runpod CLI configuration. The script never prints the key. A file existing is not sufficient: the first approved launch found an empty key and stopped before any resource creation or charge. On this Mac, the user can enter it privately with:
@@ -57,7 +92,7 @@ Use privately supplied `RUNPOD_API_KEY` or a nonempty `apikey` in the Runpod CLI
 node scripts/checks/cloud-agent-first-release/configure-key.mjs
 ```
 
-This opens a hidden-entry dialog and saves the CLI setting with owner-only permissions. Never paste a key into chat or commit it. The user approved this secure entry step on 6 October. Cloudflare uses existing Wrangler authentication. Read-only access was verified; a live model call has not been used as an authentication check.
+This opens a hidden-entry dialog and saves the CLI setting with owner-only permissions. Never paste a key into chat or commit it. The user approved this secure entry step and saved the key on 6 October. Cloudflare uses existing Wrangler authentication. The actual run and model-only checks above now establish that the key can reach the configured endpoint.
 
 The private `.wrangler/cloud-agent-infrastructure/workspace-*/report.json` is written before resource creation. It includes names, limits, task revisions, generated source/agreement/test results, service identities, usage and cleanup. Secret files are separate and are deleted after verified cleanup. If interrupted, inspect that journal before any new run; do not create a replacement deployment while cleanup is unresolved. Recover from the same checkout with:
 
