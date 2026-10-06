@@ -2,19 +2,19 @@
 
 **Continuing with Claude Code or Codex:** read [current progress](restyle-cloud-agent-progress.md), then the [handoff/restart guide](restyle-cloud-agent-handoff.md). Every checklist item now has a stable task ID. After each verified task, check it off and save its evidence and exact next action. Root [AGENTS.md](../../AGENTS.md) and [CLAUDE.md](../../CLAUDE.md) require this workflow.
 
-Status: implementation in progress, **6 October 2026**. **1A, 1B.01–1B.15, 1C, 1D, 1E.01–1E.03 and 1E.05 are verified (42/134 tasks).** Goals continue without arbitrary total call or age ceilings. Connected Try now passes actual browser/form/server restart and saved-action replay acceptance; 1,431 local tests and strict editor types pass. **Next: complete 1E.04 player invocation and recovery presentation**, then activation/export 1E.06–09. Try source is delivered in beta `5bc3d01f8d58f03b`; product Worker deployment and the full 1F generated-component acceptance remain separate. See [current evidence](restyle-cloud-agent-progress.md). Unchecked items remain work to do.
+Status: implementation in progress, **6 October 2026**. **1A, 1B.01–1B.15, 1C–1D and 1E.01–1E.05 are verified (43/134 tasks; 91 remain).** Goals continue without arbitrary total call or age ceilings. Try and the public player now share exact saved-submission identity and explicit recovery; 1,442 local tests and actual browser/server restart acceptance pass. **Next: 1E.06 shared activation before public-link or PVO delivery**, then 1E.07–09 and 1F. Beta delivery and cloud product availability are recorded separately in [progress](restyle-cloud-agent-progress.md). Unchecked items remain work to do.
 
-**Planning update:** [1G Containers](restyle-cloud-agent-roadmaps/1g-containers.md) is the next product feature after 1F, before Roadmap 2. It extends the existing service system with editable saved drafts and hosted Node.js execution. Eight new unchecked tasks are added; twelve existing unchecked 4B/4C tasks are moved into that plan, with their IDs and wording retained. No completed work is reset. The user confirmed preserving the currently recorded partial 1E / unfinished 1F status. This update is documentation only.
+**Planning update:** [1G Containers](restyle-cloud-agent-roadmaps/1g-containers.md) is the next product feature after 1F, before Roadmap 2. It extends the existing service system with editable saved drafts and hosted Node.js execution. Eight new unchecked tasks are added; twelve existing unchecked 4B/4C tasks are moved into that plan, with their IDs and wording retained. No completed work is reset. The user confirmed preserving the currently recorded partial 1E / unfinished 1F status. The planning update itself changed documentation only; implementation has now resumed.
 
 Start with [Roadmap 1](restyle-cloud-agent-roadmaps/01-first-working-component.md). It delivers the first complete version: ask for a component, let the agent build a new backend, try it, and share something that keeps working after its temporary computer shuts down.
 
 The [architecture document](restyle-cloud-agent-architecture.md) explains the idea. These roadmaps turn it into smaller pieces of work you can implement and verify.
 
-## Device and cloud decision for review
+## Reviewed device and cloud decision
 
 Use the **device** for editing, previews and supported lightweight checks. Use the **temporary cloud workshop** when development needs tools, packages or heavier execution. Keep **independent publication checks** in Restyle's controlled environment and **finished viewer services/records** hosted so they work when the creator's device is off. No permanently running VM per creator is planned.
 
-This refines existing 1G.01–03 and 1G.05/08; it adds no new task IDs or parallel agent/runtime system. See [where work runs](restyle-cloud-agent-roadmaps/1g-containers.md#where-work-runs-use-the-device-first-where-it-fits). Counts remain **42/134 complete**. The plan is ready for user review; implementation stays at its recorded checkpoint until the user asks to resume.
+This refines existing 1G.01–03 and 1G.05/08; it adds no new task IDs or parallel agent/runtime system. See [where work runs](restyle-cloud-agent-roadmaps/1g-containers.md#where-work-runs-use-the-device-first-where-it-fits). Implementation has progressed to **43/134 complete**. The user has now requested implementation to continue; preserve this distinction throughout subsequent tasks.
 
 ## The four roadmaps
 
@@ -125,4 +125,4 @@ Production promotion follows dev → preprod → prod. After successful deployme
 
 ## Start here
 
-**Current request: review the documentation-only Containers plan.** Implementation remains at **1E.04**, followed by 1E.06–09 and 1F. After that foundation is verified, start **1G.01** in the [Container plan](restyle-cloud-agent-roadmaps/1g-containers.md). Preserve completed evidence and use existing 4B/4C task IDs where moved. Do not implement app code as part of this planning update.
+**Current request: continue implementation.** Finish recorded beta delivery for verified **1E.04**, then implement **1E.06–09** and 1F. After that foundation is verified, start **1G.01** in the [Container plan](restyle-cloud-agent-roadmaps/1g-containers.md). Preserve completed evidence and use existing 4B/4C task IDs where moved. Update task checkboxes only after their actual acceptance checks pass.

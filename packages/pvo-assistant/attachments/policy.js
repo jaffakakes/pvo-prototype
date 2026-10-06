@@ -70,7 +70,7 @@ export function matchAttachmentOperation(operation, authorization) {
     : null;
 }
 
-function checkFields(binding, schema, structure) {
+export function validateServiceBindingFields(binding, schema, structure) {
   if (binding.kind === "field") {
     requireTask(
       structure.type === "form",
@@ -92,14 +92,14 @@ function checkFields(binding, schema, structure) {
     );
   } else if (binding.kind === "object") {
     for (const field of binding.fields)
-      checkFields(
+      validateServiceBindingFields(
         field.value,
         schema.fields.find((item) => item.name === field.name).schema,
         structure,
       );
   } else if (binding.kind === "array") {
     for (const item of binding.items)
-      checkFields(item, schema.items, structure);
+      validateServiceBindingFields(item, schema.items, structure);
   } else {
     requireTask(
       !/\{(?:state|response)\./.test(JSON.stringify(binding.value)),
@@ -140,7 +140,11 @@ export function validateCompiledServiceAttachment(
       canonicalJson(JSON.parse(action.body)) === expected.body,
     "The attached request does not match its verified service connection.",
   );
-  checkFields(connection.input, receipt.operation.input, proposed.structure);
+  validateServiceBindingFields(
+    connection.input,
+    receipt.operation.input,
+    proposed.structure,
+  );
   const before = original?.rules.find(
     (item) => item.event === rule.event && item.target === rule.target,
   );

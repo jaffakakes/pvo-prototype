@@ -16,7 +16,7 @@ The Container has a lasting identity even when its running instance stops. Its c
 
 ## Where work runs: use the device first where it fits
 
-**Decision for review:** use the creator's device for editing, previews and lightweight checks; start a temporary cloud workshop only when development needs it. Keep independent publication checks, the finished viewer service and shared records under Restyle's control. There is no permanently assigned running VM per creator.
+**Reviewed decision:** use the creator's device for editing, previews and lightweight checks; start a temporary cloud workshop only when development needs it. Keep independent publication checks, the finished viewer service and shared records under Restyle's control. There is no permanently assigned running VM per creator.
 
 | Job | Where it runs | Everyday reason |
 | --- | --- | --- |

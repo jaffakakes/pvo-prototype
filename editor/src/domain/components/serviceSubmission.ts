@@ -19,7 +19,7 @@ export type ComponentTestScope = {
 };
 
 /** Select only the attached control, then freeze its validated input and private replay scope. */
-export function prepareComponentTest(
+function prepareComponentTestSelection(
   component: PvoComponent,
   response: ComponentResponse,
   scope: ComponentTestScope,
@@ -78,7 +78,6 @@ export function prepareComponentTest(
   return {
     connection: saved,
     target,
-    input: resolveServiceSubmissionInput(saved, response.formValues ?? {}),
     slot: JSON.stringify([
       "component-test",
       reference.ownerId,
@@ -92,4 +91,51 @@ export function prepareComponentTest(
       control,
     ]),
   };
+}
+
+export function prepareComponentTest(
+  component: PvoComponent,
+  response: ComponentResponse,
+  scope: ComponentTestScope,
+) {
+  const prepared = prepareComponentTestSelection(component, response, scope);
+  return prepared
+    ? {
+        ...prepared,
+        input: resolveServiceSubmissionInput(
+          prepared.connection,
+          response.formValues ?? {},
+        ),
+      }
+    : null;
+}
+
+/** Locate the same checked control before reading its saved input. */
+export function prepareComponentTestRecovery(
+  component: PvoComponent,
+  scope: ComponentTestScope,
+) {
+  if (!component.serviceConnection) return null;
+  const saved = parseComponentServiceConnection(component.serviceConnection);
+  const model = componentLanguageModel(component);
+  const rule = model.rules.find(
+    (item) =>
+      item.event === saved.connection.event &&
+      item.target === saved.connection.target,
+  );
+  if (!rule)
+    throw new Error(
+      "The connected control changed. Reconnect it before testing.",
+    );
+  const structure = model.structure;
+  let index = -1;
+  if (structure.type === "form") index = 0;
+  else if (structure.type === "card")
+    index = structure.buttons.findIndex((item) => item.id === rule.target);
+  else if (structure.type === "choice")
+    index = structure.options.findIndex((item) => item.id === rule.target);
+  const response: ComponentResponse = { index, outcome: rule.action };
+  const prepared = prepareComponentTestSelection(component, response, scope);
+  if (!prepared) throw new Error("The connected control is unavailable.");
+  return { ...prepared, response };
 }

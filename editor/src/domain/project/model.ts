@@ -59,6 +59,8 @@ export type Outcome = PlaybackOutcome | {
   onError: PlaybackOutcome | null;
 };
 export type ComponentResponse = {
+  /** Host-only transient recovery selection; never a connection or export permission. */
+  recoveryActionId?: string;
   index: number;
   outcome: Outcome;
   formValues?: Record<string, string | number | boolean>;
