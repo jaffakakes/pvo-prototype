@@ -88,6 +88,14 @@
   "packages/pvo-assistant/native/schema.js",
   "packages/pvo-assistant/results/index.d.ts",
   "packages/pvo-assistant/results/index.js",
+  "packages/pvo-assistant/services/agreement.js",
+  "packages/pvo-assistant/services/index.d.ts",
+  "packages/pvo-assistant/services/index.js",
+  "packages/pvo-assistant/services/json.js",
+  "packages/pvo-assistant/services/limits.js",
+  "packages/pvo-assistant/services/operation.js",
+  "packages/pvo-assistant/services/package.js",
+  "packages/pvo-assistant/services/values.js",
   "packages/pvo-assistant/tasks/content.js",
   "packages/pvo-assistant/tasks/index.d.ts",
   "packages/pvo-assistant/tasks/index.js",
@@ -217,5 +225,11 @@
   "tests/sdk/requests.test.mjs",
   "tests/sdk/runtime.test.mjs",
   "tests/server/local-render-jobs.test.mjs",
-  "tests/server/local-reply-repository.test.mjs"
+  "tests/server/local-reply-repository.test.mjs",
+  "tests/service-packages/agreement.test.mjs",
+  "tests/service-packages/fixtures.mjs",
+  "tests/service-packages/limits.test.mjs",
+  "tests/service-packages/package.test.mjs",
+  "tests/service-packages/types.fixture.ts",
+  "tests/service-packages/types.test.mjs"
 ]
