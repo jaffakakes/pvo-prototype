@@ -72,7 +72,12 @@ export function parseWorkspaceReceipt(value) {
         : ["revision", "digest"],
       "Workspace source reference",
     );
-    integer(value.result.revision, limits.operations, "Source revision", 1);
+    integer(
+      value.result.revision,
+      Number.MAX_SAFE_INTEGER,
+      "Source revision",
+      1,
+    );
     digest(value.result.digest, "Source digest");
     if (value.kind === "start")
       time(value.result.deadlineAt, "Workspace session deadline");

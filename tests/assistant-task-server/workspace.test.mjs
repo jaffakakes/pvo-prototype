@@ -280,7 +280,7 @@ test(
 );
 
 test(
-  "workspace operations share the task tool limit and do not reserve excess calls",
+  "workspace operations continue past 24 calls and exact replay is charged once",
   options,
   async () => {
     const fixture = await taskFixture({ workspaces: true });
@@ -294,17 +294,16 @@ test(
           await fixture.control({ action: "step", id: task.id, command }),
           200,
         );
-      expectStatus(
-        await operate(fixture, task, "save", {
-          id: "excess",
-          expectedRevision: 0,
-          files: files(),
-        }),
-        409,
+      const input = { id: "after-24", expectedRevision: 0, files: files() };
+      const result = await operate(fixture, task, "save", input);
+      expectStatus(result, 200);
+      assert.deepEqual(
+        (await operate(fixture, task, "save", input)).body,
+        result.body,
       );
-      assert.equal((await rows(fixture)).operations.length, 0);
+      assert.equal((await rows(fixture)).operations.length, 1);
       const fresh = await current(fixture, task);
-      assert.equal(fresh.usage.toolCalls, 24);
+      assert.equal(fresh.usage.toolCalls, 25);
       assert.equal(fresh.usage.reservedToolCalls, 0);
     } finally {
       await fixture.close();

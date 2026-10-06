@@ -51,6 +51,7 @@ export function parseTaskRecord(value) {
       "claim",
       "questions",
       "operations",
+      "archivedOperations",
       "result",
       "failure",
       "retries",
@@ -72,6 +73,11 @@ export function parseTaskRecord(value) {
   integer(value.revision, Number.MAX_SAFE_INTEGER, "Task revision");
   integer(value.generation, value.revision, "Execution generation");
   integer(value.retries, Number.MAX_SAFE_INTEGER, "Retry count");
+  integer(
+    value.archivedOperations,
+    Number.MAX_SAFE_INTEGER,
+    "Archived operation count",
+  );
   validateUsage(value.usage);
   for (const key of ["createdAt", "updatedAt"])
     time(value[key], "Task timestamp");
@@ -232,6 +238,7 @@ export function createTask(input, metadata) {
     claim: null,
     questions: [],
     operations: [],
+    archivedOperations: 0,
     result: null,
     failure: null,
     retries: 0,

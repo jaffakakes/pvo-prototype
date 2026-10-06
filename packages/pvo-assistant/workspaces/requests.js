@@ -19,7 +19,7 @@ export function parseWorkspaceSave(value) {
   id(value.id, "Workspace operation ID");
   integer(
     value.expectedRevision,
-    limits.operations,
+    Number.MAX_SAFE_INTEGER,
     "Expected source revision",
   );
   return {
@@ -38,7 +38,7 @@ export function parseWorkspaceRun(value, command = false) {
     "Workspace execution",
   );
   id(value.id, "Workspace operation ID");
-  integer(value.revision, limits.operations, "Source revision", 1);
+  integer(value.revision, Number.MAX_SAFE_INTEGER, "Source revision", 1);
   digest(value.digest, "Source digest");
   if (command) {
     object(value.command, ["kind", "paths"], "Workspace command");
@@ -91,7 +91,7 @@ export function parseWorkspaceLease(value) {
     value.id === `${value.resourceId}-${value.session}`,
     "Invalid workspace lease ID.",
   );
-  integer(value.sourceRevision, limits.operations, "Source revision", 1);
+  integer(value.sourceRevision, Number.MAX_SAFE_INTEGER, "Source revision", 1);
   for (const field of ["startedAt", "deadlineAt", "expiresAt"])
     time(value[field], `Lease ${field}`);
   requireTask(

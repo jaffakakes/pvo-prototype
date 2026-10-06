@@ -9,7 +9,6 @@ import { TASK_LIMITS } from "../tasks/index.js";
 import { parseServiceFiles } from "../services/index.js";
 
 export const WORKSPACE_LIMITS = Object.freeze({
-  operations: TASK_LIMITS.operations,
   reservationMs: 24 * 60 * 60_000,
   retentionMs: TASK_LIMITS.retentionMs,
   sessionMs: 120_000,
@@ -51,7 +50,7 @@ export function parseWorkspaceSnapshot(value) {
   object(value, ["revision", "digest", "files"], "Workspace source snapshot");
   integer(
     value.revision,
-    WORKSPACE_LIMITS.operations,
+    Number.MAX_SAFE_INTEGER,
     "Workspace source revision",
     1,
   );

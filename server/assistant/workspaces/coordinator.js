@@ -114,8 +114,6 @@ export class AssistantWorkspace extends DurableObject {
       if (prior.digest !== digest) fail("workspace_operation_conflict");
       return prior;
     }
-    if (this.journal.actionCount() >= limits.operations)
-      fail("workspace_operation_limit");
     return null;
   }
   async save(value, input, execution) {

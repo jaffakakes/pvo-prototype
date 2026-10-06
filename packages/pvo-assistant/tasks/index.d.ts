@@ -74,6 +74,7 @@ export type TaskRecord = {
   claim: null | { id: string; claimedAt: number; expiresAt: number };
   questions: TaskQuestion[];
   operations: TaskOperation[];
+  archivedOperations: number;
   result: TaskResult | null;
   failure: TaskFailure | null;
   retries: number;
@@ -144,7 +145,6 @@ export const TASK_LIMITS: Readonly<{
   artifactBytes: number;
   retentionMs: number;
   leaseMs: number;
-  toolCalls: number;
 }>;
 export const TASK_STATES: readonly TaskState[];
 export const TASK_FAILURES: Readonly<

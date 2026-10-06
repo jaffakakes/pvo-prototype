@@ -18,7 +18,7 @@ The server journals an action and its compute reservation before an external eff
 
 | Bound | Value |
 | --- | --- |
-| Operations, including saves | 64 in the current notebook; 1B.12 replaces this goal-ending bound with durable checkpointing |
+| Operations, including saves | Counted without a goal-wide ceiling; receipts remain in the owned SQL journal |
 | Computer sessions | Counted without a goal-wide ceiling; capacity admission still applies |
 | Session lifetime | At most 120 seconds, also capped by the task claim expiry |
 | Startup/restoration | 20 seconds |

@@ -55,11 +55,11 @@ Prepared results contain an artifact reference and the original project fingerpr
 
 Before an effect, a worker records an empty `planned` intent with a unique operation ID, step ID, input digest, and timestamps. A later receipt can become `unknown`, `completed`, `absent`, or `failed`. A lost response must become `unknown`; it must not be treated as confirmed absence.
 
-The same operation ID cannot change its input digest, step, or creation time. Settled receipts are immutable, exact repeats are harmless, and known resource references cannot be discarded. A new attempt requires a distinct operation ID. One unsettled effect blocks another fresh intent, a normal checkpoint, a question, or completion. History is bounded and never silently evicted to make room for more work.
+The same operation ID cannot change its input digest, step, or creation time. Settled receipts are immutable, exact repeats are harmless, and known resource references cannot be discarded. A new attempt requires a distinct operation ID. One unsettled effect blocks another fresh intent, a normal checkpoint, a question, or completion. The current record holds a bounded recent window. `archivedOperations` counts settled receipts removed by a checkpoint. The server must archive every removed receipt atomically before committing that smaller record; a failed archive write rolls back the task change. Unknown/planned receipts and unsettled usage remain current. Owned journals preserve exact outcomes and replay identities for the full unfinished goal lifetime.
 
 Stop and claim recovery convert still-planned receipts to `unknown`. A trusted coordinator can use `reconcile_operation` to update an existing receipt when the task is no longer running, including after Stop. It cannot create another operation or restart the task. The adapter must verify the actual provider outcome and resource ownership before supplying that update. Persist intended provider targets separately, keyed by the stable task/operation identity, before making the request; this generic reference contract does not contain provider credentials or arbitrary provider payloads.
 
-`reserve_usage` holds model/tool capacity before calls. `settle_usage` accounts for consumed capacity or returns an unused reservation. Model counts are accounting, not a goal-wide turn ceiling. The prototype tool allowance remains until checkpoint compaction in 1B.12. Normal checkpoints, questions, and completion require settled reservations. Failures, interruptions, and Stop preserve uncertain reservations. They must not automatically refund a call that may already have run. Account-wide money/capacity accounting, terminal reservation reconciliation, and resource cleanup are later adapter responsibilities; these counters are not a global spending cap.
+`reserve_usage` holds model/tool capacity before calls. `settle_usage` accounts for consumed capacity or returns an unused reservation. Model and tool counts are accounting, with no fixed goal-wide turn/call ceiling. Normal checkpoints, questions, and completion require settled reservations. Failures, interruptions, and Stop preserve uncertain reservations. They must not automatically refund a call that may already have run. Account-wide money/capacity accounting, terminal reservation reconciliation, and resource cleanup are later adapter responsibilities; these counters are not a global spending cap.
 
 ## Bounds and private data
 
@@ -72,12 +72,12 @@ Stop and claim recovery convert still-planned receipts to `unknown`. A trusted c
 | Aggregate input / entire task record | 128 KiB / 256 KiB of serialized JSON |
 | Questions / suggested choices per question | 16 / 6 |
 | Question / choice / answer | 2,000 / 200 / 4,000 UTF-8 bytes |
-| Operation receipts / resource references per receipt | 64 / 8 |
+| Current operation receipts / resource references per receipt | At most 64 / 8; settled receipts move to the separate immutable archive while the current window normally stays near 32 |
 | Artifact | Opaque ID, SHA-256 digest, positive size at most 1 MiB; contents stored separately |
 | Goal lifetime / finished-content retention | Unfinished goals do not expire; Ready or Stop sets `finishedAt`, then `expiresAt = finishedAt + 7 days` |
 | Execution lease / retries including recovery | At most 60 seconds per worker / accounted without a goal-wide ceiling |
 | Model-turn accounting | Nonnegative safe integers; no fixed per-task turn cutoff |
-| Used plus reserved tool calls | 24 (prototype resource control; goal continuation redesign pending) |
+| Used plus reserved tool calls | Nonnegative safe integers; no fixed per-task call cutoff |
 
 These are initial product bounds; 1A diagnostic limits do not set product policy. The record uses exact required fields and explicit `null` for absent optional data. It accepts plain JSON objects and dense arrays, rejects accessors and extra properties, preserves exact source strings, and returns errors without echoing input values or unknown field names.
 

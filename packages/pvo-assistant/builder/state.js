@@ -10,7 +10,6 @@ import {
   object,
   requireTask,
 } from "../tasks/validation.js";
-import { TASK_LIMITS } from "../tasks/index.js";
 import {
   parseServiceAgreement,
   serializeServiceAgreement,
@@ -110,7 +109,7 @@ export function parseBuilderState(value) {
     value.cursor === 0 || value.claimGeneration !== null,
     "Tool progress needs a claim.",
   );
-  list(value.feedback, TASK_LIMITS.toolCalls, "Tool feedback");
+  list(value.feedback, BUILDER_LIMITS.feedbackEntries, "Tool feedback");
   for (const item of value.feedback) {
     object(item, ["operationId", "kind", "result"], "Saved tool feedback");
     id(item.operationId, "Feedback operation ID");
@@ -121,10 +120,10 @@ export function parseBuilderState(value) {
     );
   }
   boundedJson(value.feedback, BUILDER_LIMITS.feedbackBytes, "Tool feedback");
-  integer(value.omittedFeedback, TASK_LIMITS.toolCalls, "Omitted feedback");
-  requireTask(
-    value.feedback.length + value.omittedFeedback <= TASK_LIMITS.toolCalls,
-    "Too many saved tool results.",
+  integer(
+    value.omittedFeedback,
+    Number.MAX_SAFE_INTEGER,
+    "Archived feedback count",
   );
   if (value.reviewFeedback !== null)
     parseBuilderReviewFeedback(value.reviewFeedback, value.agreement);
@@ -216,7 +215,7 @@ export function recordBuilderTool(value, position, result, halt = false) {
   while (
     new TextEncoder().encode(JSON.stringify(feedback)).length >
       BUILDER_LIMITS.feedbackBytes ||
-    feedback.length > TASK_LIMITS.toolCalls
+    feedback.length > BUILDER_LIMITS.feedbackEntries
   ) {
     requireTask(
       feedback.length > 1,

@@ -1,4 +1,3 @@
-import { TASK_LIMITS } from "../../../packages/pvo-assistant/tasks/index.js";
 import { taskBuilderTools } from "./taskToolsRegistry.js";
 import { BUILDER_RESEARCH_KINDS } from "../../../packages/pvo-assistant/builder/index.js";
 import {
@@ -97,11 +96,6 @@ export async function runBuilderBatch(coordinator, claimed) {
   try {
     for (let position; (position = coordinator.builders.next(claimed.id));) {
       if (!coordinator.builders.current(claimed, coordinator.now())) return;
-      const current = coordinator.builders.task(claimed.id);
-      if (current.usage.toolCalls >= TASK_LIMITS.toolCalls) {
-        await fail(coordinator, claimed, "budget_exceeded");
-        return;
-      }
       const result = await tools.execute(position.tool, position.operationId);
       const saved = await coordinator.transaction(() =>
         coordinator.builders.feedback(

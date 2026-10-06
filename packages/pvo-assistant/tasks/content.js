@@ -145,7 +145,7 @@ export function validateUsage(value) {
     "Task usage",
   );
   integer(value.modelTurns, Number.MAX_SAFE_INTEGER, "Used model turns");
-  integer(value.toolCalls, limits.toolCalls, "Used tool calls");
+  integer(value.toolCalls, Number.MAX_SAFE_INTEGER, "Used tool calls");
   integer(
     value.reservedModelTurns,
     Number.MAX_SAFE_INTEGER - value.modelTurns,
@@ -153,7 +153,7 @@ export function validateUsage(value) {
   );
   integer(
     value.reservedToolCalls,
-    limits.toolCalls - value.toolCalls,
+    Number.MAX_SAFE_INTEGER - value.toolCalls,
     "Reserved tool calls",
   );
 }
