@@ -1,5 +1,3 @@
-import { boundedText } from "./repairFeedback.js";
-
 /** Private failed-proposal evidence, committed with the inference receipt and repair transition. */
 export class TaskRepairs {
   constructor(sql) {
@@ -26,14 +24,13 @@ export class TaskRepairs {
   context(task) {
     const record = this.current(task.id);
     if (!record || record.stepId !== task.stepId) return null;
-    const { text, truncated } = boundedText(record.proposal.text, 4096);
     return {
       sequence: record.sequence,
       stepId: record.stepId,
       check: record.check,
       message: record.message,
       repetitions: record.repetitions,
-      proposal: { text, truncated: truncated || record.proposal.truncated },
+      proposal: structuredClone(record.proposal),
       historyCollection: "repairs",
     };
   }

@@ -126,12 +126,29 @@ Begin with the already tested US$2.75 model admission allowance plus US$2 infras
 
 Historical spend evidence remains above: four infrastructure allowances of US$2 each, five unknown model calls retaining US$1.375, and US$0.635703 of known token usage. These are estimates/reservations, not invoices. Removing the overall ceiling does not remove metering or cleanup.
 
+## Active completion run — dinner delivery passed
+
+Run `06ef187e5cb8af49267a5f0f` began **22:38:12.162 UTC** and passed startup. It uses Worker/Container `restyle-workspace-proof-06ef187e5cb8af49267a5f0f`; journal `workspace-ZmaGwt/report.json`. Cleanup completed at **2026-10-06T22:59:16.765Z**, with all cloud resources absent and local deployment secrets removed. Its six namespaces are `bd115243de5c4c7891d15013452b4f6c`, `f7aded9ac02a4f73ae6624cfda035deb`, `8d045892d27b47c78bd078b4a688e486`, `337706706ee641de8c6222660d654d89`, `88c6253b4ee3464db030a46bd9010a45`, `6db6ecf0ab124f7788712c08bae862ab`; the first is also the Container application ID.
+
+**Verified at 22:48 UTC: 1F.04 and 1F.06.** Dinner task `o2XfoIDMWjjT9hObGCuhfQ` produced a connected form after nine generated Node tests and independent frozen-agreement validation passed. The full actual editor/Try/export/viewer/removal journey passed: lost activation response plus authoring restart; identical prepared-file retry; failed publication upload then exact-byte retry; separate cookie-free downloaded and published viewers with creator closed/workshops absent; one accepted and one full response for concurrent last-seat requests; exact action replay and a new same-name duplicate; retained hosted service, records and management/Undo explanation after deleting the local component. Publication storage remains the declared fixture; hosted execution and records are real cloud resources. Camera subsequently hit a 45-second model timeout before completing its agreement; the driver ended this run. 1F.01/05 remain unchecked. The next run uses only camera, preserving this dinner evidence.
+
+The builder repeated passing tests until it reached the default twelve daily workshop sessions. Commit `79c949b` presents the last executed decision followed by that batch's actual results within the existing prompt bound. After this same-resource update and Resume, it advanced through independent review and hosting. Under the explicit completion authorization, diagnostic daily workshop admission is now 4,096 (existing storage bound); two concurrent workshops, leases, tombstones, original expiry and metering remain, and production default twelve/day is unchanged. A separate private `completion-policy-change.json` records the amendment without racing the running driver's journal. Thirteen focused regressions and all 1,481 full tests pass. The old intentionally lost-hosting-reply flag is not recorded; do not claim that particular injection ran. Actual interrupted activation/export and authoring restart are recorded.
+
+The completed fifth run recorded **53 model calls**, 52 known HTTP 200 responses estimated at **US$0.457361**, one unknown response reserved at US$0.275, and 488 admitted diagnostic HTTP requests. Runner recovery now explicitly resumes retryable inference failures while retaining task identity; Stop remains terminal. Twelve focused regressions pass, including actual local account routes/SQLite Stop and uncertain Resume recovery. The camera-only runner also restarts authoring after saved source, then requires the same task to finish. These runner checks are not yet live-camera acceptance evidence.
+
+
+### 7 October — newly deployed address propagation
+
+Camera-only run `790268ad4e8badd432336362` (`workspace-i92vUH/report.json`) ran **2026-10-06T23:07:06.877Z–23:07:30.989Z**. It ended before creating a task because the new address did not return the required application identity/readiness; subsequent diagnostic cleanup request returned unmarked HTTP 404. No model/workshop/task was started by the runner. Usage was unavailable. Worker, one application and all six namespaces were removed with verified absence; secrets removed. This is a startup diagnostic failure, not failed camera behavior.
+
+Readiness now waits for an unmarked platform 404 under the same run deadline. Wrong application identity, authentication errors and marked application errors still fail. Five transport regressions pass in `/tmp/restyle-1f-route-propagation-tests.log`. Continue with a fresh camera-only journal under the user's existing completion authorization; do not revive a consumed resource.
+
 ## Run and recover
 
 Invocation from the active checkout, under the recorded completion authorization:
 
 ```sh
-node scripts/checks/cloud-agent-first-release/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-approved-1f
+node scripts/checks/cloud-agent-first-release/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-approved-1f --scenario=equipment
 ```
 
 Use privately supplied `RUNPOD_API_KEY` or a nonempty `apikey` in the Runpod CLI configuration. The script never prints the key. A file existing is not sufficient: the first approved launch found an empty key and stopped before any resource creation or charge. On this Mac, the user can enter it privately with:
@@ -183,9 +200,9 @@ These are evidence requirements, not a second set of completion checkboxes. Upda
 | 1F.01 | Both ordinary requests generate code, pass independent cases and return usable connected components with the real configured model/provider |
 | 1F.02 | Necessary question/answer, Stop/resume, an invalid program rejected by actual tests and a model repair driven by that feedback; identify deliberate fault injection if used |
 | 1F.03 | Close creator during work, restart authoring worker, recover saved progress and external effects without a duplicate deployment |
-| 1F.04 | Workshop absent, creator closed, separate viewer uses downloaded and published component against the hosted service |
+| 1F.04 | **Passed for generated dinner:** workshops absent, creator closed, separate cookie-free downloaded/published viewers used the real hosted service |
 | 1F.05 | Exact retry and distinct simultaneous last-seat/overlap submissions; wrong owner, test/live separation, failed hosting and interrupted export |
-| 1F.06 | Remove the local component while the owned service remains manageable; Undo explanation accurately distinguishes local edits from saved viewer records |
+| 1F.06 | **Passed for generated dinner:** local removal retained the manageable live service and records; actual UI showed the correct Undo explanation |
 | 1F.07 | Actual model tokens/unknown calls, workshop sessions, service calls, configured limits, dated cost estimate and verified deletion of every diagnostic resource |
 | 1F.08 | Relevant source/types/browser/provider checks, actual combined beta delivery and authorized normal release promotion; preserve the user's exclusion of GitHub Actions polling |
 

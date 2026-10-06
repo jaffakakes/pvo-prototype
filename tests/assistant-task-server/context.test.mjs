@@ -368,3 +368,32 @@ test("completed builder decisions are followed by their actual batch results ins
     2,
   );
 });
+
+test("repair projection includes the complete attempt when it fits and marks a smaller Unicode-safe preview only when necessary", () => {
+  const proposal = JSON.stringify({
+    kind: "agreement",
+    description: "😀".repeat(3000),
+  });
+  const input = {
+    input: { context: { components: [] }, examples: [] },
+    evidence: {
+      repair: {
+        check: "builder_response",
+        message: "Missing description",
+        proposal: { text: proposal, truncated: false },
+      },
+    },
+  };
+  const complete = authoringMessages("Trusted instructions", input, 64000);
+  assert.equal(complete[2].content, proposal);
+  assert.equal(JSON.parse(complete[3].content).proposalComplete, true);
+  const smaller = authoringMessages("Trusted instructions", input, 8192);
+  assert.ok(Buffer.byteLength(JSON.stringify(smaller)) <= 8192);
+  const preview = JSON.parse(smaller[1].content).evidence.repair.proposal;
+  assert.equal(preview.truncated, true);
+  assert.equal(preview.text.includes("\ufffd"), false);
+  assert.equal(smaller.length, 3);
+  assert.equal(JSON.parse(smaller[2].content).proposalComplete, false);
+  assert.equal(input.evidence.repair.proposal.text, proposal);
+  assert.equal(input.evidence.repair.proposal.truncated, false);
+});

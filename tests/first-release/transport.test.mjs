@@ -183,3 +183,51 @@ test("recovery respects permanent errors, cancellation and the original deadline
   );
   await assert.rejects(cancelled("/dinner/status"), { name: "AbortError" });
 });
+
+test("new route propagation retries only unmarked 404s and preserves identity and deadline checks", async () => {
+  let now = 0,
+    reads = 0;
+  const options = {
+    expiresAt: 5000,
+    now: () => now,
+    wait: async (ms) => {
+      now += ms;
+    },
+  };
+  await acceptanceReady(
+    async () =>
+      ++reads < 3
+        ? { status: 404, marker: null, data: null }
+        : { status: 200, marker: "owned", data: { ready: true } },
+    "owned",
+    options,
+  );
+  assert.equal(reads, 3);
+  assert.equal(now, 4000);
+  for (const response of [
+    { status: 404, marker: "other" },
+    { status: 401, marker: null },
+    { status: 200, marker: "other", data: { ready: true } },
+  ]) {
+    let attempts = 0;
+    await assert.rejects(
+      acceptanceReady(
+        async () => {
+          attempts++;
+          return response;
+        },
+        "owned",
+        options,
+      ),
+    );
+    assert.equal(attempts, 1);
+  }
+  await assert.rejects(
+    acceptanceReady(
+      async () => ({ status: 404, marker: null }),
+      "owned",
+      options,
+    ),
+  );
+  assert.equal(now, 5000);
+});

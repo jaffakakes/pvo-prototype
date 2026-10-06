@@ -12,6 +12,7 @@ import {
 } from "../../scripts/checks/cloud-agent-first-release/meter.js";
 import { scenarioInput } from "../../scripts/checks/cloud-agent-first-release/scenarios.js";
 import { parseTaskInput } from "../../packages/pvo-assistant/tasks/index.js";
+import { checkCancellation } from "../../scripts/checks/cloud-agent-first-release/cancellation.mjs";
 
 test("acceptance starts from ordinary requests with no injected program or decision", () => {
   for (const subject of ["dinner", "equipment"]) {
@@ -254,6 +255,17 @@ test("actual diagnostic stores ordinary tasks, rejects unowned access and retain
         await journey.close();
       }
     }
+    const cancellation = [];
+    await checkCancellation(
+      async (...args) => {
+        const response = await call(...args);
+        return { status: response.status, data: await response.json() };
+      },
+      async (check, detail) => cancellation.push({ check, ...detail }),
+      { expiresAt },
+    );
+    assert.equal(cancellation[0].check, "stopped_task_stays_stopped");
+    assert.notEqual(cancellation[0].taskId, first.task.id);
     const cleaned = await (await call("/", "DELETE")).json();
     assert.equal(cleaned.stopped.length, 2);
     assert.equal(cleaned.usage.models.length, max);
