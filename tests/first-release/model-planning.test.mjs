@@ -192,3 +192,37 @@ test("an accepted agreement stays authoritative while stale repair history is pr
     { code: "invalid_result" },
   );
 });
+
+test("nested agreement field failures identify the missing contract field and the corrected proposal is accepted", async () => {
+  const agreement = dinnerAgreement();
+  const field = agreement.operations[0].input.fields[0];
+  const description = field.description;
+  delete field.description;
+  field.privateExtra = "private-value-must-not-enter-diagnostic";
+  const proposed = { kind: "agreement", agreement };
+  const run = () =>
+    planSavedBuild(
+      task(),
+      { agreement: null },
+      [],
+      {},
+      signal(),
+      null,
+      modelsFor(proposed),
+    );
+  await assert.rejects(run(), (error) => {
+    assert.match(
+      error.feedback.message,
+      /Required fields: name, description, schema/,
+    );
+    assert.match(
+      error.feedback.message,
+      /Missing required fields: description/,
+    );
+    assert.doesNotMatch(error.feedback.message, /privateExtra|private-value/);
+    return true;
+  });
+  delete field.privateExtra;
+  field.description = description;
+  assert.deepEqual(await run(), proposed);
+});
