@@ -1,19 +1,10 @@
 import { transitionTask } from "../../../packages/pvo-assistant/tasks/index.js";
 
-const guard = (task, now, claim = null) => ({
-  ownerId: task.ownerId,
-  expectedRevision: task.revision,
-  now,
-  claim,
-});
-const claimOf = (task) =>
-  task.claim ? { id: task.claim.id, generation: task.generation } : null;
-const activeClaim = (task, claimed, now) =>
-  task?.state === "running" &&
-  task.claim.id === claimed.claim.id &&
-  task.generation === claimed.generation &&
-  now < task.claim.expiresAt &&
-  now < task.deadlineAt;
+import {
+  transitionGuard as guard,
+  taskClaim as claimOf,
+  hasCurrentClaim as activeClaim,
+} from "./executionClaim.js";
 
 /** An inference journal is separate from the model's output and survives lost replies. */
 export class TaskAttempts {
@@ -22,11 +13,31 @@ export class TaskAttempts {
     this.tasks = tasks;
     sql.exec(`CREATE TABLE IF NOT EXISTS task_attempts (id TEXT PRIMARY KEY, task_id TEXT NOT NULL,
       body TEXT NOT NULL)`);
+    sql.exec(
+      "CREATE INDEX IF NOT EXISTS task_attempts_unfinished ON task_attempts(task_id) WHERE json_extract(body,'$.finished')=0",
+    );
+    sql.exec(
+      "CREATE INDEX IF NOT EXISTS task_attempts_budget ON task_attempts(json_extract(body,'$.budgetRetryAt')) WHERE json_extract(body,'$.finished')=1 AND json_extract(body,'$.budgetSettled')=0",
+    );
   }
 
   entries() {
     return this.sql
       .exec("SELECT body FROM task_attempts")
+      .toArray()
+      .map((row) => JSON.parse(row.body));
+  }
+  get(id) {
+    const row = this.sql
+      .exec("SELECT body FROM task_attempts WHERE id=?", id)
+      .toArray()[0];
+    return row ? JSON.parse(row.body) : null;
+  }
+  unfinished() {
+    return this.sql
+      .exec(
+        "SELECT body FROM task_attempts WHERE json_extract(body,'$.finished')=0",
+      )
       .toArray()
       .map((row) => JSON.parse(row.body));
   }
@@ -96,8 +107,8 @@ export class TaskAttempts {
     return true;
   }
 
-  finish(claimed, attempt, command, code, now) {
-    const saved = this.entries().find((item) => item.id === attempt.id);
+  finish(claimed, attempt, command, code, now, wait = null, repair = null) {
+    const saved = this.get(attempt.id);
     if (!saved || saved.finished) return;
     let task = this.task(attempt.taskId);
     if (!task) throw new Error("Inference journal lost its task");
@@ -135,13 +146,18 @@ export class TaskAttempts {
       toolCalls: 0,
       consumed: attempt.dispatched,
     });
+    let accepted = false;
+    let repaired = false;
     if (current) {
       try {
-        apply(
-          code
-            ? { kind: "fail", failure: { code, stepId: task.stepId } }
-            : command,
-        );
+        let next = command;
+        if (code)
+          next = { kind: "fail", failure: { code, stepId: task.stepId } };
+        if (code === "invalid_result" && repair) next = repair;
+        if (wait) next = { kind: "wait", ...wait };
+        apply(next);
+        accepted = !code && !wait;
+        repaired = code === "invalid_result" && repair !== null && !wait;
       } catch {
         apply({
           kind: "fail",
@@ -151,10 +167,11 @@ export class TaskAttempts {
     }
     this.tasks.save(task, revision);
     this.write({ ...attempt, finished: true, budgetRetryAt: now });
+    return { accepted, repaired };
   }
 
   recover(now) {
-    for (const attempt of this.entries().filter((item) => !item.finished)) {
+    for (const attempt of this.unfinished()) {
       const task = this.task(attempt.taskId);
       if (!task) throw new Error("Inference journal lost its retained task");
       if (task.state === "running" && now < task.claim.expiresAt) continue;
@@ -175,20 +192,23 @@ export class TaskAttempts {
   }
 
   pendingBudget(now) {
-    return this.entries().filter(
-      (item) =>
-        item.finished &&
-        !item.budgetSettled &&
-        item.budgetRetryAt !== null &&
-        item.budgetRetryAt <= now,
-    );
+    return this.sql
+      .exec(
+        `SELECT body FROM task_attempts
+      WHERE json_extract(body,'$.finished')=1 AND json_extract(body,'$.budgetSettled')=0
+      AND json_extract(body,'$.budgetRetryAt')<=? ORDER BY json_extract(body,'$.budgetRetryAt'),id LIMIT 4`,
+        now,
+      )
+      .toArray()
+      .map((row) => JSON.parse(row.body));
   }
+
   budgetDone(attempt) {
-    const current = this.entries().find((item) => item.id === attempt.id);
+    const current = this.get(attempt.id);
     if (current) this.write({ ...current, budgetSettled: true });
   }
   budgetFailed(attempt, now) {
-    const current = this.entries().find((item) => item.id === attempt.id);
+    const current = this.get(attempt.id);
     if (!current || current.budgetSettled) return;
     attempt = current;
     const retries = attempt.budgetRetries + 1;
@@ -205,22 +225,17 @@ export class TaskAttempts {
     });
   }
   nextBudgetWakeup() {
-    const times = this.entries()
-      .filter(
-        (item) =>
-          item.finished && !item.budgetSettled && item.budgetRetryAt !== null,
+    return this.sql
+      .exec(
+        `SELECT MIN(json_extract(body,'$.budgetRetryAt')) AS next FROM task_attempts
+      WHERE json_extract(body,'$.finished')=1 AND json_extract(body,'$.budgetSettled')=0`,
       )
-      .map((item) => item.budgetRetryAt);
-    return times.length ? Math.min(...times) : null;
+      .one().next;
   }
   prune() {
-    // Private task content may expire, but budget bookkeeping must finish before its journal goes.
-    for (const attempt of this.entries())
-      if (
-        attempt.finished &&
-        attempt.budgetSettled &&
-        !this.task(attempt.taskId)
-      )
-        this.sql.exec("DELETE FROM task_attempts WHERE id = ?", attempt.id);
+    // Keep unsettled billing even after private task content expires.
+    this.sql.exec(`DELETE FROM task_attempts
+      WHERE json_extract(body,'$.finished')=1 AND json_extract(body,'$.budgetSettled')=1
+      AND NOT EXISTS (SELECT 1 FROM tasks WHERE tasks.id=task_attempts.task_id AND record IS NOT NULL)`);
   }
 }
