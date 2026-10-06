@@ -19,9 +19,9 @@ The temporary workshop writes and tests the code. The separately hosted service 
 - Current finished services execute in **Dynamic Workers**. The workshop uses a native Cloudflare Container. Hosting finished services in Node.js Containers remains **1G**, after this gate.
 - [Local checks](../../tests/first-release/acceptance.test.mjs) use actual workerd/SQLite for task creation, replay, owner rejection, persistence and the spending ledger. They explicitly deny outbound network and do not count as live natural-language acceptance.
 
-## Proposed paid batch — awaiting new approval
+## Approved paid batch — 6 October 2026
 
-The earlier US$15 recovery and US$1 workshop proofs are finished and cleaned up. They do not authorize this new batch. Request a fresh **maximum US$15**, covering **one disposable deployment**, both real-model requests and their verification, with all its resources removed afterward. This is a ceiling, not a purchase price or an expected charge. Do not run the command below until approved.
+The earlier US$15 recovery and US$1 workshop proofs are finished and cleaned up. They do not authorize this new batch. The user approved a fresh **maximum US$15** on 6 October by replying “yes i approve”, covering **one disposable deployment**, both real-model requests and their verification, with all its resources removed afterward. This is a ceiling, not a purchase price or an expected charge. This one batch is approved. Record its run and cleanup; do not silently start another deployment.
 
 | Item | Scope / bound |
 | --- | --- |
@@ -51,7 +51,13 @@ From the active checkout, after approval:
 node scripts/checks/cloud-agent-first-release/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-approved-15-usd
 ```
 
-Use privately supplied `RUNPOD_API_KEY` or the existing Runpod CLI configuration. The script never prints the key. Cloudflare uses existing Wrangler authentication. Read-only access was verified; a live model call has not been used as an authentication check.
+Use privately supplied `RUNPOD_API_KEY` or a nonempty `apikey` in the Runpod CLI configuration. The script never prints the key. A file existing is not sufficient: the first approved launch found an empty key and stopped before any resource creation or charge. On this Mac, the user can enter it privately with:
+
+```sh
+node scripts/checks/cloud-agent-first-release/configure-key.mjs
+```
+
+This opens a hidden-entry dialog and saves the CLI setting with owner-only permissions. Never paste a key into chat or commit it. The user approved this secure entry step on 6 October. Cloudflare uses existing Wrangler authentication. Read-only access was verified; a live model call has not been used as an authentication check.
 
 The private `.wrangler/cloud-agent-infrastructure/workspace-*/report.json` is written before resource creation. It includes names, limits, task revisions, generated source/agreement/test results, service identities, usage and cleanup. Secret files are separate and are deleted after verified cleanup. If interrupted, inspect that journal before any new run; do not create a replacement deployment while cleanup is unresolved. Recover from the same checkout with:
 

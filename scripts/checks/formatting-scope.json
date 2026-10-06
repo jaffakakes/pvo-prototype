@@ -480,5 +480,8 @@
   "scripts/checks/cloud-agent-first-release/tasks.js",
   "tests/first-release/acceptance.test.mjs",
   "scripts/checks/cloud-agent-first-release/cleanup.mjs",
-  "tests/first-release/resources.test.mjs"
+  "tests/first-release/resources.test.mjs",
+  "scripts/checks/cloud-agent-first-release/credentials.mjs",
+  "scripts/checks/cloud-agent-first-release/configure-key.mjs",
+  "tests/first-release/credentials.test.mjs"
 ]
