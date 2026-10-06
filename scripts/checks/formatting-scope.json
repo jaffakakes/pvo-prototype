@@ -500,5 +500,7 @@
   "tests/first-release/faults.test.mjs",
   "tests/first-release/follow-up.test.mjs",
   "scripts/checks/cloud-agent-first-release/budget.js",
-  "tests/first-release/spending-policy.test.mjs"
+  "tests/first-release/spending-policy.test.mjs",
+  "scripts/checks/cloud-agent-first-release/transport.mjs",
+  "tests/first-release/transport.test.mjs"
 ]

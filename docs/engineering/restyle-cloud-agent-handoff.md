@@ -2,15 +2,15 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
-## Latest scope: 1F corrected live test in progress
+## Latest scope: 1F driver recovery after verified cleanup
 
-**All 1E is verified; 1F remains incomplete. 47/134 tasks complete; 87 remain.** Active checkout: `feature/restyle-first-release`, `/Users/christinasmacbook/.codex/worktrees/restyle-first-release/pvo-prototype`, [draft #105](https://github.com/jaffakakes/pvo-prototype/pull/105). Read the latest [progress checkpoint](restyle-cloud-agent-progress.md) and [acceptance evidence](restyle-first-release-acceptance.md) before doing anything paid.
+**All 1E is verified; 1F remains incomplete. 47/134 tasks complete; 87 remain.** Active checkout: `feature/restyle-first-release`, `/Users/christinasmacbook/.codex/worktrees/restyle-first-release/pvo-prototype`, [draft #105](https://github.com/jaffakakes/pvo-prototype/pull/105). Read [current progress](restyle-cloud-agent-progress.md) and [acceptance evidence](restyle-first-release-acceptance.md).
 
-The one corrected US$9.50 run is active: Worker/Container `restyle-workspace-proof-351ca14c55ee303131312f13`, private journal `.wrangler/cloud-agent-infrastructure/workspace-jW2ZkA/report.json`, start **6 October 21:21:50 UTC**, original expiry **22:51:50 UTC**. Do not launch another deployment or restart its driver. Vite 5318 is active. The dinner task has its accepted agreement and is still generating code. It exposed missing validation detail and unclear stage guidance; both are repaired locally and being updated on the same Worker. No live generated component has passed yet.
+All three paid diagnostic deployments are deleted with verified cleanup. The latest (`351ca14c55ee303131312f13`) generated and repaired dinner code, passed four generated tests and independent validation, and recovered hosting. The form was still being repaired when a 503 on an answer made the driver clean up. No finished component/viewer acceptance or equipment run is claimed. Private evidence is preserved in `workspace-jW2ZkA/report.json`; never restart that consumed journal.
 
-The user separately approved **“Use the approved dollar budget”** after the saved task reached the 20-call daily allowance. The isolated diagnostic now preserves the same dollar ceiling and expiry, settles known token usage, keeps full reservations for unknown outcomes and retains the twelve-per-minute limit. Production daily capacity is unchanged. The same task resumed without resetting its counts. The two earlier deployments remain deleted with preserved receipts. No further key entry is needed.
+Current repairs improve model feedback, show exact workspace tool contracts, and present rejected attempts followed by validator feedback. The user approved using the dollar budget for the isolated diagnostic rather than the default daily call cap; production default capacity remains unchanged. The next driver safely retries reads and exact idempotent answers. Its replacement is prepared for **US$6.75**, keeping the original US$15 ceiling, and **the user approved this replacement** by answering “Approve remaining US$6.75”. See the linked plan before doing anything paid. The Runpod key is privately configured; no new key-entry step is needed.
 
-The served beta is **`restyle-editor-shell-057d697c83aa2d77`** from combined **`14d164f`**. The current live-test repairs still need the combined build and guarded beta delivery. Production promotion is separate; no GitHub Actions polling. Current product hosting uses Dynamic Workers; Node.js Containers remains 1G.
+Latest delivered beta: **`restyle-editor-shell-c51c48f1fe339cd7`**. Later attachment guidance still requires final delivery. Vite 5318 remains active for local tests. No GitHub Actions polling, remote merge or production claim. Complete 1F before starting 1G Node.js Containers.
 
 ## Preserved planning decision: consolidated Containers
 

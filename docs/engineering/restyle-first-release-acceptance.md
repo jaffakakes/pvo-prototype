@@ -94,12 +94,28 @@ Prepared scope: **one further disposable deployment, up to US$9.50**, consisting
 
 Across both finished runs and model diagnosis, five HTTP-500 calls retain their full **US$1.375** unknown-usage reservation. All eight successful calls reported usage, estimated **US$0.007989** in total. Retaining both earlier US$2 infrastructure allowances and adding this US$9.50 proposal gives **US$14.882989**, within the original US$15 total. This uses returned usage to settle known successful calls; unknown calls remain fully reserved. It remains an estimate, not an invoice or an account-wide billing cap.
 
+## Corrected run outcome — 6 October, cleanup verified
+
+The US$9.50 corrected run ran from **21:21:50.444 to 21:59:54.744 UTC**. Worker/Container `restyle-workspace-proof-351ca14c55ee303131312f13` and all six namespaces were deleted, absence verified, and the deployment secret file removed. Private journal `.wrangler/cloud-agent-infrastructure/workspace-jW2ZkA/report.json`; log `/tmp/restyle-1f-corrected-live.log`. Application ID `6c17043fd74f4afd80692be2a2aa1104`; namespaces `6c17043fd74f4afd80692be2a2aa1104`, `4fc1ad784c584a77ad61425ffc5a0ca6`, `b0d3bdcf615f4215b2b120743505e924`, `3c95983c14d94f1a9087dd27e007ee74`, `6fb5a6360961470a8e3e01c854fc3d64`, `264b2238fcf84393a48bda60aff5d6f1`.
+
+**Partial successes:** real editor task creation and browser closure; saved dinner clarification; actual model-generated JavaScript and Node tests; injected startup exception observed with exit 1; model repaired its source; **4/4 generated tests passed**; independent frozen-agreement checks passed; failed initial hosting reconciled absent, subsequent hosted release recovered. The task reached component attachment. Its form proposal failed compilation because it used JavaScript object syntax and concatenation inside a PVO JSON request. The component did not become Ready; equipment, viewer, delivery and local-removal checks did not run. All 1F tasks remain unchecked.
+
+The test ended on **HTTP 503 while submitting the reviewed attachment-repair answer after a same-Worker update**. The driver asserted 200 and immediately cleaned up. The original server exception was not retained, so a temporary update error is a hypothesis, not a proved cause. The repaired diagnostic transport retries only reads and exact idempotent intents, preserving answer/creation IDs and input. Restart, Resume, unrecognized writes and permanent rejections are not blindly replayed. Retry logs retain path/status/attempt without secrets; cancellation and the original expiry still apply. Three new tests cover lost committed answers, failed reads, immutable request replay, effect boundaries and expiry. A full compiler-checked request example was also added to the attachment planner; **12 attachment/planner tests passed**.
+
+**Usage:** **76 HTTP-200 model calls**, all with returned usage; **571,799 input / 21,117 output tokens**, estimated **US$0.627714**. No unknown model responses in this run. **535** admitted diagnostic HTTP requests. This is a token estimate, not an invoice. Existing workshop session/time and service limits remained enforced. The private snapshots preserve source, command receipts and validation reports; deleted resources must not be recreated merely to replace this evidence.
+
+## Next recovery run — approved
+
+One new disposable deployment, **up to US$6.75**: US$4.75 for metered model usage and US$2 infrastructure, two requested demonstrations, the same six namespaces/one Container, 90-minute deadline and verified deletion. Known usage settles actual reported token estimates; unknown outcomes keep US$0.275 reserved. The previously approved diagnostic capacity policy is explicit from startup. The driver now recovers temporary read and idempotent-answer failures instead of deleting the test immediately.
+
+Across all completed runs, retain **US$6** for the three infrastructure allowances, **US$1.375** for five earlier unknown model calls, and **US$0.635703** for all known model usage. Adding this US$6.75 proposal gives a conservative **US$14.760703** total, inside the original US$15. The user approved this replacement by answering “Approve remaining US$6.75”. This authorizes one replacement deployment; do not ask again for this same run. No additional key entry is needed.
+
 ## Run and recover
 
-Prepared invocation, from the active checkout; **for the now-approved corrected run**:
+Prepared invocation, from the active checkout; **for the approved replacement above**:
 
 ```sh
-node scripts/checks/cloud-agent-first-release/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-approved-9-50-usd
+node scripts/checks/cloud-agent-first-release/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-approved-6-75-usd
 ```
 
 Use privately supplied `RUNPOD_API_KEY` or a nonempty `apikey` in the Runpod CLI configuration. The script never prints the key. A file existing is not sufficient: the first approved launch found an empty key and stopped before any resource creation or charge. On this Mac, the user can enter it privately with:
