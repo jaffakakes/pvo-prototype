@@ -3,7 +3,7 @@ import { layerOrder } from "../../domain/layers/order";
 import type { ProjectSnapshot } from "../../domain/project/model";
 import { clamp } from "../../domain/project/numbers";
 import { cloneScenes } from "../../domain/project/snapshot";
-import { componentCount, normalizeSceneTree } from "../../domain/scenes/rules";
+import { normalizeSceneTree } from "../../domain/scenes/rules";
 import type { CaptureState } from "../types";
 
 export const projectSnapshot = (state: CaptureState): ProjectSnapshot => ({
@@ -30,6 +30,6 @@ export function restore(state: CaptureState, project: ProjectSnapshot): Partial<
     screen: state.screen, playheadPick: pickValid ? pick : null,
     ...(switched ? { sheet: null, tryMode: null } : {}),
     recordingInto: state.screen === "camera" && active.id !== "main" ? active.id : null,
-    exportFormat: componentCount(scenes) ? componentCount(state.scenes) ? state.exportFormat : "pvo" : "video",
+    exportFormat: "pvo",
   };
 }

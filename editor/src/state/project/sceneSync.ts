@@ -1,5 +1,5 @@
 import { layerOrder } from "../../domain/layers/order";
-import { componentCount, normalizeSceneTree } from "../../domain/scenes/rules";
+import { normalizeSceneTree } from "../../domain/scenes/rules";
 import type { CaptureState } from "../types";
 
 const has = (values: Partial<CaptureState>, key: keyof CaptureState) => Object.prototype.hasOwnProperty.call(values, key);
@@ -36,9 +36,7 @@ export function applyValues(state: CaptureState, values: Partial<CaptureState>):
     recordingInto = currentSceneId;
   if (!has(values, "recordingInto") && values.screen === "editor")
     recordingInto = null;
-  const count = componentCount(scenes);
-  const exportFormat = has(values, "exportFormat") ? values.exportFormat! :
-    count === 0 ? "video" : componentCount(state.scenes) === 0 ? "pvo" : state.exportFormat;
+  const exportFormat = "pvo";
   const selected = values.sel ?? (switched ? -1 : state.sel);
   let selComp = has(values, "selComp") ? values.selComp! : switched ? null : state.selComp;
   let selText = has(values, "selText") ? values.selText! : switched ? null : state.selText;

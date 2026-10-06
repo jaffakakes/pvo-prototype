@@ -31,7 +31,7 @@ const sheet = page.locator("dialog[data-state]");
 const notice = page.locator('[data-notification-id="exportFailed"]');
 async function openExport() {
   await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
-  await page.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Flat video" }).click();
+  await page.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Export and create link" }).click();
 }
 
 async function assertExportFailure() {
@@ -65,7 +65,7 @@ try {
   await page.getByRole("button", { name: /^(Open editor|Start editing)$/ }).click();
   await openExport();
   assert.equal(await page.locator("[data-notification-id]").count(), 0, "Import and opening Export need no confirmation");
-  await sheet.getByRole("button", { name: /Export video/ }).click();
+  await sheet.getByRole("button", { name: /Export and share/ }).click();
   await assertExportFailure();
   const firstNoticeAt = Date.now();
   assert.equal(await page.evaluate(() => exportCaptureFixture.calls), 1);
@@ -77,7 +77,7 @@ try {
     "A closed export attempt cannot leave stale diagnostics");
   // Respect the production brief-message cooldown before a separate failed attempt.
   await page.waitForTimeout(Math.max(0, 10100 - (Date.now() - firstNoticeAt)));
-  await sheet.getByRole("button", { name: /Export video/ }).click();
+  await sheet.getByRole("button", { name: /Export and share/ }).click();
   await assertExportFailure();
   assert.equal(await page.evaluate(() => exportCaptureFixture.calls), 2);
 
@@ -87,9 +87,9 @@ try {
   await page.locator('dialog[data-state="done"]').waitFor({ timeout: 45000 });
   const [download] = await Promise.all([
     page.waitForEvent("download", { timeout: 15000 }),
-    sheet.getByRole("button", { name: /Download/ }).click(),
+    page.getByRole("dialog", { name: "Share export" }).locator("[data-download-again]").click(),
   ]);
-  assert.match(download.suggestedFilename(), /\.(mp4|webm)$/);
+  assert.match(download.suggestedFilename(), /\.pvo$/);
   assert.equal(await page.evaluate(() => exportCaptureFixture.calls), 3, "Retry must execute the exporter again");
   assert.equal(await sheet.getByText(sentinel, { exact: true }).count(), 0,
     "Successful retry clears prior diagnostics");

@@ -11,7 +11,7 @@ export type NativeBatch = {
   operations: NativeOperation[];
   receipts: NativePreparationReceipt[];
   playback: NativePlaybackOperation[];
-  exportFormat: "video" | "pvo" | null;
+  exportFormat: "pvo" | null;
   advancedEditingEnabled: boolean;
 };
 export type NativePreparation = {

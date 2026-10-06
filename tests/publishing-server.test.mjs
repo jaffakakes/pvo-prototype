@@ -7,7 +7,7 @@ test("publishing is explicitly disabled until its storage and session secret are
   const f = await workerFixture({ PUBLISHING_ENABLED: "false" }, { createSessions: false });
   try {
     const status = await (await f.request("/api/publishing")).json();
-    assert.deepEqual(status, { available: false, hasSession: false, maxBytes: 52428800 });
+    assert.deepEqual(status, { available: false, hasSession: false, maxBytes: 671088640000 });
     assert.equal((await f.request("/api/publishing/session", { method: "POST" })).status, 404);
     assert.equal((await reserve(f, tinyMp4())).response.status, 503);
     assert.equal((await f.request("/docs/")).status, 404);
@@ -25,7 +25,7 @@ test("account sessions, CSRF and ownership protect publication operations", asyn
   const f = await workerFixture();
   try {
     assert.deepEqual(await (await f.request("/api/publishing")).json(),
-      { available: true, hasSession: true, maxBytes: 52428800 });
+      { available: true, hasSession: true, maxBytes: 671088640000 });
     assert.equal((await reserve(f, tinyMp4(), {}, { session: null })).response.status, 401);
     assert.equal((await reserve(f, tinyMp4(), {}, { headers: { Origin: "https://attacker.example", "Content-Type": "application/json" } })).response.status, 403);
     const created = await reserve(f, tinyMp4());
@@ -145,6 +145,58 @@ test("WebM and interactive PVO exports retain their verified formats", async () 
   } finally { await f.close(); }
 });
 
+test("multipart PVO upload validates parts, ownership and final bytes before publishing", async () => {
+  const f = await workerFixture();
+  try {
+    const file = await tinyPvo(null, 8 * 1024 * 1024);
+    const { body } = await reserve(f, file);
+    const path = `/api/publications/${body.id}/multipart`;
+    assert.equal((await f.request(path, { method: "POST", session: f.otherCookie })).status, 404);
+    const started = await f.request(path, { method: "POST" });
+    assert.equal(started.status, 200);
+    assert.equal((await started.json()).chunkBytes, 8 * 1024 * 1024);
+    assert.equal((await f.request(`${path}/1`, { method: "PUT", body: file.slice(0, 1),
+      session: f.otherCookie })).status, 404);
+    assert.equal((await f.request(`${path}/1`, { method: "PUT", body: file.slice(0, 1) })).status, 400);
+    const partResponse = await f.request(`${path}/1`, { method: "PUT", body: file.slice(0, 8 * 1024 * 1024) });
+    assert.equal(partResponse.status, 200, await partResponse.clone().text());
+    const part = await partResponse.json();
+    assert.equal(part.partNumber, 1);
+    const complete = parts => f.request(`${path}/complete`, { method: "PUT",
+      headers: { "Content-Type": "application/json" }, body: JSON.stringify({ parts }),
+    });
+    const finalPart = await f.request(`${path}/2`, { method: "PUT", body: file.slice(8 * 1024 * 1024) });
+    assert.equal(finalPart.status, 200, await finalPart.clone().text());
+    const parts = [part, await finalPart.json()];
+    assert.equal((await complete([])).status, 400);
+    const done = await complete(parts);
+    assert.equal(done.status, 200, await done.clone().text());
+    assert.equal((await done.json()).status, "ready");
+    assert.equal((await complete(parts)).status, 200);
+    const media = await f.request(`/media/${body.id}`, { session: null });
+    assert.deepEqual(new Uint8Array(await media.arrayBuffer()), new Uint8Array(await file.arrayBuffer()));
+  } finally { await f.close(); }
+});
+
+test("deleting an unfinished multipart link hides it and later aborts its upload", async () => {
+  const f = await workerFixture();
+  try {
+    const file = await tinyPvo();
+    const { body } = await reserve(f, file);
+    const path = `/api/publications/${body.id}/multipart`;
+    assert.equal((await f.request(path, { method: "POST" })).status, 200);
+    assert.equal((await f.request(`${path}/1`, { method: "PUT", body: file })).status, 200);
+    assert.equal((await f.request(`/api/publications/${body.id}`, { method: "DELETE" })).status, 200);
+    assert.equal((await f.request(`/player/${body.id}`)).status, 404);
+    await f.db.prepare("UPDATE upload_attempts SET expires_at = 1 WHERE publication_id = ?")
+      .bind(body.id).run();
+    await cleanupPublications({ DB: f.db, MEDIA: f.bucket });
+    const attempt = await f.db.prepare("SELECT id FROM upload_attempts WHERE publication_id = ?")
+      .bind(body.id).first();
+    assert.equal(attempt, null);
+  } finally { await f.close(); }
+});
+
 test("published PVO poster bytes must decode as a WebP signature", async () => {
   const f = await workerFixture();
   try {
@@ -179,18 +231,18 @@ test("PNG covers keep their content type through upload and published PVO valida
   } finally { await f.close(); }
 });
 
-test("quota reservations are atomic across concurrent requests and reclaimed after expiry", async () => {
+test("daily link reservations are owner scoped and storage has no account quota", async () => {
   const file = tinyMp4();
-  const f = await workerFixture({ OWNER_STORAGE_BYTES: String(file.size), TOTAL_STORAGE_BYTES: String(file.size) });
+  const f = await workerFixture({ DAILY_PUBLICATIONS: "1" });
   try {
     const results = await Promise.all([reserve(f, file), reserve(f, file)]);
     assert.deepEqual(results.map(result => result.response.status).sort(), [201, 429]);
-    assert.equal((await reserve(f, file, {}, { session: f.otherCookie })).response.status, 429);
+    assert.equal((await reserve(f, file, {}, { session: f.otherCookie })).response.status, 201);
     const id = results.find(result => result.response.status === 201).body.id;
-    await f.db.prepare("UPDATE publications SET expires_at = 1 WHERE id = ?").bind(id).run();
+    await f.db.prepare("UPDATE publications SET expires_at = 1, created_at = 1 WHERE id = ?").bind(id).run();
     await cleanupPublications({ DB: f.db, MEDIA: f.bucket });
-    assert.equal((await reserve(f, file)).response.status, 201);
-    assert.equal((await reserve(f, file, { size: 52428801 })).response.status, 413);
+    assert.equal((await reserve(f, file, { size: 52428801 })).response.status, 201);
+    assert.equal((await reserve(f, file, { size: 671088640001 }, { session: f.otherCookie })).response.status, 413);
   } finally { await f.close(); }
 });
 

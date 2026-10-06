@@ -46,18 +46,14 @@ export function ExportFooter({
       )}
       {mode === "setup" && (
         <>
-          <p>
-            {format === "pvo"
-              ? "Opens in the Restyle player; shared links show the cover."
-              : "Interactive elements are left out of video exports."}
-          </p>
+          <p>Your PVO opens through a shareable Restyle link.</p>
           <button
             type="button"
             className={styles.primary}
             disabled={unavailable}
             onClick={begin}
           >
-            ↑ &nbsp;Export {format === "pvo" ? ".pvo" : "video"} · {quality}
+            ↑ &nbsp;Export and share · {quality}
           </button>
         </>
       )}
@@ -81,22 +77,22 @@ export function ExportFooter({
         <div className={styles.doneActions}>
           <button
             type="button"
-            className={styles.primary}
-            onClick={() => {
-              void download();
-            }}
-          >
-            ↓ &nbsp;Download
-          </button>
-          <button
-            type="button"
             className={styles.shareAction}
             data-export-share
             onClick={() => {
               void share();
             }}
           >
-            Share
+            View share link
+          </button>
+          <button
+            type="button"
+            className={styles.quietAction}
+            onClick={() => {
+              void download();
+            }}
+          >
+            ↓ &nbsp;Download PVO
           </button>
           <button
             type="button"
