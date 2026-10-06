@@ -1,19 +1,10 @@
 import { transitionTask } from "../../../packages/pvo-assistant/tasks/index.js";
 
-const guard = (task, now, claim = null) => ({
-  ownerId: task.ownerId,
-  expectedRevision: task.revision,
-  now,
-  claim,
-});
-const claimOf = (task) =>
-  task.claim ? { id: task.claim.id, generation: task.generation } : null;
-const activeClaim = (task, claimed, now) =>
-  task?.state === "running" &&
-  task.claim.id === claimed.claim.id &&
-  task.generation === claimed.generation &&
-  now < task.claim.expiresAt &&
-  now < task.deadlineAt;
+import {
+  transitionGuard as guard,
+  taskClaim as claimOf,
+  hasCurrentClaim as activeClaim,
+} from "./executionClaim.js";
 
 /** An inference journal is separate from the model's output and survives lost replies. */
 export class TaskAttempts {

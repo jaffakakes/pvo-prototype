@@ -202,7 +202,7 @@ export class TaskRepository {
       throw new HttpError(409, "The task changed. Refresh its saved state.");
   }
 
-  maintain(now) {
+  maintain(now, heldTasks = new Set()) {
     for (let task of this.records()) {
       if (unfinished(task) && task.deadlineAt <= now) {
         const next = transitionTask(
@@ -219,7 +219,7 @@ export class TaskRepository {
         task = next;
       }
       // Keep uncertain effect bookkeeping until its adapter has reconciled it.
-      if (task.expiresAt <= now && !unsettled(task))
+      if (task.expiresAt <= now && !unsettled(task) && !heldTasks.has(task.id))
         this.sql.exec("UPDATE tasks SET record = NULL WHERE id = ?", task.id);
     }
   }
