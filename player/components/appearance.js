@@ -12,7 +12,7 @@ export function applyComponentAppearance(root, component, unit = 1) {
   if (!look) return;
   const buttons = [...root.querySelectorAll("button")];
   const styles = lookStyles(look, unit, buttons.length);
-  Object.assign(whole.style, styles.whole);
+  Object.assign(whole.style, styles.whole, component.kind === "choice" ? { padding: "0" } : {});
   root.querySelectorAll("h3, .prompt").forEach(element => Object.assign(element.style, styles.heading));
   root.querySelectorAll("p, .component-text, .form-fields").forEach(element => Object.assign(element.style, styles.body));
   root.querySelectorAll(".form-fields label").forEach(element => Object.assign(element.style, { color: styles.body.color, fontSize: styles.body.fontSize, fontWeight: styles.body.fontWeight, textAlign: styles.body.textAlign }));

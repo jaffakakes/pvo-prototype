@@ -1,5 +1,6 @@
 [
   "editor/src/app/projectAutosave.ts",
+  "editor/src/domain/assistant/native/stylePatch.ts",
   "editor/src/domain/assistant/cloudTaskInput.ts",
   "editor/src/domain/assistant/savedTaskStatus.ts",
   "editor/src/domain/assistant/taskProjectLink.ts",
@@ -118,6 +119,7 @@
   "scripts/checks/cloud-agent-infrastructure/workspace-program.js",
   "scripts/checks/cloud-agent-infrastructure/workspace-proof.mjs",
   "scripts/checks/cloud-agent-infrastructure/workspace-worker.js",
+  "scripts/checks/editor/assistant-style-design.mjs",
   "scripts/checks/cloud-agent-tasks/browser-lifetime.mjs",
   "scripts/checks/dependencies.mjs",
   "scripts/checks/editor/camera-flash.mjs",
@@ -201,6 +203,7 @@
   "tests/local-render-auth.test.mjs",
   "tests/local-reply-boxes.test.mjs",
   "tests/native-assistant-server.test.mjs",
+  "tests/native-assistant-style-patch.test.mjs",
   "tests/player-animation-interaction.test.mjs",
   "tests/player-request-lifecycle.test.mjs",
   "tests/player-response-policy.test.mjs",

@@ -18,6 +18,7 @@ fn choice_compiles_direct_outcomes_to_index_only_handlers() {
         }
     );
     assert!(result.css.contains("#pvo-root .pvo-option{color:#111;}"));
+    assert!(result.css.contains(".pvo-choice{display:grid;gap:7px;width:176px;background:transparent;border-width:0;box-shadow:none;padding:0;}"));
     assert!(result.js.is_empty());
 }
 
