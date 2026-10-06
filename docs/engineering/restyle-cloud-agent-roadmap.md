@@ -10,6 +10,12 @@ Start with [Roadmap 1](restyle-cloud-agent-roadmaps/01-first-working-component.m
 
 The [architecture document](restyle-cloud-agent-architecture.md) explains the idea. These roadmaps turn it into smaller pieces of work you can implement and verify.
 
+## Device and cloud decision for review
+
+Use the **device** for editing, previews and supported lightweight checks. Use the **temporary cloud workshop** when development needs tools, packages or heavier execution. Keep **independent publication checks** in Restyle's controlled environment and **finished viewer services/records** hosted so they work when the creator's device is off. No permanently running VM per creator is planned.
+
+This refines existing 1G.01–03 and 1G.05/08; it adds no new task IDs or parallel agent/runtime system. See [where work runs](restyle-cloud-agent-roadmaps/1g-containers.md#where-work-runs-use-the-device-first-where-it-fits). Counts remain **42/134 complete**. The plan is ready for user review; implementation stays at its recorded checkpoint until the user asks to resume.
+
 ## The four roadmaps
 
 | Order | What you will have when finished | Implementation guide |

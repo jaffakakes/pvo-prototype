@@ -64,8 +64,10 @@ flowchart TD
   Creator["Creator asks Restyle"] --> Agent["Agent and saved task"]
   Agent <--> Research["Research and available connections"]
   Agent <--> Questions["Follow-up questions and account setup"]
-  Agent --> Workshop["Temporary cloud workspace"]
-  Workshop --> Check["Build and test"]
+  Agent --> Draft["Saved draft and local preview"]
+  Draft -->|Development tools needed| Workshop["Temporary cloud workspace"]
+  Workshop --> Draft
+  Draft --> Check["Independent release tests"]
   Check --> Release["Deploy a service release"]
   Release --> Service["Live service"]
   Release --> Link["Connect the PVO component"]
@@ -104,6 +106,16 @@ The current implementation executes generated services in **Dynamic Workers**. T
 A component chooses an approved operation on a published Container; Restyle supplies the checked connection. There is no external hosting setup or server URL to paste. **PVO Logic stays its own restricted language.** The backend source is JavaScript for Node.js.
 
 [1G Containers](restyle-cloud-agent-roadmaps/1g-containers.md) owns this plan. It follows 1F, adds eight unchecked tasks and brings twelve existing update/management tasks forward without changing their IDs. Plugins, a marketplace, sharing Containers with other creators and installer-specific credentials are outside this update. Roadmaps 2/3 keep their existing integration and background-job responsibilities.
+
+## Use the device and cloud for the jobs they suit
+
+Editing, component previews and supported lightweight checks run on the user's device. Saving the shared draft and tracking the AI's progress use the existing server. A conversation, follow-up answer or simple code edit does not itself require starting a workshop.
+
+Start a temporary cloud workshop when development actually needs package installation, Node.js tools or heavier execution. Save its work outside the machine and stop unused compute. Local work may pause when the browser closes; already authorized cloud work resumes from its saved task. The UI must distinguish unsaved local edits, saved progress, running work and waiting work.
+
+Restyle independently checks the exact release in its controlled Node.js environment before publishing. A local test result gives feedback but cannot authorize publication. The finished Container and shared records remain hosted so viewers can use them when the creator's phone or computer is off.
+
+This can reduce workshop costs; hosted model calls, release checks, live hosting and storage still cost money. Measure those categories separately. The first version reuses the current editor, sandbox, task runner and workspace tools. A full local Node.js installation or second local agent is outside this milestone. Follow [1G's device/cloud rules and acceptance](restyle-cloud-agent-roadmaps/1g-containers.md#where-work-runs-use-the-device-first-where-it-fits).
 
 ## When the agent needs a cloud computer
 

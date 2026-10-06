@@ -54,6 +54,8 @@ The cloud build workspace has a separate ownership boundary. `packages/pvo-assis
 
 Replace `server/cloud-services/packageExecution.js`'s generated Dynamic Worker execution with a bounded Node.js Container adapter, and use the identical checked Node.js artifact/runtime for independent validation. Shared package/release rules own runtime identity and readiness; host adapters own private compute and enforce isolation, deadlines, network access and cleanup. Durable source/data/receipts and lifecycle authority stay outside the guest. Any private instance controller owns execution resources only, not another service catalog or data model. PVO Logic remains restricted; no editor/player coupling or new compiler execution privilege is needed. These are planned responsibilities, not implemented paths; add no empty folders or compatibility runtime.
 
+The planned device/cloud policy uses current browser editor/preview and shared pure checks for lightweight work, the saved server task for coordination, and a workshop only when development execution needs its tools. No new local agent, permanent VM per user or duplicate source authority is planned. Local results remain advisory; trusted Node.js validation is mandatory before publication. Persist draft/tool intent before cloud work, enforce spending/capacity in existing adapters, and release idle compute while preserving saved progress. [1G](restyle-cloud-agent-roadmaps/1g-containers.md#where-work-runs-use-the-device-first-where-it-fits) owns the exact routing and interruption checks.
+
 ## Dependency direction
 
 ```mermaid

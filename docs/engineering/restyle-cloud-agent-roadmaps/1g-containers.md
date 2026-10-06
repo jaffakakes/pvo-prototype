@@ -14,6 +14,30 @@ Creators open **Containers** outside the Components area. They can inspect the A
 
 The Container has a lasting identity even when its running instance stops. Its code, published versions and records live in Restyle's durable storage. Restyle can start another instance from the same saved release when needed. An idle instance stopping is different from the creator pausing the service.
 
+## Where work runs: use the device first where it fits
+
+**Decision for review:** use the creator's device for editing, previews and lightweight checks; start a temporary cloud workshop only when development needs it. Keep independent publication checks, the finished viewer service and shared records under Restyle's control. There is no permanently assigned running VM per creator.
+
+| Job | Where it runs | Everyday reason |
+| --- | --- | --- |
+| Edit code and components, show previews, check syntax/field shapes with supported tools | User's device | Give quick feedback using the computer or phone already open. No workshop starts for these actions. |
+| Save the shared draft, keep AI progress/questions, call the hosted model | Existing Restyle server and saved task | Both editors see the same saved work. An AI conversation or ordinary code patch does not itself need a VM. |
+| Install approved dependencies, run Node.js tools, execute heavier development tests | Temporary cloud workshop, when required | Provide the tools and consistent environment the task needs. Save work and stop idle compute. |
+| Independently verify the exact release before publishing | Restyle-controlled isolated Node.js execution | A result reported by the browser or generated tests cannot approve its own release. This check is required even if development happened locally. |
+| Handle viewer requests and keep shared records | Hosted Container plus durable storage | The feature continues working when the creator's device is off. An idle instance can sleep without erasing the service. |
+
+For the dinner example: arrange and preview the form on the phone; use a workshop if the AI needs to run development tools for the capacity rule; independently test the finished code before publishing; then the hosted Container records friends' replies while the phone is off.
+
+### How Restyle chooses
+
+Use the existing task coordinator and workspace adapter. Record why a development execution is needed and reserve its permitted resources before starting it. Reading a draft, saving edits, answering questions and running supported local checks must not automatically provision a workshop. A small AI edit can update the same revision-checked draft directly; execution-dependent work opens a disposable workshop from that saved revision.
+
+If local work is interrupted, recover the last saved draft and show any unresolved local save honestly. Cloud work can resume from its saved task without keeping the browser open; only bytes actually saved to Restyle are available there. Closing the page does not authorize a new paid build. Previously authorized queued work still follows its saved permission and capacity controls. A suspended browser must not be reported as still running local tests. Browsers can freeze or discard background pages; see [the browser lifecycle documentation](https://developer.chrome.com/docs/web-platform/page-lifecycle-api).
+
+Keep the first version small: reuse the existing browser editor, component sandbox and shared validation rules. Execute only supported checks through those boundaries. A full on-device Node.js environment, desktop installer, or second local agent runner is future work requiring evidence of enough savings to justify its complexity. Ordinary app JavaScript must not directly execute arbitrary generated backend code. The saved service and publication contract is the same wherever development work happens.
+
+**Cost expectation:** local work can reduce workshop runtime. Hosted model calls, independent release checks, the live service and retained storage still have costs. Measure workshop starts, active/idle time, validation time and retained storage separately; record estimates and actual observations before promising savings. Stop unused workshop compute after saving, with cleanup retried from durable records.
+
 ## Consolidation: what we reuse and what changes
 
 **Container is the product name for the existing owned service.** Keep its `serviceId`, owner, project scope, data, releases and management commands. Add the missing draft/editor capabilities and replace its generated-code execution adapter. Do not create a second Container registry, database authority, task runner, deployment pipeline or component protocol.
@@ -35,7 +59,7 @@ Current hosting code already preserves activated source and live records indepen
 
 1. **Open or create a Container.** Use the existing owner catalog and project identity. It can exist before any component. The first version retains the current same-owner, same-project attachment rule; listing it outside Components does not grant access from other projects or accounts.
 2. **Edit the saved draft.** Manual and AI edits both send the expected draft revision. Restyle saves a new revision only if it still matches. Concurrent changes produce a recoverable conflict; neither editor overwrites newer work silently. Pending local edits survive a failed save and are shown as unsaved.
-3. **Ask the AI to continue.** The existing saved-task runner receives the Container identity, draft revision and request. It opens a disposable workshop from that revision, keeps questions/progress, and proposes changes to the same draft. Stopping the build leaves the draft and current published service intact.
+3. **Ask the AI to continue.** The existing saved-task runner receives the Container identity, draft revision and request. It keeps questions/progress and proposes changes to that same draft. It opens a disposable workshop from the saved revision only when development tools or execution are needed. Stopping the build leaves the draft and current published service intact.
 4. **Test an exact revision.** Save before testing. Restyle freezes the code, behavior agreement, dependencies and runtime identity for independent checks. Creator/AI tests are useful feedback; neither can write its own trusted passing report. Changing any tested input invalidates readiness for the changed draft.
 5. **Publish that checked version.** The existing deployment journal prepares an inactive release, verifies its hosted Node.js behavior, and switches the selected live version through the existing activation command. Saving or testing alone does not change live behavior. A newer draft can coexist with an older published version.
 6. **Connect a component.** Pick the Container and an allowed operation, map fields, and apply through the current compiler/history boundary. The export/publication workflow confirms the selected service is active before delivering a usable file or link. The creator sees names and operations, not provider URLs.
@@ -46,9 +70,9 @@ Manual edits and AI edits receive exactly the same validation, permission, test 
 
 ```mermaid
 flowchart LR
-  Human[Manual editor] --> Draft[Saved service draft]
+  Human[On-device editor, preview and checks] --> Draft[Saved service draft]
   AI[Existing saved AI task] --> Draft
-  Draft --> Workshop[Temporary workshop]
+  Draft -->|When development execution is needed| Workshop[Temporary workshop]
   Workshop --> Draft
   Draft --> Check[Independent Node.js tests]
   Check --> Release[Immutable checked release]
@@ -95,14 +119,14 @@ There are **eight new tasks**. Twelve existing unchecked update/management tasks
 
 ### A. Settle the shared contract and saved editing
 
-- [ ] **1G.01** Confirm the 1E/1F prerequisites and define the single service/draft/release contract for Containers: existing owner/project/service identity, draft revisions, Node.js artifact identity, operation agreement, retention and current permissions. Record exact changed contracts and the minimum provider proof before app work.
-- [ ] **1G.02** Add durable draft read/save operations to the existing service boundary and evolve the service manager into Containers outside Components. Support code inspection/manual edits, recoverable pending saves, revision conflicts, reload and account changes; keep current live code unchanged.
-- [ ] **1G.03** Let the existing saved AI task continue editing that same draft through the same revision-checked command. Restore a disposable workshop, preserve manual changes/questions, recover after restart and Stop safely without duplicating the service.
+- [ ] **1G.01** Confirm the 1E/1F prerequisites and define the single service/draft/release contract for Containers: existing owner/project/service identity, draft revisions, Node.js artifact identity, operation agreement, retention and current permissions. Record exact changed contracts, device/cloud selection rules and the minimum provider proof before app work. Define observable cases where zero workshop starts are expected.
+- [ ] **1G.02** Add durable draft read/save operations to the existing service boundary and evolve the service manager into Containers outside Components. Support code inspection/manual edits, on-device preview/lightweight checks, recoverable pending saves, revision conflicts, reload and account changes. These actions must not start a workshop; keep current live code unchanged.
+- [ ] **1G.03** Let the existing saved AI task continue editing that same draft through the same revision-checked command. Choose the existing tools according to the saved work: draft edits/questions do not require a VM; restore a disposable workshop only for required development execution. Preserve manual changes/questions, recover after browser/runner restart, stop idle compute and Stop safely without duplicating the service.
 
 ### B. Replace execution and preserve the trusted gates
 
 - [ ] **1G.04** Implement and prove the bounded hosted Node.js execution adapter and reproducible package: pinned base/runtime, checked dependency bytes, isolated test/live instances, private listener, readiness, cold restart, externally enforced limits, network policy and process cleanup. Record a concrete cost/resource/cleanup plan before any paid proof. Keep Dynamic Worker evidence; remove its superseded generated-service runtime contract when the Node replacement lands, without a dual-runtime fallback.
-- [ ] **1G.05** Run independent platform validation against the exact Node.js artifact used for hosting. Apply the same gates to AI/manual edits; invalidate stale reports after source/agreement/dependency/runtime changes. Check malformed replies, ownership, isolation, time/output limits and test/live separation; generated tests or claimed success cannot grant readiness.
+- [ ] **1G.05** Run independent platform validation against the exact Node.js artifact used for hosting. Apply the same gates to AI/manual edits; invalidate stale reports after source/agreement/dependency/runtime changes. Check malformed replies, ownership, isolation, time/output limits and test/live separation; local checks, generated tests or claimed success cannot grant readiness.
 - [ ] **1G.06** Connect the Node adapter to the existing deployment journal and per-service host. Persist release intent before effects, recover lost replies, verify inactive readiness, preserve data/action receipts through instance destruction, and clean up abandoned resources without changing the current live release.
 
 ### C. Publish, connect and update through existing commands
@@ -133,8 +157,10 @@ These transferred tasks cover the basic Container service in 1G. Account connect
 
 | Acceptance | Evidence required |
 | --- | --- |
+| Device/cloud choice | Editing, previews, questions and supported local checks record zero workshop starts. A tool-dependent task starts a bounded workshop for a recorded reason; inactivity/Stop releases it and retains saved work. |
+| Interrupted local work | Browser close/suspension preserves the saved revision and unresolved-save status; it cannot fabricate completed tests or authorize new cloud spend. Existing authorized cloud work resumes from its saved task. |
 | One saved draft | Manual edit → AI continuation → conflict/reload recovery; both preserve the same Container identity and newer edits. |
-| Same gates for every author | Deliberately invalid manual and AI versions both fail; editing tested bytes cannot publish with an old passing report. |
+| Same gates for every author | Deliberately invalid manual and AI versions both fail; a forged local passing result cannot approve publication; editing tested bytes cannot publish with an old passing report. |
 | Real hosted Node.js | Approved Node.js code and a locked supported library run in the published environment after workshop deletion and live-instance destruction; code, records and receipts survive. |
 | Component connection | Select an operation without a URL; Try changes only test data; downloaded PVO on a supported separate origin and published player use live records without a creator cookie. |
 | Updates and uncertain results | Good update and safe rollback retain current data; failed/incompatible update leaves live service working; duplicate submissions and lost deployment/control replies recover one original operation. |
