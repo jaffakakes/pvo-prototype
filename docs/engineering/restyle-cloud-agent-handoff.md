@@ -4,7 +4,7 @@ This is the restart guide for **Claude Code, Codex, or another coding agent**. I
 
 ## Latest scope: implementation resumed
 
-The user has now said **“okay can we continue.”** **1E.04 is now verified; next is 1E.06 after its recorded beta delivery.** Continue in `feature/restyle-runtime-actions`, `/Users/christinasmacbook/.codex/worktrees/restyle-runtime-actions/pvo-prototype`, draft #103. Reviewed planning head `9c0b07b` has been fast-forwarded into that checkout. The implementation branch is now the portable handoff target; fetch it and read the latest progress before continuing. No new paid run is authorized by this resume.
+The user has now said **“okay can we continue.”** **1E.04 is verified and delivered to beta; next is 1E.06.** Continue in `feature/restyle-runtime-actions`, `/Users/christinasmacbook/.codex/worktrees/restyle-runtime-actions/pvo-prototype`, draft #103. Reviewed planning head `9c0b07b` has been fast-forwarded into that checkout. The implementation branch is now the portable handoff target; fetch it and read the latest progress before continuing. No new paid run is authorized by this resume.
 
 ## Preserved planning decision: consolidated Containers
 
@@ -14,7 +14,7 @@ The user confirmed preserving the inspected status: partial 1E and unfinished 1F
 
 Planning work lives on `docs/restyle-node-containers-roadmap` in `/Users/christinasmacbook/.codex/worktrees/restyle-node-containers-roadmap/pvo-prototype`; the code prerequisite is `25321a7` on `feature/restyle-runtime-actions` / draft #103. Inspect the planning diff relative to that prerequisite to see only this documentation work. Desktop snapshots are refreshed only after checking existing content. The older separate proposal at `f62583f` is superseded in scope, not current implementation guidance.
 
-Implementation has resumed: finish the recorded 1E.04 beta delivery, then 1E.06–09 and 1F before 1G.01. Explain **VM = development workshop**, **Container = hosted viewer service**, **durable storage = saved code and records**, **Component = visible controls**. Technical use of provider containers for both compute roles does not merge their lifetimes.
+Implementation has resumed: 1E.04 is delivered in beta `84546c2be1115b5a` from source `ccd65ac`; continue 1E.06–09 and 1F before 1G.01. Explain **VM = development workshop**, **Container = hosted viewer service**, **durable storage = saved code and records**, **Component = visible controls**. Technical use of provider containers for both compute roles does not merge their lifetimes.
 
 ## Review status and portable restart
 

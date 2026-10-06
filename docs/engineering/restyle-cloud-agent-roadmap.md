@@ -125,4 +125,4 @@ Production promotion follows dev → preprod → prod. After successful deployme
 
 ## Start here
 
-**Current request: continue implementation.** Finish recorded beta delivery for verified **1E.04**, then implement **1E.06–09** and 1F. After that foundation is verified, start **1G.01** in the [Container plan](restyle-cloud-agent-roadmaps/1g-containers.md). Preserve completed evidence and use existing 4B/4C task IDs where moved. Update task checkboxes only after their actual acceptance checks pass.
+**Current request: continue implementation.** **1E.04 is delivered to beta.** Implement **1E.06–09** and 1F next. After that foundation is verified, start **1G.01** in the [Container plan](restyle-cloud-agent-roadmaps/1g-containers.md). Preserve completed evidence and use existing 4B/4C task IDs where moved. Update task checkboxes only after their actual acceptance checks pass.
