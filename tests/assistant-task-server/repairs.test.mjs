@@ -149,3 +149,47 @@ test("saved rejected proposals and diagnostic previews remain finite without spl
   assert.equal(error.feedback.proposal.truncated, true);
   assert.equal(error.feedback.proposal.text.includes("\ufffd"), false);
 });
+
+test("different rejected proposals keep repairing even when the checker reports the same error", async () => {
+  let calls = 0;
+  const f = await taskFixture({
+    clock: NOW,
+    planner: async () =>
+      Response.json(
+        ++calls < 10
+          ? {
+              kind: "ask",
+              question: {
+                prompt: `Attempt ${calls}: still missing required fields`,
+              },
+            }
+          : {
+              kind: "ask",
+              question: {
+                id: "real-question",
+                revision: 0,
+                prompt: "Which date should I use?",
+                choices: [],
+                answer: null,
+              },
+            },
+      ),
+  });
+  try {
+    await f.control({ action: "time", now: NOW });
+    const task = await saved(f);
+    for (let batch = 0; batch < 5; batch++)
+      expectStatus(await f.control({ action: "sweep" }), 200);
+    const waiting = await current(f, task);
+    assert.equal(calls, 10);
+    assert.equal(waiting.state, "waiting_for_answer");
+    assert.equal(waiting.questions[0].id, "real-question");
+    assert.equal(waiting.usage.modelTurns, 10);
+    assert.equal(
+      waiting.operations.filter((row) => row.status === "failed").length,
+      9,
+    );
+  } finally {
+    await f.close();
+  }
+});

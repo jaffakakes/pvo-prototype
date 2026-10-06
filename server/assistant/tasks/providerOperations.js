@@ -51,6 +51,37 @@ export class ProviderOperations {
       .toArray()
       .map((row) => JSON.parse(row.body));
   }
+  reusable(taskId) {
+    const row = this.sql
+      .exec(
+        `SELECT body FROM provider_operations WHERE task_id=?
+      AND json_extract(body,'$.stepId')='host'
+      AND (json_extract(body,'$.settled')=0 OR
+        (json_extract(body,'$.outcome')='completed' AND json_extract(body,'$.cancelled')=0
+          AND (json_extract(body,'$.cancelRequested')=0 OR json_extract(body,'$.retained')=1)) OR
+        (json_extract(body,'$.cancelRequested')=1 AND json_extract(body,'$.cancelled')=0 AND json_extract(body,'$.retained')=0))
+      ORDER BY rowid LIMIT 1`,
+        taskId,
+      )
+      .toArray()[0];
+    return row ? JSON.parse(row.body) : null;
+  }
+  expiredReplacement(taskId, now) {
+    if (this.reusable(taskId)) return false;
+    // Replacement is permitted only after a real tombstone, never merely by elapsed time.
+    return (
+      this.sql
+        .exec(
+          `SELECT 1 FROM provider_operations WHERE task_id=?
+      AND json_extract(body,'$.stepId')='host' AND json_extract(body,'$.settled')=1
+      AND json_extract(body,'$.cancelled')=1 AND json_extract(body,'$.retained')=0
+      AND json_extract(body,'$.identity.expiresAt')<=? LIMIT 1`,
+          taskId,
+          now,
+        )
+        .toArray().length > 0
+    );
+  }
   entries() {
     return this.sql
       .exec("SELECT body FROM provider_operations")
@@ -106,17 +137,8 @@ export class ProviderOperations {
       .toArray().length;
     if (changed)
       throw new Error("The publication step's source is already frozen.");
-    const retained = this.sql
-      .exec(
-        `SELECT body FROM provider_operations WHERE task_id=? AND json_extract(body,'$.stepId')=?
-      AND (json_extract(body,'$.settled')=0 OR json_extract(body,'$.outcome')='completed' OR
-        (json_extract(body,'$.cancelRequested')=1 AND json_extract(body,'$.cancelled')=0 AND json_extract(body,'$.retained')=0))
-      ORDER BY rowid LIMIT 1`,
-        task.id,
-        task.stepId,
-      )
-      .toArray()[0];
-    if (retained) return JSON.parse(retained.body);
+    const retained = this.reusable(task.id);
+    if (retained) return retained;
     const identity = publication.identity;
     const key = `${task.id}_${identity.operationId}`;
     const existing = this.get(key);
@@ -179,6 +201,12 @@ export class ProviderOperations {
       !row ||
       row.dispatched ||
       row.settled ||
+      row.cancelRequested ||
+      row.cancelled ||
+      row.taskId !== claimed.id ||
+      row.generation !== claimed.generation ||
+      row.claimId !== claimed.claim.id ||
+      now >= row.identity.expiresAt ||
       !hasCurrentClaim(this.task(claimed.id), claimed, now)
     )
       return false;

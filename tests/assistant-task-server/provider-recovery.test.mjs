@@ -272,14 +272,16 @@ test("an unavailable provider has bounded retries, no alarm loop and no false su
 
 test("an unresolved publication wakes at its own expiry and fences its identity without expiring the goal", async () => {
   let failLookup = true;
+  let firstPublication = true;
   const fixture = await taskFixture({
     services: true,
     providerControl: async (request) => {
       const { phase, action } = await request.json();
+      const lost =
+        action === "publish" && phase === "after" && firstPublication;
+      if (lost) firstPublication = false;
       return Response.json({
-        fail:
-          (action === "publish" && phase === "after") ||
-          (action === "lookup" && failLookup),
+        fail: lost || (action === "lookup" && failLookup),
       });
     },
   });
@@ -351,5 +353,83 @@ test("an old goal publishes with a new resource lifetime and replays the exact i
     assert.equal((await stats(fixture, created.body)).stats.calls, 1);
   } finally {
     await fixture.close();
+  }
+});
+
+test("publication dispatch binds the saved intent to its exact task and claim generation", async () => {
+  const f = await taskFixture({ services: true });
+  try {
+    const task = await publishing(f);
+    const prepared = await f.control({
+      action: "prepare-publication",
+      id: task.id,
+      checked,
+      guard: guard(task),
+    });
+    expectStatus(prepared, 200);
+    const row = prepared.body;
+    assert.equal(row.dispatched, false);
+    const created = await f.create(task.input.projectId, {
+      operationId: "another-dispatch-goal",
+    });
+    expectStatus(created, 201);
+    let foreign = created.body.task;
+    for (const command of [
+      { kind: "claim", claimId: "foreign-planner", leaseMs: 60000 },
+      { kind: "checkpoint", stepId: "host" },
+      { kind: "claim", claimId: "foreign-publisher", leaseMs: 60000 },
+    ]) {
+      const response = await f.control({
+        action: "step",
+        id: foreign.id,
+        command,
+      });
+      expectStatus(response, 200);
+      foreign = response.body;
+    }
+    assert.equal(
+      (
+        await f.control({
+          action: "dispatch-publication",
+          id: foreign.id,
+          rowId: row.id,
+        })
+      ).body,
+      false,
+    );
+    await f.control({ action: "time", now: task.claim.expiresAt + 1 });
+    for (const command of [
+      { kind: "recover" },
+      { kind: "claim", claimId: "replacement-claim", leaseMs: 60000 },
+    ])
+      expectStatus(
+        await f.control({ action: "step", id: task.id, command }),
+        200,
+      );
+    assert.equal(
+      (
+        await f.control({
+          action: "dispatch-publication",
+          id: task.id,
+          rowId: row.id,
+        })
+      ).body,
+      false,
+    );
+    const before = await current(f, task);
+    expectStatus(
+      await f.request(path(task) + "/stop", {
+        body: { expectedRevision: before.revision },
+      }),
+      200,
+    );
+    await f.control({ action: "provider-reconcile" });
+    const end = (await rows(f)).find((item) => item.id === row.id);
+    assert.equal(end.dispatched, false);
+    assert.equal(end.cancelled, true);
+    assert.equal((await stats(f, end)).stats.calls, 0);
+    assert.equal((await current(f, task)).usage.toolCalls, 0);
+  } finally {
+    await f.close();
   }
 });

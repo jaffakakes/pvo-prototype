@@ -416,5 +416,6 @@
   "tests/assistant-task-server/workspace-capacity.test.mjs",
   "server/assistant/tasks/repairFeedback.js",
   "server/assistant/tasks/repairs.js",
-  "tests/assistant-task-server/repairs.test.mjs"
+  "tests/assistant-task-server/repairs.test.mjs",
+  "server/assistant/attachments/recovery.js"
 ]

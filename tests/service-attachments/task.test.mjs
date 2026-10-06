@@ -323,3 +323,170 @@ test("answering a repeated-check help question resumes the same attachment witho
     await f.close();
   }
 });
+
+test("an expired inactive connection is replaced after cleanup and restart, keeping checked source and the same goal", async () => {
+  let invalid = true;
+  const { f, task, calls } = await setup({
+    propose: (task) => {
+      const command = proposal(task);
+      if (invalid) command.component.source.structure = "<script>bad</script>";
+      return command;
+    },
+  });
+  try {
+    await f.control({ action: "sweep" });
+    await f.control({ action: "sweep" });
+    const waiting = await current(f, task);
+    assert.equal(waiting.state, "waiting_for_answer");
+    const original = (await f.control({ action: "provider-rows" })).body[0];
+    const later = original.identity.expiresAt + 1000;
+    await f.restart();
+    await f.control({ action: "time", now: later });
+    invalid = false;
+    const question = waiting.questions.at(-1);
+    expectStatus(
+      await f.request(path(task) + "/answers", {
+        body: {
+          expectedRevision: waiting.revision,
+          questionId: question.id,
+          questionRevision: 0,
+          operationId: "answer-after-host-expiry",
+          value: "Keep repairing",
+        },
+      }),
+      200,
+    );
+    expectStatus(await f.control({ action: "sweep" }), 200);
+    expectStatus(await f.control({ action: "sweep" }), 200);
+    const ready = await current(f, task);
+    assert.equal(ready.state, "ready", JSON.stringify(ready));
+    const rows = (await f.control({ action: "provider-rows" })).body;
+    assert.equal(rows.length, 2);
+    const old = rows.find((row) => row.id === original.id),
+      fresh = rows.find((row) => row.id !== original.id);
+    assert.equal(old.cancelled, true);
+    assert.deepEqual(old.identity, original.identity);
+    assert.notEqual(fresh.identity.serviceId, old.identity.serviceId);
+    assert.notEqual(fresh.identity.resourceId, old.identity.resourceId);
+    assert.equal(fresh.identity.expiresAt, later + 86400000);
+    for (const key of [
+      "agreementDigest",
+      "packageDigest",
+      "sourceDigest",
+      "reportDigest",
+    ])
+      assert.equal(fresh.identity[key], old.identity[key]);
+    assert.equal(
+      ready.usage.modelTurns,
+      4,
+      "Replacing a checked host needs no new model inference",
+    );
+    assert.equal(ready.usage.toolCalls, 2);
+    assert.equal(
+      calls.at(-1).attachmentContext.releaseId,
+      fresh.identity.resourceId,
+    );
+    const result = await f.request(path(task) + "/result");
+    assert.equal(
+      result.body.attachment.receipt.identity.serviceId,
+      fresh.identity.serviceId,
+    );
+    const oldStatus = (
+      await f.control({ action: "provider-status", identity: old.identity })
+    ).body;
+    assert.equal(oldStatus.observation.state, "deleted");
+    assert.equal(oldStatus.stats.sourcePresent, false);
+    assert.equal(oldStatus.stats.calls, 1);
+    assert.equal(
+      (await f.control({ action: "provider-status", identity: fresh.identity }))
+        .body.stats.calls,
+      1,
+    );
+    const catalog = (await f.control({ action: "service-catalog" })).body;
+    assert.equal(
+      catalog.find(
+        (item) => item.service.identity.serviceId === old.identity.serviceId,
+      ).service.state,
+      "deleted",
+    );
+    await f.restart();
+    await f.control({ action: "time", now: later });
+    assert.equal((await current(f, task)).state, "ready");
+    assert.deepEqual(
+      (await f.request(path(task) + "/result")).body,
+      result.body,
+    );
+  } finally {
+    await f.close();
+  }
+});
+
+test("unknown expired-host cleanup creates no replacement and Stop prevents later recovery from reviving the goal", async () => {
+  let failLookup = false;
+  const { f, task, calls } = await setup({
+    propose: (task) => {
+      const command = proposal(task);
+      command.component.source.structure = "<script>bad</script>";
+      return command;
+    },
+    providerControl: async (request) => {
+      const value = await request.json();
+      return Response.json({ fail: failLookup && value.action === "lookup" });
+    },
+  });
+  try {
+    await f.control({ action: "sweep" });
+    await f.control({ action: "sweep" });
+    const waiting = await current(f, task);
+    const original = (await f.control({ action: "provider-rows" })).body[0];
+    await f.control({
+      action: "time",
+      now: original.identity.expiresAt + 1000,
+    });
+    const question = waiting.questions.at(-1);
+    expectStatus(
+      await f.request(path(task) + "/answers", {
+        body: {
+          expectedRevision: waiting.revision,
+          questionId: question.id,
+          questionRevision: 0,
+          operationId: "answer-expired-unknown",
+          value: "Keep repairing",
+        },
+      }),
+      200,
+    );
+    failLookup = true;
+    expectStatus(await f.control({ action: "sweep" }), 200);
+    assert.equal((await f.control({ action: "provider-rows" })).body.length, 1);
+    assert.equal(calls.length, 3);
+    const pending = await current(f, task);
+    assert.equal(pending.state, "queued");
+    expectStatus(
+      await f.request(path(task) + "/stop", {
+        body: { expectedRevision: pending.revision },
+      }),
+      200,
+    );
+    const row = (await f.control({ action: "provider-rows" })).body[0];
+    failLookup = false;
+    await f.control({ action: "time", now: row.nextAt });
+    await f.control({ action: "sweep" });
+    assert.equal((await current(f, task)).state, "stopped");
+    const final = (await f.control({ action: "provider-rows" })).body;
+    assert.equal(final.length, 1);
+    assert.equal(final[0].cancelled, true);
+    assert.equal(
+      (
+        await f.control({
+          action: "provider-status",
+          identity: original.identity,
+        })
+      ).body.stats.calls,
+      1,
+    );
+    assert.equal(calls.length, 3);
+  } finally {
+    await f.close();
+  }
+});

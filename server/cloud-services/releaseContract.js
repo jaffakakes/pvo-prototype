@@ -24,9 +24,14 @@ export const serviceResourceId = (identity) =>
       identity.operationId,
     ]),
   ).then((hash) => `release-${hash}`);
-export const ownedServiceId = (task) =>
+export const ownedServiceId = (task, replacementAttempt = null) =>
   serviceDigest(
-    JSON.stringify([task.ownerId, task.input.projectId, task.id]),
+    JSON.stringify([
+      task.ownerId,
+      task.input.projectId,
+      task.id,
+      ...(replacementAttempt === null ? [] : [replacementAttempt]),
+    ]),
   ).then((hash) => `service-${hash}`);
 
 /** Caller must retrieve the checked artifact from task-owned storage, never model/request JSON. */
@@ -35,11 +40,12 @@ export async function prepareServicePublication(
   operationId,
   checked,
   expiresAt,
+  serviceId = null,
 ) {
   const task = parseTaskRecord(value);
   checked = parseCheckedService(checked);
   const identity = {
-    serviceId: await ownedServiceId(task),
+    serviceId: serviceId ?? (await ownedServiceId(task)),
     ownerId: task.ownerId,
     projectId: task.input.projectId,
     taskId: task.id,
