@@ -59,6 +59,8 @@ export type Outcome = PlaybackOutcome | {
   onError: PlaybackOutcome | null;
 };
 export type ComponentResponse = {
+  /** Host-only transient recovery selection; never a connection or export permission. */
+  recoveryActionId?: string;
   index: number;
   outcome: Outcome;
   formValues?: Record<string, string | number | boolean>;
@@ -95,6 +97,8 @@ export type ComponentFields = {
   outcome?: Outcome;
 };
 export type PvoComponent = {
+  /** Checked service metadata travels with the component through save and history. */
+  serviceConnection?: import("../../../../packages/pvo-assistant/attachments/index.js").ComponentServiceConnection;
   id: string;
   type: ComponentType;
   sceneId: string;

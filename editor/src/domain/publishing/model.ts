@@ -2,10 +2,21 @@ import type { ProjectSnapshot } from "../project/model";
 
 export type ExportFormat = "video" | "pvo";
 export type ExportQuality = "720p" | "1080p" | "4K";
-export type ExportStage = "preparing" | "uploading" | "rendering" | "downloading" | "browser";
-export type ExportSnapshot = ProjectSnapshot & { quality: ExportQuality; snapshotId: string };
+export type ExportStage =
+  | "preparing"
+  | "uploading"
+  | "rendering"
+  | "downloading"
+  | "browser"
+  | "activating";
+export type ExportSnapshot = ProjectSnapshot & {
+  quality: ExportQuality;
+  snapshotId: string;
+  services?: import("../export/serviceDelivery").ExportServicePlan;
+};
 export type CompletedExport = {
   snapshotId: string;
+  services?: import("../export/serviceDelivery").ExportServicePlan;
   blob: Blob;
   filename: string;
   contentType: string;
@@ -20,7 +31,11 @@ export type PublishingStatus = {
   hasSession: boolean;
   maxBytes: number;
 };
-export type PublicationReservation = { id: string; url: string; status: "pending" | "ready" };
+export type PublicationReservation = {
+  id: string;
+  url: string;
+  status: "pending" | "ready";
+};
 export type Publication = {
   id: string;
   title: string;
