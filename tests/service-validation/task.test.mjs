@@ -407,6 +407,22 @@ test(
         1,
       );
       assert.ok(stored.attempts.every((item) => item.settled));
+      const evidence = await f.control({
+        action: "select-evidence",
+        id: task.id,
+        request: {
+          kind: "history",
+          collection: "reviews",
+          after: 0,
+          offset: 0,
+          notes: "Inspect the first independent failure.",
+        },
+      });
+      expectStatus(evidence, 200);
+      const entry = JSON.parse(evidence.body.content);
+      assert.equal(entry.report.status, "failed");
+      assert.deepEqual(entry.identity, stored.artifacts[0].artifact.identity);
+      assert.equal(Object.hasOwn(entry, "package"), false);
     } finally {
       await f.close();
     }

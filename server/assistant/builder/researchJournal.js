@@ -14,6 +14,9 @@ export class TaskResearch {
     sql.exec(
       "CREATE TABLE IF NOT EXISTS task_research (id TEXT PRIMARY KEY, task_id TEXT NOT NULL, body TEXT NOT NULL)",
     );
+    sql.exec(
+      "CREATE INDEX IF NOT EXISTS task_research_task ON task_research(task_id)",
+    );
   }
   entries() {
     return this.sql

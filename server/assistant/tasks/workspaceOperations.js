@@ -18,6 +18,9 @@ export class WorkspaceOperations {
     this.tasks = tasks;
     sql.exec(`CREATE TABLE IF NOT EXISTS task_workspaces (task_id TEXT PRIMARY KEY, body TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS workspace_operations (id TEXT PRIMARY KEY, task_id TEXT NOT NULL, body TEXT NOT NULL)`);
+    sql.exec(
+      "CREATE INDEX IF NOT EXISTS workspace_operations_task ON workspace_operations(task_id)",
+    );
   }
   links() {
     return this.sql

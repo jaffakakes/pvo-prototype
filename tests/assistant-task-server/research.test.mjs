@@ -145,6 +145,21 @@ test(
       assert.equal(result.usage.toolCalls, 8);
       assert.equal(result.usage.reservedToolCalls, 0);
       assert.equal((await researchRows(fixture)).length, 8);
+      const evidence = await fixture.control({
+        action: "select-evidence",
+        id: task.id,
+        request: {
+          kind: "history",
+          collection: "research",
+          after: 0,
+          offset: 0,
+          notes: "Read the original public page evidence.",
+        },
+      });
+      expectStatus(evidence, 200);
+      const entry = JSON.parse(evidence.body.content);
+      assert.equal(entry.result.result.url, read.url);
+      assert.ok(evidence.body.content.includes("Telephone bookings only."));
       assert.equal((await rows(fixture)).links.length, 0);
     } finally {
       await fixture.close();

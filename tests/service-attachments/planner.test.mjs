@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { withEvidenceSchema } from "../../server/assistant/tasks/evidenceInput.js";
 import { planTaskAttachment } from "../../server/assistant/attachments/planner.js";
 import { serviceAttachmentSchema } from "../../packages/pvo-assistant/attachments/index.js";
 import { create } from "../assistant-tasks/fixtures.mjs";
@@ -22,7 +23,7 @@ test("attachment inference uses only the bounded command schema and supplied pub
           calls++;
           assert.deepEqual(
             request.response_format.json_schema,
-            serviceAttachmentSchema,
+            withEvidenceSchema(serviceAttachmentSchema),
           );
           assert.equal(request.max_tokens, 6000);
           const payload = JSON.parse(request.messages[1].content);

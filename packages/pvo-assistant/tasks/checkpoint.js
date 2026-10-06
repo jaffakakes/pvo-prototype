@@ -16,3 +16,14 @@ export function checkpointTaskOperations(task, retainedOperationId) {
   task.operations = task.operations.filter((item) => !ids.has(item.id));
   task.archivedOperations += removable.length;
 }
+
+/** Answered questions leave the recent context only when the repository can archive them. */
+export function checkpointTaskQuestions(task, retainedQuestionId) {
+  const retained = Math.floor(TASK_LIMITS.questions / 2);
+  const removable = task.questions
+    .slice(0, Math.max(0, task.questions.length - retained))
+    .filter((item) => item.answer !== null && item.id !== retainedQuestionId);
+  const ids = new Set(removable.map((item) => item.id));
+  task.questions = task.questions.filter((item) => !ids.has(item.id));
+  task.archivedQuestions += removable.length;
+}

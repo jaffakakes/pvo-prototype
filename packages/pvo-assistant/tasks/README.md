@@ -47,7 +47,7 @@ Creator-facing routes may expose only their named operations after authenticatio
 
 An already due queued wakeup may precede the latest bookkeeping update; reconciliation must not silently postpone it. `recover` preserves unknown effects and queues another worker without a goal-wide retry ceiling. The goal retains its original request, answers, current step, source and receipts. There is no timer in this module: the coordinator arranges worker wakeups and terminal-content deletion. No goal-age deadline ends unfinished work.
 
-Each new question starts at revision 0 with `answer: null`. Answering stores an operation ID and timestamp and advances its revision to 1. Prompts are immutable; a correction needs a new question identity. Choices are suggestions; a bounded free-text answer is allowed. Exactly one unanswered question is permitted while waiting. Stopped tasks may retain that unanswered question.
+Each new question starts at revision 0 with `answer: null`. Answering stores an operation ID and timestamp and advances its revision to 1. Prompts are immutable; a correction needs a new question identity. Choices are suggestions; a bounded free-text answer is allowed. Exactly one unanswered question is permitted while waiting. Stopped tasks may retain that unanswered question. The recent question window normally holds eight answered questions plus the current unanswered question. `archivedQuestions` counts older answered questions saved immutably outside the current record. Checkpoint writes and archived answers commit together. Question/answer IDs remain reserved forever within the retained goal, and an old exact answer replay does not advance or answer a different question.
 
 Prepared results contain an artifact reference and the original project fingerprint. Prepared component artifact contents use the separate [results contract](../results/README.md) and owned server storage. Trusted build validation reports remain a later builder responsibility. The contract checks reference shape and fingerprint consistency; it does not compile generated source or prove its behavior. Existing project fingerprints are opaque change tokens, not SHA-256 strings. The editor must recheck its current draft before applying a result.
 
@@ -70,7 +70,7 @@ Stop and claim recovery convert still-planned receipts to `unknown`. A trusted c
 | Examples / component summaries | 8 / 8 |
 | Each source section / project fingerprint | 20,000 / 128 UTF-8 bytes |
 | Aggregate input / entire task record | 128 KiB / 256 KiB of serialized JSON |
-| Questions / suggested choices per question | 16 / 6 |
+| Current questions / suggested choices per question | At most 16 / 6; answered history checkpoints near eight recent questions, with no goal-wide question ceiling |
 | Question / choice / answer | 2,000 / 200 / 4,000 UTF-8 bytes |
 | Current operation receipts / resource references per receipt | At most 64 / 8; settled receipts move to the separate immutable archive while the current window normally stays near 32 |
 | Artifact | Opaque ID, SHA-256 digest, positive size at most 1 MiB; contents stored separately |

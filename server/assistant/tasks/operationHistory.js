@@ -61,6 +61,13 @@ export class TaskOperationHistory {
         throw new Error("An archived operation cannot become a new attempt.");
       }
     }
+    for (const question of next.questions)
+      if (
+        question.answer &&
+        (this.get(next.id, question.answer.operationId) ||
+          removed.some((item) => item.id === question.answer.operationId))
+      )
+        throw new Error("An archived effect identity cannot become an answer.");
     for (const [index, operation] of removed.entries())
       this.sql.exec(
         "INSERT INTO task_operation_history(task_id,sequence,operation_id,body) VALUES(?,?,?,?)",
