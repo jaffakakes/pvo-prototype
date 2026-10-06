@@ -8,3 +8,4 @@ export {
 export { transitionTask } from "./transitions.js";
 export { parseTaskProposal, taskProposalSchema } from "./proposal.js";
 export { parseTaskReference } from "./reference.js";
+export { assertTaskExecution } from "./transition-guards.js";

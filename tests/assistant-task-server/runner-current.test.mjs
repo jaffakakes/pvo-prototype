@@ -10,10 +10,21 @@ test("a committed Stop prevents inference even before its cancellation signal is
   let receipt;
   const coordinator = {
     active: new Map(),
+    repairs: { context: () => null },
+    progress: { context: () => [], question: () => null },
+    evidence: {
+      context: () => ({
+        archivedQuestions: 0,
+        archivedOperations: 0,
+        selection: null,
+      }),
+    },
     now: () => claimed.updatedAt,
     stepTimeoutMs: () => 1000,
     env: {
-      ASSISTANT_BUDGET: { getByName: () => ({ reserve: async () => true }) },
+      ASSISTANT_BUDGET: {
+        getByName: () => ({ reserveTask: async () => ({ accepted: true }) }),
+      },
     },
     transaction: async (operation) => operation(),
     attempts: {
@@ -28,6 +39,7 @@ test("a committed Stop prevents inference even before its cancellation signal is
         return true;
       },
       current: () => current,
+      task: () => claimed,
       finish(_claimed, attempt, command, code) {
         receipt = { attempt, command, code };
       },

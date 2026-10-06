@@ -1,14 +1,25 @@
 /** Pure task contract; storage and authorization adapters must enforce their own boundaries. */
 export type TaskState =
-  "queued" | "running" | "waiting_for_answer" | "ready" | "failed" | "stopped";
+  | "queued"
+  | "running"
+  | "waiting_for_answer"
+  | "waiting"
+  | "ready"
+  | "failed"
+  | "stopped";
 export type TaskFailureCode =
   | "provider_unavailable"
   | "interrupted"
   | "reconciliation_required"
   | "execution_failed"
   | "invalid_result"
-  | "budget_exceeded"
-  | "deadline_exceeded";
+  | "budget_exceeded";
+export type TaskWaitReason =
+  | "model_capacity"
+  | "model_allowance"
+  | "workspace_capacity"
+  | "workspace_allowance"
+  | "spending_permission";
 export type TaskFailure = { code: TaskFailureCode; stepId: string };
 export type TaskArtifact = { id: string; sha256: string; bytes: number };
 export type TaskResult = { artifact: TaskArtifact; baseFingerprint: string };
@@ -19,10 +30,13 @@ export type TaskReference = {
 };
 export type TaskContext = {
   fingerprint: string;
+  currentSceneId: string;
+  scenes: Array<{ id: string; name: string; duration: number }>;
   components: Array<{
     id: string;
     sceneId: string;
     type: "tooltip" | "card" | "choice" | "form";
+    sourceVisibility: "full" | "design";
     source: { structure: string; style: string; logic: string };
   }>;
 };
@@ -71,15 +85,18 @@ export type TaskRecord = {
   generation: number;
   claim: null | { id: string; claimedAt: number; expiresAt: number };
   questions: TaskQuestion[];
+  archivedQuestions: number;
   operations: TaskOperation[];
+  archivedOperations: number;
   result: TaskResult | null;
   failure: TaskFailure | null;
+  wait: { reason: TaskWaitReason } | null;
   retries: number;
   usage: TaskUsage;
   createdAt: number;
   updatedAt: number;
-  deadlineAt: number;
-  expiresAt: number;
+  finishedAt: number | null;
+  expiresAt: number | null;
   nextRunAt: number | null;
 };
 export type TaskGuard = {
@@ -92,6 +109,7 @@ export type TaskGuard = {
 export type TaskCommand =
   | { kind: "claim"; claimId: string; leaseMs: number }
   | { kind: "checkpoint"; stepId: string }
+  | { kind: "wait"; reason: TaskWaitReason; nextRunAt: number | null }
   | { kind: "ask"; question: TaskQuestion }
   | {
       kind: "answer";
@@ -102,7 +120,7 @@ export type TaskCommand =
     }
   | { kind: "complete"; result: TaskResult }
   | { kind: "fail"; failure: TaskFailure }
-  | { kind: "resume" | "stop" | "recover" | "expire" }
+  | { kind: "resume" | "stop" | "recover" }
   | {
       kind: "record_operation" | "reconcile_operation";
       operation: TaskOperation;
@@ -128,6 +146,7 @@ export const TASK_LIMITS: Readonly<{
   examples: number;
   exampleBytes: number;
   components: number;
+  scenes: number;
   sourceBytes: number;
   inputBytes: number;
   recordBytes: number;
@@ -139,12 +158,8 @@ export const TASK_LIMITS: Readonly<{
   operations: number;
   resources: number;
   artifactBytes: number;
-  lifetimeMs: number;
   retentionMs: number;
   leaseMs: number;
-  retries: number;
-  modelTurns: number;
-  toolCalls: number;
 }>;
 export const TASK_STATES: readonly TaskState[];
 export const TASK_FAILURES: Readonly<
@@ -168,3 +183,5 @@ export function transitionTask(
   command: TaskCommand,
   guard: TaskGuard,
 ): TaskRecord;
+
+export function assertTaskExecution(task: TaskRecord, guard: TaskGuard): void;
