@@ -10,7 +10,7 @@ The creator can stop the work. Restyle can ask for missing information or spendi
 
 ## Confirmed correction
 
-The user explicitly rejected a fixed model-turn ceiling on 6 October 2026. The six/eight-turn cutoff is removed from task validation, builder-round accounting, runner admission and model prompts. Accounting still records calls and reconciles outstanding reservations. Ten durable model rounds and 100 counted turns pass local regression checks. This does not by itself remove the other prototype stopping conditions.
+The user explicitly rejected a fixed model-turn ceiling on 6 October 2026. The six/eight-turn cutoff is removed from task validation, builder-round accounting, runner admission and model prompts. Accounting still records calls and reconciles outstanding reservations. Ten durable model rounds and 100 counted turns pass local regression checks. The subsequent lifetime slice also removes the fixed 24-hour goal deadline, three-recovery ceiling and four-session ceiling. Unfinished goals keep null finish/retention timestamps; only Ready/Stop starts seven-day retention. A worker claim and each recorded inactive publication retain their own bounded lifetime. This does not yet remove the tool/history/capacity stopping conditions.
 
 ## Implementation boundaries
 

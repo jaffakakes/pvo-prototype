@@ -10,10 +10,11 @@ function requireWorkspace(condition, code) {
     throw Object.assign(new Error(code.replaceAll("_", " ")), { code });
 }
 
-export function newWorkspace(identity, now) {
+export function newWorkspace(identity) {
   return {
     identity: parseWorkspaceIdentity(identity),
-    closed: now >= identity.deadlineAt,
+    closed: false,
+    contentExpiresAt: null,
     generation: 0,
     sourceRevision: 0,
     sessions: 0,
@@ -37,10 +38,7 @@ export function assertWorkspaceOwner(state, identity) {
 }
 
 export function assertWorkspaceOpen(state, now) {
-  requireWorkspace(
-    !state.closed && now < state.identity.deadlineAt,
-    "workspace_closed",
-  );
+  requireWorkspace(!state.closed, "workspace_closed");
   requireWorkspace(!state.cleanupRequired, "workspace_cleanup_required");
   requireWorkspace(!state.active, "workspace_busy");
   assertWorkspaceGrant(state, now);
@@ -65,10 +63,6 @@ export function beginWorkspaceAction(state, { id, kind, now }) {
   );
   if (kind === "start") {
     requireWorkspace(!state.lease, "workspace_cleanup_required");
-    requireWorkspace(
-      state.sessions < limits.sessions,
-      "workspace_session_limit",
-    );
   } else {
     requireWorkspace(
       state.lease &&
@@ -80,7 +74,6 @@ export function beginWorkspaceAction(state, { id, kind, now }) {
   const generation = state.generation + 1;
   const deadlineAt = Math.min(
     now + (kind === "start" ? limits.startupMs : limits.commandMs),
-    state.identity.deadlineAt,
     state.grant.expiresAt,
     state.lease?.deadlineAt ?? Infinity,
   );
@@ -96,12 +89,8 @@ export function beginWorkspaceAction(state, { id, kind, now }) {
             session: state.sessions + 1,
             sourceRevision: state.sourceRevision,
             startedAt: now,
-            deadlineAt: Math.min(
-              now + limits.sessionMs,
-              state.identity.deadlineAt,
-              state.grant.expiresAt,
-            ),
-            expiresAt: state.identity.deadlineAt,
+            deadlineAt: Math.min(now + limits.sessionMs, state.grant.expiresAt),
+            expiresAt: now + limits.reservationMs,
           }
         : state.lease,
     active: { id, kind, generation, deadlineAt },
@@ -114,8 +103,7 @@ export function assertWorkspaceAction(state, action, now) {
     !state.closed &&
       state.active?.id === action.id &&
       state.active.generation === action.generation &&
-      now < state.active.deadlineAt &&
-      now < state.identity.deadlineAt,
+      now < state.active.deadlineAt,
     "workspace_action_stale",
   );
 }
@@ -128,7 +116,9 @@ export function finishWorkspaceAction(state, action, now) {
 export function interruptWorkspace(state, now, close = false) {
   return {
     ...state,
-    closed: state.closed || close || now >= state.identity.deadlineAt,
+    closed: state.closed || close,
+    contentExpiresAt:
+      state.contentExpiresAt ?? (close ? now + limits.retentionMs : null),
     generation: state.generation + 1,
     active: null,
     cleanupRequired: true,
@@ -165,8 +155,7 @@ export function workspaceWakeup(state, now) {
   const candidates = [
     state.active?.deadlineAt,
     !state.cleanupRequired && state.lease?.deadlineAt,
-    !state.closed && state.identity.deadlineAt,
-    !state.contentExpired && state.identity.expiresAt,
+    !state.contentExpired && state.contentExpiresAt,
     state.cleanupRequired && state.nextCleanupAt,
   ].filter((value) => typeof value === "number");
   return candidates.length ? Math.max(now, Math.min(...candidates)) : null;

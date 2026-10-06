@@ -10,7 +10,7 @@ import {
 } from "../../packages/pvo-assistant/workspaces/index.js";
 
 const identity = parseWorkspaceIdentity({});
-const state: WorkspaceState = newWorkspace(identity, 1);
+const state: WorkspaceState = newWorkspace(identity);
 const running = beginWorkspaceAction(state, {
   id: "one",
   kind: "start",

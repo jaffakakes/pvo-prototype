@@ -43,6 +43,7 @@ const publication = await prepareServicePublication(
   task,
   "host-one",
   await checkedFixture(),
+  task.createdAt + 86_400_000,
 );
 const receipt = prepareServiceAttachmentReceipt(
   publication,

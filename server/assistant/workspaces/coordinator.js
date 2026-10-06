@@ -20,7 +20,6 @@ import {
   serializeWorkspaceRequest,
 } from "../../../packages/pvo-assistant/workspaces/index.js";
 import { serializeServiceFiles } from "../../../packages/pvo-assistant/services/index.js";
-import { TASK_LIMITS } from "../../../packages/pvo-assistant/tasks/index.js";
 import { contentDigest } from "../../contentDigest.js";
 import { withAssistantDeadline } from "../deadline.js";
 import { verifyWorkspaceIdentity } from "./identity.js";
@@ -71,9 +70,7 @@ export class AssistantWorkspace extends DurableObject {
       const current = this.journal.state();
       if (current) assertWorkspaceOwner(current, identity);
       else {
-        if (identity.deadlineAt > this.now() + TASK_LIMITS.lifetimeMs)
-          fail("workspace_deadline_invalid");
-        this.journal.saveState(newWorkspace(identity, this.now()));
+        this.journal.saveState(newWorkspace(identity));
       }
     });
     await this.maintain();
@@ -344,13 +341,16 @@ export class AssistantWorkspace extends DurableObject {
       if (!state) return;
       const now = this.now();
       if (
-        (!state.closed && now >= state.identity.deadlineAt) ||
         (state.active && now >= state.active.deadlineAt) ||
         (!state.cleanupRequired && state.lease && now >= state.lease.deadlineAt)
       )
-        this.interrupt(now >= state.identity.deadlineAt);
+        this.interrupt(false);
       const current = this.journal.state();
-      if (!current.contentExpired && now >= current.identity.expiresAt) {
+      if (
+        !current.contentExpired &&
+        current.contentExpiresAt !== null &&
+        now >= current.contentExpiresAt
+      ) {
         this.journal.expireContent();
         this.journal.saveState({ ...current, contentExpired: true });
       }

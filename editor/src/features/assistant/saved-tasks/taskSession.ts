@@ -128,10 +128,7 @@ export function createSavedTaskSession(
             return latest;
           throw new SavedTaskHttpError(409);
         }
-        if (
-          savedTaskStatus(latest, adapters.now()).question?.id !==
-          action.questionId
-        )
+        if (savedTaskStatus(latest).question?.id !== action.questionId)
           throw new SavedTaskHttpError(409);
       } else if (action.kind === "stop" && latest.state === "stopped")
         return latest;

@@ -30,6 +30,7 @@ export type ServiceObservation = {
   state: "missing" | "available" | "retained" | "deleted";
 };
 export const INACTIVE_SERVICE_LIMITS: Readonly<{
+  lifetimeMs: number;
   publicationBytes: number;
   inputBytes: number;
   outputBytes: number;

@@ -14,8 +14,6 @@ export async function prepareWorkspaceIdentity(value) {
     ownerId: task.ownerId,
     projectId: task.input.projectId,
     taskId: task.id,
-    deadlineAt: task.deadlineAt,
-    expiresAt: task.expiresAt,
   };
   return parseWorkspaceIdentity({
     ...identity,

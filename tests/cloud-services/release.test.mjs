@@ -33,6 +33,7 @@ const publication = async (operationId = "publish-one") =>
     }),
     operationId,
     await checkedFixture(source),
+    NOW + 86_400_000,
   );
 let modules;
 async function fixture() {

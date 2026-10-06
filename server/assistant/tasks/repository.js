@@ -77,7 +77,7 @@ export class TaskRepository {
       .exec("SELECT record FROM tasks WHERE id = ?", id)
       .toArray()[0];
     const task = row?.record ? parseTaskRecord(JSON.parse(row.record)) : null;
-    if (!task || task.expiresAt <= now)
+    if (!task || (task.expiresAt !== null && task.expiresAt <= now))
       throw new HttpError(404, "This task is unavailable.");
     return task;
   }
@@ -91,7 +91,11 @@ export class TaskRepository {
       )
       .toArray()[0];
     if (row) {
-      if (!row.record || JSON.parse(row.record).expiresAt <= metadata.now)
+      if (
+        !row.record ||
+        (JSON.parse(row.record).expiresAt !== null &&
+          JSON.parse(row.record).expiresAt <= metadata.now)
+      )
         throw new HttpError(
           410,
           "This task has expired. Start a new request to continue.",
@@ -153,7 +157,7 @@ export class TaskRepository {
       )
       .toArray()
       .map((row) => parseTaskRecord(JSON.parse(row.record)))
-      .filter((task) => task.expiresAt > now);
+      .filter((task) => task.expiresAt === null || task.expiresAt > now);
     return {
       tasks: tasks.slice(0, limit),
       next: tasks.length > limit ? tasks[limit - 1].id : null,
@@ -203,31 +207,23 @@ export class TaskRepository {
   }
 
   maintain(now, heldTasks = new Set()) {
-    for (let task of this.records()) {
-      if (unfinished(task) && task.deadlineAt <= now) {
-        const next = transitionTask(
-          task,
-          { kind: "expire" },
-          {
-            ownerId: task.ownerId,
-            expectedRevision: task.revision,
-            now,
-            claim: null,
-          },
-        );
-        this.save(next, task.revision);
-        task = next;
-      }
+    for (const task of this.records()) {
       // Keep uncertain effect bookkeeping until its adapter has reconciled it.
-      if (task.expiresAt <= now && !unsettled(task) && !heldTasks.has(task.id))
+      if (
+        task.expiresAt !== null &&
+        task.expiresAt <= now &&
+        !unsettled(task) &&
+        !heldTasks.has(task.id)
+      )
         this.sql.exec("UPDATE tasks SET record = NULL WHERE id = ?", task.id);
     }
   }
 
   nextMaintenance(now) {
     const times = this.records().flatMap((task) => [
-      ...(unfinished(task) ? [task.deadlineAt] : []),
-      ...(task.expiresAt > now ? [task.expiresAt] : []),
+      ...(task.expiresAt !== null && task.expiresAt > now
+        ? [task.expiresAt]
+        : []),
     ]);
     return times.length ? Math.min(...times) : null;
   }

@@ -37,7 +37,7 @@ test("draft source accepts partial/empty files while rejecting unsafe and overla
 test("action intent retains a stable, bounded reservation before any provider effect", async () => {
   let state = advanceWorkspaceSource(
     authorizeWorkspaceExecution(
-      newWorkspace(await identity(), NOW),
+      newWorkspace(await identity()),
       executionGrant(),
       NOW,
     ),
@@ -73,21 +73,14 @@ test("action intent retains a stable, bounded reservation before any provider ef
 });
 
 test("cleanup retries stop without losing the obligation or creating a past-due alarm loop", async () => {
-  let state = interruptWorkspace(
-    newWorkspace(await identity(), NOW),
-    NOW,
-    true,
-  );
+  let state = interruptWorkspace(newWorkspace(await identity()), NOW, true);
   for (let i = 1; i <= WORKSPACE_LIMITS.cleanupAttempts; i++)
     state = deferWorkspaceCleanup(state, NOW);
   assert.equal(state.nextCleanupAt, null);
   assert.equal(state.cleanupRequired, true);
-  assert.equal(workspaceWakeup(state, NOW), state.identity.expiresAt);
+  assert.equal(workspaceWakeup(state, NOW), state.contentExpiresAt);
   assert.equal(
-    workspaceWakeup(
-      { ...state, contentExpired: true },
-      state.identity.expiresAt,
-    ),
+    workspaceWakeup({ ...state, contentExpired: true }, state.contentExpiresAt),
     null,
   );
 });

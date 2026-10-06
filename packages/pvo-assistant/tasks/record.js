@@ -57,7 +57,7 @@ export function parseTaskRecord(value) {
       "usage",
       "createdAt",
       "updatedAt",
-      "deadlineAt",
+      "finishedAt",
       "expiresAt",
       "nextRunAt",
     ],
@@ -71,16 +71,30 @@ export function parseTaskRecord(value) {
   id(value.stepId, "Current step ID");
   integer(value.revision, Number.MAX_SAFE_INTEGER, "Task revision");
   integer(value.generation, value.revision, "Execution generation");
-  integer(value.retries, limits.retries, "Retry count");
+  integer(value.retries, Number.MAX_SAFE_INTEGER, "Retry count");
   validateUsage(value.usage);
-  for (const key of ["createdAt", "updatedAt", "deadlineAt", "expiresAt"])
+  for (const key of ["createdAt", "updatedAt"])
     time(value[key], "Task timestamp");
   requireTask(
-    value.createdAt <= value.updatedAt &&
-      value.deadlineAt === value.createdAt + limits.lifetimeMs &&
-      value.expiresAt === value.createdAt + limits.retentionMs,
+    value.createdAt <= value.updatedAt,
     "Task timestamps or retention are inconsistent.",
   );
+  const finished = ["ready", "stopped"].includes(value.state);
+  if (finished) {
+    time(value.finishedAt, "Goal finish time");
+    time(value.expiresAt, "Finished goal retention");
+    requireTask(
+      value.finishedAt >= value.createdAt &&
+        value.finishedAt <= value.updatedAt &&
+        value.expiresAt === value.finishedAt + limits.retentionMs,
+      "Finished goal retention is inconsistent.",
+    );
+  } else {
+    requireTask(
+      value.finishedAt === null && value.expiresAt === null,
+      "Unfinished goals do not expire.",
+    );
+  }
   validateClaim(value);
   if (value.result !== null) {
     validateResult(value.result);
@@ -138,7 +152,6 @@ function validateClaim(value) {
         value.claim.claimedAt >= value.createdAt &&
         value.claim.claimedAt <= value.updatedAt &&
         value.claim.expiresAt > value.updatedAt &&
-        value.claim.expiresAt <= value.deadlineAt &&
         value.claim.expiresAt - value.claim.claimedAt <= limits.leaseMs,
       "Execution claim has inconsistent bounds.",
     );
@@ -146,8 +159,8 @@ function validateClaim(value) {
   if (value.state === "queued") {
     time(value.nextRunAt, "Next wakeup");
     requireTask(
-      value.nextRunAt >= value.createdAt && value.nextRunAt < value.deadlineAt,
-      "Queued wakeup must precede the deadline.",
+      value.nextRunAt >= value.createdAt,
+      "Queued wakeup precedes goal creation.",
     );
   } else
     requireTask(
@@ -166,8 +179,7 @@ function validateHistory(value) {
   const pending = value.questions.filter((item) => item.answer === null).length;
   let validPending = pending === 0;
   if (value.state === "waiting_for_answer") validPending = pending === 1;
-  if (value.state === "stopped" || value.failure?.code === "deadline_exceeded")
-    validPending = pending <= 1;
+  if (value.state === "stopped") validPending = pending <= 1;
   requireTask(
     validPending,
     "Unanswered questions do not match the task state.",
@@ -231,8 +243,8 @@ export function createTask(input, metadata) {
     },
     createdAt: metadata.now,
     updatedAt: metadata.now,
-    deadlineAt: metadata.now + limits.lifetimeMs,
-    expiresAt: metadata.now + limits.retentionMs,
+    finishedAt: null,
+    expiresAt: null,
     nextRunAt: metadata.now,
   });
 }

@@ -212,7 +212,10 @@ test("failed cleanup retains private bookkeeping past retention, then removes it
       body: { expectedRevision: fresh.revision },
     });
     await reconcile(fixture);
-    await fixture.control({ action: "time", now: task.expiresAt + 1 });
+    await fixture.control({
+      action: "time",
+      now: (await fixture.request(path(task))).body.task.expiresAt + 1,
+    });
     expectStatus(await fixture.request(path(task)), 404);
     assert.equal(
       (await fixture.control({ action: "inspect" })).body.records.length,
@@ -252,7 +255,10 @@ test("an unavailable provider has bounded retries, no alarm loop and no false su
         await fixture.control({ action: "time", now });
       } else assert.equal(row.nextAt, null);
     }
-    await fixture.control({ action: "time", now: task.expiresAt + 1 });
+    await fixture.control({
+      action: "time",
+      now: (await fixture.request(path(task))).body.task.expiresAt + 1,
+    });
     const swept = await fixture.control({ action: "sweep" });
     expectStatus(swept, 200);
     assert.equal(swept.body.alarm, null);
@@ -264,7 +270,7 @@ test("an unavailable provider has bounded retries, no alarm loop and no false su
   }
 });
 
-test("an exhausted failed task still wakes at its deadline to close the owned provider identity", async () => {
+test("an unresolved publication wakes at its own expiry and fences its identity without expiring the goal", async () => {
   let failLookup = true;
   const fixture = await taskFixture({
     services: true,
@@ -286,15 +292,63 @@ test("an exhausted failed task still wakes at its deadline to close the owned pr
         await fixture.control({ action: "time", now: row.nextAt });
     }
     const exhausted = (await fixture.control({ action: "inspect" })).body;
-    assert.equal(exhausted.alarm, task.deadlineAt);
+    assert.equal(exhausted.alarm, original.identity.expiresAt);
     failLookup = false;
-    await fixture.control({ action: "time", now: task.deadlineAt });
+    await fixture.control({ action: "time", now: original.identity.expiresAt });
     expectStatus(await fixture.control({ action: "sweep" }), 200);
     assert.equal((await stats(fixture, original)).observation.state, "deleted");
     const row = (await rows(fixture))[0];
     assert.equal(row.settled, true);
     assert.equal(row.cancelled, true);
     assert.equal((await current(fixture, task)).usage.reservedToolCalls, 0);
+  } finally {
+    await fixture.close();
+  }
+});
+
+test("an old goal publishes with a new resource lifetime and replays the exact intent after restart", async () => {
+  const fixture = await taskFixture({ services: true });
+  try {
+    let task = await publishing(fixture);
+    const later = NOW + 30 * 86400000;
+    await fixture.control({ action: "time", now: later });
+    for (const command of [
+      { kind: "recover" },
+      { kind: "claim", claimId: "later-worker", leaseMs: 60000 },
+    ]) {
+      const response = await fixture.control({
+        action: "step",
+        id: task.id,
+        command,
+      });
+      expectStatus(response, 200);
+      task = response.body;
+    }
+    const { ownedServiceId } =
+      await import("../../server/cloud-services/releaseContract.js");
+    // The controlled host and coordinator share the same advanced clock.
+    expectStatus(
+      await fixture.control({
+        action: "host-diagnostic",
+        identity: {
+          ownerId: task.ownerId,
+          serviceId: await ownedServiceId(task),
+        },
+      }),
+      200,
+    );
+    const created = await publish(fixture, task);
+    expectStatus(created, 200);
+    assert.equal(created.body.identity.expiresAt, later + 86400000);
+    assert.equal(created.body.outcome, "completed");
+    assert.equal((await current(fixture, task)).expiresAt, null);
+    await fixture.restart();
+    await fixture.control({ action: "time", now: later + 1000 });
+    task = await current(fixture, task);
+    const replay = await publish(fixture, task);
+    expectStatus(replay, 200);
+    assert.deepEqual(replay.body.identity, created.body.identity);
+    assert.equal((await stats(fixture, created.body)).stats.calls, 1);
   } finally {
     await fixture.close();
   }

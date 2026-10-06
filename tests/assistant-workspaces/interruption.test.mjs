@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { identity, NOW, files, command, workspaceFixture } from "./helpers.mjs";
+import {
+  identity,
+  NOW,
+  files,
+  command,
+  workspaceFixture,
+  executionGrant,
+} from "./helpers.mjs";
 
 const ok = (response) => {
   assert.equal(response.status, 200, JSON.stringify(response));
@@ -66,11 +73,15 @@ test("a wall deadline cleans up a command even if the provider ignores cancellat
     if ((await request.json()).kind === "execute") await blocked;
     return Response.json({});
   });
-  const who = { ...(await identity()), deadlineAt: NOW + 100 };
+  const who = await identity();
   try {
     const source = await saved(f, who);
     ok(await f.call("start", who, { id: "start", ...source }));
-    const receipt = ok(await f.call("execute", who, command(source)));
+    const receipt = ok(
+      await f.call("execute", who, command(source), {
+        execution: { ...executionGrant(2), expiresAt: NOW + 100 },
+      }),
+    );
     assert.equal(receipt.status, "interrupted");
     assert.equal(ok(await f.call("inspect", who)).vm.running, false);
     assert.equal(
@@ -88,7 +99,7 @@ test("a wall deadline cleans up a command even if the provider ignores cancellat
   }
 });
 
-test("a command failure saves its actual exit code while a task deadline closes the workspace", async () => {
+test("a command failure saves its exit code and a later worker restores the source after the former goal expiry", async () => {
   const f = await workspaceFixture(async () => Response.json({ exitCode: 7 }));
   const who = await identity();
   try {
@@ -98,14 +109,32 @@ test("a command failure saves its actual exit code while a task deadline closes 
     assert.equal(result.status, "completed");
     assert.equal(result.result.exitCode, 7);
     assert.equal(ok(await f.call("inspect", who)).vm.running, false);
-    ok(await f.call("time", who, null, { now: who.deadlineAt }));
+    ok(await f.call("time", who, null, { now: NOW + 30 * 86400000 }));
     const closed = ok(await f.call("lookup", who));
-    assert.equal(closed.closed, true);
+    assert.equal(closed.closed, false);
     assert.deepEqual(closed.source.files, files());
     assert.equal(ok(await f.call("inspect", who)).vm.running, false);
+    ok(
+      await f.call("time", who, null, {
+        budget: true,
+        now: NOW + 30 * 86400000,
+      }),
+    );
     assert.equal(
-      (await f.call("start", who, { id: "late", ...source })).status,
-      409,
+      ok(
+        await f.call(
+          "start",
+          who,
+          { id: "late", ...source },
+          {
+            execution: {
+              ...executionGrant(2),
+              expiresAt: NOW + 30 * 86400000 + 60000,
+            },
+          },
+        ),
+      ).status,
+      "completed",
     );
   } finally {
     await f.close();

@@ -1,4 +1,7 @@
-import { parseServicePublication } from "./publication.js";
+import {
+  INACTIVE_SERVICE_LIMITS,
+  parseServicePublication,
+} from "./publication.js";
 import { sameServiceIdentity } from "./identity.js";
 import {
   SERVICE_CATALOG_LIMITS as limits,
@@ -13,8 +16,7 @@ export function planOwnedPublication(task, value, snapshot, now) {
   if (
     identity.ownerId !== task.ownerId ||
     identity.projectId !== task.input.projectId ||
-    identity.taskId !== task.id ||
-    identity.expiresAt !== task.deadlineAt
+    identity.taskId !== task.id
   )
     throw new Error("Service intent does not belong to its saved task.");
   let { service, prior, services, releases } = snapshot;
@@ -29,6 +31,13 @@ export function planOwnedPublication(task, value, snapshot, now) {
       throw new Error("Release contents are immutable.");
     return { service, release: prior };
   }
+  if (
+    identity.expiresAt <= now ||
+    identity.expiresAt > now + INACTIVE_SERVICE_LIMITS.lifetimeMs
+  )
+    throw new Error(
+      "Inactive release lifetime is outside its publication window.",
+    );
   const all = services,
     day = Math.floor(now / 86400000) * 86400000;
   if (

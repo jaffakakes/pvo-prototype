@@ -45,18 +45,18 @@ Implemented through `packages/pvo-assistant/tasks/index.js` and `index.d.ts`. Th
 | Step receipts | Operation ID, input digest, outcome, artifact/provider references, and whether reconciliation is needed |
 | Prepared result | Bounded artifact reference and original project fingerprint; artifact validation, persistence, and editor application follow later |
 | Revision and execution ownership | Monotonic revision and a claimed execution generation so an old worker cannot commit after Stop or takeover |
-| Bounds and timestamps | Created/updated times, retry count, deadline, next wakeup, and usage reservations |
+| Bounds and timestamps | Created/updated/finished times, retry accounting, terminal retention, next wakeup, and usage reservations |
 | Errors | Sanitized operation context and a useful recovery classification; secrets and private payloads stay out |
 
-Byte/count limits for every variable-length field and collection, deadline, retention, retry count, and usage reservations are fixed in `TASK_LIMITS` and explained in the contract guide. These include 128 KiB input, 256 KiB task records, a 24-hour build deadline, and seven-day retention from creation. Storage/coordinator code must enforce the associated expiry and deletion policy. The 1A fixture's 20 calls and 60 seconds remain diagnostic limits.
+Byte/count limits for each variable-length payload and collection remain in `TASK_LIMITS` and the contract guide. Goal continuation (1B.11–1B.15) replaces the original arbitrary work cutoffs: unfinished goals do not expire; Ready/Stop starts seven-day retention; model turns and worker recoveries are counted without a goal-wide ceiling. Input stays bounded to 128 KiB and each current task record to 256 KiB. Checkpointing must preserve settled history and all unknown outcomes while allowing work to continue. The 1A fixture's 20 calls and 60 seconds remain diagnostic limits.
 
 Implemented states:
 
 | State | Meaning | Allowed next states |
 | --- | --- | --- |
-| `queued` | Waiting for its next run | `running`, `stopped`, or deadline expiry to `failed` |
+| `queued` | Waiting for its next run | `running` or `stopped` |
 | `running` | A current execution claim owns a step | `queued`, `waiting_for_answer`, `ready`, `failed`, `stopped` |
-| `waiting_for_answer` | A question needs the creator | `queued` after a valid answer, `stopped`, or deadline expiry to `failed` |
+| `waiting_for_answer` | A question needs the creator | `queued` after a valid answer, or `stopped` |
 | `ready` | A validated result is saved for the editor | Terminal for this build attempt |
 | `failed` | Work stopped with a recorded reason | `queued` after explicit resume of a recoverable failure within its bounds, or `stopped` |
 | `stopped` | Creator cancelled further work | Terminal; continuing creates a new linked attempt if needed |
@@ -120,7 +120,7 @@ Use a persisted wakeup mechanism appropriate to the chosen coordinator, such as 
 5. Check the current generation before saving its result or starting another effect.
 6. Save its receipt and next state/wakeup; release resources owned by that step.
 
-Separate retryable reads from external writes whose outcome is unknown. Bound retries, model turns, tool calls, total task duration, retained artifacts, and concurrent tasks. Enforce reservations on the server and release unused reservations after cancellation. Preserve the application's existing inference budget; browser-origin assumptions must not be the authorization mechanism for a background runner.
+Separate retryable reads from external writes whose outcome is unknown. Bound each execution, payload, artifact and concurrent resource. Preserve unfinished goals across workers without a fixed total duration or count of thinking turns; checkpoint settled history and wait visibly for capacity or spending authorization. Enforce reservations on the server and release unused reservations after cancellation. Preserve the application's existing inference budget; browser-origin assumptions must not be the authorization mechanism for a background runner.
 
 In 1B, use a small controlled authoring step to prove the lifecycle. Arbitrary model-written backend generation belongs to 1C. Use the proven 1A adapter when the acceptance check needs a real workspace rather than claiming a timer fixture proves a live build.
 

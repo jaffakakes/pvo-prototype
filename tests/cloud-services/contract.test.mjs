@@ -14,6 +14,7 @@ test("provider wire data is strictly validated and RPC resources are disposed ev
     create(),
     "publish",
     await checkedFixture(),
+    create().createdAt + 86_400_000,
   );
   for (const change of [
     {},
@@ -62,11 +63,13 @@ test("release identity is derived from the saved task and source bytes have a to
     task,
     "publish",
     await checkedFixture(),
+    task.createdAt + 86_400_000,
   );
   const same = await prepareServicePublication(
     task,
     "publish",
     await checkedFixture(),
+    task.createdAt + 86_400_000,
   );
   assert.deepEqual(first, same);
   const changed = await prepareServicePublication(
@@ -75,6 +78,7 @@ test("release identity is derived from the saved task and source bytes have a to
     await checkedFixture(
       "export function execute(){return {result:null,state:null};}",
     ),
+    task.createdAt + 86_400_000,
   );
   assert.equal(
     changed.identity.resourceId,
@@ -86,6 +90,7 @@ test("release identity is derived from the saved task and source bytes have a to
     { ...task, ownerId: "other" },
     "publish",
     { artifact: first.artifact, report: first.report },
+    { ...task, ownerId: "other" }.createdAt + 86_400_000,
   );
   assert.notEqual(foreign.identity.resourceId, first.identity.resourceId);
   assert.throws(() =>

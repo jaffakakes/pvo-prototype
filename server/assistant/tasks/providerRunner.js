@@ -3,7 +3,10 @@ import {
   prepareServicePublication,
   serviceIntentDigest,
 } from "../../cloud-services/releaseContract.js";
-import { parseServiceObservation } from "../../../packages/pvo-assistant/releases/index.js";
+import {
+  INACTIVE_SERVICE_LIMITS,
+  parseServiceObservation,
+} from "../../../packages/pvo-assistant/releases/index.js";
 import { withAssistantDeadline } from "../deadline.js";
 import { hasCurrentClaim } from "./executionClaim.js";
 
@@ -24,10 +27,14 @@ export async function publishTaskService(coordinator, claimed) {
       new Error("Hosting requires the task's independently checked package."),
       { code: "invalid_result" },
     );
+  const operationId = `service-${claimed.retries}`;
+  const prior = coordinator.providers.get(`${claimed.id}_${operationId}`);
   const publication = await prepareServicePublication(
     claimed,
-    `service-${claimed.retries}`,
+    operationId,
     { artifact: saved.artifact, report: saved.report },
+    prior?.identity.expiresAt ??
+      coordinator.now() + INACTIVE_SERVICE_LIMITS.lifetimeMs,
   );
   const inputDigest = await serviceIntentDigest(publication.identity);
   await refreshOwnedServices(coordinator);

@@ -14,9 +14,19 @@ import {
 test("an owned release binds canonical source, agreement, package and complete report while retaining its stable service identity", async () => {
   const checked = await checkedFixture(),
     task = create();
-  const first = await prepareServicePublication(task, "release-1", checked);
+  const first = await prepareServicePublication(
+    task,
+    "release-1",
+    checked,
+    task.createdAt + 86_400_000,
+  );
   assert.deepEqual(
-    await prepareServicePublication(task, "release-1", checked),
+    await prepareServicePublication(
+      task,
+      "release-1",
+      checked,
+      task.createdAt + 86_400_000,
+    ),
     first,
   );
   assert.deepEqual(await verifyServicePublication(first), first);
@@ -26,12 +36,18 @@ test("an owned release binds canonical source, agreement, package and complete r
     await checkedFixture(
       "export function execute(){return {result:null,state:null};}",
     ),
+    task.createdAt + 86_400_000,
   );
   assert.equal(changed.identity.resourceId, first.identity.resourceId);
   assert.equal(changed.identity.serviceId, first.identity.serviceId);
   assert.notEqual(changed.identity.packageDigest, first.identity.packageDigest);
   assert.notEqual(changed.identity.reportDigest, first.identity.reportDigest);
-  const next = await prepareServicePublication(task, "release-2", checked);
+  const next = await prepareServicePublication(
+    task,
+    "release-2",
+    checked,
+    task.createdAt + 86_400_000,
+  );
   assert.equal(next.identity.serviceId, first.identity.serviceId);
   assert.notEqual(next.identity.resourceId, first.identity.resourceId);
   for (const foreign of [
@@ -43,6 +59,7 @@ test("an owned release binds canonical source, agreement, package and complete r
       foreign,
       "release-1",
       checked,
+      foreign.createdAt + 86_400_000,
     );
     assert.notEqual(result.identity.serviceId, first.identity.serviceId);
     assert.notEqual(result.identity.resourceId, first.identity.resourceId);
@@ -55,6 +72,7 @@ test("publication rejects partial or forged shape reports, superseded source str
     create(),
     "release-1",
     checked,
+    create().createdAt + 86_400_000,
   );
   assert.throws(() =>
     parseServicePublication({

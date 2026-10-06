@@ -16,7 +16,7 @@ The owner-scoped catalog records intent before publication: the service, release
 
 Initial limits are eight non-deleted services per owner, eight new services per UTC day, 64 retained service identities and four releases per service. Exact intent replay works at the limit; deletion does not reset the daily budget. These are bounded initial product limits, not a billing guarantee. New releases begin pending and become inactive only after an actual provider observation. A missing observation is not proof that an in-flight publication cannot arrive. Cancellation retains a tombstone which blocks late publication.
 
-The initial inactive expiry is the originating task's deadline. Expiry/cancellation removes artifact bytes. The owner catalog retains deleted metadata. Failed provider cleanup remains journaled and holds task retention until reconciled. Stop cannot turn a late release into an attached component.
+Each new inactive publication receives its own expiry, at most 24 hours after its trusted intent is prepared. The journal freezes that value before dispatch. Exact retries and attachment verification use the saved expiry; the age or continuation of a goal cannot rewrite it. Expiry/cancellation removes artifact bytes. The owner catalog retains deleted metadata. Failed provider cleanup remains journaled and holds task retention until reconciled. Stop cannot turn a late release into an attached component.
 
 ## Private inactive checks
 

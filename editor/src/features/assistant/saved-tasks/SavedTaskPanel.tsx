@@ -66,9 +66,7 @@ function TaskAnswer({
 
 export function SavedTaskPanel() {
   const session = useSavedTask();
-  const status = session.task
-    ? savedTaskStatus(session.task, Date.now())
-    : null;
+  const status = session.task ? savedTaskStatus(session.task) : null;
   return (
     <section
       className={styles.panel}

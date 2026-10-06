@@ -10,5 +10,4 @@ export const hasCurrentClaim = (task, claimed, now) =>
   task?.state === "running" &&
   task.claim.id === claimed.claim.id &&
   task.generation === claimed.generation &&
-  now < task.claim.expiresAt &&
-  now < task.deadlineAt;
+  now < task.claim.expiresAt;

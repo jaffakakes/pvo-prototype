@@ -30,7 +30,12 @@ export const ownedServiceId = (task) =>
   ).then((hash) => `service-${hash}`);
 
 /** Caller must retrieve the checked artifact from task-owned storage, never model/request JSON. */
-export async function prepareServicePublication(value, operationId, checked) {
+export async function prepareServicePublication(
+  value,
+  operationId,
+  checked,
+  expiresAt,
+) {
   const task = parseTaskRecord(value);
   checked = parseCheckedService(checked);
   const identity = {
@@ -47,7 +52,7 @@ export async function prepareServicePublication(value, operationId, checked) {
         checked.artifact.identity,
       ),
     ),
-    expiresAt: task.deadlineAt,
+    expiresAt,
   };
   return verifyServicePublication({
     identity: { resourceId: await serviceResourceId(identity), ...identity },

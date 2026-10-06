@@ -7,7 +7,6 @@ import {
   requireTask,
   time,
 } from "../tasks/validation.js";
-import { TASK_LIMITS } from "../tasks/limits.js";
 import {
   parseServiceFiles,
   parseServiceFilePath,
@@ -87,7 +86,7 @@ export function parseWorkspaceLease(value) {
       /^workspace-[a-f0-9]{64}$/.test(value.resourceId),
     "Invalid workspace resource ID.",
   );
-  integer(value.session, limits.sessions, "Workspace session", 1);
+  integer(value.session, Number.MAX_SAFE_INTEGER, "Workspace session", 1);
   requireTask(
     value.id === `${value.resourceId}-${value.session}`,
     "Invalid workspace lease ID.",
@@ -102,7 +101,7 @@ export function parseWorkspaceLease(value) {
   );
   requireTask(
     value.expiresAt >= value.deadlineAt &&
-      value.expiresAt - value.startedAt <= TASK_LIMITS.lifetimeMs,
+      value.expiresAt - value.startedAt <= limits.reservationMs,
     "Invalid workspace reservation retention.",
   );
   return structuredClone(value);

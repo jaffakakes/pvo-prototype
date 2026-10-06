@@ -64,8 +64,7 @@ export class ProviderOperations {
     if (
       publication.identity.ownerId !== task.ownerId ||
       publication.identity.projectId !== task.input.projectId ||
-      publication.identity.taskId !== task.id ||
-      publication.identity.expiresAt !== task.deadlineAt
+      publication.identity.taskId !== task.id
     )
       throw new Error("Provider intent does not belong to this saved task.");
     const previous = this.entries().filter(
@@ -190,11 +189,7 @@ export class ProviderOperations {
       const task = tasks.get(row.taskId);
       if (!task || row.cancelRequested || row.cancelled || row.retained)
         continue;
-      if (
-        task.state !== "stopped" &&
-        !(now >= task.deadlineAt && task.state !== "ready")
-      )
-        continue;
+      if (task.state !== "stopped" && now < row.identity.expiresAt) continue;
       this.write({ ...row, cancelRequested: true, attempts: 0, nextAt: now });
     }
   }
@@ -212,15 +207,10 @@ export class ProviderOperations {
   nextWakeup() {
     const times = this.entries().flatMap((row) => {
       const task = this.task(row.taskId);
-      // Failed tasks still owe cleanup at their deadline, even after normal
-      // lookup retries have ended. Retention is a separate, later deadline.
+      // Resource expiry wakes unresolved lookup/cleanup even when the goal continues.
       const deadline =
-        task &&
-        task.state !== "ready" &&
-        !row.cancelRequested &&
-        !row.cancelled &&
-        !row.retained
-          ? [task.deadlineAt]
+        task && !row.cancelRequested && !row.cancelled && !row.retained
+          ? [row.identity.expiresAt]
           : [];
       if (!pending(row) || row.nextAt === null) return deadline;
       return [
@@ -277,7 +267,7 @@ export class ProviderOperations {
         ["available", "retained"].includes(observation.state),
     };
     if (observation.state === "missing") row.cancelRequested = true;
-    if (task.state === "stopped" || now >= task.deadlineAt)
+    if (task.state === "stopped" || now >= row.identity.expiresAt)
       row.cancelRequested = true;
     const complete =
       observation.state === "deleted" ||
