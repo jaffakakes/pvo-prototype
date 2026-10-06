@@ -16,11 +16,26 @@ export async function taskFixture({
   storage = true,
   broken = false,
   planner = null,
+  services = false,
+  providerControl = null,
+  workspaces = false,
+  workspaceControl = null,
+  workspaceEffects = async () => Response.json({}),
 } = {}) {
   modules ??= bundleWorkerModules({
     stdin: {
       resolveDir: process.cwd(),
       contents: `
+    export { TestBudget, TestWorkspace } from './tests/assistant-workspaces/controlled-worker.js';
+    import { reconcileTaskWorkspaces } from './server/assistant/tasks/workspaceRunner.js';
+    import { ServiceRelease } from "./server/cloud-services/release.js";
+    import { reconcileTaskServices } from "./server/assistant/tasks/providerRunner.js";
+    export class TestServiceRelease extends ServiceRelease {
+      constructor(ctx, env) { super(ctx, env); ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS calls (id INTEGER PRIMARY KEY CHECK (id=1), count INTEGER NOT NULL)"); }
+      now() { return Date.UTC(2100, 0, 1); }
+      async publish(value) { this.ctx.storage.sql.exec("INSERT INTO calls (id,count) VALUES (1,1) ON CONFLICT(id) DO UPDATE SET count=count+1"); return super.publish(value); }
+      stats() { return { calls: this.ctx.storage.sql.exec("SELECT count FROM calls").toArray()[0]?.count ?? 0, sourcePresent: !!this.row()?.source }; }
+    }
     import { savedTaskPlanningAvailable } from "./server/assistant/tasks/availability.js";
     import { handleRequest } from "./server/index.js";
     export { AssistantBudget } from "./server/assistant/budget.js";
@@ -36,6 +51,59 @@ export async function taskFixture({
         if (!this.env.CONTROLLED_PLAN) return super.plan(task, signal);
         return (await this.env.PLANNER.fetch("https://planner.test/", { method: "POST", body: JSON.stringify(task), signal })).json();
       }
+      providerTimeoutMs() { return 500; }
+      serviceProvider() {
+        if (this.providerDisabled) return null;
+        const provider = super.serviceProvider();
+        if (!provider || !this.env.PROVIDER_CONTROL) return provider;
+        const call = async (action, value) => {
+          const identity = value.identity ?? value;
+          const control = async phase => {
+            const response = await this.env.PROVIDER_CONTROL.fetch("https://provider-control.test", { method: "POST", body: JSON.stringify({ phase, action, identity }) });
+            const decision = await response.json();
+            if (decision.fail) throw new Error("Controlled provider failure");
+          };
+          await control("before");
+          const result = await provider[action](value);
+          await control("after");
+          return result;
+        };
+        return { publish: value => call("publish", value), lookup: value => call("lookup", value), cancel: value => call("cancel", value) };
+      }
+      workspaceTimeoutMs() { return 500; }
+      workspaceProvider() {
+        if (this.workspacesDisabled) return null;
+        const provider = super.workspaceProvider();
+        if (!provider) return null;
+        const call = async (action, ...args) => {
+          const control = async phase => {
+            if (!this.env.WORKSPACE_CONTROL) return;
+            const decision = await (await this.env.WORKSPACE_CONTROL.fetch("https://workspace-control.test", {
+              method: "POST", body: JSON.stringify({ phase, action, identity: args[0], request: args[2] }) })).json();
+            if (decision.fail) throw new Error("Controlled workspace RPC failure");
+          };
+          await control("before");
+          await this.env.ASSISTANT_WORKSPACES.getByName(args[0].resourceId).setTime(this.now());
+          await this.env.WORKSPACE_BUDGET.getByName("global").setTime(this.now());
+          const result = await provider[action](...args);
+          await control("after");
+          return result;
+        };
+        return Object.fromEntries(["operate", "receipt", "lookup", "suspend", "stop"].map(action => [action, (...args) => call(action, ...args)]));
+      }
+      disableWorkspaces() { this.workspacesDisabled = true; }
+      async reconcileWorkspaces() { await reconcileTaskWorkspaces(this); return this.workspaceRows(); }
+      workspaceRows() { return { operations: this.workspaces.entries(), links: this.workspaces.links() }; }
+      async workspaceStatus(identity) {
+        const stub = this.env.ASSISTANT_WORKSPACES.getByName(identity.resourceId);
+        await stub.setTime(this.now());
+        return { observation: await stub.lookup(identity), stats: await stub.inspect() };
+      }
+      disableProvider() { this.providerDisabled = true; }
+      async reconcileProviders() { await this.transaction(() => this.providers.noteTerminal(this.now())); await reconcileTaskServices(this); return this.providers.entries(); }
+      providerRows() { return this.providers.entries(); }
+      async providerStatus(identity) { const stub=this.env.SERVICE_RELEASES.getByName(identity.resourceId); return { observation: await stub.lookup(identity), stats: await stub.stats() }; }
+      async providerProbe(identity, input) { return this.env.SERVICE_RELEASES.getByName(identity.resourceId).probe(identity, input); }
       setTime(now) { this.clock = now; }
       async inspect() { return { alarm: await this.ctx.storage.getAlarm(), records: this.repository.records(),
         identities: this.ctx.storage.sql.exec("SELECT COUNT(*) AS count FROM tasks").one().count }; }
@@ -65,6 +133,19 @@ export async function taskFixture({
         const { action, ...args } = await request.json();
         const stub = env.ASSISTANT_TASKS.getByName("owner:" + owner.id);
         try {
+          if (action === "workspace-tools") return json(await stub.workspaceToolDefinitions());
+          if (action === "workspace-tool") return json(await stub.workspaceTool(owner.id, args.id, args.tool, args.operationId, args.guard));
+          if (action === "workspace") return json(await stub.workspaceOperation(owner.id, args.id, args.kind, args.request, args.guard));
+          if (action === "workspace-rows") return json(await stub.workspaceRows());
+          if (action === "workspace-reconcile") return json(await stub.reconcileWorkspaces());
+          if (action === "workspace-status") return json(await stub.workspaceStatus(args.identity));
+          if (action === "disable-workspaces") { await stub.disableWorkspaces(); return json({ ok: true }); }
+          if (action === "disable-provider") { await stub.disableProvider(); return json({ ok: true }); }
+          if (action === "publish") return json(await stub.publishService(owner.id, args.id, args.source, args.guard));
+          if (action === "provider-reconcile") return json(await stub.reconcileProviders());
+          if (action === "provider-rows") return json(await stub.providerRows());
+          if (action === "provider-status") return json(await stub.providerStatus(args.identity));
+          if (action === "provider-probe") return json(await stub.providerProbe(args.identity, args.input));
           if (action === "time") { await stub.setTime(args.now); return json({ ok: true }); }
           if (action === "inspect") return json(await stub.inspect());
           if (action === "sweep") return json(await stub.sweep());
@@ -95,11 +176,43 @@ export async function taskFixture({
         BROKEN: broken,
         CONTROLLED_PLAN: Boolean(planner),
       },
-      ...(planner ? { serviceBindings: { PLANNER: planner } } : {}),
+      ...(planner || providerControl || workspaces
+        ? {
+            serviceBindings: {
+              ...(planner ? { PLANNER: planner } : {}),
+              ...(workspaces ? { CONTROL: workspaceEffects } : {}),
+              ...(workspaceControl
+                ? { WORKSPACE_CONTROL: workspaceControl }
+                : {}),
+              ...(providerControl ? { PROVIDER_CONTROL: providerControl } : {}),
+            },
+          }
+        : {}),
+      ...(services ? { workerLoaders: { SERVICE_LOADER: {} } } : {}),
       ...(storage
         ? {
             durableObjects: {
               ASSISTANT_TASKS: { className: "TestTasks", useSQLite: true },
+              ...(workspaces
+                ? {
+                    ASSISTANT_WORKSPACES: {
+                      className: "TestWorkspace",
+                      useSQLite: true,
+                    },
+                    WORKSPACE_BUDGET: {
+                      className: "TestBudget",
+                      useSQLite: true,
+                    },
+                  }
+                : {}),
+              ...(services
+                ? {
+                    SERVICE_RELEASES: {
+                      className: "TestServiceRelease",
+                      useSQLite: true,
+                    },
+                  }
+                : {}),
               ...(planner
                 ? {
                     ASSISTANT_BUDGET: {
