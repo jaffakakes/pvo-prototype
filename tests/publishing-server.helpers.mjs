@@ -65,13 +65,14 @@ export function tinyWebm() {
     0x18, 0x53, 0x80, 0x67, 0xff, 0x16, 0x54, 0xae, 0x6b, 0x81, 0, 0x1f, 0x43, 0xb6, 0x75, 0x81, 0])], { type: "video/webm" });
 }
 
-export async function tinyPvo(poster = null) {
+export async function tinyPvo(poster = null, paddingBytes = 0) {
   const manifest = { spec_version: "0.1-prototype", scenes: [{ id: "main", start: 0, end: 1 }], components: [],
     media: [{ id: "video", asset_id: "video", type: "video/mp4" }],
     playback: { initial_timeline: "main", timelines: [{ id: "main", clips: [{ id: "clip", asset_id: "video", scene: "main", start: 0, end: 1 }] }] } };
   if (poster) manifest.poster = { asset_id: "poster", at: .5, type: poster.type };
   return packPvoProject({ manifest, assets: [
-    { id: "video", blob: tinyMp4() },
+    { id: "video", blob: paddingBytes ? new Blob([tinyMp4(), new Uint8Array(paddingBytes)],
+      { type: "video/mp4" }) : tinyMp4() },
     ...(poster ? [{ id: "poster", blob: poster }] : []),
   ] });
 }

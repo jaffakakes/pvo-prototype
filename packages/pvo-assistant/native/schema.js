@@ -93,7 +93,7 @@ export const operationSchemas = [
   operation("component.delete", component),
   operation("playback.seek", { ...scene, time }),
   operation("playback.play", {}), operation("playback.pause", {}),
-  operation("export.prepare", { format: enumeration(["video", "pvo"]) }),
+  operation("export.prepare", { format: enumeration(["pvo"]) }),
 ];
 export const observationRequestSchema = { anyOf: [
   ...webObservationRequests,
