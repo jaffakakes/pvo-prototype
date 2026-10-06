@@ -49,14 +49,18 @@ export function acceptanceTransport(
         signal?.throwIfAborted();
         if (!safe) throw error;
       }
-      if (response && (!safe || ![502, 503, 504].includes(response.status)))
+      const status =
+        response?.status === 200 && /^\/(dinner|equipment)\/api$/.test(path)
+          ? response.data?.status
+          : response?.status;
+      if (response && (!safe || ![502, 503, 504].includes(status)))
         return response;
       attempt++;
       await record("diagnostic_transport_recovery", {
         path,
         method,
         attempt,
-        status: response?.status ?? null,
+        status: status ?? null,
         ...(path === "/health" && response?.data?.startup
           ? { startup: response.data.startup }
           : {}),

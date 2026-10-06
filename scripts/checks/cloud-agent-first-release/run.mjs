@@ -126,6 +126,19 @@ try {
     signal: controller.signal,
     record,
   });
+  // Initialize/read the account coordinator before the browser's UI timeout.
+  // This is read-only and uses the same deadline-bound transient recovery.
+  for (const subject of subjects) {
+    const readiness = await call(`/${subject}/api`, "POST", {
+      path: "/api/assistant/tasks/acceptance-readiness-missing",
+      method: "GET",
+    });
+    if (readiness.data?.status !== 404)
+      throw new Error(
+        `${subject}: authoring routes unavailable (HTTP ${readiness.data?.status})`,
+      );
+    await record("authoring_routes_ready", { subject });
+  }
   journey = await openCreatorJourney({
     origin: resource.url,
     sourceUrl,

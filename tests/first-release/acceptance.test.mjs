@@ -266,6 +266,13 @@ test("actual diagnostic stores ordinary tasks, rejects unowned access and retain
     );
     assert.equal(cancellation[0].check, "stopped_task_stays_stopped");
     assert.notEqual(cancellation[0].taskId, first.task.id);
+    const readiness = await (
+      await call("/equipment/api", "POST", {
+        path: "/api/assistant/tasks/acceptance-readiness-missing",
+        method: "GET",
+      })
+    ).json();
+    assert.equal(readiness.status, 404);
     const cleaned = await (await call("/", "DELETE")).json();
     assert.equal(cleaned.stopped.length, 2);
     assert.equal(cleaned.usage.models.length, max);
