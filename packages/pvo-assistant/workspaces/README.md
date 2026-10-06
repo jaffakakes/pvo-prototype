@@ -41,3 +41,9 @@ The saved-task coordinator now journals workspace calls and per-task tool reserv
 `server/worker.js` exports both classes and `wrangler.jsonc` declares their bindings plus `restyle-agent-workspaces`. Product deployment is separate; no model tools are advertised until 1C.04/1C.05. The independent trusted service test gate remains in 1C.07/1C.08.
 
 Local tests use real workerd/SQLite/RPC and runtime restarts with controlled Container effects. The restore program also runs in disposable local directories. The separate [native Container acceptance](../../../docs/engineering/restyle-workspace-provider-proof.md) passed on 5 October 2026; every disposable provider resource was deleted and absence verified.
+
+## Capacity waits
+
+Workspace reservation returns `{accepted:true}` or a trusted `{accepted:false,reason,retryAt}`. Concurrent/journal capacity returns `workspace_capacity`; daily allowance returns `workspace_allowance` with the next UTC day. A closed/expired lease is `lease_closed` and cannot reopen. Denied starts persist an interrupted receipt whose capacity result includes `retryAt`; ordinary interruptions retain only their fixed code. Cleanup remains mandatory, and expiry alone never releases an unconfirmed resource slot.
+
+The saved builder records the real denial, abandons dependent commands, and saves a waiting task. When capacity is rechecked, a new operation starts from the same stored source. Old receipts/lease tombstones remain immutable; reading an old denied receipt does not pause a new work period. Restart and delayed replies preserve these rules.

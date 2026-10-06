@@ -407,5 +407,8 @@
   "tests/service-validation/task.helpers.mjs",
   "tests/service-validation/task.test.mjs",
   "tests/assistant-tasks/wait.test.mjs",
-  "tests/assistant-task-server/capacity.test.mjs"
+  "tests/assistant-task-server/capacity.test.mjs",
+  "server/assistant/tasks/spending.js",
+  "tests/assistant-task-server/spending.test.mjs",
+  "tests/assistant-task-server/workspace-capacity.test.mjs"
 ]

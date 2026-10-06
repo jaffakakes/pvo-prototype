@@ -23,7 +23,7 @@ const waitMessages = {
   workspace_allowance:
     "The current build allowance is used. Your progress is saved and work will resume when it resets.",
   spending_permission:
-    "Work needs spending permission. After an allowance is approved, choose Resume to continue this task.",
+    "Your account needs spending permission for cloud work. Ask your Restyle administrator to enable it, then choose Resume.",
 };
 
 export function savedTaskStatus(task: TaskRecord) {

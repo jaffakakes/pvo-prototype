@@ -36,6 +36,7 @@
   },
   "vars": {
     "ASSISTANT_PROVIDER": "runpod",
+    "ASSISTANT_TASK_SPENDING": "[]",
     "RUNPOD_TRANSCRIPTION_ENDPOINT": "5uqruzvtb96kph",
     "PUBLISHING_ENABLED": "true",
     "PUBLIC_ORIGIN": "https://getrestyle.app",

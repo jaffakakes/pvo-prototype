@@ -37,14 +37,23 @@ export function parseWorkspaceReceipt(value) {
       "Pending workspace operation cannot have a result.",
     );
   else if (value.status === "interrupted") {
-    object(value.result, ["code"], "Workspace interruption");
+    const capacity = ["workspace_capacity", "workspace_allowance"].includes(
+      value.result?.code,
+    );
+    object(
+      value.result,
+      capacity ? ["code", "retryAt"] : ["code"],
+      "Workspace interruption",
+    );
+    if (capacity) time(value.result.retryAt, "Workspace capacity retry time");
     choice(
       value.result.code,
       [
         "workspace_stopped",
         "workspace_claim_revoked",
         "workspace_execution_interrupted",
-        "workspace_budget_exhausted",
+        "workspace_capacity",
+        "workspace_allowance",
         "workspace_provider_unavailable",
         "workspace_output_limit",
       ],

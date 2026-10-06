@@ -1,6 +1,7 @@
 import { transitionTask } from "../../../packages/pvo-assistant/tasks/index.js";
 import { HttpError } from "../../http.js";
 import { randomId } from "../../identity.js";
+import { taskSpendingCapability } from "./spending.js";
 
 /** Admit one bounded step after expired claims, receipts and cleanup are reconciled. */
 export function claimNextTask(coordinator) {
@@ -83,10 +84,13 @@ export function claimNextTask(coordinator) {
         claim: null,
       },
     );
+    const stage =
+      claimed.stepId === "build"
+        ? coordinator.builders.stage(claimed.id)
+        : null;
     const tools =
       ["validate", "host"].includes(claimed.stepId) ||
-      (claimed.stepId === "build" &&
-        coordinator.builders.stage(claimed.id) !== "model");
+      (claimed.stepId === "build" && stage !== "model");
     let code = null;
     if (
       claimed.operations.some((operation) =>
@@ -97,6 +101,23 @@ export function claimNextTask(coordinator) {
     )
       code = "reconciliation_required";
     else if (
+      !coordinator.spendingAllowed(
+        claimed,
+        taskSpendingCapability(claimed, stage),
+      )
+    ) {
+      coordinator.repository.update(
+        claimed.id,
+        { kind: "wait", reason: "spending_permission", nextRunAt: null },
+        {
+          ownerId: claimed.ownerId,
+          expectedRevision: claimed.revision,
+          now,
+          claim: { id: claimed.claim.id, generation: claimed.generation },
+        },
+      );
+      continue;
+    } else if (
       !["plan", "build", "validate", "host", "attach"].includes(
         claimed.stepId,
       ) ||
