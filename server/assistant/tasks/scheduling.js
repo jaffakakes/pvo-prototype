@@ -101,15 +101,16 @@ export function claimNextTask(coordinator) {
     )
       code = "reconciliation_required";
     else if (
-      !["plan", "build", "validate", "host"].includes(claimed.stepId) ||
-      (claimed.stepId === "host" && !coordinator.serviceProvider()) ||
+      !["plan", "build", "validate", "host", "attach"].includes(
+        claimed.stepId,
+      ) ||
+      (["host", "attach"].includes(claimed.stepId) &&
+        !coordinator.serviceProvider()) ||
       (claimed.stepId === "validate" && !coordinator.validationAvailable()) ||
       (claimed.stepId === "build" && !coordinator.workspaceProvider()) ||
       (!tools && !coordinator.plannerAvailable())
     )
       code = "provider_unavailable";
-    else if (!tools && claimed.usage.modelTurns >= TASK_LIMITS.modelTurns)
-      code = "budget_exceeded";
     if (code) {
       coordinator.repository.update(
         claimed.id,

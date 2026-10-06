@@ -1,7 +1,11 @@
 import {
   matchAttachmentOperation,
+  prepareComponentServiceConnection,
   validateCompiledServiceAttachment,
 } from "../../../../../packages/pvo-assistant/attachments/index.js";
+import { requestHost, checkedDomains } from "../../components/actions";
+import { serviceAttachmentRequest } from "../../../../../packages/pvo-assistant/attachments/index.js";
+import type { PvoComponent } from "../../project/model";
 import type { NativeOperation } from "../../../../../packages/pvo-assistant/native/index.js";
 import { componentLanguageModel } from "../../components/languageEditing";
 import { sceneDuration } from "../../scenes/duration";
@@ -23,11 +27,11 @@ export function validateAttachmentBatchInput(
 }
 
 /** Recheck the one authorized connection against the final candidate before entering history. */
-export function validateNativeBatchAttachment(
+function validateAttachmentComponent(
   batch: Pick<NativeBatch, "before" | "project" | "attachment">,
-): void {
+): PvoComponent | null {
   const attachment = batch.attachment;
-  if (!attachment) return;
+  if (!attachment) return null;
   const scene = batch.project.scenes.find(
     (item) => item.id === attachment.sceneId,
   );
@@ -62,4 +66,40 @@ export function validateNativeBatchAttachment(
         .map((item) => ({ id: item.id, name: item.name })),
     },
   );
+  return component;
+}
+
+/** Add metadata and its exact approved host only to an already validated isolated candidate. */
+export function connectNativeBatchAttachment(batch: NativeBatch): void {
+  const attachment = batch.attachment;
+  if (!attachment) return;
+  const component = validateAttachmentComponent(batch)!;
+  component.serviceConnection = prepareComponentServiceConnection(
+    attachment.authorization,
+  );
+  const host = requestHost(
+    serviceAttachmentRequest(attachment.authorization).url,
+  );
+  batch.project.allowedDomains = checkedDomains([
+    ...batch.project.allowedDomains,
+    host,
+  ]);
+}
+
+export function validateNativeBatchAttachment(
+  batch: Pick<NativeBatch, "before" | "project" | "attachment">,
+): void {
+  const component = validateAttachmentComponent(batch);
+  if (!component || !batch.attachment) return;
+  const authorization = batch.attachment.authorization;
+  if (
+    JSON.stringify(component.serviceConnection) !==
+      JSON.stringify(prepareComponentServiceConnection(authorization)) ||
+    !batch.project.allowedDomains.includes(
+      requestHost(serviceAttachmentRequest(authorization).url),
+    )
+  )
+    throw new Error(
+      "The component connection or approved service host changed before application.",
+    );
 }

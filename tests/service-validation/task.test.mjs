@@ -37,11 +37,11 @@ test(
       assert.equal(end.stepId, "attach", JSON.stringify(end));
       assert.equal(
         end.failure.code,
-        "provider_unavailable",
-        "Attachment is a separate unfinished step",
+        "invalid_result",
+        "The backend fixture does not supply an attachment proposal",
       );
       assert.equal(end.result, null);
-      assert.equal(end.usage.modelTurns, 6);
+      assert.equal(end.usage.modelTurns, 7);
       assert.equal(end.usage.toolCalls, 8); // two writes, two captures, three cases (first fails)
       assert.equal(end.usage.reservedToolCalls, 0);
       const stored = await validation(f, task);
@@ -211,7 +211,7 @@ test(
       workspaces: true,
       planner: async (request) => {
         const value = await request.clone().json();
-        contexts.push(value.builderContext);
+        if (value.builderContext) contexts.push(value.builderContext);
         const decision = await (await generate(request)).json();
         if (decision.kind === "review" && reviews++ === 0)
           decision.digest = "0".repeat(64);

@@ -29,7 +29,7 @@ Build this before committing to a provider-specific implementation.
 
 ## 1B. Save the task and its questions
 
-**Progress: 1B is verified complete.** Saved tasks, planning, questions, prepared results and provider recovery pass the local/browser acceptance matrix and the [actual Cloudflare proof](../restyle-cloud-provider-recovery-proof.md). Source is in PR #87; integration and production delivery are separate. The following 1C.01 contract is now verified; integration and provider construction remain separate. Arbitrary workspace generation remains 1C.
+**Progress: 1B.01–1B.10 are verified.** The user has requested goal-based continuation without arbitrary model/tool/session ceilings; 1B.11–1B.15 below are the next priority. Saved tasks, planning, questions, prepared results and provider recovery pass the local/browser acceptance matrix and the [actual Cloudflare proof](../restyle-cloud-provider-recovery-proof.md). Source is in PR #87; integration and production delivery are separate. The following 1C.01 contract is now verified; integration and provider construction remain separate. Arbitrary workspace generation remains 1C.
 
 The task record is the agent's notebook. It must be saved on the server. Follow the [detailed 1B implementation plan](1b-saved-tasks.md) for contracts, build order, and failure tests.
 
@@ -43,6 +43,16 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 - [x] **1B.08** Record completed steps so restarting a task cannot repeat a deployment or other completed action.
 - [x] **1B.09** Reconcile interrupted steps with provider resource records before retrying. A deployed service whose reply was lost must be recovered and recorded.
 - [x] **1B.10** Pass the saved-task acceptance matrix, record test and browser evidence, and verify the new beta revision for the completed app changes.
+
+### Goal continuation correction — 6 October 2026
+
+The user wants the agent to keep working toward the goal, with no fixed model-turn ceiling. The former six/eight-turn cutoff has been removed and tested. Remaining execution, storage and capacity controls must support continuation. Follow [the goal-continuation implementation plan](1b-goal-continuation.md) before proceeding to 1E.04.
+
+- [ ] **1B.11** Separate the saved goal from short execution periods. Preserve its objective, current plan, questions, source and receipts across work periods without a fixed goal-wide model/tool/session count or automatic 24-hour abandonment.
+- [ ] **1B.12** Keep the notebook bounded by checkpointing settled history into owned durable records. Preserve every unknown external outcome and replay identity; full history or retention must not silently end or erase active goals.
+- [ ] **1B.13** Pause and resume for actual spending permission or temporarily unavailable capacity. Show the reason and next action; a rate limit or expired work lease must not become a permanently failed goal. Keep Stop authoritative.
+- [ ] **1B.14** Continue from actual progress and validation feedback. Repair unsuccessful work, detect repeated attempts that add no useful evidence, and ask a concrete question when necessary. Finish only after the requested result is verified.
+- [ ] **1B.15** Verify continuation beyond the former model/tool/workspace bounds, interrupted checkpoints, waiting/approved budget, Stop/resume and missing external outcomes with local controlled effects. Update the beta and portable handoff; new paid acceptance needs its own approval.
 
 **Finished when:** close the editor during an active build and while a question is pending. The build continues, or waits for the saved answer, and the same task resumes on return. Restarting its worker reconciles completed effects before retrying and creates no duplicate deployment. A different account cannot read or answer it. Stopping the task prevents new work from starting.
 
@@ -91,7 +101,7 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 
 - [x] **1E.01** Add a validated attachment command that consumes a real service receipt: owner, project, release, operation, input/result agreement, and readiness. The agent cannot attach an invented address.
 - [x] **1E.02** Update both server and editor assistant validation to admit this verified attachment. Keep existing protections for unrelated request changes.
-- [ ] **1E.03** Prepare the component and request together. Use the existing history commands, compilation, approved hosts, success/error routes, and response state.
+- [x] **1E.03** Prepare the component and request together. Use the existing history commands, compilation, approved hosts, success/error routes, and response state.
 - [ ] **1E.04** Define how Try and the player create a stable action identifier and reuse it on retry. Use one shared contract, with server validation.
 - [ ] **1E.05** Make Try use a server-authorized test connection. Changing a payload or test label cannot authorize a live operation.
 - [ ] **1E.06** Introduce one activation command used by both interactive download and link publication. Export is already available separately from publishing.

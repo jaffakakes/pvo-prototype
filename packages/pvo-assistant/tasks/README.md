@@ -76,7 +76,8 @@ Stop, deadline expiry, and claim recovery convert still-planned receipts to `unk
 | Artifact | Opaque ID, SHA-256 digest, positive size at most 1 MiB; contents stored separately |
 | Build deadline / retained task lifetime | 24 hours / 7 days from creation |
 | Execution lease / retries including recovery | At most 60 seconds / 3 |
-| Used plus reserved model turns / tool calls | 6 / 24 |
+| Model-turn accounting | Nonnegative safe integers; no fixed per-task turn cutoff |
+| Used plus reserved tool calls | 24 (prototype resource control; goal continuation redesign pending) |
 
 These are initial product bounds; 1A diagnostic limits do not set product policy. The record uses exact required fields and explicit `null` for absent optional data. It accepts plain JSON objects and dense arrays, rejects accessors and extra properties, preserves exact source strings, and returns errors without echoing input values or unknown field names.
 

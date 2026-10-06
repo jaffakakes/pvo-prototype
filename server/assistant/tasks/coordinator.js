@@ -29,6 +29,8 @@ import { TaskAttempts } from "./attempts.js";
 import { planSavedTask, savedPlannerAvailable } from "./planner.js";
 import { runAuthoringStep, settleAuthoringBudgets } from "./runner.js";
 import { DurableObject } from "cloudflare:workers";
+import { compilePvoComponent } from "../../../packages/pvo-language/worker.js";
+import { planTaskAttachment } from "../attachments/planner.js";
 import { HttpError } from "../../http.js";
 import { randomId } from "../../identity.js";
 import { TaskRepository } from "./repository.js";
@@ -301,7 +303,13 @@ export class AssistantTasks extends DurableObject {
   plannerAvailable() {
     return savedPlannerAvailable(this.env);
   }
+  compileAttachment(type, source) {
+    return compilePvoComponent(type, source);
+  }
+
   plan(task, signal, input) {
+    if (task.stepId === "attach")
+      return planTaskAttachment(task, input.attachment, this.env, signal);
     if (task.stepId === "build")
       return planSavedBuild(
         task,

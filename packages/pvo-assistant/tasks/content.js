@@ -144,11 +144,11 @@ export function validateUsage(value) {
     ["modelTurns", "toolCalls", "reservedModelTurns", "reservedToolCalls"],
     "Task usage",
   );
-  integer(value.modelTurns, limits.modelTurns, "Used model turns");
+  integer(value.modelTurns, Number.MAX_SAFE_INTEGER, "Used model turns");
   integer(value.toolCalls, limits.toolCalls, "Used tool calls");
   integer(
     value.reservedModelTurns,
-    limits.modelTurns - value.modelTurns,
+    Number.MAX_SAFE_INTEGER - value.modelTurns,
     "Reserved model turns",
   );
   integer(

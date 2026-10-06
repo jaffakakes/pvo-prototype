@@ -48,7 +48,7 @@ export function parseBuilderState(value) {
     ],
     "Saved builder",
   );
-  integer(value.round, TASK_LIMITS.modelTurns, "Builder round");
+  integer(value.round, Number.MAX_SAFE_INTEGER, "Builder round");
   if (value.agreement !== null) {
     object(value.agreement, ["digest", "body"], "Saved agreement");
     digest(value.agreement.digest, "Agreement digest");

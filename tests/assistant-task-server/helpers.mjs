@@ -13,6 +13,8 @@ const SECRET = "test-saved-task-session-secret-not-for-production";
 let modules;
 
 export async function taskFixture({
+  origin = ORIGIN,
+  clock = null,
   storage = true,
   broken = false,
   planner = null,
@@ -40,7 +42,7 @@ export async function taskFixture({
     import { reconcileTaskServices } from "./server/assistant/tasks/providerRunner.js";
     export class TestHostedService extends HostedService {
       constructor(ctx, env) { super(ctx, env); ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS calls (id TEXT PRIMARY KEY, count INTEGER NOT NULL)"); }
-      now() { return this.clock ?? (this.env.CONTROLLED_PLAN ? Date.now() : Date.UTC(2100, 0, 1)); }
+      now() { return this.clock ?? this.env.CONTROLLED_CLOCK ?? (this.env.CONTROLLED_PLAN ? Date.now() : Date.UTC(2100, 0, 1)); }
       setTime(now) { this.clock=now; }
       async publish(value) { this.ctx.storage.sql.exec("INSERT INTO calls (id,count) VALUES (?,1) ON CONFLICT(id) DO UPDATE SET count=count+1",value.identity.resourceId); return super.publish(value); }
       async executePackage(source,invocation,signal) {
@@ -59,13 +61,13 @@ export async function taskFixture({
     import { getAccountSession } from "./server/auth/sessions.js";
     import { HttpError, json } from "./server/http.js";
     export class TestTasks extends AssistantTasks {
-      now() { return this.clock ?? (this.env.CONTROLLED_PLAN ? Date.now() : Date.UTC(2100, 0, 1)); }
+      now() { return this.clock ?? this.env.CONTROLLED_CLOCK ?? (this.env.CONTROLLED_PLAN ? Date.now() : Date.UTC(2100, 0, 1)); }
       plannerAvailable() { return this.env.CONTROLLED_PLAN ? true : super.plannerAvailable(); }
       stepTimeoutMs() { return this.env.CONTROLLED_PLAN ? 1000 : super.stepTimeoutMs(); }
       leaseMs() { return this.env.CONTROLLED_PLAN ? 1500 : super.leaseMs(); }
       async plan(task, signal, input) {
         if (!this.env.CONTROLLED_PLAN) return super.plan(task, signal, input);
-        return (await this.env.PLANNER.fetch("https://planner.test/", { method: "POST", body: JSON.stringify({ ...task, builderContext: input?.build ?? null }), signal })).json();
+        return (await this.env.PLANNER.fetch("https://planner.test/", { method: "POST", body: JSON.stringify({ ...task, builderContext: input?.build ?? null, attachmentContext: input?.attachment ?? null }), signal })).json();
       }
       providerTimeoutMs() { return 500; }
       serviceProvider() {
@@ -236,10 +238,11 @@ export async function taskFixture({
       compatibilityDate: "2026-09-27",
       d1Databases: ["DB"],
       bindings: {
-        PUBLIC_ORIGIN: ORIGIN,
+        PUBLIC_ORIGIN: origin,
         SESSION_SECRET: SECRET,
         BROKEN: broken,
         CONTROLLED_PLAN: Boolean(planner),
+        CONTROLLED_CLOCK: clock,
       },
       ...(planner ||
       providerControl ||
@@ -343,11 +346,11 @@ export async function taskFixture({
         ...rest
       } = {},
     ) => {
-      const response = await mf.dispatchFetch(ORIGIN + path, {
+      const response = await mf.dispatchFetch(origin + path, {
         method,
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
         headers: {
-          Origin: ORIGIN,
+          Origin: origin,
           ...(session ? { Cookie: session } : {}),
           ...(body === undefined ? {} : { "Content-Type": "application/json" }),
           ...headers,

@@ -147,7 +147,6 @@ export const TASK_LIMITS: Readonly<{
   retentionMs: number;
   leaseMs: number;
   retries: number;
-  modelTurns: number;
   toolCalls: number;
 }>;
 export const TASK_STATES: readonly TaskState[];

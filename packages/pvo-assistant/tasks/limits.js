@@ -21,7 +21,6 @@ export const TASK_LIMITS = Object.freeze({
   retentionMs: 7 * 24 * 60 * 60_000,
   leaseMs: 60_000,
   retries: 3,
-  modelTurns: 6,
   toolCalls: 24,
 });
 
