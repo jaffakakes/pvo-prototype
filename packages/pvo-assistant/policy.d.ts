@@ -12,6 +12,7 @@ export class AssistantPolicyError extends Error {
 }
 
 export function validateCompiledAssistantOriginal(compiled: CompiledPvoComponent, context?: AssistantContext): void;
+export function usesTypedFormValues(structure: Extract<CompiledPvoComponent["structure"], { type: "form" }>): boolean;
 export function validateCompiledAssistantProposal(
   original: CompiledPvoComponent,
   proposed: CompiledPvoComponent,

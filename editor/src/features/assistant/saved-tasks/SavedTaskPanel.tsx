@@ -66,9 +66,7 @@ function TaskAnswer({
 
 export function SavedTaskPanel() {
   const session = useSavedTask();
-  const status = session.task
-    ? savedTaskStatus(session.task, Date.now())
-    : null;
+  const status = session.task ? savedTaskStatus(session.task) : null;
   return (
     <section
       className={styles.panel}
@@ -96,6 +94,15 @@ export function SavedTaskPanel() {
         <p>
           {status?.message ??
             "Recovering the saved request for this account and project."}
+        </p>
+      )}
+      {session.task?.state === "waiting" && session.task.nextRunAt !== null && (
+        <p>
+          Restyle will try again after{" "}
+          <time dateTime={new Date(session.task.nextRunAt).toISOString()}>
+            {new Date(session.task.nextRunAt).toLocaleString()}
+          </time>
+          .
         </p>
       )}
       {status?.question && (
