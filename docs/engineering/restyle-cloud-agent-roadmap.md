@@ -2,7 +2,7 @@
 
 **Continuing with Claude Code or Codex:** read [current progress](restyle-cloud-agent-progress.md), then the [handoff/restart guide](restyle-cloud-agent-handoff.md). Every checklist item now has a stable task ID. After each verified task, check it off and save its evidence and exact next action. Root [AGENTS.md](../../AGENTS.md) and [CLAUDE.md](../../CLAUDE.md) require this workflow.
 
-Status: implementation in progress, **6 October 2026**. **1A, 1B.01–1B.14, 1C, 1D and 1E.01–1E.03 are verified (40/126 tasks).** Durable goals, private history, capacity/spending waits, actual repair/progress feedback and expired inactive-host recovery pass 1,408 local tests. **Next: 1B.15 combined continuation acceptance, then 1E.04 runtime connections.** Beta `fc88f2b588e355dc` includes the preceding repair/hosting slices; the newly verified progress slice awaits delivery. The complete generated-component journey remains 1F; beta, remote integration and production are separate states. See [current evidence](restyle-cloud-agent-progress.md). Unchecked items remain work to do.
+Status: implementation in progress, **6 October 2026**. **1A, 1B.01–1B.15, 1C, 1D, 1E.01–1E.03 and 1E.05 are verified (42/126 tasks).** Goals continue without arbitrary total call or age ceilings. Connected Try now passes actual browser/form/server restart and saved-action replay acceptance; 1,429 local tests and strict editor types pass. **Next: complete 1E.04 player invocation and recovery presentation**, then activation/export 1E.06–09. The Try beta delivery is being prepared; product Worker deployment and the full 1F generated-component acceptance remain separate. See [current evidence](restyle-cloud-agent-progress.md). Unchecked items remain work to do.
 
 Start with [Roadmap 1](restyle-cloud-agent-roadmaps/01-first-working-component.md). It delivers the first complete version: ask for a component, let the agent build a new backend, try it, and share something that keeps working after its temporary computer shuts down.
 
@@ -23,12 +23,12 @@ Every roadmap contains ordered implementation steps, relevant code areas, and ob
 
 ## Delivery sequence and completion gates
 
-Use the numbered tasks in the linked guide as the detailed checklist. The phase order is a dependency plan, not a calendar estimate. 1A is complete; 1B.01–1B.13 are complete and 1B.14–1B.15 remain. A checked implementation task does not automatically mean its PR is merged or its feature is released.
+Use the numbered tasks in the linked guide as the detailed checklist. The phase order is a dependency plan, not a calendar estimate. 1A and 1B.01–1B.15 are complete. A checked implementation task does not automatically mean its PR is merged or its feature is released.
 
 | Phase | Deliverable | Depends on | Evidence needed to finish |
 | --- | --- | --- | --- |
 | **1A — complete** | Real workshop and independent hosting | Account access | Service works after workshop deletion; limits and cleanup verified |
-| **1B — continuation in progress** | Saved tasks, questions, progress, resumable authoring | Existing accounts; 1A adapters for provider recovery checks | Close browser, restart runner, answer later, stop safely, and recover one existing deployment |
+| **1B — complete** | Saved tasks, questions, progress, resumable authoring | Existing accounts; 1A adapters for provider recovery checks | Close browser, restart runner, answer later, stop safely, and recover one existing deployment |
 | **1C — complete** | Agent writes, tests, and repairs backend code | 1B task/receipt model and 1A runtime | Two different generated services pass trusted tests; invalid code cannot bypass the gate |
 | **1D — complete** | Owned services, records, quotas, pause/delete | 1B records and 1C immutable artifacts | Duplicate and competing submissions behave correctly; isolation and cleanup hold |
 | 1E | Verified service attached to component | 1C/1D receipts and existing editor/player boundaries | Try uses test permissions; file export and publication both use the correct live service |

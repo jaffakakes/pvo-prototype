@@ -92,3 +92,94 @@ export function prepareComponentServiceConnection(
 ): ComponentServiceConnection;
 
 export const serviceAttachmentSchema: Record<string, unknown>;
+
+/** A local replay scope, not server authority. Public player checkpoints contain no creator account. */
+export type ServiceSubmissionScope =
+  { mode: "try"; ownerId: string } | { mode: "public"; ownerId: null };
+export type ServiceSubmissionTarget = ServiceSubmissionScope & {
+  origin: string;
+  serviceId: string;
+  releaseId: string;
+  operation: ServiceOperation & { audience: "public" };
+};
+export type ServiceSubmission = {
+  target: ServiceSubmissionTarget;
+  action: import("../hosting/index.js").ServiceAction;
+  response: import("../hosting/index.js").ServiceActionResult | null;
+};
+export function parseServiceSubmissionTarget(
+  value: unknown,
+): ServiceSubmissionTarget;
+export function prepareServiceSubmissionTarget(
+  connection: ComponentServiceConnection,
+  scope: ServiceSubmissionScope,
+): ServiceSubmissionTarget;
+export function resolveServiceSubmissionInput(
+  connection: ComponentServiceConnection,
+  fields: Record<string, unknown>,
+): ServiceJson;
+export function parseServiceSubmission(value: unknown): ServiceSubmission;
+/** Supply a new unpredictable host-generated ID; persist the returned record before dispatch. */
+export function prepareServiceSubmission(
+  target: ServiceSubmissionTarget,
+  input: unknown,
+  actionId: string,
+): ServiceSubmission;
+/** Retries restore the saved input; they never read new form values. */
+export function retryServiceSubmission(
+  value: unknown,
+  currentTarget: ServiceSubmissionTarget,
+): ServiceSubmission;
+export function completeServiceSubmission(
+  value: unknown,
+  response: unknown,
+): ServiceSubmission;
+export function serviceSubmissionRequest(value: unknown): {
+  url: string;
+  method: "POST";
+  headers: { "Content-Type": "application/json" };
+  body: string;
+};
+
+export type ServiceSubmissionStore = {
+  read(slot: string): Promise<ServiceSubmission | null>;
+  /** Run change atomically across clients; resolve only after the write commits. */
+  update(
+    slot: string,
+    change: (current: ServiceSubmission | null) => ServiceSubmission,
+  ): Promise<ServiceSubmission>;
+};
+export type ServiceSubmissionContext = {
+  signal?: AbortSignal;
+  isCurrent(): boolean;
+};
+export function createServiceSubmissionClient(adapters: {
+  store: ServiceSubmissionStore;
+  createId(): string;
+  send(
+    request: ReturnType<typeof serviceSubmissionRequest>,
+    signal?: AbortSignal,
+  ): Promise<unknown>;
+}): {
+  submit(
+    slot: string,
+    target: ServiceSubmissionTarget,
+    input: unknown,
+    context: ServiceSubmissionContext,
+  ): Promise<ServiceSubmission>;
+  retry(
+    slot: string,
+    target: ServiceSubmissionTarget,
+    context: ServiceSubmissionContext,
+  ): Promise<ServiceSubmission>;
+};
+
+/** Browser adapter; close when the host session is disposed. */
+export function openServiceSubmissionStore(
+  factory?: IDBFactory,
+): Promise<ServiceSubmissionStore & { close(): void }>;
+
+export function matchesComponentServiceRequest(
+  connection: ComponentServiceConnection,
+  request: { url: string; method: string; body?: string },
+): boolean;

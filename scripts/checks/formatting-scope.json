@@ -420,5 +420,22 @@
   "server/assistant/attachments/recovery.js",
   "server/assistant/tasks/progress.js",
   "server/assistant/tasks/progressEvidence.js",
-  "tests/assistant-task-server/progress.test.mjs"
+  "tests/assistant-task-server/progress.test.mjs",
+  "tests/service-attachments/task.helpers.mjs",
+  "tests/assistant-task-server/continuation.test.mjs",
+  "packages/pvo-assistant/attachments/submissions.js",
+  "tests/service-attachments/submissions.test.mjs",
+  "tests/service-actions/submissions.test.mjs",
+  "packages/pvo-assistant/attachments/submissionClient.js",
+  "tests/service-attachments/submission-client.test.mjs",
+  "packages/pvo-assistant/attachments/submissionStorage.js",
+  "scripts/checks/service-submissions/browser-storage.mjs",
+  "tests/service-actions/component-try.test.mjs",
+  "editor/src/domain/components/serviceSubmission.ts",
+  "editor/src/infrastructure/services/componentTestTransport.ts",
+  "editor/src/features/preview/createTryServiceRequests.ts",
+  "editor/src/features/preview/createTryRuntimeBridge.ts",
+  "editor/src/features/preview/tryMode.ts",
+  "tests/service-attachments/try-session.test.mjs",
+  "scripts/checks/editor/component-try.mjs"
 ]

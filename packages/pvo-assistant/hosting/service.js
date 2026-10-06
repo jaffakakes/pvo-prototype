@@ -78,6 +78,22 @@ export function serviceCallScope(service, authority) {
       audience: "public",
     };
   }
+  if (authority.kind === "component_test") {
+    if (
+      authority.ownerId !== service.identity.ownerId ||
+      !service.testReleaseId ||
+      authority.releaseId !== service.testReleaseId
+    )
+      throw serviceCallError(
+        "unavailable",
+        "This component test connection is unavailable.",
+      );
+    return {
+      namespace: "test",
+      releaseId: service.testReleaseId,
+      audience: "public",
+    };
+  }
   if (
     authority.kind !== "creator" ||
     authority.ownerId !== service.identity.ownerId

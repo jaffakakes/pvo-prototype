@@ -28,15 +28,20 @@ export function serviceAttachmentRequest(authorization) {
     authorization.scope,
     authorization.now,
   );
+  return declarativeServiceRequest(
+    authorization.origin,
+    receipt.identity.serviceId,
+    receipt.operation.name,
+    command.connection.input,
+  );
+}
+
+/** Shared projection for admission and later invocation matching; never an executable action. */
+export function declarativeServiceRequest(origin, serviceId, operation, input) {
   return {
-    url: `${platformOrigin(authorization.origin)}/api/services/${receipt.identity.serviceId}/actions`,
+    url: `${platformOrigin(origin)}/api/services/${serviceId}/actions`,
     method: "POST",
-    // A declarative binding envelope. The shared service adapter supplies actual input and action identity.
-    // Sending this unchanged cannot invoke the host, which requires a validated actionId/input envelope.
-    body: canonicalJson({
-      operation: receipt.operation.name,
-      input: command.connection.input,
-    }),
+    body: canonicalJson({ operation, input }),
   };
 }
 

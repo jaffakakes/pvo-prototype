@@ -15,6 +15,22 @@ export {
 export {
   parseComponentServiceConnection,
   prepareComponentServiceConnection,
+  matchesComponentServiceRequest,
 } from "./component.js";
 
 export { serviceAttachmentSchema } from "./schema.js";
+
+export {
+  prepareServiceSubmissionTarget,
+  parseServiceSubmissionTarget,
+  resolveServiceSubmissionInput,
+  parseServiceSubmission,
+  prepareServiceSubmission,
+  retryServiceSubmission,
+  completeServiceSubmission,
+  serviceSubmissionRequest,
+} from "./submissions.js";
+
+export { createServiceSubmissionClient } from "./submissionClient.js";
+
+export { openServiceSubmissionStore } from "./submissionStorage.js";

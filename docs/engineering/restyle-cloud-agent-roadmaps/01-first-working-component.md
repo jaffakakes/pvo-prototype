@@ -29,7 +29,7 @@ Build this before committing to a provider-specific implementation.
 
 ## 1B. Save the task and its questions
 
-**Progress: 1B.01–1B.14 are verified.** The user has requested goal-based continuation without arbitrary model/tool/session ceilings; 1B.15 below is the next priority. Saved tasks, planning, questions, prepared results and provider recovery pass the local/browser acceptance matrix and the [actual Cloudflare proof](../restyle-cloud-provider-recovery-proof.md). Source is in PR #87; integration and production delivery are separate. The following 1C.01 contract is now verified; integration and provider construction remain separate. Arbitrary workspace generation remains 1C.
+**Progress: 1B.01–1B.15 are verified.** Saved goals continue through bounded work periods, private durable history, permission/capacity waits and evidence-driven repair. The combined controlled acceptance crosses former limits and survives interruptions and uncertain hosting outcomes. Current continuation source is in draft PR #102; earlier actual-provider proof is recorded in [the recovery evidence](../restyle-cloud-provider-recovery-proof.md). Merge, beta availability and production remain separate. Next is **1E.04**.
 
 The task record is the agent's notebook. It must be saved on the server. Follow the [detailed 1B implementation plan](1b-saved-tasks.md) for contracts, build order, and failure tests.
 
@@ -46,13 +46,13 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 
 ### Goal continuation correction — 6 October 2026
 
-The user wants the agent to keep working toward the goal, with no fixed model-turn ceiling. The goal-wide model/tool/session/recovery/research/source/review cutoffs and age deadline are removed. Durable history, byte-aware checkpoints, retrievable context, saved capacity/spending waits and evidence-driven repair pass 1,408 local tests. 1B.14 is complete; combined continuation acceptance remains in 1B.15. Follow [the goal-continuation implementation plan](1b-goal-continuation.md) before proceeding to 1E.04.
+The user wants the agent to keep working toward the goal, with no fixed model-turn ceiling. The goal-wide model/tool/session/recovery/research/source/review cutoffs and age deadline are removed. Durable history, byte-aware checkpoints, retrievable context, saved capacity/spending waits, evidence-driven repair and combined continuation acceptance pass 1,409 local tests. 1B.11–1B.15 are complete. Follow [the goal-continuation implementation plan](1b-goal-continuation.md) before proceeding to 1E.04.
 
 - [x] **1B.11** Separate the saved goal from short execution periods. Preserve its objective, current plan, questions, source and receipts across work periods without a fixed goal-wide model/tool/session count or automatic 24-hour abandonment.
 - [x] **1B.12** Keep the notebook bounded by checkpointing settled history into owned durable records. Preserve every unknown external outcome and replay identity; full history or retention must not silently end or erase active goals.
 - [x] **1B.13** Pause and resume for actual spending permission or temporarily unavailable capacity. Show the reason and next action; a rate limit or expired work lease must not become a permanently failed goal. Keep Stop authoritative.
 - [x] **1B.14** Continue from actual progress and validation feedback. Repair unsuccessful work, detect repeated attempts that add no useful evidence, and ask a concrete question when necessary. Finish only after the requested result is verified.
-- [ ] **1B.15** Verify continuation beyond the former model/tool/workspace bounds, interrupted checkpoints, waiting/approved budget, Stop/resume and missing external outcomes with local controlled effects. Update the beta and portable handoff; new paid acceptance needs its own approval.
+- [x] **1B.15** Verify continuation beyond the former model/tool/workspace bounds, interrupted checkpoints, waiting/approved budget, Stop/resume and missing external outcomes with local controlled effects. Update the beta and portable handoff; new paid acceptance needs its own approval.
 
 **Finished when:** close the editor during an active build and while a question is pending. The build continues, or waits for the saved answer, and the same task resumes on return. Restarting its worker reconciles completed effects before retrying and creates no duplicate deployment. A different account cannot read or answer it. Stopping the task prevents new work from starting.
 
@@ -97,13 +97,13 @@ The user wants the agent to keep working toward the goal, with no fixed model-tu
 
 ## 1E. Attach the service to PVO and activate it
 
-**1E.01/1E.02 verified:** the closed command, trusted receipt and both compiler admission boundaries pass full local checks (**1,356 tests**), editor types and the native-assistant browser regression. Saved component preparation/connection metadata is next in **1E.03**. No complete component connection is claimed yet. Follow the [detailed attachment implementation plan](1e-component-attachments.md).
+**1E.01–1E.03 and 1E.05 are verified locally.** The checked component now invokes its exact owned test release through Try, using persisted action IDs/input and the existing SDK request lifecycle. Real browser/compiler/HTTP/SQLite/IndexedDB acceptance recovers a lost successful reply after page/server restart, preserves literal input, observes service capacity and leaves live hosting inactive. Full checks pass **1,429 tests** and strict editor types. **1E.04 remains open for player integration and explicit saved-submission recovery presentation; 1E.06–09 remain open for activation/export.** Follow the [detailed attachment plan](1e-component-attachments.md).
 
 - [x] **1E.01** Add a validated attachment command that consumes a real service receipt: owner, project, release, operation, input/result agreement, and readiness. The agent cannot attach an invented address.
 - [x] **1E.02** Update both server and editor assistant validation to admit this verified attachment. Keep existing protections for unrelated request changes.
 - [x] **1E.03** Prepare the component and request together. Use the existing history commands, compilation, approved hosts, success/error routes, and response state.
 - [ ] **1E.04** Define how Try and the player create a stable action identifier and reuse it on retry. Use one shared contract, with server validation.
-- [ ] **1E.05** Make Try use a server-authorized test connection. Changing a payload or test label cannot authorize a live operation.
+- [x] **1E.05** Make Try use a server-authorized test connection. Changing a payload or test label cannot authorize a live operation.
 - [ ] **1E.06** Introduce one activation command used by both interactive download and link publication. Export is already available separately from publishing.
 - [ ] **1E.07** Prepare a matching component/service release, activate it before handing out the usable file or link, and retain a retryable result if delivery fails. If activation fails, do not claim the export is ready for online use.
 - [ ] **1E.08** Track the active connection even if the client disconnects during delivery. A failed browser response is not proof that the exported file was never received.

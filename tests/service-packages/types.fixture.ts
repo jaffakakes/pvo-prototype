@@ -180,3 +180,71 @@ const checkedConnection: import("../../packages/pvo-assistant/attachments/index.
 // @ts-expect-error Saved component metadata grants no live/test namespace selector.
 checkedConnection.mode = "live";
 void checkedConnection;
+
+const submissionTarget = attachments.prepareServiceSubmissionTarget(
+  checkedConnection,
+  { mode: "public", ownerId: null },
+);
+const submissionInput = attachments.resolveServiceSubmissionInput(
+  checkedConnection,
+  { guest: "Alice" },
+);
+const submission = attachments.prepareServiceSubmission(
+  submissionTarget,
+  submissionInput,
+  "opaque-action-id",
+);
+const restoredSubmission = attachments.retryServiceSubmission(
+  JSON.parse(JSON.stringify(submission)),
+  submissionTarget,
+);
+const submissionRequest =
+  attachments.serviceSubmissionRequest(restoredSubmission);
+const submissionMethod: "POST" = submissionRequest.method;
+attachments.completeServiceSubmission(restoredSubmission, {
+  actionId: "opaque-action-id",
+  result: "accepted",
+});
+// @ts-expect-error Public replay scopes cannot retain a creator account.
+attachments.prepareServiceSubmissionTarget(checkedConnection, {
+  mode: "public",
+  ownerId: "creator",
+});
+// @ts-expect-error Try requires the current creator identity.
+attachments.prepareServiceSubmissionTarget(checkedConnection, {
+  mode: "try",
+  ownerId: null,
+});
+// @ts-expect-error The client checkpoint has no caller-controlled permission flag.
+submission.permission = "granted";
+void submissionMethod;
+
+const submissionStore = await attachments.openServiceSubmissionStore();
+const submissionClient = attachments.createServiceSubmissionClient({
+  store: submissionStore,
+  createId: () => crypto.randomUUID(),
+  send: async () => ({ actionId: "saved", result: "accepted" }),
+});
+submissionClient.submit("component-slot", submissionTarget, submissionInput, {
+  isCurrent: () => true,
+});
+submissionClient.retry("component-slot", submissionTarget, {
+  isCurrent: () => true,
+  signal: new AbortController().signal,
+});
+// @ts-expect-error The host must supply a current-context fence.
+submissionClient.retry("component-slot", submissionTarget, {});
+submissionStore.close();
+
+serviceCallScope(hostRecord, {
+  kind: "component_test",
+  ownerId: "owner",
+  releaseId: "release-one",
+});
+serviceCallScope(hostRecord, {
+  kind: "component_test",
+  ownerId: "owner",
+  releaseId: "release-one",
+  // @ts-expect-error A component test cannot select the live namespace.
+  mode: "live",
+});
