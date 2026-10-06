@@ -1,105 +1,42 @@
-import type {
-  ExportFormat,
-  ExportQuality,
-} from "../../domain/publishing/model";
+import type { ExportQuality } from "../../domain/publishing/model";
 import { estimatedExportBytes } from "../../domain/export/quality";
 import { formatFileSize } from "../publishing/SharePanel";
 import { exportClock } from "./presentation";
 import styles from "./ExportSheet.module.css";
 
 type Props = {
-  format: ExportFormat;
   quality: ExportQuality;
-  mainDuration: number;
   totalDuration: number;
   width: number;
   height: number;
   coverAt: number;
   coverImage: string | null;
   emptyScenes: string[];
-  onFormat(format: ExportFormat): void;
   onQuality(quality: ExportQuality): void;
   onChooseCover(): void;
 };
 
 export function ExportSettings({
-  format,
   quality,
-  mainDuration,
   totalDuration,
   width,
   height,
   coverAt,
   coverImage,
   emptyScenes,
-  onFormat,
   onQuality,
   onChooseCover,
 }: Props) {
-  const allDuration = format === "pvo" ? totalDuration : mainDuration;
+  const allDuration = totalDuration;
   const approximateSize = formatFileSize(
     estimatedExportBytes(allDuration, quality),
   );
   return (
     <>
-      <section className={styles.section} aria-labelledby="export-format-label">
-        <h3 id="export-format-label">Format</h3>
-        <div
-          className={styles.formatCards}
-          role="radiogroup"
-          aria-label="Export format"
-        >
-          <button
-            type="button"
-            role="radio"
-            aria-checked={format === "video"}
-            data-selected={format === "video"}
-            onClick={() => onFormat("video")}
-          >
-            <span className={styles.radio}>
-              {format === "video" ? "✓" : ""}
-            </span>
-            <span>
-              <strong>Video</strong>
-              <small>
-                Video file. Main scene only; interactive elements are left out.
-              </small>
-            </span>
-            <em>
-              ~{formatFileSize(estimatedExportBytes(mainDuration, quality))}
-            </em>
-          </button>
-          <button
-            type="button"
-            role="radio"
-            aria-checked={format === "pvo"}
-            data-selected={format === "pvo"}
-            onClick={() => onFormat("pvo")}
-          >
-            <span className={styles.radio}>{format === "pvo" ? "✓" : ""}</span>
-            <span>
-              <strong>Interactive · .pvo</strong>
-              <small>
-                Keeps choices, forms and branching. Opens in the Restyle player.
-              </small>
-            </span>
-            <em>
-              ~{formatFileSize(estimatedExportBytes(totalDuration, quality))}
-            </em>
-          </button>
-        </div>
-        <label className={styles.phoneFormat}>
-          Format
-          <select
-            aria-label="Export format"
-            value={format}
-            onChange={(event) => onFormat(event.target.value as ExportFormat)}
-          >
-            <option value="video">Video</option>
-            <option value="pvo">.pvo · Interactive</option>
-          </select>
-        </label>
-      </section>
+      <p className={styles.qualityNote}>
+        Export keeps choices, forms and branching, then creates a shareable
+        Restyle link.
+      </p>
       <section
         className={styles.section}
         aria-labelledby="export-quality-label"

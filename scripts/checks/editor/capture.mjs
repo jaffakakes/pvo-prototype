@@ -74,17 +74,17 @@ try {
   await page.waitForTimeout(350);
   if (await page.locator(".pvBox").evaluate(element => Math.abs(element.clientWidth - element.clientHeight)) > 2) throw new Error("Ratio redo failed");
   await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
-  await page.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Flat video" }).click();
+  await page.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Export and create link" }).click();
   const exportDialog = page.locator("dialog[data-state]");
-  await exportDialog.getByRole("button", { name: /Export video/ }).click();
+  await exportDialog.getByRole("button", { name: /Export and share/ }).click();
   await page.locator('dialog[data-state="done"]').waitFor({ timeout: 45000 });
   const saved = await Promise.all([
     page.waitForEvent("download", { timeout: 15000 }),
-    exportDialog.getByRole("button", { name: /Download/ }).click(),
+    page.getByRole("dialog", { name: "Share export" }).locator("[data-download-again]").click(),
   ]).then(([download]) => download).catch(async error => {
     throw new Error(`${error.message}\nExport UI: ${await page.getByRole('dialog').innerText()}\nNotifications: ${await page.locator('[data-notification-root]').allTextContents()}\nPage errors: ${errors.join('; ')}`);
   });
-  if (!/\.(webm|mp4)$/.test(saved.suggestedFilename())) throw new Error("Unexpected export filename");
+  if (!/\.pvo$/.test(saved.suggestedFilename())) throw new Error("Unexpected export filename");
   if (process.argv[2]) {
     const real = await browser.newPage({ viewport: { width: 500, height: 1000 }, acceptDownloads: true });
     real.on("pageerror", error => errors.push(error.message));
@@ -147,15 +147,15 @@ try {
     await real.keyboard.press("s");
     if (await real.locator(".tlClip").count() !== 2) throw new Error("Split did not create two clips");
     await real.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
-    await real.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Flat video" }).click();
+    await real.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Export and create link" }).click();
     const realDialog = real.locator("dialog[data-state]");
-    await realDialog.getByRole("button", { name: /Export video/ }).click();
+    await realDialog.getByRole("button", { name: /Export and share/ }).click();
     await real.locator('dialog[data-state="done"]').waitFor({ timeout: 45000 });
     const [realSaved] = await Promise.all([
       real.waitForEvent("download", { timeout: 15000 }),
-      realDialog.getByRole("button", { name: /Download/ }).click(),
+      real.getByRole("dialog", { name: "Share export" }).locator("[data-download-again]").click(),
     ]);
-    await realSaved.saveAs(resolve(tmpdir(), "capture-real-export.webm"));
+    await realSaved.saveAs(resolve(tmpdir(), "capture-real-export.pvo"));
     console.log("Real video upload, uncropped fit, replacement, trim, speed, crop, sound, split, and export passed");
     await real.close();
   }

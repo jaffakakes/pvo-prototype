@@ -48,7 +48,7 @@ export const initial = () => {
     ratioMenu: false,
     draft: "",
     tColor: 2,
-    exportFormat: "video" as const,
+    exportFormat: "pvo" as const,
     quality: "1080p" as const,
     ex: "idle" as const,
     exPct: 0,

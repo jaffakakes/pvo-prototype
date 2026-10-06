@@ -86,6 +86,7 @@ export function useExportSession(format: "video" | "pvo") {
       exUrl: completed.url,
       exName: artifact.filename,
     });
+    if (mounted.current) setShowShare(true);
   };
   const cancel = () => {
     if (!cancelExportAttempt()) return;

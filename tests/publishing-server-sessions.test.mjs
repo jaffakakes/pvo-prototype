@@ -4,7 +4,7 @@ import { configuration } from "../server/config.js";
 import { createAccountSession } from "../server/auth/sessions.js";
 import { workerFixture, ORIGIN, SECRET, reserve, upload, tinyMp4 } from "./publishing-server.helpers.mjs";
 
-const expectedStatus = hasSession => ({ available: true, hasSession, maxBytes: 52428800 });
+const expectedStatus = hasSession => ({ available: true, hasSession, maxBytes: 671088640000 });
 
 test("publishing availability requires storage, a strong secret and its exact HTTPS origin", () => {
   const env = { PUBLISHING_ENABLED: "true", PUBLIC_ORIGIN: ORIGIN, DB: {}, MEDIA: {}, SESSION_SECRET: SECRET };

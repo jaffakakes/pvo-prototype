@@ -36,11 +36,12 @@ export function configuration(env, requestOrigin) {
       && typeof env.RENDERER?.idFromName === "function",
     clerkAvailable: managedAuthReady,
     clerkIssuer: managedAuthReady ? clerkIssuer(env.CLERK_ISSUER) : null,
-    maxBytes: positive(env.MAX_UPLOAD_BYTES, 50 * MIB, 50 * MIB),
-    ownerQuota: positive(env.OWNER_STORAGE_BYTES, 500 * MIB),
-    totalQuota: positive(env.TOTAL_STORAGE_BYTES, 5 * 1024 * MIB),
+    // Multipart uploads use at most 10,000 parts. This is a transport limit,
+    // not an account or site storage allowance.
+    maxBytes: 64 * MIB * 10000,
     dailyPublications: positive(env.DAILY_PUBLICATIONS, 20, 100),
     pendingMs: 24 * 60 * 60 * 1000,
     uploadMs: 15 * 60 * 1000,
+    multipartMs: 6 * 60 * 60 * 1000,
   };
 }

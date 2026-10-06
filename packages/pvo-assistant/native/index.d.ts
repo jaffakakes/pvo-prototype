@@ -220,7 +220,7 @@ export type NativeOperation =
   | { kind: "playback.seek"; sceneId: string; time: number }
   | { kind: "playback.play" }
   | { kind: "playback.pause" }
-  | { kind: "export.prepare"; format: "video" | "pvo" };
+  | { kind: "export.prepare"; format: "pvo" };
 export type NativeObservationRequest =
   | WebObservationRequest
   | {

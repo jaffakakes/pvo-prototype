@@ -197,7 +197,7 @@ async function exercise(phone) {
         .getByRole("button", { name: "More", exact: true })
         .click();
       await page
-        .getByRole("button", { name: "Flat video", exact: true })
+        .getByRole("button", { name: "Export and create link", exact: true })
         .click();
     } else
       await page
@@ -214,22 +214,11 @@ async function exercise(phone) {
     );
     const originalSource = await sourceVideo.getAttribute("src");
     assert(originalSource, "The export preview should load the source clip");
-    if (phone) {
-      const format = dialog.getByRole("combobox", { name: "Export format" });
-      await format.selectOption("pvo");
-      assert.equal(await format.inputValue(), "pvo");
-      await format.selectOption("video");
-    } else {
-      const formats = dialog.getByRole("radiogroup", { name: "Export format" });
-      await formats.getByRole("radio", { name: /Interactive/ }).click();
-      assert.equal(
-        await formats
-          .getByRole("radio", { name: /Interactive/ })
-          .getAttribute("aria-checked"),
-        "true",
-      );
-      await formats.getByRole("radio", { name: /Video/ }).click();
-    }
+    assert.equal(
+      await dialog.getByRole("radiogroup", { name: "Export format" }).count(),
+      0,
+      "Export must offer only the interactive PVO format",
+    );
     const quality = dialog.getByRole("radiogroup", { name: "Export quality" });
     for (const value of ["4K", "720p"]) {
       await quality
@@ -286,7 +275,7 @@ async function exercise(phone) {
     const firstProgress = dialog.getByRole("progressbar", {
       name: "Export progress",
     });
-    await dialog.getByRole("button", { name: /Export video/ }).click();
+    await dialog.getByRole("button", { name: /Export and share/ }).click();
     await page.locator('dialog[data-state="exporting"]').waitFor();
     await firstProgress.waitFor();
     await dialog
@@ -327,7 +316,7 @@ async function exercise(phone) {
       "Cancellation should clean its private render job",
     );
 
-    await dialog.getByRole("button", { name: /Export video/ }).click();
+    await dialog.getByRole("button", { name: /Export and share/ }).click();
     await page.locator('dialog[data-state="exporting"]').waitFor();
     await page.waitForFunction(
       () =>
@@ -337,49 +326,20 @@ async function exercise(phone) {
     );
     service.releaseLatest();
     await page.locator('dialog[data-state="done"]').waitFor({ timeout: 30000 });
-    await dialog.getByText("✓ EXPORTED FILE", { exact: true }).waitFor();
-    const resultVideo = dialog.locator(
-      '[data-export-preview] video[data-visible="true"]',
-    );
-    await page.waitForFunction(() => {
-      const video = document.querySelector(
-        '[data-export-preview] video[data-visible="true"]',
-      );
-      return video?.readyState >= 2;
-    });
-    assert(
-      await resultVideo.evaluate((video) => video.videoWidth > 0),
-      "Ready preview should decode the completed file",
-    );
-    await dialog.getByRole("button", { name: "Play export preview" }).click();
-    await page.waitForFunction(
-      () =>
-        document.querySelector(
-          '[data-export-preview] video[data-visible="true"]',
-        )?.currentTime > 0.1,
-    );
-    const [download] = await Promise.all([
-      page.waitForEvent("download"),
-      dialog.getByRole("button", { name: /Download/ }).click(),
-    ]);
-    assert.equal(await download.failure(), null);
-    assert.deepEqual(
-      await readFile(await download.path()),
-      videoBytes,
-      "Download must use the completed artifact bytes",
-    );
-    await dialog.getByRole("button", { name: "Share", exact: true }).click();
     const share = dialog.getByRole("dialog", { name: "Share export" });
     await share.waitFor();
-    assert.equal(
-      await dialog.getAttribute("data-state"),
-      "done",
-      "Share must leave the ready result mounted",
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      share.getByRole("button", { name: "Download PVO file" }).click(),
+    ]);
+    assert.equal(await download.failure(), null);
+    assert.match(download.suggestedFilename(), /\.pvo$/);
+    assert(
+      (await readFile(await download.path())).includes(videoBytes),
+      "The PVO package must contain the rendered scene media",
     );
-    assert(await resultVideo.isVisible());
     await share.getByRole("button", { name: "Done", exact: true }).click();
     await share.waitFor({ state: "hidden" });
-    assert.equal(await dialog.getAttribute("data-state"), "done");
     await dialog.getByRole("button", { name: /Export again/ }).click();
     await page.locator('dialog[data-state="setup"]').waitFor();
     await page.waitForFunction(
@@ -407,7 +367,7 @@ async function exercise(phone) {
     assert.equal(service.requests.uploads, 2);
     assert.deepEqual(errors, []);
     console.log(
-      `${phone ? "Phone" : "Desktop"} export dialog passed: picker, preview during render, cancellation, ready playback, download, share overlay and Export again.`,
+      `${phone ? "Phone" : "Desktop"} export dialog passed: picker, preview during render, cancellation, PVO download, automatic share overlay and Export again.`,
     );
   } catch (error) {
     console.error(

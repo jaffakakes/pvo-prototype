@@ -14,6 +14,7 @@ export function usePublication(artifact: CompletedExport) {
   const [checkedStatus, setCheckedStatus] = useState<CheckedStatus | null>(null);
   const [stage, setStage] = useState<Stage>("checking");
   const [failure, setFailure] = useState<string | null>(null);
+  const [uploadedBytes, setUploadedBytes] = useState(0);
   const active = useRef<AbortController | null>(null);
   const activePurpose = useRef<"status" | "publication" | null>(null);
   const mounted = useRef(true);
@@ -82,6 +83,7 @@ export function usePublication(artifact: CompletedExport) {
     const controller = new AbortController();
     active.current = controller;
     setFailure(null);
+    setUploadedBytes(0);
     let attemptedKey: string | null = null;
     const checkAccount = () => {
       controller.signal.throwIfAborted();
@@ -103,7 +105,9 @@ export function usePublication(artifact: CompletedExport) {
       if (reserved.status !== "ready") setExportPublication(artifact.snapshotId, reserved, input.idempotencyKey);
       if (reserved.status !== "ready") {
         setStage("uploading");
-        reserved = await client.upload(reserved.id, artifact, controller.signal);
+        reserved = await client.upload(reserved.id, artifact, controller.signal, bytes => {
+          if (mounted.current) setUploadedBytes(bytes);
+        });
         checkAccount();
         if (reserved.status !== "ready") throw new Error("The upload isn't ready. Try again.");
       }
@@ -132,6 +136,6 @@ export function usePublication(artifact: CompletedExport) {
       }
     }
   };
-  return { client, status: visibleStatus, stage, publication, title, failure, refreshStatus, createLink,
+  return { client, status: visibleStatus, stage, uploadedBytes, publication, title, failure, refreshStatus, createLink,
     cancel: () => { active.current?.abort(); }, clearFailure: () => setFailure(null) };
 }
