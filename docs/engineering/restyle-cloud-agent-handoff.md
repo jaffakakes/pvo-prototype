@@ -4,7 +4,7 @@ This is the restart guide for **Claude Code, Codex, or another coding agent**. I
 
 ## Latest scope: 1F acceptance preparation
 
-**All 1E is verified; 1F.01 is in progress. 47/134 tasks complete; 87 remain.** Active checkout: `feature/restyle-first-release`, `/Users/christinasmacbook/.codex/worktrees/restyle-first-release/pvo-prototype`. It starts from fetched `origin/dev` `cc2193e` with prerequisite `04c4383` from draft #104. Read the top [progress checkpoint](restyle-cloud-agent-progress.md) and [1F acceptance plan](restyle-first-release-acceptance.md) before running anything paid. Earlier checkpoints are history.
+**All 1E is verified; 1F.01 is in progress. 47/134 tasks complete; 87 remain.** Active checkout: `feature/restyle-first-release`, `/Users/christinasmacbook/.codex/worktrees/restyle-first-release/pvo-prototype`. It starts from fetched `origin/dev` `cc2193e` with prerequisite `04c4383` from draft #104. Preparation is `caa06cd` in [draft #105](https://github.com/jaffakakes/pvo-prototype/pull/105); the following documentation checkpoint records verified combined beta `restyle-editor-shell-224680dc85bbb5ca`. Read the top [progress checkpoint](restyle-cloud-agent-progress.md) and [1F acceptance plan](restyle-first-release-acceptance.md) before running anything paid. Earlier checkpoints are history.
 
 The new disposable harness uses the real planning/build/attachment functions and records conservative model spending. Local preparation and dry-run success do not prove a live demonstration. All 1F checkboxes remain unchecked. A fresh maximum US$15 approval has been requested for one disposable deployment; inspect the latest progress for its response before spending. Prior approvals cannot be reused. Production promotion remains separate.
 

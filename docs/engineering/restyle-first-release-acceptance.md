@@ -8,7 +8,7 @@ The earlier steps built the parts. This milestone asks the real AI to put them t
 
 The temporary workshop writes and tests the code. The separately hosted service keeps the saved RSVPs or bookings and answers viewers after the workshop stops. Publishing makes that checked service available to its connected component; it does not share a plugin or install something for other creators.
 
-**Status, 6 October 2026:** local preparation only. All 1F tasks remain unchecked. Local diagnostic tests and a Wrangler deployment dry run pass. No paid inference, cloud resource creation, public product deployment or new beta is claimed by those checks.
+**Status, 6 October 2026:** local preparation only. All 1F tasks remain unchecked. Local diagnostic tests and a Wrangler deployment dry run pass. No paid inference, cloud resource creation or public product deployment is claimed by those checks. The separate combined beta rebuild/delivery is recorded in progress; it does not establish live 1F acceptance.
 
 ## Implementation and evidence boundary
 
