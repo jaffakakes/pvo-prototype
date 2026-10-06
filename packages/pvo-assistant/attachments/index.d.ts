@@ -37,6 +37,28 @@ export type VerifiedServiceAttachment = {
   command: ServiceAttachmentCommand;
   receipt: ServiceAttachmentReceipt;
 };
+export type ServiceAttachmentAuthorization = VerifiedServiceAttachment & {
+  scope: TaskReference;
+  now: number;
+  origin: string;
+};
+export function serviceAttachmentRequest(
+  authorization: ServiceAttachmentAuthorization,
+): {
+  url: string;
+  method: "POST";
+  body: string;
+};
+export function matchAttachmentOperation(
+  operation: NativeOperation,
+  authorization?: ServiceAttachmentAuthorization,
+): VerifiedServiceAttachment | null;
+export function validateCompiledServiceAttachment(
+  original: import("../../pvo-language/index.js").CompiledPvoComponent | null,
+  proposed: import("../../pvo-language/index.js").CompiledPvoComponent,
+  authorization: ServiceAttachmentAuthorization,
+  context?: import("../index.js").AssistantContext,
+): void;
 export function parseServiceAttachmentCommand(
   value: unknown,
 ): ServiceAttachmentCommand;

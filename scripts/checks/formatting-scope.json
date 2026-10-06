@@ -1,6 +1,7 @@
 [
   "editor/src/app/projectAutosave.ts",
   "editor/src/domain/assistant/cloudTaskInput.ts",
+  "editor/src/domain/assistant/native/serviceAttachments.ts",
   "editor/src/domain/assistant/savedTaskStatus.ts",
   "editor/src/domain/assistant/taskProjectLink.ts",
   "editor/src/domain/clips/trim.ts",
@@ -92,6 +93,7 @@
   "packages/pvo-assistant/attachments/index.d.ts",
   "packages/pvo-assistant/attachments/index.js",
   "packages/pvo-assistant/attachments/input.js",
+  "packages/pvo-assistant/attachments/policy.js",
   "packages/pvo-assistant/attachments/receipt.js",
   "packages/pvo-assistant/builder/decisionSchema.js",
   "packages/pvo-assistant/builder/decisions.js",
@@ -364,6 +366,7 @@
   "tests/service-actions/limits.test.mjs",
   "tests/service-actions/update-fixtures.mjs",
   "tests/service-actions/updates.test.mjs",
+  "tests/service-attachments/admission.test.mjs",
   "tests/service-attachments/contract.test.mjs",
   "tests/service-attachments/fixtures.mjs",
   "tests/service-attachments/receipt.test.mjs",

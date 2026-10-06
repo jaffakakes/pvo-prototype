@@ -153,3 +153,21 @@ attachment.component.receipt = attachmentReceipt;
 // @ts-expect-error Input bindings cannot execute expressions.
 attachment.connection.input = { kind: "expression", code: "run()" };
 void publicAudience;
+
+const attachmentAuthorization = {
+  ...verifiedAttachment,
+  scope: { ownerId: "owner", projectId: "project", taskId: "task" },
+  now: 0,
+  origin: "https://restyle.example",
+};
+const checkedRequest = attachments.serviceAttachmentRequest(
+  attachmentAuthorization,
+);
+const postMethod: "POST" = checkedRequest.method;
+attachments.matchAttachmentOperation(
+  attachment.component,
+  attachmentAuthorization,
+);
+// @ts-expect-error A proposed component alone supplies no independent service receipt or scope.
+attachments.serviceAttachmentRequest(attachment);
+void postMethod;
