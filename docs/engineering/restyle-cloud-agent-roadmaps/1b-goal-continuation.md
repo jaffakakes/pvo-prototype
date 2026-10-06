@@ -47,3 +47,10 @@ The authoring runner now saves bounded rejected proposals and local validation/c
 
 
 The authoring-repair slice `8415147` is now delivered in combined beta `5b98e49ee71d1d5c`; build, strict types, 28 focused checks, both saved-task/result browser journeys and Worker dry run passed. No product Worker deployment. Next: safely replace expired inactive hosting after reconciliation, then general tool/review progress detection. 1B.14 remains unchecked.
+
+
+### 2026-10-06 — Expired inactive hosting recovery verified
+
+Expired inactive hosting can now be replaced after actual deletion is confirmed. The same checked backend is hosted under a fresh logical service identity; the old identity and expiry remain immutable. Attachment returns to hosting without spending another inference, and the following host step rechecks its normal permission. Unknown outcomes and Stop cannot create a replacement. Dispatch binds the recorded task, claim generation and intent bytes.
+
+No-progress help for authoring now requires an identical complete rejected proposal plus the same diagnostic; changing proposals continue even if the error repeats. **1,403 full behavior tests pass**, with restart/expiry, stale and foreign claim, unknown cleanup and Stop coverage. Source verified; beta delivery pending. General accepted-tool/review progress detection remains, so **1B.14 stays unchecked**.

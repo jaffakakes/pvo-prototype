@@ -37,7 +37,7 @@ export async function taskFixture({
     import { taskResearchTools } from "./server/assistant/builder/researchTools.js";
     import { publicResearch } from "./server/assistant/builder/researchProvider.js";
     import { reconcileTaskWorkspaces } from './server/assistant/tasks/workspaceRunner.js';
-    import {prepareServicePublication} from "./server/cloud-services/releaseContract.js";
+    import {prepareServicePublication,serviceIntentDigest} from "./server/cloud-services/releaseContract.js";
     import { resolveTaskAttachment } from "./server/assistant/attachments/receipt.js";
     import { HostedService } from "./server/cloud-services/host.js";
     import { reconcileTaskServices } from "./server/assistant/tasks/providerRunner.js";
@@ -90,10 +90,12 @@ export async function taskFixture({
       serviceProvider() {
         if (this.providerDisabled) return null;
         const provider = super.serviceProvider();
-        if (!provider || !this.env.PROVIDER_CONTROL) return provider;
+        if (!provider) return provider;
         const call = async (action, value) => {
           const identity = value.identity ?? value;
+          await this.env.SERVICE_HOSTS.getByName(identity.serviceId).setTime(this.now());
           const control = async phase => {
+            if (!this.env.PROVIDER_CONTROL) return;
             const response = await this.env.PROVIDER_CONTROL.fetch("https://provider-control.test", { method: "POST", body: JSON.stringify({ phase, action, identity }) });
             const decision = await response.json();
             if (decision.fail) throw new Error("Controlled provider failure");
@@ -130,6 +132,17 @@ export async function taskFixture({
         const claimed=await this.claimForOperation(ownerId,id,guard);
         await installCheckedDiagnostic(this,claimed,checked);
         return this.publishService(ownerId,id,guard);
+      }
+      async preparePublication(ownerId,id,checked,guard) {
+        const task=await this.claimForOperation(ownerId,id,guard);
+        await installCheckedDiagnostic(this,task,checked);
+        const publication=await prepareServicePublication(task,'prepared-'+task.generation,checked,this.now()+86400000);
+        const digest=await serviceIntentDigest(publication.identity);
+        return this.transaction(()=>this.providers.begin(task,publication,digest,this.now()));
+      }
+      dispatchPublication(ownerId,id,rowId) {
+        this.repository.bindOwner(ownerId);
+        return this.transaction(()=>this.providers.dispatch(this.repository.read(id,this.now()),rowId,this.now()));
       }
       // Trusted fixture only: isolate hosted version control from the later update-authoring workflow.
       async publishVersion(ownerId,id,checked,operationId) {
@@ -247,6 +260,8 @@ export async function taskFixture({
           if (action === "disable-workspaces") { await stub.disableWorkspaces(); return json({ ok: true }); }
           if (action === "disable-provider") { await stub.disableProvider(); return json({ ok: true }); }
           if (action === "publish") return json(await stub.publishFixture(owner.id, args.id, args.checked, args.guard));
+          if (action === "prepare-publication") return json(await stub.preparePublication(owner.id,args.id,args.checked,args.guard));
+          if (action === "dispatch-publication") return json(await stub.dispatchPublication(owner.id,args.id,args.rowId));
           if (action === "publish-unchecked") return json(await stub.publishService(owner.id,args.id,args.guard));
           if (action === "attachment") return json(await stub.resolveAttachment(owner.id,args.id,args.guard,args.command));
           if (action === "host-version") return json(await stub.publishVersion(owner.id,args.id,args.checked,args.operationId));

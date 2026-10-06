@@ -1,6 +1,7 @@
 import { refreshOwnedServices } from "../../cloud-services/management.js";
 import {
   prepareServicePublication,
+  ownedServiceId,
   serviceIntentDigest,
 } from "../../cloud-services/releaseContract.js";
 import {
@@ -27,17 +28,34 @@ export async function publishTaskService(coordinator, claimed) {
       new Error("Hosting requires the task's independently checked package."),
       { code: "invalid_result" },
     );
-  const operationId = `service-${claimed.retries}`;
+  await refreshOwnedServices(coordinator);
+  if (
+    !hasCurrentClaim(
+      coordinator.providers.task(claimed.id),
+      claimed,
+      coordinator.now(),
+    )
+  )
+    return null;
+  const operationId = `service-${claimed.generation}`;
   const prior = coordinator.providers.get(`${claimed.id}_${operationId}`);
+  const retained = coordinator.providers.reusable(claimed.id);
+  const initialServiceId = await ownedServiceId(claimed);
+  const serviceId =
+    retained?.identity.serviceId ??
+    prior?.identity.serviceId ??
+    (coordinator.services.service(initialServiceId)?.state === "deleted"
+      ? await ownedServiceId(claimed, operationId)
+      : initialServiceId);
   const publication = await prepareServicePublication(
     claimed,
     operationId,
     { artifact: saved.artifact, report: saved.report },
     prior?.identity.expiresAt ??
       coordinator.now() + INACTIVE_SERVICE_LIMITS.lifetimeMs,
+    serviceId,
   );
   const inputDigest = await serviceIntentDigest(publication.identity);
-  await refreshOwnedServices(coordinator);
   let row = await coordinator.transaction(() =>
     coordinator.providers.begin(
       claimed,
@@ -66,7 +84,7 @@ export async function publishTaskService(coordinator, claimed) {
             )
           )
             throw new Error("Publication claim is no longer current.");
-          return provider.publish(publication);
+          return provider.publish(row.publication);
         },
         callMs(coordinator),
         controller.signal,

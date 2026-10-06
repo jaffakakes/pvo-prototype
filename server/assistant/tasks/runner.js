@@ -1,3 +1,4 @@
+import { recoverExpiredAttachment } from "../attachments/recovery.js";
 import { AuthoringRepairError } from "./repairFeedback.js";
 import {
   authoringInput,
@@ -19,6 +20,13 @@ export async function runAuthoringStep(coordinator, claimed) {
   coordinator.active.set(claimed.id, controller);
   let attempt;
   try {
+    if (
+      claimed.stepId === "attach" &&
+      (await coordinator.transaction(() =>
+        recoverExpiredAttachment(coordinator, claimed),
+      ))
+    )
+      return;
     const operationId = `inference-${claimed.generation}`;
     const identity = await taskBudgetIdentity(
       claimed,

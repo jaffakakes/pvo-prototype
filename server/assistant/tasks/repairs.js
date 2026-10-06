@@ -48,7 +48,10 @@ export class TaskRepairs {
       previous?.stepId === task.stepId &&
       previous.answers === answers &&
       previous.check === feedback.check &&
-      previous.message === feedback.message;
+      previous.message === feedback.message &&
+      !previous.proposal.truncated &&
+      !feedback.proposal.truncated &&
+      previous.proposal.text === feedback.proposal.text;
     const record = {
       ...feedback,
       operationId: attempt.operationId,
