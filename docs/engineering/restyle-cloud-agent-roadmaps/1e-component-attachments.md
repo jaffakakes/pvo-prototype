@@ -51,3 +51,6 @@ Client persistence, generated IDs and runtime integration remain incomplete. **1
 
 
 The shared client and IndexedDB adapter are now verified by **1,421 tests**, strict types and a fresh Chromium restart/concurrent-tab check. Saved intent commits before dispatch, unresolved input stays immutable, and late replies cannot overwrite a newer action. Actual local HTTP Try/public replay uses the shared client. **1E.04 remains open** for host slot identity, current-context/account guards and Try/player wiring; no app consumer or new beta release yet.
+
+
+The component Try server boundary now passes **1,423 tests** and strict editor types. `/api/services/{serviceId}/releases/{releaseId}/try` derives authority from the signed session and exact origin, then checks the selected test release and public-operation audience. Payload flags and private creator receipt replay are rejected. Host runtime wiring and product acceptance remain, so **1E.04/1E.05 stay unchecked**.

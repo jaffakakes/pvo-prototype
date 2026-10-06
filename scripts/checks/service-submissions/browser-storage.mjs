@@ -11,7 +11,7 @@ const profile = await mkdtemp(join(tmpdir(), "restyle-submission-browser-"));
 const target = {
   origin,
   serviceId: "service-" + "a".repeat(64),
-  releaseId: "release-one",
+  releaseId: "release-" + "b".repeat(64),
   operation: dinnerAgreement().operations[0],
   mode: "public",
   ownerId: null,

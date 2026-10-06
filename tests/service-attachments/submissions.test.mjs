@@ -76,7 +76,7 @@ test("retry cannot cross origin, account, mode, service, release or operation de
   for (const change of [
     { origin: "https://other.example" },
     { serviceId: "service-" + "a".repeat(64) },
-    { releaseId: "another-release" },
+    { releaseId: "release-" + "f".repeat(64) },
     { mode: "try", ownerId: connection.receipt.identity.ownerId },
     { operation: { ...target.operation, description: "Changed operation" } },
   ])

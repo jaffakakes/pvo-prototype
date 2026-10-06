@@ -31,6 +31,7 @@ export type HostedServiceRecord = {
 };
 export type ServiceCallAuthority =
   | { kind: "public" }
+  | { kind: "component_test"; ownerId: string; releaseId: string }
   | { kind: "creator"; ownerId: string; mode: "test" | "live" };
 export type ServiceCallScope = {
   namespace: "test" | "live";

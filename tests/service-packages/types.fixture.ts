@@ -235,3 +235,16 @@ submissionClient.retry("component-slot", submissionTarget, {
 // @ts-expect-error The host must supply a current-context fence.
 submissionClient.retry("component-slot", submissionTarget, {});
 submissionStore.close();
+
+serviceCallScope(hostRecord, {
+  kind: "component_test",
+  ownerId: "owner",
+  releaseId: "release-one",
+});
+serviceCallScope(hostRecord, {
+  kind: "component_test",
+  ownerId: "owner",
+  releaseId: "release-one",
+  // @ts-expect-error A component test cannot select the live namespace.
+  mode: "live",
+});

@@ -426,5 +426,6 @@
   "packages/pvo-assistant/attachments/submissionClient.js",
   "tests/service-attachments/submission-client.test.mjs",
   "packages/pvo-assistant/attachments/submissionStorage.js",
-  "scripts/checks/service-submissions/browser-storage.mjs"
+  "scripts/checks/service-submissions/browser-storage.mjs",
+  "tests/service-actions/component-try.test.mjs"
 ]

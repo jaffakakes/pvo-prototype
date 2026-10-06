@@ -7,7 +7,7 @@ import { deferred } from "../assistant-task-server/provider.helpers.mjs";
 const target = {
   origin: "https://services.example",
   serviceId: "service-" + "a".repeat(64),
-  releaseId: "release-one",
+  releaseId: "release-" + "b".repeat(64),
   operation: dinnerAgreement().operations[0],
   mode: "public",
   ownerId: null,

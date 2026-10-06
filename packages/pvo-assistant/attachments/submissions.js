@@ -31,7 +31,11 @@ export function parseServiceSubmissionTarget(value) {
       /^service-[a-f0-9]{64}$/.test(value.serviceId),
     "Submission service ID is invalid.",
   );
-  id(value.releaseId, "Submission release ID");
+  requireTask(
+    typeof value.releaseId === "string" &&
+      /^release-[a-f0-9]{64}$/.test(value.releaseId),
+    "Submission release ID is invalid.",
+  );
   const operation = parseServiceOperation(value.operation);
   requireTask(
     operation.audience === "public",
@@ -193,7 +197,7 @@ export function serviceSubmissionRequest(value) {
   );
   const { target, action } = submission;
   return {
-    url: `${target.origin}/api/services/${target.serviceId}/${target.mode === "try" ? "try" : "actions"}`,
+    url: `${target.origin}/api/services/${target.serviceId}/${target.mode === "try" ? `releases/${target.releaseId}/try` : "actions"}`,
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: serializeServiceAction(action),
