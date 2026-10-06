@@ -52,3 +52,10 @@ Component Try uses a dedicated server-derived authority restricted to the owner,
 The editor resolves actual typed form values before opening storage. Its checked request is intercepted by a private callback registered for the SDK interaction; arbitrary generated payloads cannot register one. The transport accepts only the fixed same-origin release-specific test route, uses the creator session, rejects redirects and bounds JSON decoding. The SDK still owns request deadlines, ordinary allowed-domain policy, diagnostics, response state and playback routes. Completion commits before SDK success. Literal user input is never passed through PVO template resolution again.
 
 The host closes each owned IndexedDB connection. Stop or a changed account/project/component invalidates late outcomes; a returned authoritative response may settle only its own record. A retry from failed request/playback feedback reads the saved action/result, including a completion that reached storage before a playback-route failure. Starting a new Try is an explicit new test: an unresolved identical submission still reuses its ID; changed unresolved input cannot replace it. Dedicated recovery presentation for saved pending details and player integration remain open.
+
+
+## Public connection description
+
+`projectPublicServiceConnection` explicitly projects a private checked connection into origin, service ID, release ID, one public operation description/schema, event, control target and input binding. `parsePublicServiceConnection` validates that closed shape. Owner/project/task IDs, artifact digests, readiness and private receipts are absent; adding permission or credential fields is rejected.
+
+`publicServiceSubmissionTarget`, `resolvePublicServiceSubmissionInput` and `matchesPublicServiceRequest` reuse the same target, typed input and declarative comparison rules as Try. Parsing this public data grants no activation or server permission. Export must still obtain a matching active connection through the later delivery command; these shared helpers alone do not change manifests or enable the player.

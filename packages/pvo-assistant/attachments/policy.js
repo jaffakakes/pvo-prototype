@@ -45,6 +45,16 @@ export function declarativeServiceRequest(origin, serviceId, operation, input) {
   };
 }
 
+/** Compare the declarative envelope before granting its host-owned invocation adapter. */
+export function matchesDeclarativeServiceRequest(expected, request) {
+  return (
+    request.url === expected.url &&
+    request.method === expected.method &&
+    typeof request.body === "string" &&
+    canonicalJson(JSON.parse(request.body)) === expected.body
+  );
+}
+
 /** One narrow capability supplied separately from native model output; no broad request-policy bypass. */
 export function matchAttachmentOperation(operation, authorization) {
   if (!authorization) return null;

@@ -92,6 +92,15 @@ function resolveBinding(binding, fields) {
 /** Resolve already typed host form values. Strings are never coerced into numbers or booleans. */
 export function resolveServiceSubmissionInput(value, fields) {
   const saved = parseComponentServiceConnection(value);
+  return resolveBoundSubmissionInput(
+    saved.connection.input,
+    saved.receipt.operation.input,
+    fields,
+  );
+}
+
+/** Shared internal data rule for private authoring and public playback descriptors. */
+export function resolveBoundSubmissionInput(binding, schema, fields) {
   requireTask(
     fields !== null &&
       typeof fields === "object" &&
@@ -99,9 +108,9 @@ export function resolveServiceSubmissionInput(value, fields) {
       [Object.prototype, null].includes(Object.getPrototypeOf(fields)),
     "Form values must be an object.",
   );
-  const input = resolveBinding(saved.connection.input, fields);
+  const input = resolveBinding(binding, fields);
   boundedValue(
-    saved.receipt.operation.input,
+    schema,
     input,
     SERVICE_PACKAGE_LIMITS.inputBytes,
     "Service input",

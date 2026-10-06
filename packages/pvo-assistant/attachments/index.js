@@ -34,3 +34,11 @@ export {
 export { createServiceSubmissionClient } from "./submissionClient.js";
 
 export { openServiceSubmissionStore } from "./submissionStorage.js";
+
+export {
+  parsePublicServiceConnection,
+  projectPublicServiceConnection,
+  publicServiceSubmissionTarget,
+  resolvePublicServiceSubmissionInput,
+  matchesPublicServiceRequest,
+} from "./publicConnection.js";
