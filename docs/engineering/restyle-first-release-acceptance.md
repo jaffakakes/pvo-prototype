@@ -8,7 +8,7 @@ The earlier steps built the parts. This milestone asks the real AI to put them t
 
 The temporary workshop writes and tests the code. The separately hosted service keeps the saved RSVPs or bookings and answers viewers after the workshop stops. Publishing makes that checked service available to its connected component; it does not share a plugin or install something for other creators.
 
-**Status, 6 October 2026:** the one approved deployment failed on its first model request and was fully removed. Model-only diagnosis identified a request-format incompatibility; the corrected adapter obtains the expected dinner question. Both complete demonstrations and all 1F tasks remain unchecked. This is no public product deployment. The separate beta build is recorded in progress.
+**Status, 6 October 2026:** both approved diagnostic deployments are removed. The first exposed a model request-format issue, now repaired; the replacement reached the actual model but exposed the driver’s one-question assumption, also repaired locally. Neither demonstration reached generated source. All 1F tasks remain unchecked. One further corrected run is prepared, awaiting approval. This is no public product deployment; beta delivery is recorded separately in progress.
 
 ## Implementation and evidence boundary
 
@@ -72,18 +72,32 @@ The [Runpod adapter](../../server/assistant/native/runpod.js) now uses the succe
 
 **The first one-deployment authorization is consumed.** The separately approved replacement is recorded below. Do not interpret the unused dollar ceiling as approval for an unspecified additional deployment. Keep both failed evidence and the original 1F checkboxes.
 
-## Prepared replacement — approved
+## First replacement — consumed and cleaned up
 
-The corrected driver is prepared for **one replacement deployment, up to US$10: US$8 model reservations plus US$2 infrastructure allowance**, with the same two goals, resource count, 90-minute window, admission controls and verified deletion. The user approved this replacement by saying “yeah just finish 1f” after the reduced plan was explained. No replacement has been launched at this checkpoint. The current command and ledger enforce the reduced allowance; the old US$15 command is no longer accepted.
+The corrected driver is prepared for **one replacement deployment, up to US$10: US$8 model reservations plus US$2 infrastructure allowance**, with the same two goals, resource count, 90-minute window, admission controls and verified deletion. The user approved this replacement by saying “yeah just finish 1f” after the reduced plan was explained. This replacement ran at 20:32 UTC and is now removed, as recorded below. That run used the reduced allowance.
 
 This fits the original US$15 ceiling conservatively: retain **US$2.75** for all previous model requests and the entire previous **US$2 infrastructure allowance**, then reserve **US$10** for the replacement, totaling **US$14.75**. This is planning allowance, not billed spend or an account-wide cap. This permission is recorded; do not ask again for the same replacement. The prepared driver now keeps this same deployment alive for the browser, recovery and viewer matrix below.
 
+## Replacement result — 6 October 2026, 20:32 UTC
+
+Worker/Container `restyle-workspace-proof-854d81016dde0c96a0ead5ee` started at **20:32:12 UTC**. All three model calls returned HTTP 200. The actual editor saved the dinner task, closed, and the agent saved the supplied two-seat answer. The builder unnecessarily asked to confirm that answer. The diagnostic driver allowed only one question and failed its own assertion; it automatically removed the deployment before source generation. This was a harness defect, not a provider outage or evidence that saved questions cannot work.
+
+Cleanup was verified at **20:32:50.848 UTC**. Worker, Container application `9f12a3b1d31d4e90b78027859dbc44f4`, all six namespaces and the deployment secret file were removed. Namespace IDs: `9f12a3b1d31d4e90b78027859dbc44f4`, `056f565ed462419a86f89321c1c12cb4`, `81144bafd2ba445aa2fa16837bde858f`, `fb7a735ebe954e7c865203e6330e8e83`, `c5c53c7008734be6a978266dbb96ba8a`, `978ce5633cc042a0bee5780202e870c9`. Private journal `.wrangler/cloud-agent-infrastructure/workspace-3FriK2/report.json`; log `/tmp/restyle-1f-complete-live.log`. Eleven admitted diagnostic requests; zero workshop sessions or hosted services. Reported usage: **4,654 input / 97 output tokens**, estimated **US$0.004811** after per-call rounding; conservative reservations **US$0.825**.
+
+The repaired driver saves every additional question and waits for a local reviewed answer tied to the exact task/question/revision, keeping the deployment within its existing deadline. Two regression tests verify a second question can wait and continue the same task, and stale answers are rejected. Builder instructions now explicitly use saved answers when the original request calls that information unknown. No arbitrary per-goal question/model limit is added.
+
+## Next corrected run — awaiting approval
+
+Prepared scope: **one further disposable deployment, up to US$9.50**, consisting of **US$7.50 model reservations and US$2 infrastructure allowance**, with the same two goals, resources, 90-minute expiry and verified deletion. This is not approved yet: the prior approvals each covered one deployment, and both deployments are removed. Do not execute until the user approves this concrete run.
+
+Across both finished runs and model diagnosis, five HTTP-500 calls retain their full **US$1.375** unknown-usage reservation. All eight successful calls reported usage, estimated **US$0.007989** in total. Retaining both earlier US$2 infrastructure allowances and adding this US$9.50 proposal gives **US$14.882989**, within the original US$15 total. This uses returned usage to settle known successful calls; unknown calls remain fully reserved. It remains an estimate, not an invoice or an account-wide billing cap.
+
 ## Run and recover
 
-Current prepared invocation, from the active checkout; for the approved replacement:
+Prepared invocation, from the active checkout; **only after approval of the next corrected run**:
 
 ```sh
-node scripts/checks/cloud-agent-first-release/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-approved-10-usd
+node scripts/checks/cloud-agent-first-release/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-approved-9-50-usd
 ```
 
 Use privately supplied `RUNPOD_API_KEY` or a nonempty `apikey` in the Runpod CLI configuration. The script never prints the key. A file existing is not sufficient: the first approved launch found an empty key and stopped before any resource creation or charge. On this Mac, the user can enter it privately with:

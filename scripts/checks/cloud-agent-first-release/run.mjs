@@ -6,16 +6,16 @@ import { scenarios } from "./scenarios.js";
 import { readRunpodKey } from "./credentials.mjs";
 import { openCreatorJourney } from "./browser.mjs";
 import { checkGeneratedDelivery } from "./delivery.mjs";
-import { reviewedInputs } from "./review-inputs.mjs";
+import { reviewedInputs, reviewedAnswer } from "./review-inputs.mjs";
 
 const accountId = process.argv[2];
 if (
-  process.argv[3] !== "--run-approved-10-usd" ||
+  process.argv[3] !== "--run-approved-9-50-usd" ||
   process.argv.length !== 4 ||
   !/^[a-f0-9]{32}$/.test(accountId ?? "")
 ) {
   console.error(
-    "Usage (only after replacement approval): node scripts/checks/cloud-agent-first-release/run.mjs <account-id> --run-approved-10-usd",
+    "Usage (only after replacement approval): node scripts/checks/cloud-agent-first-release/run.mjs <account-id> --run-approved-9-50-usd",
   );
   process.exit(1);
 }
@@ -34,8 +34,8 @@ const expiresAt = Date.now() + 90 * 60_000;
 report.purpose =
   "1F natural-language acceptance preparation: actual Runpod Kimi planning and Cloudflare tools, no production deployment";
 report.limits = {
-  approvedUsd: 10,
-  reservedModelUsd: 8,
+  approvedUsd: 9.5,
+  reservedModelUsd: 7.5,
   infrastructureAllowanceUsd: 2,
   deployments: 1,
   containerApplications: 1,
@@ -127,6 +127,22 @@ try {
       signal: controller.signal,
       start: journey.start,
       record,
+      answerQuestion: async (subject, question, snapshot, answers) => {
+        if (answers === 0) return scenarios[subject].answer;
+        const file = `${dirname(resources.reportFile)}/${subject}-answer-${answers + 1}.json`;
+        await record("awaiting_reviewed_creator_answer", {
+          subject,
+          taskId: snapshot.task.id,
+          question,
+          file,
+        });
+        return reviewedAnswer(file, {
+          expiresAt,
+          signal: controller.signal,
+          taskId: snapshot.task.id,
+          question,
+        });
+      },
       onReady: async (subject, snapshot) => {
         const directory = dirname(resources.reportFile);
         const file = `${directory}/${subject}-inputs.json`;

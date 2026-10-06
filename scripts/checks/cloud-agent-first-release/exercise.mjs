@@ -12,11 +12,12 @@ export async function exerciseAuthoring(
     signal,
     start,
     onReady,
+    answerQuestion,
     record = async () => {},
   } = {},
 ) {
   signal?.throwIfAborted();
-  for (const [subject, scenario] of Object.entries(scenarios)) {
+  for (const subject of Object.keys(scenarios)) {
     signal?.throwIfAborted();
     const started = start
       ? await start(subject)
@@ -24,7 +25,7 @@ export async function exerciseAuthoring(
     assert.equal(started.status, 200, `${subject}: task creation failed`);
     assert.ok(started.data.task?.id, `${subject}: missing saved task`);
     let revision = -1,
-      answered = false,
+      answers = 0,
       retriedHosting = false;
     while (Date.now() < expiresAt) {
       signal?.throwIfAborted();
@@ -66,12 +67,14 @@ export async function exerciseAuthoring(
       }
       const question = task.questions.find((q) => q.answer === null);
       if (question) {
-        // The reviewed scenario supplies one creator answer; extra questions need review.
-        assert.equal(
-          answered,
-          false,
-          `${subject}: another creator answer is needed; inspect the checkpoint`,
+        // Additional questions wait for a reviewed answer; they must not destroy the deployment.
+        const value = await answerQuestion(
+          subject,
+          question,
+          snapshot,
+          answers,
         );
+        assert.ok(typeof value === "string" && value.trim());
         const answer = await call(`/${subject}/command`, "POST", {
           kind: "answers",
           id: task.id,
@@ -79,8 +82,8 @@ export async function exerciseAuthoring(
             expectedRevision: task.revision,
             questionId: question.id,
             questionRevision: question.revision,
-            operationId: `answer-${subject}`,
-            value: scenario.answer,
+            operationId: `answer-${subject}-${question.id}`,
+            value,
           },
         });
         assert.equal(answer.status, 200);
@@ -89,9 +92,9 @@ export async function exerciseAuthoring(
           subject,
           taskId: task.id,
           question: question.prompt,
-          answer: scenario.answer,
+          answer: value,
         });
-        answered = true;
+        answers++;
       }
       assert.ok(
         !["failed", "stopped"].includes(task.state),
