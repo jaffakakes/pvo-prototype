@@ -159,3 +159,5 @@ Creator-controls delivery: source **`08083f9`**, combined **`dd10ec1`**, served 
 
 
 Latest safe-update checkpoint: **1D.08 verified; all of 1D complete; 33/121 tasks done**. Full local checks pass **1,343 tests**, editor types and the real browser version-selection/rollback journey. Current records and action receipts survive safe switches; incompatible state/interface or missing/expired versions cannot displace the active program. Source/evidence are committed together on the hosting branch. Next **1E.01/1E.02** after the updated combined beta checkpoint. The later 4B update-authoring flow remains separate; this verifies the owned host/version mechanism. No new cloud spend or production release.
+
+Final hosting delivery: source **`72714fe`**, combined **`5ec4eeb`**, served beta **`a393b8b8bfa8efdf`**, preserving publishing/UI/cover changes. Build/types/37 focused tests/browser version journey/Worker dry run passed; backup and receipts are in progress. Next **1E.01/1E.02**, with all 33 completed tasks recorded. No product Worker deployment.
