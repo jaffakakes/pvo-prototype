@@ -183,6 +183,12 @@ Run `7091340c288b3f81a60f4bcf` ran **2026-10-06T23:16:16.846Z–23:26:54.107Z** 
 
 Source checks passed 1,489 tests and strict editor types; the subsequent exact-schema prompt clarification passed twelve planner/agreement tests. Final beta/promotion is 1F.08. Preserve the earlier failures and private receipts; do not recreate completed paid proofs solely because those private files are unavailable on another machine.
 
+### 1F.08 — beta passed; normal release blocked
+
+Final combined checkout `b8bf5af` built and passed strict editor types; actual Desktop beta serves **`restyle-editor-shell-e069ede11e8ff6b7`**. Fresh player/editor and activated service worker passed; all 118 old hashed assets remain. Backup `/Users/christinasmacbook/.codex/backups/restyle-1f-final-beta-bajjwooj`; receipt `/tmp/restyle-1f-final-beta-delivery.json`; logs `/tmp/restyle-1f-final-beta-{build,types,served}.log`. User session was not reloaded.
+
+PR #105 is ready. GitHub rejected the normal exact-head merge (`4eadb6a`) under its base-branch policy, then rejected a standard auto-merge request because automatic merging is disabled for the repository. No merge/promotion/deployment happened and no branch was deleted. Required-check inspection remains excluded by the user's earlier instruction; clarification to inspect/fix those checks is pending. No Actions polling/retries or protection bypass were performed. Keep 1F.08 unchecked until authorized normal promotion and actual production verification finish.
+
 ## Run and recover
 
 Invocation from the active checkout, under the recorded completion authorization:
@@ -244,6 +250,6 @@ These are evidence requirements, not a second set of completion checkboxes. Upda
 | 1F.05 | **Passed:** dinner last-seat/camera overlap races, exact retries, owner/test authority, failed dinner hosting and interrupted activation/export/publication |
 | 1F.06 | **Passed for generated dinner:** local removal retained the manageable live service and records; actual UI showed the correct Undo explanation |
 | 1F.07 | **Passed:** recorded usage/reservations/limits above; all ten diagnostic resource groups removed |
-| 1F.08 | Relevant source/types/browser/provider checks, actual combined beta delivery and authorized normal release promotion; preserve the user's exclusion of GitHub Actions polling |
+| 1F.08 | **Partial:** source/types/browser/provider checks and actual final beta passed. Normal merge rejected by branch policy; auto-merge disabled. Required-check inspection clarification pending; production unreleased. |
 
 The existing controlled browser checks remain useful regression coverage. They cannot substitute for the real-model/provider evidence above. No task becomes complete merely because this plan or a runnable harness exists.
