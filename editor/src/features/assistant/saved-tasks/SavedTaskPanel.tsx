@@ -96,6 +96,15 @@ export function SavedTaskPanel() {
             "Recovering the saved request for this account and project."}
         </p>
       )}
+      {session.task?.state === "waiting" && session.task.nextRunAt !== null && (
+        <p>
+          Restyle will try again after{" "}
+          <time dateTime={new Date(session.task.nextRunAt).toISOString()}>
+            {new Date(session.task.nextRunAt).toLocaleString()}
+          </time>
+          .
+        </p>
+      )}
       {status?.question && (
         <TaskAnswer
           key={`${session.task!.id}:${status.question.id}`}

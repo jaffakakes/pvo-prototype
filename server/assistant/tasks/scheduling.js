@@ -67,7 +67,8 @@ export function claimNextTask(coordinator) {
       }
     }
     if (
-      task.state !== "queued" ||
+      !["queued", "waiting"].includes(task.state) ||
+      task.nextRunAt === null ||
       task.nextRunAt > now ||
       coordinator.awaiting(task.id)
     )

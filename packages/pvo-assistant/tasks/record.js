@@ -55,6 +55,7 @@ export function parseTaskRecord(value) {
       "archivedOperations",
       "result",
       "failure",
+      "wait",
       "retries",
       "usage",
       "createdAt",
@@ -108,6 +109,7 @@ export function parseTaskRecord(value) {
     );
   }
   validateClaim(value);
+  validateWait(value);
   if (value.result !== null) {
     validateResult(value.result);
     requireTask(
@@ -131,7 +133,7 @@ export function parseTaskRecord(value) {
     (value.state === "failed") === (value.failure !== null),
     "Failed state and failure must agree.",
   );
-  if (["ready", "waiting_for_answer"].includes(value.state)) {
+  if (["ready", "waiting_for_answer", "waiting"].includes(value.state)) {
     requireTask(
       !hasUnsettledOperations(value.operations),
       "Uncertain operations must be reconciled first.",
@@ -168,7 +170,10 @@ function validateClaim(value) {
       "Execution claim has inconsistent bounds.",
     );
   }
-  if (value.state === "queued") {
+  if (
+    value.state === "queued" ||
+    (value.state === "waiting" && value.nextRunAt !== null)
+  ) {
     time(value.nextRunAt, "Next wakeup");
     requireTask(
       value.nextRunAt >= value.createdAt,
@@ -177,8 +182,32 @@ function validateClaim(value) {
   } else
     requireTask(
       value.nextRunAt === null,
-      "Only queued tasks have a next wakeup.",
+      "Only queued or waiting tasks have a next wakeup.",
     );
+}
+
+function validateWait(value) {
+  requireTask(
+    (value.state === "waiting") === (value.wait !== null),
+    "Waiting state and reason must agree.",
+  );
+  if (value.wait === null) return;
+  object(value.wait, ["reason"], "Wait reason");
+  requireTask(
+    [
+      "model_capacity",
+      "model_allowance",
+      "workspace_capacity",
+      "workspace_allowance",
+      "spending_permission",
+    ].includes(value.wait.reason),
+    "Wait reason is unsupported.",
+  );
+  requireTask(
+    (value.wait.reason === "spending_permission") ===
+      (value.nextRunAt === null),
+    "Only spending permission waits need explicit resumption.",
+  );
 }
 
 function validateHistory(value) {
@@ -248,6 +277,7 @@ export function createTask(input, metadata) {
     archivedOperations: 0,
     result: null,
     failure: null,
+    wait: null,
     retries: 0,
     usage: {
       modelTurns: 0,

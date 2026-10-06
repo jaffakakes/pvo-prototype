@@ -41,6 +41,7 @@ Creator-facing routes may expose only their named operations after authenticatio
 | `queued` | Coordinator claims due work; creator stops it |
 | `running` | Worker checkpoints to `queued`, asks a question, completes, or fails; creator stops it; coordinator recovers an expired claim |
 | `waiting_for_answer` | Creator answers to queue the same task or stops it |
+| `waiting` | Trusted capacity/spending reason with a scheduled `nextRunAt`, or null for permission; a due claim or creator Resume rechecks admission |
 | `ready` | Build attempt is terminal; applying the prepared result is a separate guarded editor operation |
 | `failed` | Creator resumes a retryable failure after reconciliation, or stops it |
 | `stopped` | Build attempt is terminal; no new work or result may start |
@@ -98,3 +99,7 @@ Server task storage, HTTP authentication, atomic compare-and-swap, hashing, alar
 `parseTaskProposal` accepts only one to eight bounded, uniquely identified expected-behavior examples. Native model output cannot choose task/project/account identities, providers, URLs, code or credentials. The server gates this handoff by real capability and signed session; the editor rejects it after native changes have been prepared. The proposal itself creates no task or external effect.
 
 The editor stores an exact pending `TaskInput` beside its local checkpoint before POST, replays it after an uncertain response, and removes it after `replayTaskCreation` confirms the matching owned receipt. Completed local associations contain IDs only. Pending inputs are outside Undo/export, are bounded by this contract and are stripped from independent project copies. No media bytes are added to these inputs. See the [editor lifecycle](../../../docs/engineering/restyle-cloud-agent-roadmaps/1b-saved-tasks.md).
+
+## Saved capacity waits
+
+`TaskRecord.wait` is required and null outside `waiting`; inside it contains one approved `reason`. A trusted worker uses `{kind: "wait", reason, nextRunAt}` after settling its operations and usage. Model/workspace capacity and allowance waits need a future wakeup; spending permission has none. Stop clears the wait and fences all later claims. Resume queues the same goal for fresh authorization; it never grants credit or skips reservation. Waiting tasks still consume retained active-task storage, preserve their original input/cursor/history, and have no goal expiry. Model output cannot issue this platform command.

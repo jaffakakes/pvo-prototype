@@ -10,7 +10,7 @@ import { HttpError } from "../../http.js";
 import { TASK_STORAGE_LIMITS as limits } from "./input.js";
 
 const unfinished = (task) =>
-  ["queued", "running", "waiting_for_answer"].includes(task.state);
+  ["queued", "running", "waiting_for_answer", "waiting"].includes(task.state);
 const unsettled = (task) =>
   task.operations.some((operation) =>
     ["planned", "unknown"].includes(operation.status),
@@ -179,6 +179,7 @@ export class TaskRepository {
       );
     if (
       command.kind === "resume" &&
+      !unfinished(task) &&
       this.records().filter(unfinished).length >= limits.active
     )
       throw new HttpError(

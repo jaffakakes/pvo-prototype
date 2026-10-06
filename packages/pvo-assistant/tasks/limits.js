@@ -25,6 +25,7 @@ export const TASK_STATES = Object.freeze([
   "queued",
   "running",
   "waiting_for_answer",
+  "waiting",
   "ready",
   "failed",
   "stopped",

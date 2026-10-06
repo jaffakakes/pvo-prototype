@@ -22,6 +22,7 @@ import {
 const fields = {
   claim: ["claimId", "leaseMs"],
   checkpoint: ["stepId"],
+  wait: ["reason", "nextRunAt"],
   ask: ["question"],
   answer: ["questionId", "questionRevision", "operationId", "value"],
   complete: ["result"],
@@ -37,6 +38,7 @@ const fields = {
 };
 const workerCommands = [
   "checkpoint",
+  "wait",
   "ask",
   "complete",
   "fail",
@@ -81,12 +83,15 @@ function applyCommand(task, command, guard) {
   switch (command.kind) {
     case "claim": {
       requireTask(
-        task.state === "queued" && guard.now >= task.nextRunAt,
+        ["queued", "waiting"].includes(task.state) &&
+          task.nextRunAt !== null &&
+          guard.now >= task.nextRunAt,
         "Task cannot be claimed yet.",
       );
       id(command.claimId, "Claim ID");
       integer(command.leaseMs, limits.leaseMs, "Claim duration", 1);
       task.state = "running";
+      task.wait = null;
       task.generation++;
       task.claim = {
         id: command.claimId,
@@ -105,6 +110,20 @@ function applyCommand(task, command, guard) {
       );
       task.stepId = command.stepId;
       finishClaim(task, "queued");
+      break;
+    case "wait":
+      requireSettledUsage(task);
+      requireTask(
+        !hasUnsettledOperations(task.operations),
+        "Reconcile unfinished operations before waiting.",
+      );
+      requireTask(
+        command.nextRunAt === null || command.nextRunAt > guard.now,
+        "A scheduled wait must wake in the future.",
+      );
+      finishClaim(task, "waiting");
+      task.wait = { reason: command.reason };
+      task.nextRunAt = command.nextRunAt;
       break;
     case "ask":
       validateQuestion(command.question);
@@ -131,7 +150,9 @@ function applyCommand(task, command, guard) {
       break;
     case "resume":
       requireTask(
-        task.state === "failed" && TASK_FAILURES[task.failure.code].retryable,
+        (task.state === "failed" &&
+          TASK_FAILURES[task.failure.code].retryable) ||
+          task.state === "waiting",
         "Task failure cannot be resumed.",
       );
       task.retries++;

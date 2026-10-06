@@ -356,7 +356,7 @@ export class AssistantTasks extends DurableObject {
       ...this.repository
         .records()
         .flatMap((task) =>
-          task.state === "queued"
+          ["queued", "waiting"].includes(task.state)
             ? this.awaiting(task.id)
               ? []
               : [task.nextRunAt]

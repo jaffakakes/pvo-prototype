@@ -1,6 +1,12 @@
 /** Pure task contract; storage and authorization adapters must enforce their own boundaries. */
 export type TaskState =
-  "queued" | "running" | "waiting_for_answer" | "ready" | "failed" | "stopped";
+  | "queued"
+  | "running"
+  | "waiting_for_answer"
+  | "waiting"
+  | "ready"
+  | "failed"
+  | "stopped";
 export type TaskFailureCode =
   | "provider_unavailable"
   | "interrupted"
@@ -8,6 +14,12 @@ export type TaskFailureCode =
   | "execution_failed"
   | "invalid_result"
   | "budget_exceeded";
+export type TaskWaitReason =
+  | "model_capacity"
+  | "model_allowance"
+  | "workspace_capacity"
+  | "workspace_allowance"
+  | "spending_permission";
 export type TaskFailure = { code: TaskFailureCode; stepId: string };
 export type TaskArtifact = { id: string; sha256: string; bytes: number };
 export type TaskResult = { artifact: TaskArtifact; baseFingerprint: string };
@@ -78,6 +90,7 @@ export type TaskRecord = {
   archivedOperations: number;
   result: TaskResult | null;
   failure: TaskFailure | null;
+  wait: { reason: TaskWaitReason } | null;
   retries: number;
   usage: TaskUsage;
   createdAt: number;
@@ -96,6 +109,7 @@ export type TaskGuard = {
 export type TaskCommand =
   | { kind: "claim"; claimId: string; leaseMs: number }
   | { kind: "checkpoint"; stepId: string }
+  | { kind: "wait"; reason: TaskWaitReason; nextRunAt: number | null }
   | { kind: "ask"; question: TaskQuestion }
   | {
       kind: "answer";

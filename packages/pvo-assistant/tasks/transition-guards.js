@@ -43,6 +43,7 @@ export function requireRunningClaim(task, guard) {
 
 export function finishClaim(task, state) {
   task.state = state;
+  task.wait = null;
   if (["ready", "stopped"].includes(state)) {
     task.finishedAt = task.updatedAt;
     task.expiresAt = task.finishedAt + TASK_LIMITS.retentionMs;

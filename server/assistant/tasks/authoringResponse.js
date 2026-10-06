@@ -73,6 +73,7 @@ export function finishAuthoringAttempt(
   response,
   code,
   now,
+  wait = null,
 ) {
   let prepared = null;
   if (
@@ -102,6 +103,7 @@ export function finishAuthoringAttempt(
     command,
     code,
     now,
+    wait,
   );
   if (accepted && response?.evidence)
     coordinator.evidence.save(claimed.id, response.evidence);

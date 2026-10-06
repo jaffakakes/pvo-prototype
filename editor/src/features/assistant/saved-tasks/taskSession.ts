@@ -57,7 +57,7 @@ export function createSavedTaskSession(
     if (
       current() &&
       !view.error &&
-      ["queued", "running", "waiting_for_answer"].includes(
+      ["queued", "running", "waiting_for_answer", "waiting"].includes(
         view.task?.state ?? "",
       )
     )

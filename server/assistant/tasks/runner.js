@@ -50,6 +50,7 @@ export async function runAuthoringStep(coordinator, claimed) {
     let command = null;
     let code = null;
     let invoked = false;
+    let wait = null;
     try {
       await withAssistantDeadline(
         async (signal) => {
@@ -78,6 +79,17 @@ export async function runAuthoringStep(coordinator, claimed) {
     } catch (error) {
       if (!invoked) attempt.dispatched = false;
       code = stepFailureCode(error, controller.signal);
+      if (
+        !controller.signal.aborted &&
+        (error?.taskWait || error?.status === 429)
+      ) {
+        wait = error.taskWait ?? {
+          reason: "model_capacity",
+          nextRunAt: coordinator.now() + 60000,
+        };
+        if (wait.nextRunAt !== null)
+          wait.nextRunAt = Math.max(coordinator.now() + 1000, wait.nextRunAt);
+      }
     }
     await coordinator.transaction(() =>
       finishAuthoringAttempt(
@@ -87,6 +99,7 @@ export async function runAuthoringStep(coordinator, claimed) {
         command,
         code,
         coordinator.now(),
+        wait,
       ),
     );
   } finally {

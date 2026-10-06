@@ -13,11 +13,25 @@ const failureMessages = {
   budget_exceeded: "This task reached its work limit.",
 };
 
+const waitMessages = {
+  model_capacity:
+    "Model capacity is busy. Your progress is saved and work will resume automatically.",
+  model_allowance:
+    "The current model allowance is used. Your progress is saved and work will resume when it resets.",
+  workspace_capacity:
+    "A build computer is not available yet. Your progress is saved and Restyle will try again automatically.",
+  workspace_allowance:
+    "The current build allowance is used. Your progress is saved and work will resume when it resets.",
+  spending_permission:
+    "Work needs spending permission. After an allowance is approved, choose Resume to continue this task.",
+};
+
 export function savedTaskStatus(task: TaskRecord) {
   const label = {
     queued: "Working",
     running: "Working",
     waiting_for_answer: "Needs your answer",
+    waiting: "Waiting",
     ready: "Ready",
     stopped: "Stopped",
     failed: "Failed",
@@ -27,33 +41,48 @@ export function savedTaskStatus(task: TaskRecord) {
   const uncertain = task.operations.some((operation) =>
     ["planned", "unknown"].includes(operation.status),
   );
-  const message = task.failure
-    ? buildUnavailable
-      ? "Planning is saved. Building hosted services is not available yet."
-      : failureMessages[task.failure.code]
-    : task.state === "ready"
-      ? "Your result is saved."
-      : task.state === "stopped"
-        ? uncertain
-          ? "Further work was stopped. An earlier action still needs its outcome checked."
-          : "Further work was stopped. Your saved progress is still available."
-        : task.state === "waiting_for_answer"
-          ? "Your answer will be saved before work continues."
-          : "You can close Restyle and return to this task.";
+  const message = taskMessage(task, buildUnavailable, uncertain);
   return {
     label,
     message,
-    canStop: ["queued", "running", "waiting_for_answer", "failed"].includes(
-      task.state,
-    ),
+    canStop: [
+      "queued",
+      "running",
+      "waiting_for_answer",
+      "waiting",
+      "failed",
+    ].includes(task.state),
     canResume:
-      task.state === "failed" &&
-      !!task.failure &&
-      !buildUnavailable &&
-      TASK_FAILURES[task.failure.code].retryable,
+      task.state === "waiting" ||
+      (task.state === "failed" &&
+        !!task.failure &&
+        !buildUnavailable &&
+        TASK_FAILURES[task.failure.code].retryable),
     question:
       task.state === "waiting_for_answer"
         ? (task.questions.find((item) => item.answer === null) ?? null)
         : null,
   };
+}
+
+function taskMessage(
+  task: TaskRecord,
+  buildUnavailable: boolean,
+  uncertain: boolean,
+) {
+  if (task.wait) return waitMessages[task.wait.reason];
+  if (task.failure) {
+    if (buildUnavailable)
+      return "Planning is saved. Building hosted services is not available yet.";
+    return failureMessages[task.failure.code];
+  }
+  if (task.state === "ready") return "Your result is saved.";
+  if (task.state === "stopped") {
+    if (uncertain)
+      return "Further work was stopped. An earlier action still needs its outcome checked.";
+    return "Further work was stopped. Your saved progress is still available.";
+  }
+  if (task.state === "waiting_for_answer")
+    return "Your answer will be saved before work continues.";
+  return "You can close Restyle and return to this task.";
 }
