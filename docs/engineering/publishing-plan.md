@@ -84,7 +84,7 @@ For the first release, revalidate publication availability on new page/media req
 
 ## Size, cost and storage boundaries
 
-Start with a configurable **50 MiB maximum uploaded export**, plus 500 MiB per account, 5 GiB total storage and 20 newly created links per account per rolling day; verify the limit against actual mobile exports before release. Enforce byte limits on the server and reserve quota before upload. Include pending and deleting uploads in accounting until their storage is removed. Signing out and back into the same account does not reset its quota; the total storage cap remains global. Show the completed file's size and online limit in Share before upload. Exceeding an online sharing quota must not prevent rendering or downloading locally after sign-in.
+Interactive export now creates a shareable link automatically. Large PVOs upload in parts; Restyle does not impose account or site storage quotas. The server still enforces a 20-link daily creation allowance and the multipart transport's maximum single-file size. Show upload progress and preserve the generated PVO locally if publication fails.
 
 The current player fetches the entire `.pvo` before playback. R2 storage alone does not provide progressive playback or adaptive streaming. Keep visible loading and retry states; large-video streaming is a separate player/SDK project.
 

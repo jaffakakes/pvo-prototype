@@ -156,10 +156,9 @@ export function MoreSettings() {
     {screen === "editor" && <section className={styles.section} aria-labelledby="more-export-heading">
       <h3 id="more-export-heading">Export</h3>
       <div className={styles.actions}>
-        <button type="button" onClick={() => requestExport("video")}>Flat video</button>
-        <button type="button" onClick={() => requestExport("pvo")}>Interactive (.pvo)</button>
+        <button type="button" onClick={() => requestExport()}>Export and create link</button>
       </div>
-      <p className={styles.exportNote}>Interactive (.pvo) carries components · flat video does not.</p>
+      <p className={styles.exportNote}>The shared PVO keeps every scene and interactive component.</p>
     </section>}
     {advancedEditingEnabled && <AdvancedSettings />}
     <ProjectStorageStatus onlyIssues />

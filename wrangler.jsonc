@@ -33,10 +33,7 @@
     "PUBLISHING_ENABLED": "true",
     "PUBLIC_ORIGIN": "https://getrestyle.app",
     "CLERK_ISSUER": "https://clerk.getrestyle.app",
-    "CLERK_PUBLISHABLE_KEY": "pk_live_Y2xlcmsuZ2V0cmVzdHlsZS5hcHAk",
-    "MAX_UPLOAD_BYTES": "52428800",
-    "OWNER_STORAGE_BYTES": "524288000",
-    "TOTAL_STORAGE_BYTES": "5368709120"
+    "CLERK_PUBLISHABLE_KEY": "pk_live_Y2xlcmsuZ2V0cmVzdHlsZS5hcHAk"
   },
   "r2_buckets": [{"binding":"MEDIA","bucket_name":"pvo-publications-media"}],
   "d1_databases": [{"binding":"DB","database_name":"pvo-publications-google","database_id":"46ed24c3-1bc3-487a-95cf-7b6b58c1db88","migrations_dir":"migrations"}],
