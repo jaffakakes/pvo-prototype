@@ -8,7 +8,7 @@ The earlier steps built the parts. This milestone asks the real AI to put them t
 
 The temporary workshop writes and tests the code. The separately hosted service keeps the saved RSVPs or bookings and answers viewers after the workshop stops. Publishing makes that checked service available to its connected component; it does not share a plugin or install something for other creators.
 
-**Status, 6 October 2026:** both approved diagnostic deployments are removed. The first exposed a model request-format issue, now repaired; the replacement reached the actual model but exposed the driver’s one-question assumption, also repaired locally. Neither demonstration reached generated source. All 1F tasks remain unchecked. One further corrected run is prepared, awaiting approval. This is no public product deployment; beta delivery is recorded separately in progress.
+**Status, 6 October 2026:** both approved diagnostic deployments are removed. The first exposed a model request-format issue, now repaired; the replacement reached the actual model but exposed the driver’s one-question assumption, also repaired locally. Neither demonstration reached generated source. All 1F tasks remain unchecked. The further corrected run is now approved. This is no public product deployment; beta delivery is recorded separately in progress.
 
 ## Implementation and evidence boundary
 
@@ -86,15 +86,15 @@ Cleanup was verified at **20:32:50.848 UTC**. Worker, Container application `9f1
 
 The repaired driver saves every additional question and waits for a local reviewed answer tied to the exact task/question/revision, keeping the deployment within its existing deadline. Two regression tests verify a second question can wait and continue the same task, and stale answers are rejected. Builder instructions now explicitly use saved answers when the original request calls that information unknown. No arbitrary per-goal question/model limit is added.
 
-## Next corrected run — awaiting approval
+## Next corrected run — approved
 
-Prepared scope: **one further disposable deployment, up to US$9.50**, consisting of **US$7.50 model reservations and US$2 infrastructure allowance**, with the same two goals, resources, 90-minute expiry and verified deletion. This is not approved yet: the prior approvals each covered one deployment, and both deployments are removed. Do not execute until the user approves this concrete run.
+Prepared scope: **one further disposable deployment, up to US$9.50**, consisting of **US$7.50 model reservations and US$2 infrastructure allowance**, with the same two goals, resources, 90-minute expiry and verified deletion. The user approved this concrete run by saying “continue until finished” after its US$9.50 scope was explained. The two earlier deployments are removed. Do not ask again for this same approved run.
 
 Across both finished runs and model diagnosis, five HTTP-500 calls retain their full **US$1.375** unknown-usage reservation. All eight successful calls reported usage, estimated **US$0.007989** in total. Retaining both earlier US$2 infrastructure allowances and adding this US$9.50 proposal gives **US$14.882989**, within the original US$15 total. This uses returned usage to settle known successful calls; unknown calls remain fully reserved. It remains an estimate, not an invoice or an account-wide billing cap.
 
 ## Run and recover
 
-Prepared invocation, from the active checkout; **only after approval of the next corrected run**:
+Prepared invocation, from the active checkout; **for the now-approved corrected run**:
 
 ```sh
 node scripts/checks/cloud-agent-first-release/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-approved-9-50-usd
