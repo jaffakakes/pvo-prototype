@@ -118,6 +118,20 @@ Use the exact recorded journal path. Recovery cannot deploy or create a resource
 
 The driver starts real saved tasks from the editor, closes the creator during authoring, applies the saved result after reopening, runs Try, exports with a lost activation reply, retries an interrupted publication upload, and loads the downloaded/uploaded bytes in a separate viewer. Local reviewed input files select form values and expected outcomes after inspecting the actual generated contract; they cannot replace generated code. The same deployment remains under its original expiry and allowance. The live authoring run may expose generation or provider defects; preserve the failed evidence and fix the actual issue rather than inserting a prepared program.
 
+## Local review files for the continuing agent
+
+Start the isolated editor first: `node_modules/.bin/vite --config editor/vite.config.ts --host 127.0.0.1 --port 5318 --strictPort`. The driver checks this address before preparing any resource. Do not use the production/beta server as this diagnostic source.
+
+The private journal names a local file when the driver waits for an additional answer. Inspect the saved question and original scenario. Resolve it from the already approved scenario when possible; ask the user only for genuinely missing information. Write the exact task/question/revision from that checkpoint with a plain answer, for example:
+
+```json
+{"taskId":"ID_FROM_JOURNAL","questionId":"question-2","questionRevision":0,"value":"Use exactly two seats, as already specified."}
+```
+
+The driver refuses a stale identity and resumes the same task. It waits only within the existing approved expiry; waiting does not grant extra time or spending.
+
+After each task reaches ready, inspect its real generated agreement, source and component fields, then write the journal's `dinner-inputs.json` or `equipment-inputs.json`. The object requires `resultPath` (array of result keys, or empty for a primitive), `testFields`, `viewerFields`, `publishedFields`, `publishedExpected`, `accepted`, `rejected`, `cases` (objects with `input`, `expected`, optional HTTP `status`), and exactly two `raceInputs`. These are test inputs and expectations, never replacement generated source. Dinner must leave one seat for two distinct competing guests; camera must check invalid/overlapping/adjacent dates and then two competing requests for a free interval. The published form must submit a fresh rejected request after capacity is full or an interval occupied, so repeating it with a new action after local removal verifies retained records. Do not choose expectations that excuse incorrect generated behavior.
+
 ## Diagnostic fixtures and deliberate failures
 
 The editor uses two synthetic account sessions and a controlled foreground handoff. Actual saved planning, agreement, generated source, independent validation, hosting and attachment use the configured model and cloud provider. The private bridge signs diagnostic sessions and calls production task/service routes; it does not use the production login database. Publication storage is controlled: normal export UI uploads exact PVO bytes, and the real published player loads those bytes while calling the real hosted service. This proves delivery integration, not production R2 availability.
