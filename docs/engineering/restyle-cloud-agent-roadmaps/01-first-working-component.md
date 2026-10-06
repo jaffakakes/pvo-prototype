@@ -115,7 +115,7 @@ The user wants the agent to keep working toward the goal, with no fixed model-tu
 
 ## 1F. Verify the complete first release
 
-**In progress:** [live acceptance evidence and startup recovery plan](../restyle-first-release-acceptance.md). All four disposable deployments are removed. The third generated/repaired dinner code and recovered hosting; the fourth failed startup before any AI calls. Neither complete demonstration nor viewer acceptance is verified. Startup diagnosis/recovery is corrected locally; the cloud startup cause is unknown. The next US$4.75 replacement awaits approval. All checkboxes below remain unverified.
+**In progress:** [live acceptance evidence and startup recovery plan](../restyle-first-release-acceptance.md). All four disposable deployments are removed. The third generated/repaired dinner code and recovered hosting; the fourth failed startup before any AI calls. Neither complete demonstration nor viewer acceptance is verified. Startup diagnosis/recovery is corrected locally; the cloud startup cause is unknown. The user authorized continuing until 1F passes and removed the US$15 ceiling; resource cleanup and truthful checks remain required. All checkboxes below remain unverified.
 
 - [ ] **1F.01** Run both demonstration requests from ordinary natural-language prompts.
 - [ ] **1F.02** Include a follow-up question, stop/resume, and one invalid generated program that the agent repairs from real test feedback.

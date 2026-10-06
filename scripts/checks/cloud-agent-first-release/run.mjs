@@ -11,12 +11,12 @@ import { acceptanceReady, acceptanceTransport } from "./transport.mjs";
 
 const accountId = process.argv[2];
 if (
-  process.argv[3] !== "--run-approved-4-75-usd" ||
+  process.argv[3] !== "--run-approved-1f" ||
   process.argv.length !== 4 ||
   !/^[a-f0-9]{32}$/.test(accountId ?? "")
 ) {
   console.error(
-    "Usage (only after replacement approval): node scripts/checks/cloud-agent-first-release/run.mjs <account-id> --run-approved-4-75-usd",
+    "Usage (only with 1F completion authorization): node scripts/checks/cloud-agent-first-release/run.mjs <account-id> --run-approved-1f",
   );
   process.exit(1);
 }
@@ -34,8 +34,13 @@ const { report, save } = resources;
 const expiresAt = Date.now() + 90 * 60_000;
 report.purpose =
   "1F natural-language acceptance preparation: actual Runpod Kimi planning and Cloudflare tools, no production deployment";
+report.authorization = {
+  scope: "Complete 1F acceptance",
+  totalUsdCeiling: null,
+  replacementsAuthorized: true,
+};
 report.limits = {
-  approvedUsd: 4.75,
+  initialOperatingAllowanceUsd: 4.75,
   reservedModelUsd: 2.75,
   infrastructureAllowanceUsd: 2,
   deployments: 1,

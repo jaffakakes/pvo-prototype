@@ -118,18 +118,20 @@ Worker/Container `restyle-workspace-proof-d758435100daa3b4d36f2728`, application
 
 The corrected driver now includes startup in its existing read-only recovery loop and original ninety-minute deadline, allowing diagnosis and updates of that same resource. Authenticated startup failures identify the failing phase and retain bounded platform error text after removing configured credentials. Other request/provider failures do not expose arbitrary error text. No source, test or ownership gate is weakened. Local tests cover the actual health endpoint, unauthorized access, credential redaction, recovery after the former thirty-second cutoff, wrong-resource rejection and original deadline/cancellation. This fixes the lost-diagnosis and premature-cleanup defects; **the cloud startup cause remains unknown**.
 
-## Next startup recovery — prepared, awaiting approval
+## Continued 1F recovery — authorized to completion
 
-One disposable deployment, **up to US$4.75**: US$2.75 metered model allowance and US$2 infrastructure allowance. The same two demonstrations, six namespaces/one application, original ninety-minute deadline, admission limits and cleanup apply. Keep that deployment available for read-only startup diagnosis and same-resource code repairs within the original deadline. No extra deployment or extended expiry is implied. The Runpod key is already configured.
+The user explicitly instructed: **“continue working until done … remove the 15$ ceil complete 1f until it all pass.”** This supersedes the former US$15 aggregate ceiling, pending US$4.75 approval and one-deployment restriction. Necessary replacement runs and same-resource repairs for **1F** are authorized without repeated approval. This does not authorize unrelated milestones or bypass tests, ownership controls or release protection.
 
-Conservative aggregate allowance: four completed infrastructure allowances **US$8**, five earlier unknown model calls **US$1.375**, all known model usage **US$0.635703**, plus the proposed **US$4.75** = **US$14.760703**, still within the original US$15. The startup run added zero model usage; retain its entire infrastructure allowance until actual billing is known. This is an allowance calculation, not an invoice. The previous approval explicitly covered one deployment and that deployment has been removed, so this next replacement needs approval before launch.
+Begin with the already tested US$2.75 model admission allowance plus US$2 infrastructure estimate as an operational batch setting. These are not a new user spending ceiling or a reason to ask again; adjust diagnostic admission as needed to finish 1F, record every change and actual usage, and keep production capacity unchanged. Each disposable run retains its ninety-minute cleanup deadline, bounded individual calls, six namespaces/one application and resource inventory. Reuse a running resource for repair wherever possible. Clean up completed or failed runs and verify absence before replacement. The Runpod key is already configured.
+
+Historical spend evidence remains above: four infrastructure allowances of US$2 each, five unknown model calls retaining US$1.375, and US$0.635703 of known token usage. These are estimates/reservations, not invoices. Removing the overall ceiling does not remove metering or cleanup.
 
 ## Run and recover
 
-Prepared invocation, from the active checkout; **do not run until the replacement above is approved**:
+Invocation from the active checkout, under the recorded completion authorization:
 
 ```sh
-node scripts/checks/cloud-agent-first-release/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-approved-4-75-usd
+node scripts/checks/cloud-agent-first-release/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-approved-1f
 ```
 
 Use privately supplied `RUNPOD_API_KEY` or a nonempty `apikey` in the Runpod CLI configuration. The script never prints the key. A file existing is not sufficient: the first approved launch found an empty key and stopped before any resource creation or charge. On this Mac, the user can enter it privately with:
