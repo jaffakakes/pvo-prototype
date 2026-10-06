@@ -4,6 +4,10 @@ Implemented for [Roadmap 1B.01](../../../docs/engineering/restyle-cloud-agent-ro
 
 Import through `packages/pvo-assistant/tasks/index.js`; [index.d.ts](index.d.ts) describes the same public contract. These modules have no UI, network, storage, clock, random-ID, authentication, or provider effects. Parsers return isolated clones and reject missing/unknown fields instead of supporting a second contract.
 
+## Bounded project context
+
+The current contract includes `currentSceneId`, at most 32 scene summaries (`id`, `name`, duration up to one day), and the existing eight component source summaries. Scene IDs are unique, every component belongs to a declared scene, and the current scene exists. Media bytes/URLs and private request bodies stay out of this projection. A component explicitly labels `sourceVisibility` as `full` or `design`; a redacted design is not an editable original request source. This supplies placement and route context for saved component preparation while retaining the 128 KiB input bound.
+
 ## Public functions
 
 | Function | Responsibility |

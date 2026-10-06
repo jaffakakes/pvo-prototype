@@ -13,13 +13,53 @@ import {
 } from "./validation.js";
 
 export function validateContext(value) {
-  object(value, ["fingerprint", "components"], "Task context");
+  object(
+    value,
+    ["fingerprint", "currentSceneId", "scenes", "components"],
+    "Task context",
+  );
   text(value.fingerprint, limits.fingerprintBytes, "Project fingerprint");
+  id(value.currentSceneId, "Current scene ID");
+  list(value.scenes, limits.scenes, "Task scenes");
+  for (const scene of value.scenes) {
+    object(scene, ["id", "name", "duration"], "Task scene");
+    id(scene.id, "Scene ID");
+    text(scene.name, 480, "Scene name");
+    requireTask(
+      typeof scene.duration === "number" &&
+        Number.isFinite(scene.duration) &&
+        scene.duration >= 0 &&
+        scene.duration <= 86400,
+      "Task scene duration must be within one day.",
+    );
+  }
+  unique(
+    value.scenes.map((scene) => scene.id),
+    "Task scene IDs",
+  );
+  const scenes = new Set(value.scenes.map((scene) => scene.id));
+  requireTask(
+    scenes.has(value.currentSceneId),
+    "The current task scene is missing.",
+  );
   list(value.components, limits.components, "Components");
   for (const component of value.components) {
-    object(component, ["id", "sceneId", "type", "source"], "Component context");
+    object(
+      component,
+      ["id", "sceneId", "type", "sourceVisibility", "source"],
+      "Component context",
+    );
     id(component.id, "Component ID");
     id(component.sceneId, "Scene ID");
+    requireTask(
+      scenes.has(component.sceneId),
+      "A task component refers to a missing scene.",
+    );
+    choice(
+      component.sourceVisibility,
+      ["full", "design"],
+      "Component source visibility",
+    );
     choice(
       component.type,
       ["tooltip", "card", "choice", "form"],

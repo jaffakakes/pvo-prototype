@@ -333,6 +333,7 @@
   "tests/editor-layer-reorder.test.mjs",
   "tests/editor-reply-inbox.test.mjs",
   "tests/editor-saved-tasks/application.test.mjs",
+  "tests/editor-saved-tasks/context.test.mjs",
   "tests/editor-saved-tasks/creation.test.mjs",
   "tests/editor-saved-tasks/helpers.mjs",
   "tests/editor-saved-tasks/session.test.mjs",

@@ -94,7 +94,12 @@ export class ProofTasks extends AssistantTasks {
         projectId: project.id,
         request: "Verify the fixed inactive service recovery diagnostic.",
         examples: [],
-        context: { fingerprint: "100-proof-proof", components: [] },
+        context: {
+          fingerprint: "100-proof-proof",
+          currentSceneId: "main",
+          scenes: [{ id: "main", name: "Main", duration: 10 }],
+          components: [],
+        },
       },
     });
     const claimed = await this.transaction(() => {
