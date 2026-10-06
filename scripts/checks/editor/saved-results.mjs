@@ -1,3 +1,4 @@
+import { checkComponentDelivery } from "./component-delivery.mjs";
 import { checkComponentTry } from "./component-try.mjs";
 import { attachment } from "../../../tests/service-attachments/fixtures.mjs";
 import { checkedFixture } from "../../../tests/service-hosting/fixtures.mjs";
@@ -352,6 +353,10 @@ try {
       await ready(localId);
     },
   });
+  await page
+    .getByRole("button", { name: "Open saved task", exact: true })
+    .click();
+  await checkComponentDelivery({ context, fixture, origin, page });
   await page
     .getByRole("button", { name: "Open saved task", exact: true })
     .click();

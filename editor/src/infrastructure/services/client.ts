@@ -95,6 +95,28 @@ export async function sendControl(
     throw new Error("Service account changed.");
   return summary;
 }
+export async function readService(
+  serviceId: string,
+  ownerId: string,
+  signal: AbortSignal,
+) {
+  if (!/^service-[a-f0-9]{64}$/.test(serviceId))
+    throw new Error("Invalid service identity.");
+  const body = (await request(`/api/services/${serviceId}`, signal)) as {
+    metadata?: unknown;
+    summary?: unknown;
+  };
+  const metadata = parseOwnedService(body.metadata);
+  const summary = parseHostedSummary(body.summary);
+  if (
+    [metadata.identity, summary.service.identity].some(
+      (identity) =>
+        identity.ownerId !== ownerId || identity.serviceId !== serviceId,
+    )
+  )
+    throw new Error("Service account changed.");
+  return summary;
+}
 const key = (ownerId: string) => `restyle:pending-service-control:${ownerId}`;
 export function readPendingControl(ownerId: string): PendingControl | null {
   const encoded = localStorage.getItem(key(ownerId));

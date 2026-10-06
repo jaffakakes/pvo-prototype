@@ -456,5 +456,22 @@
   "player/playback/session.js",
   "scripts/build/share-site.mjs",
   "scripts/checks/helpers/player-assets.mjs",
-  "tests/service-attachments/recovery.test.mjs"
+  "tests/service-attachments/recovery.test.mjs",
+  "editor/src/domain/export/manifest.ts",
+  "editor/src/domain/export/serviceDelivery.ts",
+  "editor/src/domain/publishing/exportSnapshot.ts",
+  "editor/src/domain/publishing/model.ts",
+  "editor/src/features/export/activateExportServices.ts",
+  "editor/src/features/export/exportPvo.ts",
+  "editor/src/features/export/prepareExportDelivery.ts",
+  "editor/src/features/export/useExportDownload.ts",
+  "editor/src/features/export/useExportSession.ts",
+  "editor/src/features/publishing/SharePanel.tsx",
+  "editor/src/features/publishing/usePublication.ts",
+  "editor/src/infrastructure/services/exportActivation.ts",
+  "editor/src/state/export/exportArtifactStore.ts",
+  "scripts/checks/editor/component-delivery.mjs",
+  "tests/service-delivery/activation.test.mjs",
+  "tests/service-delivery/helpers.mjs",
+  "tests/service-delivery/packaging.test.mjs"
 ]

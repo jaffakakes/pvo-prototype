@@ -4,7 +4,7 @@
 
 **Next product evolution:** [1G Containers](1g-containers.md) follows 1F and reuses these service/attachment boundaries with hosted Node.js. The evidence and completion states below describe their original implementation and remain unchanged.
 
-**Latest checkpoint:** **1E.01–1E.05 are verified**, including shared Try/player invocation and explicit saved-submission recovery. Full suite: 1,442 tests; real Try/public player restart acceptance passes. **Next: 1E.06** activation-on-delivery, then 1E.07–09. Earlier entries below preserve the evidence in the order it was completed.
+**Latest checkpoint:** **1E.01–1E.09 are verified**. The normal export and link/download entry points now use the shared activation gate; both downloaded and uploaded PVOs invoke the durable live service. Full suite: 1,457 tests and strict types; actual compiler/render/package/browser/Worker restart acceptance passes. **Next: 1F.01**. Earlier entries preserve historical evidence.
 
 ## In everyday terms
 
@@ -75,3 +75,16 @@ The public description is now verified by **1,431 tests** and strict types: seve
 The public player admits `restyle_capture.service_connection` against the actual control/request after compilation, uses executable-video/component-scoped IndexedDB, sends only through cookie-free public transport, and saves the validated result before SDK success. Both hosts now provide explicit saved-input/result recovery, using original input and an expected action ID. A newer tab cannot silently replace the recovery selection. Try/public browser acceptance survives browser/server restart and a lost successful reply with exactly one live/test record. Full checks pass 1,442 tests and strict editor types. **43/134 tasks complete; next 1E.06.** Beta/release evidence is recorded in progress.
 
 The editor does not yet put this descriptor into normal exports. The acceptance PVO is a fixture and its checked local service is explicitly activated by the harness. Shared activation before normal link/download delivery remains 1E.06–09.
+
+
+## 1E.06–09 — shared activation and normal delivery verified
+
+The editor captures a private owner/project/release plan with the immutable export snapshot. `domain/export/serviceDelivery.ts` validates its connection against the freshly compiled request and typed fields. The normal manifest projects only the seven public invocation fields; receipts, ownership, task IDs and digests stay out of the PVO.
+
+`features/export/activateExportServices.ts` is the one command behind rendered-file readiness, both download controls and link publication. Its browser wiring checks the current account, project and exact artifact before/after asynchronous work. The service HTTP adapter checks current authoritative ownership and the exact independently checked release identity. An inactive matching release activates through the existing revision-fenced control; already active matching releases are reused. Paused/deleted services or a different live version block delivery for creator review, so an old export cannot silently undo a pause or roll back a version.
+
+An activation intent is saved before dispatch. Unknown results keep the exact command ID; retries first read the hosted state, recovering a committed activation without resetting data. The existing host atomically retains the live release, records the control receipt and survives browser/authoring-worker closure. No client failure triggers compensating pause/delete. Multiple-service exports preflight every release first; if a later activation fails, earlier successful activations remain recorded and manageable.
+
+A rendered file that failed activation stays in the session's separate prepared slot; it is not labelled ready. Explicit Retry reuses its exact Blob and frozen connection. Project reset or discarding that prepared export releases its URL. Browser closure can require rendering the local file again; the hosted service and persisted activation intent survive. Publication upload failure keeps the completed file and publication identity for retry.
+
+**Evidence:** 15 new domain/workflow regression cases; 46 focused checks with existing export/publication tests; full 1,457 tests; 775 syntax modules, 880 dependency modules, 472 adopted formatting files and strict editor types. `editor saved-results` now includes `component-delivery.mjs`: actual compilation, video rendering, packaging, failed activation, identical retry, lost committed reply, full Worker restart, export with publishing disabled, actual downloaded PVO on another origin, no viewer cookie, pause-gated link creation, identical upload retries and uploaded bytes opened by the published player. Try data remains separate; the published viewer sees the live last-place result. The service runtime/SQLite/browser are real local instances; inference and publication storage boundaries are controlled fixtures. No paid cloud run or production deployment is claimed.
