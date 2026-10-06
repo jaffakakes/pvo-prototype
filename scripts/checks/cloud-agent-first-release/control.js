@@ -5,7 +5,9 @@ import { ProofModelMeter } from "./meter.js";
 export class AcceptanceControl extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
-    this.meter = new ProofModelMeter(ctx.storage);
+    this.meter = new ProofModelMeter(ctx.storage, {
+      settleReportedUsage: env.PROOF_SPENDING_POLICY === "settled-usage",
+    });
     ctx.storage.sql.exec(
       "CREATE TABLE IF NOT EXISTS proof_http (id INTEGER PRIMARY KEY, calls INTEGER NOT NULL)",
     );

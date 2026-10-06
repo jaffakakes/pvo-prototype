@@ -51,8 +51,9 @@ export function reportedUsage(body) {
 
 /** Durable, conservative reservations survive unknown responses and worker restarts. */
 export class ProofModelMeter {
-  constructor(storage) {
+  constructor(storage, { settleReportedUsage = false } = {}) {
     this.storage = storage;
+    this.settleReportedUsage = settleReportedUsage;
     storage.sql.exec(
       "CREATE TABLE IF NOT EXISTS proof_model_calls (id TEXT PRIMARY KEY, reserved INTEGER NOT NULL, status INTEGER, usage TEXT)",
     );
@@ -61,7 +62,11 @@ export class ProofModelMeter {
     return this.storage.transactionSync(() => {
       const sql = this.storage.sql;
       const used = sql
-        .exec("SELECT COALESCE(SUM(reserved),0) AS used FROM proof_model_calls")
+        .exec(
+          this.settleReportedUsage
+            ? "SELECT COALESCE(SUM(CASE WHEN usage IS NULL THEN reserved ELSE json_extract(usage, '$.estimatedMicros') END),0) AS used FROM proof_model_calls"
+            : "SELECT COALESCE(SUM(reserved),0) AS used FROM proof_model_calls",
+        )
         .one().used;
       if (
         !Number.isSafeInteger(expiresAt) ||

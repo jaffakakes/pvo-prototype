@@ -15,6 +15,10 @@ export class AssistantBudget extends DurableObject {
     return Date.now();
   }
 
+  dailyLimits() {
+    return { global: 60, client: 20 };
+  }
+
   async reserve(key, operationKey = null) {
     if (!validKey(key) || (operationKey !== null && !validKey(operationKey)))
       return false;
@@ -32,6 +36,7 @@ export class AssistantBudget extends DurableObject {
     const now = this.now();
     const minute = Math.floor(now / 60000);
     const nextDay = Math.floor(now / 86400000) * 86400000 + 86400000;
+    const daily = this.dailyLimits();
     const denied = (reason, retryAt) => ({ accepted: false, reason, retryAt });
     const accepted = { accepted: true };
     const decision = this.ctx.storage.transactionSync(() => {
@@ -61,7 +66,10 @@ export class AssistantBudget extends DurableObject {
         .exec("SELECT total, minute, burst FROM counts WHERE key = ?", key)
         .toArray()[0];
       const burst = client?.minute === minute ? client.burst : 0;
-      if ((global?.total ?? 0) >= 60 || (client?.total ?? 0) >= 20)
+      if (
+        (global?.total ?? 0) >= daily.global ||
+        (client?.total ?? 0) >= daily.client
+      )
         return denied("model_allowance", nextDay);
       if (burst >= 12) return denied("model_capacity", (minute + 1) * 60000);
       sql.exec(

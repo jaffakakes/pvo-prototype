@@ -495,5 +495,7 @@
   "scripts/checks/cloud-agent-first-release/review-inputs.mjs",
   "scripts/checks/cloud-agent-first-release/viewer.mjs",
   "tests/first-release/faults.test.mjs",
-  "tests/first-release/follow-up.test.mjs"
+  "tests/first-release/follow-up.test.mjs",
+  "scripts/checks/cloud-agent-first-release/budget.js",
+  "tests/first-release/spending-policy.test.mjs"
 ]

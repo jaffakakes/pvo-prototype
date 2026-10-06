@@ -37,8 +37,11 @@ export async function planSavedBuild(
     throw Object.assign(new Error("Saved feedback violates its bound."), {
       code: "invalid_result",
     });
+  const stage = hasAgreement
+    ? "Current stage: the behavior agreement in build.agreement is already accepted and immutable. Do not propose another agreement. Use workspace tools to write and test its implementation, or request independent review when ready. Historical rejected agreements do not change this current stage. Read history only for specific missing information needed for the next action; do not reread past failures when the current agreement and latest feedback supply that information."
+    : "Current stage: no behavior agreement has been accepted. Resolve missing requirements and propose a valid agreement before writing source.";
   const messages = authoringMessages(
-    instructions + "\n" + evidenceInstructions,
+    instructions + "\n" + evidenceInstructions + "\n" + stage,
     {
       input: task.input,
       questions: task.questions,
@@ -87,10 +90,10 @@ export async function planSavedBuild(
       hasAgreement,
       available: definitions.map((tool) => tool.kind),
     });
-  } catch {
+  } catch (error) {
     throw new AuthoringRepairError(
       "builder_response",
-      "Return a valid builder decision for the current agreement and listed tools using the supplied JSON schema.",
+      `Repair the rejected builder decision using the supplied JSON schema. Local validation: ${error instanceof Error ? error.message : "Invalid builder decision."}`,
       response?.content,
     );
   }

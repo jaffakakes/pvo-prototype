@@ -10,7 +10,7 @@ import { scenarios } from "./scenarios.js";
 import { diagnosticApi } from "./api.js";
 export { AcceptanceTasks } from "./tasks.js";
 export { AcceptanceControl } from "./control.js";
-export { AssistantBudget } from "../../../server/assistant/budget.js";
+export { AcceptanceBudget as AssistantBudget } from "./budget.js";
 export { WorkspaceBudget } from "../../../server/assistant/workspaces/budget.js";
 export { HostedService } from "../../../server/cloud-services/host.js";
 
@@ -47,7 +47,16 @@ export default {
       if (publicAction)
         return hostedServiceRoute(request, env, { origin: url.origin });
       if (request.method === "GET" && url.pathname === "/health")
-        return mark(Response.json({ ready: true }), env);
+        return mark(
+          Response.json({
+            ready: true,
+            budgetPolicy: env.PROOF_SPENDING_POLICY ?? "default",
+            dailyLimits: await env.ASSISTANT_BUDGET.getByName(
+              `assistant:${new Date().toISOString().slice(0, 10)}`,
+            ).dailyLimits(),
+          }),
+          env,
+        );
       if (request.method === "GET" && url.pathname === "/usage")
         return mark(Response.json(await ledger.report()), env);
       const [, subject, action] = url.pathname.split("/");

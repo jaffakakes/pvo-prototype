@@ -41,7 +41,7 @@ At the prices checked on 6 October, Kimi K2.6 costs **US$0.95 per million input 
 
 Cloudflare bills active instances for memory, CPU and disk. The existing `lite` instance has 256 MiB memory, 1/16 vCPU and 2 GB disk. Even a batch crossing UTC midnight is constrained by the existing daily workspace allowance; record actual starts and destruction evidence. Request/storage/hosting charges and existing account activity are separate from the model estimate. Do not describe this harness as an account-wide dollar cap. [Container pricing](https://developers.cloudflare.com/containers/platform/pricing/), [instance limits](https://developers.cloudflare.com/containers/platform/limits/).
 
-No new goal-wide model-turn ceiling is introduced. Existing daily account capacity remains enforced. A capacity/permission wait leaves the goal saved; a diagnostic that stops at that point has not passed the milestone. Do not bypass the capacity control to make a demonstration pass.
+No new goal-wide model-turn ceiling is introduced. Default daily account capacity remains enforced. A capacity/permission wait leaves the goal saved; a diagnostic that stops at that point has not passed the milestone. The separately approved isolated-test policy below permits continuation under the same dollar budget without changing production capacity.
 
 ## Actual run and repair — 6 October 2026
 
@@ -87,6 +87,8 @@ Cleanup was verified at **20:32:50.848 UTC**. Worker, Container application `9f1
 The repaired driver saves every additional question and waits for a local reviewed answer tied to the exact task/question/revision, keeping the deployment within its existing deadline. Two regression tests verify a second question can wait and continue the same task, and stale answers are rejected. Builder instructions now explicitly use saved answers when the original request calls that information unknown. No arbitrary per-goal question/model limit is added.
 
 ## Next corrected run — approved
+
+**Approved capacity adjustment, 6 October:** the user answered “Use the approved dollar budget” after the same dinner task paused at the existing 20-call daily allowance. For this one existing deployment, `PROOF_SPENDING_POLICY=settled-usage` enables a diagnostic-only daily allowance up to the existing 4,096-entry reservation-storage bound. The 12/minute burst limit, exact replay accounting, original 90-minute expiry, US$7.50 model allowance and US$2 infrastructure allowance remain. Every model call first reserves US$0.275; a returned valid usage report settles its estimated token cost, while missing/unknown usage retains the entire reservation. Existing counts and the spending ledger survive this same-resource update. Product default capacity is unchanged. Four SQLite/restart/budget tests passed; no additional deployment is authorized by this adjustment.
 
 Prepared scope: **one further disposable deployment, up to US$9.50**, consisting of **US$7.50 model reservations and US$2 infrastructure allowance**, with the same two goals, resources, 90-minute expiry and verified deletion. The user approved this concrete run by saying “continue until finished” after its US$9.50 scope was explained. The two earlier deployments are removed. Do not ask again for this same approved run.
 
