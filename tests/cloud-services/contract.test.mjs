@@ -32,9 +32,9 @@ test("provider wire data is strictly validated and RPC resources are disposed ev
       },
     };
     const provider = serviceProvider({
-      SERVICE_RELEASES: {
+      SERVICE_HOSTS: {
         getByName(name) {
-          assert.equal(name, identity.resourceId);
+          assert.equal(name, identity.serviceId);
           return { lookup: async () => result };
         },
       },
