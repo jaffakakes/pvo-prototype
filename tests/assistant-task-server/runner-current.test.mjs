@@ -10,6 +10,13 @@ test("a committed Stop prevents inference even before its cancellation signal is
   let receipt;
   const coordinator = {
     active: new Map(),
+    evidence: {
+      context: () => ({
+        archivedQuestions: 0,
+        archivedOperations: 0,
+        selection: null,
+      }),
+    },
     now: () => claimed.updatedAt,
     stepTimeoutMs: () => 1000,
     env: {

@@ -73,6 +73,7 @@ export type TaskRecord = {
   generation: number;
   claim: null | { id: string; claimedAt: number; expiresAt: number };
   questions: TaskQuestion[];
+  archivedQuestions: number;
   operations: TaskOperation[];
   archivedOperations: number;
   result: TaskResult | null;

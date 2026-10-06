@@ -232,9 +232,9 @@ test("duplicate creation compares the actual validated input as well as its supp
   );
 });
 
-test("question counts and references remain bounded after repeated valid answers", () => {
+test("40 answered questions keep recent context bounded without ending the goal", () => {
   let task = create();
-  for (let index = 0; index < TASK_LIMITS.questions; index++) {
+  for (let index = 0; index < 40; index++) {
     task = claim(task);
     task = command(task, {
       kind: "ask",
@@ -246,9 +246,10 @@ test("question counts and references remain bounded after repeated valid answers
       operationId: `answer-${index}`,
     });
   }
+  assert.equal(task.archivedQuestions + task.questions.length, 40);
+  assert.ok(task.questions.length <= 9);
   task = claim(task);
-  assert.throws(
-    () => command(task, { kind: "ask", question: question() }),
-    /item limit/,
-  );
+  task = command(task, { kind: "ask", question: question() });
+  assert.equal(task.state, "waiting_for_answer");
+  assert.equal(task.questions.at(-1).answer, null);
 });

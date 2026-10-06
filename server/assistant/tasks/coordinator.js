@@ -33,6 +33,7 @@ import { compilePvoComponent } from "../../../packages/pvo-language/worker.js";
 import { planTaskAttachment } from "../attachments/planner.js";
 import { HttpError } from "../../http.js";
 import { randomId } from "../../identity.js";
+import { TaskEvidence } from "./evidence.js";
 import { TaskRepository } from "./repository.js";
 import {
   creationDigest,
@@ -64,6 +65,7 @@ export class AssistantTasks extends DurableObject {
       this.repository,
     );
     this.artifacts = new ServiceArtifacts(ctx.storage.sql, this.repository);
+    this.evidence = new TaskEvidence(ctx.storage.sql);
     this.active = new Map();
   }
 
@@ -95,6 +97,7 @@ export class AssistantTasks extends DurableObject {
       this.services.maintain(now);
       repository.maintain(now, this.heldTasks());
       this.results.prune();
+      this.evidence.prune();
       this.builders.prune(now);
       this.research.prune(now);
       this.validation.prune(now);
@@ -309,7 +312,13 @@ export class AssistantTasks extends DurableObject {
 
   plan(task, signal, input) {
     if (task.stepId === "attach")
-      return planTaskAttachment(task, input.attachment, this.env, signal);
+      return planTaskAttachment(
+        task,
+        input.attachment,
+        this.env,
+        signal,
+        input.evidence,
+      );
     if (task.stepId === "build")
       return planSavedBuild(
         task,
@@ -317,8 +326,9 @@ export class AssistantTasks extends DurableObject {
         this.builderToolDefinitions(),
         this.env,
         signal,
+        input.evidence,
       );
-    return planSavedTask(task, this.env, signal);
+    return planSavedTask(task, this.env, signal, input.evidence);
   }
 
   async transaction(operation) {
@@ -381,6 +391,7 @@ export class AssistantTasks extends DurableObject {
     await settleAuthoringBudgets(this);
     await this.transaction(() => {
       this.attempts.prune();
+      this.evidence.prune();
       this.providers.prune();
       this.workspaces.prune(this.now());
       this.builders.prune(this.now());

@@ -1,5 +1,9 @@
 import { TASK_FAILURES, TASK_LIMITS as limits } from "./limits.js";
-import { checkpointTaskOperations } from "./checkpoint.js";
+import {
+  checkpointTaskOperations,
+  checkpointTaskQuestions,
+  checkpointTaskQuestionBytes,
+} from "./checkpoint.js";
 import { parseTaskRecord } from "./record.js";
 import { object, id, integer, requireTask, text } from "./validation.js";
 import {
@@ -64,10 +68,12 @@ export function transitionTask(value, command, guard) {
     "This task attempt is terminal.",
   );
   checkpointTaskOperations(task, command.operation?.id ?? command.operationId);
+  checkpointTaskQuestions(task, command.questionId);
   task.updatedAt = guard.now;
   const replay = applyCommand(task, command, guard);
   if (replay) return parseTaskRecord(value);
   task.revision++;
+  checkpointTaskQuestionBytes(task, command.questionId);
   return parseTaskRecord(task);
 }
 

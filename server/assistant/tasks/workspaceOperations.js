@@ -18,10 +18,24 @@ export class WorkspaceOperations {
     this.tasks = tasks;
     sql.exec(`CREATE TABLE IF NOT EXISTS task_workspaces (task_id TEXT PRIMARY KEY, body TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS workspace_operations (id TEXT PRIMARY KEY, task_id TEXT NOT NULL, body TEXT NOT NULL)`);
+    sql.exec(
+      "CREATE INDEX IF NOT EXISTS workspace_operations_task ON workspace_operations(task_id)",
+    );
+    sql.exec(
+      "CREATE INDEX IF NOT EXISTS workspace_operations_unfinished ON workspace_operations(task_id) WHERE json_extract(body,'$.settled')=0",
+    );
   }
   links() {
     return this.sql
       .exec("SELECT body FROM task_workspaces")
+      .toArray()
+      .map((row) => JSON.parse(row.body));
+  }
+  unfinished() {
+    return this.sql
+      .exec(
+        "SELECT body FROM workspace_operations WHERE json_extract(body,'$.settled')=0",
+      )
       .toArray()
       .map((row) => JSON.parse(row.body));
   }
@@ -35,7 +49,10 @@ export class WorkspaceOperations {
     return this.tasks.records().find((task) => task.id === id);
   }
   link(taskId) {
-    return this.links().find((link) => link.taskId === taskId) ?? null;
+    const row = this.sql
+      .exec("SELECT body FROM task_workspaces WHERE task_id=?", taskId)
+      .toArray()[0];
+    return row ? JSON.parse(row.body) : null;
   }
   get(id) {
     const row = this.sql
@@ -60,9 +77,7 @@ export class WorkspaceOperations {
   }
   heldTasks() {
     return new Set([
-      ...this.entries()
-        .filter((row) => !row.settled)
-        .map((row) => row.taskId),
+      ...this.unfinished().map((row) => row.taskId),
       ...this.links()
         .filter(waiting)
         .map((link) => link.taskId),
@@ -71,7 +86,7 @@ export class WorkspaceOperations {
   awaiting(taskId) {
     const link = this.link(taskId);
     return (
-      this.entries().some(
+      this.unfinished().some(
         (row) => row.taskId === taskId && !row.settled && row.nextAt !== null,
       ) || Boolean(link && waiting(link) && link.nextAt !== null)
     );
@@ -316,7 +331,7 @@ export class WorkspaceOperations {
     )
       throw new Error("Workspace cleanup is not confirmed.");
     this.saveLink({ ...link, cleaned: true, nextAt: null });
-    for (const row of this.entries())
+    for (const row of this.unfinished())
       if (row.taskId === link.taskId && !row.settled)
         this.write({ ...row, nextAt: now });
   }
@@ -337,7 +352,7 @@ export class WorkspaceOperations {
     });
   }
   due(now) {
-    return this.entries().filter((row) => {
+    return this.unfinished().filter((row) => {
       const task = this.task(row.taskId),
         link = this.link(row.taskId);
       return (
@@ -369,7 +384,7 @@ export class WorkspaceOperations {
           ? [link.grant.expiresAt]
           : []),
     ]);
-    for (const row of this.entries())
+    for (const row of this.unfinished())
       if (!row.settled && row.nextAt !== null) {
         const task = this.task(row.taskId),
           link = this.link(row.taskId);
@@ -384,19 +399,18 @@ export class WorkspaceOperations {
     return times.length ? Math.min(...times) : null;
   }
   prune(now) {
-    const tasks = new Map(this.tasks.records().map((task) => [task.id, task]));
-    for (const row of this.entries()) {
-      const task = tasks.get(row.taskId);
-      if (task?.expiresAt !== null && task?.expiresAt <= now && row.receipt)
-        this.write({ ...row, receipt: null });
-      if (row.settled && !tasks.has(row.taskId))
-        this.sql.exec("DELETE FROM workspace_operations WHERE id=?", row.id);
-    }
-    for (const link of this.links())
-      if (link.cleaned && !tasks.has(link.taskId))
-        this.sql.exec(
-          "DELETE FROM task_workspaces WHERE task_id=?",
-          link.taskId,
-        );
+    this.sql.exec(
+      `UPDATE workspace_operations SET body=json_set(body,'$.receipt',NULL)
+      WHERE json_extract(body,'$.receipt') IS NOT NULL AND task_id IN (
+        SELECT id FROM tasks WHERE record IS NOT NULL AND json_extract(record,'$.expiresAt')<=?
+      )`,
+      now,
+    );
+    this.sql
+      .exec(`DELETE FROM workspace_operations WHERE json_extract(body,'$.settled')=1
+      AND NOT EXISTS (SELECT 1 FROM tasks WHERE tasks.id=workspace_operations.task_id AND record IS NOT NULL)`);
+    this.sql
+      .exec(`DELETE FROM task_workspaces WHERE json_extract(body,'$.cleaned')=1
+      AND NOT EXISTS (SELECT 1 FROM tasks WHERE tasks.id=task_workspaces.task_id AND record IS NOT NULL)`);
   }
 }

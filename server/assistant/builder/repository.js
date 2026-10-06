@@ -62,7 +62,7 @@ export class TaskBuilders {
         command: {
           kind: "ask",
           question: {
-            id: `question-${this.task(claimed.id).questions.length + 1}`,
+            id: `question-${this.task(claimed.id).archivedQuestions + this.task(claimed.id).questions.length + 1}`,
             revision: 0,
             prompt: decision.prompt,
             choices: decision.choices,

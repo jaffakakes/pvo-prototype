@@ -62,12 +62,13 @@ export async function taskFixture({
     import { HttpError, json } from "./server/http.js";
     export class TestTasks extends AssistantTasks {
       now() { return this.clock ?? this.env.CONTROLLED_CLOCK ?? (this.env.CONTROLLED_PLAN ? Date.now() : Date.UTC(2100, 0, 1)); }
-      plannerAvailable() { return this.env.CONTROLLED_PLAN ? true : super.plannerAvailable(); }
+      plannerAvailable() { return this.planningPaused ? false : this.env.CONTROLLED_PLAN ? true : super.plannerAvailable(); }
+      pausePlanning() { this.planningPaused = true; }
       stepTimeoutMs() { return this.env.CONTROLLED_PLAN ? 1000 : super.stepTimeoutMs(); }
       leaseMs() { return this.env.CONTROLLED_PLAN ? 1500 : super.leaseMs(); }
       async plan(task, signal, input) {
         if (!this.env.CONTROLLED_PLAN) return super.plan(task, signal, input);
-        return (await this.env.PLANNER.fetch("https://planner.test/", { method: "POST", body: JSON.stringify({ ...task, builderContext: input?.build ?? null, attachmentContext: input?.attachment ?? null }), signal })).json();
+        return (await this.env.PLANNER.fetch("https://planner.test/", { method: "POST", body: JSON.stringify({ ...task, builderContext: input?.build ?? null, attachmentContext: input?.attachment ?? null, evidenceContext: input?.evidence ?? null }), signal })).json();
       }
       providerTimeoutMs() { return 500; }
       serviceProvider() {
@@ -163,13 +164,21 @@ export async function taskFixture({
       async providerStatus(identity) { const stub=this.env.SERVICE_HOSTS.getByName(identity.serviceId); return { observation: await stub.lookup(identity), stats: await stub.stats(identity) }; }
       async providerProbe(identity, input) { return this.env.SERVICE_HOSTS.getByName(identity.serviceId).probe(identity, input); }
       setTime(now) { this.clock = now; }
+      evidenceContext(ownerId,id) {
+        this.repository.bindOwner(ownerId);
+        return this.evidence.context(this.repository.read(id,this.now()));
+      }
+      selectEvidence(ownerId,id,request) {
+        this.repository.bindOwner(ownerId);
+        return this.evidence.select(this.repository.read(id,this.now()),request);
+      }
       operationHistory(ownerId,id,after) {
         this.repository.bindOwner(ownerId);this.repository.read(id,this.now());
         return this.repository.history.page(id,after);
       }
       historyWriteFailure(enabled) {
-        if(enabled) this.ctx.storage.sql.exec("CREATE TRIGGER reject_history BEFORE INSERT ON task_operation_history BEGIN SELECT RAISE(ABORT, 'controlled archive failure'); END;");
-        else this.ctx.storage.sql.exec("DROP TRIGGER reject_history");
+        if(enabled) this.ctx.storage.sql.exec("CREATE TRIGGER reject_history BEFORE INSERT ON task_operation_history BEGIN SELECT RAISE(ABORT, 'controlled archive failure'); END; CREATE TRIGGER reject_questions BEFORE INSERT ON task_question_history BEGIN SELECT RAISE(ABORT, 'controlled question failure'); END;");
+        else this.ctx.storage.sql.exec("DROP TRIGGER reject_history; DROP TRIGGER reject_questions;");
       }
       async inspect() { return { alarm: await this.ctx.storage.getAlarm(), records: this.repository.records(),
         identities: this.ctx.storage.sql.exec("SELECT COUNT(*) AS count FROM tasks").one().count }; }
@@ -222,6 +231,9 @@ export async function taskFixture({
           if (action === "provider-status") return json(await stub.providerStatus(args.identity));
           if (action === "provider-probe") return json(await stub.providerProbe(args.identity, args.input));
           if (action === "time") { await stub.setTime(args.now); return json({ ok: true }); }
+          if (action === "pause-planning") {await stub.pausePlanning();return json({ok:true});}
+          if (action === "evidence-context") return json(await stub.evidenceContext(owner.id,args.id));
+          if (action === "select-evidence") return json(await stub.selectEvidence(owner.id,args.id,args.request));
           if (action === "operation-history") return json(await stub.operationHistory(owner.id,args.id,args.after));
           if (action === "history-write-failure") {await stub.historyWriteFailure(args.enabled);return json({ok:true});}
           if (action === "inspect") return json(await stub.inspect());

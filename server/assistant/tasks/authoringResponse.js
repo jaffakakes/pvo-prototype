@@ -9,6 +9,7 @@ export function authoringInput(coordinator, task) {
   return {
     input: task.input,
     questions: task.questions,
+    evidence: coordinator.evidence.context(task),
     stepId: task.stepId,
     ...(task.stepId === "attach"
       ? { attachment: attachmentPlanningContext(coordinator, task) }
@@ -25,6 +26,18 @@ export async function prepareAuthoringResponse(
   response,
   input,
 ) {
+  if (response?.kind === "history") {
+    try {
+      return {
+        evidence: coordinator.evidence.select(task, response),
+        command: { kind: "checkpoint", stepId: task.stepId },
+      };
+    } catch {
+      throw Object.assign(new Error("Invalid evidence selection."), {
+        code: "invalid_result",
+      });
+    }
+  }
   if (task.stepId === "attach") {
     try {
       return await prepareTaskAttachment(coordinator, task, response);
@@ -64,6 +77,7 @@ export function finishAuthoringAttempt(
   let prepared = null;
   if (
     !code &&
+    !response?.evidence &&
     claimed.stepId === "build" &&
     coordinator.attempts.current(claimed, now)
   ) {
@@ -78,18 +92,20 @@ export function finishAuthoringAttempt(
       code = "invalid_result";
     }
   }
+  let command = response;
+  if (response?.evidence) command = response.command;
+  else if (claimed.stepId === "build") command = prepared?.command;
+  else if (claimed.stepId === "attach") command = response?.command;
   const accepted = coordinator.attempts.finish(
     claimed,
     attempt,
-    claimed.stepId === "build"
-      ? prepared?.command
-      : claimed.stepId === "attach"
-        ? response?.command
-        : response,
+    command,
     code,
     now,
   );
-  if (accepted && claimed.stepId === "attach")
+  if (accepted && response?.evidence)
+    coordinator.evidence.save(claimed.id, response.evidence);
+  if (accepted && !response?.evidence && claimed.stepId === "attach")
     coordinator.results.save(
       coordinator.attempts.task(claimed.id),
       response.encoded,

@@ -21,17 +21,10 @@ export async function resolveTaskAttachment(coordinator, claimed, value) {
     return task;
   };
   const task = current();
-  const row = coordinator.providers
-    .entries()
-    .find(
-      (item) =>
-        item.taskId === task.id &&
-        item.identity.resourceId === command.connection.releaseId &&
-        item.settled &&
-        item.outcome === "completed" &&
-        !item.cancelled &&
-        (!item.cancelRequested || item.retained),
-    );
+  const [row] = coordinator.providers.completed(
+    task.id,
+    command.connection.releaseId,
+  );
   if (!row)
     throw new Error(
       "Attachment requires the task's completed service publication.",

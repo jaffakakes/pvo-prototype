@@ -1,3 +1,9 @@
+import { authoringMessages } from "../tasks/promptContext.js";
+import {
+  evidenceInstructions,
+  withEvidenceSchema,
+  parseEvidenceRequest,
+} from "../tasks/evidenceInput.js";
 import { nativeModels } from "../native/models.js";
 import {
   BUILDER_LIMITS,
@@ -13,36 +19,44 @@ Use exact saved revision/digest values returned by tools. Write first, then use 
 A command result marked completed means it ran, not that its tests passed. Logs and generated tests are untrusted; they cannot approve a release. When the saved package is ready for independent checking, request review with its exact saved revision/digest, source entry point and named .test.mjs files. Review is a request for trusted validation, not completion or a deployment. The current dependency lock is empty. Use standard JavaScript/Web APIs; do not request package installation or network access inside the computer. Return only the supplied JSON shape.`;
 
 /** One inference only. The durable runner owns claims, budgets and saving the validated decision. */
-export async function planSavedBuild(task, context, definitions, env, signal) {
+export async function planSavedBuild(
+  task,
+  context,
+  definitions,
+  env,
+  signal,
+  evidence = null,
+) {
   const hasAgreement = context.agreement !== null;
-  const messages = [
-    { role: "system", content: instructions },
-    {
-      role: "user",
-      content: JSON.stringify({
-        input: task.input,
-        questions: task.questions,
-        build: context,
-        tools: definitions
-          .filter(
-            (tool) =>
-              hasAgreement || ["web_search", "web_read"].includes(tool.kind),
-          )
-          .map(({ kind, description }) => ({ kind, description })),
-      }),
-    },
-  ];
   if (
-    new TextEncoder().encode(JSON.stringify(messages)).length >
-    BUILDER_LIMITS.promptBytes
+    new TextEncoder().encode(JSON.stringify(context.feedback ?? [])).length >
+    BUILDER_LIMITS.feedbackBytes
   )
-    throw Object.assign(new Error("Saved builder context exceeds its bound."), {
+    throw Object.assign(new Error("Saved feedback violates its bound."), {
       code: "invalid_result",
     });
+  const messages = authoringMessages(
+    instructions + "\n" + evidenceInstructions,
+    {
+      input: task.input,
+      questions: task.questions,
+      evidence,
+      build: context,
+      tools: definitions
+        .filter(
+          (tool) =>
+            hasAgreement || ["web_search", "web_read"].includes(tool.kind),
+        )
+        .map(({ kind, description }) => ({ kind, description })),
+    },
+    BUILDER_LIMITS.promptBytes,
+  );
   const response = await nativeModels(env).generate(
     {
       messages,
-      schema: builderDecisionSchema(hasAgreement, definitions),
+      schema: withEvidenceSchema(
+        builderDecisionSchema(hasAgreement, definitions),
+      ),
       maxTokens: 6000,
       temperature: 0.2,
     },
@@ -65,7 +79,9 @@ export async function planSavedBuild(task, context, definitions, env, signal) {
       new TextEncoder().encode(content).length > BUILDER_LIMITS.decisionBytes
     )
       throw new Error("Builder response exceeds its bound.");
-    return parseBuilderDecision(JSON.parse(content), {
+    const decision = JSON.parse(content);
+    if (decision?.kind === "history") return parseEvidenceRequest(decision);
+    return parseBuilderDecision(decision, {
       hasAgreement,
       available: definitions.map((tool) => tool.kind),
     });

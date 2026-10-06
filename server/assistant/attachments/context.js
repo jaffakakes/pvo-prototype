@@ -9,16 +9,7 @@ export function attachmentPlanningContext(coordinator, claimed) {
     task.stepId !== "attach"
   )
     throw new Error("The attachment task is no longer current.");
-  const rows = coordinator.providers
-    .entries()
-    .filter(
-      (row) =>
-        row.taskId === task.id &&
-        row.settled &&
-        row.outcome === "completed" &&
-        !row.cancelled &&
-        (!row.cancelRequested || row.retained),
-    );
+  const rows = coordinator.providers.completed(task.id);
   const builder = coordinator.builders.get(task.id);
   const saved =
     builder && coordinator.artifacts.verified(task.id, builder.round);

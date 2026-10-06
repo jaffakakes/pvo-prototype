@@ -5,6 +5,7 @@ import {
   transitionTask,
 } from "../../../packages/pvo-assistant/tasks/index.js";
 import { TaskOperationHistory } from "./operationHistory.js";
+import { TaskQuestionHistory } from "./questionHistory.js";
 import { HttpError } from "../../http.js";
 import { TASK_STORAGE_LIMITS as limits } from "./input.js";
 
@@ -22,6 +23,7 @@ export class TaskRepository {
   constructor(sql) {
     this.sql = sql;
     this.history = new TaskOperationHistory(sql);
+    this.questions = new TaskQuestionHistory(sql);
     sql.exec(`CREATE TABLE IF NOT EXISTS owner (id INTEGER PRIMARY KEY CHECK (id = 1), owner_id TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY, local_id TEXT NOT NULL UNIQUE, created_at INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS tasks (id TEXT PRIMARY KEY, operation_id TEXT NOT NULL UNIQUE,
@@ -196,6 +198,20 @@ export class TaskRepository {
         transitionTask({ ...task, operations: [archived] }, command, guard);
         return task;
       }
+      if (command.kind === "answer") {
+        const answered = this.questions.answer(task.id, command.operationId);
+        const question = this.questions.get(task.id, command.questionId);
+        if (answered || question) {
+          if (!question || answered?.id !== question.id)
+            throw new Error("Archived answer identity conflicts.");
+          transitionTask(
+            { ...task, questions: [...task.questions, question] },
+            command,
+            guard,
+          );
+          return task;
+        }
+      }
       next = transitionTask(task, command, guard);
     } catch {
       throw new HttpError(
@@ -215,6 +231,7 @@ export class TaskRepository {
     if (!before || before.revision !== expectedRevision)
       throw new HttpError(409, "The task changed. Refresh its saved state.");
     this.history.archive(before, task);
+    this.questions.archive(before, task);
     const changed = this.sql.exec(
       `UPDATE tasks SET record = ? WHERE id = ?
       AND json_extract(record, '$.revision') = ?`,
@@ -236,6 +253,7 @@ export class TaskRepository {
         !heldTasks.has(task.id)
       ) {
         this.history.remove(task.id);
+        this.questions.remove(task.id);
         this.sql.exec("UPDATE tasks SET record = NULL WHERE id = ?", task.id);
       }
     }

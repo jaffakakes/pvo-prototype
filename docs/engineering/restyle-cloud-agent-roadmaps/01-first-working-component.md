@@ -29,7 +29,7 @@ Build this before committing to a provider-specific implementation.
 
 ## 1B. Save the task and its questions
 
-**Progress: 1B.01–1B.10 are verified.** The user has requested goal-based continuation without arbitrary model/tool/session ceilings; 1B.11–1B.15 below are the next priority. Saved tasks, planning, questions, prepared results and provider recovery pass the local/browser acceptance matrix and the [actual Cloudflare proof](../restyle-cloud-provider-recovery-proof.md). Source is in PR #87; integration and production delivery are separate. The following 1C.01 contract is now verified; integration and provider construction remain separate. Arbitrary workspace generation remains 1C.
+**Progress: 1B.01–1B.12 are verified.** The user has requested goal-based continuation without arbitrary model/tool/session ceilings; 1B.13–1B.15 below are the next priority. Saved tasks, planning, questions, prepared results and provider recovery pass the local/browser acceptance matrix and the [actual Cloudflare proof](../restyle-cloud-provider-recovery-proof.md). Source is in PR #87; integration and production delivery are separate. The following 1C.01 contract is now verified; integration and provider construction remain separate. Arbitrary workspace generation remains 1C.
 
 The task record is the agent's notebook. It must be saved on the server. Follow the [detailed 1B implementation plan](1b-saved-tasks.md) for contracts, build order, and failure tests.
 
@@ -46,10 +46,10 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 
 ### Goal continuation correction — 6 October 2026
 
-The user wants the agent to keep working toward the goal, with no fixed model-turn ceiling. The former six/eight-turn cutoff has been removed and tested. Remaining execution, storage and capacity controls must support continuation. Follow [the goal-continuation implementation plan](1b-goal-continuation.md) before proceeding to 1E.04.
+The user wants the agent to keep working toward the goal, with no fixed model-turn ceiling. The goal-wide model/tool/session/recovery/research/source/review cutoffs and age deadline are removed. Durable history, byte-aware checkpoints and retrievable bounded inference context pass 1,384 local tests. Capacity/spending waits and progress-driven repair remain in 1B.13–1B.15. Follow [the goal-continuation implementation plan](1b-goal-continuation.md) before proceeding to 1E.04.
 
-- [ ] **1B.11** Separate the saved goal from short execution periods. Preserve its objective, current plan, questions, source and receipts across work periods without a fixed goal-wide model/tool/session count or automatic 24-hour abandonment.
-- [ ] **1B.12** Keep the notebook bounded by checkpointing settled history into owned durable records. Preserve every unknown external outcome and replay identity; full history or retention must not silently end or erase active goals.
+- [x] **1B.11** Separate the saved goal from short execution periods. Preserve its objective, current plan, questions, source and receipts across work periods without a fixed goal-wide model/tool/session count or automatic 24-hour abandonment.
+- [x] **1B.12** Keep the notebook bounded by checkpointing settled history into owned durable records. Preserve every unknown external outcome and replay identity; full history or retention must not silently end or erase active goals.
 - [ ] **1B.13** Pause and resume for actual spending permission or temporarily unavailable capacity. Show the reason and next action; a rate limit or expired work lease must not become a permanently failed goal. Keep Stop authoritative.
 - [ ] **1B.14** Continue from actual progress and validation feedback. Repair unsuccessful work, detect repeated attempts that add no useful evidence, and ask a concrete question when necessary. Finish only after the requested result is verified.
 - [ ] **1B.15** Verify continuation beyond the former model/tool/workspace bounds, interrupted checkpoints, waiting/approved budget, Stop/resume and missing external outcomes with local controlled effects. Update the beta and portable handoff; new paid acceptance needs its own approval.

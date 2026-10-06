@@ -77,6 +77,36 @@ test("100 receipts cross the former history cutoff, survive restart and keep exa
       operation: all[0].operation,
     });
     assert.deepEqual(replay, task);
+    task = await step(f, task, {
+      kind: "ask",
+      question: {
+        id: "after-history",
+        revision: 0,
+        prompt: "Continue?",
+        choices: [],
+        answer: null,
+      },
+    });
+    const answer = {
+      kind: "answer",
+      questionId: "after-history",
+      questionRevision: 0,
+      operationId: "receipt-0",
+      value: "Yes",
+    };
+    expectStatus(
+      await f.control({ action: "step", id: task.id, command: answer }),
+      409,
+    );
+    task = await step(f, task, {
+      ...answer,
+      operationId: "answer-after-history",
+    });
+    task = await step(f, task, {
+      kind: "claim",
+      claimId: "history-next-worker",
+      leaseMs: 60000,
+    });
     expectStatus(
       await f.control({
         action: "step",
@@ -204,6 +234,22 @@ test("100 actual workspace writes checkpoint usage and retain the exact source a
     expectStatus(replay, 200);
     assert.deepEqual(replay.body, first);
     assert.equal((await rows(f)).operations.length, 100);
+    const history = await f.control({
+      action: "select-evidence",
+      id: task.id,
+      request: {
+        kind: "history",
+        collection: "workspace",
+        after: 0,
+        offset: 0,
+        notes: "Inspect first saved source receipt.",
+      },
+    });
+    expectStatus(history, 200);
+    const entry = JSON.parse(history.body.content);
+    assert.equal(entry.operationId, "write-0");
+    assert.equal(entry.receipt.result.revision, 1);
+    assert.equal(Object.hasOwn(entry, "identity"), false);
     assert.deepEqual(await read(f, task), task);
   } finally {
     await f.close();

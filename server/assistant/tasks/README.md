@@ -85,3 +85,13 @@ Each maintenance pass handles at most two operations, with five failed-lookup/cl
 Expired tasks are hidden from owner reads even when private cleanup bookkeeping is retained. A provider journal holding a cleanup obligation prevents content pruning until deletion is verified. This adapter is private and is not yet offered to the model: Roadmap 1C supplies the builder and Roadmap 1D supplies activation, durable business records and public invocation.
 
 See the [disposable real-provider acceptance plan](../../../docs/engineering/restyle-cloud-provider-recovery-proof.md). Test controls, crashes and arbitrary clock changes exist only in fixtures/diagnostics.
+
+
+## Answer archive and model evidence selection
+
+`questionHistory.js` archives answered questions atomically with the current task revision. `archivedQuestions` and the recent question count allocate the next host question ID without a lifetime count cap. Exact old answer replay uses the same domain guards. Archived answer IDs cannot become new answers or effects; archived effect IDs cannot become answers. Pending questions remain current.
+
+`evidenceInput.js` owns the closed model selection and its schema. `evidence.js` reads one indexed, task-scoped history row and projects at most 4,096 UTF-8 bytes per fragment. It supports immutable original input, frozen agreement, archived/current answers, settled operation history, research results, workspace receipts and independent review reports; it excludes provider credentials and full package bundles. The next offset counts Unicode code points. The selection includes bounded model-written working notes; these are context, never trusted validation or permission. A selection commits only with the accepted current inference and is deleted when safe terminal cleanup removes task content. `authoringResponse.js` coordinates the shared selection path for plan/build/attach without changing the build cursor, agreement or current source.
+
+
+`promptContext.js` owns the pure, shared finite prompt projection for planning, building and attachment. When valid accumulated context exceeds the message bound, it marks retrievable omissions instead of mutating the saved task or returning a goal-ending size failure. Question checkpoints also compact by total serialized record bytes, retaining the pending/just-answered question. Routine journal recovery uses indexed outstanding rows, exact IDs, SQL wakeup aggregation and bounded provider/budget selection; historical `entries()` methods are fixture inspection only.

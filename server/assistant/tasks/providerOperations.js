@@ -19,6 +19,37 @@ export class ProviderOperations {
     sql.exec(
       "CREATE TABLE IF NOT EXISTS provider_operations (id TEXT PRIMARY KEY, task_id TEXT NOT NULL, body TEXT NOT NULL)",
     );
+    sql.exec(
+      "CREATE INDEX IF NOT EXISTS provider_operations_task ON provider_operations(task_id,json_extract(body,'$.stepId'))",
+    );
+    sql.exec(
+      "CREATE INDEX IF NOT EXISTS provider_operations_pending ON provider_operations(task_id) WHERE json_extract(body,'$.settled')=0 OR (json_extract(body,'$.cancelRequested')=1 AND json_extract(body,'$.cancelled')=0 AND json_extract(body,'$.retained')=0)",
+    );
+  }
+  pendingEntries() {
+    return this.sql
+      .exec(
+        `SELECT body FROM provider_operations WHERE json_extract(body,'$.settled')=0 OR
+      (json_extract(body,'$.cancelRequested')=1 AND json_extract(body,'$.cancelled')=0 AND json_extract(body,'$.retained')=0)`,
+      )
+      .toArray()
+      .map((row) => JSON.parse(row.body));
+  }
+  completed(taskId, releaseId = null) {
+    // Two rows are enough to reject ambiguity; never hydrate every historic release.
+    return this.sql
+      .exec(
+        `SELECT body FROM provider_operations WHERE task_id=?
+      AND json_extract(body,'$.settled')=1 AND json_extract(body,'$.outcome')='completed'
+      AND json_extract(body,'$.cancelled')=0
+      AND (json_extract(body,'$.cancelRequested')=0 OR json_extract(body,'$.retained')=1)
+      AND (? IS NULL OR json_extract(body,'$.identity.resourceId')=?) ORDER BY rowid LIMIT 2`,
+        taskId,
+        releaseId,
+        releaseId,
+      )
+      .toArray()
+      .map((row) => JSON.parse(row.body));
   }
   entries() {
     return this.sql
@@ -44,14 +75,10 @@ export class ProviderOperations {
     return this.tasks.records().find((task) => task.id === id);
   }
   heldTasks() {
-    return new Set(
-      this.entries()
-        .filter(pending)
-        .map((row) => row.taskId),
-    );
+    return new Set(this.pendingEntries().map((row) => row.taskId));
   }
   awaiting(taskId) {
-    return this.entries().some(
+    return this.pendingEntries().some(
       (row) => row.taskId === taskId && pending(row) && row.nextAt !== null,
     );
   }
@@ -67,21 +94,29 @@ export class ProviderOperations {
       publication.identity.taskId !== task.id
     )
       throw new Error("Provider intent does not belong to this saved task.");
-    const previous = this.entries().filter(
-      (row) => row.taskId === task.id && row.stepId === task.stepId,
-    );
-    if (
-      previous.some(
-        (row) =>
-          row.identity.packageDigest !== publication.identity.packageDigest ||
-          row.identity.reportDigest !== publication.identity.reportDigest,
+    const changed = this.sql
+      .exec(
+        `SELECT 1 FROM provider_operations WHERE task_id=? AND json_extract(body,'$.stepId')=?
+      AND (json_extract(body,'$.identity.packageDigest')<>? OR json_extract(body,'$.identity.reportDigest')<>?) LIMIT 1`,
+        task.id,
+        task.stepId,
+        publication.identity.packageDigest,
+        publication.identity.reportDigest,
       )
-    )
+      .toArray().length;
+    if (changed)
       throw new Error("The publication step's source is already frozen.");
-    const retained = previous.find(
-      (row) => pending(row) || row.outcome === "completed",
-    );
-    if (retained) return retained;
+    const retained = this.sql
+      .exec(
+        `SELECT body FROM provider_operations WHERE task_id=? AND json_extract(body,'$.stepId')=?
+      AND (json_extract(body,'$.settled')=0 OR json_extract(body,'$.outcome')='completed' OR
+        (json_extract(body,'$.cancelRequested')=1 AND json_extract(body,'$.cancelled')=0 AND json_extract(body,'$.retained')=0))
+      ORDER BY rowid LIMIT 1`,
+        task.id,
+        task.stepId,
+      )
+      .toArray()[0];
+    if (retained) return JSON.parse(retained.body);
     const identity = publication.identity;
     const key = `${task.id}_${identity.operationId}`;
     const existing = this.get(key);
@@ -184,43 +219,47 @@ export class ProviderOperations {
   }
 
   noteTerminal(now) {
-    const tasks = new Map(this.tasks.records().map((task) => [task.id, task]));
-    for (const row of this.entries()) {
-      const task = tasks.get(row.taskId);
-      if (!task || row.cancelRequested || row.cancelled || row.retained)
-        continue;
-      if (task.state !== "stopped" && now < row.identity.expiresAt) continue;
-      this.write({ ...row, cancelRequested: true, attempts: 0, nextAt: now });
-    }
+    this.sql.exec(
+      `UPDATE provider_operations SET body=json_set(body,'$.cancelRequested',json('true'),'$.attempts',0,'$.nextAt',?)
+      WHERE json_extract(body,'$.cancelRequested')=0 AND json_extract(body,'$.cancelled')=0 AND json_extract(body,'$.retained')=0
+      AND EXISTS (SELECT 1 FROM tasks WHERE tasks.id=provider_operations.task_id AND record IS NOT NULL
+        AND (json_extract(record,'$.state')='stopped' OR json_extract(provider_operations.body,'$.identity.expiresAt')<=?))`,
+      now,
+      now,
+    );
   }
   due(now) {
-    return this.entries().filter((row) => {
-      const task = this.task(row.taskId);
-      return (
-        pending(row) &&
-        row.nextAt !== null &&
-        row.nextAt <= now &&
-        !(task?.state === "running" && task.claim.expiresAt > now)
-      );
-    });
+    return this.sql
+      .exec(
+        `SELECT p.body FROM provider_operations p LEFT JOIN tasks t ON t.id=p.task_id
+      WHERE (json_extract(p.body,'$.settled')=0 OR (json_extract(p.body,'$.cancelRequested')=1 AND json_extract(p.body,'$.cancelled')=0 AND json_extract(p.body,'$.retained')=0))
+      AND json_extract(p.body,'$.nextAt')<=?
+      AND (t.record IS NULL OR json_extract(t.record,'$.state')<>'running' OR json_extract(t.record,'$.claim.expiresAt')<=?)
+      ORDER BY p.rowid LIMIT 2`,
+        now,
+        now,
+      )
+      .toArray()
+      .map((row) => JSON.parse(row.body));
   }
   nextWakeup() {
-    const times = this.entries().flatMap((row) => {
-      const task = this.task(row.taskId);
-      // Resource expiry wakes unresolved lookup/cleanup even when the goal continues.
-      const deadline =
-        task && !row.cancelRequested && !row.cancelled && !row.retained
-          ? [row.identity.expiresAt]
-          : [];
-      if (!pending(row) || row.nextAt === null) return deadline;
-      return [
-        ...deadline,
-        task?.state === "running"
-          ? Math.max(row.nextAt, task.claim.expiresAt)
-          : row.nextAt,
-      ];
-    });
-    return times.length ? Math.min(...times) : null;
+    // Resource expiry and pending reconciliation each contribute their own wakeup.
+    return this.sql
+      .exec(
+        `SELECT MIN(wakeup) AS next FROM (
+      SELECT json_extract(p.body,'$.identity.expiresAt') AS wakeup FROM provider_operations p JOIN tasks t ON t.id=p.task_id
+        WHERE t.record IS NOT NULL AND json_extract(p.body,'$.cancelRequested')=0
+          AND json_extract(p.body,'$.cancelled')=0 AND json_extract(p.body,'$.retained')=0
+      UNION ALL
+      SELECT CASE WHEN json_extract(t.record,'$.state')='running'
+        THEN MAX(json_extract(p.body,'$.nextAt'),json_extract(t.record,'$.claim.expiresAt'))
+        ELSE json_extract(p.body,'$.nextAt') END AS wakeup
+        FROM provider_operations p LEFT JOIN tasks t ON t.id=p.task_id
+        WHERE json_extract(p.body,'$.settled')=0 OR (json_extract(p.body,'$.cancelRequested')=1
+          AND json_extract(p.body,'$.cancelled')=0 AND json_extract(p.body,'$.retained')=0)
+    )`,
+      )
+      .one().next;
   }
   failedLookup(id, now) {
     const row = this.get(id);
@@ -319,9 +358,9 @@ export class ProviderOperations {
   }
 
   prune() {
-    const tasks = new Set(this.tasks.records().map((task) => task.id));
-    for (const row of this.entries())
-      if (!pending(row) && !tasks.has(row.taskId))
-        this.sql.exec("DELETE FROM provider_operations WHERE id = ?", row.id);
+    this.sql
+      .exec(`DELETE FROM provider_operations WHERE json_extract(body,'$.settled')=1
+      AND (json_extract(body,'$.cancelRequested')=0 OR json_extract(body,'$.cancelled')=1 OR json_extract(body,'$.retained')=1)
+      AND NOT EXISTS (SELECT 1 FROM tasks WHERE tasks.id=provider_operations.task_id AND record IS NOT NULL)`);
   }
 }
