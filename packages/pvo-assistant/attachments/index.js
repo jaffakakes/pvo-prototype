@@ -18,3 +18,13 @@ export {
 } from "./component.js";
 
 export { serviceAttachmentSchema } from "./schema.js";
+
+export {
+  prepareServiceSubmissionTarget,
+  resolveServiceSubmissionInput,
+  parseServiceSubmission,
+  prepareServiceSubmission,
+  retryServiceSubmission,
+  completeServiceSubmission,
+  serviceSubmissionRequest,
+} from "./submissions.js";

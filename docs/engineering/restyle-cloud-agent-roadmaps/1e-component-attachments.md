@@ -41,3 +41,10 @@ The PVO request body at this stage is a declarative envelope with an operation n
 **1E.01–1E.03 are verified in local implementation.** Full checks pass **1,368 tests**, editor types and the actual saved-result browser journey. The background runner uses the current execution claim and metered inference journal, validates actual compiler output and current hosted evidence, and saves immutable result/ready/inference receipts atomically. Browser acceptance covers completion with the page closed, full server restart, checked component/connection/approved-host application, persistent Undo/Redo and protection of a changed draft. Fixtures use a controlled model and local Worker/SQLite, not live-model acceptance.
 
 The fixed per-task model-turn cutoff is removed following the user's correction. [Goal continuation 1B.11–1B.15](1b-goal-continuation.md) is verified, including combined long-running acceptance. Next is **1E.04** for runtime input resolution and action identity. **1E.04 onward remain unchecked.** Project receipt metadata is private authoring data; public export must project only the fields viewers need and must go through the later activation command. No cloud product deployment or complete online component is claimed.
+
+
+### 2026-10-06 — Shared submission contract verified; 1E.04 still open
+
+The [submission contract](../../../packages/pvo-assistant/attachments/README.md) now resolves typed input, preserves exact action/input across retries, fences changed connection/account scopes and checks matching results. Both actual local HTTP routes recover a lost reply after restart without repeating the action; changed input under the same ID conflicts. Full 1,415-test suite and editor types pass.
+
+Client persistence, generated IDs and runtime integration remain incomplete. **1E.04 is unchecked**; proceed with shared client orchestration and atomic storage, then Try/player wiring. No app availability, activation or public export is implied.

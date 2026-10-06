@@ -180,3 +180,41 @@ const checkedConnection: import("../../packages/pvo-assistant/attachments/index.
 // @ts-expect-error Saved component metadata grants no live/test namespace selector.
 checkedConnection.mode = "live";
 void checkedConnection;
+
+const submissionTarget = attachments.prepareServiceSubmissionTarget(
+  checkedConnection,
+  { mode: "public", ownerId: null },
+);
+const submissionInput = attachments.resolveServiceSubmissionInput(
+  checkedConnection,
+  { guest: "Alice" },
+);
+const submission = attachments.prepareServiceSubmission(
+  submissionTarget,
+  submissionInput,
+  "opaque-action-id",
+);
+const restoredSubmission = attachments.retryServiceSubmission(
+  JSON.parse(JSON.stringify(submission)),
+  submissionTarget,
+);
+const submissionRequest =
+  attachments.serviceSubmissionRequest(restoredSubmission);
+const submissionMethod: "POST" = submissionRequest.method;
+attachments.completeServiceSubmission(restoredSubmission, {
+  actionId: "opaque-action-id",
+  result: "accepted",
+});
+// @ts-expect-error Public replay scopes cannot retain a creator account.
+attachments.prepareServiceSubmissionTarget(checkedConnection, {
+  mode: "public",
+  ownerId: "creator",
+});
+// @ts-expect-error Try requires the current creator identity.
+attachments.prepareServiceSubmissionTarget(checkedConnection, {
+  mode: "try",
+  ownerId: null,
+});
+// @ts-expect-error The client checkpoint has no caller-controlled permission flag.
+submission.permission = "granted";
+void submissionMethod;
