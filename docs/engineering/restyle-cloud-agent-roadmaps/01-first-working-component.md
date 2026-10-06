@@ -115,14 +115,14 @@ The user wants the agent to keep working toward the goal, with no fixed model-tu
 
 ## 1F. Verify the complete first release
 
-**In progress:** [live acceptance evidence and startup recovery plan](../restyle-first-release-acceptance.md). All four disposable deployments are removed. The third generated/repaired dinner code and recovered hosting; the fourth failed startup before any AI calls. Neither complete demonstration nor viewer acceptance is verified. Startup diagnosis/recovery is corrected locally; the cloud startup cause is unknown. The user authorized continuing until 1F passes and removed the US$15 ceiling; resource cleanup and truthful checks remain required. All checkboxes below remain unverified.
+**In progress:** [live acceptance evidence](../restyle-first-release-acceptance.md). The dinner example completed actual model generation, independent validation, hosting, attachment, Try, interrupted delivery, separate downloaded/published viewers, last-seat races and local removal. **1F.04 and 1F.06 are verified** from that live run. Camera booking and remaining recovery/release checks continue. The fifth diagnostic is active; four older deployments are deleted. The user authorized continuing until 1F passes and removed the US$15 ceiling; keep resource cleanup and truthful evidence.
 
 - [ ] **1F.01** Run both demonstration requests from ordinary natural-language prompts.
 - [ ] **1F.02** Include a follow-up question, stop/resume, and one invalid generated program that the agent repairs from real test feedback.
 - [ ] **1F.03** Close the editor during an active build and restart the authoring worker. Verify saved work continues and completed effects are recovered.
-- [ ] **1F.04** Shut down the workspace and close Restyle. Use the finished component from a separate viewer session.
+- [x] **1F.04** Shut down the workspace and close Restyle. Use the finished component from a separate viewer session.
 - [ ] **1F.05** Exercise duplicate submissions and distinct simultaneous submissions competing for the last place or overlapping equipment dates. Also check wrong-account access, test/live separation, a failed deployment, and an interrupted export.
-- [ ] **1F.06** Remove a local component and check that a published copy's service is still manageable. Explain that editor Undo does not reverse saved viewer actions.
+- [x] **1F.06** Remove a local component and check that a published copy's service is still manageable. Explain that editor Undo does not reverse saved viewer actions.
 - [ ] **1F.07** Record the actual resource use and confirm the configured limits and cleanup work.
 - [ ] **1F.08** Complete the relevant source checks and real browser/provider checks, then release through the active beta and normal promotion process.
 

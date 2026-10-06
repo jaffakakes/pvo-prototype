@@ -2,15 +2,15 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
-## Latest scope: 1F startup diagnosis after verified cleanup
+## Latest scope: 1F live dinner passed; camera continuing
 
-**All 1E is verified; 1F remains incomplete. 47/134 tasks complete; 87 remain.** Active checkout: `feature/restyle-first-release`, `/Users/christinasmacbook/.codex/worktrees/restyle-first-release/pvo-prototype`, [draft #105](https://github.com/jaffakakes/pvo-prototype/pull/105). Read [current progress](restyle-cloud-agent-progress.md) and [acceptance evidence](restyle-first-release-acceptance.md).
+**All 1E and 1F.04/06 are verified; 1F remains incomplete. 49/134 tasks complete; 85 remain.** Active checkout: `feature/restyle-first-release`, `/Users/christinasmacbook/.codex/worktrees/restyle-first-release/pvo-prototype`, [draft #105](https://github.com/jaffakakes/pvo-prototype/pull/105). Read [current progress](restyle-cloud-agent-progress.md) and [acceptance evidence](restyle-first-release-acceptance.md).
 
-All four paid diagnostic deployments are deleted with verified cleanup. The third generated/repaired dinner code, passed independent validation and recovered hosting, but never completed attachment. The fourth (`d758435100daa3b4d36f2728`) returned 503 during startup and made **zero model calls**; its cloud exception was not retained. It is fully deleted. Neither complete demonstration nor viewer acceptance is claimed. Do not restart consumed journals.
+Four prior diagnostics are deleted; the fifth, `06ef187e5cb8af49267a5f0f`, is **active** in `workspace-ZmaGwt/report.json`. Its dinner example passed real generation, tests, hosting, component attachment, Try, interrupted export/publication, separate downloaded/published viewers, concurrent last-seat requests and retained service/data after local removal. **1F.04 and 1F.06 are checked.** Camera and remaining recovery/cost/cleanup/release work continue. Do not start a second deployment while this run is active. Earlier startup failures remain recorded; their exact cause was not established.
 
 The latest repairs retain private, credential-redacted startup diagnostics and use the existing original-deadline read recovery for startup. This allows a same-resource repair instead of thirty-second cleanup. Local health/recovery regressions pass; the cloud startup cause is still unknown. The user already approved budget-governed diagnostic capacity; production capacity stays unchanged. The user has now authorized continuing until **all 1F passes**, explicitly removing the **US$15 ceiling**. That supersedes pending replacement approval and the former one-deployment restriction. Necessary 1F replacements and repairs need no repeated approval; keep metering, resource inventories, cleanup and release gates. See the current authorization in the acceptance plan. The Runpod key is privately configured; no new key entry is needed.
 
-Latest delivered beta: **`restyle-editor-shell-073512c14b8c6bb1`**, including `5e29fa3`; subsequent pending changes are diagnostic-only. Vite 5318 remains active. No GitHub Actions polling, remote merge or production claim. Continue 1F before 1G Node.js Containers.
+Latest delivered beta: **`restyle-editor-shell-aa2c2df171a90f09`**, including `79c949b`; the small saved-planner hosting guidance still needs final delivery. Vite 5318 remains active. No GitHub Actions polling, remote merge or production claim. Continue 1F before 1G Node.js Containers.
 
 ## Preserved planning decision: consolidated Containers
 
