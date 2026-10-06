@@ -48,7 +48,7 @@ report.limits = {
   namespaces: 6,
   creators: 2,
   globalConcurrentSessions: 2,
-  globalDailySessions: 12,
+  globalDailySessions: 4096,
   sessionSeconds: 120,
   commandSeconds: 15,
   requestLimit: 2000,

@@ -11,7 +11,7 @@ import { diagnosticApi } from "./api.js";
 export { AcceptanceTasks } from "./tasks.js";
 export { AcceptanceControl } from "./control.js";
 export { AcceptanceBudget as AssistantBudget } from "./budget.js";
-export { WorkspaceBudget } from "../../../server/assistant/workspaces/budget.js";
+export { AcceptanceWorkspaceBudget as WorkspaceBudget } from "./budget.js";
 export { HostedService } from "../../../server/cloud-services/host.js";
 
 export class AcceptanceWorkspace extends AssistantWorkspace {

@@ -300,3 +300,71 @@ test("a bounded repair conversation ends with local rejection feedback and never
     "An incomplete proposal remains marked as truncated context",
   );
 });
+
+test("completed builder decisions are followed by their actual batch results instead of being repeated as a fresh request", () => {
+  const decision = {
+    kind: "tools",
+    review: null,
+    calls: [
+      {
+        kind: "workspace_test",
+        revision: 2,
+        digest: "d".repeat(64),
+        paths: ["tests/main.test.mjs"],
+      },
+    ],
+  };
+  const current = {
+    operationId: "build-7-0",
+    kind: "workspace_test",
+    result: {
+      status: "completed",
+      result: { exitCode: 0, stdout: "9 tests passed; untrusted log text" },
+    },
+  };
+  const input = {
+    input: { context: { components: [] }, examples: [] },
+    build: {
+      round: 7,
+      lastDecision: decision,
+      batchEnd: "completed",
+      feedback: [
+        {
+          operationId: "build-6-0",
+          kind: "workspace_test",
+          result: { exitCode: 1 },
+        },
+        current,
+      ],
+    },
+  };
+  const original = structuredClone(input);
+  const messages = authoringMessages("Trusted instructions", input, 8192);
+  assert.deepEqual(
+    messages.map((x) => x.role),
+    ["system", "user", "assistant", "user"],
+  );
+  assert.deepEqual(JSON.parse(messages[2].content), decision);
+  assert.deepEqual(JSON.parse(messages[3].content).observed, {
+    batchOutcome: "completed",
+    toolResults: [current],
+  });
+  assert.match(
+    JSON.parse(messages[3].content).nextAction,
+    /request independent review/,
+  );
+  assert.equal(messages[0].content, "Trusted instructions");
+  assert.deepEqual(input, original);
+  assert.ok(Buffer.byteLength(JSON.stringify(messages)) <= 8192);
+  input.build.batchEnd = null;
+  assert.equal(
+    authoringMessages("Trusted instructions", input, 8192).length,
+    2,
+  );
+  input.build.batchEnd = "completed";
+  input.build.lastDecision = { kind: "tools", contentOmitted: true };
+  assert.equal(
+    authoringMessages("Trusted instructions", input, 8192).length,
+    2,
+  );
+});
