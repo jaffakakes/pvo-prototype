@@ -40,10 +40,11 @@ export function ExportSheet() {
     exported,
     start,
     cancel,
-  } = useExportSession(s.exportFormat);
+  } = useExportSession("pvo");
   const [picking, setPicking] = useState(false);
+  const [shareBusy, setShareBusy] = useState(false);
   const [pickerTime, setPickerTime] = useState(s.coverAt);
-  const format = s.exportFormat;
+  const format = "pvo" as const;
   const mode = exportView(s.ex, exportGateOpen, failure, picking);
   const coverImage = useCoverPreview(
     main,
@@ -104,6 +105,7 @@ export function ExportSheet() {
   };
   const close = () => {
     if (showShare) {
+      if (shareBusy) return;
       setShowShare(false);
       return;
     }
@@ -187,7 +189,7 @@ export function ExportSheet() {
                 ) : mode === "done" ? (
                   <>
                     <span className={styles.desktopOnly}>
-                      Your {format === "pvo" ? "export" : "video"} is ready
+                      Your export is ready
                     </span>
                     <span className={styles.phoneOnly}>Ready</span>
                   </>
@@ -228,9 +230,7 @@ export function ExportSheet() {
             )}
             {mode === "setup" && (
               <ExportSettings
-                format={format}
                 quality={s.quality}
-                mainDuration={mainDuration}
                 totalDuration={s.scenes.reduce(
                   (sum, scene) => sum + sceneDuration(scene),
                   0,
@@ -240,7 +240,6 @@ export function ExportSheet() {
                 coverAt={s.coverAt}
                 coverImage={coverImage}
                 emptyScenes={emptyScenes.map((scene) => scene.name)}
-                onFormat={(exportFormat) => s.patch({ exportFormat })}
                 onQuality={(quality) => s.patch({ quality })}
                 onChooseCover={() => {
                   setPickerTime(s.coverAt);
@@ -262,7 +261,7 @@ export function ExportSheet() {
                 <hr />
                 <p>
                   The cover appears on your result card and shared links. Phones
-                  may pick their own thumbnail for downloaded videos.
+                  can see it on your shared PVO link.
                 </p>
               </div>
             )}
@@ -322,8 +321,7 @@ export function ExportSheet() {
                   Copy details
                 </button>
                 <div className={styles.locked}>
-                  ♙ {format === "pvo" ? ".pvo" : "Video"} · {s.quality} · Cover{" "}
-                  {exportClock(s.coverAt, false)}
+                  ♙ .pvo · {s.quality} · Cover {exportClock(s.coverAt, false)}
                 </div>
               </div>
             )}
@@ -354,6 +352,8 @@ export function ExportSheet() {
           >
             <SharePanel
               embedded
+              autoCreate
+              onBusyChange={setShareBusy}
               artifact={exported.artifact}
               url={exported.url}
               renderMethod={exported.renderMethod}

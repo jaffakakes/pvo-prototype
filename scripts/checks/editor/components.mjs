@@ -24,6 +24,8 @@ async function recordDemo(milliseconds) {
 try {
   await page.route("**/api/auth/session", route => route.fulfill({ contentType: "application/json",
     body: JSON.stringify({ available: true, clerkAvailable: false, clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: { id: "components-check", name: "Components check" } }) }));
+  await page.route("**/api/renders", route => route.fulfill({ contentType: "application/json",
+    body: JSON.stringify({ available: false, maxSourceBytes: 0, maxSources: 0, formats: [] }) }));
   await page.goto(editorUrl, { waitUntil: "networkidle" });
   await recordDemo(1200);
   await page.getByRole("button", { name: "Open editor" }).click();
@@ -73,16 +75,18 @@ try {
   // Interactive export contains the Main scene and its branch.
   await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
   await page.getByRole("dialog", { name: "More" })
-    .getByRole("button", { name: "Interactive (.pvo)", exact: true }).click();
+    .getByRole("button", { name: "Export and create link", exact: true }).click();
   const exportDialog = page.locator("dialog[data-state]");
-  await exportDialog.getByRole("button", { name: /Export \.pvo/ }).waitFor();
-  assert.equal(await exportDialog.getByRole("combobox", { name: "Export format" }).inputValue(),
-    "pvo", "Interactive should be preselected");
-  await exportDialog.getByRole("button", { name: /Export \.pvo/ }).click();
+  await exportDialog.getByRole("button", { name: /Export and share/ }).waitFor();
+  assert.equal(await exportDialog.getByRole("combobox", { name: "Export format" }).count(),
+    0, "Only PVO export should be offered");
+  await exportDialog.getByRole("button", { name: /Export and share/ }).click();
   await page.locator('dialog[data-state="done"]').waitFor({ timeout: 60000 });
+  const share = page.getByRole("dialog", { name: "Share export", exact: true });
+  await share.waitFor();
   const [download] = await Promise.all([
     page.waitForEvent("download", { timeout: 15000 }),
-    exportDialog.getByRole("button", { name: /Download/ }).click(),
+    share.locator("[data-download-again]").click(),
   ]);
   assert.match(download.suggestedFilename(), /\.pvo$/, "Interactive export must download as PVO");
   const decoded = await readPvoProject(new Blob([await readFile(await download.path())]));

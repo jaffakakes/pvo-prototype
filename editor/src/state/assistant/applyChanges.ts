@@ -18,7 +18,7 @@ export type AppliedAssistantChange = {
 export function applyAssistantChanges(batch: NativeBatch): AppliedAssistantChange | null {
   const changed = commitNativeBatch(batch, nativeProjectFingerprint(batch.before), "edit");
   applyNativePlayback(batch.playback);
-  if (batch.exportFormat) void requestExport(batch.exportFormat);
+  if (batch.exportFormat) void requestExport();
   if (!changed) return null;
   const current = useCapture.getState();
   return { localId: current.localId, past: current.past, future: current.future,
