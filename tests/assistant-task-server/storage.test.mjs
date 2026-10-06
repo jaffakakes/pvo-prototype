@@ -62,34 +62,45 @@ test("owned project resolution, concurrent creation replay and complete storage 
   }
 });
 
-test("deadline and retention alarms erase private content but preserve creation identity", async () => {
+test("unfinished goals survive weeks and full restart; retention starts only after Stop", async () => {
   const fixture = await taskFixture();
   try {
-    const task = await saved(fixture);
-    await fixture.control({
-      action: "time",
-      now: NOW + TASK_LIMITS.lifetimeMs,
+    let task = await saved(fixture);
+    for (const command of [
+      { kind: "claim", claimId: "ask-first", leaseMs: 60000 },
+      { kind: "ask", question: question() },
+    ]) {
+      const next = await fixture.control({
+        action: "step",
+        id: task.id,
+        command,
+      });
+      expectStatus(next, 200);
+      task = next.body;
+    }
+    const later = NOW + 30 * 86400000;
+    await fixture.control({ action: "time", now: later });
+    const kept = await fixture.control({ action: "sweep" });
+    expectStatus(kept, 200);
+    assert.deepEqual(kept.body.records[0], task);
+    assert.equal(kept.body.records[0].expiresAt, null);
+    await fixture.restart();
+    await fixture.control({ action: "time", now: later });
+    assert.deepEqual((await fixture.request(path(task))).body.task, task);
+    expectStatus(await fixture.create(task.input.projectId), 200);
+    const stopped = await fixture.request(path(task) + "/stop", {
+      body: { expectedRevision: task.revision },
     });
-    const expired = await fixture.control({ action: "sweep" });
-    assert.equal(expired.body.records[0].failure.code, "deadline_exceeded");
-    assert.equal(expired.body.alarm, task.expiresAt);
-    expectStatus(
-      await fixture.request(path(task) + "/resume", {
-        body: { expectedRevision: 1 },
-      }),
-      409,
-    );
-    await fixture.control({ action: "time", now: task.expiresAt });
+    expectStatus(stopped, 200);
+    assert.equal(stopped.body.task.finishedAt, later);
+    assert.equal(stopped.body.task.expiresAt, later + TASK_LIMITS.retentionMs);
+    await fixture.control({ action: "time", now: stopped.body.task.expiresAt });
     const swept = await fixture.control({ action: "sweep" });
     assert.deepEqual(swept.body, { records: [], alarm: null, identities: 1 });
     expectStatus(await fixture.request(path(task)), 404);
     expectStatus(await fixture.create(task.input.projectId), 410);
     await fixture.restart();
     expectStatus(await fixture.create(task.input.projectId), 410);
-    assert.equal(
-      (await fixture.project()).body.project.id,
-      task.input.projectId,
-    );
   } finally {
     await fixture.close();
   }

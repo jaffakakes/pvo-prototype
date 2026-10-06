@@ -177,3 +177,13 @@ The [Roadmap 1A evidence](../docs/engineering/restyle-cloud-infrastructure-proof
 ### Saved-task server lifetime
 
 `node scripts/checks/cloud-agent-tasks/browser-lifetime.mjs` launches local workerd/D1/SQLite and a fresh Chromium context. It creates an authenticated saved task, closes the browser during a controlled planning step, and recovers the same question in a new context. Requires built language WASM, installed dependencies and Chrome (`CHROME_PATH` can override the executable). It disposes its local runtime/storage and never calls a real model or cloud provider. This checks server lifetime; the editor task UI is a separate later journey.
+
+### Cloud service recovery diagnostic
+
+`node scripts/checks/cloud-agent-recovery/run.mjs <account-id> --run` performs the bounded, paid 1B.08/1B.09 provider acceptance and verifies cleanup of its own temporary deployment. Read the [resource/spending plan](../docs/engineering/restyle-cloud-provider-recovery-proof.md) and obtain the recorded spending decision first. It imports the production coordinator/release adapters and exposes only fixed, authenticated diagnostics. `node --test tests/cloud-services/*.test.mjs tests/assistant-task-server/provider*.test.mjs` runs local checks without provider charges; local workerd does not prove CPU enforcement.
+
+### Cloud workspace recovery diagnostic
+
+`node scripts/checks/cloud-agent-workspaces/run.mjs <account-id> --run` checks real Container restoration, forced coordinator interruption, Stop, timeout/descendant shutdown and output limits, then removes its disposable resources. Read the [bounded verification plan](../docs/engineering/restyle-workspace-provider-proof.md) and record approval before deployment. The local command `node --test tests/assistant-workspaces/*.test.mjs` uses real workerd/SQLite with controlled Container effects and does not spend provider credits. Neither a local pass nor a deployment dry run establishes real Container acceptance.
+
+`EDITOR_URL=http://127.0.0.1:5299/ npm run check:browser -- editor hosted-services` checks the actual account service manager against local workerd/SQLite. It covers a lost activation response, reload and exact command replay, pause/resume, account isolation, explicit deletion and phone/desktop layouts. Start a fresh Vite process from the tested checkout. The checked service fixture and authenticated HTTP bridge are controlled; actions use the actual isolated runtime. No paid resources are created.

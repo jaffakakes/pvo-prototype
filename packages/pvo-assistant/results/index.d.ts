@@ -1,3 +1,4 @@
+import type { VerifiedServiceAttachment } from "../attachments/index.js";
 import type { NativeOperation } from "../native/index.js";
 import type {
   TaskArtifact,
@@ -24,6 +25,7 @@ export type PreparedTaskResult = {
   taskId: string;
   baseFingerprint: string;
   operations: PreparedComponentOperation[];
+  attachment: VerifiedServiceAttachment | null;
 };
 export type TaskApplication = TaskReference & { artifact: TaskArtifact };
 export const PREPARED_COMPONENT_OPERATIONS: readonly PreparedComponentOperation["kind"][];
@@ -31,6 +33,7 @@ export function parsePreparedTaskResult(value: unknown): PreparedTaskResult;
 export function prepareTaskResult(
   task: TaskRecord,
   operations: unknown,
+  attachment?: VerifiedServiceAttachment | null,
 ): PreparedTaskResult;
 export function matchPreparedTaskResult(
   value: unknown,
