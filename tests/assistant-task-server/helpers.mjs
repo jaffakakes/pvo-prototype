@@ -80,6 +80,7 @@ export async function taskFixture({
         this.ctx.storage.sql.exec("INSERT INTO test_spending (id,body) VALUES (1,?) ON CONFLICT(id) DO UPDATE SET body=excluded.body",JSON.stringify(grants));
       }
       pausePlanning() { this.planningPaused = true; }
+      async alarm() { if (!this.planningPaused) return super.alarm(); }
       stepTimeoutMs() { return this.env.CONTROLLED_PLAN ? 1000 : super.stepTimeoutMs(); }
       leaseMs() { return this.env.CONTROLLED_PLAN ? 1500 : super.leaseMs(); }
       async plan(task, signal, input) {

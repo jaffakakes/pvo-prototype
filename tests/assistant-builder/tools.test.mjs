@@ -67,6 +67,31 @@ test("model tool inputs exclude ownership, grants, credentials, arbitrary comman
   assert.equal(accessed, false);
 });
 
+test("rejected tool inputs identify their exact allowed fields without exposing values", () => {
+  const input = {
+    kind: "workspace_read",
+    revision: 1,
+    path: "src/service.mjs",
+    offset: 0,
+  };
+  assert.deepEqual(parseBuilderTool(input), input);
+  assert.throws(
+    () => parseBuilderTool({ ...input, digest: "private-value" }),
+    (error) => {
+      assert.match(
+        error.message,
+        /workspace_read \(exact fields: kind, revision, path, offset\)/,
+      );
+      assert.doesNotMatch(error.message, /private-value/);
+      return true;
+    },
+  );
+  assert.throws(
+    () => parseBuilderTool({ kind: "history", collection: "repairs" }),
+    /Workspace tool is unsupported/,
+  );
+});
+
 test("file feedback is bounded, Unicode-safe, revision-specific and contains only declared source", () => {
   const content = "🙂é".repeat(3000);
   const source = {
