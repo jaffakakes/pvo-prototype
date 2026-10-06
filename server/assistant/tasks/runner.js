@@ -2,7 +2,7 @@ import {
   authoringInput,
   prepareAuthoringResponse,
   finishAuthoringAttempt,
-} from "../builder/inference.js";
+} from "./authoringResponse.js";
 import { withAssistantDeadline } from "../deadline.js";
 import { transitionGuard, taskClaim } from "./executionClaim.js";
 import { creationDigest } from "./input.js";
