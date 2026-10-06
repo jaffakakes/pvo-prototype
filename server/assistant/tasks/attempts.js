@@ -107,7 +107,7 @@ export class TaskAttempts {
     return true;
   }
 
-  finish(claimed, attempt, command, code, now, wait = null) {
+  finish(claimed, attempt, command, code, now, wait = null, repair = null) {
     const saved = this.get(attempt.id);
     if (!saved || saved.finished) return;
     let task = this.task(attempt.taskId);
@@ -147,14 +147,17 @@ export class TaskAttempts {
       consumed: attempt.dispatched,
     });
     let accepted = false;
+    let repaired = false;
     if (current) {
       try {
         let next = command;
         if (code)
           next = { kind: "fail", failure: { code, stepId: task.stepId } };
+        if (code === "invalid_result" && repair) next = repair;
         if (wait) next = { kind: "wait", ...wait };
         apply(next);
         accepted = !code && !wait;
+        repaired = code === "invalid_result" && repair !== null && !wait;
       } catch {
         apply({
           kind: "fail",
@@ -164,7 +167,7 @@ export class TaskAttempts {
     }
     this.tasks.save(task, revision);
     this.write({ ...attempt, finished: true, budgetRetryAt: now });
-    return accepted;
+    return { accepted, repaired };
   }
 
   recover(now) {

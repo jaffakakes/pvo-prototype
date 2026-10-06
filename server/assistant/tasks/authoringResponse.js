@@ -1,3 +1,5 @@
+import { transitionTask } from "../../../packages/pvo-assistant/tasks/index.js";
+import { AuthoringRepairError } from "./repairFeedback.js";
 import { parseBuilderDecision } from "../../../packages/pvo-assistant/builder/index.js";
 import { serializeServiceAgreement } from "../../../packages/pvo-assistant/services/index.js";
 import { attachmentPlanningContext } from "../attachments/context.js";
@@ -9,7 +11,10 @@ export function authoringInput(coordinator, task) {
   return {
     input: task.input,
     questions: task.questions,
-    evidence: coordinator.evidence.context(task),
+    evidence: {
+      ...coordinator.evidence.context(task),
+      repair: coordinator.repairs.context(task),
+    },
     stepId: task.stepId,
     ...(task.stepId === "attach"
       ? { attachment: attachmentPlanningContext(coordinator, task) }
@@ -33,21 +38,49 @@ export async function prepareAuthoringResponse(
         command: { kind: "checkpoint", stepId: task.stepId },
       };
     } catch {
-      throw Object.assign(new Error("Invalid evidence selection."), {
-        code: "invalid_result",
-      });
+      throw new AuthoringRepairError(
+        "history_selection",
+        "Choose a valid collection and cursor from the saved history instructions.",
+        response,
+      );
     }
   }
   if (task.stepId === "attach") {
     try {
       return await prepareTaskAttachment(coordinator, task, response);
-    } catch {
-      throw Object.assign(new Error("Invalid saved component attachment."), {
-        code: "invalid_result",
-      });
+    } catch (error) {
+      if (error instanceof AuthoringRepairError) throw error;
+      throw new AuthoringRepairError(
+        "attachment_evidence",
+        "The proposed connection could not be matched to current owned, independently checked hosting evidence. Use the exact supplied release and operation.",
+        response,
+      );
     }
   }
-  if (task.stepId !== "build") return response;
+  if (task.stepId !== "build") {
+    try {
+      if (!["ask", "checkpoint"].includes(response?.kind))
+        throw new Error("Return a question or build checkpoint.");
+      if (
+        response.kind === "checkpoint" &&
+        !["plan", "build"].includes(response.stepId)
+      )
+        throw new Error("Planning can only advance to build.");
+      transitionTask(task, response, {
+        ownerId: task.ownerId,
+        expectedRevision: task.revision,
+        now: task.updatedAt,
+        claim: { id: task.claim.id, generation: task.generation },
+      });
+      return response;
+    } catch {
+      throw new AuthoringRepairError(
+        "planning_response",
+        "Return a valid question or build decision using the supplied JSON schema.",
+        response,
+      );
+    }
+  }
   try {
     const decision = parseBuilderDecision(response, {
       hasAgreement: input.build.agreement !== null,
@@ -58,10 +91,8 @@ export async function prepareAuthoringResponse(
         ? await contentDigest(serializeServiceAgreement(decision.agreement))
         : null;
     return { decision, agreementDigest };
-  } catch {
-    throw Object.assign(new Error("Invalid saved builder response."), {
-      code: "invalid_result",
-    });
+  } catch (error) {
+    throw new AuthoringRepairError("builder_response", error.message, response);
   }
 }
 
@@ -74,6 +105,7 @@ export function finishAuthoringAttempt(
   code,
   now,
   wait = null,
+  feedback = null,
 ) {
   let prepared = null;
   if (
@@ -89,22 +121,43 @@ export function finishAuthoringAttempt(
         response.agreementDigest,
         now,
       );
-    } catch {
+    } catch (error) {
       code = "invalid_result";
+      feedback = new AuthoringRepairError(
+        "builder_state",
+        error.message,
+        response.decision,
+      ).feedback;
     }
   }
   let command = response;
   if (response?.evidence) command = response.command;
   else if (claimed.stepId === "build") command = prepared?.command;
   else if (claimed.stepId === "attach") command = response?.command;
-  const accepted = coordinator.attempts.finish(
+  const repair =
+    code === "invalid_result" &&
+    feedback &&
+    !wait &&
+    coordinator.attempts.current(claimed, now)
+      ? coordinator.repairs.prepare(
+          coordinator.attempts.task(claimed.id),
+          attempt,
+          feedback,
+          now,
+        )
+      : null;
+  const result = coordinator.attempts.finish(
     claimed,
     attempt,
     command,
     code,
     now,
     wait,
+    repair?.command ?? null,
   );
+  if (result?.repaired) coordinator.repairs.save(claimed.id, repair.record);
+  const accepted = result?.accepted;
+  if (accepted && !response?.evidence) coordinator.repairs.clear(claimed.id);
   if (accepted && response?.evidence)
     coordinator.evidence.save(claimed.id, response.evidence);
   if (accepted && !response?.evidence && claimed.stepId === "attach")

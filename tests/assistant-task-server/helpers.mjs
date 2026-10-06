@@ -196,6 +196,10 @@ export async function taskFixture({
         if(enabled) this.ctx.storage.sql.exec("CREATE TRIGGER reject_history BEFORE INSERT ON task_operation_history BEGIN SELECT RAISE(ABORT, 'controlled archive failure'); END; CREATE TRIGGER reject_questions BEFORE INSERT ON task_question_history BEGIN SELECT RAISE(ABORT, 'controlled question failure'); END;");
         else this.ctx.storage.sql.exec("DROP TRIGGER reject_history; DROP TRIGGER reject_questions;");
       }
+      repairWriteFailure(enabled) {
+        if(enabled) this.ctx.storage.sql.exec("CREATE TRIGGER reject_repairs BEFORE INSERT ON task_repairs BEGIN SELECT RAISE(ABORT, 'controlled repair failure'); END;");
+        else this.ctx.storage.sql.exec("DROP TRIGGER reject_repairs;");
+      }
       attemptRows() { return this.attempts.entries(); }
       async inspect() { return { alarm: await this.ctx.storage.getAlarm(), records: this.repository.records(),
         identities: this.ctx.storage.sql.exec("SELECT COUNT(*) AS count FROM tasks").one().count }; }
@@ -263,6 +267,7 @@ export async function taskFixture({
           if (action === "select-evidence") return json(await stub.selectEvidence(owner.id,args.id,args.request));
           if (action === "operation-history") return json(await stub.operationHistory(owner.id,args.id,args.after));
           if (action === "history-write-failure") {await stub.historyWriteFailure(args.enabled);return json({ok:true});}
+          if (action === "repair-write-failure") {await stub.repairWriteFailure(args.enabled);return json({ok:true});}
           if (action === "attempt-rows") return json(await stub.attemptRows());
           if (action === "inspect") return json(await stub.inspect());
           if (action === "sweep") return json(await stub.sweep());

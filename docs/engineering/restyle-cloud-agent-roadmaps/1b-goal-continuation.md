@@ -37,3 +37,10 @@ Keep provider source/data retention and execution cleanup separate from the life
 ## What remains protected
 
 Individual calls, payloads, sandbox memory/CPU, concurrency and outbound capabilities remain bounded. Costs require the configured owner allowance. These protect each action; they do not set a fixed number of thinking turns for completing the goal. No new paid run is authorized by this design change. Existing US$1 and US$15 diagnostic approvals have already finished with cleanup.
+
+
+### 2026-10-06 — Authoring validation repair verified; 1B.14 still open
+
+The authoring runner now saves bounded rejected proposals and local validation/compiler diagnostics in an owned journal and queues the same step. The next inference sees that repair evidence, with full saved entries available through bounded history reads. Three identical consecutive check failures without a new answer produce a concrete help question; answering allows continued repair of the same goal. History retrieval does not erase the failure signal. Ready still requires actual independent package checks, owned hosting evidence and successful component compilation.
+
+**1,399 full tests pass**, including a compiler failure/restart/repair and 13 attachment attempts separated by answered help questions; Stop, foreign-owner access, receipt/repair transaction rollback and cleanup are covered. The source slice is verified; beta delivery is pending. **1B.14 remains unchecked** because generic tool/review progress detection and replacement of expired inactive hosting are still open. No paid calls/resources.

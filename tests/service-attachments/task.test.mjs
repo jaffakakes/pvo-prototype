@@ -147,10 +147,13 @@ test("invalid source, invented release, wrong control and hidden originals canno
     });
     try {
       expectStatus(await f.control({ action: "sweep" }), 200);
+      assert.equal((await current(f, task)).state, "queued");
+      expectStatus(await f.control({ action: "sweep" }), 200);
       const end = await current(f, task);
-      assert.equal(end.state, "failed");
-      assert.equal(end.failure.code, "invalid_result");
-      assert.equal(end.usage.modelTurns, 1);
+      assert.equal(end.state, "waiting_for_answer");
+      assert.equal(end.failure, null);
+      assert.equal(end.usage.modelTurns, 3);
+      assert.ok(end.questions[0].choices.includes("Keep repairing"));
       assert.equal(end.result, null);
       assert.equal((await f.control({ action: "results" })).body.count, 0);
     } finally {
@@ -216,6 +219,106 @@ test("result storage failure rolls back ready state and its inference receipt to
       1,
       "the lost completion remains reserved for recovery",
     );
+  } finally {
+    await f.close();
+  }
+});
+
+test("compiler feedback and rejected source survive restart, then repaired source passes real checks", async () => {
+  let count = 0;
+  const { f, task, calls } = await setup({
+    propose: (task) => {
+      const command = proposal(task);
+      if (++count <= 2)
+        command.component.source.structure = "<script>bad</script>";
+      return command;
+    },
+  });
+  try {
+    expectStatus(await f.control({ action: "sweep" }), 200);
+    assert.equal((await current(f, task)).state, "queued");
+    const feedback = calls[1].evidenceContext.repair;
+    assert.equal(feedback.check, "component_validation");
+    assert.match(feedback.message, /[Ss]tructure/);
+    assert.ok(feedback.proposal.text.includes("<script>bad</script>"));
+    await f.restart();
+    expectStatus(await f.control({ action: "sweep" }), 200);
+    const ready = await current(f, task);
+    assert.equal(ready.state, "ready", JSON.stringify(ready.failure));
+    assert.equal(ready.usage.modelTurns, 3);
+    assert.equal(calls[2].evidenceContext.repair.repetitions, 2);
+    assert.equal(
+      ready.operations.filter((row) => row.failure?.code === "invalid_result")
+        .length,
+      2,
+    );
+    assert.equal((await f.control({ action: "results" })).body.count, 1);
+    const request = {
+      kind: "history",
+      collection: "repairs",
+      after: 0,
+      offset: 0,
+      notes: "",
+    };
+    const history = await f.control({
+      action: "select-evidence",
+      id: task.id,
+      request,
+    });
+    expectStatus(history, 200);
+    assert.equal(JSON.parse(history.body.content).message, feedback.message);
+    expectStatus(
+      await f.request("/__test", {
+        session: f.otherCookie,
+        body: { action: "select-evidence", id: task.id, request },
+      }),
+      409,
+    );
+  } finally {
+    await f.close();
+  }
+});
+
+test("answering a repeated-check help question resumes the same attachment without a goal-wide retry limit", async () => {
+  let invalid = true;
+  const { f, task, calls } = await setup({
+    propose: (task) => {
+      const command = proposal(task);
+      if (invalid) command.component.source.structure = "<script>bad</script>";
+      return command;
+    },
+  });
+  try {
+    for (let round = 0; round < 4; round++) {
+      await f.control({ action: "sweep" });
+      await f.control({ action: "sweep" });
+      const waiting = await current(f, task);
+      assert.equal(waiting.state, "waiting_for_answer");
+      assert.equal(waiting.usage.modelTurns, (round + 1) * 3);
+      assert.equal(calls.at(-1).evidenceContext.repair.repetitions, 2);
+      const question = waiting.questions.at(-1);
+      expectStatus(
+        await f.request(path(task) + "/answers", {
+          body: {
+            expectedRevision: waiting.revision,
+            questionId: question.id,
+            questionRevision: 0,
+            operationId: `continue-repair-${round}`,
+            value: "Keep repairing",
+          },
+        }),
+        200,
+      );
+      // Capacity can replenish without expiring the unfinished goal.
+      await f.control({ action: "time", now: NOW + (round + 1) * 60000 });
+    }
+    invalid = false;
+    await f.restart();
+    await f.control({ action: "time", now: NOW + 4 * 60000 });
+    expectStatus(await f.control({ action: "sweep" }), 200);
+    const ready = await current(f, task);
+    assert.equal(ready.state, "ready");
+    assert.equal(ready.usage.modelTurns, 13);
   } finally {
     await f.close();
   }
