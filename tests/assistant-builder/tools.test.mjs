@@ -145,7 +145,7 @@ test("the model only sees tools backed by supplied adapters and schemas cannot b
   assert.equal(
     builderToolDefinitions(["workspace_start"])[0].schema.properties.revision
       .maximum,
-    64,
+    Number.MAX_SAFE_INTEGER,
   );
 });
 

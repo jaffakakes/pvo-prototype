@@ -1,11 +1,10 @@
 import { SERVICE_PACKAGE_LIMITS } from "../services/index.js";
-import { WORKSPACE_LIMITS } from "../workspaces/index.js";
 import { TASK_LIMITS } from "../tasks/index.js";
 import { BUILDER_TOOL_KINDS } from "./tools.js";
 const revision = {
   type: "integer",
   minimum: 1,
-  maximum: WORKSPACE_LIMITS.operations,
+  maximum: Number.MAX_SAFE_INTEGER,
 };
 const digest = { type: "string", pattern: "^[a-f0-9]{64}$" };
 const path = { type: "string", maxLength: 160 };

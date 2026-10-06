@@ -12,6 +12,7 @@ import {
   deferred,
   expectStatus,
 } from "./task.helpers.mjs";
+import { dinnerSource, packageFor } from "./fixtures.mjs";
 const options = { timeout: 25000 };
 
 test(
@@ -290,7 +291,7 @@ test(
 );
 
 test(
-  "validation enforces the existing tool budget even when saved cases remain unfinished",
+  "validation completes every saved case beyond the former 24-tool cutoff",
   options,
   async () => {
     const basic = planner({ cases: 16 });
@@ -321,15 +322,91 @@ test(
         () => current(f, task),
         (value) => value.state === "failed",
       );
-      assert.equal(end.stepId, "validate", JSON.stringify(end));
-      assert.equal(end.failure.code, "budget_exceeded");
-      assert.equal(end.usage.toolCalls, 24);
-      assert.equal(end.usage.modelTurns, 6);
+      assert.equal(end.stepId, "attach", JSON.stringify(end));
+      assert.equal(
+        end.failure.code,
+        "invalid_result",
+        "Backend fixture supplies no component proposal",
+      );
+      assert.equal(end.usage.toolCalls, 34);
+      assert.equal(end.usage.modelTurns, 7);
       assert.equal(end.usage.reservedToolCalls, 0);
       const state = await validation(f, task);
-      assert.equal(state.artifacts[0].report.status, "running");
-      assert.equal(state.artifacts[0].report.cases.length, 7);
+      assert.equal(state.artifacts[0].report.status, "passed");
+      assert.equal(state.artifacts[0].report.cases.length, 16);
       assert.equal(end.result, null);
+    } finally {
+      await f.close();
+    }
+  },
+);
+
+test(
+  "a fifth package repair is independently checked and retains all earlier failure evidence",
+  options,
+  async () => {
+    const basic = planner();
+    const f = await taskFixture({
+      services: true,
+      workspaces: true,
+      planner: async (request) => {
+        const task = await request.clone().json();
+        const decision = await (await basic(request)).json();
+        const context = task.builderContext;
+        if (task.stepId !== "build" || !context?.agreement)
+          return Response.json(decision);
+        const writes = context.feedback.filter(
+          (item) => item.kind === "workspace_write",
+        );
+        if (
+          !writes.length ||
+          context.reviewFeedback?.review.revision === writes.length
+        ) {
+          return Response.json({
+            kind: "tools",
+            review: null,
+            calls: [
+              {
+                kind: "workspace_write",
+                expectedRevision: writes.length,
+                files: packageFor(
+                  writes.length === 4
+                    ? dinnerSource
+                    : `export function execute({state}){return {result:'bad-${writes.length}',state};}`,
+                ).files,
+              },
+            ],
+          });
+        }
+        return Response.json(decision);
+      },
+    });
+    try {
+      const task = await saved(f);
+      const stored = await until(
+        () => validation(f, task),
+        (value) => value.artifacts.at(-1)?.report.status === "passed",
+      );
+      assert.equal(stored.artifacts.length, 5);
+      assert.deepEqual(
+        stored.artifacts.map((item) => item.report.status),
+        ["failed", "failed", "failed", "failed", "passed"],
+      );
+      assert.equal(
+        new Set(
+          stored.artifacts.map((item) => item.artifact.identity.packageDigest),
+        ).size,
+        5,
+      );
+      assert.equal(
+        new Set(
+          stored.artifacts.map(
+            (item) => item.artifact.identity.agreementDigest,
+          ),
+        ).size,
+        1,
+      );
+      assert.ok(stored.attempts.every((item) => item.settled));
     } finally {
       await f.close();
     }

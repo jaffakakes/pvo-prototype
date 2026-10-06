@@ -9,7 +9,6 @@ import {
 
 export const BUILDER_RESEARCH_KINDS = Object.freeze(["web_search", "web_read"]);
 export const BUILDER_RESEARCH_LIMITS = Object.freeze({
-  calls: 4,
   queryBytes: 200,
   urlBytes: 2048,
   resultBytes: 48 * 1024,

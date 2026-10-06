@@ -4,6 +4,7 @@ import {
   replayTaskCreation,
   transitionTask,
 } from "../../../packages/pvo-assistant/tasks/index.js";
+import { TaskOperationHistory } from "./operationHistory.js";
 import { HttpError } from "../../http.js";
 import { TASK_STORAGE_LIMITS as limits } from "./input.js";
 
@@ -20,6 +21,7 @@ const unsettled = (task) =>
 export class TaskRepository {
   constructor(sql) {
     this.sql = sql;
+    this.history = new TaskOperationHistory(sql);
     sql.exec(`CREATE TABLE IF NOT EXISTS owner (id INTEGER PRIMARY KEY CHECK (id = 1), owner_id TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY, local_id TEXT NOT NULL UNIQUE, created_at INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS tasks (id TEXT PRIMARY KEY, operation_id TEXT NOT NULL UNIQUE,
@@ -183,6 +185,17 @@ export class TaskRepository {
       );
     let next;
     try {
+      const archived = ["record_operation", "reconcile_operation"].includes(
+        command.kind,
+      )
+        ? this.history.get(task.id, command.operation?.id)
+        : null;
+      if (archived) {
+        // Validate an exact immutable replay through the same domain rules. The
+        // temporary view is never stored and cannot replace current unknown work.
+        transitionTask({ ...task, operations: [archived] }, command, guard);
+        return task;
+      }
       next = transitionTask(task, command, guard);
     } catch {
       throw new HttpError(
@@ -195,6 +208,13 @@ export class TaskRepository {
   }
 
   save(task, expectedRevision) {
+    const row = this.sql
+      .exec("SELECT record FROM tasks WHERE id=?", task.id)
+      .toArray()[0];
+    const before = row?.record ? parseTaskRecord(JSON.parse(row.record)) : null;
+    if (!before || before.revision !== expectedRevision)
+      throw new HttpError(409, "The task changed. Refresh its saved state.");
+    this.history.archive(before, task);
     const changed = this.sql.exec(
       `UPDATE tasks SET record = ? WHERE id = ?
       AND json_extract(record, '$.revision') = ?`,
@@ -214,8 +234,10 @@ export class TaskRepository {
         task.expiresAt <= now &&
         !unsettled(task) &&
         !heldTasks.has(task.id)
-      )
+      ) {
+        this.history.remove(task.id);
         this.sql.exec("UPDATE tasks SET record = NULL WHERE id = ?", task.id);
+      }
     }
   }
 

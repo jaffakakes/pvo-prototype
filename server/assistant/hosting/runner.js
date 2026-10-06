@@ -1,4 +1,3 @@
-import { TASK_LIMITS } from "../../../packages/pvo-assistant/tasks/index.js";
 import { publishTaskService } from "../tasks/providerRunner.js";
 import {
   hasCurrentClaim,
@@ -20,20 +19,6 @@ export async function runHostingStep(coordinator, claimed) {
         );
     });
   try {
-    const retained = coordinator.providers
-      .entries()
-      .some(
-        (row) =>
-          row.taskId === claimed.id &&
-          row.settled &&
-          row.outcome === "completed" &&
-          !row.cancelled &&
-          (!row.cancelRequested || row.retained),
-      );
-    if (!retained && claimed.usage.toolCalls >= TASK_LIMITS.toolCalls)
-      throw Object.assign(new Error("Task tool limit reached."), {
-        code: "budget_exceeded",
-      });
     const row = await publishTaskService(coordinator, claimed);
     if (!row?.settled) return;
     if (

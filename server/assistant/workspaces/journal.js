@@ -49,11 +49,6 @@ export class WorkspaceJournal {
       JSON.stringify(action),
     );
   }
-  actionCount() {
-    return this.sql
-      .exec("SELECT COUNT(*) AS count FROM workspace_actions")
-      .one().count;
-  }
   expireContent() {
     this.sql.exec("DELETE FROM workspace_source");
     this.sql.exec("DELETE FROM workspace_actions");

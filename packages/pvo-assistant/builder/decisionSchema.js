@@ -1,7 +1,6 @@
 import { BUILDER_RESEARCH_KINDS } from "./research.js";
 import { SERVICE_PACKAGE_LIMITS as service } from "../services/index.js";
 import { TASK_LIMITS } from "../tasks/index.js";
-import { WORKSPACE_LIMITS } from "../workspaces/index.js";
 import { BUILDER_LIMITS } from "./decisions.js";
 
 const string = (maximum) => ({ type: "string", maxLength: maximum });
@@ -92,7 +91,7 @@ export function builderDecisionSchema(hasAgreement, definitions) {
     revision: {
       type: "integer",
       minimum: 1,
-      maximum: WORKSPACE_LIMITS.operations,
+      maximum: Number.MAX_SAFE_INTEGER,
     },
     digest: { type: "string", pattern: "^[a-f0-9]{64}$" },
     entrypoint: string(160),

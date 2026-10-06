@@ -190,12 +190,8 @@ test("usage is reserved before consumption and unfinished reservations prevent s
   task = command(task, {
     kind: "reserve_usage",
     modelTurns: 101,
-    toolCalls: 24,
+    toolCalls: 101,
   });
-  assert.throws(
-    () => command(task, { kind: "reserve_usage", modelTurns: 0, toolCalls: 1 }),
-    /range/,
-  );
   assert.throws(
     () => command(task, { kind: "complete", result: result() }),
     /reservations/,
@@ -203,17 +199,17 @@ test("usage is reserved before consumption and unfinished reservations prevent s
   task = command(task, {
     kind: "settle_usage",
     modelTurns: 100,
-    toolCalls: 20,
+    toolCalls: 100,
     consumed: true,
   });
   task = command(task, {
     kind: "settle_usage",
     modelTurns: 1,
-    toolCalls: 4,
+    toolCalls: 1,
     consumed: false,
   });
   assert.equal(task.usage.modelTurns, 100);
-  assert.equal(task.usage.toolCalls, 20);
+  assert.equal(task.usage.toolCalls, 100);
   assert.throws(
     () =>
       command(task, {

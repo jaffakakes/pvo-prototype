@@ -19,7 +19,6 @@ export const SERVICE_TEST_LIMITS = Object.freeze({
   invocationBytes: 64 * 1024,
   replyBytes: 64 * 1024,
   reportBytes: 48 * 1024,
-  packages: 4,
 });
 const failures = [
   "invalid_reply",

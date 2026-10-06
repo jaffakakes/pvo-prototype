@@ -68,6 +68,7 @@ export const BUILDER_LIMITS: Readonly<{
   batchCalls: number;
   decisionBytes: number;
   feedbackBytes: number;
+  feedbackEntries: number;
   promptBytes: number;
 }>;
 export function parseBuilderDecision(
@@ -156,7 +157,6 @@ export type BuilderResearch =
   { kind: "web_search"; query: string } | { kind: "web_read"; url: string };
 export const BUILDER_RESEARCH_KINDS: readonly BuilderResearch["kind"][];
 export const BUILDER_RESEARCH_LIMITS: Readonly<{
-  calls: number;
   queryBytes: number;
   urlBytes: number;
   resultBytes: number;

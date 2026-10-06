@@ -13,10 +13,7 @@ import {
   serializeServiceFiles,
   SERVICE_PACKAGE_LIMITS,
 } from "../services/index.js";
-import {
-  WORKSPACE_LIMITS,
-  parseWorkspaceOperationId,
-} from "../workspaces/index.js";
+import { parseWorkspaceOperationId } from "../workspaces/index.js";
 
 export const BUILDER_TOOL_LIMITS = Object.freeze({
   readBytes: 4096,
@@ -50,13 +47,13 @@ export function parseBuilderTool(value) {
   object(value, ["kind", ...(fields[kind] ?? [])], "Workspace tool");
   choice(kind, BUILDER_TOOL_KINDS, "Workspace tool");
   if (value.revision !== undefined)
-    integer(value.revision, WORKSPACE_LIMITS.operations, "Source revision", 1);
+    integer(value.revision, Number.MAX_SAFE_INTEGER, "Source revision", 1);
   if (value.digest !== undefined) digest(value.digest, "Source digest");
   if (value.path !== undefined) parseServiceFilePath(value.path);
   if (value.kind === "workspace_write") {
     integer(
       value.expectedRevision,
-      WORKSPACE_LIMITS.operations,
+      Number.MAX_SAFE_INTEGER,
       "Expected source revision",
     );
     parseServiceFiles(value.files);

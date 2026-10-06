@@ -113,7 +113,6 @@ export const SERVICE_TEST_LIMITS: Readonly<{
   invocationBytes: number;
   replyBytes: number;
   reportBytes: number;
-  packages: number;
 }>;
 export type ServiceTestIdentity = {
   agreementDigest: string;

@@ -117,7 +117,7 @@ test(
 );
 
 test(
-  "public research stops at four calls even when the model asks for more",
+  "public research continues past four calls and saves all evidence without a VM",
   options,
   async () => {
     let reads = 0;
@@ -130,20 +130,21 @@ test(
       },
       planner: async (request) => {
         const task = await request.json();
-        return Response.json(plan(task) ?? research([read, read]));
+        return Response.json(
+          plan(task) ?? (reads < 8 ? research([read, read]) : ask()),
+        );
       },
     });
     try {
       const task = await saved(fixture);
       const result = await until(
         () => current(fixture, task),
-        (value) => value.state === "failed",
+        (value) => value.state === "waiting_for_answer",
       );
-      assert.equal(result.failure.code, "budget_exceeded");
-      assert.equal(reads, 4);
-      assert.equal(result.usage.toolCalls, 4);
+      assert.equal(reads, 8);
+      assert.equal(result.usage.toolCalls, 8);
       assert.equal(result.usage.reservedToolCalls, 0);
-      assert.equal((await researchRows(fixture)).length, 4);
+      assert.equal((await researchRows(fixture)).length, 8);
       assert.equal((await rows(fixture)).links.length, 0);
     } finally {
       await fixture.close();

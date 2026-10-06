@@ -163,6 +163,14 @@ export async function taskFixture({
       async providerStatus(identity) { const stub=this.env.SERVICE_HOSTS.getByName(identity.serviceId); return { observation: await stub.lookup(identity), stats: await stub.stats(identity) }; }
       async providerProbe(identity, input) { return this.env.SERVICE_HOSTS.getByName(identity.serviceId).probe(identity, input); }
       setTime(now) { this.clock = now; }
+      operationHistory(ownerId,id,after) {
+        this.repository.bindOwner(ownerId);this.repository.read(id,this.now());
+        return this.repository.history.page(id,after);
+      }
+      historyWriteFailure(enabled) {
+        if(enabled) this.ctx.storage.sql.exec("CREATE TRIGGER reject_history BEFORE INSERT ON task_operation_history BEGIN SELECT RAISE(ABORT, 'controlled archive failure'); END;");
+        else this.ctx.storage.sql.exec("DROP TRIGGER reject_history");
+      }
       async inspect() { return { alarm: await this.ctx.storage.getAlarm(), records: this.repository.records(),
         identities: this.ctx.storage.sql.exec("SELECT COUNT(*) AS count FROM tasks").one().count }; }
       async step(ownerId, id, command, expectedRevision) {
@@ -214,6 +222,8 @@ export async function taskFixture({
           if (action === "provider-status") return json(await stub.providerStatus(args.identity));
           if (action === "provider-probe") return json(await stub.providerProbe(args.identity, args.input));
           if (action === "time") { await stub.setTime(args.now); return json({ ok: true }); }
+          if (action === "operation-history") return json(await stub.operationHistory(owner.id,args.id,args.after));
+          if (action === "history-write-failure") {await stub.historyWriteFailure(args.enabled);return json({ok:true});}
           if (action === "inspect") return json(await stub.inspect());
           if (action === "sweep") return json(await stub.sweep());
           if (action === "fail-result-write") { await stub.failResultWrite(); return json({ ok: true }); }

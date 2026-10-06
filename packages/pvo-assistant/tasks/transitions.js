@@ -1,4 +1,5 @@
 import { TASK_FAILURES, TASK_LIMITS as limits } from "./limits.js";
+import { checkpointTaskOperations } from "./checkpoint.js";
 import { parseTaskRecord } from "./record.js";
 import { object, id, integer, requireTask, text } from "./validation.js";
 import {
@@ -62,6 +63,7 @@ export function transitionTask(value, command, guard) {
       ["reconcile_operation", "reconcile_usage"].includes(command.kind),
     "This task attempt is terminal.",
   );
+  checkpointTaskOperations(task, command.operation?.id ?? command.operationId);
   task.updatedAt = guard.now;
   const replay = applyCommand(task, command, guard);
   if (replay) return parseTaskRecord(value);
@@ -228,7 +230,7 @@ function updateUsage(task, command) {
     Number.MAX_SAFE_INTEGER,
     "Model turn reservation",
   );
-  integer(command.toolCalls, limits.toolCalls, "Tool call reservation");
+  integer(command.toolCalls, Number.MAX_SAFE_INTEGER, "Tool call reservation");
   requireTask(
     command.modelTurns + command.toolCalls > 0,
     "A usage change must reserve or settle work.",

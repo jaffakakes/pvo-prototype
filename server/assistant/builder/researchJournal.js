@@ -1,8 +1,5 @@
 import { transitionTask } from "../../../packages/pvo-assistant/tasks/index.js";
-import {
-  BUILDER_RESEARCH_LIMITS,
-  parseBuilderResearchResult,
-} from "../../../packages/pvo-assistant/builder/index.js";
+import { parseBuilderResearchResult } from "../../../packages/pvo-assistant/builder/index.js";
 import {
   hasCurrentClaim,
   taskClaim,
@@ -53,13 +50,6 @@ export class TaskResearch {
         throw new Error("Research operation input conflicts.");
       return prior;
     }
-    if (
-      this.entries().filter((row) => row.taskId === task.id).length >=
-      BUILDER_RESEARCH_LIMITS.calls
-    )
-      throw Object.assign(new Error("Task research limit reached."), {
-        code: "budget_exceeded",
-      });
     const revision = task.revision;
     const apply = (command) => {
       task = transitionTask(

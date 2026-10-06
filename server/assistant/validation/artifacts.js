@@ -2,7 +2,6 @@ import {
   newServiceTestReport,
   appendServiceCaseResult,
   parseServiceTestReport,
-  SERVICE_TEST_LIMITS,
 } from "../../../packages/pvo-assistant/services/index.js";
 
 /** Immutable packages and platform reports live in the owner's coordinator, outside generated code. */
@@ -24,14 +23,6 @@ export class ServiceArtifacts {
       .toArray()[0];
     return row ? JSON.parse(row.body) : null;
   }
-  count(taskId) {
-    return this.sql
-      .exec(
-        "SELECT COUNT(*) AS count FROM task_service_artifacts WHERE task_id=?",
-        taskId,
-      )
-      .one().count;
-  }
   save(taskId, round, artifact) {
     const prior = this.get(taskId, round);
     if (prior) {
@@ -39,10 +30,6 @@ export class ServiceArtifacts {
         throw new Error("Saved service package cannot be replaced.");
       return prior;
     }
-    if (this.count(taskId) >= SERVICE_TEST_LIMITS.packages)
-      throw Object.assign(new Error("Service package limit reached."), {
-        code: "budget_exceeded",
-      });
     const value = {
       taskId,
       round,

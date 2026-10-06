@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { WORKSPACE_LIMITS as limits } from "../../packages/pvo-assistant/workspaces/index.js";
 import { prepareWorkspaceIdentity } from "../../server/assistant/workspaces/identity.js";
 import { create, claim } from "../assistant-tasks/fixtures.mjs";
 import { identity, files, workspaceFixture } from "./helpers.mjs";
@@ -28,12 +27,12 @@ test("workspace identity is derived from the saved task and survives execution-g
   );
 });
 
-test("new saves cannot grow the operation journal past its cap, but exact receipts still replay", async () => {
+test("100 source revisions survive restart and keep exact replay without a goal-wide cutoff", async () => {
   const f = await workspaceFixture();
   const who = await identity();
   try {
     let first;
-    for (let revision = 0; revision < limits.operations; revision++) {
+    for (let revision = 0; revision < 100; revision++) {
       const receipt = ok(
         await f.call("save", who, {
           id: `save-${revision}`,
@@ -46,8 +45,8 @@ test("new saves cannot grow the operation journal past its cap, but exact receip
     assert.equal(
       (
         await f.call("save", who, {
-          id: "one-too-many",
-          expectedRevision: limits.operations,
+          id: "save-0",
+          expectedRevision: 100,
           files: files(),
         })
       ).status,
@@ -63,9 +62,21 @@ test("new saves cannot grow the operation journal past its cap, but exact receip
       ),
       first,
     );
-    assert.equal(
-      ok(await f.call("inspect", who)).actions.length,
-      limits.operations,
+    const before = ok(await f.call("inspect", who));
+    assert.equal(before.actions.length, 100);
+    const source = ok(await f.call("lookup", who)).source;
+    assert.equal(source.revision, 100);
+    await f.restart();
+    assert.deepEqual(ok(await f.call("lookup", who)).source, source);
+    assert.deepEqual(
+      ok(
+        await f.call("save", who, {
+          id: "save-0",
+          expectedRevision: 0,
+          files: files(),
+        }),
+      ),
+      first,
     );
   } finally {
     await f.close();

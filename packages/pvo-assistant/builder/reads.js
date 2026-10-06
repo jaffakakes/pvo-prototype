@@ -11,10 +11,7 @@ import {
   SERVICE_PACKAGE_LIMITS,
   parseServiceFilePath,
 } from "../services/index.js";
-import {
-  parseWorkspaceSnapshot,
-  WORKSPACE_LIMITS,
-} from "../workspaces/index.js";
+import { parseWorkspaceSnapshot } from "../workspaces/index.js";
 import { BUILDER_TOOL_LIMITS, parseBuilderTool } from "./tools.js";
 
 const bytes = (value) => new TextEncoder().encode(value).length;
@@ -74,7 +71,7 @@ export function parseBuilderReadResult(input, value) {
   const tool = parseBuilderTool(input);
   if (tool.kind === "workspace_list") {
     object(value, ["revision", "digest", "files"], "Workspace file list");
-    integer(value.revision, WORKSPACE_LIMITS.operations, "Source revision");
+    integer(value.revision, Number.MAX_SAFE_INTEGER, "Source revision");
     if (value.revision === 0)
       requireTask(value.digest === null, "An empty workspace has no digest.");
     else digest(value.digest, "Source digest");

@@ -114,3 +114,24 @@ test("builder feedback stays bounded while the saved decision retains full sourc
   assert.equal(state.omittedFeedback, 2);
   assert.ok(JSON.stringify(builderContext(state)).length < 150000);
 });
+
+test("100 tool results retain the agreement and current cursor with bounded recent context", () => {
+  let state = agreed();
+  const agreement = structuredClone(state.agreement);
+  for (let index = 0; index < 100; index++) {
+    state = acceptBuilderDecision(state, tools([{ kind: "workspace_list" }]));
+    state = beginBuilderBatch(state, index + 1);
+    state = recordBuilderTool(state, nextBuilderTool(state), {
+      revision: index,
+    });
+    state = parseBuilderState(JSON.parse(JSON.stringify(state)));
+  }
+  assert.equal(state.feedback.length, 24);
+  assert.equal(state.omittedFeedback, 76);
+  assert.equal(state.feedback[0].result.revision, 76);
+  assert.equal(state.feedback.at(-1).result.revision, 99);
+  assert.equal(state.round, 101);
+  assert.equal(state.cursor, 1);
+  assert.equal(builderStage(state), "model");
+  assert.deepEqual(state.agreement, agreement);
+});

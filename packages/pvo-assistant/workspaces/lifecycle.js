@@ -47,7 +47,8 @@ export function assertWorkspaceOpen(state, now) {
 export function advanceWorkspaceSource(state, revision, now) {
   assertWorkspaceOpen(state, now);
   requireWorkspace(
-    revision === state.sourceRevision + 1 && revision <= limits.operations,
+    revision === state.sourceRevision + 1 &&
+      revision <= Number.MAX_SAFE_INTEGER,
     "workspace_source_conflict",
   );
   return { ...state, sourceRevision: revision };

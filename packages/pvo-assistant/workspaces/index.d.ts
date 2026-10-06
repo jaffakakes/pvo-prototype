@@ -12,7 +12,6 @@ export type WorkspaceSnapshot = {
   files: ServiceSourceFile[];
 };
 export const WORKSPACE_LIMITS: Readonly<{
-  operations: number;
   reservationMs: number;
   retentionMs: number;
   sessionMs: number;

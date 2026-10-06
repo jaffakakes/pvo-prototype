@@ -1,4 +1,3 @@
-import { TASK_LIMITS } from "../../../packages/pvo-assistant/tasks/index.js";
 import {
   SERVICE_TEST_LIMITS,
   SERVICE_TEST_POLICY,
@@ -75,14 +74,6 @@ export async function runServiceValidation(coordinator, claimed) {
     await coordinator.transaction(() =>
       completeReport(coordinator, claimed, state, saved.report),
     );
-    return;
-  }
-  if (
-    claimed.usage.toolCalls >= TASK_LIMITS.toolCalls ||
-    (!saved &&
-      coordinator.artifacts.count(claimed.id) >= SERVICE_TEST_LIMITS.packages)
-  ) {
-    await fail(coordinator, claimed, "budget_exceeded");
     return;
   }
   const input = saved

@@ -16,13 +16,13 @@ import {
   parseServiceFilePath,
   SERVICE_PACKAGE_LIMITS,
 } from "../services/index.js";
-import { WORKSPACE_LIMITS } from "../workspaces/index.js";
 import { parseBuilderTool } from "./tools.js";
 
 export const BUILDER_LIMITS = Object.freeze({
   batchCalls: 4,
   decisionBytes: 1024 * 1024 + 4096,
   feedbackBytes: 128 * 1024,
+  feedbackEntries: 24,
   promptBytes: 640 * 1024,
 });
 const fields = {
@@ -82,7 +82,7 @@ export function parseBuilderDecision(value, { hasAgreement, available }) {
     parseBuilderDecision(value.review, { hasAgreement, available });
   }
   if (kind === "review") {
-    integer(value.revision, WORKSPACE_LIMITS.operations, "Source revision", 1);
+    integer(value.revision, Number.MAX_SAFE_INTEGER, "Source revision", 1);
     digest(value.digest, "Saved source digest");
     parseServiceFilePath(value.entrypoint);
     requireTask(
