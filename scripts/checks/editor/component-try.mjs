@@ -92,7 +92,9 @@ export async function checkComponentTry({
     await reopen();
     assert.deepEqual(await saved(), [pending]);
     await start();
-    await submit("{state.private.name}");
+    await getPage()
+      .getByRole("button", { name: "Check saved test", exact: true })
+      .click();
     await getPage().waitForFunction(() =>
       Object.values(
         window.resultProbe.tryMode.getTryRuntime()?.state.responses ?? {},

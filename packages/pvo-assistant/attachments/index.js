@@ -10,6 +10,7 @@ export {
   serviceAttachmentRequest,
   matchAttachmentOperation,
   validateCompiledServiceAttachment,
+  validateServiceBindingFields,
 } from "./policy.js";
 
 export {
@@ -42,3 +43,10 @@ export {
   resolvePublicServiceSubmissionInput,
   matchesPublicServiceRequest,
 } from "./publicConnection.js";
+
+export {
+  ServiceSubmissionHttpError,
+  sendServiceSubmission,
+} from "./transport.js";
+
+export { recoverServiceSubmissionFields } from "./recovery.js";

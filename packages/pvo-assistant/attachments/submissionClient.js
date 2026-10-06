@@ -89,7 +89,7 @@ export function createServiceSubmissionClient({ store, createId, send }) {
       });
       return dispatch(slot, saved, context);
     },
-    async retry(slot, target, context) {
+    async retry(slot, target, context, expectedActionId) {
       assertCurrent(context);
       target = parseServiceSubmissionTarget(target);
       const value = await store.read(slot);
@@ -98,7 +98,16 @@ export function createServiceSubmissionClient({ store, createId, send }) {
           "submission_missing",
           "There is no saved submission to retry.",
         );
-      return dispatch(slot, retryServiceSubmission(value, target), context);
+      const saved = retryServiceSubmission(value, target);
+      if (
+        expectedActionId !== undefined &&
+        saved.action.actionId !== expectedActionId
+      )
+        throw failure(
+          "submission_changed",
+          "A newer submission is saved. Open its recovery option again.",
+        );
+      return dispatch(slot, saved, context);
     },
   };
 }

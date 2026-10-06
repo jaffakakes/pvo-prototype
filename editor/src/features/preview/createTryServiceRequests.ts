@@ -1,5 +1,7 @@
 import {
   createServiceSubmissionClient,
+  ServiceSubmissionHttpError,
+  sendServiceSubmission,
   matchesComponentServiceRequest,
   type ServiceSubmissionStore,
 } from "../../../../packages/pvo-assistant/attachments/index.js";
@@ -11,10 +13,6 @@ import type {
   ComponentResponse,
   PvoComponent,
 } from "../../domain/project/model";
-import {
-  ComponentTestHttpError,
-  sendComponentTest,
-} from "../../infrastructure/services/componentTestTransport";
 
 export type TryServiceRequest = (
   request: { url: string; method: string; body?: string },
@@ -59,14 +57,29 @@ export function createTryServiceRequests(host: TryServiceHost) {
           store,
           createId: host.createId,
           send: (wire, requestSignal) =>
-            sendComponentTest(wire, scope.origin, host.request, requestSignal),
+            sendServiceSubmission(
+              wire,
+              prepared.target,
+              host.request,
+              requestSignal,
+            ),
         });
         const context = { signal, isCurrent };
-        const existing = retrySaved ? await store.read(prepared.slot) : null;
+        const existing =
+          retrySaved || response.recoveryActionId
+            ? await store.read(prepared.slot)
+            : null;
         // A retry of failed feedback can recover even a response saved after the SDK timed out
         // or before a playback route failed. Starting a new Try is a distinct submission.
+        if (response.recoveryActionId && !existing)
+          throw new Error("The saved submission is no longer available.");
         const saved = existing
-          ? await client.retry(prepared.slot, prepared.target, context)
+          ? await client.retry(
+              prepared.slot,
+              prepared.target,
+              context,
+              response.recoveryActionId,
+            )
           : await client.submit(
               prepared.slot,
               prepared.target,
@@ -77,7 +90,7 @@ export function createTryServiceRequests(host: TryServiceHost) {
         return Response.json(saved.response);
       } catch (error) {
         isCurrent();
-        if (error instanceof ComponentTestHttpError)
+        if (error instanceof ServiceSubmissionHttpError)
           return new Response(null, { status: error.status });
         throw error;
       } finally {

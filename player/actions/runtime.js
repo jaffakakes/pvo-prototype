@@ -1,8 +1,16 @@
-import { createPvoRuntime, observeDiagnostic } from "../../packages/pvo-sdk/index.js";
+import {
+  createPvoRuntime,
+  observeDiagnostic,
+} from "../../packages/pvo-sdk/index.js";
 import { actionOperationIsCurrent } from "./operations.js";
 import { clearRequestStatus, updateRequestStatus } from "./request-status.js";
 
-export function createActionRuntimeAdapter({ session, refs, adapters }) {
+export function createActionRuntimeAdapter({
+  session,
+  refs,
+  adapters,
+  services,
+}) {
   function makeActionRuntime(project) {
     let runtime;
     const contextIsCurrent = (context) => {
@@ -12,10 +20,13 @@ export function createActionRuntimeAdapter({ session, refs, adapters }) {
     };
 
     runtime = createPvoRuntime(project, {
-      ...(typeof session.onDiagnostic === "function" ? {
-        onDiagnostic: event => observeDiagnostic(session.onDiagnostic, event),
-        captureDiagnosticBodies: session.captureDiagnosticBodies,
-      } : {}),
+      ...(typeof session.onDiagnostic === "function"
+        ? {
+            onDiagnostic: (event) =>
+              observeDiagnostic(session.onDiagnostic, event),
+            captureDiagnosticBodies: session.captureDiagnosticBodies,
+          }
+        : {}),
       show(component, context) {
         if (!contextIsCurrent(context)) return;
         session.forcedHidden.delete(component.id);
@@ -44,7 +55,8 @@ export function createActionRuntimeAdapter({ session, refs, adapters }) {
       custom(name, payload, context) {
         if (!contextIsCurrent(context)) return undefined;
         if (name === "restyle_continue") {
-          if (context.playerInteraction) context.playerInteraction.outcome = { kind: "continue" };
+          if (context.playerInteraction)
+            context.playerInteraction.outcome = { kind: "continue" };
           return true;
         }
         const detail = {
@@ -59,12 +71,23 @@ export function createActionRuntimeAdapter({ session, refs, adapters }) {
       },
       openUrl(url, context) {
         if (!contextIsCurrent(context)) return undefined;
-        if (!/^https?:\/\//i.test(url)) throw new Error("Only HTTP(S) links can be opened.");
-        if (window.confirm(`Open ${new URL(url).host}?`)) window.open(url, "_blank", "noopener,noreferrer");
+        if (!/^https?:\/\//i.test(url))
+          throw new Error("Only HTTP(S) links can be opened.");
+        if (window.confirm(`Open ${new URL(url).host}?`))
+          window.open(url, "_blank", "noopener,noreferrer");
         return url;
       },
       request({ url, ...options }, context) {
-        if (!contextIsCurrent(context)) throw new DOMException("The interaction is no longer active.", "AbortError");
+        if (!contextIsCurrent(context))
+          throw new DOMException(
+            "The interaction is no longer active.",
+            "AbortError",
+          );
+        const serviceRequest = services?.forInteraction(
+          context.playerInteraction,
+        );
+        if (serviceRequest)
+          return serviceRequest({ url, ...options }, options.signal);
         // Requests are performed by the trusted host, not inside the PVO renderer.
         // A redirect cannot silently escape the manifest's allowed_domains.
         return fetch(url, {
@@ -79,18 +102,26 @@ export function createActionRuntimeAdapter({ session, refs, adapters }) {
         if (event.type === "state" || event.type === "reset") {
           adapters.updateRuntimeState(event.state);
         }
-        const requestId = typeof event.componentId === "string" ? event.componentId : null;
+        const requestId =
+          typeof event.componentId === "string" ? event.componentId : null;
         if (event.type === "request_start") {
           if (requestId) {
             session.pendingRequestComponents.add(requestId);
           }
           adapters.pauseForComponentRequest?.(requestId);
           updateRequestStatus(session, adapters.setStatus);
-        } else if (event.type === "request_success" || event.type === "request_error") {
+        } else if (
+          event.type === "request_success" ||
+          event.type === "request_error"
+        ) {
           if (requestId) session.pendingRequestComponents.delete(requestId);
           // A later request in the same action cannot erase an earlier
           // unhandled failure; the next viewer retry clears it instead.
-          if (requestId && event.type === "request_error" && event.handled !== true)
+          if (
+            requestId &&
+            event.type === "request_error" &&
+            event.handled !== true
+          )
             session.failedRequestComponents.set(requestId, event.failure);
           updateRequestStatus(session, adapters.setStatus);
         }
@@ -107,14 +138,17 @@ export function createActionRuntimeAdapter({ session, refs, adapters }) {
     }
     const previous = session.actionRuntime;
     clearRequestStatus(session);
-    const state = preserveState && previous ? structuredClone(previous.state) : null;
-    const visible = preserveState && previous ? new Set(previous.visible) : null;
+    const state =
+      preserveState && previous ? structuredClone(previous.state) : null;
+    const visible =
+      preserveState && previous ? new Set(previous.visible) : null;
     const next = makeActionRuntime(session.manifest);
     if (state) next.state = state;
     if (visible) next.visible = visible;
     session.actionRuntime = next;
     session.runtimeStateRevision += 1;
-    if (!preserveState) session.overlayResetRevision = (session.overlayResetRevision ?? 0) + 1;
+    if (!preserveState)
+      session.overlayResetRevision = (session.overlayResetRevision ?? 0) + 1;
     session.renderedOverlayKey = "";
     return next;
   }

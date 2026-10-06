@@ -116,6 +116,8 @@ useCapture.subscribe((state, previous) => {
   syncDebugContext(debugInput(state), sourceChanged);
 });
 export const {
+  readSavedSubmission,
+  recoverSavedSubmission,
   beginComponentInteraction,
   recordTryDiagnostic,
   observeTryDiagnostics,

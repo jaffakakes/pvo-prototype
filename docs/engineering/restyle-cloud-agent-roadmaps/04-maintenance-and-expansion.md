@@ -6,9 +6,9 @@ Task IDs are stable. Checked items are verified work; update their evidence and 
 
 **Outcome:** a creator can ask Restyle to change or fix an existing connected component. The agent understands what is already deployed and can make a tested update.
 
-**Depends on:** Roadmap 1's source records, releases, service controls, and basic recovery. Roadmaps 2 and 3 are needed for any connected accounts or background jobs affected by an update.
+**Depends on:** Roadmap 1 and [1G Containers](1g-containers.md), including saved source, Node.js releases, service controls and basic recovery. Roadmaps 2 and 3 are needed for any connected accounts or background jobs affected by an update.
 
-Core ownership, spending limits, pause/delete controls, and release recovery already belong in Roadmap 1. This roadmap improves the experience and expands what the system can build.
+Core ownership, limits and lifecycle already exist in 1D; 1G extends them for editable Node.js Containers. Basic update/management work is scheduled once in 1G. This roadmap adds diagnosis and the later operational capabilities below.
 
 ## 4A. Let the agent inspect and repair an existing feature
 
@@ -25,29 +25,20 @@ Use the current [Try diagnostics design](../try-debugger-plan.md) and [notificat
 
 ## 4B. Update a working service without breaking shared components
 
-- [ ] **4B.01** Build a new inactive release from retained source and the requested change.
-- [ ] **4B.02** Identify every recorded active component connection and export that points to the service. Forwarded or downloaded copies may still use those addresses even when Restyle cannot count the viewers. Test the update against the recorded agreements.
-- [ ] **4B.03** Check that the new code can use the current saved records. Define a specific data-change task if that cannot be guaranteed; do not silently rewrite or discard records.
-- [ ] **4B.04** Keep the active release unchanged while tests run.
-- [ ] **4B.05** Switch only the verified service/component connection as one recorded release action. Preserve the prior release for recovery while it remains safe to run against current records.
-- [ ] **4B.06** Test a failed update and restore service availability without replaying external writes.
-- [ ] **4B.07** Explain what editor Undo can restore and which live changes require a separate reversal.
+**Pulled forward into Containers.** The seven existing tasks **4B.01–4B.07** now live in [1G's publication and update checklist](1g-containers.md#c-publish-connect-and-update-through-existing-commands). Their IDs, unchecked status and wording are preserved. Implement the basic update flow once, using the existing host's activation, compatibility and action-replay rules.
 
-**Finished when:** the creator asks to change the RSVP capacity rule, the update works for the intended shared component, and a deliberately broken replacement leaves the prior release working.
-
-These are deployed code releases using one current platform/PVO contract. Do not implement old manifest shapes, legacy parsers, or automatic compatibility adapters as part of update handling.
+When Roadmaps 2/3 add external connections or background jobs, extend and verify that same update flow for those effects. Returning to old code must not replay an external write or rewind data. No second deployment system, old manifest parser or compatibility runtime is planned here.
 
 ## 4C. Improve service management
 
-- [ ] **4C.01** Show which projects and published components use each service and which account connections they need.
-- [ ] **4C.02** Add useful views of remaining quotas, approximate cost, recent results, and failures.
+**Basic management is pulled forward into Containers.** Existing tasks **4C.01, 4C.02, 4C.04, 4C.05 and 4C.06** now live in [1G's management checklist](1g-containers.md#d-finish-the-same-management-surface), unchanged and unchecked. Connections, data inspection, usage/cost, pause/delete and cleanup use one service manager. Do not build them again here.
+
+Remaining later work extends that manager:
+
 - [ ] **4C.03** Surface expiring credentials and limits through the existing status surfaces. Keep unresolved problems visible after dismissing a notice.
-- [ ] **4C.04** Let creators inspect retained data and choose the allowed cleanup action.
-- [ ] **4C.05** Explain the effects of pause and deletion on new submissions, accepted jobs, and stored records before applying the selected operation.
-- [ ] **4C.06** Verify periodic cleanup removes only abandoned resources and expired records covered by the agreed retention rule.
 - [ ] **4C.07** Add operational checks that detect a service whose published component still points to a missing release.
 
-**Finished when:** a creator can determine why a feature stopped, restore its connection, control its cost, and retire it without guessing what remains active.
+**Finished when:** once real connections and background jobs exist, their expiring permissions, unresolved work and missing-release faults appear in the same Container controls with an accurate recovery action. Basic Container lifecycle acceptance belongs to 1G; this phase adds evidence for those later capabilities.
 
 ## 4D. Expand capabilities when a real request needs them
 
@@ -60,7 +51,7 @@ Implement these as separate follow-on tasks. Each needs a concrete demonstration
 | Capability | Evidence that it is needed | Proof before calling it ready |
 | --- | --- | --- |
 | Richer live controls | A real task needs returned lists, availability slots, or editable server data. | The data-driven control behaves the same in Try, export, and the standalone player. |
-| Additional runtimes | A required library or process cannot run in the initial service environment. | The same ownership, limits, deployment, pause/delete, and recovery contract works on the new runtime. |
+| Additional runtimes beyond Node.js | A required library or process cannot run in the Node.js Container environment delivered by 1G. | The same ownership, limits, deployment, pause/delete, and recovery contract works on the new runtime. |
 | Calling or connected-device actions | A chosen workflow requires an actual phone or device operation. | A real authorized connection performs the action and reports its available evidence truthfully. |
 | More provider integrations | Research finds a service with usable access and a creator needs it. | The connection passes setup, test/live, revocation, and failure checks. |
 | Better automatic repair | Repeated failures have a safe, bounded fix. | The repair restores service and preserves existing records without repeating completed actions. |
@@ -69,6 +60,6 @@ A browser automation capability may help with some services, but account access 
 
 ## Complete this roadmap
 
-Demonstrate one real repair, one successful update, one failed update with safe recovery, one paused/deleted service, and one additional capability justified by a concrete request.
+Reuse the recorded 1G evidence for basic updates and service lifecycle. Demonstrate a real repair, the affected update/control behavior with any new connection or job capability, and one additional capability justified by a concrete request. Repeat earlier checks only where a changed dependency creates a concrete risk.
 
 Run the focused behavior checks and affected browser paths, then complete the same beta verification and release workflow used for earlier roadmaps. Stop expanding once the chosen roadmap outcome is met; future capability requests become their own focused tasks.

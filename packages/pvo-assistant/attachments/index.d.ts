@@ -171,6 +171,7 @@ export function createServiceSubmissionClient(adapters: {
     slot: string,
     target: ServiceSubmissionTarget,
     context: ServiceSubmissionContext,
+    expectedActionId?: string,
   ): Promise<ServiceSubmission>;
 };
 
@@ -207,3 +208,28 @@ export function matchesPublicServiceRequest(
   value: PublicServiceConnection,
   request: { url: string; method: string; body?: string },
 ): boolean;
+
+/** HTTP status only; never exposes a private response body. */
+export class ServiceSubmissionHttpError extends Error {
+  constructor(status: number);
+  readonly status: number;
+}
+export function sendServiceSubmission(
+  request: ReturnType<typeof serviceSubmissionRequest>,
+  target: ServiceSubmissionTarget,
+  fetcher: typeof fetch,
+  signal?: AbortSignal,
+): Promise<unknown>;
+
+/** Checks bindings against actual compiled/declared control fields; parsing alone is insufficient. */
+export function validateServiceBindingFields(
+  binding: ServiceInputBinding,
+  schema: import("../services/index.js").ServiceValueSchema,
+  structure: import("../../pvo-language/index.js").PvoLanguageStructure,
+): void;
+
+export function recoverServiceSubmissionFields(
+  value: ServiceSubmission,
+  target: ServiceSubmissionTarget,
+  binding: ServiceInputBinding,
+): Record<string, ServiceJson>;

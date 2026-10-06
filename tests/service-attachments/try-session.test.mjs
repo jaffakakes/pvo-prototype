@@ -13,7 +13,7 @@ const compiled = buildSync({
   export { createTrySession } from './editor/src/features/preview/createTrySession.ts';
   export { initial } from './editor/src/state/project/initial.ts';
   export { prepareComponentTest } from './editor/src/domain/components/serviceSubmission.ts';
-  export { sendComponentTest } from './editor/src/infrastructure/services/componentTestTransport.ts';
+  export { sendServiceSubmission } from './packages/pvo-assistant/attachments/index.js';
 `,
     resolveDir: process.cwd(),
   },
@@ -22,10 +22,14 @@ const compiled = buildSync({
   format: "esm",
   platform: "browser",
 });
-const { createTrySession, initial, prepareComponentTest, sendComponentTest } =
-  await import(
-    `data:text/javascript;base64,${Buffer.from(compiled.outputFiles[0].text).toString("base64")}`
-  );
+const {
+  createTrySession,
+  initial,
+  prepareComponentTest,
+  sendServiceSubmission,
+} = await import(
+  `data:text/javascript;base64,${Buffer.from(compiled.outputFiles[0].text).toString("base64")}`
+);
 const publication = await prepareServicePublication(
   create(),
   "host-one",
@@ -411,16 +415,18 @@ test("component transport rejects credential redirects, oversized bodies and can
     request.url.replace(/releases\/.*\/try$/, "operate"),
   ]) {
     await assert.rejects(
-      sendComponentTest({ ...request, url }, origin, () =>
-        assert.fail("Must not send"),
+      sendServiceSubmission(
+        { ...request, url },
+        prepareComponentTest(component, response(), scope()).target,
+        () => assert.fail("Must not send"),
       ),
     );
   }
   let cancelled = false;
   await assert.rejects(
-    sendComponentTest(
+    sendServiceSubmission(
       request,
-      origin,
+      prepareComponentTest(component, response(), scope()).target,
       async () =>
         new Response(
           new ReadableStream({
@@ -442,9 +448,9 @@ test("component transport rejects credential redirects, oversized bodies and can
   const waiting = new Promise((resolve) => {
     reading = resolve;
   });
-  const pending = sendComponentTest(
+  const pending = sendServiceSubmission(
     request,
-    origin,
+    prepareComponentTest(component, response(), scope()).target,
     async () =>
       new Response(
         new ReadableStream({
@@ -462,4 +468,65 @@ test("component transport rejects credential redirects, oversized bodies and can
   await waiting;
   controller.abort();
   await assert.rejects(pending, { name: "AbortError" });
+});
+
+test("Try offers explicit saved-input recovery after reload and suppresses recovery after account replacement", async () => {
+  const store = storage(),
+    wires = [];
+  const send = async (_url, options) => {
+    wires.push(options.body);
+    if (wires.length === 1) throw new Error("Lost response");
+    return Response.json({
+      actionId: JSON.parse(options.body).actionId,
+      result: "accepted",
+    });
+  };
+  const first = fixture({ store, send });
+  await first.submit("Alice");
+  first.session.stopTry();
+  const next = fixture({ store, send });
+  assert.deepEqual(await next.session.readSavedSubmission(next.item), {
+    complete: false,
+  });
+  await next.session.recoverSavedSubmission(next.item);
+  assert.equal(next.state.t, 7);
+  assert.equal(wires[0], wires[1]);
+  next.session.stopTry();
+  const completed = fixture({ store, send });
+  assert.deepEqual(
+    await completed.session.readSavedSubmission(completed.item),
+    { complete: true },
+  );
+  await completed.session.recoverSavedSubmission(completed.item);
+  assert.equal(wires.length, 2);
+  completed.session.stopTry();
+  let resumeRead, started;
+  const reading = new Promise((resolve) => {
+    started = resolve;
+  });
+  const replaced = fixture({
+    store,
+    send,
+    openStore: async () => {
+      const opened = await store.open();
+      return {
+        ...opened,
+        read: async (key) => {
+          started();
+          await new Promise((resolve) => {
+            resumeRead = resolve;
+          });
+          return opened.read(key);
+        },
+      };
+    },
+  });
+  const recovery = replaced.session.recoverSavedSubmission(replaced.item);
+  await reading;
+  replaced.account.ownerId = "another";
+  resumeRead();
+  await assert.rejects(recovery, /no saved submission/);
+  assert.equal(wires.length, 2);
+  assert.equal(replaced.state.t, 0);
+  replaced.session.stopTry();
 });

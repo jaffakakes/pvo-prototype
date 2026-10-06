@@ -97,12 +97,12 @@ The user wants the agent to keep working toward the goal, with no fixed model-tu
 
 ## 1E. Attach the service to PVO and activate it
 
-**1E.01–1E.03 and 1E.05 are verified locally.** The checked component now invokes its exact owned test release through Try, using persisted action IDs/input and the existing SDK request lifecycle. Real browser/compiler/HTTP/SQLite/IndexedDB acceptance recovers a lost successful reply after page/server restart, preserves literal input, observes service capacity and leaves live hosting inactive. Full checks pass **1,429 tests** and strict editor types. **1E.04 remains open for player integration and explicit saved-submission recovery presentation; 1E.06–09 remain open for activation/export.** Follow the [detailed attachment plan](1e-component-attachments.md).
+**1E.01–1E.05 are verified locally.** Try and the public player now use the same persisted submission contract, exact replay and completion-before-success sequence. Both provide explicit saved-input/result recovery after reopening. Actual compiler/browser/HTTP/SQLite/IndexedDB acceptance covers full browser/server restart, cookie-free public calls and one effect despite lost replies. Full checks pass **1,442 tests** and strict editor types. **Next: 1E.06–09 shared activation and normal export/link delivery.** The public browser journey uses a constructed fixture PVO; normal exporter activation is still pending. Follow the [detailed attachment plan](1e-component-attachments.md).
 
 - [x] **1E.01** Add a validated attachment command that consumes a real service receipt: owner, project, release, operation, input/result agreement, and readiness. The agent cannot attach an invented address.
 - [x] **1E.02** Update both server and editor assistant validation to admit this verified attachment. Keep existing protections for unrelated request changes.
 - [x] **1E.03** Prepare the component and request together. Use the existing history commands, compilation, approved hosts, success/error routes, and response state.
-- [ ] **1E.04** Define how Try and the player create a stable action identifier and reuse it on retry. Use one shared contract, with server validation.
+- [x] **1E.04** Define how Try and the player create a stable action identifier and reuse it on retry. Use one shared contract, with server validation.
 - [x] **1E.05** Make Try use a server-authorized test connection. Changing a payload or test label cannot authorize a live operation.
 - [ ] **1E.06** Introduce one activation command used by both interactive download and link publication. Export is already available separately from publishing.
 - [ ] **1E.07** Prepare a matching component/service release, activate it before handing out the usable file or link, and retain a retryable result if delivery fails. If activation fails, do not claim the export is ready for online use.
@@ -124,6 +124,10 @@ The user wants the agent to keep working toward the goal, with no fixed model-tu
 - [ ] **1F.07** Record the actual resource use and confirm the configured limits and cleanup work.
 - [ ] **1F.08** Complete the relevant source checks and real browser/provider checks, then release through the active beta and normal promotion process.
 
-**Release gate:** all six steps pass. A mock provider, a temporary VM URL, or generated source alone does not prove this roadmap is finished.
+**Release gate:** all six phases, 1A–1F, pass. A mock provider, a temporary VM URL, or generated source alone does not prove this roadmap is finished.
 
-Next: [Roadmap 2 — research and connections](02-research-and-connections.md).
+## 1G. Containers — next product feature
+
+After 1F, follow [the consolidated Containers plan](1g-containers.md). It adds saved manual/AI code editing and replaces generated-service execution with hosted Node.js, while reusing the service identity, storage, checked releases, activation and attachment system. Existing basic update/management tasks from Roadmap 4 move forward with their original IDs; they are not duplicated.
+
+The detailed plan owns all new 1G checkboxes. Earlier 1E/1F statuses and evidence stay unchanged; the user confirmed that the current incomplete items must remain unchecked. Containers has its own acceptance gate and is followed by [Roadmap 2 — research and connections](02-research-and-connections.md).

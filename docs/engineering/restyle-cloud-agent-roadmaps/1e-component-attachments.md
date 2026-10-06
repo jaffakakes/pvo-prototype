@@ -2,6 +2,10 @@
 
 [Numbered roadmap](01-first-working-component.md#1e-attach-the-service-to-pvo-and-activate-it) · [Progress and evidence](../restyle-cloud-agent-progress.md)
 
+**Next product evolution:** [1G Containers](1g-containers.md) follows 1F and reuses these service/attachment boundaries with hosted Node.js. The evidence and completion states below describe their original implementation and remain unchanged.
+
+**Latest checkpoint:** **1E.01–1E.05 are verified**, including shared Try/player invocation and explicit saved-submission recovery. Full suite: 1,442 tests; real Try/public player restart acceptance passes. **Next: 1E.06** activation-on-delivery, then 1E.07–09. Earlier entries below preserve the evidence in the order it was completed.
+
 ## In everyday terms
 
 The cloud agent has built a small service and tested its rules. This stage gives the component a checked connection to that service. Restyle must make sure it is the right service, belongs to the right creator and project, and accepts the information the component will send.
@@ -64,3 +68,10 @@ Try now invokes only the selected checked control through the dedicated owner/re
 
 
 The public description is now verified by **1,431 tests** and strict types: seven explicit invocation fields, closed validation, no private receipt identity, and common input/request/replay rules. No public player/export consumer exists yet. **1E.04 remains unchecked**; continue with player admission and host transport, deterministic manifest-scoped persistence, static package copying and later activation-gated export projection.
+
+
+### 2026-10-06 — 1E.04 verified
+
+The public player admits `restyle_capture.service_connection` against the actual control/request after compilation, uses executable-video/component-scoped IndexedDB, sends only through cookie-free public transport, and saves the validated result before SDK success. Both hosts now provide explicit saved-input/result recovery, using original input and an expected action ID. A newer tab cannot silently replace the recovery selection. Try/public browser acceptance survives browser/server restart and a lost successful reply with exactly one live/test record. Full checks pass 1,442 tests and strict editor types. **43/134 tasks complete; next 1E.06.** Beta/release evidence is recorded in progress.
+
+The editor does not yet put this descriptor into normal exports. The acceptance PVO is a fixture and its checked local service is explicitly activated by the harness. Shared activation before normal link/download delivery remains 1E.06–09.

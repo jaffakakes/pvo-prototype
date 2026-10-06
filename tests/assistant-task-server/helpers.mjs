@@ -443,7 +443,7 @@ export async function taskFixture({
       return {
         status: response.status,
         headers: response.headers,
-        body: await response.json(),
+        body: response.status === 204 ? null : await response.json(),
       };
     };
     return {
