@@ -97,13 +97,13 @@ The user wants the agent to keep working toward the goal, with no fixed model-tu
 
 ## 1E. Attach the service to PVO and activate it
 
-**1E.01/1E.02 verified:** the closed command, trusted receipt and both compiler admission boundaries pass full local checks (**1,356 tests**), editor types and the native-assistant browser regression. Saved component preparation/connection metadata is next in **1E.03**. No complete component connection is claimed yet. Follow the [detailed attachment implementation plan](1e-component-attachments.md).
+**1E.01–1E.03 and 1E.05 are verified locally.** The checked component now invokes its exact owned test release through Try, using persisted action IDs/input and the existing SDK request lifecycle. Real browser/compiler/HTTP/SQLite/IndexedDB acceptance recovers a lost successful reply after page/server restart, preserves literal input, observes service capacity and leaves live hosting inactive. Full checks pass **1,429 tests** and strict editor types. **1E.04 remains open for player integration and explicit saved-submission recovery presentation; 1E.06–09 remain open for activation/export.** Follow the [detailed attachment plan](1e-component-attachments.md).
 
 - [x] **1E.01** Add a validated attachment command that consumes a real service receipt: owner, project, release, operation, input/result agreement, and readiness. The agent cannot attach an invented address.
 - [x] **1E.02** Update both server and editor assistant validation to admit this verified attachment. Keep existing protections for unrelated request changes.
 - [x] **1E.03** Prepare the component and request together. Use the existing history commands, compilation, approved hosts, success/error routes, and response state.
 - [ ] **1E.04** Define how Try and the player create a stable action identifier and reuse it on retry. Use one shared contract, with server validation.
-- [ ] **1E.05** Make Try use a server-authorized test connection. Changing a payload or test label cannot authorize a live operation.
+- [x] **1E.05** Make Try use a server-authorized test connection. Changing a payload or test label cannot authorize a live operation.
 - [ ] **1E.06** Introduce one activation command used by both interactive download and link publication. Export is already available separately from publishing.
 - [ ] **1E.07** Prepare a matching component/service release, activate it before handing out the usable file or link, and retain a retryable result if delivery fails. If activation fails, do not claim the export is ready for online use.
 - [ ] **1E.08** Track the active connection even if the client disconnects during delivery. A failed browser response is not proof that the exported file was never received.

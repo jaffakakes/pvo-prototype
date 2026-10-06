@@ -42,6 +42,13 @@ Pure contract tests cover serialized recovery, exact input/bytes, typed bindings
 
 The common client and IndexedDB adapter are verified with storage failures, concurrent callers, late replies, cancellation, client recreation and actual server replay. A fresh Chromium profile survives a complete browser shutdown/restart; two tabs serialize competing submissions, transaction rollback preserves the old record, and closed storage sends nothing. The browser script uses controlled responses; the separate HTTP tests use the real local service host.
 
-Host-specific slot identity, account/context guards, transport and Try/player wiring remain **1E.04/1E.05** work. Public export/activation remain **1E.06–09**. The shared contract alone does not make an exported component usable.
+Try now uses account/local-project/component/control-scoped storage, exact live request matching, current-context guards and the dedicated server test route. The player wiring and explicit recovery presentation remain **1E.04** work. Public export/activation remain **1E.06–09**. The shared contract alone does not make an exported component usable.
 
 Component Try uses a dedicated server-derived authority restricted to the owner, expected test release and public operations. The general creator `/try` management route is not a component capability. HTTP acceptance rejects foreign/anonymous sessions, changed origins/releases, private operations and payload authority flags before generated code runs. Test and live records remain separate across restart.
+
+
+## Try host integration
+
+The editor resolves actual typed form values before opening storage. Its checked request is intercepted by a private callback registered for the SDK interaction; arbitrary generated payloads cannot register one. The transport accepts only the fixed same-origin release-specific test route, uses the creator session, rejects redirects and bounds JSON decoding. The SDK still owns request deadlines, ordinary allowed-domain policy, diagnostics, response state and playback routes. Completion commits before SDK success. Literal user input is never passed through PVO template resolution again.
+
+The host closes each owned IndexedDB connection. Stop or a changed account/project/component invalidates late outcomes; a returned authoritative response may settle only its own record. A retry from failed request/playback feedback reads the saved action/result, including a completion that reached storage before a playback-route failure. Starting a new Try is an explicit new test: an unresolved identical submission still reuses its ID; changed unresolved input cannot replace it. Dedicated recovery presentation for saved pending details and player integration remain open.

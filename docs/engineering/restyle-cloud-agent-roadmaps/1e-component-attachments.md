@@ -54,3 +54,10 @@ The shared client and IndexedDB adapter are now verified by **1,421 tests**, str
 
 
 The component Try server boundary now passes **1,423 tests** and strict editor types. `/api/services/{serviceId}/releases/{releaseId}/try` derives authority from the signed session and exact origin, then checks the selected test release and public-operation audience. Payload flags and private creator receipt replay are rejected. Host runtime wiring and product acceptance remain, so **1E.04/1E.05 stay unchecked**.
+
+
+### 2026-10-06 — 1E.05 verified; 1E.04 still open
+
+Try now invokes only the selected checked control through the dedicated owner/release/public-operation test authority. Shared persistence records typed literal input and a fresh ID before sending; lost responses replay, failed playback retries recover completed results, and changed account/project/component sessions suppress late effects. The SDK retains deadlines, state and success/error routes; completion commits first. Six host/transport cases and real compiled form/HTTP/SQLite/Chromium IndexedDB acceptance pass, including page/server restart and real one-place capacity. Full suite: **1,429**, strict editor types pass.
+
+**1E.05 is checked; 42/126 roadmap tasks complete.** Public player metadata/invocation and explicit recovery presentation remain **1E.04**, with export descriptor/activation dependencies in 1E.06–09. Beta delivery is recorded separately in progress; no complete usable public export or cloud product deployment is implied.

@@ -1,3 +1,4 @@
+import { checkComponentTry } from "./component-try.mjs";
 import { attachment } from "../../../tests/service-attachments/fixtures.mjs";
 import { checkedFixture } from "../../../tests/service-hosting/fixtures.mjs";
 import assert from "node:assert/strict";
@@ -340,6 +341,20 @@ try {
     ),
     connection.connection,
   );
+  await checkComponentTry({
+    context,
+    fixture,
+    origin,
+    getPage: () => page,
+    reopen: async () => {
+      await page.close();
+      await fixture.restart();
+      await ready(localId);
+    },
+  });
+  await page
+    .getByRole("button", { name: "Open saved task", exact: true })
+    .click();
   const second = await ask("Build another saved component", 2);
   await page.evaluate(async () => {
     window.resultProbe.useCapture.getState().edit({ ratio: "1:1" });

@@ -15,6 +15,7 @@ export {
 export {
   parseComponentServiceConnection,
   prepareComponentServiceConnection,
+  matchesComponentServiceRequest,
 } from "./component.js";
 
 export { serviceAttachmentSchema } from "./schema.js";

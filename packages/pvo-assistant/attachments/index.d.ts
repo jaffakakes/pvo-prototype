@@ -178,3 +178,8 @@ export function createServiceSubmissionClient(adapters: {
 export function openServiceSubmissionStore(
   factory?: IDBFactory,
 ): Promise<ServiceSubmissionStore & { close(): void }>;
+
+export function matchesComponentServiceRequest(
+  connection: ComponentServiceConnection,
+  request: { url: string; method: string; body?: string },
+): boolean;
