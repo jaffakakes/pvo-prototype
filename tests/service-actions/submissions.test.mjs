@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { randomUUID } from "node:crypto";
 import {
   taskFixture,
   expectStatus,
@@ -14,9 +15,8 @@ import {
   prepareServiceAttachmentReceipt,
   prepareServiceSubmissionTarget,
   resolveServiceSubmissionInput,
-  prepareServiceSubmission,
+  createServiceSubmissionClient,
   retryServiceSubmission,
-  completeServiceSubmission,
   serviceSubmissionRequest,
 } from "../../packages/pvo-assistant/attachments/index.js";
 
@@ -55,13 +55,17 @@ for (const mode of ["try", "public"]) {
         mode,
         ownerId: mode === "try" ? service.task.ownerId : null,
       });
-      const saved = prepareServiceSubmission(
-        target,
-        resolveServiceSubmissionInput(connection, { guest: "Alice" }),
-        "submission-one",
-      );
-      // The adapter persists before dispatch. The first real response is deliberately discarded.
-      const storage = JSON.stringify(saved);
+      // Controlled serialized client storage; the separate Chromium check verifies the IndexedDB adapter.
+      let serialized = null;
+      const store = {
+        read: async () => (serialized === null ? null : JSON.parse(serialized)),
+        update: async (_slot, change) => {
+          serialized = JSON.stringify(
+            change(serialized === null ? null : JSON.parse(serialized)),
+          );
+          return JSON.parse(serialized);
+        },
+      };
       const send = async (value, overrides = {}) => {
         const request = serviceSubmissionRequest(value);
         return f.request(new URL(request.url).pathname, {
@@ -72,18 +76,53 @@ for (const mode of ["try", "public"]) {
           ...overrides,
         });
       };
-      expectStatus(await send(saved), 200);
+      let loseReply = true,
+        sends = 0;
+      const adapters = {
+        store,
+        createId: randomUUID,
+        send: async (request) => {
+          sends++;
+          const stored = await store.read();
+          assert.deepEqual(
+            serviceSubmissionRequest(stored),
+            request,
+            "The exact intent commits before transport",
+          );
+          const response = await send(stored);
+          expectStatus(response, 200);
+          if (loseReply) throw new Error("Controlled lost successful reply");
+          return response.body;
+        },
+      };
+      let client = createServiceSubmissionClient(adapters);
+      const active = { isCurrent: () => true };
+      await assert.rejects(
+        client.submit(
+          "component",
+          target,
+          resolveServiceSubmissionInput(connection, { guest: "Alice" }),
+          active,
+        ),
+        /lost successful reply/,
+      );
+      const saved = await store.read();
       assert.equal(saved.response, null);
       await f.restart();
-      const restored = retryServiceSubmission(JSON.parse(storage), target);
-      const reply = await send(restored);
-      expectStatus(reply, 200);
-      assert.equal(reply.body.result, "accepted");
+      loseReply = false;
+      client = createServiceSubmissionClient(adapters);
+      const restored = retryServiceSubmission(saved, target);
+      const complete = await client.retry("component", target, active);
+      assert.equal(complete.response.result, "accepted");
       assert.equal(executions, 1);
-      const complete = completeServiceSubmission(restored, reply.body);
       assert.deepEqual(
-        retryServiceSubmission(JSON.parse(JSON.stringify(complete)), target),
+        await client.retry("component", target, active),
         complete,
+      );
+      assert.equal(
+        sends,
+        2,
+        "The saved completed response needs no network retry",
       );
       const changed = {
         ...restored,
@@ -95,14 +134,14 @@ for (const mode of ["try", "public"]) {
         1,
         "Changing input under the same ID never runs generated code",
       );
-      const distinct = prepareServiceSubmission(
+      const distinct = await client.submit(
+        "component",
         target,
         { name: "Alice" },
-        "submission-two",
+        active,
       );
-      const second = await send(distinct);
-      expectStatus(second, 200);
-      assert.equal(second.body.result, "already_joined");
+      assert.notEqual(distinct.action.actionId, saved.action.actionId);
+      assert.equal(distinct.response.result, "already_joined");
       assert.equal(
         executions,
         2,

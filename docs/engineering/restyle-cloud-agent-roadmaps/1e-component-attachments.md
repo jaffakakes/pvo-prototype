@@ -48,3 +48,6 @@ The fixed per-task model-turn cutoff is removed following the user's correction.
 The [submission contract](../../../packages/pvo-assistant/attachments/README.md) now resolves typed input, preserves exact action/input across retries, fences changed connection/account scopes and checks matching results. Both actual local HTTP routes recover a lost reply after restart without repeating the action; changed input under the same ID conflicts. Full 1,415-test suite and editor types pass.
 
 Client persistence, generated IDs and runtime integration remain incomplete. **1E.04 is unchecked**; proceed with shared client orchestration and atomic storage, then Try/player wiring. No app availability, activation or public export is implied.
+
+
+The shared client and IndexedDB adapter are now verified by **1,421 tests**, strict types and a fresh Chromium restart/concurrent-tab check. Saved intent commits before dispatch, unresolved input stays immutable, and late replies cannot overwrite a newer action. Actual local HTTP Try/public replay uses the shared client. **1E.04 remains open** for host slot identity, current-context/account guards and Try/player wiring; no app consumer or new beta release yet.

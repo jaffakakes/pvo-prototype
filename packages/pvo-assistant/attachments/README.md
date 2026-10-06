@@ -26,8 +26,20 @@ Try and the player use the same `ServiceSubmission` record:
 
 Parsing a locally modified record grants no authority or integrity guarantee. Server action receipts reject reuse of an existing ID with changed input and replay the original result without running generated code again. The server remains responsible for business-state changes and test/live isolation.
 
+## Shared client and browser adapter
+
+`createServiceSubmissionClient({ store, createId, send })` owns the persist/send/complete sequence. `submit` captures and validates target/input synchronously before waiting for storage. Identical unresolved input reuses its ID; changed unresolved input is rejected. `retry` restores the saved intent, and a completed result returns without a network call. A distinct submission after completion requires a fresh ID.
+
+The store's `update(slot, change)` must serialize read/change/write across clients and resolve after commit. `openServiceSubmissionStore()` supplies that contract through actual IndexedDB transactions. Its owner must close the database when the host session is disposed. Storage failures prevent dispatch. The host supplies a stable, scoped slot and must never erase an unresolved intent to start a new one silently.
+
+Every operation requires `isCurrent()` and optionally an abort signal. Check the account, local project, component/connection and active interaction there. An authoritative response may settle only its own unchanged record after cancellation; stale completion still rejects before the host can apply UI/routes. A newer saved intent cannot be overwritten by that late response.
+
+The host's `send` adapter receives canonical wire bytes and must transmit them without PVO template interpolation. Record completion before returning success to the SDK request lifecycle, so success routes cannot run ahead of a failed storage write. HTTP errors, invalid replies and ambiguous responses keep the saved action retryable. Avoid dispatch through an authored arbitrary URL; match the exact checked connection and fixed platform route first.
+
 ## Current verification and remaining adapters
 
 Pure contract tests cover serialized recovery, exact input/bytes, typed bindings, changed scopes, invalid/late results and immutable completion. Actual local HTTP/workerd/SQLite tests cover lost responses, full server restart, replay, changed-input conflict, distinct submissions and Try ownership for both routes. Public TypeScript declarations are checked by a consumer fixture.
 
-Browser persistence, host-generated IDs, current-context fencing and Try/player wiring remain **1E.04/1E.05** work. Public export/activation remain **1E.06–09**. The shared contract alone does not make an exported component usable.
+The common client and IndexedDB adapter are verified with storage failures, concurrent callers, late replies, cancellation, client recreation and actual server replay. A fresh Chromium profile survives a complete browser shutdown/restart; two tabs serialize competing submissions, transaction rollback preserves the old record, and closed storage sends nothing. The browser script uses controlled responses; the separate HTTP tests use the real local service host.
+
+Host-specific slot identity, account/context guards, transport and Try/player wiring remain **1E.04/1E.05** work. Public export/activation remain **1E.06–09**. The shared contract alone does not make an exported component usable.

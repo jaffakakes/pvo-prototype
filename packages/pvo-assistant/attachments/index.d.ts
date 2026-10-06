@@ -107,6 +107,9 @@ export type ServiceSubmission = {
   action: import("../hosting/index.js").ServiceAction;
   response: import("../hosting/index.js").ServiceActionResult | null;
 };
+export function parseServiceSubmissionTarget(
+  value: unknown,
+): ServiceSubmissionTarget;
 export function prepareServiceSubmissionTarget(
   connection: ComponentServiceConnection,
   scope: ServiceSubmissionScope,
@@ -137,3 +140,41 @@ export function serviceSubmissionRequest(value: unknown): {
   headers: { "Content-Type": "application/json" };
   body: string;
 };
+
+export type ServiceSubmissionStore = {
+  read(slot: string): Promise<ServiceSubmission | null>;
+  /** Run change atomically across clients; resolve only after the write commits. */
+  update(
+    slot: string,
+    change: (current: ServiceSubmission | null) => ServiceSubmission,
+  ): Promise<ServiceSubmission>;
+};
+export type ServiceSubmissionContext = {
+  signal?: AbortSignal;
+  isCurrent(): boolean;
+};
+export function createServiceSubmissionClient(adapters: {
+  store: ServiceSubmissionStore;
+  createId(): string;
+  send(
+    request: ReturnType<typeof serviceSubmissionRequest>,
+    signal?: AbortSignal,
+  ): Promise<unknown>;
+}): {
+  submit(
+    slot: string,
+    target: ServiceSubmissionTarget,
+    input: unknown,
+    context: ServiceSubmissionContext,
+  ): Promise<ServiceSubmission>;
+  retry(
+    slot: string,
+    target: ServiceSubmissionTarget,
+    context: ServiceSubmissionContext,
+  ): Promise<ServiceSubmission>;
+};
+
+/** Browser adapter; close when the host session is disposed. */
+export function openServiceSubmissionStore(
+  factory?: IDBFactory,
+): Promise<ServiceSubmissionStore & { close(): void }>;

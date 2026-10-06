@@ -19,7 +19,7 @@ import { parseComponentServiceConnection } from "./component.js";
 import { platformOrigin } from "./policy.js";
 
 /** A client checkpoint scope, never permission to call the service or select its active release. */
-function parseTarget(value) {
+export function parseServiceSubmissionTarget(value) {
   object(
     value,
     ["origin", "serviceId", "releaseId", "operation", "mode", "ownerId"],
@@ -55,7 +55,7 @@ export function prepareServiceSubmissionTarget(value, scope) {
     scope.mode !== "try" || scope.ownerId === saved.receipt.identity.ownerId,
     "Try connection belongs to a different account.",
   );
-  return parseTarget({
+  return parseServiceSubmissionTarget({
     origin: saved.origin,
     serviceId: saved.receipt.identity.serviceId,
     releaseId: saved.connection.releaseId,
@@ -122,7 +122,7 @@ function checkResponse(target, action, response) {
 /** Restore a saved client intent. Parsing a locally edited record grants no server authority. */
 export function parseServiceSubmission(value) {
   object(value, ["target", "action", "response"], "Service submission");
-  const target = parseTarget(value.target);
+  const target = parseServiceSubmissionTarget(value.target);
   object(value.action, ["actionId", "operation", "input"], "Submission action");
   boundedValue(
     target.operation.input,
@@ -140,9 +140,21 @@ export function parseServiceSubmission(value) {
   return structuredClone(value);
 }
 
+/** Internal capture before asynchronous storage; validates data without generating a new identity. */
+export function snapshotSubmissionInput(target, input) {
+  target = parseServiceSubmissionTarget(target);
+  boundedValue(
+    target.operation.input,
+    input,
+    SERVICE_PACKAGE_LIMITS.inputBytes,
+    "Service input",
+  );
+  return { target, input: structuredClone(input) };
+}
+
 /** The host generates a fresh unpredictable ID for each distinct submission, then persists this before sending. */
 export function prepareServiceSubmission(target, input, actionId) {
-  target = parseTarget(target);
+  target = parseServiceSubmissionTarget(target);
   return parseServiceSubmission({
     target,
     action: { actionId, operation: target.operation.name, input },
@@ -155,7 +167,7 @@ export function retryServiceSubmission(value, currentTarget) {
   const submission = parseServiceSubmission(value);
   requireTask(
     canonicalJson(submission.target) ===
-      canonicalJson(parseTarget(currentTarget)),
+      canonicalJson(parseServiceSubmissionTarget(currentTarget)),
     "The saved submission belongs to another connection or account.",
   );
   return submission;

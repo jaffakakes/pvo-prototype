@@ -218,3 +218,20 @@ attachments.prepareServiceSubmissionTarget(checkedConnection, {
 // @ts-expect-error The client checkpoint has no caller-controlled permission flag.
 submission.permission = "granted";
 void submissionMethod;
+
+const submissionStore = await attachments.openServiceSubmissionStore();
+const submissionClient = attachments.createServiceSubmissionClient({
+  store: submissionStore,
+  createId: () => crypto.randomUUID(),
+  send: async () => ({ actionId: "saved", result: "accepted" }),
+});
+submissionClient.submit("component-slot", submissionTarget, submissionInput, {
+  isCurrent: () => true,
+});
+submissionClient.retry("component-slot", submissionTarget, {
+  isCurrent: () => true,
+  signal: new AbortController().signal,
+});
+// @ts-expect-error The host must supply a current-context fence.
+submissionClient.retry("component-slot", submissionTarget, {});
+submissionStore.close();
