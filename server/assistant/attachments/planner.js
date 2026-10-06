@@ -23,6 +23,7 @@ export async function planTaskAttachment(
   env,
   signal,
   evidence = null,
+  models = nativeModels(env),
 ) {
   const request = {
     schema: withEvidenceSchema(serviceAttachmentSchema),
@@ -39,7 +40,7 @@ export async function planTaskAttachment(
       256 * 1024,
     ),
   };
-  const response = await nativeModels(env).generate(request, signal);
+  const response = await models.generate(request, signal);
   try {
     if (
       !response ||

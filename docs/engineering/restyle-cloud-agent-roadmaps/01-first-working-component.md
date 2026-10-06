@@ -115,6 +115,8 @@ The user wants the agent to keep working toward the goal, with no fixed model-tu
 
 ## 1F. Verify the complete first release
 
+**In progress:** [live acceptance plan, disposable harness, limits and remaining evidence](../restyle-first-release-acceptance.md). Local preparation is not a completed demonstration; all checkboxes below remain unverified.
+
 - [ ] **1F.01** Run both demonstration requests from ordinary natural-language prompts.
 - [ ] **1F.02** Include a follow-up question, stop/resume, and one invalid generated program that the agent repairs from real test feedback.
 - [ ] **1F.03** Close the editor during an active build and restart the authoring worker. Verify saved work continues and completed effects are recovered.

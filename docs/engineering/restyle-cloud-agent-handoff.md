@@ -2,11 +2,11 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
-## Latest scope: service delivery verified
+## Latest scope: 1F acceptance preparation
 
-**All 1E is verified; next is 1F.01. 47/134 tasks complete; 87 remain.** Continue `feature/restyle-service-delivery` at `/Users/christinasmacbook/.codex/worktrees/restyle-service-delivery/pvo-prototype`. It starts from fetched `origin/dev` `cc2193e` with an explicit merge of completed runtime prerequisite `47f46de` from draft #103. Read the top [progress checkpoint](restyle-cloud-agent-progress.md) for the final commit/PR, verification, beta receipt and exact next action. Earlier checkpoints below are history.
+**All 1E is verified; 1F.01 is in progress. 47/134 tasks complete; 87 remain.** Active checkout: `feature/restyle-first-release`, `/Users/christinasmacbook/.codex/worktrees/restyle-first-release/pvo-prototype`. It starts from fetched `origin/dev` `cc2193e` with prerequisite `04c4383` from draft #104. Read the top [progress checkpoint](restyle-cloud-agent-progress.md) and [1F acceptance plan](restyle-first-release-acceptance.md) before running anything paid. Earlier checkpoints are history.
 
-One shared activation gate now serves normal export readiness, download and publication. A failed/lost browser reply never deletes a live service; exact retry and authoritative status recover it. Current private scope and compiled source are checked before the public connection is packaged. Local browser/runtime tests pass; live natural-language acceptance remains 1F. No paid run or production deployment is authorized by this resume.
+The new disposable harness uses the real planning/build/attachment functions and records conservative model spending. Local preparation and dry-run success do not prove a live demonstration. All 1F checkboxes remain unchecked. A fresh maximum US$15 approval has been requested for one disposable deployment; inspect the latest progress for its response before spending. Prior approvals cannot be reused. Production promotion remains separate.
 
 ## Preserved planning decision: consolidated Containers
 
@@ -26,7 +26,7 @@ Implementation has completed 1E; continue 1F before 1G.01. Use the latest progre
 
 **On this Mac:** use the active implementation checkout above. It includes reviewed plan `9c0b07b`. Desktop Markdown files are guarded reading copies; Desktop app source is not this implementation. Preserve its pending generated output.
 
-**On another machine:** fetch `origin/feature/restyle-service-delivery` or its verified merged successor. Read that branch's latest progress and handoff first. The preceding planning branch remains `origin/docs/restyle-node-containers-roadmap`; its reviewed plan is included in the implementation history. Use a clean checkout/worktree without resetting another checkout. A branch is not evidence of deployment. Committed evidence is sufficient to resume; missing private local logs do not justify rerunning completed paid proofs.
+**On another machine:** fetch `origin/feature/restyle-first-release` or its verified merged successor. Read that branch's latest progress and handoff first. The preceding planning branch remains `origin/docs/restyle-node-containers-roadmap`; its reviewed plan is included in the implementation history. Use a clean checkout/worktree without resetting another checkout. A branch is not evidence of deployment. Committed evidence is sufficient to resume; missing private local logs do not justify rerunning completed paid proofs.
 
 **Continuation:** continue **1F.01** from the exact setup action in progress. Containers starts at 1G.01 afterward. Recheck newer evidence; never infer completion from the plan. After each verified item, update its one checkbox and the progress log in the same batch. Before interruption, save changed files, checks run/unrun, resources, uncertainty and the exact next action. No Codex-specific tool or previous chat is required.
 
@@ -174,8 +174,10 @@ Do not rerun paid cloud proofs simply because an agent changed. Run them to veri
 
 ## Prompt the user can give the next agent
 
-> Read CLAUDE.md, AGENTS.md, docs/engineering/restyle-cloud-agent-progress.md and docs/engineering/restyle-cloud-agent-handoff.md from feature/restyle-runtime-actions (draft #103) or its verified successor. Continue the exact next numbered task in progress. Implementation has resumed; preserve the reviewed device/cloud and consolidated Node.js Container plan after 1F. Preserve existing work, skip GitHub Actions polling, and do not reuse exhausted paid-test approvals. After each verified task, mark its checkbox complete and save the checks, commit/PR, resources, beta state and next action. Leave partial work unchecked and record a resumable checkpoint before stopping. Explain outcomes in plain language. Do not depend on previous chat history.
+> Read CLAUDE.md, AGENTS.md, docs/engineering/restyle-cloud-agent-progress.md and docs/engineering/restyle-cloud-agent-handoff.md from feature/restyle-first-release (or the latest branch recorded in progress) or its verified successor. Continue the exact next numbered task in progress. Implementation has resumed; preserve the reviewed device/cloud and consolidated Node.js Container plan after 1F. Preserve existing work, skip GitHub Actions polling, and do not reuse exhausted paid-test approvals. After each verified task, mark its checkbox complete and save the checks, commit/PR, resources, beta state and next action. Leave partial work unchecked and record a resumable checkpoint before stopping. Explain outcomes in plain language. Do not depend on previous chat history.
 
+
+## Historical implementation checkpoints
 
 Latest 1C checkpoint: implementation **`98dd960`**, [draft PR #96](https://github.com/jaffakakes/pvo-prototype/pull/96), **1,309 full local tests** and **46 combined-beta focused tests**. The active beta serves `restyle-editor-shell-285b0d16a1d49e74`, including the separate UI design and iPhone cover fixes. The progress document records exact backup/output paths. All of 1C and 1D.01/02 are complete; 1D.03–1D.05 are next. Read the newer hosting checkpoint for current checks/delivery. Do not confuse a passing local test report or static beta delivery with hosted product availability.
 

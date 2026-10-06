@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { dirname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { createAccountReader, readCloudflareToken } from "./account.mjs";
@@ -11,7 +11,10 @@ const exec = promisify(execFile);
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 
 // Owns only the randomly named deployments recorded in this run's journal.
-export async function prepareResources(accountId) {
+export async function prepareResources(
+  accountId,
+  { resumeReport = null } = {},
+) {
   const token = await readCloudflareToken();
   const read = createAccountReader({ accountId, token });
   const account = await read("workers/subdomain");
@@ -22,24 +25,74 @@ export async function prepareResources(accountId) {
       /^[a-z0-9-]+$/.test(subdomain),
     "Workers subdomain unavailable",
   );
-  const id = randomBytes(12).toString("hex");
   const base = resolve(root, ".wrangler/cloud-agent-infrastructure");
   await mkdir(base, { recursive: true, mode: 0o700 });
-  const directory = await mkdtemp(`${base}/workspace-`);
+  const directory = resumeReport
+    ? dirname(resolve(resumeReport))
+    : await mkdtemp(`${base}/workspace-`);
+  assert.ok(
+    directory.startsWith(base + sep),
+    "Proof journal must be inside this checkout's private resource directory",
+  );
   const reportFile = resolve(directory, "report.json");
-  const report = {
-    id,
-    accountId,
-    startedAt: new Date().toISOString(),
-    resources: [],
-    checks: [],
-    cleanupVerified: false,
-  };
+  assert.ok(
+    !resumeReport || resolve(resumeReport) === reportFile,
+    "Expected an existing report.json",
+  );
+  const report = resumeReport
+    ? JSON.parse(await readFile(reportFile, "utf8"))
+    : {
+        id: randomBytes(12).toString("hex"),
+        accountId,
+        startedAt: new Date().toISOString(),
+        resources: [],
+        checks: [],
+        cleanupVerified: false,
+      };
+  const id = report.id;
+  assert.ok(
+    /^[a-f0-9]{24}$/.test(id) &&
+      report.accountId === accountId &&
+      Array.isArray(report.resources),
+    "Invalid proof identity or account",
+  );
   const save = () =>
     writeFile(reportFile, `${JSON.stringify(report, null, 2)}\n`, {
       mode: 0o600,
     });
   const credentials = new Map();
+  const redactions = new Map();
+
+  if (resumeReport) {
+    for (const resource of report.resources) {
+      assert.ok(
+        /^[a-z-]+$/.test(resource.kind) &&
+          resource.name === `restyle-${resource.kind}-proof-${id}`,
+        "Invalid owned resource name",
+      );
+      assert.equal(
+        resource.url,
+        `https://${resource.name}.${subdomain}.workers.dev`,
+      );
+      assert.equal(
+        resource.config,
+        resolve(directory, `${resource.kind}.json`),
+      );
+      assert.equal(
+        resource.secrets,
+        resolve(directory, `${resource.kind}-secrets.json`),
+      );
+      if (resource.attempted && !resource.removed) {
+        try {
+          const values = JSON.parse(await readFile(resource.secrets, "utf8"));
+          if (typeof values.PROOF_TOKEN === "string")
+            credentials.set(resource.name, values.PROOF_TOKEN);
+        } catch {
+          /* Account-side deletion still works without diagnostic credentials. */
+        }
+      }
+    }
+  }
 
   async function list(kind) {
     const results = [];
@@ -73,8 +126,16 @@ export async function prepareResources(accountId) {
       bindings,
       loaderBinding,
       containerClassName = "Workspace",
+      vars = {},
+      secrets = {},
+      expiresAt = Date.now() + 20 * 60_000,
     } = {},
   ) {
+    assert.equal(
+      resumeReport,
+      null,
+      "A cleanup-only journal cannot create resources",
+    );
     const name = `restyle-${kind}-proof-${id}`;
     assert.equal(
       (await read(`workers/scripts/${name}/settings`)).status,
@@ -116,8 +177,9 @@ export async function prepareResources(accountId) {
       preview_urls: false,
       observability: { enabled: false },
       vars: {
+        ...vars,
         PROOF_ID: id,
-        PROOF_EXPIRES_AT: String(Date.now() + 20 * 60_000),
+        PROOF_EXPIRES_AT: String(expiresAt),
       },
       durable_objects: { bindings: ownedBindings },
       exports: Object.fromEntries(
@@ -143,17 +205,21 @@ export async function prepareResources(accountId) {
               },
             ],
           }
-        : { worker_loaders: [{ binding: loaderBinding ?? "LOADER" }] }),
+        : {}),
+      ...(loaderBinding || kind !== "workspace"
+        ? { worker_loaders: [{ binding: loaderBinding ?? "LOADER" }] }
+        : {}),
     };
     await writeFile(resource.config, JSON.stringify(config, null, 2), {
       mode: 0o600,
     });
     await writeFile(
       resource.secrets,
-      JSON.stringify({ PROOF_TOKEN: proofToken }),
+      JSON.stringify({ ...secrets, PROOF_TOKEN: proofToken }),
       { mode: 0o600 },
     );
     credentials.set(name, proofToken);
+    redactions.set(name, [token, proofToken, ...Object.values(secrets)]);
     report.resources.push(resource);
     await save();
     return resource;
@@ -190,7 +256,7 @@ export async function prepareResources(accountId) {
       return result;
     } catch (error) {
       let diagnostic = `${error.stdout ?? ""}\n${error.stderr ?? ""}`;
-      for (const secret of [token, ...credentials.values()])
+      for (const secret of redactions.get(resource.name) ?? [token])
         diagnostic = diagnostic.replaceAll(secret, "[redacted]");
       await writeFile(
         resolve(directory, `${resource.kind}-deployment-error.log`),
@@ -204,6 +270,11 @@ export async function prepareResources(accountId) {
   }
 
   async function deploy(resource) {
+    assert.equal(
+      resumeReport,
+      null,
+      "A cleanup-only journal cannot deploy resources",
+    );
     await command(resource, true);
     resource.attempted = true;
     await save();
@@ -305,6 +376,14 @@ export async function prepareResources(accountId) {
     if (!resource.attempted || resource.removed) return;
     console.log(`Removing ${resource.name}`);
     await discover(resource); // Reconcile an upload whose response was lost.
+    const currentApps = await list("containers");
+    for (const id of resource.applicationIds) {
+      const current = currentApps.find((app) => app.id === id);
+      assert.ok(
+        !current || current.name === resource.name,
+        "Recorded application is no longer owned by this proof",
+      );
+    }
     try {
       resource.storageDeletion = await call(resource, "/", "DELETE");
     } catch {

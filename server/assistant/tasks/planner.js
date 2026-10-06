@@ -37,8 +37,14 @@ export function savedPlannerAvailable(env) {
 }
 
 /** A single read-only planning inference. Models cannot emit platform commands or effects. */
-export async function planSavedTask(task, env, signal, evidence = null) {
-  const response = await nativeModels(env).generate(
+export async function planSavedTask(
+  task,
+  env,
+  signal,
+  evidence = null,
+  models = nativeModels(env),
+) {
+  const response = await models.generate(
     {
       schema: withEvidenceSchema(schema),
       temperature: 0.15,

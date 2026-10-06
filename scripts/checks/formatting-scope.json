@@ -473,5 +473,15 @@
   "scripts/checks/editor/component-delivery.mjs",
   "tests/service-delivery/activation.test.mjs",
   "tests/service-delivery/helpers.mjs",
-  "tests/service-delivery/packaging.test.mjs"
+  "tests/service-delivery/packaging.test.mjs",
+  "scripts/checks/cloud-agent-first-release/control.js",
+  "scripts/checks/cloud-agent-first-release/run.mjs",
+  "scripts/checks/cloud-agent-first-release/exercise.mjs",
+  "scripts/checks/cloud-agent-first-release/worker.js",
+  "scripts/checks/cloud-agent-first-release/scenarios.js",
+  "scripts/checks/cloud-agent-first-release/meter.js",
+  "scripts/checks/cloud-agent-first-release/tasks.js",
+  "tests/first-release/acceptance.test.mjs",
+  "scripts/checks/cloud-agent-first-release/cleanup.mjs",
+  "tests/first-release/resources.test.mjs"
 ]
