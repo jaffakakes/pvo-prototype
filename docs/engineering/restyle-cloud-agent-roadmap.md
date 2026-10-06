@@ -2,7 +2,7 @@
 
 **Continuing with Claude Code or Codex:** read [current progress](restyle-cloud-agent-progress.md), then the [handoff/restart guide](restyle-cloud-agent-handoff.md). Every checklist item now has a stable task ID. After each verified task, check it off and save its evidence and exact next action. Root [AGENTS.md](../../AGENTS.md) and [CLAUDE.md](../../CLAUDE.md) require this workflow.
 
-Status: implementation in progress, **6 October 2026**. **1A, 1B.01–1B.14, 1C, 1D and 1E.01–1E.03 are verified (40/126 tasks).** Durable goals, private history, capacity/spending waits, actual repair/progress feedback and expired inactive-host recovery pass 1,408 local tests. **Next: 1B.15 combined continuation acceptance, then 1E.04 runtime connections.** Beta `7c4dc779c558fb31` includes complete 1B.14 source and passed the combined build/browser checks. The complete generated-component journey remains 1F; beta, remote integration and production are separate states. See [current evidence](restyle-cloud-agent-progress.md). Unchecked items remain work to do.
+Status: implementation in progress, **6 October 2026**. **1A, 1B.01–1B.15, 1C, 1D and 1E.01–1E.03 are verified (41/126 tasks).** The combined continuation journey passes 78 controlled model calls, 65 source revisions, seven sessions, long goal age, waits, restarts and uncertain hosting recovery. All 1,409 local tests pass. **Next: 1E.04 runtime connections.** Beta `7c4dc779c558fb31` contains the verified product source; this acceptance slice adds tests/handoff only. The complete generated-component journey remains 1F; beta, remote integration and production are separate states. See [current evidence](restyle-cloud-agent-progress.md). Unchecked items remain work to do.
 
 Start with [Roadmap 1](restyle-cloud-agent-roadmaps/01-first-working-component.md). It delivers the first complete version: ask for a component, let the agent build a new backend, try it, and share something that keeps working after its temporary computer shuts down.
 
@@ -23,7 +23,7 @@ Every roadmap contains ordered implementation steps, relevant code areas, and ob
 
 ## Delivery sequence and completion gates
 
-Use the numbered tasks in the linked guide as the detailed checklist. The phase order is a dependency plan, not a calendar estimate. 1A is complete; 1B.01–1B.13 are complete and 1B.14–1B.15 remain. A checked implementation task does not automatically mean its PR is merged or its feature is released.
+Use the numbered tasks in the linked guide as the detailed checklist. The phase order is a dependency plan, not a calendar estimate. 1A and 1B.01–1B.15 are complete. A checked implementation task does not automatically mean its PR is merged or its feature is released.
 
 | Phase | Deliverable | Depends on | Evidence needed to finish |
 | --- | --- | --- | --- |
