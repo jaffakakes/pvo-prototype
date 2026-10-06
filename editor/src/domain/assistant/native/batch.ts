@@ -17,7 +17,7 @@ import { applyComponentOperation, validateNativeComponentRoutes } from "./compon
 import { applyMediaOperation } from "./mediaOperations";
 import { nativePreparationReceipt, nativeReceiptValues } from "./receipts";
 import { applyFontOperation } from "./fontOperations";
-import { validateAttachmentBatchInput, validateNativeBatchAttachment } from "./serviceAttachments";
+import { validateAttachmentBatchInput, connectNativeBatchAttachment } from "./serviceAttachments";
 import type { NativeBatch, NativePlaybackOperation, NativePreparation } from "./types";
 export type { NativeBatch, NativePreparation, NativePlaybackOperation } from "./types";
 export { validateNativeBatchEditingMode } from "./componentOperations";
@@ -163,6 +163,6 @@ export async function prepareNativeBatch(before: ProjectSnapshot, input: readonl
   validateNativeBatchEffects({ project, playback, exportFormat });
   const batch = { before: copy(before), project, operations, receipts, playback, exportFormat, advancedEditingEnabled: options.advancedEditingEnabled,
     ...(attachment ? { attachment } : {}) };
-  validateNativeBatchAttachment(batch);
+  connectNativeBatchAttachment(batch);
   return batch;
 }

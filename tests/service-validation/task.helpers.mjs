@@ -33,6 +33,9 @@ export function planner({
   return async (request) => {
     const task = await request.json();
     observe(task);
+    // This backend-only fixture deliberately supplies no component proposal.
+    if (task.stepId === "attach")
+      return Response.json({ kind: "no_attachment_fixture" });
     if (task.stepId === "plan")
       return Response.json({ kind: "checkpoint", stepId: "build" });
     const context = task.builderContext;

@@ -77,3 +77,18 @@ export function matchServiceAttachment(
   scope: TaskReference,
   now: number,
 ): VerifiedServiceAttachment;
+
+/** Persisted project metadata. Parsing never grants server permissions or current readiness. */
+export type ComponentServiceConnection = {
+  receipt: ServiceAttachmentReceipt;
+  connection: ServiceAttachmentCommand["connection"];
+  origin: string;
+};
+export function parseComponentServiceConnection(
+  value: unknown,
+): ComponentServiceConnection;
+export function prepareComponentServiceConnection(
+  authorization: ServiceAttachmentAuthorization,
+): ComponentServiceConnection;
+
+export const serviceAttachmentSchema: Record<string, unknown>;

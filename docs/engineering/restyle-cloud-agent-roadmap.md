@@ -63,6 +63,7 @@ Work on the workspace and hosting can overlap once their input and output agreem
 
 - Every task, workspace, service, and saved record belongs to a creator and project.
 - Follow-up questions and completed work survive closing the editor.
+- Goals have no arbitrary model-turn ceiling. Short work periods and resource controls must checkpoint and resume the same goal; use [1B.11–1B.15](restyle-cloud-agent-roadmaps/1b-goal-continuation.md) for the user-requested continuation design.
 - Test execution is enforced by the server. Editing a browser field cannot turn a test into a live action.
 - Time, request, storage, and spending limits are enforced outside generated code.
 - The creator can stop a build, inspect a service, pause it, and delete it.

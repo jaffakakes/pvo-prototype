@@ -5,6 +5,7 @@ export const TASK_LIMITS = Object.freeze({
   examples: 8,
   exampleBytes: 2000,
   components: 8,
+  scenes: 32,
   sourceBytes: 20_000,
   inputBytes: 128 * 1024,
   recordBytes: 256 * 1024,
@@ -20,7 +21,6 @@ export const TASK_LIMITS = Object.freeze({
   retentionMs: 7 * 24 * 60 * 60_000,
   leaseMs: 60_000,
   retries: 3,
-  modelTurns: 6,
   toolCalls: 24,
 });
 

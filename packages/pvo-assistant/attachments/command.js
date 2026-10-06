@@ -22,7 +22,11 @@ export function parseServiceAttachmentCommand(value) {
       component.source,
     "A service attachment needs one complete component source proposal.",
   );
-  const connection = value.connection;
+  validateServiceConnectionProposal(value.connection);
+  return structuredClone(value);
+}
+
+export function validateServiceConnectionProposal(connection) {
   object(
     connection,
     ["releaseId", "operation", "event", "target", "input"],
@@ -42,7 +46,6 @@ export function parseServiceAttachmentCommand(value) {
     );
   else id(connection.target, "Service connection target");
   validateAttachmentInput(connection.input);
-  return structuredClone(value);
 }
 
 /** Scope comes from the authenticated task/current project, never from the proposed command. */

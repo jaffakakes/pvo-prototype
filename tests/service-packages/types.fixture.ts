@@ -171,3 +171,12 @@ attachments.matchAttachmentOperation(
 // @ts-expect-error A proposed component alone supplies no independent service receipt or scope.
 attachments.serviceAttachmentRequest(attachment);
 void postMethod;
+
+const componentConnection = attachments.prepareComponentServiceConnection(
+  attachmentAuthorization,
+);
+const checkedConnection: import("../../packages/pvo-assistant/attachments/index.js").ComponentServiceConnection =
+  attachments.parseComponentServiceConnection(componentConnection);
+// @ts-expect-error Saved component metadata grants no live/test namespace selector.
+checkedConnection.mode = "live";
+void checkedConnection;

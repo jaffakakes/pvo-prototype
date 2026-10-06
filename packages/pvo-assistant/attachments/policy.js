@@ -8,7 +8,7 @@ import {
 import { matchServiceAttachment } from "./command.js";
 
 /** This origin is platform configuration; it must never come from the model's connection proposal. */
-function platformOrigin(value) {
+export function platformOrigin(value) {
   const url = new URL(value);
   const loopback = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
   requireTask(

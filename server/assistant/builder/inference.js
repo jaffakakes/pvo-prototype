@@ -1,5 +1,7 @@
 import { parseBuilderDecision } from "../../../packages/pvo-assistant/builder/index.js";
 import { serializeServiceAgreement } from "../../../packages/pvo-assistant/services/index.js";
+import { attachmentPlanningContext } from "../attachments/context.js";
+import { prepareTaskAttachment } from "../attachments/preparation.js";
 import { contentDigest } from "../../contentDigest.js";
 
 /** Hash the exact saved decision context before reserving an inference. */
@@ -8,6 +10,9 @@ export function authoringInput(coordinator, task) {
     input: task.input,
     questions: task.questions,
     stepId: task.stepId,
+    ...(task.stepId === "attach"
+      ? { attachment: attachmentPlanningContext(coordinator, task) }
+      : {}),
     ...(task.stepId === "build"
       ? { build: coordinator.builders.context(task.id) }
       : {}),
@@ -20,6 +25,15 @@ export async function prepareAuthoringResponse(
   response,
   input,
 ) {
+  if (task.stepId === "attach") {
+    try {
+      return await prepareTaskAttachment(coordinator, task, response);
+    } catch {
+      throw Object.assign(new Error("Invalid saved component attachment."), {
+        code: "invalid_result",
+      });
+    }
+  }
   if (task.stepId !== "build") return response;
   try {
     const decision = parseBuilderDecision(response, {
@@ -67,10 +81,19 @@ export function finishAuthoringAttempt(
   const accepted = coordinator.attempts.finish(
     claimed,
     attempt,
-    claimed.stepId === "build" ? prepared?.command : response,
+    claimed.stepId === "build"
+      ? prepared?.command
+      : claimed.stepId === "attach"
+        ? response?.command
+        : response,
     code,
     now,
   );
+  if (accepted && claimed.stepId === "attach")
+    coordinator.results.save(
+      coordinator.attempts.task(claimed.id),
+      response.encoded,
+    );
   if (accepted && prepared)
     coordinator.builders.write(claimed.id, prepared.state);
 }

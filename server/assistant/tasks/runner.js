@@ -4,6 +4,7 @@ import {
   finishAuthoringAttempt,
 } from "../builder/inference.js";
 import { withAssistantDeadline } from "../deadline.js";
+import { transitionGuard, taskClaim } from "./executionClaim.js";
 import { creationDigest } from "./input.js";
 import {
   taskBudgetIdentity,
@@ -23,7 +24,24 @@ export async function runAuthoringStep(coordinator, claimed) {
       operationId,
       coordinator.now(),
     );
-    const input = authoringInput(coordinator, claimed);
+    let input;
+    try {
+      input = authoringInput(coordinator, claimed);
+    } catch {
+      await coordinator.transaction(() => {
+        if (!coordinator.attempts.current(claimed, coordinator.now())) return;
+        const task = coordinator.attempts.task(claimed.id);
+        coordinator.repository.update(
+          task.id,
+          {
+            kind: "fail",
+            failure: { code: "invalid_result", stepId: task.stepId },
+          },
+          transitionGuard(task, coordinator.now(), taskClaim(task)),
+        );
+      });
+      return;
+    }
     const digest = await creationDigest(input);
     attempt = await coordinator.transaction(() =>
       coordinator.attempts.begin(claimed, identity, digest, coordinator.now()),

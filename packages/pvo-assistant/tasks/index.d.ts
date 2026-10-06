@@ -19,10 +19,13 @@ export type TaskReference = {
 };
 export type TaskContext = {
   fingerprint: string;
+  currentSceneId: string;
+  scenes: Array<{ id: string; name: string; duration: number }>;
   components: Array<{
     id: string;
     sceneId: string;
     type: "tooltip" | "card" | "choice" | "form";
+    sourceVisibility: "full" | "design";
     source: { structure: string; style: string; logic: string };
   }>;
 };
@@ -128,6 +131,7 @@ export const TASK_LIMITS: Readonly<{
   examples: number;
   exampleBytes: number;
   components: number;
+  scenes: number;
   sourceBytes: number;
   inputBytes: number;
   recordBytes: number;
@@ -143,7 +147,6 @@ export const TASK_LIMITS: Readonly<{
   retentionMs: number;
   leaseMs: number;
   retries: number;
-  modelTurns: number;
   toolCalls: number;
 }>;
 export const TASK_STATES: readonly TaskState[];

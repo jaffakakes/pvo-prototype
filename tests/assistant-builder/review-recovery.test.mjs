@@ -4,12 +4,12 @@ import { runBuilderBatch } from "../../server/assistant/builder/runner.js";
 import { create, claim } from "../assistant-tasks/fixtures.mjs";
 import { transitionTask } from "../../packages/pvo-assistant/tasks/index.js";
 
-test("a saved completed review batch advances after restart without a seventh inference or any tool", async () => {
+test("a saved completed review batch advances after restart after many prior turns without another model call or any tool", async () => {
   const task = {
     ...claim(create()),
     stepId: "build",
     usage: {
-      modelTurns: 6,
+      modelTurns: 100,
       toolCalls: 24,
       reservedModelTurns: 0,
       reservedToolCalls: 0,
@@ -31,6 +31,6 @@ test("a saved completed review batch advances after restart without a seventh in
   assert.equal(result.stepId, "validate");
   assert.equal(result.state, "queued");
   assert.equal(result.result, null);
-  assert.equal(result.usage.modelTurns, 6);
+  assert.equal(result.usage.modelTurns, 100);
   assert.equal(result.usage.toolCalls, 24);
 });
