@@ -17,6 +17,17 @@ export class TaskResearch {
     sql.exec(
       "CREATE INDEX IF NOT EXISTS task_research_task ON task_research(task_id)",
     );
+    sql.exec(
+      "CREATE INDEX IF NOT EXISTS task_research_unfinished ON task_research(task_id) WHERE json_extract(body,'$.settled')=0",
+    );
+  }
+  unfinished() {
+    return this.sql
+      .exec(
+        "SELECT body FROM task_research WHERE json_extract(body,'$.settled')=0",
+      )
+      .toArray()
+      .map((row) => JSON.parse(row.body));
   }
   entries() {
     return this.sql
@@ -25,12 +36,15 @@ export class TaskResearch {
       .map((row) => JSON.parse(row.body));
   }
   get(taskId, operationId) {
-    return (
-      this.entries().find(
-        (row) => row.taskId === taskId && row.operationId === operationId,
-      ) ?? null
-    );
+    const row = this.sql
+      .exec(
+        "SELECT body FROM task_research WHERE id=?",
+        `${taskId}_${operationId}`,
+      )
+      .toArray()[0];
+    return row ? JSON.parse(row.body) : null;
   }
+
   write(row) {
     this.sql.exec(
       "INSERT INTO task_research (id,task_id,body) VALUES (?,?,?) ON CONFLICT(id) DO UPDATE SET body=excluded.body",
@@ -161,7 +175,7 @@ export class TaskResearch {
     return settled;
   }
   recover(now) {
-    for (const row of this.entries().filter((row) => !row.settled)) {
+    for (const row of this.unfinished()) {
       const task = this.task(row.taskId);
       if (task?.state === "running" && task.claim.expiresAt > now) continue;
       this.finish(
@@ -173,21 +187,19 @@ export class TaskResearch {
     }
   }
   nextWakeup(now) {
-    const times = this.entries()
-      .filter((row) => !row.settled)
-      .map((row) =>
-        this.task(row.taskId)?.state === "running" ? row.deadlineAt : now,
-      );
+    const times = this.unfinished().map((row) =>
+      this.task(row.taskId)?.state === "running" ? row.deadlineAt : now,
+    );
     return times.length ? Math.min(...times) : null;
   }
   prune(now) {
-    for (const row of this.entries()) {
-      const task = this.task(row.taskId);
-      if (
-        row.settled &&
-        (!task || (task.expiresAt !== null && task.expiresAt <= now))
-      )
-        this.sql.exec("DELETE FROM task_research WHERE id=?", row.id);
-    }
+    this.sql.exec(
+      `DELETE FROM task_research
+      WHERE json_extract(body,'$.settled')=1 AND NOT EXISTS (
+        SELECT 1 FROM tasks WHERE tasks.id=task_research.task_id AND record IS NOT NULL
+        AND (json_extract(record,'$.expiresAt') IS NULL OR json_extract(record,'$.expiresAt')>?)
+      )`,
+      now,
+    );
   }
 }
