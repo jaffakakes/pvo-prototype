@@ -47,13 +47,24 @@ export async function openCreatorJourney({
         await import("/src/state/auth/authGateStore.ts")
       ).refreshAccountSession();
     });
-    await page.waitForFunction(
-      (id) =>
-        window.resultProbe.storage.getProjectStorageStatus().phase ===
-          "ready" &&
-        (!id || window.resultProbe.useCapture.getState().localId === id),
-      session.localId,
-    );
+    try {
+      await page.waitForFunction(
+        (id) =>
+          window.resultProbe.storage.getProjectStorageStatus().phase ===
+            "ready" &&
+          (!id || window.resultProbe.useCapture.getState().localId === id),
+        session.localId,
+      );
+    } catch (error) {
+      await record("creator_storage_not_ready", {
+        subject: session.subject,
+        errors: session.errors,
+        storage: await page.evaluate(() =>
+          window.resultProbe.storage.getProjectStorageStatus(),
+        ),
+      });
+      throw error;
+    }
     return page;
   }
   async function start(subject) {

@@ -143,6 +143,12 @@ Camera-only run `790268ad4e8badd432336362` (`workspace-i92vUH/report.json`) ran 
 
 Readiness now waits for an unmarked platform 404 under the same run deadline. Wrong application identity, authentication errors and marked application errors still fail. Five transport regressions pass in `/tmp/restyle-1f-route-propagation-tests.log`. Continue with a fresh camera-only journal under the user's existing completion authorization; do not revive a consumed resource.
 
+### 7 October — browser preflight recovery
+
+Run `1710621093ac99bbcc783fb4` (`workspace-aIE6Oo/report.json`) ran **2026-10-06T23:08:28.332Z–23:09:25.995Z**. Cloud readiness passed; editor startup probe timed out before creating a task. **Zero model calls, two diagnostic HTTP admissions**. All resources and secrets removed with verified cleanup. The ordinary UI had loaded, but the probe imported an unversioned storage module while the hot-reloaded app used timestamped modules. Its separate instance remained in `starting`. Restarting only the owned Vite 5318 process cleared the split; the actual local browser/task-creation preflight passed all three tests in `/tmp/restyle-1f-camera-browser-preflight-fixed.log`. Added diagnostic storage/error recording for future startup failures; no product persistence change.
+
+Before a paid browser acceptance run, start a fresh isolated Vite process after source changes and verify `CHECK_ACCEPTANCE_BROWSER=1 node --test tests/first-release/acceptance.test.mjs`. Do not restart the user's beta server. All seven diagnostics are cleaned; subsequent run remains authorized by the completion instruction.
+
 ## Run and recover
 
 Invocation from the active checkout, under the recorded completion authorization:
