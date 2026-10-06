@@ -149,6 +149,10 @@ Run `1710621093ac99bbcc783fb4` (`workspace-aIE6Oo/report.json`) ran **2026-10-06
 
 Before a paid browser acceptance run, start a fresh isolated Vite process after source changes and verify `CHECK_ACCEPTANCE_BROWSER=1 node --test tests/first-release/acceptance.test.mjs`. Do not restart the user's beta server. All seven diagnostics are cleaned; subsequent run remains authorized by the completion instruction.
 
+### 7 October — cloud submission diagnosis
+
+Run `1c47fd9fd5a361e2943e514e` (`workspace-H0uUcC/report.json`) ran **2026-10-06T23:11:47.529Z–23:12:38.942Z**. The fresh editor passed storage startup, but the later saved-task submission wait expired. Zero model calls, three admitted diagnostic HTTP requests, no workshops; complete cleanup verified. Cause remains unconfirmed. Private diagnostics now record rejected API status and the submission stage. Transport now recognizes inner API-wrapper HTTP failures for the same replay-safe intents; six transport regressions pass. Read-only account-route readiness precedes browser startup. The fresh local browser preflight passed again in `/tmp/restyle-1f-camera-browser-preflight-second.log`.
+
 ## Run and recover
 
 Invocation from the active checkout, under the recorded completion authorization:

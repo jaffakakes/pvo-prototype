@@ -29,6 +29,14 @@ export async function openCreatorJourney({
       ...(body === undefined ? {} : { body }),
     });
     assert.equal(response.status, 200, "Diagnostic API bridge unavailable");
+    if (response.data?.status >= 400)
+      await record("creator_api_rejected", {
+        subject,
+        path,
+        method,
+        status: response.data.status,
+        error: response.data.body?.error,
+      });
     return response.data;
   }
   async function ready(session) {
@@ -181,12 +189,22 @@ export async function openCreatorJourney({
     await page
       .getByRole("button", { name: "Send request", exact: true })
       .click();
-    await page.waitForFunction(
-      () =>
-        window.resultProbe.useCapture.getState().assistantTaskLinks?.accounts[0]
-          ?.taskId &&
-        !window.resultProbe.storage.getProjectStorageStatus().storage.dirty,
-    );
+    try {
+      await page.waitForFunction(
+        () =>
+          window.resultProbe.useCapture.getState().assistantTaskLinks
+            ?.accounts[0]?.taskId &&
+          !window.resultProbe.storage.getProjectStorageStatus().storage.dirty,
+      );
+    } catch (error) {
+      await record("creator_submission_not_saved", {
+        subject,
+        taskId: session.task?.id ?? null,
+        errors: session.errors,
+        visibleText: (await page.locator("body").innerText()).slice(-6000),
+      });
+      throw error;
+    }
     assert.ok(session.task?.id, "The browser must create a real saved task");
     await page.close();
     await record("creator_closed_during_authoring", {

@@ -231,3 +231,36 @@ test("new route propagation retries only unmarked 404s and preserves identity an
   );
   assert.equal(now, 5000);
 });
+
+test("idempotent bridge requests recover an inner HTTP failure without replacing the saved intent", async () => {
+  const bodies = [],
+    records = [];
+  const call = acceptanceTransport(
+    async (path, method, body) => {
+      bodies.push(structuredClone(body));
+      return {
+        status: 200,
+        data: {
+          status: bodies.length === 1 ? 503 : 201,
+          body:
+            bodies.length === 1
+              ? { error: "unavailable" }
+              : { project: { id: "same-project" } },
+        },
+      };
+    },
+    {
+      expiresAt: Date.now() + 1000,
+      wait: async () => {},
+      record: async (kind, value) => records.push(value),
+    },
+  );
+  const response = await call("/equipment/api", "POST", {
+    path: "/api/assistant/projects",
+    method: "POST",
+    body: { localId: "exact-local-project" },
+  });
+  assert.equal(response.data.status, 201);
+  assert.deepEqual(bodies[0], bodies[1]);
+  assert.equal(records[0].status, 503);
+});
