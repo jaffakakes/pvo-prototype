@@ -42,7 +42,7 @@ Pure contract tests cover serialized recovery, exact input/bytes, typed bindings
 
 The common client and IndexedDB adapter are verified with storage failures, concurrent callers, late replies, cancellation, client recreation and actual server replay. A fresh Chromium profile survives a complete browser shutdown/restart; two tabs serialize competing submissions, transaction rollback preserves the old record, and closed storage sends nothing. The browser script uses controlled responses; the separate HTTP tests use the real local service host.
 
-Try now uses account/local-project/component/control-scoped storage, exact live request matching, current-context guards and the dedicated server test route. The player wiring and explicit recovery presentation remain **1E.04** work. Public export/activation remain **1E.06–09**. The shared contract alone does not make an exported component usable.
+Try now uses account/local-project/component/control-scoped storage, exact live request matching, current-context guards and the dedicated server test route. The player and explicit recovery are verified in **1E.04**. Normal export/activation is verified in **1E.06–09** through the delivery boundary described below. Parsing alone never grants invocation or activation authority.
 
 Component Try uses a dedicated server-derived authority restricted to the owner, expected test release and public operations. The general creator `/try` management route is not a component capability. HTTP acceptance rejects foreign/anonymous sessions, changed origins/releases, private operations and payload authority flags before generated code runs. Test and live records remain separate across restart.
 

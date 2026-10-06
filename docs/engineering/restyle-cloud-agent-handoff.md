@@ -174,8 +174,10 @@ Do not rerun paid cloud proofs simply because an agent changed. Run them to veri
 
 ## Prompt the user can give the next agent
 
-> Read CLAUDE.md, AGENTS.md, docs/engineering/restyle-cloud-agent-progress.md and docs/engineering/restyle-cloud-agent-handoff.md from feature/restyle-runtime-actions (draft #103) or its verified successor. Continue the exact next numbered task in progress. Implementation has resumed; preserve the reviewed device/cloud and consolidated Node.js Container plan after 1F. Preserve existing work, skip GitHub Actions polling, and do not reuse exhausted paid-test approvals. After each verified task, mark its checkbox complete and save the checks, commit/PR, resources, beta state and next action. Leave partial work unchecked and record a resumable checkpoint before stopping. Explain outcomes in plain language. Do not depend on previous chat history.
+> Read CLAUDE.md, AGENTS.md, docs/engineering/restyle-cloud-agent-progress.md and docs/engineering/restyle-cloud-agent-handoff.md from feature/restyle-service-delivery (draft #104) or its verified successor. Continue the exact next numbered task in progress. Implementation has resumed; preserve the reviewed device/cloud and consolidated Node.js Container plan after 1F. Preserve existing work, skip GitHub Actions polling, and do not reuse exhausted paid-test approvals. After each verified task, mark its checkbox complete and save the checks, commit/PR, resources, beta state and next action. Leave partial work unchecked and record a resumable checkpoint before stopping. Explain outcomes in plain language. Do not depend on previous chat history.
 
+
+## Historical implementation checkpoints
 
 Latest 1C checkpoint: implementation **`98dd960`**, [draft PR #96](https://github.com/jaffakakes/pvo-prototype/pull/96), **1,309 full local tests** and **46 combined-beta focused tests**. The active beta serves `restyle-editor-shell-285b0d16a1d49e74`, including the separate UI design and iPhone cover fixes. The progress document records exact backup/output paths. All of 1C and 1D.01/02 are complete; 1D.03–1D.05 are next. Read the newer hosting checkpoint for current checks/delivery. Do not confuse a passing local test report or static beta delivery with hosted product availability.
 
