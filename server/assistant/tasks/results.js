@@ -13,9 +13,9 @@ export class TaskResults {
       sha256 TEXT NOT NULL, bytes INTEGER NOT NULL, body TEXT NOT NULL);`);
   }
 
-  async encode(task, operations) {
+  async encode(task, operations, attachment = null) {
     const body = serializePreparedTaskResult(
-      prepareTaskResult(task, operations),
+      prepareTaskResult(task, operations, attachment),
     );
     const bytes = new TextEncoder().encode(body);
     const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));

@@ -253,7 +253,11 @@ function recoverClaim(task, now) {
 }
 
 function updateUsage(task, command) {
-  integer(command.modelTurns, limits.modelTurns, "Model turn reservation");
+  integer(
+    command.modelTurns,
+    Number.MAX_SAFE_INTEGER,
+    "Model turn reservation",
+  );
   integer(command.toolCalls, limits.toolCalls, "Tool call reservation");
   requireTask(
     command.modelTurns + command.toolCalls > 0,

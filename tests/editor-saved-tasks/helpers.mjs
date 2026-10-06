@@ -9,6 +9,7 @@ export const api = await import(
     export * from './editor/src/domain/project/mediaReferences.ts';
     export * from './editor/src/domain/assistant/native/context.ts';
     export * from './editor/src/domain/assistant/native/batch.ts';
+    export * from './editor/src/domain/assistant/savedResultPreparation.ts';
     export * from './editor/src/features/assistant/saved-tasks/applicationWorkflow.ts';
     export * from './editor/src/state/assistant/taskProjectCommands.ts';
     export * from './editor/src/state/assistant/taskResultCommands.ts';
