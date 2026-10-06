@@ -2,6 +2,8 @@
 
 [Numbered roadmap](01-first-working-component.md#1e-attach-the-service-to-pvo-and-activate-it) · [Progress and evidence](../restyle-cloud-agent-progress.md)
 
+**Next product evolution:** [1G Containers](1g-containers.md) follows 1F and reuses these service/attachment boundaries with hosted Node.js. The evidence and completion states below describe their original implementation and remain unchanged.
+
 ## In everyday terms
 
 The cloud agent has built a small service and tested its rules. This stage gives the component a checked connection to that service. Restyle must make sure it is the right service, belongs to the right creator and project, and accepts the information the component will send.

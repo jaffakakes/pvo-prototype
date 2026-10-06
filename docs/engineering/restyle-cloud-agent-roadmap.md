@@ -2,7 +2,9 @@
 
 **Continuing with Claude Code or Codex:** read [current progress](restyle-cloud-agent-progress.md), then the [handoff/restart guide](restyle-cloud-agent-handoff.md). Every checklist item now has a stable task ID. After each verified task, check it off and save its evidence and exact next action. Root [AGENTS.md](../../AGENTS.md) and [CLAUDE.md](../../CLAUDE.md) require this workflow.
 
-Status: implementation in progress, **6 October 2026**. **1A, 1B.01–1B.15, 1C, 1D, 1E.01–1E.03 and 1E.05 are verified (42/126 tasks).** Goals continue without arbitrary total call or age ceilings. Connected Try now passes actual browser/form/server restart and saved-action replay acceptance; 1,431 local tests and strict editor types pass. **Next: complete 1E.04 player invocation and recovery presentation**, then activation/export 1E.06–09. Try source is delivered in beta `5bc3d01f8d58f03b`; product Worker deployment and the full 1F generated-component acceptance remain separate. See [current evidence](restyle-cloud-agent-progress.md). Unchecked items remain work to do.
+Status: implementation in progress, **6 October 2026**. **1A, 1B.01–1B.15, 1C, 1D, 1E.01–1E.03 and 1E.05 are verified (42/134 tasks).** Goals continue without arbitrary total call or age ceilings. Connected Try now passes actual browser/form/server restart and saved-action replay acceptance; 1,431 local tests and strict editor types pass. **Next: complete 1E.04 player invocation and recovery presentation**, then activation/export 1E.06–09. Try source is delivered in beta `5bc3d01f8d58f03b`; product Worker deployment and the full 1F generated-component acceptance remain separate. See [current evidence](restyle-cloud-agent-progress.md). Unchecked items remain work to do.
+
+**Planning update:** [1G Containers](restyle-cloud-agent-roadmaps/1g-containers.md) is the next product feature after 1F, before Roadmap 2. It extends the existing service system with editable saved drafts and hosted Node.js execution. Eight new unchecked tasks are added; twelve existing unchecked 4B/4C tasks are moved into that plan, with their IDs and wording retained. No completed work is reset. The user confirmed preserving the currently recorded partial 1E / unfinished 1F status. This update is documentation only.
 
 Start with [Roadmap 1](restyle-cloud-agent-roadmaps/01-first-working-component.md). It delivers the first complete version: ask for a component, let the agent build a new backend, try it, and share something that keeps working after its temporary computer shuts down.
 
@@ -12,10 +14,10 @@ The [architecture document](restyle-cloud-agent-architecture.md) explains the id
 
 | Order | What you will have when finished | Implementation guide |
 | --- | --- | --- |
-| 1 | An agent that builds a working component and a real hosted backend, with saved progress and basic management controls. | [Build the first working component](restyle-cloud-agent-roadmaps/01-first-working-component.md) |
+| 1, then 1G | First a working component/backend; then a Containers area for manual/AI editing and checked Node.js hosting using that same service system. | [Build the first working component](restyle-cloud-agent-roadmaps/01-first-working-component.md) |
 | 2 | An agent that researches outside services, asks useful questions, helps connect accounts, and continues with the chosen approach. | [Research and connect outside services](restyle-cloud-agent-roadmaps/02-research-and-connections.md) |
 | 3 | Features that continue working after a viewer closes the video, with reliable messages, callbacks, schedules, and honest status updates. | [Support work that takes time](restyle-cloud-agent-roadmaps/03-background-work.md) |
-| 4 | An agent that updates and repairs existing features, with richer controls and additional runtimes when needed. | [Maintain and expand the system](restyle-cloud-agent-roadmaps/04-maintenance-and-expansion.md) |
+| 4 | Deeper diagnosis, connection-health monitoring and additional capabilities; reuse the update/management work delivered in 1G. | [Maintain and expand the system](restyle-cloud-agent-roadmaps/04-maintenance-and-expansion.md) |
 
 The first roadmap uses Restyle-owned storage so you can prove code generation and hosting without first needing a restaurant or messaging account. It must generate different rules for different requests. The product remains a general builder.
 
@@ -33,7 +35,8 @@ Use the numbered tasks in the linked guide as the detailed checklist. The phase 
 | **1D — complete** | Owned services, records, quotas, pause/delete | 1B records and 1C immutable artifacts | Duplicate and competing submissions behave correctly; isolation and cleanup hold |
 | 1E | Verified service attached to component | 1C/1D receipts and existing editor/player boundaries | Try uses test permissions; file export and publication both use the correct live service |
 | 1F | First complete product release | 1B–1E gates | Two natural-language demonstrations; restart/failure checks; beta and authorized release evidence |
-| 2A | Research and saved capability decisions | 1B saved questions; existing web tools | Online, phone-only, and no-booking examples produce truthful available options |
+| **1G — planned next feature** | Containers: saved manual/AI drafts, checked Node.js runtime, and existing service update/management flows | Completed 1E/1F; reuse 1B–1D | Exact tested Node.js release survives workshop/instance shutdown; both editing paths, attachments, costs and cleanup verified |
+| 2A | Research and saved capability decisions | Product sequence follows 1G; reuse 1B saved questions and web tools | Online, phone-only, and no-booking examples produce truthful available options |
 | 2B | One secure account connection | 2A access decision and owner records | Connect, reload, expire, reconnect, revoke; another owner cannot use it |
 | 2C | Generated integration through controlled credentials | 1D and 2B; Roadmap 3 for long-running effects | Live supported operation; revocation and unknown-outcome handling |
 | 2D | Useful manual alternatives | 1B questions and 2A research | Chosen manual step stays pending; RSVP is never labelled a confirmed booking |
@@ -42,8 +45,8 @@ Use the numbered tasks in the linked guide as the detailed checklist. The phase 
 | 3C | Truthful pending/final component status | 3A/3B and 1E attachment | Private receipt access, safe refresh, correct Try/export/player behavior |
 | 3D | Real acceptance-triggered automation | 2C and 3A–3C | Supported provider path works with browsers closed; uncertain outcomes are reconciled |
 | 4A | Scoped diagnosis and repair | Retained source and service/task records | Correctly distinguish code faults and account faults; preserve saved records |
-| 4B | Tested updates and recovery | 1D releases, 1E attachments, 4A diagnosis | Good replacement works; broken replacement leaves prior release available |
-| 4C | Better service management | 1D basic controls; 2/3 for connected work | Creator can identify failure, control usage, and retire resources safely |
+| 4B — pulled into 1G | Basic tested updates and recovery | 1D releases and 1G Node.js drafts; extend for 2/3 later | Existing 4B.01–07 checklist appears once in 1G; preserve current records and prior working release |
+| 4C — shared with 1G | Basic management in 1G; later connection-health and missing-release monitoring | Same service controls; 2/3 for connected work | Five existing tasks move to 1G; 4C.03/07 remain later |
 | 4D | Additional capability justified by a request | Existing ownership/lifecycle gates | One concrete new capability meets the same isolation, recovery, and truthful-result checks |
 
 For the current milestone, use the [goal-continuation plan](restyle-cloud-agent-roadmaps/1b-goal-continuation.md), then return to the [1E attachment implementation plan](restyle-cloud-agent-roadmaps/1e-component-attachments.md). The completed [1D hosting implementation plan](restyle-cloud-agent-roadmaps/1d-hosted-services.md) retains its decisions and evidence. The completed [1C workshop implementation plan](restyle-cloud-agent-roadmaps/1c-generated-services.md) retains its decisions and evidence. The completed [1B implementation plan](restyle-cloud-agent-roadmaps/1b-saved-tasks.md) retains its acceptance evidence. Later milestones already contain their task breakdowns in Roadmaps 1–4; expand a task's implementation notes when starting it without renumbering or resetting completed work.
@@ -56,8 +59,9 @@ For the current milestone, use the [goal-continuation plan](restyle-cloud-agent-
 4. **1D: Host the finished work.** Add owned services, stable addresses, saved records, usage limits, and management controls.
 5. **1E: Connect PVO.** Attach a verified service to a component and support both downloaded files and published links.
 6. **1F: Prove the whole flow.** Run the complete journey with two different generated features and the workspace switched off.
+7. **1G: Make Containers editable and host them in Node.js.** Use one saved draft for manual/AI edits, retain the service lifecycle and connection rules, and deliver the existing basic update/management tasks here.
 
-Work on the workspace and hosting can overlap once their input and output agreement is defined. Connect the whole flow before expanding the system to more providers or runtimes.
+Complete 1E/1F first, then follow [the consolidated Container checklist](restyle-cloud-agent-roadmaps/1g-containers.md#ordered-implementation-checklist). The runtime change is an explicit 1G requirement; it does not reopen earlier Dynamic Worker evidence.
 
 ## Rules that apply from the first release
 
@@ -78,7 +82,7 @@ These are working requirements for the first release. They should not be postpon
 
 Restyle already has the editor assistant, public web research, account services, PVO requests, approved request hosts, response state, response templates, publishing, and reply collection.
 
-The cloud workspace, durable authoring task, generated service deployment, and automatic service attachment are new capabilities. The current assistant rejects new or changed network effects. Extending it requires a validated attachment operation as well as model instructions.
+The implementation branch now has a saved-task runner, temporary workspaces, independent checks, Dynamic Worker service execution, durable service records and creator controls. Verified attachment admission and connected Try also exist; public player/export integration and 1F acceptance remain incomplete. Ordinary assistant edits still reject unapproved network effects. Containers reuses the checked attachment command and evolves the service manager; it does not create parallel hosting or ownership machinery.
 
 The current Logic authoring language exposes less than the broader PVO format. Reuse the existing response machinery and add only the controls needed by a real interaction.
 
@@ -115,4 +119,4 @@ Production promotion follows dev → preprod → prod. After successful deployme
 
 ## Start here
 
-**Continue with 1C.05 in Roadmap 1:** connect the saved model builder to the verified task-owned workspace tools. Save its behavior agreement before source generation, persist decisions and actual tool feedback, and repair code from real failures. Trusted approval remains in 1C.07/08. Continue local work without waiting for GitHub checks; keep remote integration and production separate. Read the current progress first.
+**Current request: review the documentation-only Containers plan.** Implementation remains at **1E.04**, followed by 1E.06–09 and 1F. After that foundation is verified, start **1G.01** in the [Container plan](restyle-cloud-agent-roadmaps/1g-containers.md). Preserve completed evidence and use existing 4B/4C task IDs where moved. Do not implement app code as part of this planning update.

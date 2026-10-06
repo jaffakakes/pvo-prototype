@@ -2,6 +2,8 @@
 
 [Numbered roadmap](01-first-working-component.md#1d-run-the-finished-service-and-manage-its-data) · [Current progress](../restyle-cloud-agent-progress.md) · [Service contract](../../../packages/pvo-assistant/services/README.md)
 
+**Next product evolution:** [1G Containers](1g-containers.md) follows 1F and reuses these service/attachment boundaries with hosted Node.js. The evidence and completion states below describe their original implementation and remain unchanged.
+
 ## In plain language
 
 The temporary computer builds the program. A separate service keeps its checked program and saved records. Each service belongs to one creator and project and has a stable identity. A release is one exact checked version of that program. New versions start inactive so testing cannot change live records or affect viewers.

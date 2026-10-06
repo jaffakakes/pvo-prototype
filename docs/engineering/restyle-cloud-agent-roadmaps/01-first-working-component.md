@@ -124,6 +124,10 @@ The user wants the agent to keep working toward the goal, with no fixed model-tu
 - [ ] **1F.07** Record the actual resource use and confirm the configured limits and cleanup work.
 - [ ] **1F.08** Complete the relevant source checks and real browser/provider checks, then release through the active beta and normal promotion process.
 
-**Release gate:** all six steps pass. A mock provider, a temporary VM URL, or generated source alone does not prove this roadmap is finished.
+**Release gate:** all six phases, 1A–1F, pass. A mock provider, a temporary VM URL, or generated source alone does not prove this roadmap is finished.
 
-Next: [Roadmap 2 — research and connections](02-research-and-connections.md).
+## 1G. Containers — next product feature
+
+After 1F, follow [the consolidated Containers plan](1g-containers.md). It adds saved manual/AI code editing and replaces generated-service execution with hosted Node.js, while reusing the service identity, storage, checked releases, activation and attachment system. Existing basic update/management tasks from Roadmap 4 move forward with their original IDs; they are not duplicated.
+
+The detailed plan owns all new 1G checkboxes. Earlier 1E/1F statuses and evidence stay unchanged; the user confirmed that the current incomplete items must remain unchecked. Containers has its own acceptance gate and is followed by [Roadmap 2 — research and connections](02-research-and-connections.md).

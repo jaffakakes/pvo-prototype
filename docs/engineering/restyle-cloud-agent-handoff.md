@@ -2,6 +2,16 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
+## Latest scope: consolidated Containers planning
+
+The **6 October 2026** request is documentation only. Read [1G Containers](restyle-cloud-agent-roadmaps/1g-containers.md) and the [planning checkpoint](restyle-cloud-agent-progress.md#current-planning-update--containers-6-october-2026). Containers is the next feature after 1F, with JavaScript/Node.js hosting, one saved draft for manual/AI editing and the same independent tests and publish controls. Evolve existing services; do not create parallel task, storage, hosting or management systems.
+
+The user confirmed preserving the inspected status: partial 1E and unfinished 1F. **42/134 tasks are complete.** Eight new tasks are unchecked; twelve existing 4B/4C tasks have moved into 1G without renumbering or changing their text/status. Earlier completed evidence remains intact. The current request excludes app implementation, plugins, marketplace, sharing Containers between creators and installer-specific credentials.
+
+Planning work lives on `docs/restyle-node-containers-roadmap` in `/Users/christinasmacbook/.codex/worktrees/restyle-node-containers-roadmap/pvo-prototype`; the code prerequisite is `25321a7` on `feature/restyle-runtime-actions` / draft #103. Inspect the planning diff relative to that prerequisite to see only this documentation work. Desktop snapshots are refreshed only after checking existing content. The older separate proposal at `f62583f` is superseded in scope, not current implementation guidance.
+
+On resuming app work, finish 1E.04/1E.06–09 and 1F before 1G.01. Explain **VM = development workshop**, **Container = hosted viewer service**, **durable storage = saved code and records**, **Component = visible controls**. Technical use of provider containers for both compute roles does not merge their lifetimes.
+
 ## The user's goal
 
 A creator describes a component in Restyle. The agent figures out what is needed, asks useful follow-up questions, writes and tests any required backend code in a temporary cloud computer, hosts the finished service, and connects the component to it. The service keeps working after its building computer and the creator's browser close.
@@ -72,7 +82,7 @@ The [evidence document](restyle-cloud-infrastructure-proof.md) records exact res
 
 ## How completion must be recorded
 
-The numbered checkboxes in the four detailed roadmap files are the authoritative task checklist. IDs such as **1B.01** remain stable; do not renumber existing tasks when inserting a later discovery. Give new tasks an unused ID and record why they were added.
+The numbered checkboxes in the detailed roadmap files, including 1G, are the authoritative task checklist. Each ID appears as a checkbox once; transferred 4B/4C tasks now live in 1G. IDs such as **1B.01** remain stable; do not renumber existing tasks when inserting a later discovery. Give new tasks an unused ID and record why they were added.
 
 Use the [progress file](restyle-cloud-agent-progress.md) as a compact working note and chronological evidence log. After each cohesive, verified task:
 
