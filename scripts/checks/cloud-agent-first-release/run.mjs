@@ -7,16 +7,16 @@ import { readRunpodKey } from "./credentials.mjs";
 import { openCreatorJourney } from "./browser.mjs";
 import { checkGeneratedDelivery } from "./delivery.mjs";
 import { reviewedInputs, reviewedAnswer } from "./review-inputs.mjs";
-import { acceptanceTransport } from "./transport.mjs";
+import { acceptanceReady, acceptanceTransport } from "./transport.mjs";
 
 const accountId = process.argv[2];
 if (
-  process.argv[3] !== "--run-approved-6-75-usd" ||
+  process.argv[3] !== "--run-approved-4-75-usd" ||
   process.argv.length !== 4 ||
   !/^[a-f0-9]{32}$/.test(accountId ?? "")
 ) {
   console.error(
-    "Usage (only after replacement approval): node scripts/checks/cloud-agent-first-release/run.mjs <account-id> --run-approved-6-75-usd",
+    "Usage (only after replacement approval): node scripts/checks/cloud-agent-first-release/run.mjs <account-id> --run-approved-4-75-usd",
   );
   process.exit(1);
 }
@@ -35,8 +35,8 @@ const expiresAt = Date.now() + 90 * 60_000;
 report.purpose =
   "1F natural-language acceptance preparation: actual Runpod Kimi planning and Cloudflare tools, no production deployment";
 report.limits = {
-  approvedUsd: 6.75,
-  reservedModelUsd: 4.75,
+  approvedUsd: 4.75,
+  reservedModelUsd: 2.75,
   infrastructureAllowanceUsd: 2,
   deployments: 1,
   containerApplications: 1,
@@ -102,7 +102,6 @@ try {
     mode: 0o600,
   });
   await resources.deploy(resource);
-  await resources.ready(resource);
   const call = acceptanceTransport(
     (...args) => resources.call(resource, ...args),
     {
@@ -111,6 +110,7 @@ try {
       record,
     },
   );
+  await acceptanceReady(call, resources.id);
   journey = await openCreatorJourney({
     origin: resource.url,
     sourceUrl,

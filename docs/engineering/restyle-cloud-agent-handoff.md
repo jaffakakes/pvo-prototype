@@ -2,15 +2,15 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
-## Latest scope: 1F driver recovery after verified cleanup
+## Latest scope: 1F startup diagnosis after verified cleanup
 
 **All 1E is verified; 1F remains incomplete. 47/134 tasks complete; 87 remain.** Active checkout: `feature/restyle-first-release`, `/Users/christinasmacbook/.codex/worktrees/restyle-first-release/pvo-prototype`, [draft #105](https://github.com/jaffakakes/pvo-prototype/pull/105). Read [current progress](restyle-cloud-agent-progress.md) and [acceptance evidence](restyle-first-release-acceptance.md).
 
-All three paid diagnostic deployments are deleted with verified cleanup. The latest (`351ca14c55ee303131312f13`) generated and repaired dinner code, passed four generated tests and independent validation, and recovered hosting. The form was still being repaired when a 503 on an answer made the driver clean up. No finished component/viewer acceptance or equipment run is claimed. Private evidence is preserved in `workspace-jW2ZkA/report.json`; never restart that consumed journal.
+All four paid diagnostic deployments are deleted with verified cleanup. The third generated/repaired dinner code, passed independent validation and recovered hosting, but never completed attachment. The fourth (`d758435100daa3b4d36f2728`) returned 503 during startup and made **zero model calls**; its cloud exception was not retained. It is fully deleted. Neither complete demonstration nor viewer acceptance is claimed. Do not restart consumed journals.
 
-Current repairs improve model feedback, show exact workspace tool contracts, and present rejected attempts followed by validator feedback. The user approved using the dollar budget for the isolated diagnostic rather than the default daily call cap; production default capacity remains unchanged. The next driver safely retries reads and exact idempotent answers. Its replacement is prepared for **US$6.75**, keeping the original US$15 ceiling, and **the user approved this replacement** by answering “Approve remaining US$6.75”. See the linked plan before doing anything paid. The Runpod key is privately configured; no new key-entry step is needed.
+The latest repairs retain private, credential-redacted startup diagnostics and use the existing original-deadline read recovery for startup. This allows a same-resource repair instead of thirty-second cleanup. Local health/recovery regressions pass; the cloud startup cause is still unknown. The user already approved budget-governed diagnostic capacity; production capacity stays unchanged. A new **US$4.75** replacement is prepared inside the original US$15 total, **awaiting approval** because the previous permission explicitly covered one deployment. See the concrete plan before any paid action. The Runpod key is privately configured; no new key entry is needed.
 
-Latest delivered beta: **`restyle-editor-shell-c51c48f1fe339cd7`**. Later attachment guidance still requires final delivery. Vite 5318 remains active for local tests. No GitHub Actions polling, remote merge or production claim. Complete 1F before starting 1G Node.js Containers.
+Latest delivered beta: **`restyle-editor-shell-073512c14b8c6bb1`**, including `5e29fa3`; subsequent pending changes are diagnostic-only. Vite 5318 remains active. No GitHub Actions polling, remote merge or production claim. Continue 1F before 1G Node.js Containers.
 
 ## Preserved planning decision: consolidated Containers
 

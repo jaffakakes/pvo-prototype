@@ -3,7 +3,7 @@ import { runpodNativeModels } from "../../../server/assistant/native/runpod.js";
 
 // A disposable test's dollar allowance, not a goal-wide model-turn policy.
 export const MODEL_LIMITS = Object.freeze({
-  allowanceMicros: 4_750_000,
+  allowanceMicros: 2_750_000,
   reservationMicros: 275_000,
   maxOutputTokens: 6000,
   maxRequestBytes: 1024 * 1024,

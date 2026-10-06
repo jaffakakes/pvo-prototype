@@ -104,18 +104,32 @@ The test ended on **HTTP 503 while submitting the reviewed attachment-repair ans
 
 **Usage:** **76 HTTP-200 model calls**, all with returned usage; **571,799 input / 21,117 output tokens**, estimated **US$0.627714**. No unknown model responses in this run. **535** admitted diagnostic HTTP requests. This is a token estimate, not an invoice. Existing workshop session/time and service limits remained enforced. The private snapshots preserve source, command receipts and validation reports; deleted resources must not be recreated merely to replace this evidence.
 
-## Next recovery run — approved
+## Recovery run — consumed and cleaned up
 
 One new disposable deployment, **up to US$6.75**: US$4.75 for metered model usage and US$2 infrastructure, two requested demonstrations, the same six namespaces/one Container, 90-minute deadline and verified deletion. Known usage settles actual reported token estimates; unknown outcomes keep US$0.275 reserved. The previously approved diagnostic capacity policy is explicit from startup. The driver now recovers temporary read and idempotent-answer failures instead of deleting the test immediately.
 
 Across all completed runs, retain **US$6** for the three infrastructure allowances, **US$1.375** for five earlier unknown model calls, and **US$0.635703** for all known model usage. Adding this US$6.75 proposal gives a conservative **US$14.760703** total, inside the original US$15. The user approved this replacement by answering “Approve remaining US$6.75”. This authorizes one replacement deployment; do not ask again for this same run. No additional key entry is needed.
 
+## Startup outcome — 6 October, cleanup verified
+
+The approved US$6.75 deployment ran from **22:09:50.584 to 22:11:00.220 UTC**. Its private startup endpoint returned 503 and never became ready within the driver's thirty-second readiness window. **Zero model calls, zero generated tasks, zero workshop starts and zero hosted releases.** The ledger recorded ten admitted diagnostic requests. The underlying startup exception was not retained; neither a provider outage nor a specific code defect is established. Local reproduction of the exact health route succeeds.
+
+Worker/Container `restyle-workspace-proof-d758435100daa3b4d36f2728`, application `b7be8a067aa044d58dfd1c4744fe6525` and all six namespaces were deleted and absence verified. Namespace IDs: `b7be8a067aa044d58dfd1c4744fe6525`, `dbb7300eabf444e99ab4ce9ac83e8cb3`, `48471104f5a4468a90d4844de5da09a6`, `15a83f5ff9b4478c9864c805b46b5613`, `0fe30bc2661648fc88f97f957c576b89`, `82421e67b7fb4027abd6fb8df8de7b62`. The deployment secret file was removed. Private receipt `.wrangler/cloud-agent-infrastructure/workspace-Lvojiy/report.json`; log `/tmp/restyle-1f-recovery-live.log`. This consumed deployment must not be restarted.
+
+The corrected driver now includes startup in its existing read-only recovery loop and original ninety-minute deadline, allowing diagnosis and updates of that same resource. Authenticated startup failures identify the failing phase and retain bounded platform error text after removing configured credentials. Other request/provider failures do not expose arbitrary error text. No source, test or ownership gate is weakened. Local tests cover the actual health endpoint, unauthorized access, credential redaction, recovery after the former thirty-second cutoff, wrong-resource rejection and original deadline/cancellation. This fixes the lost-diagnosis and premature-cleanup defects; **the cloud startup cause remains unknown**.
+
+## Next startup recovery — prepared, awaiting approval
+
+One disposable deployment, **up to US$4.75**: US$2.75 metered model allowance and US$2 infrastructure allowance. The same two demonstrations, six namespaces/one application, original ninety-minute deadline, admission limits and cleanup apply. Keep that deployment available for read-only startup diagnosis and same-resource code repairs within the original deadline. No extra deployment or extended expiry is implied. The Runpod key is already configured.
+
+Conservative aggregate allowance: four completed infrastructure allowances **US$8**, five earlier unknown model calls **US$1.375**, all known model usage **US$0.635703**, plus the proposed **US$4.75** = **US$14.760703**, still within the original US$15. The startup run added zero model usage; retain its entire infrastructure allowance until actual billing is known. This is an allowance calculation, not an invoice. The previous approval explicitly covered one deployment and that deployment has been removed, so this next replacement needs approval before launch.
+
 ## Run and recover
 
-Prepared invocation, from the active checkout; **for the approved replacement above**:
+Prepared invocation, from the active checkout; **do not run until the replacement above is approved**:
 
 ```sh
-node scripts/checks/cloud-agent-first-release/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-approved-6-75-usd
+node scripts/checks/cloud-agent-first-release/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-approved-4-75-usd
 ```
 
 Use privately supplied `RUNPOD_API_KEY` or a nonempty `apikey` in the Runpod CLI configuration. The script never prints the key. A file existing is not sufficient: the first approved launch found an empty key and stopped before any resource creation or charge. On this Mac, the user can enter it privately with:

@@ -66,6 +66,12 @@ test("actual diagnostic stores ordinary tasks, rejects unowned access and retain
     import worker from './scripts/checks/cloud-agent-first-release/worker.js';
     export default { async fetch(request,env) {
       const path = new URL(request.url).pathname;
+      if(path === '/startup-failure') {
+        return worker.fetch(new Request('https://acceptance.test/health', request), {
+          ...env,
+          ASSISTANT_BUDGET: { getByName() { throw new Error('Simulated budget failure: '+env.PROOF_TOKEN); } }
+        });
+      }
       if(path === '/ledger') {
         const {action,args=[]} = await request.json();
         try { return Response.json((await env.PROOF_CONTROL.getByName('global')[action](...args)) ?? null); }
@@ -136,6 +142,26 @@ test("actual diagnostic stores ordinary tasks, rejects unowned access and retain
   try {
     await start();
     assert.equal((await call("/health", "GET", null, false)).status, 401);
+    const health = await call("/health");
+    assert.equal(health.status, 200, await health.clone().text());
+    assert.deepEqual(await health.json(), {
+      ready: true,
+      budgetPolicy: "default",
+      dailyLimits: { global: 60, client: 20 },
+    });
+    const startup = await call("/startup-failure");
+    assert.equal(startup.status, 503);
+    assert.deepEqual(await startup.json(), {
+      error: "acceptance_operation_failed",
+      startup: {
+        phase: "budget",
+        message: "Simulated budget failure: [redacted]",
+      },
+    });
+    assert.equal(
+      (await call("/startup-failure", "GET", null, false)).status,
+      401,
+    );
     assert.equal(
       (await call("/dinner/begin", "POST", null, false)).status,
       401,

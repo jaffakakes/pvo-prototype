@@ -57,6 +57,9 @@ export function acceptanceTransport(
         method,
         attempt,
         status: response?.status ?? null,
+        ...(path === "/health" && response?.data?.startup
+          ? { startup: response.data.startup }
+          : {}),
       });
       const remaining = expiresAt - now();
       if (remaining <= 0) break;
@@ -66,4 +69,15 @@ export function acceptanceTransport(
       `Diagnostic deadline ended while recovering ${method} ${path}.`,
     );
   };
+}
+
+/** Startup uses the same bounded recovery as subsequent read-only calls. */
+export async function acceptanceReady(call, proofId) {
+  const response = await call("/health");
+  if (
+    response.status !== 200 ||
+    response.marker !== proofId ||
+    response.data?.ready !== true
+  )
+    throw new Error("The approved diagnostic did not become ready.");
 }

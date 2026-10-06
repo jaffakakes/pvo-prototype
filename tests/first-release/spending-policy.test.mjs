@@ -80,10 +80,16 @@ test("the optional diagnostic policy preserves counts and burst admission while 
       outputTokens: 50,
       estimatedMicros: 295,
     });
+    const secondKnown = await meter("reserve", expiresAt);
+    await meter("settle", secondKnown, 200, {
+      inputTokens: 100,
+      outputTokens: 50,
+      estimatedMicros: 295,
+    });
     const max = Math.floor(
       MODEL_LIMITS.allowanceMicros / MODEL_LIMITS.reservationMicros,
     );
-    for (let i = 1; i < max; i++) await meter("reserve", expiresAt);
+    for (let i = 2; i < max; i++) await meter("reserve", expiresAt);
     await mf.dispose();
     policy = "settled-usage";
     await start();
@@ -101,16 +107,21 @@ test("the optional diagnostic policy preserves counts and burst admission while 
       11,
       "The unchanged twelve-per-minute limit still applies",
     );
-    await meter("reserve", expiresAt);
+    const unknownAllowed = Math.floor(
+      (MODEL_LIMITS.allowanceMicros - 590) / MODEL_LIMITS.reservationMicros,
+    );
+    assert.ok(unknownAllowed > max - 2);
+    for (let i = max - 2; i < unknownAllowed; i++)
+      await meter("reserve", expiresAt);
     const report = await meter("report");
     assert.equal(
       report.models.length,
-      max + 1,
+      unknownAllowed + 2,
       "Reported successful usage frees only the unused dollars",
     );
     assert.equal(
       report.models.filter((value) => value.usage === null).length,
-      max,
+      unknownAllowed,
     );
     assert.equal(
       report.models.find((value) => value.id === known).usage.estimatedMicros,
