@@ -4,7 +4,19 @@
 
 Last checkpoint: **7 October 2026**. Recheck Git and provider state before relying on the dated operational details below.
 
-## Current checkpoint — 1F functional acceptance passed; protected release blocked, 7 October 2026
+## Current checkpoint — 1F complete through beta; production deferred by user
+
+**1F.01–1F.08 complete. 55/134 numbered tasks complete; 79 remain. Next: 1G.01, Containers.** On 7 October the user explicitly chose **Keep production release pending**, then clarified that production waits until everything is done and they have tested beta. The roadmap now makes verified beta delivery the 1F.08 completion gate and records production as a separate final gate after the full roadmap, user beta testing and explicit release approval. This is an authorized scope/sequence change, not a claim that production was deployed.
+
+- **Verified result:** both real generated dinner/camera journeys, recovery/races/ownership, 1,489 full tests, strict types, focused final prompt checks and final beta build/fresh-browser/activated-service-worker verification passed. The actual serving beta is **`restyle-editor-shell-e069ede11e8ff6b7`**, combined checkout `b8bf5af`, including tested source `4eadb6a`. User beta acceptance is still pending; no claim that the user has tested it.
+- **Saved source/handoff:** active checkout `feature/restyle-first-release`, `/Users/christinasmacbook/.codex/worktrees/restyle-first-release/pvo-prototype`; [PR #105](https://github.com/jaffakakes/pvo-prototype/pull/105), ready and unmerged. Latest preceding evidence commit `8045d8d`; this documentation commit records the user's final release policy. The acceptance document preserves all earlier failed attempts and cost/cleanup receipts. Keep normal branch protections and the user's exclusion of GitHub Actions inspection/polling/retries.
+- **Documentation verification:** 255 local links across 19 documents pass; all 134 task IDs are retained, with only the verified 1F items changed from the acceptance baseline. The 1F.08 description explicitly records the new beta gate. `git diff --check` passes. This batch changes documentation only.
+- **Cleanup:** all ten cloud diagnostics are deleted/absence verified, private deployment secrets removed. Owned Vite 5318 (PID 9811) was stopped; beta 4173 and unrelated servers remain. No ongoing cloud test costs. All unreleased feature branches are retained; production-dependent cleanup has not been triggered.
+- **Exact next implementation task:** 1G.01 in [Containers](restyle-cloud-agent-roadmaps/1g-containers.md), when continuing implementation. Start a focused branch from freshly fetched `origin/dev` and explicitly include the verified unreleased prerequisite from the latest first-release branch; do not discard that source because PR #105 is unmerged. Preserve the current task/service/storage/attachment system and separate temporary workshop from hosted Node.js service. 1G is not implemented yet.
+- **Production:** intentionally deferred, no longer a blocker to subsequent beta work. Do not merge/promote/deploy merely to finish 1F. Resume protected production release only after the remaining roadmap and the user's beta testing/explicit release approval. The earlier policy rejection and disabled auto-merge remain historical facts; no protection was bypassed and no automatic merge is queued.
+
+## Previous checkpoint — 1F functional acceptance passed; protected release blocked, 7 October 2026
+
 
 **1F.01–1F.07 complete. 54/134 roadmap tasks complete; 80 remain.** Exact next task: **1F.08**, normal `dev → preprod → prod` release; final beta is verified. Continue in `feature/restyle-first-release`, `/Users/christinasmacbook/.codex/worktrees/restyle-first-release/pvo-prototype`, [PR #105](https://github.com/jaffakakes/pvo-prototype/pull/105). Latest product source `45cb01b`; this documentation batch records the verified acceptance without changing generated code or earlier evidence.
 
