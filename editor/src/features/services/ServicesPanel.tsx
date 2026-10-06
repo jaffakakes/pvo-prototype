@@ -67,6 +67,45 @@ export function ServicesPanel() {
                   Test records and live records are separate. Undo in the editor
                   does not undo viewer submissions.
                 </p>
+                {service?.liveReleaseId && (
+                  <ul>
+                    {item.summary?.releases.map((release, index) =>
+                      release.state === "deleted" ? null : (
+                        <li key={release.identity.resourceId}>
+                          <span>
+                            Version {index + 1}
+                            {release.identity.resourceId ===
+                            service.liveReleaseId
+                              ? " · current"
+                              : ""}
+                          </span>
+                          {release.identity.resourceId !==
+                            service.liveReleaseId && (
+                            <button
+                              type="button"
+                              disabled={disabled}
+                              onClick={() =>
+                                control(
+                                  item,
+                                  "activate",
+                                  release.identity.resourceId,
+                                )
+                              }
+                            >
+                              Use version {index + 1}
+                            </button>
+                          )}
+                        </li>
+                      ),
+                    )}
+                  </ul>
+                )}
+                {service?.liveReleaseId && (
+                  <p>
+                    Changing versions keeps live records and saved replies. A
+                    version that cannot use them will be rejected.
+                  </p>
+                )}
               </details>
               <div className={styles.actions}>
                 {service?.state !== "active" && (

@@ -59,7 +59,9 @@ export class ServiceReleaseStore {
   }
   rows() {
     return this.sql
-      .exec("SELECT id,identity,body,probes,retained FROM service_releases")
+      .exec(
+        "SELECT id,identity,body,probes,retained FROM service_releases ORDER BY rowid",
+      )
       .toArray();
   }
   row(id) {

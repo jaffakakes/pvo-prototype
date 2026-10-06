@@ -1,9 +1,11 @@
+import { parseServicePublication } from "../../packages/pvo-assistant/releases/index.js";
 import {
   parseServiceControl,
   serializeServiceControl,
   planServiceControl,
   serviceCallError,
   parseHostedSummary,
+  prepareReleaseActivation,
 } from "../../packages/pvo-assistant/hosting/index.js";
 import { contentDigest } from "../contentDigest.js";
 
@@ -55,6 +57,30 @@ export async function controlHostedService(host, serviceId, ownerId, value) {
           "unavailable",
           "This checked release is unavailable.",
         );
+      const candidate = parseServicePublication(JSON.parse(row.body)).artifact
+        .agreement;
+      const previousRow = service.liveReleaseId
+        ? host.store.row(service.liveReleaseId)
+        : null;
+      if (service.liveReleaseId && !previousRow?.body)
+        throw serviceCallError(
+          "unavailable",
+          "The current service version is unavailable.",
+        );
+      const previous = previousRow
+        ? parseServicePublication(JSON.parse(previousRow.body)).artifact
+            .agreement
+        : null;
+      const snapshot = host.actions.data(
+        "live",
+        previous ? previous.state.initial : candidate.state.initial,
+      );
+      const state = prepareReleaseActivation(
+        previous,
+        candidate,
+        snapshot.state,
+      );
+      host.actions.initializeLive(state);
       host.store.retain(control.releaseId);
     }
     host.store.saveService(next);

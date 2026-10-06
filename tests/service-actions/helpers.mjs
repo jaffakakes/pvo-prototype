@@ -78,3 +78,18 @@ export async function control(f, service, kind, options = {}) {
     body,
   });
 }
+
+export async function version(
+  f,
+  service,
+  { source, agreement, operationId = randomUUID() } = {},
+) {
+  const result = await f.control({
+    action: "host-version",
+    id: service.task.id,
+    checked: await checkedFixture(source, agreement),
+    operationId,
+  });
+  expectStatus(result, 200);
+  return { ...service, identity: result.body };
+}

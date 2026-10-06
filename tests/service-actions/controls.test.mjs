@@ -198,7 +198,12 @@ for (const kind of ["pause", "delete"])
         release.resolve();
         assert.notEqual((await pending).status, 200);
         const data = await inspect(f, service);
-        assert.deepEqual(data.data, []);
+        if (kind === "delete") assert.deepEqual(data.data, []);
+        else
+          assert.deepEqual(
+            data.data.map((row) => JSON.parse(row.body)),
+            [{ capacity: 1, guests: [] }],
+          );
         assert.deepEqual(data.receipts, []);
       } finally {
         release.resolve();

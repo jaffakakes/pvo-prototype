@@ -22,3 +22,5 @@ export {
   planServiceControl,
   parseHostedSummary,
 } from "./controls.js";
+
+export { prepareReleaseActivation } from "./updates.js";

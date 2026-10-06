@@ -42,11 +42,6 @@ export function planServiceControl(service, control, now) {
     liveReleaseId = service.liveReleaseId,
     testReleaseId = service.testReleaseId;
   if (control.kind === "activate") {
-    if (liveReleaseId !== null && liveReleaseId !== control.releaseId)
-      throw serviceCallError(
-        "invalid_input",
-        "Replacing the active release is not available yet.",
-      );
     state = "active";
     liveReleaseId = control.releaseId;
   } else if (control.kind === "pause") {

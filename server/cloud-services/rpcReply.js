@@ -12,6 +12,7 @@ export async function hostedReply(operation) {
       budget_exceeded: 429,
       busy: 429,
       invalid_result: 502,
+      incompatible_version: 422,
     };
     return {
       ok: false,
