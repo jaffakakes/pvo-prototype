@@ -35,6 +35,7 @@ export async function taskFixture({
     import { publicResearch } from "./server/assistant/builder/researchProvider.js";
     import { reconcileTaskWorkspaces } from './server/assistant/tasks/workspaceRunner.js';
     import {prepareServicePublication} from "./server/cloud-services/releaseContract.js";
+    import { resolveTaskAttachment } from "./server/assistant/attachments/receipt.js";
     import { HostedService } from "./server/cloud-services/host.js";
     import { reconcileTaskServices } from "./server/assistant/tasks/providerRunner.js";
     export class TestHostedService extends HostedService {
@@ -121,6 +122,7 @@ export async function taskFixture({
         await this.transaction(()=>this.services.observe(publication.identity,result.state,this.now()));
         return publication.identity;
       }
+      async resolveAttachment(ownerId,id,guard,command) { return resolveTaskAttachment(this,await this.claimForOperation(ownerId,id,guard),command); }
       serviceCatalog() { return this.services.services().map(service=>({service,releases:this.services.releases(service.identity.serviceId)})); }
       async runValidationCase(artifact, index, signal) {
         const control = async phase => {
@@ -201,6 +203,7 @@ export async function taskFixture({
           if (action === "disable-provider") { await stub.disableProvider(); return json({ ok: true }); }
           if (action === "publish") return json(await stub.publishFixture(owner.id, args.id, args.checked, args.guard));
           if (action === "publish-unchecked") return json(await stub.publishService(owner.id,args.id,args.guard));
+          if (action === "attachment") return json(await stub.resolveAttachment(owner.id,args.id,args.guard,args.command));
           if (action === "host-version") return json(await stub.publishVersion(owner.id,args.id,args.checked,args.operationId));
           if (action === "service-catalog") return json(await stub.serviceCatalog());
           if (action === "provider-reconcile") return json(await stub.reconcileProviders());

@@ -1,4 +1,5 @@
 import { validateCompiledAssistantOriginal, validateCompiledAssistantProposal } from "../../../packages/pvo-assistant/policy.js";
+import { matchAttachmentOperation, validateCompiledServiceAttachment } from "../../../packages/pvo-assistant/attachments/index.js";
 import { HttpError } from "../../http.js";
 import { validateWordTiming } from "./wordTimingPolicy.js";
 import { validateNativeAnimation } from "./animationPolicy.js";
@@ -92,12 +93,14 @@ export function validateNativeInput(request) {
 }
 
 /** Server validation improves repair feedback; the editor still owns atomic command validation. */
-export async function validateNativeResult(request, result, compile) {
+export async function validateNativeResult(request, result, compile, attachment) {
   if (!result.message.trim()) throw new Error("Provide a concise user-facing message.");
   if (request.mode === "ask" && result.operations.length)
     throw new Error("Ask mode cannot return editing or playback operations.");
   if (result.operations.length && result.observations.length)
     throw new Error("Inspect footage before returning operations; do not combine both in one turn.");
+  if (attachment && result.operations.filter(operation => matchAttachmentOperation(operation, attachment)).length !== 1)
+    throw new Error("A verified attachment must match exactly one component proposal.");
   let frames = 0;
   for (const observation of result.observations) {
     if (!["frames", "transcript", "word_timing", "object_tracking"].includes(observation.kind)) continue;
@@ -164,6 +167,11 @@ export async function validateNativeResult(request, result, compile) {
     const type = operation.kind === "component.add" ? operation.componentType : component.type;
     const proposed = await compile(type, operation.source);
     const context = { currentSceneId: scene.id, duration: scene.duration, scenes: request.project.scenes };
+    if (matchAttachmentOperation(operation, attachment)) {
+      const original = component?.source ? await compile(type, component.source) : null;
+      validateCompiledServiceAttachment(original, proposed, attachment, context);
+      continue;
+    }
     if (component?.source) {
       const original = await compile(type, component.source);
       validateCompiledAssistantProposal(original, proposed, context);

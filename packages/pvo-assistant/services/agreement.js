@@ -1,6 +1,5 @@
 import {
   boundedJson,
-  choice,
   id,
   list,
   object,
@@ -9,9 +8,10 @@ import {
   unique,
 } from "../tasks/validation.js";
 import { SERVICE_PACKAGE_LIMITS as limits } from "./limits.js";
-import { boundedValue, serviceName, validateSchema } from "./values.js";
+import { boundedValue, validateSchema } from "./values.js";
 import { validateInvocation, validateReply } from "./operation.js";
 import { canonicalJson } from "./json.js";
+import { validateOperation } from "./operationSchema.js";
 
 /** Saved before generation by the trusted task adapter; never a readiness receipt. */
 export function parseServiceAgreement(value) {
@@ -32,19 +32,8 @@ export function parseServiceAgreement(value) {
   );
   list(value.operations, limits.operations, "Service operations");
   requireService(value.operations.length > 0, "A service needs operations.");
-  for (const operation of value.operations) {
-    object(
-      operation,
-      ["name", "description", "audience", "access", "input", "result"],
-      "Service operation",
-    );
-    serviceName(operation.name, "Operation name");
-    text(operation.description, 1024, "Operation description");
-    choice(operation.audience, ["public", "creator"], "Operation audience");
-    choice(operation.access, ["read", "write"], "Operation storage access");
-    validateSchema(operation.input, budget);
-    validateSchema(operation.result, budget);
-  }
+  for (const operation of value.operations)
+    validateOperation(operation, budget);
   unique(
     value.operations.map((operation) => operation.name),
     "Operation names",

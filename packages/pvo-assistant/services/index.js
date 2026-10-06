@@ -28,3 +28,5 @@ export {
   appendServiceCaseResult,
   inspectServiceReply,
 } from "./testing.js";
+
+export { parseServiceOperation } from "./operationSchema.js";

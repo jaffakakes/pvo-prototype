@@ -1,4 +1,5 @@
 import { DEFAULT_TEXT_STYLE } from "../../../../../packages/pvo-text-runtime/index.js";
+import { matchAttachmentOperation } from "../../../../../packages/pvo-assistant/attachments/index.js";
 import { parseNativeOperation, type NativeOperation } from "../../../../../packages/pvo-assistant/native/index.js";
 import { changeSceneAudioGain } from "../../audio/gain";
 import { changeLayerAnimation } from "../../animation/editing";
@@ -16,6 +17,7 @@ import { applyComponentOperation, validateNativeComponentRoutes } from "./compon
 import { applyMediaOperation } from "./mediaOperations";
 import { nativePreparationReceipt, nativeReceiptValues } from "./receipts";
 import { applyFontOperation } from "./fontOperations";
+import { validateAttachmentBatchInput, validateNativeBatchAttachment } from "./serviceAttachments";
 import type { NativeBatch, NativePlaybackOperation, NativePreparation } from "./types";
 export type { NativeBatch, NativePreparation, NativePlaybackOperation } from "./types";
 export { validateNativeBatchEditingMode } from "./componentOperations";
@@ -65,10 +67,12 @@ export function validateNativeBatchEffects({ project, playback, exportFormat }: 
 export async function prepareNativeBatch(before: ProjectSnapshot, input: readonly NativeOperation[], options: NativePreparation): Promise<NativeBatch> {
   if (input.length > 24) throw new Error("An assistant edit batch supports at most 24 operations.");
   const operations = input.map(parseNativeOperation);
+  validateAttachmentBatchInput(operations, options);
   let project = copy(before);
   const playback: NativePlaybackOperation[] = [];
   const receipts: NativeBatch["receipts"] = [];
   let exportFormat: NativeBatch["exportFormat"] = null;
+  let attachment: NativeBatch["attachment"];
   for (const operation of operations) {
     cancelled(options);
     const previousValues = nativeReceiptValues(project);
@@ -138,6 +142,13 @@ export async function prepareNativeBatch(before: ProjectSnapshot, input: readonl
         updated = updateText(scene, operation, options.createId);
       } else {
         updated = await applyComponentOperation(project, scene, operation, options);
+        if (matchAttachmentOperation(operation, options.attachment)) {
+          const component = operation.kind === "component.add"
+            ? updated.components.find(item => !scene.components.some(before => before.id === item.id))
+            : updated.components.find(item => item.id === ("componentId" in operation ? operation.componentId : null));
+          if (!component) throw new Error("The prepared service component is missing.");
+          attachment = { authorization: structuredClone(options.attachment!), sceneId: scene.id, componentId: component.id };
+        }
       }
       project.scenes = project.scenes.map(item => item.id === scene.id ? { ...updated, layers: layerOrder(updated) } : item);
     } catch (error) {
@@ -150,5 +161,8 @@ export async function prepareNativeBatch(before: ProjectSnapshot, input: readonl
   cancelled(options);
   if (JSON.stringify(project) !== JSON.stringify(before)) validateNativeComponentRoutes(project);
   validateNativeBatchEffects({ project, playback, exportFormat });
-  return { before: copy(before), project, operations, receipts, playback, exportFormat, advancedEditingEnabled: options.advancedEditingEnabled };
+  const batch = { before: copy(before), project, operations, receipts, playback, exportFormat, advancedEditingEnabled: options.advancedEditingEnabled,
+    ...(attachment ? { attachment } : {}) };
+  validateNativeBatchAttachment(batch);
+  return batch;
 }
