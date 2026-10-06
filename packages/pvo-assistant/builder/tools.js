@@ -44,8 +44,13 @@ export function parseBuilderTool(value) {
     "Workspace tool must be an object.",
   );
   const kind = Object.getOwnPropertyDescriptor(value, "kind")?.value;
-  object(value, ["kind", ...(fields[kind] ?? [])], "Workspace tool");
   choice(kind, BUILDER_TOOL_KINDS, "Workspace tool");
+  const keys = ["kind", ...fields[kind]];
+  object(
+    value,
+    keys,
+    `Workspace tool ${kind} (exact fields: ${keys.join(", ")})`,
+  );
   if (value.revision !== undefined)
     integer(value.revision, Number.MAX_SAFE_INTEGER, "Source revision", 1);
   if (value.digest !== undefined) digest(value.digest, "Source digest");
