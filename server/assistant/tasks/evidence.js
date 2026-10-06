@@ -64,18 +64,8 @@ export class TaskEvidence {
 
   select(task, request) {
     request = parseEvidenceRequest(request);
-    const source = sources[request.collection];
-    // Identifiers come only from the fixed map above; task/cursor values are bound.
-    const row = this.sql
-      .exec(
-        `SELECT ${source.sequence} AS sequence,body FROM ${source.table} WHERE task_id=? AND ${source.sequence}>? ORDER BY ${source.sequence} LIMIT 1`,
-        task.id,
-        request.after,
-      )
-      .toArray()[0];
-    const text = row
-      ? JSON.stringify(source.project(JSON.parse(row.body)))
-      : "";
+    const entry = this.entry(task, request);
+    const text = entry ? JSON.stringify(entry.value) : "";
     const points = [...text];
     if (request.offset > points.length)
       throw new Error("Evidence offset exceeds the saved entry.");
@@ -90,10 +80,47 @@ export class TaskEvidence {
     }
     return {
       ...request,
-      sequence: row?.sequence ?? null,
+      sequence: entry?.sequence ?? null,
       content,
       nextOffset: next < points.length ? next : null,
     };
+  }
+
+  entry(task, request) {
+    if (request.collection === "input")
+      return request.after === 0 ? { sequence: 1, value: task.input } : null;
+    if (request.collection === "agreement") {
+      if (request.after !== 0) return null;
+      const row = this.sql
+        .exec("SELECT body FROM task_builders WHERE task_id=?", task.id)
+        .toArray()[0];
+      const agreement = row ? JSON.parse(row.body).agreement : null;
+      return agreement ? { sequence: 1, value: agreement } : null;
+    }
+    const source = sources[request.collection];
+    // Identifiers come only from the fixed map above; task/cursor values are bound.
+    const row = this.sql
+      .exec(
+        `SELECT ${source.sequence} AS sequence,body FROM ${source.table} WHERE task_id=? AND ${source.sequence}>? ORDER BY ${source.sequence} LIMIT 1`,
+        task.id,
+        request.after,
+      )
+      .toArray()[0];
+    if (row)
+      return {
+        sequence: row.sequence,
+        value: source.project(JSON.parse(row.body)),
+      };
+    if (request.collection === "questions") {
+      const index = Math.max(0, request.after - task.archivedQuestions);
+      const question = task.questions[index];
+      if (question)
+        return {
+          sequence: task.archivedQuestions + index + 1,
+          value: question,
+        };
+    }
+    return null;
   }
 
   save(taskId, selection) {

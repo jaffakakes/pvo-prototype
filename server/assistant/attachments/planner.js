@@ -1,3 +1,4 @@
+import { authoringMessages } from "../tasks/promptContext.js";
 import {
   evidenceInstructions,
   withEvidenceSchema,
@@ -26,29 +27,17 @@ export async function planTaskAttachment(
     schema: withEvidenceSchema(serviceAttachmentSchema),
     temperature: 0.15,
     maxTokens: 6000,
-    messages: [
-      { role: "system", content: instructions + "\n" + evidenceInstructions },
+    messages: authoringMessages(
+      instructions + "\n" + evidenceInstructions,
       {
-        role: "user",
-        content: JSON.stringify({
-          request: task.input.request,
-          examples: task.input.examples,
-          context: task.input.context,
-          questions: task.questions,
-          evidence,
-          service: context,
-        }),
+        input: task.input,
+        questions: task.questions,
+        evidence,
+        service: context,
       },
-    ],
+      256 * 1024,
+    ),
   };
-  if (
-    new TextEncoder().encode(JSON.stringify(request.messages)).length >
-    256 * 1024
-  )
-    throw Object.assign(
-      new Error("Component attachment context exceeds its bound."),
-      { code: "invalid_result" },
-    );
   const response = await nativeModels(env).generate(request, signal);
   try {
     if (

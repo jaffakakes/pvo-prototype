@@ -1,3 +1,4 @@
+import { authoringMessages } from "../tasks/promptContext.js";
 import {
   evidenceInstructions,
   withEvidenceSchema,
@@ -27,31 +28,29 @@ export async function planSavedBuild(
   evidence = null,
 ) {
   const hasAgreement = context.agreement !== null;
-  const messages = [
-    { role: "system", content: instructions + "\n" + evidenceInstructions },
-    {
-      role: "user",
-      content: JSON.stringify({
-        input: task.input,
-        questions: task.questions,
-        evidence,
-        build: context,
-        tools: definitions
-          .filter(
-            (tool) =>
-              hasAgreement || ["web_search", "web_read"].includes(tool.kind),
-          )
-          .map(({ kind, description }) => ({ kind, description })),
-      }),
-    },
-  ];
   if (
-    new TextEncoder().encode(JSON.stringify(messages)).length >
-    BUILDER_LIMITS.promptBytes
+    new TextEncoder().encode(JSON.stringify(context.feedback ?? [])).length >
+    BUILDER_LIMITS.feedbackBytes
   )
-    throw Object.assign(new Error("Saved builder context exceeds its bound."), {
+    throw Object.assign(new Error("Saved feedback violates its bound."), {
       code: "invalid_result",
     });
+  const messages = authoringMessages(
+    instructions + "\n" + evidenceInstructions,
+    {
+      input: task.input,
+      questions: task.questions,
+      evidence,
+      build: context,
+      tools: definitions
+        .filter(
+          (tool) =>
+            hasAgreement || ["web_search", "web_read"].includes(tool.kind),
+        )
+        .map(({ kind, description }) => ({ kind, description })),
+    },
+    BUILDER_LIMITS.promptBytes,
+  );
   const response = await nativeModels(env).generate(
     {
       messages,

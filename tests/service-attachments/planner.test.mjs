@@ -28,7 +28,7 @@ test("attachment inference uses only the bounded command schema and supplied pub
           assert.equal(request.max_tokens, 6000);
           const payload = JSON.parse(request.messages[1].content);
           assert.deepEqual(payload.service, context);
-          assert.equal(payload.context.currentSceneId, "scene-one");
+          assert.equal(payload.input.context.currentSceneId, "scene-one");
           assert.equal(Object.hasOwn(payload, "receipt"), false);
           return { response: JSON.stringify(proposed) };
         },

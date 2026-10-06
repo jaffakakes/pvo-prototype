@@ -26,4 +26,19 @@ export function checkpointTaskQuestions(task, retainedQuestionId) {
   const ids = new Set(removable.map((item) => item.id));
   task.questions = task.questions.filter((item) => !ids.has(item.id));
   task.archivedQuestions += removable.length;
+  checkpointTaskQuestionBytes(task, retainedQuestionId);
+}
+
+export function checkpointTaskQuestionBytes(task, retainedQuestionId) {
+  while (
+    new TextEncoder().encode(JSON.stringify(task)).length >
+    TASK_LIMITS.recordBytes
+  ) {
+    const index = task.questions.findIndex(
+      (item) => item.answer !== null && item.id !== retainedQuestionId,
+    );
+    if (index < 0) break;
+    task.questions.splice(index, 1);
+    task.archivedQuestions++;
+  }
 }
