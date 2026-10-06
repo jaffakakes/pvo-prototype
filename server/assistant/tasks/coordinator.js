@@ -1,12 +1,36 @@
-import { TaskResults } from "./results.js";
+import { manageHostedServices } from "../../cloud-services/management.js";
+import { ServiceCatalog } from "../../cloud-services/catalog.js";
+import { runHostingStep } from "../hosting/runner.js";
+import { ServiceArtifacts } from "../validation/artifacts.js";
+import { ServiceValidationJournal } from "../validation/journal.js";
+import { runServiceValidation } from "../validation/runner.js";
+import { runServiceCase } from "../validation/cases.js";
+import { claimNextTask } from "./scheduling.js";
+import { TaskResearch } from "../builder/researchJournal.js";
+import { publicResearch } from "../builder/researchProvider.js";
+import { taskBuilderTools } from "../builder/taskToolsRegistry.js";
+import { TaskBuilders } from "../builder/repository.js";
+import { planSavedBuild } from "../builder/planner.js";
+import { runBuilderBatch } from "../builder/runner.js";
+import { taskWorkspaceTools } from "../builder/taskTools.js";
+import { WorkspaceOperations } from "./workspaceOperations.js";
+import { workspaceProvider } from "./workspaceProvider.js";
 import {
-  transitionTask,
-  TASK_LIMITS,
-} from "../../../packages/pvo-assistant/tasks/index.js";
+  runWorkspaceOperation,
+  reconcileTaskWorkspaces,
+} from "./workspaceRunner.js";
+import { ProviderOperations } from "./providerOperations.js";
+import { serviceProvider } from "./serviceProvider.js";
+import { publishTaskService, reconcileTaskServices } from "./providerRunner.js";
+
+import { TaskResults } from "./results.js";
+import { assertTaskExecution } from "../../../packages/pvo-assistant/tasks/index.js";
 import { TaskAttempts } from "./attempts.js";
 import { planSavedTask, savedPlannerAvailable } from "./planner.js";
 import { runAuthoringStep, settleAuthoringBudgets } from "./runner.js";
 import { DurableObject } from "cloudflare:workers";
+import { compilePvoComponent } from "../../../packages/pvo-language/worker.js";
+import { planTaskAttachment } from "../attachments/planner.js";
 import { HttpError } from "../../http.js";
 import { randomId } from "../../identity.js";
 import { TaskRepository } from "./repository.js";
@@ -25,7 +49,21 @@ export class AssistantTasks extends DurableObject {
     super(ctx, env);
     this.repository = new TaskRepository(ctx.storage.sql);
     this.results = new TaskResults(ctx.storage.sql);
+    this.services = new ServiceCatalog(ctx.storage.sql);
+    this.providers = new ProviderOperations(
+      ctx.storage.sql,
+      this.repository,
+      this.services,
+    );
+    this.workspaces = new WorkspaceOperations(ctx.storage.sql, this.repository);
     this.attempts = new TaskAttempts(ctx.storage.sql, this.repository);
+    this.builders = new TaskBuilders(ctx.storage.sql, this.repository);
+    this.research = new TaskResearch(ctx.storage.sql, this.repository);
+    this.validation = new ServiceValidationJournal(
+      ctx.storage.sql,
+      this.repository,
+    );
+    this.artifacts = new ServiceArtifacts(ctx.storage.sql, this.repository);
     this.active = new Map();
   }
 
@@ -53,8 +91,14 @@ export class AssistantTasks extends DurableObject {
       const now = this.now();
       const repository = this.repository;
       repository.bindOwner(ownerId);
-      repository.maintain(now);
+      this.noteTerminal(now);
+      this.services.maintain(now);
+      repository.maintain(now, this.heldTasks());
       this.results.prune();
+      this.builders.prune(now);
+      this.research.prune(now);
+      this.validation.prune(now);
+      this.artifacts.prune(now);
       let result;
       try {
         result = this.ctx.storage.transactionSync(() => {
@@ -93,6 +137,7 @@ export class AssistantTasks extends DurableObject {
         if (!(error instanceof HttpError)) throw error;
         result = { error: error.message, status: error.status };
       }
+      this.noteTerminal(now);
       await this.scheduleMaintenance(now);
       return result;
     });
@@ -141,6 +186,114 @@ export class AssistantTasks extends DurableObject {
     );
   }
 
+  noteTerminal(now) {
+    this.providers.noteTerminal(now);
+    this.workspaces.noteTerminal(now);
+  }
+  heldTasks() {
+    return new Set([
+      ...this.providers.heldTasks(),
+      ...this.workspaces.heldTasks(),
+    ]);
+  }
+  awaiting(id) {
+    return this.providers.awaiting(id) || this.workspaces.awaiting(id);
+  }
+
+  workspaceProvider() {
+    return workspaceProvider(this.env);
+  }
+  workspaceTimeoutMs() {
+    return 30000;
+  }
+
+  /** Private builder capability: the task selects ownership and the current execution grant. */
+  async workspaceOperation(ownerId, id, kind, request, guard) {
+    const claimed = await this.claimForOperation(ownerId, id, guard);
+    return runWorkspaceOperation(this, claimed, kind, request);
+  }
+
+  researchProvider() {
+    return publicResearch();
+  }
+  builderToolDefinitions() {
+    return taskBuilderTools(this, null).definitions;
+  }
+
+  workspaceToolDefinitions() {
+    return taskWorkspaceTools(this, null).definitions;
+  }
+
+  async workspaceTool(ownerId, id, tool, operationId, guard) {
+    const claimed = await this.claimForOperation(ownerId, id, guard);
+    return taskWorkspaceTools(this, claimed).execute(tool, operationId);
+  }
+
+  async claimForOperation(ownerId, id, guard) {
+    taskId(ownerId);
+    taskId(id);
+    if (!guard || !Number.isSafeInteger(guard.expectedRevision) || !guard.claim)
+      throw new HttpError(409, "A current execution claim is required.");
+    return this.transaction(() => {
+      this.repository.bindOwner(ownerId);
+      const task = this.repository.read(id, this.now());
+      assertTaskExecution(task, {
+        ownerId,
+        expectedRevision: guard.expectedRevision,
+        claim: guard.claim,
+        now: this.now(),
+      });
+      return task;
+    });
+  }
+
+  manageServices(ownerId, operation) {
+    return manageHostedServices(this, ownerId, operation);
+  }
+
+  serviceProvider() {
+    return serviceProvider(this.env);
+  }
+  providerTimeoutMs() {
+    return 5000;
+  }
+
+  /** Trusted authoring capability. No browser route or model tool can select publication metadata. */
+  async publishService(ownerId, id, guard) {
+    taskId(ownerId);
+    taskId(id);
+    const claimed = await this.transaction(() => {
+      this.repository.bindOwner(ownerId);
+      const task = this.repository.read(id, this.now());
+      const current = {
+        ownerId,
+        expectedRevision: guard.expectedRevision,
+        claim: guard.claim,
+        now: this.now(),
+      };
+      assertTaskExecution(task, current);
+      return task;
+    });
+    return publishTaskService(this, claimed);
+  }
+
+  validationAvailable() {
+    return Boolean(
+      this.workspaceProvider() &&
+      typeof this.env.SERVICE_LOADER?.load === "function",
+    );
+  }
+  runValidationCase(artifact, index, signal) {
+    return runServiceCase(
+      this.env.SERVICE_LOADER,
+      artifact.package,
+      artifact.agreement,
+      artifact.identity.agreementDigest,
+      index,
+      signal,
+    );
+  }
+
   stepTimeoutMs() {
     return 45000;
   }
@@ -150,96 +303,53 @@ export class AssistantTasks extends DurableObject {
   plannerAvailable() {
     return savedPlannerAvailable(this.env);
   }
-  plan(task, signal) {
+  compileAttachment(type, source) {
+    return compilePvoComponent(type, source);
+  }
+
+  plan(task, signal, input) {
+    if (task.stepId === "attach")
+      return planTaskAttachment(task, input.attachment, this.env, signal);
+    if (task.stepId === "build")
+      return planSavedBuild(
+        task,
+        input.build,
+        this.builderToolDefinitions(),
+        this.env,
+        signal,
+      );
     return planSavedTask(task, this.env, signal);
   }
 
   async transaction(operation) {
     return this.ctx.storage.transaction(async () => {
       const result = operation();
+      this.noteTerminal(this.now());
       await this.scheduleMaintenance(this.now());
       return result;
     });
   }
 
   claimNext() {
-    const now = this.now();
-    this.repository.maintain(now);
-    for (const [id, controller] of this.active) {
-      const task = this.attempts.task(id);
-      if (!task || task.state !== "running" || task.claim.expiresAt <= now)
-        controller.abort();
-    }
-    this.attempts.recover(now);
-    this.repository.maintain(now);
-    this.attempts.prune();
-    this.results.prune();
-    for (let task of this.repository.records()) {
-      if (task.state === "running" && task.claim.expiresAt <= now) {
-        const recovered = transitionTask(
-          task,
-          { kind: "recover" },
-          {
-            ownerId: task.ownerId,
-            expectedRevision: task.revision,
-            now,
-            claim: null,
-          },
-        );
-        this.repository.save(recovered, task.revision);
-        task = recovered;
-      }
-      if (task.state !== "queued" || task.nextRunAt > now) continue;
-      const claimed = this.repository.update(
-        task.id,
-        { kind: "claim", claimId: randomId(), leaseMs: this.leaseMs() },
-        {
-          ownerId: task.ownerId,
-          expectedRevision: task.revision,
-          now,
-          claim: null,
-        },
-      );
-      let code = null;
-      if (
-        claimed.operations.some((operation) =>
-          ["unknown", "planned"].includes(operation.status),
-        ) ||
-        claimed.usage.reservedModelTurns ||
-        claimed.usage.reservedToolCalls
-      )
-        code = "reconciliation_required";
-      else if (claimed.stepId !== "plan" || !this.plannerAvailable())
-        code = "provider_unavailable";
-      else if (claimed.usage.modelTurns >= TASK_LIMITS.modelTurns)
-        code = "budget_exceeded";
-      if (code) {
-        this.repository.update(
-          claimed.id,
-          { kind: "fail", failure: { code, stepId: claimed.stepId } },
-          {
-            ownerId: claimed.ownerId,
-            expectedRevision: claimed.revision,
-            now,
-            claim: { id: claimed.claim.id, generation: claimed.generation },
-          },
-        );
-        continue;
-      }
-      return claimed;
-    }
-    return null;
+    return claimNextTask(this);
   }
 
   async scheduleMaintenance(now) {
     const times = [
       this.repository.nextMaintenance(now),
+      this.services.nextExpiry(now),
       this.attempts.nextBudgetWakeup(),
+      this.research.nextWakeup(now),
+      this.validation.nextWakeup(now),
+      this.providers.nextWakeup(),
+      this.workspaces.nextWakeup(),
       ...this.repository
         .records()
         .flatMap((task) =>
           task.state === "queued"
-            ? [task.nextRunAt]
+            ? this.awaiting(task.id)
+              ? []
+              : [task.nextRunAt]
             : task.state === "running"
               ? [task.claim.expiresAt]
               : [],
@@ -251,13 +361,32 @@ export class AssistantTasks extends DurableObject {
   }
 
   async alarm() {
+    await this.transaction(() => this.noteTerminal(this.now()));
+    await reconcileTaskServices(this);
+    await reconcileTaskWorkspaces(this);
     // Durable wakeups run independently of HTTP requests. Each invocation owns at most two steps.
     for (let index = 0; index < 2; index++) {
       const claimed = await this.transaction(() => this.claimNext());
       if (!claimed) break;
-      await runAuthoringStep(this, claimed);
+      if (claimed.stepId === "host") await runHostingStep(this, claimed);
+      else if (claimed.stepId === "validate")
+        await runServiceValidation(this, claimed);
+      else if (
+        claimed.stepId === "build" &&
+        this.builders.stage(claimed.id) !== "model"
+      )
+        await runBuilderBatch(this, claimed);
+      else await runAuthoringStep(this, claimed);
     }
     await settleAuthoringBudgets(this);
-    await this.transaction(() => this.attempts.prune());
+    await this.transaction(() => {
+      this.attempts.prune();
+      this.providers.prune();
+      this.workspaces.prune(this.now());
+      this.builders.prune(this.now());
+      this.research.prune(this.now());
+      this.validation.prune(this.now());
+      this.artifacts.prune(this.now());
+    });
   }
 }

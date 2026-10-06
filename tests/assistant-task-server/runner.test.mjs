@@ -173,23 +173,27 @@ test("an expired inference claim recovers its journal and rejects the old result
   }
 });
 
-test("unbounded planner checkpoints stop at the shared task model limit", async () => {
+test("a saved goal continues past the former eight-turn cutoff and can ask for necessary input", async () => {
   let count = 0;
   const fixture = await taskFixture({
     planner: async () => {
       count++;
-      return Response.json({ kind: "checkpoint", stepId: "plan" });
+      return Response.json(
+        count === 10
+          ? { kind: "ask", question: question() }
+          : { kind: "checkpoint", stepId: "plan" },
+      );
     },
   });
   try {
     const task = await saved(fixture);
     const result = await until(
       () => state(fixture, task),
-      (value) => value.state === "failed",
+      (value) => value.state === "waiting_for_answer",
     );
-    assert.equal(result.failure.code, "budget_exceeded");
-    assert.equal(count, 6);
-    assert.equal(result.usage.modelTurns, 6);
+    assert.equal(result.failure, null);
+    assert.equal(count, 10);
+    assert.equal(result.usage.modelTurns, 10);
     assert.equal(result.usage.reservedModelTurns, 0);
   } finally {
     await fixture.close();

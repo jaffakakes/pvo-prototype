@@ -73,6 +73,55 @@ test("closed input and nested records reject owner injection and credential-bear
   );
 });
 
+test("saved component preparation has bounded real scene identities/timing and explicit source visibility", () => {
+  assert.deepEqual(parseTaskInput(input()).context.scenes, [
+    { id: "scene-one", name: "Main", duration: 10 },
+  ]);
+  for (const mutate of [
+    (value) => {
+      delete value.context.scenes;
+    },
+    (value) => {
+      value.context.currentSceneId = "missing";
+    },
+    (value) => {
+      value.context.scenes.push(value.context.scenes[0]);
+    },
+    (value) => {
+      value.context.scenes[0].duration = Infinity;
+    },
+    (value) => {
+      value.context.scenes[0].duration = -1;
+    },
+    (value) => {
+      value.context.scenes[0].duration = 86401;
+    },
+    (value) => {
+      value.context.components[0].sceneId = "missing";
+    },
+    (value) => {
+      delete value.context.components[0].sourceVisibility;
+    },
+    (value) => {
+      value.context.components[0].sourceVisibility = "trusted";
+    },
+    (value) => {
+      value.context.scenes = Array.from(
+        { length: TASK_LIMITS.scenes + 1 },
+        (_, i) => ({ id: `scene-${i}`, name: "Scene", duration: 1 }),
+      );
+    },
+  ]) {
+    const value = input();
+    mutate(value);
+    assert.throws(() => parseTaskInput(value));
+  }
+  const blank = input();
+  blank.context.scenes[0].duration = 0;
+  blank.context.components[0].sourceVisibility = "design";
+  assert.doesNotThrow(() => parseTaskInput(blank));
+});
+
 test("text budgets count UTF-8 bytes and input aggregate limits apply across source sections", () => {
   const value = input();
   value.request = "é".repeat(TASK_LIMITS.requestBytes / 2);
@@ -82,8 +131,9 @@ test("text budgets count UTF-8 bytes and input aggregate limits apply across sou
   const large = input();
   large.context.components = Array.from({ length: 3 }, (_, index) => ({
     id: `component-${index}`,
-    sceneId: "scene",
+    sceneId: "scene-one",
     type: "form",
+    sourceVisibility: "full",
     source: {
       structure: "s".repeat(20_000),
       style: "s".repeat(20_000),

@@ -4,13 +4,13 @@
 
 **Plain-English result:** Restyle remembers what you asked it to build, what it has already done, and what answer it needs from you. Closing the editor does not erase the task. Returning to it resumes the same work.
 
-This milestone is in progress. **1B.01–1B.07 are verified:** the [shared task contract](../../../packages/pvo-assistant/tasks/README.md), local association, owned storage, planning runner, native handoff, task UI and guarded prepared-result application are implemented. Provider reconciliation and full milestone acceptance remain. Keep completion markers in Roadmap 1; record decisions and evidence in the progress log.
+**This milestone is verified complete.** Shared records, local association, owned storage/planning, native handoff, task UI, guarded results and provider reconciliation pass the acceptance matrix below. The [live recovery proof](../restyle-cloud-provider-recovery-proof.md) and progress log record exact source/resources/cleanup. PR integration and production release are separate from this verification.
 
 ## First useful change
 
 Completed **1B.01: the shared task record and its rules** answers: “What is a valid saved task, and what changes are allowed?” Its pure functions and tests need no cloud deployment or UI. The record carries trusted owner metadata, a server project identity, and the original project fingerprint.
 
-The local project association in **1B.02** is also complete. **1B.03** now resolves owned server projects and preserves real tasks across storage restart. The saved runner in **1B.05** is now verified. **1B.04/1B.06** request routing and task presentation and **1B.07** result application are also complete. Continue with **1B.08/1B.09** provider journals and reconciliation. Prove each layer through its public boundary before connecting the next.
+The local project association in **1B.02** is also complete. **1B.03** now resolves owned server projects and preserves real tasks across storage restart. The saved runner in **1B.05** is now verified. **1B.04/1B.06** request routing and task presentation and **1B.07** result application are also complete. The **1B.08/1B.09** provider journal and reconciliation are also verified; next is **1C.01**. Prove each layer through its public boundary before connecting the next.
 
 ## Suggested source ownership
 
@@ -148,23 +148,25 @@ Use a stable operation identity based on task, step, and attempt before provisio
 
 Distinguish “not yet attempted,” “provider outcome unknown,” “completed,” and “confirmed absent.” Only a proven absence or an adapter's documented duplicate-safe operation permits a new create. Keep resource ownership checks in trusted code. A transient provider read failure is not proof of absence.
 
-**Verification:** create succeeds but its response is lost; runner crashes before saving success; provider lookup is temporarily unavailable; Stop arrives during reconciliation. A resumed task finds its original resource and records it once. Prove the actual provider path using disposable resources and verify final cleanup; fixtures cover deterministic failure branches.
+**Verified locally and on the actual provider:** create succeeds but its response is lost; runner crashes before saving success; provider lookup is temporarily unavailable; Stop arrives during reconciliation. A resumed task finds its original resource and records it once. Prove the actual provider path using disposable resources and verify final cleanup; fixtures cover deterministic failure branches.
 
 ## 1B.10 — Acceptance matrix and beta delivery
 
-| Scenario | Result required before marking 1B complete |
+| Scenario | Verified evidence |
 | --- | --- |
-| Close during an active step | Server continues to a saved result or saved question |
-| Close while a question is pending | Same question and prior answers return; answering continues the same task |
-| Restart runner | Completed steps remain completed; pending work resumes under one current claim |
-| Concurrent wakeups | One owner executes the step; no duplicate create or duplicate result |
-| Lost deployment reply | Existing owned resource is found, recorded, and cleaned up correctly |
-| Stop then late completion | Stale worker cannot commit a ready result or start the next effect |
-| Wrong account | Read, answer, list, resume, stop, and result application are denied |
-| Changed local project | Newer local edits are preserved; saved prepared result remains recoverable |
-| Account expiry/switch | Private task data is cleared from the old session and cannot reappear via a late response |
-| Budget or provider unavailable | Clear saved failure/wait reason; no hidden unbounded retries or fake completion |
-| Actual beta | New build served from the active beta output directory with the expected service-worker revision |
+| Close during an active step | `cloud-agent-tasks/browser-lifetime.mjs`, `editor/saved-tasks.mjs` and `editor/saved-results.mjs`: server finishes controlled planning/result work after page closure |
+| Close while a question is pending | Runner/editor suites: question and prior answers persist; answer continues the same task |
+| Restart runner | Real local workerd destruction/recreation plus live forced coordinator reset before provider receipt |
+| Concurrent wakeups | Runner/provider suites: one current claim, one provider create and one result commit |
+| Lost deployment reply | Live Cloudflare release recovered under its original owned identity, charged once, probed and deleted; separate local reply-loss test |
+| Stop then late completion | Task/result/runner suites plus live cancellation tombstone before delayed publication; stale worker cannot complete or revive stopped work |
+| Wrong account | Task route/result and editor suites deny list/read/answer/resume/Stop/result access across owners |
+| Changed local project | Saved-results browser: newer edits preserved and saved result remains available |
+| Account expiry/switch | Saved-task/project-link browser suites clear old private state and reject delayed replies |
+| Budget or provider unavailable | Runner/provider suites: saved failures, five bounded provider retries, no hot alarm loop, retained uncertainty and deadline cleanup |
+| Actual beta | `restyle-editor-shell-bf736f38b7e88ad0` served from actual Desktop `dist/`; HTTP HTML/release/SW and fresh Chromium activated worker/cache/UI passed |
+
+Acceptance source: `6e0f78b6c490a5c782692f6a95dee76584141522`. Full checks: 1,207 Node tests, 581 syntax modules, 754 dependency modules, 237 formatting files, editor types, product/WASM build, Worker dry runs and CI. Browser inputs/model/completion and bridge are controlled fixtures; the provider recovery itself ran on Cloudflare. The Desktop Node beta serves the updated UI but does not expose Worker task APIs. General code generation belongs to 1C, and the complete live product journey remains 1F.
 
 Run focused contract/storage/runner tests and the affected real browser journey, then the repository checks and editor type check. App changes require `npm run build` and the beta procedure in AGENTS.md, preserving pending output and open sessions. Record commands, actual results, tested code, cleanup receipts, and beta revision in the progress log.
 
