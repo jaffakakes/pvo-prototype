@@ -10,8 +10,11 @@ import {
   useAuthGate,
 } from "../../state/auth/authGateStore";
 import { useCapture } from "../../state/captureStore";
-import { useExportArtifact } from "../../state/export/exportArtifactStore";
-import { downloadCompletedExport } from "./exportWorkflow";
+import {
+  useExportArtifact,
+  discardPreparedExport,
+} from "../../state/export/exportArtifactStore";
+import { useExportDownload } from "./useExportDownload";
 import { SharePanel } from "../publishing/SharePanel";
 import { captureCoverFrame } from "./captureCoverFrame";
 import { ExportAccountGate } from "./ExportAccountGate";
@@ -41,6 +44,7 @@ export function ExportSheet() {
     start,
     cancel,
   } = useExportSession("pvo");
+  const exportDownload = useExportDownload();
   const [picking, setPicking] = useState(false);
   const [shareBusy, setShareBusy] = useState(false);
   const [pickerTime, setPickerTime] = useState(s.coverAt);
@@ -127,16 +131,17 @@ export function ExportSheet() {
     setPicking(false);
   };
   const retry720 = () => {
+    discardPreparedExport();
     s.patch({ quality: "720p" });
     begin();
   };
   const download = async () => {
-    if (!(await requireAccount("download"))) return;
     const current = useExportArtifact.getState();
     if (current.url && current.artifact)
-      downloadCompletedExport(current.url, current.artifact.filename);
+      await exportDownload.download(current.artifact, current.url);
   };
   const backToSettings = () => {
+    discardPreparedExport();
     setPicking(false);
     s.patch({ ex: "idle", exPct: 0 });
   };
@@ -294,20 +299,29 @@ export function ExportSheet() {
               />
             )}
 
+            {mode === "done" && exportDownload.busy && (
+              <p role="status">Checking connected services…</p>
+            )}
+            {mode === "done" && exportDownload.failure && (
+              <p role="alert">{exportDownload.failure}</p>
+            )}
             {mode === "failed" && (
               <div className={styles.failed}>
                 <strong>
                   Stopped at{" "}
-                  {failureStage === "preparing"
-                    ? "Preparing media"
-                    : failureStage === "downloading"
-                      ? "Packaging file"
-                      : `Rendering scene ${sceneNumber} of ${sceneCount}`}{" "}
+                  {failureStage === "activating"
+                    ? "Connecting services"
+                    : failureStage === "preparing"
+                      ? "Preparing media"
+                      : failureStage === "downloading"
+                        ? "Packaging file"
+                        : `Rendering scene ${sceneNumber} of ${sceneCount}`}{" "}
                   · {progress}%
                 </strong>
                 <p>
-                  We couldn't finish this export. Your settings and cover are
-                  kept.
+                  {exported.prepared
+                    ? "Your prepared file is kept. Retry checks the same service and file without rendering again."
+                    : "We couldn’t finish this export. Your settings and cover are kept."}
                 </p>
                 <pre>{failure}</pre>
                 <button
