@@ -29,7 +29,7 @@ Build this before committing to a provider-specific implementation.
 
 ## 1B. Save the task and its questions
 
-**Progress:** 1B.01–1B.07 are verified: shared task rules, local association, durable storage/planning, native handoff, task UI and immutable prepared results with guarded apply-once receipts. Next is 1B.08/1B.09 provider receipts/reconciliation; full milestone acceptance remains incomplete. Arbitrary workspace generation remains 1C.
+**Progress: 1B is verified complete.** Saved tasks, planning, questions, prepared results and provider recovery pass the local/browser acceptance matrix and the [actual Cloudflare proof](../restyle-cloud-provider-recovery-proof.md). Source is in PR #87; integration and production delivery are separate. The following 1C.01 contract is now verified; integration and provider construction remain separate. Arbitrary workspace generation remains 1C.
 
 The task record is the agent's notebook. It must be saved on the server. Follow the [detailed 1B implementation plan](1b-saved-tasks.md) for contracts, build order, and failure tests.
 
@@ -40,9 +40,9 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 - [x] **1B.05** Add a background authoring runner with saved checkpoints, wakeups, bounded retries, and one active worker owning each task step. Its lifetime must not depend on an open HTTP request or browser tab. Viewer jobs in Roadmap 3 are a separate responsibility.
 - [x] **1B.06** Add a small progress view in the existing assistant conversation. Start with “Working,” “Needs your answer,” “Ready,” “Stopped,” and “Failed,” with a specific reason.
 - [x] **1B.07** Save prepared component changes while the editor is closed. Apply them on return only after checking the current local project.
-- [ ] **1B.08** Record completed steps so restarting a task cannot repeat a deployment or other completed action.
-- [ ] **1B.09** Reconcile interrupted steps with provider resource records before retrying. A deployed service whose reply was lost must be recovered and recorded.
-- [ ] **1B.10** Pass the saved-task acceptance matrix, record test and browser evidence, and verify the new beta revision for the completed app changes.
+- [x] **1B.08** Record completed steps so restarting a task cannot repeat a deployment or other completed action.
+- [x] **1B.09** Reconcile interrupted steps with provider resource records before retrying. A deployed service whose reply was lost must be recovered and recorded.
+- [x] **1B.10** Pass the saved-task acceptance matrix, record test and browser evidence, and verify the new beta revision for the completed app changes.
 
 **Finished when:** close the editor during an active build and while a question is pending. The build continues, or waits for the saved answer, and the same task resumes on return. Restarting its worker reconciles completed effects before retrying and creates no duplicate deployment. A different account cannot read or answer it. Stopping the task prevents new work from starting.
 
@@ -50,15 +50,17 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 
 ## 1C. Let the agent write and test backend code
 
-- [ ] **1C.01** Agree on a small service package: source files, locked dependencies, runtime target, supported operations, input/result descriptions, and tests. An operation means one thing the component can ask the service to do.
-- [ ] **1C.02** Start one isolated workspace per task. Restore files from saved source when resuming.
-- [ ] **1C.03** Give resource creation a stable task identifier. If a create response is lost, look up the existing workspace or deployment before creating another.
-- [ ] **1C.04** Expose bounded tools for reading/writing workspace files, running commands, and reading test results. Advertise each tool to the model only when its adapter is available.
-- [ ] **1C.05** Connect those tools to the planner's loop. The agent must use actual command and test results to correct its code; a successful-looking message is not a completion receipt.
-- [ ] **1C.06** Allow the minimum research and package access needed. Exclude platform administration credentials and other creators' data.
-- [ ] **1C.07** Run tests and produce a saved source bundle with an exact content identifier and test report.
-- [ ] **1C.08** Check the requested behavior using cases saved before generation, alongside platform-owned validation of isolation and input/output rules. Deployment readiness comes from the trusted test runner, not a success file or claim written by generated code.
-- [ ] **1C.09** On Stop, timeout, or failure, terminate running commands, release the workspace, and preserve completed source and results.
+**Progress: all of 1C verified.** Saved task-owned workspaces, bounded tools, durable general construction/repair and cited public research are connected. Independent validation now captures exact package bytes, checks the immutable behavior agreement in an isolated runtime and saves platform-owned reports. Stop, restart, ownership, retention, malformed outputs and unchanged usage caps are covered by **1,309 passing local tests**. The [native Container proof](../restyle-workspace-provider-proof.md) passed and its resources were removed. Controlled local model/workspace tests remain distinct from later natural-language live acceptance. Hosting is next in **1D.01/1D.02**. See the [1C implementation evidence](1c-generated-services.md).
+
+- [x] **1C.01** Agree on a small service package: source files, locked dependencies, runtime target, supported operations, input/result descriptions, and tests. An operation means one thing the component can ask the service to do.
+- [x] **1C.02** Start one isolated workspace per task. Restore files from saved source when resuming.
+- [x] **1C.03** Give resource creation a stable task identifier. If a create response is lost, look up the existing workspace or deployment before creating another.
+- [x] **1C.04** Expose bounded tools for reading/writing workspace files, running commands, and reading test results. Advertise each tool to the model only when its adapter is available.
+- [x] **1C.05** Connect those tools to the planner's loop. The agent must use actual command and test results to correct its code; a successful-looking message is not a completion receipt.
+- [x] **1C.06** Allow the minimum research and package access needed. Exclude platform administration credentials and other creators' data.
+- [x] **1C.07** Run tests and produce a saved source bundle with an exact content identifier and test report.
+- [x] **1C.08** Check the requested behavior using cases saved before generation, alongside platform-owned validation of isolation and input/output rules. Deployment readiness comes from the trusted test runner, not a success file or claim written by generated code.
+- [x] **1C.09** On Stop, timeout, or failure, terminate running commands, release the workspace, and preserve completed source and results.
 
 **Finished when:** the agent generates and tests both demonstration services from their requests. A restart restores its saved work. Invalid code fails the test gate, and model claims cannot bypass that gate.
 
@@ -66,14 +68,18 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 
 ## 1D. Run the finished service and manage its data
 
-- [ ] **1D.01** Add owned service and release records. Link each release to its exact source bundle, test result, runtime, operations, and storage permissions.
-- [ ] **1D.02** Deploy releases inactive. Separate test data and permissions from live data and permissions.
-- [ ] **1D.03** Create a stable Restyle address that routes to the recorded release. Validate input and ownership before generated code runs.
-- [ ] **1D.04** Provide durable service storage with boundaries between creators and between services. Include atomic updates: checking and taking the last place must happen as one protected operation. The same protection applies to overlapping equipment bookings.
-- [ ] **1D.05** Add a saved action identifier and result record. Retrying the same action returns its prior result; reusing that identifier with different input is rejected.
-- [ ] **1D.06** Implement creator controls to inspect, activate, pause, and delete services, with limits enforced outside the generated program.
-- [ ] **1D.07** Clean up abandoned inactive releases and failed deployments. Retain active services until an explicit lifecycle action stops them.
-- [ ] **1D.08** Keep the prior active release available during an update. Returning to it must be safe for the current stored records.
+**Progress: all of 1D is verified.** Checked services have stable addresses, atomic test/live records, exact action replay, creator controls and an independent active lifetime. Version selection validates current live state and the existing client interface before switching. Safe rollback retains current records/receipts; incompatible or expired versions cannot displace the working program. Full local checks pass **1,343 tests**, editor TypeScript and the actual service-manager browser journey. **Next: 1E.01/1E.02, a verified component attachment command and both validation boundaries.** Local implementation, beta delivery and production remain separate. See [hosting details](1d-hosted-services.md).
+
+**Current implementation:** see [the 1D ownership and hosting notes](1d-hosted-services.md); unchecked items below remain incomplete.
+
+- [x] **1D.01** Add owned service and release records. Link each release to its exact source bundle, test result, runtime, operations, and storage permissions.
+- [x] **1D.02** Deploy releases inactive. Separate test data and permissions from live data and permissions.
+- [x] **1D.03** Create a stable Restyle address that routes to the recorded release. Validate input and ownership before generated code runs.
+- [x] **1D.04** Provide durable service storage with boundaries between creators and between services. Include atomic updates: checking and taking the last place must happen as one protected operation. The same protection applies to overlapping equipment bookings.
+- [x] **1D.05** Add a saved action identifier and result record. Retrying the same action returns its prior result; reusing that identifier with different input is rejected.
+- [x] **1D.06** Implement creator controls to inspect, activate, pause, and delete services, with limits enforced outside the generated program.
+- [x] **1D.07** Clean up abandoned inactive releases and failed deployments. Retain active services until an explicit lifecycle action stops them.
+- [x] **1D.08** Keep the prior active release available during an update. Returning to it must be safe for the current stored records.
 
 **Finished when:** test and live records stay separate; one creator cannot access another's private operations; repeated submissions do not create duplicate replies; two different guests cannot both claim the last place; pause blocks new work; deletion follows the documented retention rule.
 
