@@ -4,12 +4,17 @@ import { planSavedBuild } from "../../../server/assistant/builder/planner.js";
 import { planTaskAttachment } from "../../../server/assistant/attachments/planner.js";
 import { meteredModels } from "./meter.js";
 import { scenarioInput, scenarios } from "./scenarios.js";
+import { acceptanceFaults, injectSourceFault } from "./faults.js";
 
 export const proofOwner = (env, subject) => `proof-${env.PROOF_ID}-${subject}`;
 
 /** Runs the product planners, runner, tools and gates. Extra methods only observe/control the diagnostic. */
 export class AcceptanceTasks extends AssistantTasks {
-  plan(task, signal, input) {
+  constructor(ctx, env) {
+    super(ctx, env);
+    this.faults = acceptanceFaults(ctx.storage);
+  }
+  async plan(task, signal, input) {
     const models = meteredModels(
       this.env,
       this.env.PROOF_CONTROL.getByName("global"),
@@ -23,8 +28,8 @@ export class AcceptanceTasks extends AssistantTasks {
         input.evidence,
         models,
       );
-    if (task.stepId === "build")
-      return planSavedBuild(
+    if (task.stepId === "build") {
+      const decision = await planSavedBuild(
         task,
         input.build,
         this.builderToolDefinitions(),
@@ -33,7 +38,52 @@ export class AcceptanceTasks extends AssistantTasks {
         input.evidence,
         models,
       );
+      if (
+        task.ownerId === proofOwner(this.env, "dinner") &&
+        !this.faults.has("source")
+      ) {
+        const fault = injectSourceFault(decision);
+        if (fault) {
+          this.faults.save("source", {
+            taskId: task.id,
+            path: fault.path,
+            originalDecision: decision,
+          });
+          return fault.decision;
+        }
+      }
+      return decision;
+    }
     return planSavedTask(task, this.env, signal, input.evidence, models);
+  }
+  serviceProvider() {
+    const provider = super.serviceProvider();
+    if (!provider) return null;
+    return {
+      ...provider,
+      publish: async (publication) => {
+        if (publication.identity.ownerId !== proofOwner(this.env, "dinner"))
+          return provider.publish(publication);
+        if (!this.faults.has("hosting_unavailable")) {
+          this.faults.save("hosting_unavailable", {
+            identity: publication.identity,
+          });
+          throw new Error(
+            "Deliberate acceptance hosting failure before dispatch",
+          );
+        }
+        const result = await provider.publish(publication);
+        if (!this.faults.has("hosting_lost_reply")) {
+          this.faults.save("hosting_lost_reply", {
+            identity: publication.identity,
+          });
+          this.ctx.abort(
+            "Acceptance restarts the authoring worker after real hosting committed, before its receipt is saved",
+          );
+        }
+        return result;
+      },
+    };
   }
   async begin(subject) {
     if (!scenarios[subject]) throw new Error("Unknown scenario.");
@@ -68,6 +118,7 @@ export class AcceptanceTasks extends AssistantTasks {
       workspaces,
       services: this.services.services(),
       validations: this.validation.entries(),
+      faults: this.faults.report(),
       result: task?.state === "ready" ? this.results.read(task) : null,
     };
   }

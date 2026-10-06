@@ -7,6 +7,7 @@ import {
 import { hostedServiceRoute } from "../../../server/cloud-services/routes.js";
 import { proofOwner } from "./tasks.js";
 import { scenarios } from "./scenarios.js";
+import { diagnosticApi } from "./api.js";
 export { AcceptanceTasks } from "./tasks.js";
 export { AcceptanceControl } from "./control.js";
 export { AssistantBudget } from "../../../server/assistant/budget.js";
@@ -55,7 +56,13 @@ export default {
       const stub = tasks(subject),
         ownerId = proofOwner(env, subject);
       let result;
-      if (request.method === "GET" && action === "status")
+      if (request.method === "POST" && action === "api")
+        result = await diagnosticApi(
+          env,
+          subject,
+          JSON.parse(await readBounded(request.body, 128 * 1024)),
+        );
+      else if (request.method === "GET" && action === "status")
         result = await stub.snapshot(subject);
       else if (request.method === "POST" && action === "begin")
         result = await stub.begin(subject);

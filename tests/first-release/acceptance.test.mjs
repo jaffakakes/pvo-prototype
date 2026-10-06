@@ -88,6 +88,7 @@ test("actual diagnostic stores ordinary tasks, rejects unowned access and retain
     compatibilityDate: "2026-10-03",
     bindings: {
       PROOF_ID: "local",
+      PUBLIC_ORIGIN: "https://acceptance.test",
       PROOF_TOKEN: "local-token",
       PROOF_EXPIRES_AT: String(expiresAt),
       ASSISTANT_PROVIDER: "runpod",
@@ -143,6 +144,32 @@ test("actual diagnostic stores ordinary tasks, rejects unowned access and retain
     assert.ok(first.task?.id, JSON.stringify(first));
     const repeat = await (await call("/dinner/begin", "POST")).json();
     assert.equal(repeat.task.id, first.task.id);
+    const bridged = await (
+      await call("/dinner/api", "POST", {
+        path: `/api/assistant/tasks/${first.task.id}`,
+        method: "GET",
+      })
+    ).json();
+    assert.equal(bridged.status, 200);
+    assert.equal(bridged.body.task.id, first.task.id);
+    const foreign = await (
+      await call("/equipment/api", "POST", {
+        path: `/api/assistant/tasks/${first.task.id}`,
+        method: "GET",
+      })
+    ).json();
+    assert.equal(foreign.status, 404);
+    assert.equal(
+      (
+        await call(
+          "/dinner/api",
+          "POST",
+          { path: "/api/assistant/tasks", method: "GET" },
+          false,
+        )
+      ).status,
+      401,
+    );
     assert.equal((await call("/wrong-owner")).status, 404);
     const snapshot = await (await call("/dinner/status")).json();
     assert.equal(snapshot.task.id, first.task.id);
@@ -173,6 +200,34 @@ test("actual diagnostic stores ordinary tasks, rejects unowned access and retain
       (await (await call("/dinner/status")).json()).task.id,
       first.task.id,
     );
+    if (process.env.CHECK_ACCEPTANCE_BROWSER === "1") {
+      const { openCreatorJourney } =
+        await import("../../scripts/checks/cloud-agent-first-release/browser.mjs");
+      const journey = await openCreatorJourney({
+        origin: "https://acceptance.test",
+        sourceUrl: process.env.EDITOR_URL || "http://127.0.0.1:5318/",
+        proofId: "local",
+        call: async (...args) => {
+          const response = await call(...args);
+          return { status: response.status, data: await response.json() };
+        },
+        record: async () => {},
+      });
+      try {
+        const created = await journey.start("equipment");
+        assert.equal(created.status, 200);
+        assert.equal(
+          created.data.task.input.request,
+          scenarioInput("equipment", "unused").request,
+        );
+        assert.notEqual(
+          created.data.task.input.context.fingerprint,
+          "1f-empty-scene",
+        );
+      } finally {
+        await journey.close();
+      }
+    }
     const cleaned = await (await call("/", "DELETE")).json();
     assert.equal(cleaned.stopped.length, 2);
     assert.equal(cleaned.usage.models.length, max);

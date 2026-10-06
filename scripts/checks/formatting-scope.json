@@ -489,5 +489,14 @@
   "tests/first-release/credentials.test.mjs",
   "server/assistant/native/runpod.js",
   "tests/native-assistant-runpod.test.mjs",
-  "tests/first-release/model-planning.test.mjs"
+  "tests/first-release/model-planning.test.mjs",
+  "scripts/checks/cloud-agent-first-release/api.js",
+  "scripts/checks/cloud-agent-first-release/browser.mjs",
+  "scripts/checks/cloud-agent-first-release/delivery.mjs",
+  "scripts/checks/cloud-agent-first-release/faults.js",
+  "scripts/checks/cloud-agent-first-release/publication.mjs",
+  "scripts/checks/cloud-agent-first-release/review-inputs.mjs",
+  "scripts/checks/cloud-agent-first-release/viewer.mjs",
+  "tests/first-release/faults.test.mjs",
+  "tests/first-release/follow-up.test.mjs"
 ]
