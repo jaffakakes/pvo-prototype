@@ -153,6 +153,8 @@ Before a paid browser acceptance run, start a fresh isolated Vite process after 
 
 Run `1c47fd9fd5a361e2943e514e` (`workspace-H0uUcC/report.json`) ran **2026-10-06T23:11:47.529Z–23:12:38.942Z**. The fresh editor passed storage startup, but the later saved-task submission wait expired. Zero model calls, three admitted diagnostic HTTP requests, no workshops; complete cleanup verified. Cause remains unconfirmed. Private diagnostics now record rejected API status and the submission stage. Transport now recognizes inner API-wrapper HTTP failures for the same replay-safe intents; six transport regressions pass. Read-only account-route readiness precedes browser startup. The fresh local browser preflight passed again in `/tmp/restyle-1f-camera-browser-preflight-second.log`.
 
+The next diagnostic `6b5ec15e583982b750fc7b69` (`workspace-r4WODH/report.json`) exposed an error in the newly added readiness probe: task lists require a project query. It returned HTTP 400 before authoring. No model calls; cleanup verified. Replaced that invalid probe with a missing-task read, whose expected HTTP 404 proves the owned coordinator is reachable. The actual local Worker/browser test validates this route in `/tmp/restyle-1f-camera-route-preflight.log`.
+
 ## Run and recover
 
 Invocation from the active checkout, under the recorded completion authorization:
