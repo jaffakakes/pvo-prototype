@@ -434,5 +434,7 @@
   "editor/src/features/preview/createTryRuntimeBridge.ts",
   "editor/src/features/preview/tryMode.ts",
   "tests/service-attachments/try-session.test.mjs",
-  "scripts/checks/editor/component-try.mjs"
+  "scripts/checks/editor/component-try.mjs",
+  "packages/pvo-assistant/attachments/publicConnection.js",
+  "tests/service-attachments/public-connection.test.mjs"
 ]

@@ -183,3 +183,27 @@ export function matchesComponentServiceRequest(
   connection: ComponentServiceConnection,
   request: { url: string; method: string; body?: string },
 ): boolean;
+
+/** Viewer data only. It contains no authoring receipt and cannot authorize activation or private calls. */
+export type PublicServiceConnection = Pick<
+  ServiceSubmissionTarget,
+  "origin" | "serviceId" | "releaseId" | "operation"
+> &
+  Pick<ServiceAttachmentCommand["connection"], "event" | "target" | "input">;
+export function parsePublicServiceConnection(
+  value: unknown,
+): PublicServiceConnection;
+export function projectPublicServiceConnection(
+  value: ComponentServiceConnection,
+): PublicServiceConnection;
+export function publicServiceSubmissionTarget(
+  value: PublicServiceConnection,
+): ServiceSubmissionTarget & { mode: "public"; ownerId: null };
+export function resolvePublicServiceSubmissionInput(
+  value: PublicServiceConnection,
+  fields: Record<string, unknown>,
+): ServiceJson;
+export function matchesPublicServiceRequest(
+  value: PublicServiceConnection,
+  request: { url: string; method: string; body?: string },
+): boolean;

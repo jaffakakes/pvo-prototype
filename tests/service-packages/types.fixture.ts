@@ -248,3 +248,25 @@ serviceCallScope(hostRecord, {
   // @ts-expect-error A component test cannot select the live namespace.
   mode: "live",
 });
+
+const publicConnection =
+  attachments.projectPublicServiceConnection(componentConnection);
+const restoredPublicConnection =
+  attachments.parsePublicServiceConnection(publicConnection);
+const publicTarget = attachments.publicServiceSubmissionTarget(
+  restoredPublicConnection,
+);
+const publicMode: "public" = publicTarget.mode;
+const anonymousOwner: null = publicTarget.ownerId;
+attachments.resolvePublicServiceSubmissionInput(restoredPublicConnection, {
+  guest: "Alice",
+});
+attachments.matchesPublicServiceRequest(restoredPublicConnection, {
+  url: "https://restyle.example/action",
+  method: "POST",
+  body: "{}",
+});
+// @ts-expect-error Private authoring receipts cannot be read from the public description.
+publicConnection.receipt;
+void publicMode;
+void anonymousOwner;

@@ -5,8 +5,11 @@ import {
 } from "./command.js";
 import { parseServiceAttachmentReceipt } from "./receipt.js";
 import { validateAttachmentInput } from "./input.js";
-import { platformOrigin, declarativeServiceRequest } from "./policy.js";
-import { canonicalJson } from "../services/json.js";
+import {
+  platformOrigin,
+  declarativeServiceRequest,
+  matchesDeclarativeServiceRequest,
+} from "./policy.js";
 
 /** Saved project data, not authority to invoke or activate a release. Retain expired receipts for recovery. */
 export function parseComponentServiceConnection(value) {
@@ -50,10 +53,5 @@ export function matchesComponentServiceRequest(value, request) {
     saved.receipt.operation.name,
     saved.connection.input,
   );
-  return (
-    request.url === expected.url &&
-    request.method === expected.method &&
-    typeof request.body === "string" &&
-    canonicalJson(JSON.parse(request.body)) === expected.body
-  );
+  return matchesDeclarativeServiceRequest(expected, request);
 }
