@@ -96,3 +96,31 @@ export function requireServiceReceiptCapacity(
   usage: { count: number; bytes: number },
   additionalBytes?: number,
 ): void;
+
+export const SERVICE_CONTROL_RECEIPTS: number;
+export type ServiceControl =
+  | {
+      kind: "activate";
+      actionId: string;
+      expectedRevision: number;
+      releaseId: string;
+    }
+  | { kind: "pause" | "delete"; actionId: string; expectedRevision: number };
+export type ServiceControlReceipt = {
+  actionId: string;
+  kind: ServiceControl["kind"];
+  revision: number;
+  at: number;
+};
+export type HostedServiceSummary = {
+  service: HostedServiceRecord;
+  releases: import("../releases/index.js").ServiceObservation[];
+};
+export function parseServiceControl(value: unknown): ServiceControl;
+export function serializeServiceControl(value: unknown): string;
+export function planServiceControl(
+  service: HostedServiceRecord,
+  control: ServiceControl,
+  now: number,
+): HostedServiceRecord;
+export function parseHostedSummary(value: unknown): HostedServiceSummary;

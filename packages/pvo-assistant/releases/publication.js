@@ -68,7 +68,7 @@ export function parseServiceObservation(value, expected) {
     "Provider returned a different owned service.",
   );
   requireTask(
-    ["missing", "available", "deleted"].includes(value.state),
+    ["missing", "available", "retained", "deleted"].includes(value.state),
     "Provider state is unsupported.",
   );
   return { identity, state: value.state };

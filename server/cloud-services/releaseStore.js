@@ -17,7 +17,7 @@ export class ServiceReleaseStore {
   constructor(sql) {
     this.sql = sql;
     sql.exec(`CREATE TABLE IF NOT EXISTS service (id INTEGER PRIMARY KEY CHECK(id=1), body TEXT NOT NULL);
-      CREATE TABLE IF NOT EXISTS service_releases (id TEXT PRIMARY KEY, identity TEXT NOT NULL, body TEXT, probes INTEGER NOT NULL DEFAULT 0)`);
+      CREATE TABLE IF NOT EXISTS service_releases (id TEXT PRIMARY KEY, identity TEXT NOT NULL, body TEXT, probes INTEGER NOT NULL DEFAULT 0, retained INTEGER NOT NULL DEFAULT 0)`);
   }
   service() {
     const row = this.sql
@@ -59,13 +59,13 @@ export class ServiceReleaseStore {
   }
   rows() {
     return this.sql
-      .exec("SELECT id,identity,body,probes FROM service_releases")
+      .exec("SELECT id,identity,body,probes,retained FROM service_releases")
       .toArray();
   }
   row(id) {
     return this.sql
       .exec(
-        "SELECT id,identity,body,probes FROM service_releases WHERE id=?",
+        "SELECT id,identity,body,probes,retained FROM service_releases WHERE id=?",
         id,
       )
       .toArray()[0];
@@ -79,7 +79,7 @@ export class ServiceReleaseStore {
         409,
         "Service ownership or immutable contents conflict.",
       );
-    if (now >= identity.expiresAt && stored.body !== null) {
+    if (now >= identity.expiresAt && stored.body !== null && !stored.retained) {
       this.cancel(identity, now);
       stored.body = null;
     }
@@ -88,7 +88,13 @@ export class ServiceReleaseStore {
   observation(identity, row) {
     return {
       identity,
-      state: !row ? "missing" : row.body === null ? "deleted" : "available",
+      state: !row
+        ? "missing"
+        : row.body === null
+          ? "deleted"
+          : row.retained
+            ? "retained"
+            : "available",
     };
   }
   requireCapacity() {
@@ -96,6 +102,8 @@ export class ServiceReleaseStore {
       throw new HttpError(429, "This service has reached its release limit.");
   }
   publish(identity, body, now) {
+    if (this.assertOwner(identity)?.state === "deleted")
+      throw new HttpError(410, "This service has been deleted.");
     let current = this.current(identity, now);
     if (!current) {
       if (identity.expiresAt > now + TASK_LIMITS.lifetimeMs)
@@ -123,6 +131,7 @@ export class ServiceReleaseStore {
         409,
         "Service ownership or immutable contents conflict.",
       );
+    if (row?.retained) return;
     if (!row) this.requireCapacity();
     this.sql.exec(
       "INSERT INTO service_releases(id,identity,body) VALUES(?,?,NULL) ON CONFLICT(id) DO UPDATE SET body=NULL",
@@ -131,6 +140,15 @@ export class ServiceReleaseStore {
     );
     if (service.testReleaseId === identity.resourceId)
       this.saveService(selectTestRelease(service, null, now));
+  }
+  retain(id) {
+    this.sql.exec(
+      "UPDATE service_releases SET retained=1 WHERE id=? AND body IS NOT NULL",
+      id,
+    );
+  }
+  deleteReleases() {
+    this.sql.exec("UPDATE service_releases SET body=NULL,retained=0");
   }
   consumeProbe(identity, now) {
     const row = this.current(identity, now);
@@ -149,7 +167,7 @@ export class ServiceReleaseStore {
   }
   nextExpiry() {
     const times = this.rows()
-      .filter((row) => row.body !== null)
+      .filter((row) => row.body !== null && !row.retained)
       .map((row) => JSON.parse(row.identity).expiresAt);
     return times.length ? Math.min(...times) : null;
   }

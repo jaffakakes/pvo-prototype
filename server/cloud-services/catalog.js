@@ -1,3 +1,4 @@
+import { parseHostedSummary } from "../../packages/pvo-assistant/hosting/index.js";
 import {
   parseOwnedService,
   parseOwnedRelease,
@@ -98,6 +99,44 @@ export class ServiceCatalog {
     const service = this.service(identity.serviceId);
     this.saveService(
       expireOwnedService(service, this.releases(identity.serviceId), now),
+    );
+  }
+  synchronize(value, now) {
+    const summary = parseHostedSummary(value),
+      host = summary.service;
+    const service = this.service(host.identity.serviceId);
+    if (
+      !service ||
+      ["serviceId", "ownerId", "projectId"].some(
+        (key) => service.identity[key] !== host.identity[key],
+      )
+    )
+      throw new Error("Unknown hosted service owner.");
+    if (service.hostRevision !== null && service.hostRevision > host.revision)
+      return;
+    // Validate the complete observation before mutating its catalog projection.
+    const releases = summary.releases.map((item) =>
+      observeOwnedRelease(
+        this.release(item.identity.resourceId),
+        item.identity,
+        item.state,
+        now,
+      ),
+    );
+    for (const release of releases) this.saveRelease(release);
+    this.saveService(
+      expireOwnedService(
+        {
+          ...service,
+          state: host.state,
+          hostRevision: host.revision,
+          description:
+            host.state === "deleted" ? "Deleted service" : service.description,
+          updatedAt: now,
+        },
+        this.releases(host.identity.serviceId),
+        now,
+      ),
     );
   }
   maintain(now) {

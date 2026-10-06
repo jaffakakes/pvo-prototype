@@ -27,7 +27,7 @@ export type ServicePublication = CheckedService & {
 };
 export type ServiceObservation = {
   identity: ServiceReleaseIdentity;
-  state: "missing" | "available" | "deleted";
+  state: "missing" | "available" | "retained" | "deleted";
 };
 export const INACTIVE_SERVICE_LIMITS: Readonly<{
   publicationBytes: number;
@@ -64,7 +64,8 @@ export const SERVICE_CATALOG_LIMITS: Readonly<{
 export type OwnedService = {
   identity: Pick<ServiceReleaseIdentity, "serviceId" | "ownerId" | "projectId">;
   description: string;
-  state: "inactive" | "deleted";
+  hostRevision: number | null;
+  state: "inactive" | "active" | "paused" | "deleted";
   createdAt: number;
   updatedAt: number;
 };
@@ -74,7 +75,7 @@ export type OwnedRelease = {
   permissions: Array<
     Pick<ServiceAgreement["operations"][number], "name" | "audience" | "access">
   >;
-  state: "pending" | "inactive" | "deleted";
+  state: "pending" | "inactive" | "retained" | "deleted";
   createdAt: number;
   updatedAt: number;
 };

@@ -83,6 +83,10 @@ export class ServiceActionStore {
       bytes,
     );
   }
+  clearAll() {
+    for (const table of ["service_data", "service_actions", "service_usage"])
+      this.sql.exec(`DELETE FROM ${table}`);
+  }
   clearTest(resourceId) {
     const namespace = `test:${resourceId}`;
     for (const table of ["service_data", "service_actions", "service_usage"])
