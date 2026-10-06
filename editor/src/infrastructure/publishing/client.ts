@@ -2,6 +2,7 @@ import type { CompletedExport, PublicationInput } from "../../domain/publishing/
 import { publicationList, publicationReservation, publishingStatus, unavailablePublishing } from "../../domain/publishing/responses";
 
 type Options = { origin?: string; fetch?: typeof fetch; timeoutMs?: number };
+const MULTIPART_THRESHOLD = 50 * 1024 * 1024;
 
 export class PublishingHttpError extends Error {
   constructor(readonly status: number, message: string) {
@@ -34,7 +35,8 @@ export function createPublishingClient(options: Options = {}) {
       timer = setTimeout(() => {
         const error = new Error("Sharing timed out. Try again.");
         controller.abort(error); reject(error);
-      }, options.timeoutMs ?? (init.method === "PUT" ? 180000 : 30000));
+      }, options.timeoutMs ?? (path.includes("/multipart/") && init.method === "PUT" ? 30 * 60 * 1000
+        : init.method === "PUT" ? 180000 : 30000));
     });
     try {
       return await Promise.race([stopped, (async () => {
@@ -56,10 +58,39 @@ export function createPublishingClient(options: Options = {}) {
     async reserve(input: PublicationInput, signal?: AbortSignal) {
       return publicationReservation(await json("/api/publications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) }, signal), origin);
     },
-    async upload(id: string, artifact: CompletedExport, signal?: AbortSignal) {
-      const result = publicationReservation(await json(`/api/publications/${encodeURIComponent(id)}/content`, {
-        method: "PUT", headers: { "Content-Type": artifact.contentType }, body: artifact.blob,
-      }, signal), origin);
+    async upload(id: string, artifact: CompletedExport, signal?: AbortSignal, onProgress?: (uploadedBytes: number) => void) {
+      const path = `/api/publications/${encodeURIComponent(id)}`;
+      let response: unknown;
+      if (artifact.blob.size <= MULTIPART_THRESHOLD) {
+        response = await json(`${path}/content`, {
+          method: "PUT", headers: { "Content-Type": artifact.contentType }, body: artifact.blob,
+        }, signal);
+        onProgress?.(artifact.blob.size);
+      } else {
+        const started = await json(`${path}/multipart`, { method: "POST" }, signal);
+        if (started?.status === "ready") response = started;
+        else {
+          const size = started?.chunkBytes;
+          if (!Number.isSafeInteger(size) || size < 8 * 1024 * 1024 || size > 64 * 1024 * 1024
+            || Math.ceil(artifact.blob.size / size) > 10000)
+            throw new Error("The server returned an invalid upload size.");
+          const parts: { partNumber: number; etag: string }[] = [];
+          for (let offset = 0, partNumber = 1; offset < artifact.blob.size; offset += size, partNumber++) {
+            signal?.throwIfAborted();
+            const uploaded = await json(`${path}/multipart/${partNumber}`, {
+              method: "PUT", headers: { "Content-Type": "application/octet-stream" },
+              body: artifact.blob.slice(offset, offset + size),
+            }, signal);
+            if (uploaded?.partNumber !== partNumber || typeof uploaded?.etag !== "string" || !uploaded.etag)
+              throw new Error("The server did not confirm an upload part. Please retry.");
+            parts.push({ partNumber, etag: uploaded.etag });
+            onProgress?.(Math.min(artifact.blob.size, offset + size));
+          }
+          response = await json(`${path}/multipart/complete`, { method: "PUT",
+            headers: { "Content-Type": "application/json" }, body: JSON.stringify({ parts }) }, signal);
+        }
+      }
+      const result = publicationReservation(response, origin);
       if (result.id !== id) throw new Error("The upload returned a different publication.");
       return result;
     },

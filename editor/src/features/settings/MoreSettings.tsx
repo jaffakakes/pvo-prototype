@@ -311,15 +311,12 @@ export function MoreSettings() {
         >
           <h3 id="more-export-heading">Export</h3>
           <div className={styles.actions}>
-            <button type="button" onClick={() => requestExport("video")}>
-              Flat video
-            </button>
-            <button type="button" onClick={() => requestExport("pvo")}>
-              Interactive (.pvo)
+            <button type="button" onClick={() => requestExport()}>
+              Export and create link
             </button>
           </div>
           <p className={styles.exportNote}>
-            Interactive (.pvo) carries components · flat video does not.
+            The shared PVO keeps every scene and interactive component.
           </p>
         </section>
       )}

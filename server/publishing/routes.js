@@ -4,6 +4,7 @@ import { getAccountSession } from "../auth/sessions.js";
 import { publicationInput, publicationResult } from "./input.js";
 import { ownedPublication, reservePublication } from "./repository.js";
 import { uploadPublication } from "./upload.js";
+import { beginMultipartUpload, completeMultipartUpload, uploadMultipartPart } from "./multipart.js";
 import { cleanPublication } from "./cleanup.js";
 import { uploadPoster } from "./poster.js";
 
@@ -30,9 +31,17 @@ export async function publishingRoute(request, env, config) {
     }
     throw new HttpError(405, "This publication operation is not supported.");
   }
-  const match = /^\/api\/publications\/([^/]+)(\/content|\/poster)?$/.exec(url.pathname);
+  const match = /^\/api\/publications\/([^/]+)(\/content|\/poster|\/multipart(?:\/complete|\/[0-9]+)?)?$/.exec(url.pathname);
   if (!match || !validPublicationId(match[1])) throw new HttpError(404, "This publication is unavailable.");
   const publication = await ownedPublication(env.DB, match[1], owner.id);
+  if (match[2] === "/multipart" && request.method === "POST")
+    return json(publication.status === "ready" ? publicationResult(publication, config.origin)
+      : await beginMultipartUpload(env, config, publication));
+  if (match[2] === "/multipart/complete" && request.method === "PUT")
+    return json(publicationResult(await completeMultipartUpload(env, config, publication,
+      await readJson(request, 4 * 1024 * 1024)), config.origin));
+  if (match[2]?.startsWith("/multipart/") && request.method === "PUT")
+    return json(await uploadMultipartPart(request, env, config, publication, match[2].slice("/multipart/".length)));
   if (match[2] && request.method === "PUT")
     return match[2] === "/poster"
       ? json(await uploadPoster(request, env, publication))

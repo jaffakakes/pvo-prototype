@@ -415,7 +415,7 @@ test("merged batches cannot retain a seek into a deleted or shortened scene", as
 
 test("merged batches cannot retain export preparation after removing all authored content", async () => {
   const before = reset();
-  const original = await api.prepareNativeBatch(before, [{ kind: "export.prepare", format: "video" }], preparation());
+  const original = await api.prepareNativeBatch(before, [{ kind: "export.prepare", format: "pvo" }], preparation());
   const followUp = await api.prepareNativeBatch(original.project, [
     { kind: "clip.delete", sceneId: "main", clipId: 100 },
     { kind: "clip.delete", sceneId: "main", clipId: 101 },

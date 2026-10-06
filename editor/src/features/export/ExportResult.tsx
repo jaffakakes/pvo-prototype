@@ -54,27 +54,27 @@ export function ExportResult({
       <div className={`${styles.doneActions} ${styles.desktopReadyActions}`}>
         <button
           type="button"
-          className={styles.primary}
-          onClick={() => {
-            void onDownload();
-          }}
-        >
-          ↓ &nbsp;Download
-        </button>
-        <button
-          type="button"
           className={styles.shareAction}
           data-export-share
           onClick={() => {
             void onShare();
           }}
         >
-          Share
+          View share link
+        </button>
+        <button
+          type="button"
+          className={styles.quietAction}
+          onClick={() => {
+            void onDownload();
+          }}
+        >
+          ↓ &nbsp;Download PVO
         </button>
       </div>
       <p className={styles.readyNote}>
-        Share opens alongside — this result stays put. The cover is saved with
-        your project and frozen for this export.
+        Your link is created after export. The cover is saved with your project
+        and frozen for this export.
       </p>
       <button
         type="button"

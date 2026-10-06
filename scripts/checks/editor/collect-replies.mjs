@@ -101,13 +101,15 @@ try {
 
   await creator.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
   await creator.getByRole("dialog", { name: "More" })
-    .getByRole("button", { name: "Interactive (.pvo)", exact: true }).click();
+    .getByRole("button", { name: "Export and create link", exact: true }).click();
   const exportDialog = creator.locator("dialog[data-state]");
-  await exportDialog.getByRole("button", { name: /Export \.pvo/ }).click();
+  await exportDialog.getByRole("button", { name: /Export and share/ }).click();
   await creator.locator('dialog[data-state="done"]').waitFor({ timeout: 60000 });
+  const share = creator.getByRole("dialog", { name: "Share export", exact: true });
+  await share.waitFor();
   const [download] = await Promise.all([
     creator.waitForEvent("download", { timeout: 15000 }),
-    exportDialog.getByRole("button", { name: /Download/ }).click(),
+    share.locator("[data-download-again]").click(),
   ]);
   assert.equal(await download.failure(), null);
   const packageBytes = await readFile(await download.path());
@@ -117,6 +119,7 @@ try {
   assert.equal(manifestForm?.on_submit?.type, "request");
   assert.equal(manifestForm.on_submit.url, box.url);
   assert.equal(manifestForm.restyle_capture?.form?.submitMode, "collect");
+  await share.locator("[data-share-done]").click();
   await exportDialog.getByRole("button", { name: "Close export" }).click();
 
   await viewer.goto(`${origin}/player/`, { waitUntil: "networkidle" });

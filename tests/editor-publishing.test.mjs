@@ -41,6 +41,34 @@ test("reservation and retry send stable metadata while upload sends the complete
   assert.equal(calls[2].options.headers["Content-Type"], "video/webm");
 });
 
+test("large PVOs upload in bounded parts and become a link only after completion", async () => {
+  const calls = [];
+  const client = createPublishingClient({ origin, fetch: async (url, options) => {
+    calls.push({ url, options });
+    if (url.endsWith("/multipart") && options.method === "POST") return Response.json({ chunkBytes: 8 * 1024 * 1024 });
+    const part = /\/multipart\/(\d+)$/.exec(url);
+    if (part) return Response.json({ partNumber: Number(part[1]), etag: `etag_${part[1]}` });
+    if (url.endsWith("/multipart/complete")) return Response.json({ ...reservation, status: "ready" });
+    throw new Error(`Unexpected request: ${url}`);
+  } });
+  const slices = [];
+  const progress = [];
+  const size = 50 * 1024 * 1024 + 1;
+  const file = { ...artifact(), format: "pvo", contentType: "application/vnd.pvo",
+    blob: { size, slice(start, end) {
+      slices.push([start, end]);
+      return new Blob(["part"]);
+    } } };
+  const ready = await client.upload(reservation.id, file, undefined, bytes => progress.push(bytes));
+  assert.equal(ready.status, "ready");
+  assert.equal(slices.length, 7);
+  assert.deepEqual(slices[0], [0, 8 * 1024 * 1024]);
+  assert.deepEqual(slices.at(-1), [48 * 1024 * 1024, 56 * 1024 * 1024]);
+  assert.deepEqual(progress, [8, 16, 24, 32, 40, 48].map(mib => mib * 1024 * 1024).concat(size));
+  assert(calls.slice(1, -1).every(call => call.options.method === "PUT"));
+  assert.deepEqual(JSON.parse(calls.at(-1).options.body).parts.map(part => part.partNumber), [1, 2, 3, 4, 5, 6, 7]);
+});
+
 test("cover upload sends only the frozen WebP Blob to the owned publication", async () => {
   const calls = [];
   const client = createPublishingClient({ origin, fetch: async (url, options) => {

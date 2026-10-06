@@ -114,7 +114,7 @@ test("playback and export effects merge across steps and wait for final verifica
   const seek = { kind: "playback.seek", sceneId: "main", time: 2 };
   const pause = { kind: "playback.pause" };
   const f = fixture([
-    operations(seek, { kind: "export.prepare", format: "video" }),
+    operations(seek, { kind: "export.prepare", format: "pvo" }),
     request => {
       assert.equal(f.commits.length, 0, "Export preparation cannot terminate or commit early");
       assert.equal(request.project.ratio, "9:16");
@@ -126,7 +126,7 @@ test("playback and export effects merge across steps and wait for final verifica
   assert.equal(f.requests.length, 3);
   assert.equal(f.commits.length, 1);
   assert.deepEqual(result.batch.playback, [seek, pause]);
-  assert.equal(result.batch.exportFormat, "video");
+  assert.equal(result.batch.exportFormat, "pvo");
   assert.equal(result.batch.project.ratio, "1:1");
   assert.equal(result.batch.operations.length, 4);
 });
@@ -139,7 +139,7 @@ test("later edits cannot invalidate retained seek or export effects", async () =
       error: /requested playback position/,
     },
     {
-      effect: { kind: "export.prepare", format: "video" },
+      effect: { kind: "export.prepare", format: "pvo" },
       change: { kind: "clip.delete", sceneId: "main", clipId: 10 },
       error: /before exporting/,
     },
@@ -508,7 +508,7 @@ test("a later deferred seek or playback state permits restoring the earlier sche
   const pause = { kind: "playback.pause" };
   const f = fixture([
     operations(seek, pause, { kind: "export.prepare", format: "pvo" }),
-    operations({ kind: "playback.seek", sceneId: "main", time: 4 }, { kind: "playback.play" }, { kind: "export.prepare", format: "video" }),
+    operations({ kind: "playback.seek", sceneId: "main", time: 4 }, { kind: "playback.play" }, { kind: "export.prepare", format: "pvo" }),
     operations(seek, pause, { kind: "export.prepare", format: "pvo" }), answer,
   ]);
   const result = await run(f);

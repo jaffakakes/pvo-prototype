@@ -10,7 +10,7 @@ export async function cleanPublication(env, id, now = Date.now()) {
     if (publication.active_attempt === attempt.id && attempt.expires_at > now) continue;
     if (publication.status === "pending" && attempt.expires_at > now) continue;
     try {
-      await discardAttempt(env.DB, env.MEDIA, id, { id: attempt.id, key: attempt.object_key });
+      await discardAttempt(env.DB, env.MEDIA, id, attempt);
     } catch { console.error("Publication storage cleanup deferred", id, attempt.id); }
   }
   if (publication.status === "deleting") {
