@@ -33,16 +33,16 @@ test(
       const task = await saved(f);
       const end = await until(
         () => current(f, task),
-        (value) => value.state === "failed",
+        (value) => value.state === "waiting_for_answer",
       );
       assert.equal(end.stepId, "attach", JSON.stringify(end));
       assert.equal(
-        end.failure.code,
-        "invalid_result",
+        end.failure,
+        null,
         "The backend fixture does not supply an attachment proposal",
       );
       assert.equal(end.result, null);
-      assert.equal(end.usage.modelTurns, 7);
+      assert.equal(end.usage.modelTurns, 9);
       assert.equal(end.usage.toolCalls, 8); // two writes, two captures, three cases (first fails)
       assert.equal(end.usage.reservedToolCalls, 0);
       const stored = await validation(f, task);
@@ -132,7 +132,7 @@ test(
       await f.restart();
       const end = await until(
         () => current(f, task),
-        (value) => value.state === "failed",
+        (value) => value.state === "waiting_for_answer",
       );
       assert.equal(end.stepId, "attach", JSON.stringify(end));
       const after = await validation(f, task);
@@ -227,7 +227,7 @@ test(
       const task = await saved(f);
       const end = await until(
         () => current(f, task),
-        (value) => value.state === "failed",
+        (value) => value.state === "waiting_for_answer",
       );
       assert.equal(end.stepId, "attach", JSON.stringify(end));
       const stored = await validation(f, task);
@@ -320,16 +320,16 @@ test(
       const task = await saved(f);
       const end = await until(
         () => current(f, task),
-        (value) => value.state === "failed",
+        (value) => value.state === "waiting_for_answer",
       );
       assert.equal(end.stepId, "attach", JSON.stringify(end));
       assert.equal(
-        end.failure.code,
-        "invalid_result",
+        end.failure,
+        null,
         "Backend fixture supplies no component proposal",
       );
       assert.equal(end.usage.toolCalls, 34);
-      assert.equal(end.usage.modelTurns, 7);
+      assert.equal(end.usage.modelTurns, 9);
       assert.equal(end.usage.reservedToolCalls, 0);
       const state = await validation(f, task);
       assert.equal(state.artifacts[0].report.status, "passed");

@@ -34,7 +34,7 @@ test(
       const task = await saved(f);
       const end = await until(
         () => current(f, task),
-        (value) => value.state === "failed",
+        (value) => value.state === "waiting_for_answer",
       );
       assert.equal(end.stepId, "attach");
       assert.equal(end.result, null);
@@ -132,7 +132,7 @@ test(
       await f.restart();
       const end = await until(
         () => current(f, task),
-        (value) => value.state === "failed",
+        (value) => value.state === "waiting_for_answer",
       );
       assert.equal(end.stepId, "attach", JSON.stringify(end));
       assert.equal(end.retries, 1);

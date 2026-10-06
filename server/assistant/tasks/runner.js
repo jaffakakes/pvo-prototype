@@ -1,3 +1,4 @@
+import { AuthoringRepairError } from "./repairFeedback.js";
 import {
   authoringInput,
   prepareAuthoringResponse,
@@ -51,6 +52,7 @@ export async function runAuthoringStep(coordinator, claimed) {
     let code = null;
     let invoked = false;
     let wait = null;
+    let feedback = null;
     try {
       await withAssistantDeadline(
         async (signal) => {
@@ -79,6 +81,7 @@ export async function runAuthoringStep(coordinator, claimed) {
     } catch (error) {
       if (!invoked) attempt.dispatched = false;
       code = stepFailureCode(error, controller.signal);
+      if (error instanceof AuthoringRepairError) feedback = error.feedback;
       if (
         !controller.signal.aborted &&
         (error?.taskWait || error?.status === 429)
@@ -100,6 +103,7 @@ export async function runAuthoringStep(coordinator, claimed) {
         code,
         coordinator.now(),
         wait,
+        feedback,
       ),
     );
   } finally {

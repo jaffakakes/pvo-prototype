@@ -1,3 +1,4 @@
+import { AuthoringRepairError } from "../tasks/repairFeedback.js";
 import { authoringMessages } from "../tasks/promptContext.js";
 import {
   evidenceInstructions,
@@ -61,8 +62,10 @@ export async function planTaskAttachment(
       ? parseEvidenceRequest(decision)
       : parseServiceAttachmentCommand(decision);
   } catch {
-    throw Object.assign(new Error("Invalid component attachment response."), {
-      code: "invalid_result",
-    });
+    throw new AuthoringRepairError(
+      "attachment_response",
+      "Return one valid service.attach command or history selection using the supplied JSON schema.",
+      response?.content,
+    );
   }
 }

@@ -1,3 +1,4 @@
+import { AuthoringRepairError } from "../tasks/repairFeedback.js";
 import { parseServiceAttachmentCommand } from "../../../packages/pvo-assistant/attachments/index.js";
 import { validateNativeResult } from "../native/policy.js";
 import { resolveTaskAttachment } from "./receipt.js";
@@ -19,8 +20,10 @@ export async function prepareTaskAttachment(coordinator, task, value) {
   const context = task.input.context;
   const operation = command.component;
   if (operation.kind === "component.add" && operation.duration === null)
-    throw new Error(
+    throw new AuthoringRepairError(
+      "component_validation",
       "A new connected component needs an explicit visible duration.",
+      value,
     );
   const scenes = context.scenes.map((scene) => ({
     ...scene,
@@ -37,19 +40,27 @@ export async function prepareTaskAttachment(coordinator, task, value) {
           component.source,
       })),
   }));
-  await validateNativeResult(
-    {
-      mode: "edit",
-      project: { scenes: scenes.filter((scene) => scene.duration > 0) },
-    },
-    {
-      message: "Prepared component connection.",
-      operations: [operation],
-      observations: [],
-    },
-    (type, source) => coordinator.compileAttachment(type, source),
-    authorization,
-  );
+  try {
+    await validateNativeResult(
+      {
+        mode: "edit",
+        project: { scenes: scenes.filter((scene) => scene.duration > 0) },
+      },
+      {
+        message: "Prepared component connection.",
+        operations: [operation],
+        observations: [],
+      },
+      (type, source) => coordinator.compileAttachment(type, source),
+      authorization,
+    );
+  } catch (error) {
+    throw new AuthoringRepairError(
+      "component_validation",
+      error.message,
+      value,
+    );
+  }
   const encoded = await coordinator.results.encode(
     task,
     [operation],

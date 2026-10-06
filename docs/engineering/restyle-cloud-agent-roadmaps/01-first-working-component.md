@@ -29,7 +29,7 @@ Build this before committing to a provider-specific implementation.
 
 ## 1B. Save the task and its questions
 
-**Progress: 1B.01–1B.12 are verified.** The user has requested goal-based continuation without arbitrary model/tool/session ceilings; 1B.13–1B.15 below are the next priority. Saved tasks, planning, questions, prepared results and provider recovery pass the local/browser acceptance matrix and the [actual Cloudflare proof](../restyle-cloud-provider-recovery-proof.md). Source is in PR #87; integration and production delivery are separate. The following 1C.01 contract is now verified; integration and provider construction remain separate. Arbitrary workspace generation remains 1C.
+**Progress: 1B.01–1B.13 are verified.** The user has requested goal-based continuation without arbitrary model/tool/session ceilings; 1B.14–1B.15 below are the next priority. Saved tasks, planning, questions, prepared results and provider recovery pass the local/browser acceptance matrix and the [actual Cloudflare proof](../restyle-cloud-provider-recovery-proof.md). Source is in PR #87; integration and production delivery are separate. The following 1C.01 contract is now verified; integration and provider construction remain separate. Arbitrary workspace generation remains 1C.
 
 The task record is the agent's notebook. It must be saved on the server. Follow the [detailed 1B implementation plan](1b-saved-tasks.md) for contracts, build order, and failure tests.
 

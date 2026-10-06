@@ -1,6 +1,11 @@
 import { parseEvidenceRequest } from "./evidenceInput.js";
 
 const sources = {
+  repairs: {
+    table: "task_repairs",
+    sequence: "rowid",
+    project: (value) => value,
+  },
   questions: {
     table: "task_question_history",
     sequence: "sequence",

@@ -1,3 +1,4 @@
+import { AuthoringRepairError } from "../tasks/repairFeedback.js";
 import { authoringMessages } from "../tasks/promptContext.js";
 import {
   evidenceInstructions,
@@ -86,8 +87,10 @@ export async function planSavedBuild(
       available: definitions.map((tool) => tool.kind),
     });
   } catch {
-    throw Object.assign(new Error("Invalid saved builder decision."), {
-      code: "invalid_result",
-    });
+    throw new AuthoringRepairError(
+      "builder_response",
+      "Return a valid builder decision for the current agreement and listed tools using the supplied JSON schema.",
+      response?.content,
+    );
   }
 }

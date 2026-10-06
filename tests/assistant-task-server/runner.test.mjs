@@ -200,7 +200,7 @@ test("a saved goal continues past the former eight-turn cutoff and can ask for n
   }
 });
 
-test("invalid planning output and a timed-out provider leave bounded saved failures", async () => {
+test("invalid planning output asks for help after repeated failures; a timeout retains its saved failure", async () => {
   for (const slow of [false, true]) {
     const fixture = await taskFixture({
       planner: async () => {
@@ -216,15 +216,20 @@ test("invalid planning output and a timed-out provider leave bounded saved failu
       const task = await saved(fixture);
       const result = await until(
         () => state(fixture, task),
-        (value) => value.state === "failed",
+        (value) => value.state === (slow ? "failed" : "waiting_for_answer"),
       );
-      assert.equal(
-        result.failure.code,
-        slow ? "interrupted" : "invalid_result",
-      );
+      if (slow) assert.equal(result.failure.code, "interrupted");
+      else {
+        assert.equal(result.failure, null);
+        assert.equal(result.usage.modelTurns, 3);
+        assert.match(result.questions[0].prompt, /valid plan/);
+      }
       assert.equal(result.usage.reservedModelTurns, 0);
       await delay(400);
-      assert.equal((await state(fixture, task)).state, "failed");
+      assert.equal(
+        (await state(fixture, task)).state,
+        slow ? "failed" : "waiting_for_answer",
+      );
     } finally {
       await fixture.close();
     }

@@ -1,3 +1,4 @@
+import { AuthoringRepairError } from "./repairFeedback.js";
 import { authoringMessages } from "./promptContext.js";
 import {
   evidenceInstructions,
@@ -99,8 +100,10 @@ export async function planSavedTask(task, env, signal, evidence = null) {
     });
     return command;
   } catch {
-    throw Object.assign(new Error("Invalid saved planning result"), {
-      code: "invalid_result",
-    });
+    throw new AuthoringRepairError(
+      "planning_response",
+      "Return a valid ask or build decision using the supplied JSON schema.",
+      response?.content,
+    );
   }
 }
