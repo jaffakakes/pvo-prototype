@@ -4,7 +4,7 @@
 
 ## Status — 7 October 2026
 
-**US$1 approved by the user at 08:09 UTC, 7 October 2026**, for the single diagnostic deployment below. **1G.04 is unchecked.** The first upload stopped before resource creation; no runtime case passed. A corrected runner will retry within the same allowance. The existing product still runs generated services through Dynamic Workers. Preserve its completed 1E/1F evidence. This proof cannot by itself complete the replacement, manual publication, component connection or final beta acceptance.
+**US$1 approved by the user at 08:09 UTC, 7 October 2026**, for the single diagnostic deployment below. **1G.04 is unchecked.** Two upload attempts stopped before any Worker/application/namespace creation; no runtime case passed. Their owned upload process and registry cleanup are verified. The supervised uploader will retry within the same allowance. The existing product still runs generated services through Dynamic Workers. Preserve its completed 1E/1F evidence. This proof cannot by itself complete the replacement, manual publication, component connection or final beta acceptance.
 
 In everyday terms: first verify that a disposable hosted computer can run the exact saved JavaScript, return an answer, and disappear without leaving private files or background programs behind. Then connect that proven execution effect to the existing service and independent tests.
 
@@ -40,7 +40,7 @@ node scripts/checks/node-runtime/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-
 node scripts/checks/node-runtime/run.mjs 84880ccf8f98bb789d58cbea5436a645 --cleanup /absolute/path/to/report.json
 ```
 
-The journal saves ownership, expiry, names and an attempted-upload flag before remote mutation. Cleanup revokes execution and destroys guests, then removes the application, Worker and namespace, discovers uploaded tags only in the pre-recorded unique repository, deletes them and verifies absence. A lost upload/deletion response is reconciled by identity; failed inspection keeps cleanup pending. Only after all owned resources are absent are local diagnostic secrets removed. Local logs/journals retain evidence. The local image cache can remain for further tests; it has no running compute charges.
+The journal saves ownership, expiry, names and an attempted-upload flag before remote mutation. The uploader owns the Docker command group, uses temporary registry credentials and a ten-minute transfer deadline, and deploys only a confirmed immutable image reference. Wrangler no longer launches the remote Docker upload. Timeout is a failure even when a wrapper exits zero. Cleanup revokes execution and destroys guests, then removes the application, Worker and namespace, discovers uploaded tags only in the pre-recorded unique repository, deletes them and verifies absence. A lost upload/deletion response is reconciled by identity; failed inspection keeps cleanup pending. Only after all owned resources are absent are local diagnostic secrets removed. Local logs/journals retain evidence. The local image cache can remain for further tests; it has no running compute charges.
 
 ## Evidence so far
 
@@ -55,6 +55,7 @@ The journal saves ownership, expiry, names and an attempted-upload flag before r
 | Run | Authorization | Remote creation | Outcome / cleanup |
 | --- | --- | --- | --- |
 | Initial upload attempt `6a0868727a1b5ab1fb09b420` | US$1 approved, 7 October 08:09 UTC | No Worker/application/namespace/image observed | CLI ended early; zero runtime cases. Exact account and corrected registry inventories empty; journal `.wrangler/cloud-agent-infrastructure/workspace-wulZFc/report.json`. |
+| Upload retry `3e382dce0a1bec8557d0ad52` | Same US$1 allowance | No Worker/application/namespace; Docker transfer timed out | Exact orphan push PID 84307 stopped; journal reopened and cleanup reverified. `.wrangler/cloud-agent-infrastructure/workspace-aNuEpQ/report.json`. Zero runtime cases. |
 
 After the paid run, record its exact journal, runtime image digest, start/elapsed usage, checks and cleanup result here before marking any roadmap task. Full task completion also requires the canonical Node package/runtime replacement and its remaining integration gates.
 

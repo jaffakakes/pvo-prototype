@@ -11,6 +11,42 @@ import {
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { proofCommand } from "../../scripts/checks/cloud-agent-infrastructure/proof-command.mjs";
+import { proofProcess } from "../../scripts/checks/cloud-agent-infrastructure/proof-process.mjs";
+
+test("a timed-out command cannot leave an inherited upload process holding its pipes open", async () => {
+  const started = Date.now();
+  await assert.rejects(
+    proofProcess(
+      process.execPath,
+      [
+        "-e",
+        `
+      const {spawn}=require('node:child_process');
+      spawn(process.execPath,['-e','setInterval(()=>{},1000)'],{stdio:'inherit'});
+      process.on('SIGTERM',()=>process.exit(0));
+      setInterval(()=>{},1000);
+    `,
+      ],
+      { timeoutMs: 150 },
+    ),
+    /timed out/,
+  );
+  assert.ok(
+    Date.now() - started < 3000,
+    "Descendant pipes were closed with the command group",
+  );
+  await assert.rejects(
+    proofProcess(
+      process.execPath,
+      [
+        "-e",
+        "process.stdout.write('x'.repeat(10000));setInterval(()=>{},1000)",
+      ],
+      { maxBuffer: 32 },
+    ),
+    /output exceeded/,
+  );
+});
 
 test("proof command retains successful and failed diagnostics with credentials redacted", async () => {
   const directory = await mkdtemp(resolve(tmpdir(), "restyle-command-"));

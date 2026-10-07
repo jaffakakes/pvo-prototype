@@ -12,6 +12,7 @@ import {
 } from "./proof-images.mjs";
 
 import { proofCommand } from "./proof-command.mjs";
+import { uploadProofImage } from "./proof-image-upload.mjs";
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 
 // Owns only the randomly named deployments recorded in this run's journal.
@@ -280,6 +281,8 @@ export async function prepareResources(
     resource.attempted = true;
     await save();
     console.log(`Deploying ${resource.name}`);
+    if (resource.imageRepository)
+      await uploadProofImage(resource, { accountId, token, directory, save });
     await command(resource, false);
     await discover(resource);
     const worker = await read(`workers/scripts/${resource.name}/settings`);

@@ -1,9 +1,6 @@
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import { resolve } from "node:path";
 import { writeFile } from "node:fs/promises";
-
-const exec = promisify(execFile);
+import { proofProcess } from "./proof-process.mjs";
 
 /** Credentials stay in the child environment; diagnostics are private and redacted. */
 export async function proofCommand(
@@ -23,7 +20,7 @@ export async function proofCommand(
     await writeFile(diagnosticFile, diagnostic, { mode: 0o600 });
   }
   try {
-    const result = await exec(
+    const result = await proofProcess(
       process.execPath,
       [
         resolve(root, "node_modules/wrangler/bin/wrangler.js"),
@@ -33,7 +30,7 @@ export async function proofCommand(
       ],
       {
         cwd: root,
-        timeout: 300_000,
+        timeoutMs: 300_000,
         maxBuffer: 1024 * 1024,
         env: {
           ...process.env,
