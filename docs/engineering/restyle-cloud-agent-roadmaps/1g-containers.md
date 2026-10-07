@@ -233,3 +233,8 @@ The prepared Node resource lease, independent-validation claim and host-recogniz
 ## Canonical Node integration — 7 October 2026
 
 Current source replaces the Worker package/loader with one pinned Node runtime and retained supported-library bytes. AI/manual authoring, independent validation and the existing host share that artifact; source/runtime/lock changes invalidate prior reports. The offline workshop restores the reviewed catalog without downloads. Full **1,602 tests**, editor types and source checks pass, including actual local Node execution and workerd/SQLite/RPC lifecycles with controlled effects. The [progress checkpoint](../restyle-cloud-agent-progress.md) separates these from the completed isolated Fly proof. Configured Fly product acceptance, library/cost UI and final beta delivery remain pending; no checkbox changes or production release are claimed. Completed 1E/1F evidence is retained, and superseded paid creation drivers are retired with cleanup retained.
+
+
+## Library selection and private compute views — 7 October 2026
+
+Current source adds exact supported-library selection to the existing draft editor and private compute/cost/storage projection to Records and usage. Full **1,605 tests**, editor types and desktop/phone browser acceptance pass locally. The [current checkpoint](../restyle-cloud-agent-progress.md) records the save-fixture race, lifecycle/ownership checks, unavailable-metering behavior and cost exclusions. Final visual confirmation passes; configured Fly product acceptance and Node beta delivery remain pending. All six remaining tasks stay unchecked; earlier 1E/1F evidence remains unchanged.

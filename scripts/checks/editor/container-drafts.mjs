@@ -1,3 +1,4 @@
+import { nodeLibraryIds } from "../../../packages/pvo-assistant/services/index.js";
 import {
   packageFor,
   dinnerAgreement,
@@ -29,6 +30,7 @@ const f = await taskFixture({
       return Response.json({ kind: "read", path: "src/main.mjs", offset: 0 });
     return Response.json({
       kind: "write",
+      libraries: nodeLibraryIds(draft.metadata.dependencies),
       expectedRevision: draft.revision,
       files: [
         {
@@ -140,14 +142,25 @@ try {
         (await import("/src/app/projectAutosave.ts")).getProjectStorageStatus()
           .phase === "ready",
     );
+    await page.locator("#root[inert]").waitFor({ state: "hidden" });
     await page.evaluate(async () => {
       await (
         await import("/src/state/auth/authGateStore.ts")
       ).refreshAccountSession();
-      (await import("/src/state/captureStore.ts")).useCapture
-        .getState()
-        .patch({ sheet: "more" });
     });
+    if (page.viewportSize().width >= 900) {
+      await page
+        .getByRole("button", { name: "Project settings", exact: true })
+        .click();
+      await page
+        .getByRole("button", { name: "More settings", exact: true })
+        .click();
+    } else {
+      await page
+        .locator("header")
+        .getByRole("button", { name: "More", exact: true })
+        .click();
+    }
     await page
       .getByRole("button", { name: "Open Containers", exact: true })
       .click();
@@ -164,9 +177,19 @@ try {
     exact: true,
   });
   await code.fill("// unfinished manual draft");
+  await page
+    .getByRole("checkbox", { name: "nanoid 5.1.6", exact: true })
+    .check();
   await page.getByRole("button", { name: "Save draft", exact: true }).click();
   await page
     .getByRole("button", { name: "Retry saved action", exact: true })
+    .waitFor();
+  // Pending is shown before dispatch. Restart only after the server committed
+  // and the deliberately lost response reached the client.
+  await page
+    .getByText("The save could not be confirmed. Retry the saved action.", {
+      exact: true,
+    })
     .waitFor();
   await f.restart();
   await open();
@@ -177,6 +200,13 @@ try {
     .click();
   await page.getByText("Saved draft · revision 1", { exact: true }).waitFor();
   assert.deepEqual(saves[1], saves[0]);
+  assert.equal(saves[1].content.dependencies[0].version, "5.1.6");
+  assert.equal(
+    await page
+      .getByRole("checkbox", { name: "nanoid 5.1.6", exact: true })
+      .isChecked(),
+    true,
+  );
   await code.fill("// local work survives reload");
   await open();
   await page.getByRole("button", { name: "Open code", exact: true }).click();
@@ -354,6 +384,10 @@ try {
     .getByText("Independent checks: failed", { exact: true })
     .scrollIntoViewIfNeeded();
   await page.screenshot({ path: "/tmp/restyle-containers-desktop.png" });
+  await page
+    .getByRole("group", { name: "Libraries", exact: true })
+    .scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "/tmp/restyle-libraries-desktop.png" });
   await page.setViewportSize({ width: 390, height: 844 });
   await page
     .getByRole("button", { name: "Open Containers", exact: true })
@@ -364,6 +398,10 @@ try {
     .getByText("Independent checks: failed", { exact: true })
     .scrollIntoViewIfNeeded();
   await page.screenshot({ path: "/tmp/restyle-containers-phone.png" });
+  await page
+    .getByRole("group", { name: "Libraries", exact: true })
+    .scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "/tmp/restyle-libraries-phone.png" });
   await page.getByRole("button", { name: "Stop task", exact: true }).click();
   await page
     .getByText("Work on this draft has stopped.", { exact: false })
@@ -403,6 +441,7 @@ try {
     "Containers: creation, manual editing, lost committed reply/exact replay, real host restart, local reload, concurrent-author conflict/reapply, device checks, AI question/reload/answer, lost task creation recovery, same-draft editing, manual tests, independent rejection, publish replay, live preservation, expired-task recovery and account isolation passed.",
   );
 } catch (error) {
+  console.error("Browser errors:", errors);
   await page
     ?.screenshot({ path: "/tmp/restyle-containers-failure.png" })
     .catch(() => {});

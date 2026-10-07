@@ -1,3 +1,4 @@
+import { ContainerLibraries } from "./ContainerLibraries";
 import { ContainerAssistant } from "./ContainerAssistant";
 import { useState } from "react";
 import {
@@ -153,6 +154,17 @@ export function ContainerEditor({
               Add file
             </button>
           </div>
+          <ContainerLibraries
+            dependencies={buffer.content.dependencies}
+            disabled={busy || pending}
+            onChange={(dependencies) => {
+              setCheck(null);
+              session.edit((value) => ({
+                ...value,
+                content: { ...value.content, dependencies },
+              }));
+            }}
+          />
           <details>
             <summary>Entry point, tests and behavior agreement</summary>
             <label>

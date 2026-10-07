@@ -85,6 +85,7 @@
   "editor/src/features/services/ContainerAssistant.tsx",
   "editor/src/features/services/ContainerConnection.tsx",
   "editor/src/features/services/ContainerEditor.tsx",
+  "editor/src/features/services/ContainerLibraries.tsx",
   "editor/src/features/services/ContainerRecords.tsx",
   "editor/src/features/services/ContainerTests.tsx",
   "editor/src/features/services/ContainerUses.tsx",
@@ -633,5 +634,9 @@
   "tests/service-validation/report.test.mjs",
   "tests/service-validation/runtime.test.mjs",
   "tests/service-validation/task.helpers.mjs",
-  "tests/service-validation/task.test.mjs"
+  "tests/service-validation/task.test.mjs",
+  "packages/pvo-assistant/hosting/compute.js",
+  "server/cloud-services/node/usage.js",
+  "editor/src/features/services/ContainerCompute.tsx",
+  "tests/node-runtime/usage.test.mjs"
 ]

@@ -25,6 +25,11 @@ export {
 
 export { prepareReleaseActivation } from "./updates.js";
 export {
+  SERVICE_COMPUTE_MODES,
+  SERVICE_COMPUTE_COUNTERS,
+  parseServiceCompute,
+} from "./compute.js";
+export {
   SERVICE_RECORD_LIMITS,
   SERVICE_FAILURE_CODES,
   parseServiceRecords,

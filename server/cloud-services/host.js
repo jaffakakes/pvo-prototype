@@ -179,11 +179,7 @@ export class HostedService extends DurableObject {
     );
   }
   records(serviceId, ownerId) {
-    return hostedReply(() =>
-      this.ctx.storage.transactionSync(() =>
-        inspectServiceRecords(this, serviceId, ownerId),
-      ),
-    );
+    return hostedReply(() => inspectServiceRecords(this, serviceId, ownerId));
   }
   operations(serviceId, ownerId) {
     return hostedReply(() =>
