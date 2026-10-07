@@ -13,14 +13,25 @@ import {
 
 /** Fixed diagnostic calls only; every instance is removed before the next case. */
 export class FlyProofMachine {
-  constructor(resources, record) {
+  constructor(
+    resources,
+    record,
+    {
+      image = NODE_RUNTIME.baseImage,
+      bridgePath = "/runtime/bridge.mjs",
+      executionMs = NODE_LIMITS.executionMs,
+    } = {},
+  ) {
     this.resources = resources;
     this.record = record;
     this.path = `${resources.path}/machines/${record.id}`;
+    this.image = image;
+    this.bridgePath = bridgePath;
+    this.executionMs = executionMs;
   }
   async start() {
     const { request } = this.resources;
-    const expected = NODE_RUNTIME.baseImage.split("@")[1];
+    const expected = this.image.split("@")[1];
     const deadline = Date.now() + NODE_LIMITS.startupMs;
     const remaining = () => {
       const value = deadline - Date.now();
@@ -36,7 +47,7 @@ export class FlyProofMachine {
         assert.equal(
           state.image_ref?.digest,
           expected,
-          "Fly resolved a different Node base image",
+          "Fly resolved a different immutable runtime image",
         );
         if (state.state === "stopped" && !startRequested) {
           await requireFly(
@@ -96,6 +107,15 @@ export class FlyProofMachine {
     );
     // Fly omits the zero-valued exit_code field on successful commands.
     const exitCode = data?.exit_code === undefined ? 0 : data.exit_code;
+    this.lastCommand = {
+      fields: Object.keys(data ?? {}),
+      exitCode,
+      exitSignal: data?.exit_signal ?? null,
+      stdoutBytes:
+        typeof data?.stdout === "string"
+          ? Buffer.byteLength(data.stdout)
+          : null,
+    };
     if (exitCode !== 0 || typeof data?.stdout !== "string") {
       // This is a private fixed-fixture diagnostic, never the product error surface.
       this.resources.report.commandFailure = {
@@ -116,18 +136,23 @@ export class FlyProofMachine {
   async bridge(payload, timeoutMs = 4000) {
     const encoded = Buffer.from(JSON.stringify(payload)).toString("base64");
     const chunks = encoded.match(/.{1,65536}/g) ?? [];
-    const raw = await this.command(["node", "/runtime/bridge.mjs", ...chunks], {
+    const raw = await this.command(["node", this.bridgePath, ...chunks], {
       timeoutMs,
     });
     let reply;
     try {
       reply = JSON.parse(raw);
     } catch {
+      this.resources.report.transportFailure = {
+        ...this.lastCommand,
+        raw: raw.slice(0, 512),
+      };
+      await this.resources.save();
       throw nodeExecutionError("invalid_reply");
     }
-    if (reply?.status === 504) throw nodeExecutionError("timeout");
-    if (payload.path === "/ready" && reply?.status === 503)
+    if (payload.path === "/ready" && [503, 504].includes(reply?.status))
       throw nodeExecutionError("startup_pending");
+    if (reply?.status === 504) throw nodeExecutionError("timeout");
     if (
       !Number.isInteger(reply?.status) ||
       reply.status < 200 ||
@@ -151,10 +176,7 @@ export class FlyProofMachine {
           NODE_LIMITS.invocationBytes
       )
         throw nodeExecutionError("input_limit");
-      return await this.bridge(
-        { path: "/execute", body },
-        NODE_LIMITS.executionMs,
-      );
+      return await this.bridge({ path: "/execute", body }, this.executionMs);
     } catch (error) {
       if (error.name === "TimeoutError" || error.name === "AbortError")
         throw nodeExecutionError("timeout");

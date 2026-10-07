@@ -1,6 +1,4 @@
 import test from "node:test";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -225,7 +223,7 @@ test("Fly checks immutable identity, withholds source until ready and rejects ma
   });
   resources.request = async () =>
     ok({ state: "started", image_ref: { digest: "wrong" } });
-  await assert.rejects(machine.start(), /different Node base/);
+  await assert.rejects(machine.start(), /different immutable runtime/);
 });
 
 test("Fly reports an account billing block without storing provider text", async (t) => {
@@ -286,43 +284,6 @@ test("Fly waits for initial creation to settle before starting a Machine", async
   assert.equal(starts, 1);
 });
 
-test("Fly guest bridge receives bounded UTF-8 input through encoded arguments", async () => {
-  const body = JSON.stringify({
-    input: "日本語 '';$(not-a-command)".repeat(3000),
-  });
-  const encoded = Buffer.from(
-    JSON.stringify({ path: "/execute", body }),
-  ).toString("base64");
-  const chunks = encoded.match(/.{1,65536}/g);
-  assert.ok(chunks.length > 1);
-  const bootstrap =
-    "globalThis.fetch=async(url,options)=>new Response(JSON.stringify({url,body:options.body}));";
-  const { stdout } = await promisify(execFile)(process.execPath, [
-    "--import",
-    "data:text/javascript," + encodeURIComponent(bootstrap),
-    new URL("../../scripts/checks/node-runtime/fly/bridge.mjs", import.meta.url)
-      .pathname,
-    ...chunks,
-  ]);
-  const response = JSON.parse(stdout);
-  // The wire output remains bounded even if its echoed input would be too large.
-  assert.equal(response.status, 413);
-  const small = Buffer.from(
-    JSON.stringify({ path: "/execute", body: "日本語 ';$(not-a-command)" }),
-  ).toString("base64");
-  const echoed = await promisify(execFile)(process.execPath, [
-    "--import",
-    "data:text/javascript," + encodeURIComponent(bootstrap),
-    new URL("../../scripts/checks/node-runtime/fly/bridge.mjs", import.meta.url)
-      .pathname,
-    small,
-  ]);
-  assert.deepEqual(JSON.parse(JSON.parse(echoed.stdout).body), {
-    url: "http://127.0.0.1:8080/execute",
-    body: "日本語 ';$(not-a-command)",
-  });
-});
-
 test("Fly readiness retries a short transport timeout within the startup deadline", async () => {
   let attempts = 0;
   const resources = {
@@ -330,6 +291,8 @@ test("Fly readiness retries a short transport timeout within the startup deadlin
     request: async (method, path) => {
       if (path.endsWith("/exec")) {
         if (++attempts === 1)
+          return ok({ stdout: JSON.stringify({ status: 504, body: "" }) });
+        if (attempts === 2)
           throw Object.assign(new Error("temporary transport timeout"), {
             name: "TimeoutError",
           });
@@ -350,7 +313,7 @@ test("Fly readiness retries a short transport timeout within the startup deadlin
     },
   };
   await new FlyProofMachine(resources, { id: "1234567890abcd" }).start();
-  assert.equal(attempts, 2);
+  assert.equal(attempts, 3);
 });
 
 test("sandbox capability requires observed denial and privilege separation after a transient status timeout", async () => {

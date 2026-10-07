@@ -20,6 +20,7 @@ export class ServiceNodeExecution extends DurableObject {
     this.native = this.containerAdapter();
     this.active = null;
     this.cleaning = null;
+    this.starting = null;
     this.metering = new NodeMetering(ctx.storage.sql);
     ctx.storage.sql
       .exec(`CREATE TABLE IF NOT EXISTS node_lease(id INTEGER PRIMARY KEY CHECK(id=1),body TEXT NOT NULL);
@@ -254,7 +255,19 @@ export class ServiceNodeExecution extends DurableObject {
         async (signal) => {
           this.assertCurrent(lease);
           signal.throwIfAborted();
-          this.native.start(lease.id);
+          const starting = Promise.resolve().then(() => {
+            this.assertCurrent(lease);
+            signal.throwIfAborted();
+            return this.native.start(lease.id);
+          });
+          this.starting = { id: lease.id, promise: starting };
+          try {
+            await starting;
+          } finally {
+            if (this.starting?.id === lease.id) this.starting = null;
+          }
+          this.assertCurrent(lease);
+          signal.throwIfAborted();
           await this.native.ready(() => this.assertCurrent(lease), signal);
           await this.markReady(lease.id);
           this.assertCurrent(lease);
@@ -346,7 +359,10 @@ export class ServiceNodeExecution extends DurableObject {
     }
   }
   async destroyAndRelease(id) {
-    await this.native.destroy();
+    // A pending create can finish after cancellation. It must settle before absence is accepted.
+    // Provider adapters also retain creation intent for recovery after this object restarts.
+    if (this.starting?.id === id) await this.starting.promise.catch(() => {});
+    await this.native.destroy(id);
     await this.ctx.storage.transaction(async () => {
       const actual = this.lease();
       if (!actual || actual.id !== id || actual.phase !== "cleanup") return;

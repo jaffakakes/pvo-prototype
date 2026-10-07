@@ -32,7 +32,10 @@ export async function flyRunnerFiles() {
     "Reviewed Node runner bytes changed",
   );
   const bridge = await readFile(
-    new URL("./bridge.mjs", import.meta.url),
+    new URL(
+      "../../../../server/cloud-services/node/guest/bridge.mjs",
+      import.meta.url,
+    ),
     "utf8",
   );
   const probe = await readFile(

@@ -16,6 +16,7 @@ export async function flyProofResources(
   {
     resumeReport = null,
     directoryRoot = resolve(".wrangler/fly-node-proof"),
+    plan = FLY_PROOF,
   } = {},
 ) {
   assert.match(org, /^[a-z0-9][a-z0-9-]{0,62}$/);
@@ -37,7 +38,7 @@ export async function flyProofResources(
         cleanupVerified: false,
         machines: [],
         checks: [],
-        plan: { ...FLY_PROOF, approved: false },
+        plan: { ...plan, approved: false },
       };
   assert.match(report.id, /^[a-f0-9]{24}$/);
   assert.equal(report.org, org);
@@ -183,7 +184,7 @@ export async function flyProofResources(
       await save();
       // A successful configuration request is not proof that empty port lists block packets.
     },
-    async createMachine(files) {
+    async createMachine(files, configure = flyMachineConfiguration) {
       requireActive();
       assert.ok(
         report.machines.length < report.plan.maxMachines,
@@ -196,7 +197,17 @@ export async function flyProofResources(
         "An earlier Machine still requires cleanup",
       );
       const name = `restyle-${report.id}-${String(report.machines.length).padStart(2, "0")}`;
-      const row = { name, attemptedAt: Date.now(), id: null, removed: false };
+      const configuration = configure({ name, proofId: report.id, files });
+      assert.equal(configuration.name, name);
+      assert.equal(configuration.config.metadata.restyle_proof, report.id);
+      const row = {
+        name,
+        attemptedAt: Date.now(),
+        id: null,
+        removed: false,
+        image: configuration.config.image,
+        guest: configuration.config.guest,
+      };
       report.machines.push(row);
       await save();
       // No retry after an uncertain create. Cleanup discovers the saved name/metadata in this app.
@@ -204,7 +215,7 @@ export async function flyProofResources(
         request,
         "POST",
         `${path}/machines`,
-        flyMachineConfiguration({ name, proofId: report.id, files }),
+        configuration,
         { timeoutMs: 45000 },
       );
       assert.match(actual.id, /^[a-f0-9]{10,32}$/);

@@ -1,4 +1,6 @@
-/** Private diagnostic transport. Credentials never enter a Machine or a report. */
+import { flyFetch } from "./connection.mjs";
+
+/** Private diagnostic transport. Credentials never enter an execution Machine or a report. */
 export function flyApi(token, { fetchImpl = fetch } = {}) {
   if (typeof token !== "string" || !token.trim())
     throw new Error("Fly authentication is required.");
@@ -10,16 +12,20 @@ export function flyApi(token, { fetchImpl = fetch } = {}) {
   ) {
     if (!/^\/apps(?:\/[a-zA-Z0-9_/-]+)?(?:\?force=true)?$/.test(path))
       throw new Error("Invalid Fly diagnostic API path.");
-    const response = await fetchImpl(`https://api.machines.dev/v1${path}`, {
-      method,
-      redirect: "error",
-      headers: {
-        Authorization: `${token.split(",").some((value) => /^(fm1r|fm2)_/.test(value)) ? "FlyV1" : "Bearer"} ${token}`,
-        "Content-Type": "application/json",
+    const response = await flyFetch(
+      fetchImpl,
+      `https://api.machines.dev/v1${path}`,
+      {
+        method,
+        redirect: "error",
+        headers: {
+          Authorization: `${token.split(",").some((value) => /^(fm1r|fm2)_/.test(value)) ? "FlyV1" : "Bearer"} ${token}`,
+          "Content-Type": "application/json",
+        },
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+        signal: AbortSignal.timeout(timeoutMs),
       },
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-      signal: AbortSignal.timeout(timeoutMs),
-    });
+    );
     const pieces = [];
     let bytes = 0;
     try {

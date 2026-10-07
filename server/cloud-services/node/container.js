@@ -70,7 +70,7 @@ export class NodeContainer {
     const image = this.container?.images?.runtime;
     if (typeof image !== "string" || !/@sha256:[a-f0-9]{64}$/.test(image))
       throw nodeExecutionError("runtime_unavailable");
-    this.container.start({
+    return this.container.start({
       image,
       instance: "lite",
       enableInternet: false,
