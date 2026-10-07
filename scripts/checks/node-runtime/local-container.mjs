@@ -1,14 +1,17 @@
-import { NODE_RUNTIME, NODE_LIMITS as limits } from "./runtime.js";
-import { withAssistantDeadline } from "../../assistant/deadline.js";
+import {
+  NODE_RUNTIME,
+  NODE_LIMITS as limits,
+} from "../../../server/cloud-services/node/runtime.js";
+import { withAssistantDeadline } from "../../../server/assistant/deadline.js";
 
 import {
   nodeExecutionError,
   nodeExecutionBody,
   readNodeReply,
-} from "./protocol.js";
+} from "../../../server/cloud-services/node/protocol.js";
 
-/** Native provider effects. The durable controller owns admission, the lease and cleanup receipt. */
-export class NodeContainer {
+/** Local Docker diagnostic transport only; product hosting uses the durable Fly adapter. */
+export class LocalNodeProbe {
   constructor(container) {
     this.container = container;
   }

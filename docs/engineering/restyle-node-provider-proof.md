@@ -81,7 +81,7 @@ Use the actual organisation slug returned by the Machines API, not GraphQL's `pe
 
 [ServiceNodeExecution](../../server/cloud-services/node/coordinator.js) now binds the Fly effect to its existing durable lease, through `SERVICE_NODE_FLY_APP`, `SERVICE_NODE_FLY_IMAGE` and the private `SERVICE_NODE_FLY_TOKEN`. Configuration is not enabled in the application yet. Five real local Durable Object/SQLite/RPC cases with controlled Fly HTTP responses pass, including unknown creation and lost deletion across restart, cancelled inspection, result-after-destruction and unavailable configuration. Full 1,598 tests pass. Workerd's unsupported `redirect: error` was replaced by manual redirect rejection; credentials are never forwarded to a redirect destination. Provider timeouts remain infrastructure uncertainty, separate from a confirmed guest timeout. The subsequent resource-deadline/profile batch below replaces the preparation values; product enablement and full acceptance remain pending.
 
-The historical Cloudflare Node creation launcher below must not be run after this provider binding. Its earlier results and owned-resource cleanup remain historical evidence; retire its creation mode in the canonical replacement. Do not replace the separate development-workshop adapter.
+The historical Cloudflare Node launcher now accepts cleanup only; its creation path and diagnostic Worker are removed. The old direct HTTP adapter lives solely in the local Docker diagnostic, outside product hosting. Earlier results and owned-resource cleanup remain historical evidence. The separate development-workshop adapter is unchanged.
 
 ### Product resource deadlines and Fly estimate — 7 October 2026
 
@@ -128,7 +128,7 @@ Approved authorization: **one diagnostic deployment, up to US$1 estimated total*
 
 The Container contract requires scoped approval after preparing the executable plan. Earlier 1F spending is closed and does not fund this distinct test. The user has now explicitly approved US$1. Run the prepared diagnostic once within these bounds, record its journal before effects, verify cleanup, and use the provider evidence for the next implementation decision. This approval is separate from the closed 1F spending.
 
-## Commands and recovery
+## Historical Cloudflare commands and recovery
 
 Run from the active source checkout. Credentials are read from the existing secure local Cloudflare setup; never paste them into chat or these documents. The account ID is public configuration.
 
@@ -136,13 +136,7 @@ Run from the active source checkout. Credentials are read from the existing secu
 # Use the reviewed crane 0.22.1 binary; another agent can install the same version on its host.
 export RESTYLE_CRANE_BIN="$PWD/.wrangler/tools/crane-v0.22.1/crane"
 
-# Read-only account checks plus local build/archive/digest; no upload or paid execution.
-node scripts/checks/node-runtime/run.mjs 84880ccf8f98bb789d58cbea5436a645 --dry-run
-
-# Only after this proof's explicit approval; prints its private report path first.
-node scripts/checks/node-runtime/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-approved-node-proof
-
-# Recover an interrupted deployment using its exact journal; cannot create resources.
+# Cleanup only for an existing historical journal; new Cloudflare Node creation is disabled.
 node scripts/checks/node-runtime/run.mjs 84880ccf8f98bb789d58cbea5436a645 --cleanup /absolute/path/to/report.json
 ```
 

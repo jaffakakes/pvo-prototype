@@ -3,7 +3,7 @@ import { writeFile, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
-import { NodeContainer } from "../../../server/cloud-services/node/container.js";
+import { LocalNodeProbe } from "./local-container.mjs";
 import { NODE_RUNTIME } from "../../../server/cloud-services/node/runtime.js";
 import { dockerContainer } from "./docker.mjs";
 
@@ -31,7 +31,7 @@ async function invoke(
   const row = { name: native.name, label, created: false, cleaned: false };
   record.containers.push(row);
   await save();
-  const container = new NodeContainer(native),
+  const container = new LocalNodeProbe(native),
     controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 40000);
   let ready = false;
