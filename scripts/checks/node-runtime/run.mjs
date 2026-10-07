@@ -83,6 +83,7 @@ try {
           const row = { id, label, startedAt, status: "pending" };
           resources.report.checks.push(row);
           await resources.save();
+          console.log(`Checking ${label}`);
           const result = await resources.call(resource, "/execute", "POST", {
             id,
             ownerId: "proof-owner",
@@ -125,6 +126,13 @@ try {
       await resources.save();
     }
   }
+} catch (error) {
+  resources.report.failure = {
+    name: error.name,
+    message: String(error.message).slice(0, 3000),
+  };
+  await resources.save();
+  throw error;
 } finally {
   await resources.cleanup();
   assert.equal(

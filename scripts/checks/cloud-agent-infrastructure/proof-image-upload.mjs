@@ -37,7 +37,14 @@ export async function uploadProofImage(
         env:
           binary === "docker"
             ? process.env
-            : { ...process.env, DOCKER_CONFIG: dockerConfig },
+            : {
+                ...process.env,
+                DOCKER_CONFIG: dockerConfig,
+                // The registry upload returned an HTTP/2 stream protocol error; keep TLS and use HTTP/1.1.
+                GODEBUG: [process.env.GODEBUG, "http2client=0"]
+                  .filter(Boolean)
+                  .join(","),
+              },
       });
       return result;
     } catch (error) {
@@ -63,7 +70,11 @@ export async function uploadProofImage(
       "0.22.1",
       "Use the reviewed crane v0.22.1 uploader",
     );
-    resource.imageUploader = { name: "crane", version: "v0.22.1" };
+    resource.imageUploader = {
+      name: "crane",
+      version: "v0.22.1",
+      protocol: "https-http1",
+    };
     await save();
     // Build locally; upload from the host rather than through Docker Desktop networking.
     const context = await run("docker", [

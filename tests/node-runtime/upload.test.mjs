@@ -65,6 +65,8 @@ test("only a completed owned upload selects a pinned deployment image and creden
           return { stdout: "built/exported" };
         }
         assert.equal(command, "crane");
+        assert.ok(opts.env.GODEBUG.endsWith("http2client=0"));
+        assert.equal(args.includes("--insecure"), false);
         assert.equal(
           opts.env.DOCKER_CONFIG,
           resolve(directory, "docker-credentials"),
