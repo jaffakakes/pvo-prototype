@@ -435,6 +435,7 @@
   "server/cloud-services/node/guest/supervisor.mjs",
   "server/cloud-services/node/guest/transport.mjs",
   "server/cloud-services/node/metering.js",
+  "server/cloud-services/node/protocol.js",
   "server/cloud-services/node/runtime.js",
   "server/cloud-services/ownership.js",
   "server/cloud-services/packageExecution.js",

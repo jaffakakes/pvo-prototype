@@ -1,10 +1,7 @@
 import { parseNodeBundle } from "../../../packages/pvo-assistant/services/index.js";
 import { DurableObject } from "cloudflare:workers";
-import {
-  NodeContainer,
-  nodeExecutionError,
-  nodeExecutionBody,
-} from "./container.js";
+import { NodeContainer } from "./container.js";
+import { nodeExecutionError, nodeExecutionBody } from "./protocol.js";
 import { NodeMetering } from "./metering.js";
 import { NODE_LIMITS as limits } from "./runtime.js";
 import { withAssistantDeadline } from "../../assistant/deadline.js";

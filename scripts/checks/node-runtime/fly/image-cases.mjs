@@ -6,7 +6,7 @@ import { inspectRuntimeStartup } from "./startup.mjs";
 import { networkProbeProgram } from "./network.mjs";
 import { IMAGE_PROOF, runtimeConfiguration } from "./image.mjs";
 import { exerciseNode } from "../exercise.mjs";
-import { nodeExecutionBody } from "../../../../server/cloud-services/node/container.js";
+import { nodeExecutionBody } from "../../../../server/cloud-services/node/protocol.js";
 import { parseNodeBundle } from "../../../../packages/pvo-assistant/services/index.js";
 
 export async function runImageCases(resources) {

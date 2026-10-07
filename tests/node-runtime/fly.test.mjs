@@ -367,7 +367,7 @@ test("sandbox capability requires observed denial and privilege separation after
 
 test("Fly execution dispatch stays small and cannot run a changed saved payload", async () => {
   const { nodeExecutionBody } =
-    await import("../../server/cloud-services/node/container.js");
+    await import("../../server/cloud-services/node/protocol.js");
   const calls = [];
   const resources = {
     path: "/apps/owned",

@@ -9,7 +9,7 @@ import {
   nodeExecutionBody,
   readNodeReply,
   nodeExecutionError,
-} from "../../../../server/cloud-services/node/container.js";
+} from "../../../../server/cloud-services/node/protocol.js";
 
 /** Fixed diagnostic calls only; every instance is removed before the next case. */
 export class FlyProofMachine {

@@ -4,10 +4,8 @@ import {
   parseNodeBundle,
   supportedNodeLibraries,
 } from "../../packages/pvo-assistant/services/index.js";
-import {
-  readNodeReply,
-  NodeContainer,
-} from "../../server/cloud-services/node/container.js";
+import { NodeContainer } from "../../server/cloud-services/node/container.js";
+import { readNodeReply } from "../../server/cloud-services/node/protocol.js";
 import { NODE_RUNTIME } from "../../server/cloud-services/node/runtime.js";
 import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
