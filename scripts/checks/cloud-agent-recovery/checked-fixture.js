@@ -6,6 +6,7 @@ import {
 import {
   serializeServicePackage,
   serializeServiceTestReport,
+  nodeLibraryIds,
 } from "../../../packages/pvo-assistant/services/index.js";
 import { prepareServicePublication } from "../../../server/cloud-services/releaseContract.js";
 
@@ -49,7 +50,7 @@ export async function installCheckedDiagnostic(coordinator, claimed, checked) {
     );
     const review = {
       kind: "review",
-      libraries: [],
+      libraries: nodeLibraryIds(artifact.package.dependencies),
       revision: 1,
       digest: artifact.identity.sourceDigest,
       entrypoint: artifact.package.entrypoint,

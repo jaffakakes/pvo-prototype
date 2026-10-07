@@ -2,7 +2,7 @@
 
 [Roadmap overview](../restyle-cloud-agent-roadmap.md) · [Architecture](../restyle-cloud-agent-architecture.md#containers-the-next-product-feature) · [Current evidence](../restyle-cloud-agent-progress.md)
 
-**Status: implementation started, 7 October 2026.** 1E/1F are verified through beta. **1G.01–1G.03, 1G.07, 4B.01–07 and 4C.01/04/05 are complete**; the [implementation contract](../restyle-containers-contract.md) records the shared draft/release rules, zero-workshop cases and required Node.js proof. Remaining implementation and provider acceptance stay unchecked. Production is deferred until the user tests the finished work in beta.
+**Status: implementation started, 7 October 2026.** 1E/1F are verified through beta. **1G.01–1G.03, 1G.07, 4B.01–07 and 4C.01/02/04/05 are complete**; the [implementation contract](../restyle-containers-contract.md) records the shared draft/release rules, zero-workshop cases and required Node.js proof. Remaining implementation and provider acceptance stay unchecked. Production is deferred until the user tests the finished work in beta.
 
 ## The simple version
 
@@ -53,7 +53,7 @@ Keep the first version small: reuse the existing browser editor, component sandb
 | [Service manager](../../../editor/src/features/services/ServicesPanel.tsx) already lists owned services and offers version selection, pause/resume and delete. | Evolve that feature into the Containers destination with Code, Tests, Versions, Connections and Usage views. These are views of one service. |
 | [Attachment contract](../../../packages/pvo-assistant/attachments/README.md) checks ownership, public operations, typed inputs and retry identities. | Reuse it for selecting an existing published Container as well as AI-created components. Complete 1E/1F before claiming the whole viewer path. |
 
-Current hosting code already preserves activated source and live records independently of task cleanup. Its local tests establish those guarantees for Dynamic Workers. The earlier real cloud proofs establish workshop/hosting separation and provider recovery, **not hosted Node.js service acceptance**. Product Worker deployment is not recorded as complete.
+The original Dynamic Worker foundation established workshop/hosting separation and durable records. Current source uses the canonical Node.js contract and Fly execution controller; the existing static beta contains that contract. The [integrated acceptance](../restyle-node-product-acceptance.md) records the separate configured provider/browser proof. Permanent product hosting and production deployment are distinct from this bounded test.
 
 ## One draft, one publishing path
 
@@ -85,7 +85,7 @@ flowchart LR
 
 Use the existing per-service host as the authority for draft revisions, release selection, test/live namespaces, request limits and atomic records. Keep small metadata in its durable storage; if locked dependencies exceed the present source-package bounds, store immutable content-addressed bundles in private object storage with owned references. Choose and verify bounds before enabling larger packages. Object storage is an artifact store, not a second service registry or an independent transaction authority.
 
-Proposed first runtime: a platform-managed, pinned Node.js base image plus the checked immutable service bundle. Restyle restores verified bytes before starting the private service listener. Dependencies are resolved and integrity-checked during the isolated build; no package installation on a viewer request. Any package installation scripts require an explicit supported build policy. Creators do not supply Docker infrastructure or platform deployment credentials. A bounded provider proof must confirm that this loading approach works before committing to its adapter.
+Current runtime: a platform-managed, pinned Node.js base image plus the checked immutable service bundle. Restyle restores verified bytes before starting the private service listener. Supported dependencies are retained as exact reviewed bytes and integrity-checked before execution; no package installation occurs on a viewer request. Any package installation scripts require an explicit supported build policy. Creators do not supply Docker infrastructure or platform deployment credentials. The completed isolated provider proof verifies private bundle loading, runtime isolation, large-input transfer and cleanup; the integrated product proof verifies the caller and viewer paths.
 
 Keep the named operation agreement and `execute({operation, input, state, now})` boundary. Node.js code can use supported JavaScript libraries and temporary files, but durable changes go through Restyle's validated result/state commit. The gateway exposes approved operations; arbitrary process ports or file paths are not public APIs. PVO Logic stays its separate restricted language and continues to call the checked request boundary.
 
@@ -99,7 +99,7 @@ Retain separate test and live data. Node.js receives only the admitted call and 
 
 Source, release bundle, reports, selected version, records and receipts must survive both workshop deletion and live-instance destruction. Memory, local disk and shutdown callbacks cannot be their only copy. A sleeping instance can restart automatically; a paused or deleted service cannot. Cold starts have a deadline and a truthful retryable outcome, with the original action identity retained.
 
-**Fly.io is the selected Node execution provider (7 October).** The user chose their existing account after six Cloudflare image-upload attempts failed before runtime execution. Fly Machines can pull the pinned public Node image directly. Preserve the existing Restyle task/service/data authorities and replace only the generated-code execution effect once its isolation, runtime and cleanup proof passes. The prepared Cloudflare controller and all earlier evidence remain recorded; they are not a second active product runtime. Follow [the current Fly proof](../restyle-node-provider-proof.md#current-decision--flyio-7-october-2026).
+**Fly.io is the selected Node execution provider (7 October).** The user chose their existing account after six Cloudflare image-upload attempts failed before runtime execution. Fly Machines can pull the pinned public Node image directly. Preserve the existing Restyle task/service/data authorities and use its generated-code execution effect while retaining those authorities. The retired Cloudflare execution preparation and earlier evidence remain recorded; they are not a second active product runtime. Follow [the current Fly proof](../restyle-node-provider-proof.md#current-decision--flyio-7-october-2026).
 
 ## Updates, controls and costs use existing foundations
 
@@ -144,7 +144,7 @@ There are **eight new tasks**. Twelve existing unchecked update/management tasks
 ### D. Finish the same management surface
 
 - [x] **4C.01** Show which projects and published components use each service and which account connections they need.
-- [ ] **4C.02** Add useful views of remaining quotas, approximate cost, recent results, and failures.
+- [x] **4C.02** Add useful views of remaining quotas, approximate cost, recent results, and failures.
 - [x] **4C.04** Let creators inspect retained data and choose the allowed cleanup action.
 - [x] **4C.05** Explain the effects of pause and deletion on new submissions, accepted jobs, and stored records before applying the selected operation.
 - [ ] **4C.06** Verify periodic cleanup removes only abandoned resources and expired records covered by the agreed retention rule.
@@ -238,3 +238,10 @@ Current source replaces the Worker package/loader with one pinned Node runtime a
 ## Library selection and private compute views — 7 October 2026
 
 Current source adds exact supported-library selection to the existing draft editor and private compute/cost/storage projection to Records and usage. Full **1,605 tests**, editor types and desktop/phone browser acceptance pass locally. The [current checkpoint](../restyle-cloud-agent-progress.md) records the save-fixture race, lifecycle/ownership checks, unavailable-metering behavior and cost exclusions. Final visual confirmation passes; configured Fly product acceptance and Node beta delivery remain pending. All six remaining tasks stay unchecked; earlier 1E/1F evidence remains unchanged.
+
+
+## Usage view delivered through beta — 7 October 2026
+
+**4C.02 complete.** Source `bdda340` is pushed in draft #106 and the management browser journey passes with actual local HTTP/SQLite/Node fixture execution, measured persisted counters, owner isolation, unavailable usage, reset replay and update/lifecycle controls. Full 1,605 tests and source/type checks pass. Desktop/phone screenshots and the Impeccable detector were reviewed. A positive estimate smaller than displayed precision is shown as less than the smallest displayed amount, never zero.
+
+Combined `6d76aa6` passes build, editor types and 23 focused records/usage/delivery tests. Beta **`restyle-editor-shell-2625ed5f550e6744`** is served from Desktop `dist/` on 4173; served files and a fresh client's activated worker are verified. Backup `restyle-node-ui-beta-2gea13_a` retains previous and built files; 131 old hashed assets remain and the user's session was not reloaded. This beta contains the Node contract and new views, but its local static server has no configured service/task API. It does not establish hosted product availability or complete the five remaining Node/retention/final-acceptance tasks. See [progress](../restyle-cloud-agent-progress.md).
