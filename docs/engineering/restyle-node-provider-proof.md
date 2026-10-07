@@ -2,13 +2,51 @@
 
 [Contract](restyle-containers-contract.md) · [Roadmap 1G](restyle-cloud-agent-roadmaps/1g-containers.md) · [Progress](restyle-cloud-agent-progress.md)
 
-## Status — 7 October 2026
+## Current decision — Fly.io, 7 October 2026
 
-**US$1 approved by the user at 08:09 UTC, 7 October 2026**, for the single diagnostic deployment below. **1G.04 is unchecked.** Six preparation/upload attempts stopped before any Worker/application/namespace creation; no runtime case passed. Owned upload processes, credentials and registry cleanup are verified. The final host HTTP/1.1 transfer also failed; all attempts are cleaned up and provider selection is being reconsidered. The existing product still runs generated services through Dynamic Workers. Preserve its completed 1E/1F evidence. This proof cannot by itself complete the replacement, manual publication, component connection or final beta acceptance.
+The user selected **Fly.io** after the Cloudflare upload failures and connected their existing account. Use the existing **US$1 isolated test allowance** for the replacement proof described here; no larger subscription or production deployment is authorised. This is a change of execution provider, not a second Container product. The product still executes generated services through Dynamic Workers until the Node replacement is proved and integrated. **1G.04 remains unchecked.** Preserve all completed 1E/1F evidence and the six historical Cloudflare attempts below.
 
-In everyday terms: first verify that a disposable hosted computer can run the exact saved JavaScript, return an answer, and disappear without leaving private files or background programs behind. Then connect that proven execution effect to the existing service and independent tests.
+In everyday terms: Fly supplies the small computer that runs a Container's JavaScript. Restyle continues to own its saved code, records, tests and publish controls. The temporary development workshop remains separate. A running instance can disappear without deleting the saved Container.
 
-## Reviewed runnable plan
+### Fly test plan and recovery
+
+- [Diagnostic driver](../../scripts/checks/node-runtime/fly/run.mjs): one uniquely named `restyle-node-proof-<24 hex characters>` app in the connected personal organisation, with a matching separate private network. No production app, public IP/service, volume, model call or workshop change.
+- At most **one shared CPU / 256 MiB Machine at a time**, twelve creations across a **60-minute** journaled test. Each fixed guest has a 60-second supplemental watchdog. The driver destroys and verifies each Machine before the next one. Interrupted runs resume cleanup from their private journal; the inside-guest watchdog is not an outside-guest safety boundary or a billing guarantee.
+- Fly downloads the exact pinned public Node image directly; the API supplies only the small fixed runner files. No local Docker image upload is needed. Verify the provider image digest and exact Node/runner identity before sending source. Credentials and expected test answers stay outside the guest.
+- First run fixed public IPv4/IPv6 TCP/UDP positive controls in the empty isolated app. Destroy that Machine, apply the proposed no-port network policy, then start a fresh Machine and require the same probes to be denied. An empty allow list is **unproven**: policy rejection or permitted traffic stops the proof before source cases. These four probes alone do not establish private-network, metadata, raw-protocol or Fly Proxy isolation. Those remaining boundaries must be established before product use.
+- Then run the existing six runtime cases: exact Node/locked library, clean filesystem on the next instance, denied outbound request, outside-guest execution timeout, oversized response, and whole-instance descendant removal. Keep expected answers outside every guest. API responses are bounded and treated as untrusted.
+- Record ownership before creation. Cleanup discovers uncertain creations by the recorded app and Machine metadata, preserves foreign resources, verifies destruction and app absence, and leaves uncertainty pending. A cleanup-only command cannot create replacements. No acceptance checkbox changes merely because local tests pass.
+- Dated compute estimate: `iad` shared CPU / 256 MiB is US$2.19 per 720 hours, about **US$0.00304 for a full hour** with one running Machine. Root filesystem, network, other existing Restyle services, taxes and delayed provider billing are separate. US$1 remains the operational test allowance, not an instantaneous invoice cap. [Fly pricing](https://fly.io/docs/about/pricing/) and [Machine sizing](https://fly.io/docs/machines/guides-examples/machine-sizing/).
+
+```sh
+# No account access or remote creation.
+node scripts/checks/node-runtime/fly/run.mjs --dry-run YOUR_ORGANISATION
+
+# Secure local token file; never a token literal or credential in chat.
+export RESTYLE_FLY_TOKEN_FILE="$HOME/.codex/secure/restyle-fly/proof.token"
+node scripts/checks/node-runtime/fly/run.mjs --run-approved-fly-proof YOUR_ORGANISATION
+
+# An interrupted run's exact saved journal; does not authorise another run.
+node scripts/checks/node-runtime/fly/run.mjs --cleanup YOUR_ORGANISATION /absolute/path/to/report.json
+```
+
+Use the actual organisation slug returned by the Machines API, not GraphQL's `personal` alias. They were verified as the same account; no ownership check was relaxed. The account connection was made through Fly's official browser sign-in and published one-time PKCE CLI flow. Its short login expired during setup, so a named organisation-scoped test token expires after one hour and must be revoked after testing and cleanup. Its private credential is outside the repository and every Machine. On another computer, use official `fly auth login` and a short-lived appropriately scoped token; this Mac's local credential is not portable. The Fly CLI downloads stalled locally; the proof uses HTTPS Machines API calls directly. See [Apps](https://docs.fly.io/machines/api/apps-resource), [Machines](https://docs.fly.io/machines/api/machines-resource), [network policies](https://docs.fly.io/machines/guides-examples/network-policies), [tokens](https://docs.fly.io/security/tokens/) and [published login protocol](https://github.com/superfly/fly-go/blob/main/cli_session.go).
+
+### Fly evidence — 7 October 2026
+
+Full local verification passes **1,554 tests**, 872 syntax, 936 dependency and 595 formatting checks. Actual provider journal `run-9PdanG/report.json` under `.wrangler/fly-node-proof/` passed exact image/Node/runner readiness and all four public TCP/UDP IPv4/IPv6 positive controls. The next API request rejected the empty-port policy with **400, at least one port is required**. The driver stopped before any generated-source case and verified Machine/app destruction. This invalidates the proposed policy configuration; it does not prove a network-denied runtime.
+
+Five Machines were created across setup/transport attempts; all have verified destruction. Earlier billing and expired-login attempts created none. One empty app required a verified organisation-alias correction before cleanup. Read [progress](restyle-cloud-agent-progress.md) for all journals and the separately authorised unused-app deletion. The latest account-scoped token expires after one hour and still requires explicit revocation/local-value cleanup at the end of testing.
+
+The tested transport uses the published Go `cmd` field, safely quoted fixed arguments, and bounded base64 chunks for input because the tested exec path did not deliver stdin. Each chunk is below Linux's per-argument byte ceiling; maximum accepted request delivery still needs actual-provider acceptance. Readiness waits for creation to settle before the first start request. Credentials and expected results never enter the VM.
+
+**Next design investigation:** keep Fly Machines and evaluate a trusted root supervisor that launches Node with no privileges in a separate Linux network namespace. The VM remains the outer isolation and destruction boundary. This would change the trusted runtime envelope and must be designed, independently tested and digest-bound before use; it is not permission to run generated code with public network access. Do not reuse the failed empty-port policy or claim the six runtime cases passed. No such supervisor or alternate Fly sandbox has been implemented yet.
+
+## Historical Cloudflare plan and evidence
+
+US$1 was approved at 08:09 UTC, 7 October for the original diagnostic. Six preparation/upload attempts stopped before any Worker/application/namespace creation and zero Node runtime cases ran. Owned upload processes, credentials and registry cleanup were verified; unreferenced blob collection and final billing were not established. The final HTTP/1.1 upload also failed. The following plan and records describe those attempts, not the currently selected provider.
+
+### Original reviewed runnable plan
 
 - Use [the existing resource journal](../../scripts/checks/cloud-agent-infrastructure/proof-resources.mjs) with [the Node diagnostic](../../scripts/checks/node-runtime/run.mjs). One uniquely named diagnostic Worker, one Container application, one SQLite namespace and one uniquely owned runtime-image repository. No production route, model calls, external volume or app configuration changes.
 - Run at most two instances through exactly two private controller IDs. Cloudflare's Durable Object-managed policy rejects `max_instances`; the fixed slot selection and durable lease enforce concurrency. No public route accepts another slot name.

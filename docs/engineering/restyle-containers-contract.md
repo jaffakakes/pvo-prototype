@@ -62,6 +62,10 @@ Drafts survive task expiry and idle-instance destruction until explicit service 
 
 Update through the existing inactive publication and activation journal. The current release stays live during editing/tests. Activation checks all recorded connection agreements and the current live state, switches one service revision, and retains prior safe releases. Rollback changes code while preserving today's data and action receipts. Incompatible updates fail without rewriting data. Lists of connections must disclose that forwarded files cannot all be counted.
 
+## Selected provider and retained responsibilities
+
+The user selected **Fly.io on 7 October 2026**. Use a private Fly Machines execution effect, subject to [its runtime/isolation/cleanup proof](restyle-node-provider-proof.md). Keep drafts, releases, live/test records, ownership, task continuation and attachments in their existing Restyle authorities. Fly receives only admitted execution input and the exact checked artifact; its credential stays in the trusted adapter. Replace the prepared Cloudflare-specific execution effect when verified, without a dual-runtime fallback or a second service manager. The Cloudflare facts and estimates below document the original preparation; they are not Fly pricing or proof. Product execution remains Dynamic Workers until the single Node contract is integrated.
+
 ## Minimum provider proof before enabling Node.js hosting
 
 The [runnable Node proof and cleanup plan](restyle-node-provider-proof.md) records the current preparation and authorization state.

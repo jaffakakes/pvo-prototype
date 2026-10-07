@@ -585,5 +585,13 @@
   "editor/src/features/services/useConnectionSync.ts",
   "editor/src/features/services/exportConnections.ts",
   "editor/src/features/services/ContainerUses.tsx",
-  "tests/service-delivery/connections.test.mjs"
+  "tests/service-delivery/connections.test.mjs",
+  "scripts/checks/node-runtime/fly/api.mjs",
+  "scripts/checks/node-runtime/fly/bridge.mjs",
+  "scripts/checks/node-runtime/fly/config.mjs",
+  "scripts/checks/node-runtime/fly/machine.mjs",
+  "scripts/checks/node-runtime/fly/network.mjs",
+  "scripts/checks/node-runtime/fly/resources.mjs",
+  "scripts/checks/node-runtime/fly/run.mjs",
+  "tests/node-runtime/fly.test.mjs"
 ]

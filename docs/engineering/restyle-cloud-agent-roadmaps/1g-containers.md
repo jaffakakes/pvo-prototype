@@ -99,7 +99,7 @@ Retain separate test and live data. Node.js receives only the admitted call and 
 
 Source, release bundle, reports, selected version, records and receipts must survive both workshop deletion and live-instance destruction. Memory, local disk and shutdown callbacks cannot be their only copy. A sleeping instance can restart automatically; a paused or deleted service cannot. Cold starts have a deadline and a truthful retryable outcome, with the original action identity retained.
 
-Cloudflare remains the first provider candidate. Its [Container lifecycle](https://developers.cloudflare.com/containers/concepts/architecture/) documents temporary disks and a distinct ready state; its [Durable Object Container API](https://developers.cloudflare.com/containers/api/durable-object-container/) provides host-controlled start, networking and stop operations. These are provider capabilities, not evidence that Restyle's proposed adapter has passed. Recheck them in the implementation proof.
+**Fly.io is the selected Node execution provider (7 October).** The user chose their existing account after six Cloudflare image-upload attempts failed before runtime execution. Fly Machines can pull the pinned public Node image directly. Preserve the existing Restyle task/service/data authorities and replace only the generated-code execution effect once its isolation, runtime and cleanup proof passes. The prepared Cloudflare controller and all earlier evidence remain recorded; they are not a second active product runtime. Follow [the current Fly proof](../restyle-node-provider-proof.md#current-decision--flyio-7-october-2026).
 
 ## Updates, controls and costs use existing foundations
 
@@ -111,7 +111,7 @@ Cloudflare remains the first provider candidate. Its [Container lifecycle](https
 
 **Limits/costs:** extend existing admission and usage accounting for instance size, CPU/runtime, idle lifetime, startup time, concurrency, starts, build/package download bytes, stored bundles/data/receipts and logs. Bound test and live usage separately, plus service/owner/platform totals. Reserve capacity before work, meter outside the guest, reconcile uncertain starts and stop owned processes at the limit. Do not reintroduce an arbitrary total model-turn or goal-age ceiling: save progress and wait for capacity or actual spending permission.
 
-Show build/test usage separately from ongoing hosting/storage, with a dated estimate and known uncertainty. Sleeping compute can stop consuming runtime while retained storage still has costs. Include Worker/Durable Object, storage, logs and network charges in estimates; provider billing is not an instantaneous application spending cap. Consult current [Container pricing](https://developers.cloudflare.com/containers/platform/pricing/) before a paid proof. Previous US$1/US$15 batches are closed; this documentation authorizes no new spend.
+Show build/test usage separately from ongoing hosting/storage, with a dated estimate and known uncertainty. Sleeping compute can stop consuming runtime while retained storage still has costs. Include Worker/Durable Object, storage, logs and network charges in estimates; provider billing is not an instantaneous application spending cap. Use current Fly compute/storage/network prices for the selected execution provider, and retain Cloudflare platform/storage charges where still applicable. The latest proof records the user-approved US$1 test and provider change; earlier closed 1F/workspace budgets are not additional allowances.
 
 ## Ordered implementation checklist
 
