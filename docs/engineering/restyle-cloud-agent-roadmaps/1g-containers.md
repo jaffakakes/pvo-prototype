@@ -2,7 +2,7 @@
 
 [Roadmap overview](../restyle-cloud-agent-roadmap.md) · [Architecture](../restyle-cloud-agent-architecture.md#containers-the-next-product-feature) · [Current evidence](../restyle-cloud-agent-progress.md)
 
-**Status: implementation started, 7 October 2026.** 1E/1F are verified through beta. **1G.01–1G.03, 1G.07 and 4B.07/4C.04/4C.05 are complete**; the [implementation contract](../restyle-containers-contract.md) records the shared draft/release rules, zero-workshop cases and required Node.js proof. Remaining implementation and provider acceptance stay unchecked. Production is deferred until the user tests the finished work in beta.
+**Status: implementation started, 7 October 2026.** 1E/1F are verified through beta. **1G.01–1G.03, 1G.07, 4B.01–07 and 4C.01/04/05 are complete**; the [implementation contract](../restyle-containers-contract.md) records the shared draft/release rules, zero-workshop cases and required Node.js proof. Remaining implementation and provider acceptance stay unchecked. Production is deferred until the user tests the finished work in beta.
 
 ## The simple version
 
@@ -131,19 +131,19 @@ There are **eight new tasks**. Twelve existing unchecked update/management tasks
 
 ### C. Publish, connect and update through existing commands
 
-- [ ] **4B.01** Build a new inactive release from retained source and the requested change.
-- [ ] **4B.02** Identify every recorded active component connection and export that points to the service. Forwarded or downloaded copies may still use those addresses even when Restyle cannot count the viewers. Test the update against the recorded agreements.
-- [ ] **4B.03** Check that the new code can use the current saved records. Define a specific data-change task if that cannot be guaranteed; do not silently rewrite or discard records.
-- [ ] **4B.04** Keep the active release unchanged while tests run.
-- [ ] **4B.05** Switch only the verified service/component connection as one recorded release action. Preserve the prior release for recovery while it remains safe to run against current records.
-- [ ] **4B.06** Test a failed update and restore service availability without replaying external writes.
+- [x] **4B.01** Build a new inactive release from retained source and the requested change.
+- [x] **4B.02** Identify every recorded active component connection and export that points to the service. Forwarded or downloaded copies may still use those addresses even when Restyle cannot count the viewers. Test the update against the recorded agreements.
+- [x] **4B.03** Check that the new code can use the current saved records. Define a specific data-change task if that cannot be guaranteed; do not silently rewrite or discard records.
+- [x] **4B.04** Keep the active release unchanged while tests run.
+- [x] **4B.05** Switch only the verified service/component connection as one recorded release action. Preserve the prior release for recovery while it remains safe to run against current records.
+- [x] **4B.06** Test a failed update and restore service availability without replaying external writes.
 - [x] **4B.07** Explain what editor Undo can restore and which live changes require a separate reversal.
 
 - [x] **1G.07** Let a component select a checked operation on an owned published Container using the existing attachment command, typed field mapping, compiler/history and approved-host policy. Reuse activation checks for download/publication, server-authorized Try and public player action replay. No manual server URL or creator administration data enters the PVO.
 
 ### D. Finish the same management surface
 
-- [ ] **4C.01** Show which projects and published components use each service and which account connections they need.
+- [x] **4C.01** Show which projects and published components use each service and which account connections they need.
 - [ ] **4C.02** Add useful views of remaining quotas, approximate cost, recent results, and failures.
 - [x] **4C.04** Let creators inspect retained data and choose the allowed cleanup action.
 - [x] **4C.05** Explain the effects of pause and deletion on new submissions, accepted jobs, and stored records before applying the selected operation.
@@ -189,3 +189,20 @@ These management/UI tasks use the current hosted-service authority. **4C.02 rema
 **1G.07 complete through beta.** Source `b7d3e94` adds owned published operation selection, typed field/literal mapping and a real compiler/native attachment transaction. The existing project link supports manual connections without an AI task; exact retained Try versions keep separate test records. The original AI-result path remains verified. Full **1,529 tests**, strict types, ten project/checkpoint tests, actual desktop/phone connection and editor/download/published-player browser journeys pass. Cross-origin viewers use no creator cookie; private administration data stays outside the PVO.
 
 Combined `ef5c02b` passes build/types/28 focused tests and is delivered as **`restyle-editor-shell-d22007c2d6d3923a`** on actual beta 4173. Served bundle/shared bytes and activated service worker verified; 127 older hashed assets retained with no forced reload. See [progress](../restyle-cloud-agent-progress.md) for receipts. This runtime-independent attachment milestone does not complete Node hosting, recorded connection/export impact or final provider acceptance. No model/workshop/paid resources or production deployment.
+
+
+## Dependency and update acceptance — 7 October 2026
+
+**4B.01–06 and 4C.01 complete through beta.** These are the update/management authorities; replacing their execution effect with Node remains 1G.04–06/08. Existing 1E/1F evidence is preserved.
+
+| Task | Verified behavior |
+| --- | --- |
+| 4B.01 | Existing manual/AI draft tasks start from saved source and build a checked inactive release of the same service; edits and exact source survive restart. |
+| 4B.02 | Private project reports, immutable export snapshots and ready owned publication references identify recorded component/operation uses. Activation checks their retained agreement contracts. Forwarded-file/viewer completeness is explicitly disclaimed. |
+| 4B.03 | Candidate state validation uses current live records. Incompatible changes leave them intact; the contract defines the separate data-change task rather than implementing conversion or reset. |
+| 4B.04 | Failed generated or independent tests and newer draft edits keep the current live release available. |
+| 4B.05 | Revision-fenced activation selects the checked release and saves its exact control receipt atomically. Prior code is retained; existing public component addresses use the verified live selection. |
+| 4B.06 | Failure/rollback/restart and in-flight replacement tests preserve current data and original action replies. No external writes/jobs are enabled in this milestone. |
+| 4C.01 | Containers shows named projects/components, recorded exports and published links. A lost project report has explicit retry and read-back recovery. Current services use Restyle storage and require no external account connection. |
+
+Source **`6b1e772`**, plus Node cleanup-race repair **`a68ee92`**, passes **1,535 full tests**, strict types, twenty final label/report/delivery tests and actual editor/player/manual-draft browser acceptance. The current host is still Dynamic Workers; these tests do not claim hosted Node acceptance. Combined **`d697988`** passes build/types/**41 tests** and is delivered as **`restyle-editor-shell-2be2aa4028e49099`**, verified on actual beta 4173 with activated service worker and 128 retained older hashed assets. [Progress](../restyle-cloud-agent-progress.md) records receipts, the initial failures/fixes and exact remaining tasks. No paid 1G resources or production release.

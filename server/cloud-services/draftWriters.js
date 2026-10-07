@@ -19,7 +19,7 @@ export class DraftWriters {
     id(grant.taskId, "Draft task");
     integer(grant.generation, Number.MAX_SAFE_INTEGER, "Draft generation", 1);
     integer(grant.expiresAt, now + TASK_LIMITS.leaseMs, "Draft lease", now + 1);
-    this.sql.exec("DELETE FROM draft_writers WHERE expires_at<=?", now);
+    this.expire(now);
     const row = this.sql
       .exec("SELECT * FROM draft_writers WHERE task_id=?", grant.taskId)
       .toArray()[0];
@@ -37,11 +37,19 @@ export class DraftWriters {
   }
   stop(taskId, now) {
     id(taskId, "Draft task");
-    this.sql.exec("DELETE FROM draft_writers WHERE expires_at<=?", now);
+    this.expire(now);
     this.sql.exec(
       "INSERT INTO draft_writers(task_id,generation,stopped,expires_at) VALUES(?,0,1,?) ON CONFLICT(task_id) DO UPDATE SET stopped=1, expires_at=MAX(expires_at,excluded.expires_at)",
       taskId,
       now + TASK_LIMITS.leaseMs,
     );
+  }
+  expire(now) {
+    this.sql.exec("DELETE FROM draft_writers WHERE expires_at<=?", now);
+  }
+  nextExpiry() {
+    return this.sql
+      .exec("SELECT MIN(expires_at) AS at FROM draft_writers")
+      .one().at;
   }
 }

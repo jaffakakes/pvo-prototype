@@ -64,3 +64,8 @@ Provider references: [Container lifecycle API](https://developers.cloudflare.com
 ### Local cleanup race follow-up
 
 The dependency/update full suite exposed a maintenance alarm aborting an already-completed execution while its guest destruction was pending. The controller now aborts overdue running work only; a successful result waits for existing cleanup confirmation. Explicit cancellation continues to reject late results. A deterministic held-destruction/alarm regression and all fifteen Node runtime tests pass (`/tmp/restyle-runtime-race-fixed.log`). This is local controller evidence; the paid provider proof remains pending and no guest was created.
+
+
+## Automatic retention preparation — 7 October 2026
+
+The prepared controller now schedules future usage expiry even after its short cancellation receipts expire. It retains an unresolved compute lease and metering row through a thirty-two-day interruption and full restart, blocks replacement starts, and resumes cleanup without losing the obligation. Usage older than thirty UTC days is removed only after no lease owns it. Controlled workerd/SQLite tests pass with the existing cancellation/alarm matrix; full source checks pass **1,539 tests**. This is local preparation only: no guest/provider was created, the scoped approval remains pending, and 1G.04/08 and 4C.06 stay unchecked.
