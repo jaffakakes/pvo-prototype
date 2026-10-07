@@ -56,6 +56,7 @@ The journal saves ownership, expiry, names and an attempted-upload flag before r
 | --- | --- | --- | --- |
 | Initial upload attempt `6a0868727a1b5ab1fb09b420` | US$1 approved, 7 October 08:09 UTC | No Worker/application/namespace/image observed | CLI ended early; zero runtime cases. Exact account and corrected registry inventories empty; journal `.wrangler/cloud-agent-infrastructure/workspace-wulZFc/report.json`. |
 | Upload retry `3e382dce0a1bec8557d0ad52` | Same US$1 allowance | No Worker/application/namespace; Docker transfer timed out | Exact orphan push PID 84307 stopped; journal reopened and cleanup reverified. `.wrangler/cloud-agent-infrastructure/workspace-aNuEpQ/report.json`. Zero runtime cases. |
+| Supervised preparation `a6640c1769252c957eef4d8a` | Same allowance; no remote upload | Local Docker plugin lookup failed | Corrected and locally built successfully; resource inventories empty. `.wrangler/cloud-agent-infrastructure/workspace-CAB14R/report.json`. |
 
 After the paid run, record its exact journal, runtime image digest, start/elapsed usage, checks and cleanup result here before marking any roadmap task. Full task completion also requires the canonical Node package/runtime replacement and its remaining integration gates.
 

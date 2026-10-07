@@ -21,10 +21,14 @@ export async function uploadProofImage(
   async function docker(label, args, input, timeoutMs = 60_000) {
     let result;
     try {
-      result = await run("docker", ["--config", dockerConfig, ...args], {
-        input,
-        timeoutMs,
-      });
+      result = await run(
+        "docker",
+        [...(label === "build" ? [] : ["--config", dockerConfig]), ...args],
+        {
+          input,
+          timeoutMs,
+        },
+      );
       return result;
     } catch (error) {
       result = error;

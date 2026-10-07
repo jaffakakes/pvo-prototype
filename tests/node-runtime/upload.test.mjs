@@ -53,6 +53,14 @@ test("only a completed owned upload selects a pinned deployment image and creden
         calls.push(args);
         if (args[0] === "context")
           return { stdout: "unix:///owned/docker.sock\n" };
+        if (args.includes("build")) {
+          assert.equal(
+            args.includes("--config"),
+            false,
+            "Local build keeps installed Docker CLI plugins",
+          );
+          return { stdout: "built" };
+        }
         assert.deepEqual(args.slice(0, 4), [
           "--config",
           resolve(directory, "docker-credentials"),
