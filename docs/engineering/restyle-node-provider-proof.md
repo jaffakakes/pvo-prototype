@@ -69,3 +69,12 @@ The dependency/update full suite exposed a maintenance alarm aborting an already
 ## Automatic retention preparation — 7 October 2026
 
 The prepared controller now schedules future usage expiry even after its short cancellation receipts expire. It retains an unresolved compute lease and metering row through a thirty-two-day interruption and full restart, blocks replacement starts, and resumes cleanup without losing the obligation. Usage older than thirty UTC days is removed only after no lease owns it. Controlled workerd/SQLite tests pass with the existing cancellation/alarm matrix; full source checks pass **1,539 tests**. This is local preparation only: no guest/provider was created, the scoped approval remains pending, and 1G.04/08 and 4C.06 stay unchecked.
+
+
+## Resource accounting preparation — 7 October 2026
+
+The same prepared execution controller now records admitted payload bytes, returned bounded JSON bytes, starts and separately timed startup/execution/cleanup in `node_usage`. An owned read-only snapshot separates live/test/validation/probe totals, daily capacity and an unresolved lease; it starts no compute and exposes no other owner's private fields. A cleanup confirmation settles time once, even after restart; a missing confirmation remains pending. The private prepared schema changes before any Node deployment, with no compatibility path.
+
+The proof driver retains those snapshots and a dated gross compute estimate in each result receipt. Memory/disk provisioning and an assumed full-CPU estimate use [the rechecked pricing](https://developers.cloudflare.com/containers/platform/pricing/). Reserved wall time includes startup/cleanup and can exceed billed running time. Included allowances and all non-Node charges are explicitly excluded; pending time is separate. This preparation must not be presented as a complete Container bill or as completed 4C.02.
+
+Nineteen focused Node cases and **1,541 full behavior tests** pass, plus strict editor types. The updated diagnostic dry run passes with no attempted creation: `.wrangler/cloud-agent-infrastructure/workspace-OWODtO/report.json`, `dryRunPassed:true`, `cleanupVerified:true`. Logs `/tmp/restyle-node-metering-{tests-final,full,types,dry-run}.log`. Scope approval is still pending, no paid proof ran, and all six remaining Roadmap 1 gates remain unchecked.
