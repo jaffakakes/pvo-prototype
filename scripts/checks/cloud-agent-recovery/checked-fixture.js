@@ -56,8 +56,18 @@ export async function installCheckedDiagnostic(coordinator, claimed, checked) {
     };
     state = acceptBuilderDecision(state, review);
     coordinator.artifacts.save(claimed.id, state.round, artifact);
-    for (const result of report.cases)
-      coordinator.artifacts.append(claimed.id, state.round, result);
+    for (const [index, result] of report.cases.entries()) {
+      const scenario = artifact.agreement.cases[index];
+      for (let step = 0; step < result.completedSteps; step++) {
+        const last = step === scenario.steps.length - 1;
+        coordinator.artifacts.advance(claimed.id, state.round, {
+          index,
+          step,
+          caseResult: last ? result : null,
+          state: last ? null : scenario.steps[step].expected.state,
+        });
+      }
+    }
     coordinator.builders.write(
       claimed.id,
       recordBuilderReview(state, { review, report, error: null }),

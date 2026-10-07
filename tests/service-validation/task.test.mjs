@@ -43,7 +43,7 @@ test(
       );
       assert.equal(end.result, null);
       assert.equal(end.usage.modelTurns, 9);
-      assert.equal(end.usage.toolCalls, 8); // two writes, two captures, three cases (first fails)
+      assert.equal(end.usage.toolCalls, 14); // two writes, two captures, one failed + eight passed steps, hosting
       assert.equal(end.usage.reservedToolCalls, 0);
       const stored = await validation(f, task);
       assert.equal(stored.artifacts.length, 2);
@@ -102,7 +102,7 @@ test(
 );
 
 test(
-  "restart keeps completed cases and retries only the lost isolated case with a new charged attempt",
+  "restart keeps completed steps and retries only the lost isolated step with a new charged attempt",
   options,
   async () => {
     const entered = deferred();
@@ -114,8 +114,14 @@ test(
       planner: planner({ cases: 2 }),
       validationControl: async (request) => {
         const value = await request.json();
-        if (value.phase === "before") executions.push(value.index);
-        if (value.index === 1 && value.phase === "after" && !held) {
+        if (value.phase === "before")
+          executions.push([value.index, value.step]);
+        if (
+          value.index === 0 &&
+          value.step === 2 &&
+          value.phase === "after" &&
+          !held
+        ) {
           held = true;
           entered.resolve();
           await delay(2500);
@@ -127,7 +133,12 @@ test(
       const task = await saved(f);
       await entered.promise;
       const before = await validation(f, task);
-      assert.equal(before.artifacts[0].report.cases.length, 1);
+      assert.equal(before.artifacts[0].report.cases.length, 0);
+      assert.equal(before.artifacts[0].cursor.step, 2);
+      assert.deepEqual(before.artifacts[0].cursor.state, {
+        capacity: 1,
+        guests: ["Alice"],
+      });
       assert.equal(before.artifacts[0].report.status, "running");
       await f.restart();
       const end = await until(
@@ -136,9 +147,19 @@ test(
       );
       assert.equal(end.stepId, "attach", JSON.stringify(end));
       const after = await validation(f, task);
-      assert.deepEqual(executions, [0, 1, 1]);
+      assert.deepEqual(executions, [
+        [0, 0],
+        [0, 1],
+        [0, 2],
+        [0, 2],
+        [0, 3],
+        [1, 0],
+        [1, 1],
+        [1, 2],
+        [1, 3],
+      ]);
       assert.equal(end.retries, 1);
-      assert.equal(end.usage.toolCalls, 6);
+      assert.equal(end.usage.toolCalls, 12);
       assert.equal(end.usage.reservedToolCalls, 0);
       assert.equal(after.artifacts[0].report.status, "passed");
       assert.equal(
@@ -147,7 +168,7 @@ test(
       );
       assert.equal(
         new Set(after.attempts.map((row) => row.operationId)).size,
-        4,
+        10,
       );
     } finally {
       await f.close();
@@ -328,7 +349,7 @@ test(
         null,
         "Backend fixture supplies no component proposal",
       );
-      assert.equal(end.usage.toolCalls, 34);
+      assert.equal(end.usage.toolCalls, 82);
       assert.equal(end.usage.modelTurns, 9);
       assert.equal(end.usage.reservedToolCalls, 0);
       const state = await validation(f, task);

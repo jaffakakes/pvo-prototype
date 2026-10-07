@@ -11,7 +11,7 @@ import { runHostingStep } from "../hosting/runner.js";
 import { ServiceArtifacts } from "../validation/artifacts.js";
 import { ServiceValidationJournal } from "../validation/journal.js";
 import { runServiceValidation } from "../validation/runner.js";
-import { runServiceCase } from "../validation/cases.js";
+import { runServiceStep } from "../validation/cases.js";
 import { taskSpendingAllowed } from "./spending.js";
 import { claimNextTask } from "./scheduling.js";
 import { TaskResearch } from "../builder/researchJournal.js";
@@ -324,13 +324,14 @@ export class AssistantTasks extends DurableObject {
       typeof this.env.SERVICE_LOADER?.load === "function",
     );
   }
-  runValidationCase(artifact, index, signal) {
-    return runServiceCase(
+  runValidationStep(artifact, index, cursor, signal) {
+    return runServiceStep(
       this.env.SERVICE_LOADER,
       artifact.package,
       artifact.agreement,
       artifact.identity.agreementDigest,
       index,
+      cursor,
       signal,
     );
   }

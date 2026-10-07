@@ -2,6 +2,7 @@ import {
   newServiceTestReport,
   appendServiceCaseResult,
   parseServiceTestReport,
+  parseServiceState,
 } from "../../../packages/pvo-assistant/services/index.js";
 
 /** Immutable packages and platform reports live in the owner's coordinator, outside generated code. */
@@ -35,6 +36,10 @@ export class ServiceArtifacts {
       round,
       artifact,
       report: newServiceTestReport(artifact.agreement, artifact.identity),
+      cursor: {
+        step: 0,
+        state: structuredClone(artifact.agreement.cases[0].initialState),
+      },
     };
     this.sql.exec(
       "INSERT INTO task_service_artifacts (task_id,round,body) VALUES (?,?,?)",
@@ -44,15 +49,53 @@ export class ServiceArtifacts {
     );
     return value;
   }
-  append(taskId, round, result) {
+  advance(taskId, round, observation) {
     const value = this.get(taskId, round);
     if (!value) throw new Error("Saved service package is missing.");
-    value.report = appendServiceCaseResult(
-      value.report,
-      value.artifact.agreement,
-      value.artifact.identity,
-      result,
-    );
+    if (
+      value.report.status !== "running" ||
+      observation.index !== value.report.cases.length ||
+      observation.step !== value.cursor?.step
+    )
+      throw new Error(
+        "Validation step no longer matches its saved checkpoint.",
+      );
+    const scenario = value.artifact.agreement.cases[observation.index];
+    if (observation.caseResult) {
+      if (
+        observation.caseResult.status === "passed" &&
+        observation.step + 1 !== scenario.steps.length
+      )
+        throw new Error("A case cannot pass before its last step.");
+      if (
+        observation.caseResult.status !== "passed" &&
+        observation.caseResult.completedSteps !== observation.step
+      )
+        throw new Error("Wrong incomplete validation step.");
+      value.report = appendServiceCaseResult(
+        value.report,
+        value.artifact.agreement,
+        value.artifact.identity,
+        observation.caseResult,
+      );
+      value.cursor =
+        value.report.status === "running"
+          ? {
+              step: 0,
+              state: structuredClone(
+                value.artifact.agreement.cases[value.report.cases.length]
+                  .initialState,
+              ),
+            }
+          : null;
+    } else {
+      if (observation.step + 1 >= scenario.steps.length)
+        throw new Error("Last validation step needs a completed case result.");
+      value.cursor = {
+        step: observation.step + 1,
+        state: parseServiceState(value.artifact.agreement, observation.state),
+      };
+    }
     this.sql.exec(
       "UPDATE task_service_artifacts SET body=? WHERE task_id=? AND round=?",
       JSON.stringify(value),

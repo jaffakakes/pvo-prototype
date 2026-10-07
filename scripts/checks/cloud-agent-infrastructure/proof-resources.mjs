@@ -1,13 +1,17 @@
 import assert from "node:assert/strict";
-import { execFile } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { promisify } from "node:util";
 import { createAccountReader, readCloudflareToken } from "./account.mjs";
 
-const exec = promisify(execFile);
+import {
+  proofImageRepository,
+  listProofImages,
+  removeProofImages,
+} from "./proof-images.mjs";
+
+import { proofCommand } from "./proof-command.mjs";
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 
 // Owns only the randomly named deployments recorded in this run's journal.
@@ -82,6 +86,8 @@ export async function prepareResources(
         resource.secrets,
         resolve(directory, `${resource.kind}-secrets.json`),
       );
+      if (resource.imageRepository)
+        assert.equal(resource.imageRepository, proofImageRepository(id));
       if (resource.attempted && !resource.removed) {
         try {
           const values = JSON.parse(await readFile(resource.secrets, "utf8"));
@@ -126,6 +132,7 @@ export async function prepareResources(
       bindings,
       loaderBinding,
       containerClassName = "Workspace",
+      containerImages,
       vars = {},
       secrets = {},
       expiresAt = Date.now() + 20 * 60_000,
@@ -157,6 +164,12 @@ export async function prepareResources(
       attempted: false,
       removed: false,
     };
+    if (containerImages) {
+      assert.equal(kind, "workspace");
+      assert.equal(containerClassName, `RestyleNode${id}`);
+      assert.deepEqual(Object.keys(containerImages), ["runtime"]);
+      resource.imageRepository = proofImageRepository(id);
+    }
     const className = kind === "workspace" ? containerClassName : "Release";
     const ownedBindings = bindings ?? [
       {
@@ -202,6 +215,7 @@ export async function prepareResources(
                 name,
                 class_name: className,
                 scheduling_policy: "durable_object",
+                ...(containerImages ? { images: containerImages } : {}),
               },
             ],
           }
@@ -222,17 +236,30 @@ export async function prepareResources(
     redactions.set(name, [token, proofToken, ...Object.values(secrets)]);
     report.resources.push(resource);
     await save();
+    if (resource.imageRepository) {
+      assert.deepEqual(
+        await listProofImages(resource, run),
+        [],
+        "Proof image name must be unused",
+      );
+      resource.imageOwnershipVerified = true;
+      await save();
+    }
     return resource;
   }
 
-  async function command(resource, dryRun) {
-    const args = [
-      resolve(root, "node_modules/wrangler/bin/wrangler.js"),
+  function run(resource, args) {
+    return proofCommand(resource, args, {
+      root,
+      directory,
+      token,
+      secrets: redactions.get(resource.name) ?? [],
+    });
+  }
+
+  function command(resource, dryRun) {
+    return run(resource, [
       "deploy",
-      "--config",
-      resource.config,
-    ];
-    args.push(
       ...(dryRun
         ? [
             "--dry-run",
@@ -240,33 +267,7 @@ export async function prepareResources(
             resolve(directory, `bundle-${resource.kind}`),
           ]
         : ["--secrets-file", resource.secrets]),
-    );
-    try {
-      const result = await exec(process.execPath, args, {
-        cwd: root,
-        timeout: 120_000,
-        maxBuffer: 1024 * 1024,
-        env: {
-          ...process.env,
-          CLOUDFLARE_API_TOKEN: token,
-          WRANGLER_SEND_METRICS: "false",
-          CI: "true",
-        },
-      });
-      return result;
-    } catch (error) {
-      let diagnostic = `${error.stdout ?? ""}\n${error.stderr ?? ""}`;
-      for (const secret of redactions.get(resource.name) ?? [token])
-        diagnostic = diagnostic.replaceAll(secret, "[redacted]");
-      await writeFile(
-        resolve(directory, `${resource.kind}-deployment-error.log`),
-        diagnostic,
-        { mode: 0o600 },
-      );
-      throw new Error(
-        `${resource.kind} ${dryRun ? "dry run" : "deployment"} failed; see private deployment diagnostic`,
-      );
-    }
+    ]);
   }
 
   async function deploy(resource) {
@@ -411,6 +412,7 @@ export async function prepareResources(
             resource.namespaceIds.includes(ns.id),
         )
       ) {
+        await removeProofImages(resource, run, save);
         resource.removed = true;
         resource.removedAt = new Date().toISOString();
         await save();
@@ -449,6 +451,7 @@ export async function prepareResources(
     save,
     prepare,
     deploy,
+    dryRun: (resource) => command(resource, true),
     ready,
     call,
     remove,

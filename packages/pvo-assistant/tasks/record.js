@@ -199,6 +199,8 @@ function validateWait(value) {
       "model_allowance",
       "workspace_capacity",
       "workspace_allowance",
+      "service_capacity",
+      "service_allowance",
       "spending_permission",
     ].includes(value.wait.reason),
     "Wait reason is unsupported.",

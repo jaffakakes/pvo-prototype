@@ -169,14 +169,15 @@ export async function taskFixture({
       }
       async resolveAttachment(ownerId,id,guard,command) { return resolveTaskAttachment(this,await this.claimForOperation(ownerId,id,guard),command); }
       serviceCatalog() { return this.services.services().map(service=>({service,releases:this.services.releases(service.identity.serviceId)})); }
-      async runValidationCase(artifact, index, signal) {
+      async runValidationStep(artifact, index, cursor, signal) {
         const control = async phase => {
           if (!this.env.VALIDATION_CONTROL) return;
-          const decision = await (await this.env.VALIDATION_CONTROL.fetch("https://validation-control.test", {method:"POST", body:JSON.stringify({phase,index,identity:artifact.identity})})).json();
+          const decision = await (await this.env.VALIDATION_CONTROL.fetch("https://validation-control.test", {method:"POST", body:JSON.stringify({phase,index,step:cursor.step,identity:artifact.identity})})).json();
           if (decision.fail) throw new Error("Controlled validation interruption");
+          if (decision.wait) throw Object.assign(new Error("Controlled capacity"),decision.wait);
         };
         await control("before");
-        const result = await super.runValidationCase(artifact,index,signal);
+        const result = await super.runValidationStep(artifact,index,cursor,signal);
         await control("after");
         return result;
       }

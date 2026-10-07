@@ -7,7 +7,7 @@ import {
   SERVICE_RUNTIME,
 } from "../../../packages/pvo-assistant/services/index.js";
 import { contentDigest } from "../../../server/contentDigest.js";
-import { runServiceCase } from "../../../server/assistant/validation/cases.js";
+import { runServiceStep } from "../../../server/assistant/validation/cases.js";
 
 // Fixed recovery diagnostic, not a generated product template. No request supplies source or URLs.
 const source = `import {env} from 'cloudflare:workers';
@@ -91,18 +91,19 @@ export async function recoveryCheckedService(loader) {
     sourceDigest: await contentDigest(serializeServiceFiles(pkg.files)),
     packageDigest: await contentDigest(serializeServicePackage(pkg)),
   };
-  const result = await runServiceCase(
+  const result = await runServiceStep(
     loader,
     pkg,
     agreement,
     agreementDigest,
     0,
+    { step: 0, state: agreement.cases[0].initialState },
   );
   const report = appendServiceCaseResult(
     newServiceTestReport(agreement, identity),
     agreement,
     identity,
-    result,
+    result.caseResult,
   );
   if (report.status !== "passed")
     throw new Error(

@@ -17,13 +17,19 @@ async function fixture() {
       resolveDir: process.cwd(),
       contents: `
     import {executeServicePackage} from './server/cloud-services/packageExecution.js';
-    import {runServiceCase} from './server/assistant/validation/cases.js';
+    import {runServiceStep} from './server/assistant/validation/cases.js';
     export default {async fetch(request,env) {
       const value=await request.json();
       try {
-        const result=value.agreement
-          ? await runServiceCase(env.LOADER,value.source,value.agreement,value.source.agreementDigest,0,request.signal)
-          : await executeServicePackage(env.LOADER,value.source,value.input,request.signal);
+        let result;
+        if(value.agreement) {
+          let cursor={step:0,state:value.agreement.cases[0].initialState};
+          for(;;) {
+            const observation=await runServiceStep(env.LOADER,value.source,value.agreement,value.source.agreementDigest,0,cursor,request.signal);
+            if(observation.caseResult){result=observation.caseResult;break;}
+            cursor={step:cursor.step+1,state:observation.state};
+          }
+        } else result=await executeServicePackage(env.LOADER,value.source,value.input,request.signal);
         return Response.json(result);
       } catch(error) {return Response.json({error:error.code ?? 'rejected'},{status:409});}
     }};`,

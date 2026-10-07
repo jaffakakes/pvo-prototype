@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { executeServicePackage } from "../../server/cloud-services/packageExecution.js";
-import { runServiceCase } from "../../server/assistant/validation/cases.js";
+import { runServiceStep } from "../../server/assistant/validation/cases.js";
 import { packageFor, dinnerAgreement } from "./fixtures.mjs";
 const loader = (fetch) => ({
   load() {
@@ -71,22 +71,23 @@ test(
     const source = packageFor(),
       agreement = dinnerAgreement();
     const never = loader(() => new Promise(() => {}));
-    const timed = await runServiceCase(
+    const timed = await runServiceStep(
       never,
       source,
       agreement,
       source.agreementDigest,
       0,
+      { step: 0, state: agreement.cases[0].initialState },
     );
-    assert.equal(timed.status, "failed");
-    assert.equal(timed.failure.code, "timeout");
-    assert.equal(timed.completedSteps, 0);
+    assert.equal(timed.caseResult.status, "failed");
+    assert.equal(timed.caseResult.failure.code, "timeout");
+    assert.equal(timed.caseResult.completedSteps, 0);
     const stopped = new AbortController();
     let started;
     const entered = new Promise((resolve) => {
       started = resolve;
     });
-    const checking = runServiceCase(
+    const checking = runServiceStep(
       loader(() => {
         started();
         return new Promise(() => {});
@@ -95,13 +96,14 @@ test(
       agreement,
       source.agreementDigest,
       0,
+      { step: 0, state: agreement.cases[0].initialState },
       stopped.signal,
     );
     await entered;
     stopped.abort();
     const result = await checking;
-    assert.equal(result.status, "interrupted");
-    assert.equal(result.failure.code, "interrupted");
-    assert.equal(result.completedSteps, 0);
+    assert.equal(result.caseResult.status, "interrupted");
+    assert.equal(result.caseResult.failure.code, "interrupted");
+    assert.equal(result.caseResult.completedSteps, 0);
   },
 );

@@ -38,3 +38,9 @@ export {
   serializeServiceDraftSave,
   newServiceDraftContent,
 } from "./drafts.js";
+
+export {
+  parseNodeBundle,
+  parseNodeDependencies,
+  supportedNodeLibraries,
+} from "./nodeBundle.js";

@@ -64,6 +64,8 @@ Update through the existing inactive publication and activation journal. The cur
 
 ## Minimum provider proof before enabling Node.js hosting
 
+The [runnable Node proof and cleanup plan](restyle-node-provider-proof.md) records the current preparation and authorization state.
+
 Prepare a dedicated diagnostic Worker/application with no production routes or binding changes. Use fixed reviewed source initially, then the real editor path in 1G.08. Record resource names, limits, permission and expiry before creation; retain the journal and verify removal afterward.
 
 Required evidence: immutable image/runtime match; a supported locked library executes without package-network access; private readiness and bounded output; network denied; infinite loop and spawned descendant stopped by whole-instance destruction; fresh request cannot see an earlier file; exact bytes restored after destruction; records/replay survive while workshop is absent; wrong owner and test/live isolation; pause/delete prevent viewer restart; lost start/deploy/control replies reconcile without duplicate committed effects; all owned resources absent after cleanup.
@@ -74,4 +76,4 @@ Provider facts checked against the [Container API](https://developers.cloudflare
 
 ## Verification and continuation
 
-1G.01 is a contract/documentation task: review this contract against actual service, release, task/workspace, validation and attachment owners; verify links and retain the recorded 1E/1F evidence. Next, implement 1G.02 saved drafts and the Containers editor using the existing service manager. Keep every unverified implementation checkbox unchecked. Finish Roadmap 1 through beta only; user beta acceptance and production are separate later gates.
+1G.01 is a contract/documentation task: review this contract against actual service, release, task/workspace, validation and attachment owners; verify links and retain the recorded 1E/1F evidence. The later 1G.02–03 checkpoints verify saved drafts and manual/AI editing through beta. Next is 1G.04 hosted Node.js execution and provider acceptance. Keep every unverified implementation checkbox unchecked. Finish Roadmap 1 through beta only; user beta acceptance and production are separate later gates.
