@@ -54,6 +54,7 @@ export async function publishTaskService(coordinator, claimed) {
     prior?.identity.expiresAt ??
       coordinator.now() + INACTIVE_SERVICE_LIMITS.lifetimeMs,
     serviceId,
+    coordinator.drafts.get(claimed.id)?.draft.revision ?? null,
   );
   const inputDigest = await serviceIntentDigest(publication.identity);
   let row = await coordinator.transaction(() =>

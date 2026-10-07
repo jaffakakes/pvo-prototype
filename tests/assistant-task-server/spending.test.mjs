@@ -58,7 +58,10 @@ test("cloud spending requires a valid, unexpired trusted owner grant for the act
     ["validate", null, "workspace"],
     ["host", null, "hosting"],
   ])
-    assert.equal(taskSpendingCapability({ stepId }, stage), capability);
+    assert.equal(
+      taskSpendingCapability({ stepId, input: { context: {} } }, stage),
+      capability,
+    );
 });
 
 test("missing, foreign and expired permission performs no paid work; trusted approval resumes the same saved cursor", async () => {

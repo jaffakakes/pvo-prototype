@@ -60,7 +60,11 @@ test("draft planning uses the native content protocol and rejects invented tools
   const task = claim(create());
   task.input.context = {
     fingerprint: "draft-1",
-    container: { serviceId: "service-" + "a".repeat(64), revision: 1 },
+    container: {
+      serviceId: "service-" + "a".repeat(64),
+      revision: 1,
+      mode: "edit",
+    },
   };
   const env = {
     ASSISTANT_PROVIDER: "cloudflare",

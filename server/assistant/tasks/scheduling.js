@@ -91,6 +91,7 @@ export function claimNextTask(coordinator) {
       claimed.input.context.container &&
       ["draft_apply", "draft_sync", "draft_finish"].includes(claimed.stepId);
     const tools =
+      claimed.input.context.container?.mode === "test" ||
       draftEffect ||
       ["validate", "host"].includes(claimed.stepId) ||
       (claimed.stepId === "build" && stage !== "model");

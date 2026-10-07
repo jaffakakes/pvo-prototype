@@ -12,6 +12,7 @@ export type ServiceReleaseIdentity = ServiceTestIdentity & {
   taskId: string;
   operationId: string;
   reportDigest: string;
+  draftRevision: number | null;
   expiresAt: number;
 };
 export type CheckedService = {

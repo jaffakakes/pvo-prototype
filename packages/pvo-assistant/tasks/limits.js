@@ -37,6 +37,7 @@ export const TASK_FAILURES = Object.freeze({
   interrupted: Object.freeze({ retryable: true }),
   reconciliation_required: Object.freeze({ retryable: true }),
   execution_failed: Object.freeze({ retryable: true }),
+  tests_failed: Object.freeze({ retryable: false }),
   invalid_result: Object.freeze({ retryable: false }),
   budget_exceeded: Object.freeze({ retryable: false }),
 });

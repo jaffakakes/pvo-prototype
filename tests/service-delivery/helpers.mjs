@@ -157,6 +157,7 @@ export async function setup() {
       updatedAt: now,
     },
     releases: [{ identity, state: "available" }],
+    draftRevision: null,
   };
   const languages = new Map([
     ["join", { source: component.code.pvo, compiled }],

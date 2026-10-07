@@ -60,6 +60,14 @@ export function ServicesPanel() {
           const service = item.summary?.service,
             id = item.metadata.identity.serviceId;
           const disabled = busy || !!pending || !service;
+          const checked = item.summary?.releases.find(
+            (release) => release.identity.resourceId === service?.testReleaseId,
+          );
+          const checkedCurrent =
+            checked &&
+            checked.state !== "deleted" &&
+            (checked.identity.draftRevision === null ||
+              checked.identity.draftRevision === item.summary?.draftRevision);
           return (
             <li key={id}>
               <h4>{item.metadata.description}</h4>
@@ -93,7 +101,13 @@ export function ServicesPanel() {
                             service.liveReleaseId && (
                             <button
                               type="button"
-                              disabled={disabled}
+                              disabled={
+                                disabled ||
+                                (release.state !== "retained" &&
+                                  release.identity.draftRevision !== null &&
+                                  release.identity.draftRevision !==
+                                    item.summary?.draftRevision)
+                              }
                               onClick={() =>
                                 control(
                                   item,
@@ -132,12 +146,24 @@ export function ServicesPanel() {
                 />
               )}
               <div className={styles.actions}>
+                {service?.state === "active" &&
+                  checked &&
+                  checked.identity.resourceId !== service.liveReleaseId && (
+                    <button
+                      type="button"
+                      disabled={disabled || !checkedCurrent}
+                      onClick={() =>
+                        control(item, "activate", checked.identity.resourceId)
+                      }
+                    >
+                      Publish checked update
+                    </button>
+                  )}
                 {service?.state !== "active" && (
                   <button
                     type="button"
                     disabled={
-                      disabled ||
-                      (!service?.testReleaseId && !service?.liveReleaseId)
+                      disabled || (!service?.liveReleaseId && !checkedCurrent)
                     }
                     onClick={() => control(item, "activate")}
                   >
@@ -163,6 +189,12 @@ export function ServicesPanel() {
                   Delete Container
                 </button>
               </div>
+              {checked && !checkedCurrent && (
+                <p>
+                  The saved draft changed after testing. Test it again before
+                  publishing an update.
+                </p>
+              )}
               {confirmDelete === id && (
                 <div>
                   <p>

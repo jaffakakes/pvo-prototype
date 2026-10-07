@@ -12,6 +12,7 @@ export type TaskFailureCode =
   | "interrupted"
   | "reconciliation_required"
   | "execution_failed"
+  | "tests_failed"
   | "invalid_result"
   | "budget_exceeded";
 export type TaskWaitReason =
@@ -44,7 +45,7 @@ export type TaskContext = {
 };
 export type ContainerTaskContext = {
   fingerprint: string;
-  container: { serviceId: string; revision: number };
+  container: { serviceId: string; revision: number; mode: "edit" | "test" };
 };
 export type TaskInput = {
   operationId: string;

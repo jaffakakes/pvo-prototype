@@ -43,7 +43,15 @@ export async function prepareDraftTaskCreation(coordinator, ownerId, input) {
   if (draft.revision !== target.revision)
     throw new HttpError(
       409,
-      "Save or reload the latest draft before asking the AI to edit it.",
+      "Save or reload the latest draft before starting this task.",
+    );
+  if (
+    target.mode === "test" &&
+    (!draft.content.agreement || !draft.content.tests.length)
+  )
+    throw new HttpError(
+      400,
+      "Save a behavior agreement and select tests before testing this draft.",
     );
   return draft;
 }

@@ -66,7 +66,11 @@ export function planServiceControl(service, control, now) {
   });
 }
 export function parseHostedSummary(value) {
-  object(value, ["service", "releases"], "Hosted service summary");
+  object(
+    value,
+    ["service", "releases", "draftRevision"],
+    "Hosted service summary",
+  );
   const service = parseHostedService(value.service);
   list(
     value.releases,
@@ -88,5 +92,11 @@ export function parseHostedSummary(value) {
     releases.length
   )
     throw new Error("Repeated hosted release identity.");
-  return { service, releases };
+  if (value.draftRevision !== null)
+    integer(
+      value.draftRevision,
+      Number.MAX_SAFE_INTEGER,
+      "Current draft revision",
+    );
+  return { service, releases, draftRevision: value.draftRevision };
 }

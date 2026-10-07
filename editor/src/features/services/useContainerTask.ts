@@ -126,7 +126,11 @@ export function useContainerTask(ownerId: string, serviceId: string) {
     result?.identity === identity && useAuthGate.getState().user?.id === ownerId
       ? result.view
       : empty;
-  const start = (draft: ServiceDraft, request: string) => {
+  const start = (
+    draft: ServiceDraft,
+    request: string,
+    mode: "edit" | "test",
+  ) => {
     if (loaded !== scope || useAuthGate.getState().user?.id !== ownerId) return;
     if (link && (!view.task || !["ready", "stopped"].includes(view.task.state)))
       return;
@@ -138,7 +142,7 @@ export function useContainerTask(ownerId: string, serviceId: string) {
         examples: [],
         context: {
           fingerprint: `draft-${serviceId}-${draft.revision}`,
-          container: { serviceId, revision: draft.revision },
+          container: { serviceId, revision: draft.revision, mode },
         },
       });
       const next = { input, reference: null };
