@@ -1,4 +1,5 @@
 import { draftTestResults } from "../drafts/testResults.js";
+import { SERVICE_EXECUTION_LIMITS } from "../../../packages/pvo-assistant/services/index.js";
 import { runDraftTestPreparation } from "../drafts/testing.js";
 import { planDraftEdit } from "../drafts/planner.js";
 import { runDraftStep } from "../drafts/runner.js";
@@ -34,7 +35,10 @@ import { serviceProvider } from "./serviceProvider.js";
 import { publishTaskService, reconcileTaskServices } from "./providerRunner.js";
 
 import { TaskResults } from "./results.js";
-import { assertTaskExecution } from "../../../packages/pvo-assistant/tasks/index.js";
+import {
+  assertTaskExecution,
+  TASK_LIMITS,
+} from "../../../packages/pvo-assistant/tasks/index.js";
 import { TaskAttempts } from "./attempts.js";
 import { planSavedTask, savedPlannerAvailable } from "./planner.js";
 import { runAuthoringStep, settleAuthoringBudgets } from "./runner.js";
@@ -349,8 +353,10 @@ export class AssistantTasks extends DurableObject {
   stepTimeoutMs() {
     return 45000;
   }
-  leaseMs() {
-    return 60000;
+  leaseMs(task) {
+    return task?.stepId === "validate"
+      ? SERVICE_EXECUTION_LIMITS.validationClaimMs
+      : TASK_LIMITS.defaultLeaseMs;
   }
   spendingAllowed(task, capability) {
     return taskSpendingAllowed(this.env, task.ownerId, capability, this.now());

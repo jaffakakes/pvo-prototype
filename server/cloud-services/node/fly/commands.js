@@ -12,7 +12,7 @@ export class FlyCommands {
     this.nextAt = 0;
   }
 
-  command(args, { timeoutMs = 5000, signal } = {}) {
+  command(args, { timeoutMs = NODE_LIMITS.transportMs, signal } = {}) {
     const deadline = this.clock.now() + timeoutMs;
     const operation = this.tail.then(async () => {
       signal?.throwIfAborted();

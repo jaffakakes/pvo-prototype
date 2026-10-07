@@ -64,6 +64,13 @@ export type ServiceExecute = (
   invocation: ServiceInvocation,
 ) => ServiceReply | Promise<ServiceReply>;
 export const SERVICE_RUNTIME: "cloudflare-workers-esm";
+export const SERVICE_EXECUTION_LIMITS: Readonly<{
+  leaseMs: number;
+  cleanupMs: number;
+  requestMs: number;
+  validationStepMs: number;
+  validationClaimMs: number;
+}>;
 export const SERVICE_PACKAGE_LIMITS: Readonly<{
   operations: number;
   cases: number;

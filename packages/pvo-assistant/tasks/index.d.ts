@@ -170,6 +170,7 @@ export const TASK_LIMITS: Readonly<{
   artifactBytes: number;
   retentionMs: number;
   leaseMs: number;
+  defaultLeaseMs: number;
 }>;
 export const TASK_STATES: readonly TaskState[];
 export const TASK_FAILURES: Readonly<

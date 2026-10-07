@@ -43,17 +43,21 @@ export class FlyNodeContainer {
     signal.throwIfAborted();
     assertCurrent();
     const id = await this.lifecycle.create(execution, {
-      region: "iad",
+      region: NODE_LIMITS.region,
       skip_launch: true,
       skip_service_registration: true,
       skip_secrets: true,
       config: {
-        guest: { cpu_kind: "shared", cpus: 1, memory_mb: 1024 },
+        guest: {
+          cpu_kind: NODE_LIMITS.cpuKind,
+          cpus: NODE_LIMITS.cpus,
+          memory_mb: NODE_LIMITS.memoryMiB,
+        },
         init: {
           exec: [
             "/usr/bin/timeout",
             "--signal=KILL",
-            "180",
+            String(NODE_LIMITS.watchdogSeconds),
             "node",
             "/runtime/supervisor.mjs",
           ],
@@ -98,7 +102,7 @@ export class FlyNodeContainer {
             await this.clock.sleep(300, current);
           }
         },
-        120000,
+        NODE_LIMITS.preparationMs,
         signal,
       );
       await withAssistantDeadline(

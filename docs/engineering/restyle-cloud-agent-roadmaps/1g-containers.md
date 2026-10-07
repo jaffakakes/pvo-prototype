@@ -223,3 +223,8 @@ The successful cloud proof's byte-checked upload and paced commands now share co
 ## Durable Fly binding preparation — 7 October 2026
 
 The existing Node compute lease now owns the Fly create/start/destroy obligation, with no second service catalog. Full **1,598 tests** and all **76 Node runtime cases** pass, including actual local durable restarts with controlled provider replies. The product package, independent validation and hosting still use Dynamic Workers; deadlines, Fly accounting and final Node beta acceptance remain unfinished. See the [current checkpoint](../restyle-cloud-agent-progress.md). All six remaining gates remain unchecked.
+
+
+## Resource deadline and Fly profile preparation — 7 October 2026
+
+The prepared Node resource lease, independent-validation claim and host-recognized Container request now allow time for the proved large upload. Ordinary requests/model/workshop claims retain their existing short limits, with cancellation and outside cleanup enforced. Accounting uses the actual Fly `iad` shared-1x / 1 GiB profile and a dated compute-only estimate, with other charges explicitly excluded. The [provider notes](../restyle-node-provider-proof.md#product-resource-deadlines-and-fly-estimate--7-october-2026) record bounds and pricing; [progress](../restyle-cloud-agent-progress.md) records verification. The product runtime replacement, complete cost UI and final beta acceptance remain pending. All six gates stay unchecked.

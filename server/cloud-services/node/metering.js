@@ -113,9 +113,11 @@ export class NodeMetering {
           }
         : null,
       instance: {
+        provider: "fly",
+        region: NODE_LIMITS.region,
+        cpuKind: NODE_LIMITS.cpuKind,
+        cpus: NODE_LIMITS.cpus,
         memoryMiB: NODE_LIMITS.memoryMiB,
-        vcpu: NODE_LIMITS.vcpu,
-        diskGB: 2,
       },
     };
   }

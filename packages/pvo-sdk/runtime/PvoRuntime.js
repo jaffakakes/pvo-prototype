@@ -201,20 +201,24 @@ export class PvoRuntime {
         ...detail(),
         ...(captured && resolvedBody != null ? { requestBody: sanitizeDiagnosticValue(resolvedBody) } : {}),
       });
-      data = await withRequestDeadline(async (signal) => {
-        const requestOptions = { ...options, signal };
-        // Hosts receive the same composed signal through both existing adapter shapes.
-        const response = this.handlers.request
-          ? await this.handlers.request({ url, ...requestOptions }, { ...context, signal })
-          : await fetch(url, requestOptions);
-        if (response && typeof response.json === "function") {
-          status = diagnostics.responseStatus(response);
-          if (!response.ok) throw new RequestHttpError(response.status);
-          const type = response.headers?.get?.("content-type") || "";
-          return type.includes("json") ? response.json() : response.text();
-        }
-        return response;
-      }, context.signal);
+      data = await withRequestDeadline(
+        async (signal) => {
+          const requestOptions = { ...options, signal };
+          // Hosts receive the same composed signal through both existing adapter shapes.
+          const response = this.handlers.request
+            ? await this.handlers.request({ url, ...requestOptions }, { ...context, signal })
+            : await fetch(url, requestOptions);
+          if (response && typeof response.json === "function") {
+            status = diagnostics.responseStatus(response);
+            if (!response.ok) throw new RequestHttpError(response.status);
+            const type = response.headers?.get?.("content-type") || "";
+            return type.includes("json") ? response.json() : response.text();
+          }
+          return response;
+        },
+        context.signal,
+        this.handlers.requestTimeoutMs?.({ url, ...options }, context),
+      );
       throwIfAborted(context.signal);
     } catch (error) {
       if (context.signal?.aborted) {

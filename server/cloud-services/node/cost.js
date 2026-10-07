@@ -1,25 +1,22 @@
-/** Dated gross compute estimate. Included allowances, actual CPU and other services are not measured here. */
+/** Dated Fly iad shared-1x / 1 GiB estimate. Wall time is measured; provider billing is not. */
 export const NODE_COMPUTE_RATES = Object.freeze({
   checkedOn: "2026-10-07",
-  source: "https://developers.cloudflare.com/containers/platform/pricing/",
-  memoryGiBSecondUsd: 0.0000025,
-  cpuSecondUsd: 0.00002,
-  diskGBSecondUsd: 0.00000007,
+  source: "https://fly.io/pricing-update/",
+  region: "iad",
+  cpuKind: "shared",
+  cpus: 1,
+  memoryMiB: 1024,
+  // Published 256 MiB preset: $0.0030474/hour; 0.75 GiB extra RAM: $6.003072/GiB/720 hours.
+  machineSecondUsd: (0.0030474 + 0.75 * (6.003072 / 720)) / 3600,
 });
 
 export function estimateNodeCompute(snapshot) {
   const rates = NODE_COMPUTE_RATES;
   const estimate = (milliseconds) => {
     const seconds = milliseconds / 1000;
-    const memoryDiskUsd =
-      seconds *
-      ((snapshot.instance.memoryMiB / 1024) * rates.memoryGiBSecondUsd +
-        snapshot.instance.diskGB * rates.diskGBSecondUsd);
     return {
       milliseconds,
-      memoryDiskUsd,
-      withFullCpuUsd:
-        memoryDiskUsd + seconds * snapshot.instance.vcpu * rates.cpuSecondUsd,
+      computeUsd: seconds * rates.machineSecondUsd,
     };
   };
   return {
@@ -39,13 +36,15 @@ export function estimateNodeCompute(snapshot) {
             ...estimate(snapshot.pending.milliseconds),
           },
     basis:
-      "Reserved wall time from admission to confirmed destruction; includes startup and cleanup. It may exceed provider running time. Full-CPU assumption is an estimate, not measured CPU or a spending cap.",
+      "Fly shared-1x / 1 GiB in iad, using wall time from admission to confirmed destruction. Includes image preparation, startup, upload and cleanup; this can exceed billed running time. An estimate, not an invoice or spending cap.",
     excluded: [
       "AI model",
       "development workshop",
+      "runtime image build and registry",
       "Worker",
       "Durable Object requests and duration",
       "retained storage",
+      "stopped Machine root filesystem",
       "network",
       "logs",
       "subscription",

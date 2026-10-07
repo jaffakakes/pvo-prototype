@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { estimateNodeCompute } from "../../server/cloud-services/node/cost.js";
+import { NODE_LIMITS } from "../../server/cloud-services/node/runtime.js";
 import { deferred, fixture, request } from "./coordinator.helpers.mjs";
 
 test("a durable Node slot meters owned calls, fences replay and preserves daily capacity through restart", async () => {
@@ -196,7 +197,7 @@ test("idle maintenance expires only elapsed replay fences and schedules usage re
     );
     const original = await f.call({ kind: "inspect" });
     assert.equal(original.receipts.length, 1);
-    assert.equal(original.alarm, now + 45000);
+    assert.equal(original.alarm, now + NODE_LIMITS.leaseMs);
     await f.restart();
     await f.call({ kind: "time", now: original.alarm - 1 });
     const early = await f.call({ kind: "cleanup" });
@@ -310,8 +311,8 @@ test("read-only metering separates owners, services and phases and never hides p
       null,
     );
     const expected = estimateNodeCompute(pending);
-    assert.equal(expected.completed.validation.withFullCpuUsd, 0);
-    assert(Math.abs(expected.pending.withFullCpuUsd - 0.000002418) < 1e-12);
+    assert.equal(expected.completed.validation.computeUsd, 0);
+    assert(Math.abs(expected.pending.computeUsd - 0.0000031002) < 1e-12);
     assert.equal(expected.allowancesApplied, false);
     release.resolve();
     assert.equal((await running).ok, true);

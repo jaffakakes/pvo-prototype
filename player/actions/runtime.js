@@ -4,6 +4,7 @@ import {
 } from "../../packages/pvo-sdk/index.js";
 import { actionOperationIsCurrent } from "./operations.js";
 import { clearRequestStatus, updateRequestStatus } from "./request-status.js";
+import { SERVICE_EXECUTION_LIMITS } from "../../packages/pvo-assistant/services/index.js";
 
 export function createActionRuntimeAdapter({
   session,
@@ -76,6 +77,12 @@ export function createActionRuntimeAdapter({
         if (window.confirm(`Open ${new URL(url).host}?`))
           window.open(url, "_blank", "noopener,noreferrer");
         return url;
+      },
+      requestTimeoutMs(_request, context) {
+        return contextIsCurrent(context) &&
+          services?.forInteraction(context.playerInteraction)
+          ? SERVICE_EXECUTION_LIMITS.requestMs
+          : undefined;
       },
       request({ url, ...options }, context) {
         if (!contextIsCurrent(context))

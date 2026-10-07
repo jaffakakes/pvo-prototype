@@ -53,7 +53,7 @@ export async function uploadFlyInput(
   delivery,
   { signal, assertCurrent = () => {} } = {},
 ) {
-  const deadline = Date.now() + 100000;
+  const deadline = Date.now() + NODE_LIMITS.uploadMs;
   const upload = async (part, index) => {
     signal?.throwIfAborted();
     assertCurrent();

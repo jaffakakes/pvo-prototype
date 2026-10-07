@@ -1,3 +1,5 @@
+import { SERVICE_EXECUTION_LIMITS } from "../../../packages/pvo-assistant/services/index.js";
+
 /** Exact reviewed runner/base identity; verify with the Node runtime build/proof before release. */
 export const NODE_RUNTIME = Object.freeze({
   name: "nodejs-esm",
@@ -10,12 +12,18 @@ export const NODE_RUNTIME = Object.freeze({
     "sha256:9942e6c3dccc44a923c70ef9d8b3b7609b1a8338ea05b33ca80047952d0f449b",
 });
 export const NODE_LIMITS = Object.freeze({
+  preparationMs: 120000,
   startupMs: 30000,
+  uploadMs: 100000,
   executionMs: 2000,
-  cleanupMs: 5000,
-  leaseMs: 45000,
-  memoryMiB: 256,
-  vcpu: 0.0625,
+  transportMs: 5000,
+  watchdogSeconds: 180,
+  cleanupMs: SERVICE_EXECUTION_LIMITS.cleanupMs,
+  leaseMs: SERVICE_EXECUTION_LIMITS.leaseMs,
+  region: "iad",
+  cpuKind: "shared",
+  cpus: 1,
+  memoryMiB: 1024,
   slots: 2,
   replyBytes: 64 * 1024,
   invocationBytes: 64 * 1024,

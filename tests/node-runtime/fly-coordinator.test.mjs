@@ -1,11 +1,53 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { NODE_RUNTIME } from "../../server/cloud-services/node/runtime.js";
+import {
+  NODE_RUNTIME,
+  NODE_LIMITS,
+} from "../../server/cloud-services/node/runtime.js";
 import { deferred, fixture, request } from "./coordinator.helpers.mjs";
 
 const execution = "00000000-0000-4000-8000-000000000001";
 const replacement = "00000000-0000-4000-8000-000000000002";
 const absent = () => new Response(null, { status: 404 });
+
+test("provider preparation beyond the old request limit retains its lease and completes with measured startup", async () => {
+  const now = Date.UTC(2100, 0, 1, 12);
+  let f,
+    advanced = false;
+  const provider = fly({
+    inspect: async () => {
+      if (!advanced) {
+        advanced = true;
+        await f.call({ kind: "time", now: now + 70000 });
+      }
+    },
+  });
+  f = await fixture(provider.request, { provider: true });
+  try {
+    await f.call({ kind: "time", now });
+    const result = await f.call({
+      ...request(execution),
+      expiresAt: now + NODE_LIMITS.leaseMs,
+    });
+    assert.equal(result.ok, true, JSON.stringify(result));
+    const usage = await f.call({
+      kind: "usage",
+      ownerId: "creator",
+      serviceId: "service-one",
+    });
+    assert.equal(usage.periods.test.startupMilliseconds, 70000);
+    assert.equal(usage.pending, null);
+    assert.deepEqual(usage.instance, {
+      provider: "fly",
+      region: "iad",
+      cpuKind: "shared",
+      cpus: 1,
+      memoryMiB: 1024,
+    });
+  } finally {
+    await f.close();
+  }
+});
 
 function fly({
   loseCreate = false,
