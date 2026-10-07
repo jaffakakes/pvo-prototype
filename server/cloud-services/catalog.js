@@ -1,10 +1,10 @@
 import { parseHostedSummary } from "../../packages/pvo-assistant/hosting/index.js";
 import {
   parseOwnedService,
+  admitOwnedService,
   parseOwnedRelease,
   planOwnedPublication,
   observeOwnedRelease,
-  expireOwnedService,
 } from "../../packages/pvo-assistant/releases/index.js";
 import { HttpError } from "../http.js";
 
@@ -13,7 +13,45 @@ export class ServiceCatalog {
   constructor(sql) {
     this.sql = sql;
     sql.exec(`CREATE TABLE IF NOT EXISTS owned_services (id TEXT PRIMARY KEY, body TEXT NOT NULL);
+      CREATE TABLE IF NOT EXISTS owned_service_creations (id TEXT PRIMARY KEY, digest TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS owned_service_releases (id TEXT PRIMARY KEY, service_id TEXT NOT NULL, body TEXT NOT NULL)`);
+  }
+  create(identity, description, digest, now) {
+    const prior = this.sql
+      .exec(
+        "SELECT digest FROM owned_service_creations WHERE id=?",
+        identity.serviceId,
+      )
+      .toArray()[0];
+    if (prior) {
+      if (prior.digest !== digest)
+        throw Object.assign(
+          new Error("This creation ID already has different content."),
+          { code: "action_conflict" },
+        );
+      return this.service(identity.serviceId);
+    }
+    if (this.service(identity.serviceId))
+      throw Object.assign(
+        new Error("This service identity is already in use."),
+        { code: "action_conflict" },
+      );
+    admitOwnedService(this.services(), now);
+    const service = parseOwnedService({
+      identity,
+      description,
+      state: "inactive",
+      hostRevision: null,
+      createdAt: now,
+      updatedAt: now,
+    });
+    this.saveService(service);
+    this.sql.exec(
+      "INSERT INTO owned_service_creations(id,digest) VALUES(?,?)",
+      identity.serviceId,
+      digest,
+    );
+    return service;
   }
   services() {
     return this.sql
@@ -96,10 +134,6 @@ export class ServiceCatalog {
       now,
     );
     this.saveRelease(release);
-    const service = this.service(identity.serviceId);
-    this.saveService(
-      expireOwnedService(service, this.releases(identity.serviceId), now),
-    );
   }
   synchronize(value, now) {
     const summary = parseHostedSummary(value),
@@ -124,41 +158,13 @@ export class ServiceCatalog {
       ),
     );
     for (const release of releases) this.saveRelease(release);
-    this.saveService(
-      expireOwnedService(
-        {
-          ...service,
-          state: host.state,
-          hostRevision: host.revision,
-          description:
-            host.state === "deleted" ? "Deleted service" : service.description,
-          updatedAt: now,
-        },
-        this.releases(host.identity.serviceId),
-        now,
-      ),
-    );
-  }
-  maintain(now) {
-    for (const service of this.services()) {
-      const next = expireOwnedService(
-        service,
-        this.releases(service.identity.serviceId),
-        now,
-      );
-      if (next !== service) this.saveService(next);
-    }
-  }
-  nextExpiry(now) {
-    const times = this.services()
-      .filter((item) => item.state === "inactive")
-      .flatMap((service) => {
-        const releases = this.releases(service.identity.serviceId);
-        return releases.length &&
-          releases.every((item) => item.state === "deleted")
-          ? [Math.max(now, ...releases.map((item) => item.identity.expiresAt))]
-          : [];
-      });
-    return times.length ? Math.min(...times) : null;
+    this.saveService({
+      ...service,
+      state: host.state,
+      hostRevision: host.revision,
+      description:
+        host.state === "deleted" ? "Deleted Container" : service.description,
+      updatedAt: now,
+    });
   }
 }

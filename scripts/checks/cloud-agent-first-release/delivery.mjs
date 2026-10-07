@@ -306,14 +306,14 @@ export async function checkGeneratedDelivery({
     window.resultProbe.useCapture.getState().patch({ sheet: "more" }),
   );
   await reopened
-    .getByRole("button", { name: "Manage services", exact: true })
+    .getByRole("button", { name: "Open Containers", exact: true })
     .click();
-  await reopened.getByText("Service details", { exact: true }).click();
+  await reopened.getByText("Container details", { exact: true }).click();
   await reopened
     .getByText(/Undo in the editor does not undo viewer submissions/)
     .waitFor();
   await reopened
-    .getByRole("button", { name: "Pause service", exact: true })
+    .getByRole("button", { name: "Pause Container", exact: true })
     .waitFor();
   await record("local_removal_keeps_hosted_service", {
     subject,

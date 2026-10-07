@@ -17,8 +17,6 @@ export {
   parseOwnedRelease,
 } from "./catalog.js";
 
-export {
-  planOwnedPublication,
-  observeOwnedRelease,
-  expireOwnedService,
-} from "./lifecycle.js";
+export { planOwnedPublication, observeOwnedRelease } from "./lifecycle.js";
+
+export { admitOwnedService } from "./catalog.js";

@@ -4,7 +4,7 @@ import {
   transitionGuard,
 } from "../tasks/executionClaim.js";
 
-/** A deleted inactive host can be rebuilt from the checked artifact, without another model call. */
+/** An expired inactive release can be rebuilt on the same Container from the checked artifact, without another model call. */
 export function recoverExpiredAttachment(coordinator, claimed) {
   if (claimed.stepId !== "attach") return false;
   const now = coordinator.now();

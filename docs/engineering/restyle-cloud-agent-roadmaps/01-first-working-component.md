@@ -115,7 +115,7 @@ The user wants the agent to keep working toward the goal, with no fixed model-tu
 
 ## 1F. Verify the complete first release
 
-**1F.01–1F.07 verified; 1F.08 release remains.** [Live acceptance evidence](../restyle-first-release-acceptance.md) records both ordinary requests, real model-written programs, independent validation, hosting, actual editor/Try/download/publication viewers, races, recovery and cleanup. Dinner passed in the fifth run; camera passed in the tenth. All ten diagnostic deployments are removed. Full source checks (1,489 tests) and strict types pass; final beta/promotion evidence is recorded separately. Preserve the earlier failed evidence. The user's removed US$15 ceiling remains removed; no further paid acceptance run is needed merely to repeat these passed checks.
+**1F.01–1F.08 complete at the beta gate.** [Live acceptance evidence](../restyle-first-release-acceptance.md) records both ordinary requests, real model-written programs, independent validation, hosting, actual editor/Try/download/publication viewers, races, recovery and cleanup. Dinner passed in the fifth run; camera passed in the tenth. All ten diagnostic deployments are removed. Full source checks (1,489 tests) and strict types pass; Final beta `restyle-editor-shell-e069ede11e8ff6b7` is verified. The user explicitly deferred production until the entire roadmap is finished, they test the beta, and they approve release. Preserve the earlier failed evidence. The user's removed US$15 ceiling remains removed; no further paid acceptance run is needed merely to repeat these passed checks.
 
 - [x] **1F.01** Run both demonstration requests from ordinary natural-language prompts.
 - [x] **1F.02** Include a follow-up question, stop/resume, and one invalid generated program that the agent repairs from real test feedback.
@@ -124,7 +124,9 @@ The user wants the agent to keep working toward the goal, with no fixed model-tu
 - [x] **1F.05** Exercise duplicate submissions and distinct simultaneous submissions competing for the last place or overlapping equipment dates. Also check wrong-account access, test/live separation, a failed deployment, and an interrupted export.
 - [x] **1F.06** Remove a local component and check that a published copy's service is still manageable. Explain that editor Undo does not reverse saved viewer actions.
 - [x] **1F.07** Record the actual resource use and confirm the configured limits and cleanup work.
-- [ ] **1F.08** Complete the relevant source checks and real browser/provider checks, then release through the active beta and normal promotion process.
+- [x] **1F.08** Complete the relevant source checks and real browser/provider checks, then deliver the verified build through the active beta for user testing. Production is the separate final release gate below.
+
+**Release decision, 7 October:** the user said production must wait until everything is done and they have tested the beta. This moves production promotion out of the 1F completion gate; it does not claim a merge or deployment happened. Continue the remaining roadmap in beta. Production requires the full roadmap, user beta testing and explicit release approval, followed by protected promotion/live verification/branch cleanup.
 
 **Release gate:** all six phases, 1A–1F, pass. A mock provider, a temporary VM URL, or generated source alone does not prove this roadmap is finished.
 

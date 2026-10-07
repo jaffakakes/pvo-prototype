@@ -196,3 +196,7 @@ The [Roadmap 1A evidence](../docs/engineering/restyle-cloud-infrastructure-proof
 ## First-release cloud-agent acceptance
 
 The [1F acceptance plan](../docs/engineering/restyle-first-release-acceptance.md) describes the real-model disposable diagnostic, required fresh spending approval, cost/resource bounds and cleanup command. `scripts/checks/cloud-agent-first-release/run.mjs` starts ordinary saved goals using the actual production planners and hosting gates. Its local tests use no external network. This is separate from production deployment and from the full browser/recovery release gate; follow the current progress checkpoint before running it.
+
+### Container draft editing
+
+With a fresh editor Vite server, run `EDITOR_URL=http://127.0.0.1:5319/ node scripts/checks/editor/container-drafts.mjs`. It uses actual local Worker/SQLite APIs behind the browser bridge: create/edit, uncertain save and exact retry through host/browser restart, local recovery, concurrent-author conflicts, supported device checks and account switching. No paid resources. `hosted-services.mjs` covers lifecycle and release-selection regressions on the same Containers surface. These checks do not claim hosted Node.js provider acceptance.

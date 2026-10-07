@@ -180,3 +180,34 @@ export function parseServiceState(
 ): ServiceJson;
 
 export function parseServiceOperation(value: unknown): ServiceOperation;
+
+export type ServiceDraftContent = {
+  description: string;
+  agreement: ServiceAgreement | null;
+  entrypoint: string;
+  files: ServiceSourceFile[];
+  tests: string[];
+  dependencies: [];
+};
+export type ServiceDraft = {
+  identity: { serviceId: string; ownerId: string; projectId: string };
+  revision: number;
+  content: ServiceDraftContent;
+  updatedAt: number;
+};
+export type ServiceDraftSave = {
+  actionId: string;
+  expectedRevision: number;
+  content: ServiceDraftContent;
+};
+export const SERVICE_DRAFT_LIMITS: Readonly<{
+  bytes: number;
+  receipts: number;
+}>;
+export function parseServiceDraftContent(value: unknown): ServiceDraftContent;
+export function parseServiceDraft(value: unknown): ServiceDraft;
+export function parseServiceDraftSave(value: unknown): ServiceDraftSave;
+export function serializeServiceDraftSave(value: unknown): string;
+export function newServiceDraftContent(
+  description: string,
+): ServiceDraftContent;

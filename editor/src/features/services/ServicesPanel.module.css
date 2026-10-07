@@ -45,3 +45,75 @@
   overflow-wrap: anywhere;
   font-family: monospace;
 }
+
+.editor,
+.create {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding-block: 16px;
+  border-top: 1px solid var(--q14);
+}
+.panel label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.panel input,
+.panel textarea,
+.panel select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  min-height: 44px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--q14);
+  border-radius: 8px;
+  font: inherit;
+  caret-color: var(--highlight);
+}
+.panel textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+.panel textarea.code {
+  min-height: 260px;
+  font:
+    12px/1.6 ui-monospace,
+    monospace;
+  tab-size: 2;
+}
+.panel :is(input, textarea, select, button, summary):focus-visible {
+  outline: 2px solid var(--highlight);
+  outline-offset: 3px;
+}
+.panel button:hover:not(:disabled) {
+  background: var(--button-secondary-bg);
+}
+.panel :is(input, textarea)::placeholder {
+  color: var(--text-secondary);
+}
+.panel ::selection {
+  background: var(--highlight);
+  color: var(--surface);
+}
+.preview {
+  max-height: 320px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font:
+    12px/1.6 ui-monospace,
+    monospace;
+}
+.editor details > label {
+  margin-block: 12px;
+}
+.panel summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}

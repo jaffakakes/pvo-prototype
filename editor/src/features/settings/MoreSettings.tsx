@@ -286,8 +286,8 @@ export function MoreSettings() {
           </div>
         )}
       </section>
-      <section className={styles.section} aria-label="Cloud services">
-        <h3>Cloud services</h3>
+      <section className={styles.section} aria-label="Containers">
+        <h3>Containers</h3>
         <div className={styles.actions}>
           <button
             type="button"
@@ -295,7 +295,7 @@ export function MoreSettings() {
             aria-controls={servicesId}
             onClick={() => setShowServices(!showServices)}
           >
-            {showServices ? "Close services" : "Manage services"}
+            {showServices ? "Close Containers" : "Open Containers"}
           </button>
         </div>
         {showServices && (

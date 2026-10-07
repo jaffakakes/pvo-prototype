@@ -99,7 +99,6 @@ export class AssistantTasks extends DurableObject {
       const repository = this.repository;
       repository.bindOwner(ownerId);
       this.noteTerminal(now);
-      this.services.maintain(now);
       repository.maintain(now, this.heldTasks());
       this.results.prune();
       this.evidence.prune();
@@ -357,7 +356,6 @@ export class AssistantTasks extends DurableObject {
   async scheduleMaintenance(now) {
     const times = [
       this.repository.nextMaintenance(now),
-      this.services.nextExpiry(now),
       this.attempts.nextBudgetWakeup(),
       this.research.nextWakeup(now),
       this.validation.nextWakeup(now),

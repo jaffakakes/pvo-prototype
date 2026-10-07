@@ -7,6 +7,7 @@ import {
   SERVICE_CATALOG_LIMITS as limits,
   parseOwnedRelease,
   parseOwnedService,
+  admitOwnedService,
 } from "./catalog.js";
 
 /** Decide an immutable publication intent from a bounded owner catalog snapshot. */
@@ -38,17 +39,7 @@ export function planOwnedPublication(task, value, snapshot, now) {
     throw new Error(
       "Inactive release lifetime is outside its publication window.",
     );
-  const all = services,
-    day = Math.floor(now / 86400000) * 86400000;
-  if (
-    !service &&
-    (all.length >= limits.identities ||
-      all.filter((item) => item.state !== "deleted").length >= limits.active ||
-      all.filter((item) => item.createdAt >= day).length >= limits.daily)
-  )
-    throw Object.assign(new Error("Your service limit has been reached."), {
-      code: "budget_exceeded",
-    });
+  if (!service) admitOwnedService(services, now);
   if (service?.state === "deleted" || releases.length >= limits.releases)
     throw Object.assign(
       new Error("This service cannot accept another release."),
@@ -100,15 +91,4 @@ export function observeOwnedRelease(release, identity, state, now) {
     state: state === "available" ? "inactive" : state,
     updatedAt: now,
   });
-}
-export function expireOwnedService(service, releases, now) {
-  if (
-    service.state !== "inactive" ||
-    !releases.length ||
-    !releases.every(
-      (item) => item.state === "deleted" && item.identity.expiresAt <= now,
-    )
-  )
-    return service;
-  return parseOwnedService({ ...service, state: "deleted", updatedAt: now });
 }

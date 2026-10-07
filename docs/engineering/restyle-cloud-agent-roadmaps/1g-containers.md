@@ -2,7 +2,7 @@
 
 [Roadmap overview](../restyle-cloud-agent-roadmap.md) · [Architecture](../restyle-cloud-agent-architecture.md#containers-the-next-product-feature) · [Current evidence](../restyle-cloud-agent-progress.md)
 
-**Status: planned, 6 October 2026. All work here is unchecked.** Containers follows 1F and comes before Roadmap 2. The inspected implementation still has partial 1E and unfinished 1F; the user confirmed that their recorded status must be preserved. This document adds no implementation or deployment claim.
+**Status: implementation started, 7 October 2026.** 1E/1F are verified through beta. **1G.01 is complete**; the [implementation contract](../restyle-containers-contract.md) records the shared draft/release rules, zero-workshop cases and required Node.js proof. Remaining implementation and provider acceptance stay unchecked. Production is deferred until the user tests the finished work in beta.
 
 ## The simple version
 
@@ -119,7 +119,7 @@ There are **eight new tasks**. Twelve existing unchecked update/management tasks
 
 ### A. Settle the shared contract and saved editing
 
-- [ ] **1G.01** Confirm the 1E/1F prerequisites and define the single service/draft/release contract for Containers: existing owner/project/service identity, draft revisions, Node.js artifact identity, operation agreement, retention and current permissions. Record exact changed contracts, device/cloud selection rules and the minimum provider proof before app work. Define observable cases where zero workshop starts are expected.
+- [x] **1G.01** Confirm the 1E/1F prerequisites and define the single service/draft/release contract for Containers: existing owner/project/service identity, draft revisions, Node.js artifact identity, operation agreement, retention and current permissions. Record exact changed contracts, device/cloud selection rules and the minimum provider proof before app work. Define observable cases where zero workshop starts are expected.
 - [ ] **1G.02** Add durable draft read/save operations to the existing service boundary and evolve the service manager into Containers outside Components. Support code inspection/manual edits, on-device preview/lightweight checks, recoverable pending saves, revision conflicts, reload and account changes. These actions must not start a workshop; keep current live code unchanged.
 - [ ] **1G.03** Let the existing saved AI task continue editing that same draft through the same revision-checked command. Choose the existing tools according to the saved work: draft edits/questions do not require a VM; restore a disposable workshop only for required development execution. Preserve manual changes/questions, recover after browser/runner restart, stop idle compute and Stop safely without duplicating the service.
 

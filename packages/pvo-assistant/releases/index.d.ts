@@ -100,8 +100,4 @@ export function observeOwnedRelease(
   state: ServiceObservation["state"],
   now: number,
 ): OwnedRelease;
-export function expireOwnedService(
-  service: OwnedService,
-  releases: OwnedRelease[],
-  now: number,
-): OwnedService;
+export function admitOwnedService(services: OwnedService[], now: number): void;
