@@ -9,10 +9,14 @@ import { serviceCallError } from "./actions.js";
 
 export const SERVICE_CONTROL_RECEIPTS = 64;
 export function parseServiceControl(value) {
-  choice(value?.kind, ["activate", "pause", "delete"], "Service control");
+  choice(
+    value?.kind,
+    ["activate", "pause", "delete", "reset_test"],
+    "Service control",
+  );
   object(
     value,
-    value.kind === "activate"
+    ["activate", "reset_test"].includes(value.kind)
       ? ["kind", "actionId", "expectedRevision", "releaseId"]
       : ["kind", "actionId", "expectedRevision"],
     "Service control",
@@ -23,7 +27,8 @@ export function parseServiceControl(value) {
     Number.MAX_SAFE_INTEGER,
     "Expected service revision",
   );
-  if (value.kind === "activate") id(value.releaseId, "Service release ID");
+  if (["activate", "reset_test"].includes(value.kind))
+    id(value.releaseId, "Service release ID");
   return structuredClone(value);
 }
 export const serializeServiceControl = (value) =>
@@ -51,7 +56,7 @@ export function planServiceControl(service, control, now) {
         "This service has not been activated.",
       );
     state = "paused";
-  } else {
+  } else if (control.kind === "delete") {
     state = "deleted";
     liveReleaseId = null;
     testReleaseId = null;

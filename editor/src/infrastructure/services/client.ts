@@ -6,6 +6,7 @@ import {
 import {
   parseHostedSummary,
   parseServiceControl,
+  parseServiceRecords,
   type HostedServiceSummary,
   type ServiceControl,
 } from "../../../../packages/pvo-assistant/hosting/index.js";
@@ -116,6 +117,23 @@ export async function readService(
   )
     throw new Error("Service account changed.");
   return summary;
+}
+export async function readServiceRecords(
+  serviceId: string,
+  ownerId: string,
+  signal: AbortSignal,
+) {
+  if (!/^service-[a-f0-9]{64}$/.test(serviceId))
+    throw new Error("Invalid service identity.");
+  const records = parseServiceRecords(
+    await request(`/api/services/${serviceId}/records`, signal),
+  );
+  if (
+    records.service.identity.ownerId !== ownerId ||
+    records.service.identity.serviceId !== serviceId
+  )
+    throw new Error("Service account changed.");
+  return records;
 }
 const key = (ownerId: string) => `restyle:pending-service-control:${ownerId}`;
 export function readPendingControl(ownerId: string): PendingControl | null {

@@ -1,4 +1,5 @@
 import { ContainerEditor } from "./ContainerEditor";
+import { ContainerRecords } from "./ContainerRecords";
 import { CreateContainer } from "./CreateContainer";
 import { useState } from "react";
 import { openSignIn } from "../../state/auth/authGateStore";
@@ -10,6 +11,8 @@ export function ServicesPanel() {
   const { services, pending, busy, error, ownerId, refresh, control, retry } =
     useServices();
   const [editing, setEditing] = useState<string | null>(null);
+  const [records, setRecords] = useState<string | null>(null);
+  const [confirmPause, setConfirmPause] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   if (!ownerId)
     return (
@@ -127,7 +130,9 @@ export function ServicesPanel() {
                 {service?.liveReleaseId && (
                   <p>
                     Changing versions keeps live records and saved replies. A
-                    version that cannot use them will be rejected.
+                    version that cannot use them will be rejected. Editor Undo
+                    only restores component edits; publish another checked
+                    version to change live behavior.
                   </p>
                 )}
               </details>
@@ -143,6 +148,28 @@ export function ServicesPanel() {
                   key={`${ownerId}:${id}`}
                   ownerId={ownerId}
                   serviceId={id}
+                />
+              )}
+              <button
+                type="button"
+                aria-expanded={records === id}
+                disabled={!service}
+                onClick={() => setRecords(records === id ? null : id)}
+              >
+                {records === id
+                  ? "Close records and usage"
+                  : "Records and usage"}
+              </button>
+              {records === id && service && (
+                <ContainerRecords
+                  key={`${ownerId}:${id}`}
+                  ownerId={ownerId}
+                  serviceId={id}
+                  revision={service.revision}
+                  disabled={disabled}
+                  onReset={(releaseId) =>
+                    control(item, "reset_test", releaseId)
+                  }
                 />
               )}
               <div className={styles.actions}>
@@ -176,7 +203,7 @@ export function ServicesPanel() {
                   <button
                     type="button"
                     disabled={disabled}
-                    onClick={() => control(item, "pause")}
+                    onClick={() => setConfirmPause(id)}
                   >
                     Pause Container
                   </button>
@@ -199,7 +226,10 @@ export function ServicesPanel() {
                 <div>
                   <p>
                     Delete this Container and all its saved records? Existing
-                    copies of the component will stop working.
+                    copies of the component will stop working. New submissions
+                    are blocked and unfinished calls cannot save records. Saved
+                    replies and records are removed. Editor Undo cannot restore
+                    them.
                   </p>
                   <button
                     type="button"
@@ -218,6 +248,31 @@ export function ServicesPanel() {
                   >
                     Keep Container
                   </button>
+                </div>
+              )}
+              {confirmPause === id && (
+                <div>
+                  <p>
+                    Pause new live submissions? Unfinished calls cannot save
+                    records. Accepted records, saved replies and code remain.
+                    Resume this Container to accept submissions again. Editor
+                    Undo does not resume it.
+                  </p>
+                  <div className={styles.actions}>
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => {
+                        setConfirmPause(null);
+                        control(item, "pause");
+                      }}
+                    >
+                      Confirm pause
+                    </button>
+                    <button type="button" onClick={() => setConfirmPause(null)}>
+                      Keep Container running
+                    </button>
+                  </div>
                 </div>
               )}
             </li>

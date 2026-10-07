@@ -96,6 +96,22 @@ export async function controlHostedService(host, serviceId, ownerId, value) {
       host.actions.initializeLive(state);
       host.store.retain(control.releaseId);
     }
+    if (control.kind === "reset_test") {
+      const row = host.store.row(control.releaseId);
+      if (
+        !row ||
+        !host.store.current(JSON.parse(row.identity), host.now())?.body
+      )
+        throw serviceCallError(
+          "unavailable",
+          "This checked release is unavailable.",
+        );
+      const publication = parseServicePublication(JSON.parse(row.body));
+      host.actions.resetTest(
+        control.releaseId,
+        publication.artifact.agreement.state.initial,
+      );
+    }
     host.store.saveService(next);
     if (control.kind === "delete") {
       host.store.deleteReleases();

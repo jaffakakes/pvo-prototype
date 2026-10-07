@@ -1,4 +1,5 @@
 import { DraftWriters } from "./draftWriters.js";
+import { inspectServiceRecords } from "./records.js";
 import { ServiceDraftStore } from "./draftStore.js";
 import {
   readHostedDraft,
@@ -161,6 +162,13 @@ export class HostedService extends DurableObject {
   control(serviceId, ownerId, input) {
     return hostedReply(() =>
       controlHostedService(this, serviceId, ownerId, input),
+    );
+  }
+  records(serviceId, ownerId) {
+    return hostedReply(() =>
+      this.ctx.storage.transactionSync(() =>
+        inspectServiceRecords(this, serviceId, ownerId),
+      ),
     );
   }
   cleanupDeletedReleases() {

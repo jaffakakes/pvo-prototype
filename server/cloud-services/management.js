@@ -96,6 +96,13 @@ export async function manageHostedServices(coordinator, ownerId, operation) {
     if (!metadata || metadata.identity.ownerId !== ownerId)
       throw serviceCallError("unavailable", "This service is unavailable.");
     if (operation.kind === "read") return refreshOne(coordinator, metadata);
+    if (operation.kind === "records") {
+      const result = await hostResult(() =>
+        stub(coordinator, operation.id).records(operation.id, ownerId),
+      );
+      if (!result.ok) return { control: result };
+      return result.value;
+    }
     if (operation.kind === "readDraft" || operation.kind === "saveDraft") {
       const result = await hostResult(() =>
         operation.kind === "readDraft"

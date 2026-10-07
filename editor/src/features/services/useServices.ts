@@ -149,14 +149,17 @@ export function useServices() {
     if (pending.current || !item.summary) return;
     const service = item.summary.service;
     const releaseId =
-      selectedReleaseId ?? service.liveReleaseId ?? service.testReleaseId;
-    if (kind === "activate" && !releaseId) return;
+      selectedReleaseId ??
+      (kind === "reset_test"
+        ? service.testReleaseId
+        : (service.liveReleaseId ?? service.testReleaseId));
+    if (["activate", "reset_test"].includes(kind) && !releaseId) return;
     const base = {
       actionId: crypto.randomUUID(),
       expectedRevision: service.revision,
     };
     const control: ServiceControl =
-      kind === "activate"
+      kind === "activate" || kind === "reset_test"
         ? { ...base, kind, releaseId: releaseId! }
         : { ...base, kind };
     void send({ serviceId: service.identity.serviceId, control });

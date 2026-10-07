@@ -101,7 +101,7 @@ export function requireServiceReceiptCapacity(
 export const SERVICE_CONTROL_RECEIPTS: number;
 export type ServiceControl =
   | {
-      kind: "activate";
+      kind: "activate" | "reset_test";
       actionId: string;
       expectedRevision: number;
       releaseId: string;
@@ -126,6 +126,42 @@ export function planServiceControl(
   now: number,
 ): HostedServiceRecord;
 export function parseHostedSummary(value: unknown): HostedServiceSummary;
+
+export const SERVICE_RECORD_LIMITS: Readonly<{
+  results: number;
+  failures: number;
+  bytes: number;
+}>;
+export const SERVICE_FAILURE_CODES: readonly string[];
+export type ServiceRecordsArea = {
+  mode: "live" | "test";
+  releaseId: string;
+  stored: boolean;
+  version: number;
+  recordsJson: string;
+  usage: ServiceUsage;
+  receipts: { count: number; bytes: number };
+  results: {
+    actionId: string;
+    operation: string;
+    releaseId: string;
+    createdAt: number;
+    resultJson: string;
+  }[];
+  failures: {
+    actionId: string;
+    operation: string;
+    releaseId: string;
+    at: number;
+    code: string;
+  }[];
+};
+export type ServiceRecords = {
+  service: HostedServiceRecord;
+  observedAt: number;
+  areas: ServiceRecordsArea[];
+};
+export function parseServiceRecords(value: unknown): ServiceRecords;
 
 export function prepareReleaseActivation(
   previous: ServiceAgreement | null,
