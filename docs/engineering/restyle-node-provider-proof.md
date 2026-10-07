@@ -48,7 +48,7 @@ The journal saves ownership, expiry, names and an attempted-upload flag before r
 - Fourteen final focused tests pass: real workerd/SQLite admission/replay/metering/restart/cancellation/uncertain destruction; exact library admission; outside-guest byte/UTF-8/runtime checks; bounded recovery-only image cleanup. `/tmp/restyle-node-all-focused.log`.
 - Wrangler local deployment dry-run passed for journal `.wrangler/cloud-agent-infrastructure/workspace-t0WAAb/report.json`, proof ID `b7b2ffc2440bab0d1c4071ce`. Registry inventory confirmed its unique image name unused. `attempted:false`, `dryRunPassed:true`, `cleanupVerified:true`; no upload, instances or namespaces were created. Initial dry-run configuration failures are recorded in progress.
 - Full `npm run check` passed 1,512 tests, 837 syntax / 908 dependency / 545 formatting checks; strict editor types pass. Final cleanup-lock correction is covered by the fourteen focused tests above.
-- Current verified beta is `restyle-editor-shell-cc5dbc01f8df1631`. No runtime change has been delivered to beta or production by this preparation.
+- Follow-up source `ebcd318` checkpoints independent test steps and distinguishes startup/transport failures; full **1,516 tests**, types, browser recovery and combined beta checks pass. Current beta is **`restyle-editor-shell-c7c37ca0cfe361da`**. The Node execution adapter remains unwired; no hosted Node runtime or production deployment is claimed.
 
 ## Resource register
 
