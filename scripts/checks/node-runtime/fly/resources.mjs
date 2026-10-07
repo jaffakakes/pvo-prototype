@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import { mkdir, mkdtemp, readFile, writeFile, rename } from "node:fs/promises";
 import { dirname, resolve, sep } from "node:path";
 import { requireFly } from "./api.mjs";
+import { ownedMachines, removeOwnedMachine } from "./owned-machines.mjs";
 import {
   FLY_PROOF,
   flyMachineConfiguration,
@@ -66,49 +67,9 @@ export async function flyProofResources(
       "Fly proof deadline reached",
     );
   };
-  const inventory = async () => {
-    const values = await requireFly(request, "GET", `${path}/machines`);
-    assert.ok(Array.isArray(values));
-    for (const value of values) {
-      assert.equal(
-        value.config?.metadata?.restyle_proof,
-        report.id,
-        "Unexpected Machine in owned proof app; preserve it",
-      );
-      assert.match(value.id, /^[a-f0-9]{10,32}$/);
-    }
-    return values;
-  };
+  const inventory = () => ownedMachines(request, path, report.id);
   const removeMachine = async (machine) => {
-    assert.equal(
-      machine.config?.metadata?.restyle_proof,
-      report.id,
-      "Refuse destruction without matching ownership",
-    );
-    assert.match(machine.id, /^[a-f0-9]{10,32}$/);
-    const target = `${path}/machines/${machine.id}`;
-    const before = await request("GET", target);
-    if (before.status !== 404) {
-      assert.ok(before.ok, "Machine ownership inspection failed");
-      assert.equal(
-        before.data?.config?.metadata?.restyle_proof,
-        report.id,
-        "Machine ownership changed; preserve it",
-      );
-      if (before.data.state !== "destroyed") {
-        const deleted = await request("DELETE", `${target}?force=true`);
-        assert.ok(
-          deleted.ok || deleted.status === 404,
-          `Machine deletion failed (${deleted.status})`,
-        );
-      }
-    }
-    const absent = await request("GET", target);
-    assert.ok(
-      absent.status === 404 ||
-        (absent.ok && absent.data?.state === "destroyed"),
-      "Machine destruction not confirmed",
-    );
+    await removeOwnedMachine(request, path, report.id, machine);
     const row = report.machines.find((value) => value.name === machine.name);
     if (row) {
       row.removed = true;

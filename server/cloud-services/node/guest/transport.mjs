@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { writeFileSync, writeSync } from "node:fs";
 import { sandboxFlags } from "./sandbox.mjs";
 
 // Trusted host transport permits only the fixed sandbox bridge. Input is data, never a command.
@@ -19,6 +20,22 @@ if (
   (request.path === "/execute" && typeof request.body !== "string")
 )
   process.exit(2);
+
+// Host-only metadata makes interrupted transport diagnosable without retaining service data.
+const observation = {
+  startedAt: Date.now(),
+  path: request.path,
+  phase: "starting",
+};
+const observe = (fields) => {
+  Object.assign(observation, fields, {
+    elapsedMs: Date.now() - observation.startedAt,
+  });
+  writeFileSync("/control/transport-status.json", JSON.stringify(observation), {
+    mode: 0o600,
+  });
+};
+observe({});
 
 const child = spawn(
   "/opt/gvisor/runsc",
@@ -41,7 +58,8 @@ const finish = (status, body = "") => {
   finished = true;
   clearTimeout(timer);
   child.kill("SIGKILL");
-  process.stdout.write(JSON.stringify({ status, body }));
+  observe({ phase: "finished", status, stdoutBytes: bytes });
+  writeSync(1, JSON.stringify({ status, body }));
 };
 const timer = setTimeout(() => finish(504), 3000);
 child.stdout.on("data", (part) => {
@@ -51,7 +69,10 @@ child.stdout.on("data", (part) => {
   parts.push(part);
 });
 child.once("error", () => finish(503));
-child.once("exit", (code) => {
+child.once("exit", (code, signal) =>
+  observe({ phase: "exited", code, signal }),
+);
+child.once("close", (code) => {
   if (finished) return;
   if (code !== 0) return finish(503);
   try {

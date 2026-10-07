@@ -115,8 +115,14 @@ export class FlyProofMachine {
         typeof data?.stdout === "string"
           ? Buffer.byteLength(data.stdout)
           : null,
+      stderr:
+        typeof data?.stderr === "string" ? data.stderr.slice(0, 2048) : null,
     };
-    if (exitCode !== 0 || typeof data?.stdout !== "string") {
+    if (
+      exitCode !== 0 ||
+      (data?.exit_signal ?? 0) !== 0 ||
+      typeof data?.stdout !== "string"
+    ) {
       // This is a private fixed-fixture diagnostic, never the product error surface.
       this.resources.report.commandFailure = {
         machine: this.record.id,

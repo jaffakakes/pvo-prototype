@@ -8,10 +8,14 @@ import assert from "node:assert/strict";
 /** Remove only this journal's immutable diagnostic image; never change the user's Docker login. */
 export async function removeProofImage(resources, token) {
   const { report, save } = resources;
-  if (!report.build?.image) return;
-  const image = report.build.image;
-  assert.ok(image.startsWith(`registry.fly.io/${report.app}@sha256:`));
-  assert.match(image.split("@")[1], /^sha256:[a-f0-9]{64}$/);
+  const image = report.build?.image ?? report.registryIntent;
+  if (!image) return;
+  assert.match(
+    image,
+    new RegExp(
+      `^registry\\.fly\\.io/${report.app}(?:@sha256:[a-f0-9]{64}|:runtime)$`,
+    ),
+  );
   const directory = await mkdtemp(join(tmpdir(), "restyle-registry-cleanup-"));
   try {
     await writeFile(
@@ -42,6 +46,13 @@ export async function removeProofImage(resources, token) {
         deleteAccepted: true,
         blobCollectionVerified: false,
       };
+      try {
+        await run(crane, ["digest", image], options);
+        report.registryCleanup.manifestAbsent = false;
+      } catch (error) {
+        report.registryCleanup.manifestAbsent =
+          /MANIFEST_UNKNOWN|NAME_UNKNOWN/.test(String(error.stderr));
+      }
     } catch (error) {
       report.registryCleanup = {
         deleteAccepted: false,

@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
-import { setTimeout as delay } from "node:timers/promises";
 import { NODE_RUNTIME } from "../../../../server/cloud-services/node/runtime.js";
 import { flyMachineConfiguration } from "./config.mjs";
 
@@ -10,8 +9,8 @@ export const IMAGE_PROOF = Object.freeze({
   maxMachines: 10,
   lifetimeMs: 60 * 60_000,
   machineLifetimeSeconds: 120,
-  memoryMiB: 512,
-  maxConcurrent: 1,
+  memoryMiB: 1024,
+  maxConcurrent: 2,
   builderMemoryMiB: 1024,
   builderLifetimeSeconds: 600,
   builderRootfsGiB: 4,
@@ -90,48 +89,7 @@ export function runtimeConfiguration(image, options) {
   );
   const value = flyMachineConfiguration(options);
   value.config.image = image;
+  value.config.guest.memory_mb = IMAGE_PROOF.memoryMiB;
   value.config.init.exec[4] = "/runtime/supervisor.mjs";
   return value;
-}
-
-/** Poll fixed trusted builder status; uploaded code and registry credentials never enter the journal. */
-export async function buildRuntimeImage(machine, resources) {
-  await machine.command([
-    "node",
-    "-e",
-    `require('node:child_process').spawn(process.execPath,['/build-input/prepare.mjs'],{detached:true,stdio:'ignore'}).unref()`,
-  ]);
-  const deadline = Date.now() + 480000;
-  let stage;
-  while (Date.now() < deadline) {
-    try {
-      stage = JSON.parse(
-        await machine.command(
-          [
-            "node",
-            "-e",
-            `try{process.stdout.write(require('node:fs').readFileSync('/runtime/image-status.json','utf8'))}catch{process.stdout.write('{"phase":"starting"}')}`,
-          ],
-          { timeoutMs: 8000 },
-        ),
-      );
-    } catch (error) {
-      if (["TypeError", "AbortError", "TimeoutError"].includes(error.name)) {
-        await delay(1000);
-        continue;
-      }
-      throw error;
-    }
-    if (resources.report.build?.phase !== stage.phase)
-      console.log(`Image build: ${stage.phase}`);
-    resources.report.build = stage;
-    await resources.save();
-    if (stage.phase === "failed")
-      throw new Error(`Trusted runtime build failed: ${stage.message}`);
-    if (stage.phase === "passed") return stage;
-    await delay(2000);
-  }
-  throw new Error(
-    `Trusted runtime build deadline reached (${stage?.phase ?? "unknown"})`,
-  );
 }
