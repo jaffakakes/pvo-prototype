@@ -18,6 +18,8 @@ This is an open-ended building capability. Restaurant bookings, invitations, mes
 
 The creator should not need to know which server to buy, how to write an API, or where a password belongs. They should see questions about their goal, a secure way to connect accounts, progress, and a working result.
 
+**Request interpretation, clarified 8 October 2026:** derive the needed capabilities, questions, collected information, and success checks from each creator's actual request and project context. Reuse known answers and existing capabilities; a request that needs no external service should not be forced through account setup. When the goal changes, revise the plan and tests. Verify this behavior with unrelated and previously unused requests under [Roadmap 2's acceptance cases](restyle-cloud-agent-roadmaps/02-research-and-connections.md#build-from-the-creators-request). Examples are illustrations, not product templates or a fixed capability list.
+
 ## How it would feel to use
 
 The following is an illustrative conversation. The restaurant's rules would have to be researched for the actual request.
@@ -101,7 +103,7 @@ Creators get a **Containers** destination outside Components. They can open the 
 
 **Reuse the existing service system.** A Container keeps the existing service identity, owner/project rules, releases, data, retry receipts and management commands. Evolve the current service manager and replace its generated-code execution adapter with Node.js Container hosting. Add a durable editable draft and code views. Keep one task runner, one publication flow, one data authority and one component attachment contract.
 
-The current source uses one checked **Node.js** package/runtime through a private Fly execution adapter. Independent validation, inactive probes and live/test calls share the artifact and controller. Saved source, records and replies remain in the existing Restyle service. Beta `restyle-editor-shell-2625ed5f550e6744` contains the Node contract and management views. Configured product Fly acceptance remains pending; the static beta has no service/task API configured. The workshop separately runs development tools and restores the platform’s supported libraries offline. Historical Worker test results remain valid evidence of the earlier implementation.
+The current source uses one checked **Node.js** package/runtime through a private Fly execution adapter. Independent validation, inactive probes and live/test calls share the artifact and controller. Saved source, records and replies remain in the existing Restyle service. Beta `restyle-editor-shell-0aeb35ad18374509` contains the Node contract and management views. [Integrated Fly acceptance](restyle-node-product-acceptance.md#verified-result--7-october-2026) and cleanup pass; the static beta has no service/task API configured. The workshop separately runs development tools and restores the platform’s supported libraries offline. Historical Worker test results remain valid evidence of the earlier implementation.
 
 A component chooses an approved operation on a published Container; Restyle supplies the checked connection. There is no external hosting setup or server URL to paste. **PVO Logic stays its own restricted language.** The backend source is JavaScript for Node.js.
 

@@ -4,6 +4,8 @@
 Task IDs are stable. Checked items are verified work; update their evidence and the [handoff progress log](../restyle-cloud-agent-progress.md) whenever a task finishes.
 
 
+**Current status, 7 October 2026:** Roadmap 1, including [1G Containers](1g-containers.md), is complete through beta. [Final Node acceptance](../restyle-node-product-acceptance.md#verified-result--7-october-2026) records the runtime replacement and cleanup; prior evidence below is preserved. Next is **2A.01**. Production is explicitly deferred.
+
 **Outcome:** a creator asks for a component, answers any necessary question, and receives a working feature with newly generated backend code. It works in Try, a downloaded PVO, and a published player after its build workspace has stopped.
 
 **Starting point:** the existing editor assistant, account system, PVO request support, and Cloudflare application. No cloud builder is implemented by this roadmap document.

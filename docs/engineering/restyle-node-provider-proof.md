@@ -217,3 +217,8 @@ Before any replacement-provider paid test, prepare its exact executable plan, re
 ### Canonical product integration checkpoint — 7 October 2026
 
 The current package contract records the exact proved Node/base/runner/image identities and retained supported-library bytes. The independent validator, inactive probe and live/test host now delegate to the same durable Fly execution controller; ownership/mode come from the existing task/service authority. The Worker loader contract is removed without a fallback. Full 1,602 tests and editor types pass locally. Repository-owned Node processes verify application behavior behind actual workerd RPC/SQLite; they are explicitly not another Fly isolation proof. The image bytes are unchanged from the eight-case provider proof. No application provider credentials/configuration or deployment is enabled yet. Library selection, full cost views and actual editor/player/Fly acceptance remain in the [current progress](restyle-cloud-agent-progress.md).
+
+
+## Integrated product acceptance completed — 7 October 2026
+
+The subsequent [product acceptance](restyle-node-product-acceptance.md#verified-result--7-october-2026) passes with this exact immutable runtime, actual independent validation/hosting, editor/Try/export/two-player calls, interrupted compute recovery, retention and cleanup. The separate eight-case isolation/large-upload evidence above was reused. All Roadmap 1 gates are checked, final beta is delivered, and production remains untouched. The committed acceptance document records the failed preparations, final 19 executions, costs and scoped-key cleanup; no paid rerun is needed for handoff.

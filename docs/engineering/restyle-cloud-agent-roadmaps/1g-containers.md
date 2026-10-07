@@ -2,7 +2,7 @@
 
 [Roadmap overview](../restyle-cloud-agent-roadmap.md) · [Architecture](../restyle-cloud-agent-architecture.md#containers-the-next-product-feature) · [Current evidence](../restyle-cloud-agent-progress.md)
 
-**Status: implementation started, 7 October 2026.** 1E/1F are verified through beta. **1G.01–1G.03, 1G.07, 4B.01–07 and 4C.01/02/04/05 are complete**; the [implementation contract](../restyle-containers-contract.md) records the shared draft/release rules, zero-workshop cases and required Node.js proof. Remaining implementation and provider acceptance stay unchecked. Production is deferred until the user tests the finished work in beta.
+**Status: complete through beta, 7 October 2026.** All eight 1G tasks and twelve transferred update/management tasks are verified. Roadmap 1 has no remaining implementation/acceptance checkbox. The [integrated Node/Fly evidence](../restyle-node-product-acceptance.md#verified-result--7-october-2026) records real provider, editor/player, interruption, retention, costs and cleanup. Permanent cloud environment availability remains distinct from static beta delivery. Production is deferred until the user tests the finished work and explicitly approves release.
 
 ## The simple version
 
@@ -125,9 +125,9 @@ There are **eight new tasks**. Twelve existing unchecked update/management tasks
 
 ### B. Replace execution and preserve the trusted gates
 
-- [ ] **1G.04** Implement and prove the bounded hosted Node.js execution adapter and reproducible package: pinned base/runtime, checked dependency bytes, isolated test/live instances, private listener, readiness, cold restart, externally enforced limits, network policy and process cleanup. Record a concrete cost/resource/cleanup plan before any paid proof. Keep Dynamic Worker evidence; remove its superseded generated-service runtime contract when the Node replacement lands, without a dual-runtime fallback.
-- [ ] **1G.05** Run independent platform validation against the exact Node.js artifact used for hosting. Apply the same gates to AI/manual edits; invalidate stale reports after source/agreement/dependency/runtime changes. Check malformed replies, ownership, isolation, time/output limits and test/live separation; local checks, generated tests or claimed success cannot grant readiness.
-- [ ] **1G.06** Connect the Node adapter to the existing deployment journal and per-service host. Persist release intent before effects, recover lost replies, verify inactive readiness, preserve data/action receipts through instance destruction, and clean up abandoned resources without changing the current live release.
+- [x] **1G.04** Implement and prove the bounded hosted Node.js execution adapter and reproducible package: pinned base/runtime, checked dependency bytes, isolated test/live instances, private listener, readiness, cold restart, externally enforced limits, network policy and process cleanup. Record a concrete cost/resource/cleanup plan before any paid proof. Keep Dynamic Worker evidence; remove its superseded generated-service runtime contract when the Node replacement lands, without a dual-runtime fallback.
+- [x] **1G.05** Run independent platform validation against the exact Node.js artifact used for hosting. Apply the same gates to AI/manual edits; invalidate stale reports after source/agreement/dependency/runtime changes. Check malformed replies, ownership, isolation, time/output limits and test/live separation; local checks, generated tests or claimed success cannot grant readiness.
+- [x] **1G.06** Connect the Node adapter to the existing deployment journal and per-service host. Persist release intent before effects, recover lost replies, verify inactive readiness, preserve data/action receipts through instance destruction, and clean up abandoned resources without changing the current live release.
 
 ### C. Publish, connect and update through existing commands
 
@@ -147,13 +147,13 @@ There are **eight new tasks**. Twelve existing unchecked update/management tasks
 - [x] **4C.02** Add useful views of remaining quotas, approximate cost, recent results, and failures.
 - [x] **4C.04** Let creators inspect retained data and choose the allowed cleanup action.
 - [x] **4C.05** Explain the effects of pause and deletion on new submissions, accepted jobs, and stored records before applying the selected operation.
-- [ ] **4C.06** Verify periodic cleanup removes only abandoned resources and expired records covered by the agreed retention rule.
+- [x] **4C.06** Verify periodic cleanup removes only abandoned resources and expired records covered by the agreed retention rule.
 
 These transferred tasks cover the basic Container service in 1G. Account connections and durable viewer jobs remain unavailable until Roadmaps 2/3 implement them; those later milestones extend the same controls and rerun their affected acceptance, rather than creating another management feature. Forwarded downloads cannot be fully enumerated, so the UI must say when impact counts are incomplete.
 
 ### E. Verify the complete feature
 
-- [ ] **1G.08** Verify the acceptance matrix below with real editor/player tests and bounded provider evidence for the hosted Node.js path. Record costs and cleanup, complete relevant source/type/build checks, deliver the beta without forced reload, and follow separately authorized production promotion. Update the progress/handoff after each verified task; a plan, local fixture or static beta alone cannot finish this gate.
+- [x] **1G.08** Verify the acceptance matrix below with real editor/player tests and bounded provider evidence for the hosted Node.js path. Record costs and cleanup, complete relevant source/type/build checks, deliver the beta without forced reload, and follow separately authorized production promotion. Update the progress/handoff after each verified task; a plan, local fixture or static beta alone cannot finish this gate.
 
 | Acceptance | Evidence required |
 | --- | --- |
@@ -245,3 +245,12 @@ Current source adds exact supported-library selection to the existing draft edit
 **4C.02 complete.** Source `bdda340` is pushed in draft #106 and the management browser journey passes with actual local HTTP/SQLite/Node fixture execution, measured persisted counters, owner isolation, unavailable usage, reset replay and update/lifecycle controls. Full 1,605 tests and source/type checks pass. Desktop/phone screenshots and the Impeccable detector were reviewed. A positive estimate smaller than displayed precision is shown as less than the smallest displayed amount, never zero.
 
 Combined `6d76aa6` passes build, editor types and 23 focused records/usage/delivery tests. Beta **`restyle-editor-shell-2625ed5f550e6744`** is served from Desktop `dist/` on 4173; served files and a fresh client's activated worker are verified. Backup `restyle-node-ui-beta-2gea13_a` retains previous and built files; 131 old hashed assets remain and the user's session was not reloaded. This beta contains the Node contract and new views, but its local static server has no configured service/task API. It does not establish hosted product availability or complete the five remaining Node/retention/final-acceptance tasks. See [progress](../restyle-cloud-agent-progress.md).
+
+
+## Final Node acceptance and completion — 7 October 2026
+
+**1G.04, 1G.05, 1G.06, 4C.06 and 1G.08 are complete.** Integrated run `run-LzPJJ6` passed real independent Node/library checks, interrupted publication recovery, durable data and exact replies, invalid-update rejection, compatible update/rollback, actual editor attachment/Try/export, both separate-origin players, forced compute-controller restart and retry, active/paused retention, deletion and cleanup. Nineteen Node executions ran; the existing eight-case sandbox/large-upload proof remains preserved. See [full evidence and limitations](../restyle-node-product-acceptance.md#verified-result--7-october-2026).
+
+The cloud/browser test found a device-clock defect; source `ef1deaa` uses the authenticated server observation when proposing a connection, retaining the server’s fresh ownership/release/lifecycle check. A browser regression passes with the device clock sixty seconds behind. Combined `59dda41` passes build/types/22 focused checks and is delivered as **`restyle-editor-shell-0aeb35ad18374509`** on actual beta 4173. Served files and activated worker are verified; 133 old hashed assets remain and no editing session was reloaded.
+
+All three acceptance attempts’ Machines/apps/app keys are removed/revoked; both completed image manifests are confirmed absent. The diagnostic Worker and four namespaces are removed, the organization test key is revoked, and owned plaintext credentials are deleted. Provider blob garbage collection and the final invoice are not verified. Lumo is preserved. The local static beta has no service/task API configured; the real hosted path was verified in the removed isolated environment. No production, integration merge, Actions work or unreleased branch deletion occurred.

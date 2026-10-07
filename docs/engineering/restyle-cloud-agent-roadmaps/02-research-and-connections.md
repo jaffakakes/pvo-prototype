@@ -8,18 +8,27 @@ Task IDs are stable. Checked items are verified work; update their evidence and 
 
 **Depends on:** Roadmap 1's saved tasks, questions, ownership, workspace, live services and test/live separation, followed by [1G Containers](1g-containers.md) for the planned product sequence. Integrations extend that same Node.js service and management system. Provider research can begin earlier, but real connections must use these boundaries.
 
-Use a restaurant journey as one demonstration. Its actual booking route must come from research. The demonstration can end in a real integration or a manual step chosen by the creator; the component must describe that outcome accurately.
+## Build from the creator's request
+
+The creator's actual goal determines the plan. Restaurant bookings and the other examples illustrate the behavior; they do not define a fixed set of templates, required fields, providers, or follow-up questions. Apply this rule to all four stages below.
+
+1. Establish the requested result and what would demonstrate success, using the creator's words and existing project context. Ask only about missing decisions that affect the result.
+2. Work out the needed capabilities, data, accounts, and steps for that request. Reuse what is already available; research outside services only where needed. A request that existing component logic or Restyle-owned storage can satisfy needs no external connection.
+3. Build suitable code and connections from verified capabilities. Keep unknown access or unsupported operations explicit, and ask before substituting a different outcome.
+4. Test against that request's agreed result with independent expectations. A working example or provider connection alone does not prove the agent understood another request.
+
+**Acceptance across different requests:** exercise unrelated goals, such as a calendar availability view, an equipment request sent to a connected work tracker, and a restaurant arrangement. These are illustrative test inputs, not a supported-feature list. Include a previously unused goal or changed requirements without adding a special-case prompt or template for it. Across the cases, cover usable access, missing account setup, unavailable automation, uncertain evidence, and a request needing no outside service. Verify that questions, collected fields, generated behavior, and displayed results follow the actual request. A missing connection or unavailable capability must produce an honest next step; do not claim that every provider or action is supported.
 
 ## 2A. Research the required capability
 
 - [ ] **2A.01** Extend the existing public web tools with structured evidence: source URL, time checked, supported operation, access requirements, uncertainty, and what still needs testing.
 - [ ] **2A.02** Let the agent inspect the creator's available connection names and permissions without seeing credentials.
 - [ ] **2A.03** Record whether the next operation is available, needs account setup, needs new adapter code, requires a manual step, or remains unverified.
-- [ ] **2A.04** Check actual integration documentation and available access. A booking button on a website does not establish permission to use a private API.
+- [ ] **2A.04** Check actual integration documentation and available access for the requested operation. A feature visible on a website does not establish permission to use its private API.
 - [ ] **2A.05** Ask a focused follow-up only when the evidence or creator's intent is insufficient. Continue independent work while waiting.
 - [ ] **2A.06** Save the chosen outcome. Reuse prior answers until the creator changes the request or new evidence invalidates them.
 
-**Finished when:** given examples with online booking, phone-only booking, and no bookings, the agent explains the actual options and follows the creator's choice. Fixture tests cover each branch; a real researched service verifies that the tools also work outside fixtures.
+**Finished when:** different requests produce relevant evidence, capability decisions, and focused questions under the acceptance cases above. The agent follows the creator's choice, reuses existing answers, and changes its plan when the request or evidence changes. Fixture tests cover each access/outcome branch; a real researched service verifies that the tools also work outside fixtures. Restaurant-specific success alone is insufficient.
 
 **Where to start:** [web tools](../../../server/web/routes.js), [web research design](../web-search.md), and [assistant web instructions](../../../server/assistant/native/webPrompt.js).
 
@@ -52,17 +61,17 @@ This should remain extensible to researched services. The first integration prov
 
 ## 2D. Make manual alternatives useful
 
-- [ ] **2D.01** Let the agent propose an explicit change of outcome when automation is unavailable: collect RSVPs, prepare a call brief, provide a supported booking link, or prepare a message draft.
+- [ ] **2D.01** Let the agent propose a useful alternative suited to the request when automation is unavailable, explaining how the outcome changes. Examples include preparing a draft, collecting information for a person, or opening a supported provider flow; they are not a fixed fallback menu.
 - [ ] **2D.02** Save the creator's choice before changing the component's promise.
 - [ ] **2D.03** Add required form fields through existing component commands. Explain what collected data will be used for.
 - [ ] **2D.04** Record manual follow-up as pending until a person marks it completed or an actual service result confirms completion.
 - [ ] **2D.05** Preserve automatic and manual steps in the same saved task so returning later does not lose context.
 
-**Finished when:** a creator can choose a manual call and still receive a useful component and guest list. Neither the editor nor the viewer claims a table is booked from an RSVP alone.
+**Finished when:** creators with different goals can choose useful manual alternatives, preserve their original context, and see which work remains pending. Neither the editor nor the viewer reports the original external action as completed from a preparatory step alone. For example, an RSVP does not confirm a booking, and preparing a work request does not prove it was submitted.
 
 ## Complete this roadmap
 
-Demonstrate a researched request, a saved follow-up question, secure account setup, a connected component, an expired connection, and a creator-chosen manual alternative.
+Demonstrate a researched request, a saved follow-up question, secure account setup, a connected component, an expired connection, and a creator-chosen manual alternative. Also run the acceptance cases across different requests above. Record each requested result, why the selected approach fits, what was actually verified, and any remaining limitation. One real provider proves its connection; broader controlled cases test the agent's ability to adapt without claiming those providers have live integrations.
 
 Use existing [assistant tests](../../../tests/native-assistant-server.test.mjs) and new focused tests for the connection boundary. Browser checks must cover setup/resume and the component's actual result. A mocked API proves local handling; a controlled provider check proves the real account connection.
 

@@ -25,6 +25,22 @@ export function batchProgressEvidence(state) {
     } = tool;
     let result = structuredClone(feedback.result);
     if (!result || typeof result !== "object") return null;
+    if (tool.kind === "web_evidence") {
+      // Rewording an interpretation or reciting a newer receipt is not new external evidence.
+      observations.push({
+        request: { kind: tool.kind },
+        result: {
+          status: result.status,
+          source: result.result
+            ? {
+                url: result.result.source.url,
+                truncated: result.result.source.truncated,
+              }
+            : null,
+        },
+      });
+      continue;
+    }
     if (["web_read", "web_search"].includes(tool.kind)) {
       if (result.result) delete result.result.retrievedAt;
     } else if (["workspace_list", "workspace_read"].includes(tool.kind)) {

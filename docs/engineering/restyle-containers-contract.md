@@ -64,7 +64,7 @@ Update through the existing inactive publication and activation journal. The cur
 
 ## Selected provider and retained responsibilities
 
-The user selected **Fly.io on 7 October 2026**. Use a private Fly Machines execution effect, subject to [its runtime/isolation/cleanup proof](restyle-node-provider-proof.md). Keep drafts, releases, live/test records, ownership, task continuation and attachments in their existing Restyle authorities. Fly receives only admitted execution input and the exact checked artifact; its credential stays in the trusted adapter. Replace the prepared Cloudflare-specific execution effect when verified, without a dual-runtime fallback or a second service manager. The Cloudflare facts and estimates below document the original preparation; they are not Fly pricing or proof. The source now routes independent validation, inactive probes and hosted live/test calls through this one Node contract. Beta `restyle-editor-shell-2625ed5f550e6744` contains this Node contract. Configured product Fly acceptance remains pending; static beta delivery does not configure a service/task API.
+The user selected **Fly.io on 7 October 2026**. Use a private Fly Machines execution effect, subject to [its runtime/isolation/cleanup proof](restyle-node-provider-proof.md). Keep drafts, releases, live/test records, ownership, task continuation and attachments in their existing Restyle authorities. Fly receives only admitted execution input and the exact checked artifact; its credential stays in the trusted adapter. Replace the prepared Cloudflare-specific execution effect when verified, without a dual-runtime fallback or a second service manager. The Cloudflare facts and estimates below document the original preparation; they are not Fly pricing or proof. The source now routes independent validation, inactive probes and hosted live/test calls through this one Node contract. Beta `restyle-editor-shell-0aeb35ad18374509` contains this Node contract. [Integrated Fly acceptance](restyle-node-product-acceptance.md#verified-result--7-october-2026) and cleanup pass; static beta delivery does not configure a service/task API.
 
 ## Minimum provider proof before enabling Node.js hosting
 
@@ -115,3 +115,19 @@ Manual library selection edits the existing saved draft. AI decisions select the
 The private records snapshot now includes actual service SQLite bytes and an aggregate of the two private execution-slot counters. The service host authorizes the owner before reading those counters and rechecks deletion afterward. Live, test, independent validation and readiness remain separate. Daily capacity is shared across the owner's services and across the platform, with an explicit reset time; this is not a lifetime goal/model-turn limit. Unfinished execution/cleanup remains a separate obligation and estimate. Missing or inconsistent accounting is shown as unavailable, not free usage.
 
 The UI uses the dated [Fly compute basis](restyle-node-provider-proof.md#product-resource-deadlines-and-fly-estimate--7-october-2026). This measures admission through confirmed destruction and can exceed billed running time. AI/workshops, image builds/registry, stopped root filesystems, Worker/Durable Object requests/duration/storage, network/logs, subscriptions and tax are excluded; allowances are not deducted. Measured SQLite bytes include source, releases, data, receipts and database overhead, but exclude shared task/compute stores and do not measure GB-months. The view is a useful estimate with explicit gaps, not a total bill. Private accounting expires under the existing thirty-day retention rule; a still-owned cleanup obligation is retained until settled. No new data or execution authority is introduced.
+
+
+## Hosting configuration and beta availability
+
+The platform operator supplies these private settings for an explicitly authorized hosting environment; creators choose named operations in Restyle and never paste provider URLs:
+
+| Setting | Required value |
+| --- | --- |
+| `SERVICE_NODE_EXECUTION` | Existing `ServiceNodeExecution` Durable Object binding, already declared in Wrangler. It owns two durable compute slots. |
+| `SERVICE_NODE_FLY_APP` | The dedicated Fly app owned by the platform in the authorized account. Keep it separate from unrelated apps. |
+| `SERVICE_NODE_FLY_IMAGE` | `registry.fly.io/<that-app>@<the exact SERVICE_RUNTIME.imageDigest>`. Reproduce the pinned runtime and retain the immutable image. |
+| `SERVICE_NODE_FLY_TOKEN` | Private app-scoped deploy credential in Worker secrets. It reaches only the fixed Machines API; never a generated execution guest, browser or PVO file. |
+
+The current profile uses Fly `iad`, shared-1x and 1 GiB. Every invocation starts fresh private compute and destroys it before returning a successful result; source, records and action receipts stay in the existing service host. Missing configuration fails closed before reserving compute. Preserve image access and valid scoped credentials while the environment is enabled; preserve durable cleanup leases until all owned Machines are confirmed absent before decommissioning it.
+
+The isolated acceptance configures these values temporarily, verifies the complete path, then removes its resources. The local beta on port 4173 serves the app assets and update notification flow; its static server does not supply service/task APIs. A permanent beta/cloud backend requires a separately configured hosting environment and ongoing resources. Neither static asset delivery nor a passing disposable proof is a production deployment. Production remains explicitly deferred.

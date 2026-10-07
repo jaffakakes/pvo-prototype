@@ -71,3 +71,24 @@ const privateRead: BuilderResearch = {
   headers: {},
 };
 void [evidence, researchDecision, privateRead];
+
+const note: BuilderResearch = {
+  kind: "web_evidence",
+  sourceOperationId: "read-docs",
+  operation: "Show availability",
+  support: "unclear",
+  excerpts: [],
+  accessRequirements: [],
+  uncertainty: ["Account access is unknown."],
+  stillNeedsTesting: ["Check an authorized test calendar."],
+};
+const suppliedAuthority: BuilderResearch = {
+  ...note,
+  // @ts-expect-error the model cannot provide source verification
+  verification: "tested",
+};
+if (evidence.kind === "web_evidence" && evidence.status === "completed") {
+  const verification: "source_text_only" = evidence.result.verification;
+  void verification;
+}
+void suppliedAuthority;
