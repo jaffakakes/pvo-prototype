@@ -233,7 +233,7 @@ export class ServiceNodeExecution extends DurableObject {
       try {
         await this.beginCleanup(lease.id);
         // Do not release capacity or a result until whole-guest destruction is confirmed.
-        await this.cleanup(lease.id);
+        await this.cleanup(lease.id, true);
       } finally {
         if (this.active?.id === lease.id) this.active = null;
       }
@@ -256,11 +256,21 @@ export class ServiceNodeExecution extends DurableObject {
       await this.ctx.storage.setAlarm(lease.nextAt + 10);
     });
   }
-  async cleanup(id) {
+  async cleanup(id, waitForOwnedResult = false) {
     const lease = this.lease();
     if (!lease || lease.id !== id || lease.phase !== "cleanup") return;
     if (this.cleaning) {
-      await this.ctx.storage.setAlarm(this.now() + 1000);
+      const operation = this.cleaning;
+      // The result path waits for an alarm's same cleanup; cancellation itself remains nonblocking.
+      if (waitForOwnedResult) {
+        try {
+          await withAssistantDeadline(() => operation, limits.cleanupMs);
+        } catch {
+          /* The retained lease still fences capacity and owns cleanup retries. */
+        }
+      }
+      if (this.lease()?.id === id)
+        await this.ctx.storage.setAlarm(this.now() + 1000);
       return;
     }
     // Hold the single cleanup operation through its durable commit, not just the provider promise.
@@ -335,7 +345,8 @@ export class ServiceNodeExecution extends DurableObject {
       await this.ctx.storage.setAlarm(lease.deadlineAt);
       return;
     }
-    this.active?.controller.abort();
+    // A cleanup alarm must not cancel a successful execution already waiting for destruction.
+    if (lease.phase === "running") this.active?.controller.abort();
     await this.beginCleanup(lease.id);
     await this.cleanup(lease.id);
   }
