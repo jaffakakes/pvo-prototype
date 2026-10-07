@@ -29,8 +29,20 @@ test("product commands retain bounded pacing and never dispatch expired or cance
     calls.map((x) => x.at),
     [0, 1100],
   );
-  assert.equal(results[1].reason.name, "TimeoutError");
+  assert.equal(results[1].reason.code, "runtime_unavailable");
   assert.equal(results[2].status, "rejected");
+});
+
+test("a lost command reply is infrastructure uncertainty and is never executed a second time", async () => {
+  let calls = 0;
+  const commands = new FlyCommands(async () => {
+    calls++;
+    throw new TypeError("provider connection lost");
+  }, "/apps/owned/machines/1234567890abcd");
+  await assert.rejects(commands.bridge("execute"), {
+    code: "runtime_unavailable",
+  });
+  assert.equal(calls, 1);
 });
 
 test("only the fixed host transport executes and untrusted command/reply status cannot claim a result", async () => {

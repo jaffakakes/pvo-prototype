@@ -33,7 +33,7 @@ export function flyMachineApi({ app, token, fetchImpl = fetch }) {
     // Never retry a create, start or execution after an unknown HTTP outcome.
     const response = await fetchImpl(`https://api.machines.dev/v1${path}`, {
       method,
-      redirect: "error",
+      redirect: "manual",
       headers: {
         Authorization: authorization,
         "Content-Type": "application/json",
@@ -41,6 +41,11 @@ export function flyMachineApi({ app, token, fetchImpl = fetch }) {
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       signal: current,
     });
+    // Workers supports manual redirects, not redirect:error. Never forward the app credential elsewhere.
+    if (response.status >= 300 && response.status < 400) {
+      await response.body?.cancel();
+      throw nodeExecutionError("runtime_unavailable");
+    }
     const reader = response.body?.getReader();
     if (!reader)
       return { ok: response.ok, status: response.status, data: null };

@@ -216,7 +216,7 @@ test("Fly checks immutable identity, withholds source until ready and rejects ma
     throw Object.assign(new Error("request expired"), { name: "TimeoutError" });
   };
   await assert.rejects(machine.execute({ files: [] }, { input: {} }), {
-    code: "timeout",
+    code: "runtime_unavailable",
   });
   resources.request = async () =>
     ok({ state: "started", image_ref: { digest: "wrong" } });

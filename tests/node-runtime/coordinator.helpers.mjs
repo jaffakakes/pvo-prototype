@@ -3,26 +3,37 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
 import { bundleWorkerModules } from "../worker-bundle.helpers.mjs";
+import { NODE_RUNTIME } from "../../server/cloud-services/node/runtime.js";
 
 export const deferred = () => {
   let resolve;
   const promise = new Promise((r) => (resolve = r));
   return { promise, resolve };
 };
-let modules;
-export async function fixture(effect = async () => Response.json({})) {
-  modules ??= bundleWorkerModules({
-    stdin: {
-      resolveDir: process.cwd(),
-      contents: `
+const modules = new Map();
+export async function fixture(
+  effect = async () => Response.json({}),
+  { provider = false, configured = true } = {},
+) {
+  if (!modules.has(provider))
+    modules.set(
+      provider,
+      bundleWorkerModules({
+        stdin: {
+          resolveDir: process.cwd(),
+          contents: `
     import { ServiceNodeExecution } from './server/cloud-services/node/coordinator.js';
     export class TestExecution extends ServiceNodeExecution {
       now(){return this.clock??Date.now();}
       setTime(now){this.clock=now;}
-      containerAdapter(){const effect=async kind=>{const reply=await (await this.env.EFFECTS.fetch('https://effect.test',{method:'POST',body:JSON.stringify({kind})})).json();if(reply.fail)throw new Error('Controlled missing receipt');return reply;};return {
-        start:()=>effect('start'), ready:async check=>{check();},
+      ${
+        provider
+          ? ""
+          : `containerAdapter(){const effect=async kind=>{const reply=await (await this.env.EFFECTS.fetch('https://effect.test',{method:'POST',body:JSON.stringify({kind})})).json();if(reply.fail)throw new Error('Controlled missing receipt');return reply;};return {
+        start:id=>{this.save({...this.lease(),provider:{execution:id}});return effect('start');}, ready:async check=>{check();},
         execute:()=>effect('execute'),destroy:()=>effect('destroy'),
-      };}
+      };}`
+      }
       limits(){return {owner:2,platform:4};}
       sweep(){return this.alarm();}
       async diagnostic(){return {lease:this.lease(),usage:this.ctx.storage.sql.exec('SELECT * FROM node_usage').toArray(),receipts:this.ctx.storage.sql.exec('SELECT * FROM node_receipts').toArray(),alarm:await this.ctx.storage.getAlarm()};}
@@ -35,19 +46,28 @@ export async function fixture(effect = async () => Response.json({})) {
       if(kind==='cleanup'){await stub.sweep();return Response.json(await stub.diagnostic());}
       return Response.json(await stub.diagnostic());
     }};`,
-    },
-  });
+        },
+      }),
+    );
   const root = await mkdtemp(join(tmpdir(), "restyle-node-state-"));
   let mf;
   const start = async () => {
     mf = new Miniflare(
       await convertV4MiniflareOptions({
-        modules: await modules,
+        modules: await modules.get(provider),
         compatibilityDate: "2026-10-03",
         durableObjects: {
           RUNTIME: { className: "TestExecution", useSQLite: true },
         },
         serviceBindings: { EFFECTS: effect },
+        ...(provider ? { outboundService: effect } : {}),
+        bindings: configured
+          ? {
+              SERVICE_NODE_FLY_APP: "restyle-owned",
+              SERVICE_NODE_FLY_TOKEN: "fixture-private-token",
+              SERVICE_NODE_FLY_IMAGE: `registry.fly.io/restyle-owned@${NODE_RUNTIME.imageDigest}`,
+            }
+          : {},
         isolatedResourcePersistencePath: root,
         resourcePersistencePath: root,
       }),

@@ -21,22 +21,31 @@ export class FlyCommands {
       signal?.throwIfAborted();
       const remaining = deadline - this.clock.now();
       if (remaining <= 0)
-        throw new DOMException(
-          "Fly command admission timed out",
-          "TimeoutError",
-        );
+        throw Object.assign(nodeExecutionError("runtime_unavailable"), {
+          name: "TimeoutError",
+        });
       this.nextAt = this.clock.now() + 1100;
       const cmd = args
         .map((value) => "'" + value.replaceAll("'", "'\"'\"'") + "'")
         .join(" ");
       if (new TextEncoder().encode(cmd).length > 12000)
         throw nodeExecutionError("input_limit");
-      const response = await this.request(
-        "POST",
-        `${this.path}/exec`,
-        { cmd, timeout: Math.max(1, Math.ceil(remaining / 1000)) },
-        { timeoutMs: Math.min(15000, remaining), signal },
-      );
+      let response;
+      try {
+        response = await this.request(
+          "POST",
+          `${this.path}/exec`,
+          { cmd, timeout: Math.max(1, Math.ceil(remaining / 1000)) },
+          { timeoutMs: Math.min(15000, remaining), signal },
+        );
+      } catch (error) {
+        signal?.throwIfAborted();
+        // A lost transport reply is infrastructure uncertainty, not a failing generated-code test.
+        const unavailable = nodeExecutionError("runtime_unavailable");
+        if (["AbortError", "TimeoutError"].includes(error.name))
+          unavailable.name = error.name;
+        throw unavailable;
+      }
       signal?.throwIfAborted();
       if (!response.ok) throw nodeExecutionError("runtime_unavailable");
       const { data } = response;

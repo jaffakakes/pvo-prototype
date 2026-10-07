@@ -18,6 +18,8 @@ export class FlyNodeContainer {
     fetchImpl = fetch,
     clock = flyClock,
   }) {
+    if (!app || !token || !image)
+      throw nodeExecutionError("runtime_unavailable");
     if (image !== `registry.fly.io/${app}@${NODE_RUNTIME.imageDigest}`)
       throw nodeExecutionError("runtime_mismatch");
     this.request = flyMachineApi({ app, token, fetchImpl });

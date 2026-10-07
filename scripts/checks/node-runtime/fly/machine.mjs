@@ -185,7 +185,10 @@ export class FlyProofMachine {
         throw nodeExecutionError("input_limit");
       return await this.bridge({ path: "/execute", body }, this.executionMs);
     } catch (error) {
-      if (error.name === "TimeoutError" || error.name === "AbortError")
+      if (
+        !error.code &&
+        (error.name === "TimeoutError" || error.name === "AbortError")
+      )
         throw nodeExecutionError("timeout");
       throw error;
     }

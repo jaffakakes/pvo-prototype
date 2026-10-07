@@ -28,7 +28,7 @@ test("the product Fly adapter can reach only Machine operations inside its confi
       (call) =>
         call.url.startsWith(
           "https://api.machines.dev/v1/apps/restyle-owned/machines",
-        ) && call.options.redirect === "error",
+        ) && call.options.redirect === "manual",
     ),
   );
   for (const [method, path] of [
@@ -41,6 +41,27 @@ test("the product Fly adapter can reach only Machine operations inside its confi
   ])
     await assert.rejects(request(method, path), { code: "invalid_input" });
   assert.equal(calls.length, 6);
+});
+
+test("a provider redirect is rejected without forwarding credentials to its destination", async () => {
+  const calls = [];
+  const request = flyMachineApi({
+    app: "restyle-owned",
+    token: "fixture-private-token",
+    fetchImpl: async (url, options) => {
+      calls.push({ url, options });
+      return new Response(null, {
+        status: 307,
+        headers: { Location: "https://other.invalid" },
+      });
+    },
+  });
+  await assert.rejects(request("POST", "/apps/restyle-owned/machines", {}), {
+    code: "runtime_unavailable",
+  });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].options.redirect, "manual");
+  assert.equal(new URL(calls[0].url).origin, "https://api.machines.dev");
 });
 
 test("an unknown create outcome is never retried and aborted admission never sends credentials", async () => {

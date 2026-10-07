@@ -218,3 +218,8 @@ Full **1,541 tests**, strict types, nineteen Node cases and the updated provider
 ## Shared Fly transport preparation — 7 October 2026
 
 The successful cloud proof's byte-checked upload and paced commands now share code with the prepared product Fly adapter. Full **1,591 tests**, syntax, dependency and formatting checks pass locally, including lost start replies and cancellation before a late start. This is preparatory implementation: the current product still executes Dynamic Workers and beta is unchanged. The [progress checkpoint](../restyle-cloud-agent-progress.md) names the pending files and next durable-controller binding. All six remaining gates stay unchecked; the isolated eight-case provider proof and earlier 1E/1F evidence are preserved.
+
+
+## Durable Fly binding preparation — 7 October 2026
+
+The existing Node compute lease now owns the Fly create/start/destroy obligation, with no second service catalog. Full **1,598 tests** and all **76 Node runtime cases** pass, including actual local durable restarts with controlled provider replies. The product package, independent validation and hosting still use Dynamic Workers; deadlines, Fly accounting and final Node beta acceptance remain unfinished. See the [current checkpoint](../restyle-cloud-agent-progress.md). All six remaining gates remain unchecked.

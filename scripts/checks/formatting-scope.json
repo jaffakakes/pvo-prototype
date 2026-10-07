@@ -558,6 +558,7 @@
   "tests/node-runtime/fly-build.test.mjs",
   "tests/node-runtime/fly-commands.test.mjs",
   "tests/node-runtime/fly-container.test.mjs",
+  "tests/node-runtime/fly-coordinator.test.mjs",
   "tests/node-runtime/fly-lifecycle.test.mjs",
   "tests/node-runtime/fly.test.mjs",
   "tests/node-runtime/images.test.mjs",
