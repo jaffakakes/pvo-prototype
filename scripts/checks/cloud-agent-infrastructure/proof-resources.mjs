@@ -221,7 +221,7 @@ export async function prepareResources(
             ],
           }
         : {}),
-      ...(loaderBinding || kind !== "workspace"
+      ...(loaderBinding !== false && (loaderBinding || kind !== "workspace")
         ? { worker_loaders: [{ binding: loaderBinding ?? "LOADER" }] }
         : {}),
     };

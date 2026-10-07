@@ -5,8 +5,9 @@ import { flyFetch } from "./connection.mjs";
 export function flyBuildCredentials(
   token,
   resources,
-  { fetchImpl = fetch } = {},
+  { fetchImpl = fetch, expiry = "15m" } = {},
 ) {
+  assert.ok(["15m", "1h"].includes(expiry));
   const { report, save } = resources;
   const name = `restyle-image-${report.id}`;
   async function query(query, variables) {
@@ -67,7 +68,7 @@ export function flyBuildCredentials(
           organizationId: organization.id,
           profile: "deploy",
           profileParams: { app_id: report.app },
-          expiry: "15m",
+          expiry,
         },
       );
       const result = createLimitedAccessToken.limitedAccessToken;
