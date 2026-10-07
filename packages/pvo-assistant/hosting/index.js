@@ -24,3 +24,8 @@ export {
 } from "./controls.js";
 
 export { prepareReleaseActivation } from "./updates.js";
+export {
+  SERVICE_RECORD_LIMITS,
+  SERVICE_FAILURE_CODES,
+  parseServiceRecords,
+} from "./records.js";

@@ -42,66 +42,96 @@ export async function invokeHostedAction(host, serviceId, authority, value) {
     const publication = parseServicePublication(JSON.parse(row.body));
     const namespace =
       scope.namespace === "test" ? `test:${scope.releaseId}` : "live";
-    host.actions.admit(namespace, now);
-    const prior = replayServiceAction(
-      host.actions.receipt(namespace, action.actionId),
-      action,
-      digest,
-      scope.audience,
-    );
-    if (prior) return prior;
-    const snapshot = host.actions.data(
-      namespace,
-      publication.artifact.agreement.state.initial,
-    );
-    const invocation = prepareHostedInvocation(
-      publication.artifact.agreement,
-      action,
-      snapshot.state,
-      now,
-      scope.audience,
-    );
-    host.actions.admit(namespace, now, true);
-    const controller = new AbortController();
-    host.calls.active = { resourceId: scope.releaseId, controller };
     try {
-      const reply = checkedHostedReply(
-        publication.artifact.agreement,
-        invocation,
-        await host.executePackage(
-          publication.artifact.package,
-          invocation,
-          controller.signal,
-        ),
+      host.actions.admit(namespace, now);
+      const prior = replayServiceAction(
+        host.actions.receipt(namespace, action.actionId),
+        action,
+        digest,
+        scope.audience,
       );
-      return host.ctx.storage.transactionSync(() => {
-        const fresh = available(host, serviceId, authority);
-        if (
-          fresh.service.revision !== service.revision ||
-          fresh.scope.releaseId !== scope.releaseId ||
-          host.store.current(publication.identity, host.now())?.body === null
-        )
-          throw serviceCallError(
-            "state_changed",
-            "This service changed. Retry the same action.",
+      if (prior) return prior;
+      const snapshot = host.actions.data(
+        namespace,
+        publication.artifact.agreement.state.initial,
+      );
+      const invocation = prepareHostedInvocation(
+        publication.artifact.agreement,
+        action,
+        snapshot.state,
+        now,
+        scope.audience,
+      );
+      host.actions.admit(namespace, now, true);
+      const controller = new AbortController();
+      host.calls.active = { resourceId: scope.releaseId, controller };
+      try {
+        const reply = checkedHostedReply(
+          publication.artifact.agreement,
+          invocation,
+          await host.executePackage(
+            publication.artifact.package,
+            invocation,
+            controller.signal,
+          ),
+        );
+        return host.ctx.storage.transactionSync(() => {
+          const fresh = available(host, serviceId, authority);
+          if (
+            fresh.service.revision !== service.revision ||
+            fresh.scope.releaseId !== scope.releaseId ||
+            host.store.current(publication.identity, host.now())?.body === null
+          )
+            throw serviceCallError(
+              "state_changed",
+              "This service changed. Retry the same action.",
+            );
+          const receipt = {
+            actionId: action.actionId,
+            operation: action.operation,
+            inputDigest: digest,
+            audience: publication.artifact.agreement.operations.find(
+              (item) => item.name === action.operation,
+            ).audience,
+            releaseId: scope.releaseId,
+            result: reply.result,
+            createdAt: host.now(),
+          };
+          host.actions.commit(
+            namespace,
+            snapshot.version,
+            reply.state,
+            receipt,
           );
-        const receipt = {
-          actionId: action.actionId,
-          operation: action.operation,
-          inputDigest: digest,
-          audience: publication.artifact.agreement.operations.find(
-            (item) => item.name === action.operation,
-          ).audience,
-          releaseId: scope.releaseId,
-          result: reply.result,
-          createdAt: host.now(),
-        };
-        host.actions.commit(namespace, snapshot.version, reply.state, receipt);
-        return { actionId: action.actionId, result: reply.result };
-      });
-    } finally {
-      if (host.calls.active?.controller === controller)
-        host.calls.active = null;
+          return { actionId: action.actionId, result: reply.result };
+        });
+      } finally {
+        if (host.calls.active?.controller === controller)
+          host.calls.active = null;
+      }
+    } catch (error) {
+      // Diagnostics cannot replace a call's outcome or resurrect removed records.
+      try {
+        if (
+          host.store.service()?.state !== "deleted" &&
+          host.store.row(scope.releaseId)?.body
+        )
+          host.ctx.storage.transactionSync(() =>
+            host.actions.failure(
+              namespace,
+              action,
+              scope.releaseId,
+              error?.code,
+              host.now(),
+            ),
+          );
+      } catch {
+        console.error(
+          "Service failure diagnostic could not be saved",
+          serviceId,
+        );
+      }
+      throw error;
     }
   });
 }

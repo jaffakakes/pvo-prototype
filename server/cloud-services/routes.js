@@ -4,7 +4,7 @@ import { checkOrigin, HttpError, json, readJson } from "../http.js";
 import { HOSTED_SERVICE_LIMITS } from "../../packages/pvo-assistant/hosting/index.js";
 
 const servicePath =
-  /^\/api\/services\/(service-[a-f0-9]{64})(?:\/(try|operate|actions|activate|pause|delete|draft))?$/;
+  /^\/api\/services\/(service-[a-f0-9]{64})(?:\/(try|operate|actions|activate|pause|delete|reset_test|draft|records))?$/;
 const componentTryPath =
   /^\/api\/services\/(service-[a-f0-9]{64})\/releases\/(release-[a-f0-9]{64})\/try$/;
 function routeTarget(path) {
@@ -70,6 +70,7 @@ export async function hostedServiceRoute(request, env, config) {
     const reading =
       (list && !creating) ||
       target?.kind === null ||
+      target?.kind === "records" ||
       (draft && request.method === "GET");
     if (request.method !== (reading ? "GET" : "POST"))
       throw new HttpError(
@@ -131,7 +132,7 @@ export async function hostedServiceRoute(request, env, config) {
         : list
           ? { kind: "list" }
           : reading
-            ? { kind: "read", id }
+            ? { kind: kind === "records" ? "records" : "read", id }
             : { kind: "control", id, input };
     const result = await rpc(() =>
       env.ASSISTANT_TASKS.getByName(`owner:${owner.id}`).manageServices(

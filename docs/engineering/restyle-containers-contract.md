@@ -77,3 +77,10 @@ Provider facts checked against the [Container API](https://developers.cloudflare
 ## Verification and continuation
 
 1G.01 is a contract/documentation task: review this contract against actual service, release, task/workspace, validation and attachment owners; verify links and retain the recorded 1E/1F evidence. The later 1G.02–03 checkpoints verify saved drafts and manual/AI editing through beta. Next is 1G.04 hosted Node.js execution and provider acceptance. Keep every unverified implementation checkbox unchecked. Finish Roadmap 1 through beta only; user beta acceptance and production are separate later gates.
+
+
+## Records and cleanup checkpoint (7 October 2026)
+
+The existing host now serves a bounded owner-only records snapshot and daily operation/reply usage, with live data and each available release’s test data separated. Five recent saved results and eight safe failure codes are shown per area. Reads do not execute the program. Failure history retains only those eight entries until test-release cleanup or service deletion; input bodies and generated exceptions are never logged. See the [hosting contract](../../packages/pvo-assistant/hosting/README.md#private-records-and-allowed-cleanup).
+
+`reset_test` extends the existing revision-fenced control command, with an exact release ID and the same persistent retry receipt as pause/delete/activate. It restores only that release’s starting test records, retains usage and successful action identities, and fences unfinished commits. It cannot clear live records, remove replay protection or reactivate a paused Container. The UI confirms resets, pause and deletion and explains which effects editor Undo cannot reverse. Remaining cost/connection views and Node provider acceptance still have their own unchecked gates.

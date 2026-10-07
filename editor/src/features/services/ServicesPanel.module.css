@@ -126,3 +126,20 @@
   font-size: 0.85rem;
   line-height: 1.5;
 }
+.recordArea {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding-block: 12px;
+  border-top: 1px solid var(--q14);
+}
+.recordArea h5 {
+  margin: 0;
+  font-size: 13px;
+}
+.recordEvents {
+  padding-inline-start: 20px;
+}
+.recordEvents li + li {
+  margin-block-start: 12px;
+}
