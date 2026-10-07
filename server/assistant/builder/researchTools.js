@@ -2,6 +2,8 @@ import {
   parseBuilderResearch,
   parseBuilderResearchResult,
   serializeBuilderResearch,
+  builderResearchDefinitions,
+  createResearchEvidence,
 } from "../../../packages/pvo-assistant/builder/index.js";
 import { parseWorkspaceOperationId } from "../../../packages/pvo-assistant/workspaces/index.js";
 import { contentDigest } from "../../contentDigest.js";
@@ -11,11 +13,15 @@ import { withAssistantDeadline } from "../deadline.js";
 export function taskResearchTools(coordinator, claimed) {
   const provider = coordinator.researchProvider();
   return {
-    definitions: provider?.definitions ?? [],
+    definitions: [
+      ...(provider?.definitions ?? []),
+      ...builderResearchDefinitions(["web_evidence"]),
+    ],
     async execute(value, operationId) {
       const tool = parseBuilderResearch(value);
       parseWorkspaceOperationId(operationId);
-      if (!provider) throw new Error("Public research is unavailable.");
+      if (!provider && tool.kind !== "web_evidence")
+        throw new Error("Public research is unavailable.");
       const digest = await contentDigest(serializeBuilderResearch(tool));
       let row = await coordinator.transaction(() =>
         coordinator.research.begin(
@@ -51,6 +57,39 @@ export function taskResearchTools(coordinator, claimed) {
               signal.throwIfAborted();
               if (!coordinator.builders.current(claimed, coordinator.now()))
                 throw new DOMException("Task stopped", "AbortError");
+              if (tool.kind === "web_evidence") {
+                const source = coordinator.research.get(
+                  claimed.id,
+                  tool.sourceOperationId,
+                );
+                if (
+                  !source?.settled ||
+                  source.tool.kind !== "web_read" ||
+                  source.result?.status !== "completed"
+                )
+                  return {
+                    kind: tool.kind,
+                    status: "unavailable",
+                    result: null,
+                  };
+                const page = parseBuilderResearchResult(
+                  source.tool,
+                  source.result,
+                ).result;
+                try {
+                  return parseBuilderResearchResult(tool, {
+                    kind: tool.kind,
+                    status: "completed",
+                    result: createResearchEvidence(tool, page),
+                  });
+                } catch {
+                  return {
+                    kind: tool.kind,
+                    status: "unavailable",
+                    result: null,
+                  };
+                }
+              }
               return parseBuilderResearchResult(
                 tool,
                 await provider.execute(tool, signal),

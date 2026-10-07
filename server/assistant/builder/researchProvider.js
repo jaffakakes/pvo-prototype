@@ -1,5 +1,4 @@
 import {
-  BUILDER_RESEARCH_KINDS,
   BUILDER_RESEARCH_LIMITS,
   builderResearchDefinitions,
   parseBuilderResearch,
@@ -24,9 +23,11 @@ function truncate(value, maximum) {
 export function publicResearch({ fetch: send = globalThis.fetch } = {}) {
   if (typeof send !== "function") return null;
   return {
-    definitions: builderResearchDefinitions(BUILDER_RESEARCH_KINDS),
+    definitions: builderResearchDefinitions(["web_search", "web_read"]),
     async execute(value, signal) {
       const tool = parseBuilderResearch(value);
+      if (tool.kind === "web_evidence")
+        throw new Error("Evidence requires the saved task's source journal.");
       try {
         const options = { fetch: send, signal, timeoutMs: 10000 };
         const result =

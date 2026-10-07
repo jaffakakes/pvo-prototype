@@ -31,3 +31,4 @@ export {
 } from "./research.js";
 
 export { builderReviewRequest } from "./review.js";
+export { createResearchEvidence } from "./researchEvidence.js";

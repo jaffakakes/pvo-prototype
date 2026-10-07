@@ -4,7 +4,16 @@
 
 Last checkpoint: **8 October 2026**. Recheck Git and provider state before relying on the dated operational details below.
 
-## Current checkpoint — Roadmap 2 request interpretation clarified
+## Current checkpoint — 2A.01 implementation under verification
+
+**75/134 remain checked; 2A.01 remains unchecked until final verification and beta delivery.** Active branch `feature/restyle-research-connections`, checkout `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`, prerequisite `7c39533`. The user authorized starting 2A.01 after the request-based roadmap clarification.
+
+- **Pending source:** structured `web_evidence` in the existing durable research journal. Shared closed schema/types separate the agent's assessment from source URL/time/truncation supplied by the trusted same-task read. Exact excerpt checks, replay, no extra fetch/workshop, history and unchanged-progress handling are implemented. Builder research instructions follow the actual request; the touched builder prompt's stale Worker/no-Node sentence now matches the canonical pinned Node runtime.
+- **Checks so far:** full `npm run check` passes **1,615/1,615 tests**, including five new contract/planner/progress cases and three local Worker/SQLite lifecycle/runner cases; strict editor types pass. Logs `/tmp/restyle-research-full-check.log` and `/tmp/restyle-research-editor-types.log`. The first new-worktree run needed the existing WASM build; test fixtures were then corrected to use an allowed mocked public hostname and distinct task-creation IDs. The final prompt clarification is verified separately before commit. Beta delivery remains pending. No live model or external account action has been tested.
+- **Public-source evidence/resources:** no cloud resources, credentials or spending. The real public adapter read the [Calendar documentation](https://developers.google.com/workspace/calendar/api/v3/reference/freebusy/query); its exact source/time and three excerpts passed the new evidence contract. Separate controlled task tests verify persistence/restart. A supplemental combined live/Worker diagnostic launched from Node stdin stalled before emitting a result; it was stopped and its owned processes/storage removed, with no combined-pass claim. The standalone real adapter and controlled lifecycle results remain separate in [web research verification](web-search.md#verification--8-october-2026). Current beta remains `restyle-editor-shell-0aeb35ad18374509` on Desktop 4173. Preserve generated output and old assets before delivery. No production, integration merge, Actions or branch cleanup.
+- **Exact next:** finish full checks and the public-document evidence/restart proof, review the diff, commit this batch, build a beta combining the existing delivered beta with this source, verify actual served revision, then mark only 2A.01 complete. Next numbered task is 2A.02.
+
+## Previous checkpoint — Roadmap 2 request interpretation clarified
 
 The user asked to continue Roadmap 2, then clarified that the restaurant example must not determine the product's behavior. This documentation checkpoint makes the creator's actual goal govern research, questions, collected information, generated behavior, and independent success checks. **75/134 tasks remain checked; all 24 Roadmap 2 tasks remain unchecked.**
 

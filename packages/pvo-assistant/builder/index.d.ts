@@ -154,8 +154,33 @@ export function builderContext(value: BuilderState): {
   reviewFeedback: BuilderReviewFeedback | null;
 };
 
+export type ResearchAssessment = {
+  operation: string;
+  support: "documented" | "not_documented" | "unclear";
+  excerpts: string[];
+  accessRequirements: string[];
+  uncertainty: string[];
+  stillNeedsTesting: string[];
+};
+export type ResearchEvidenceRequest = ResearchAssessment & {
+  kind: "web_evidence";
+  sourceOperationId: string;
+};
+export type ResearchEvidence = {
+  source: {
+    operationId: string;
+    url: string;
+    title: string;
+    checkedAt: string;
+    truncated: boolean;
+  };
+  assessment: ResearchAssessment;
+  verification: "source_text_only";
+};
 export type BuilderResearch =
-  { kind: "web_search"; query: string } | { kind: "web_read"; url: string };
+  | { kind: "web_search"; query: string }
+  | { kind: "web_read"; url: string }
+  | ResearchEvidenceRequest;
 export const BUILDER_RESEARCH_KINDS: readonly BuilderResearch["kind"][];
 export const BUILDER_RESEARCH_LIMITS: Readonly<{
   queryBytes: number;
@@ -164,6 +189,7 @@ export const BUILDER_RESEARCH_LIMITS: Readonly<{
   textBytes: number;
 }>;
 export type BuilderResearchResult =
+  | { kind: "web_evidence"; status: "completed"; result: ResearchEvidence }
   | {
       kind: BuilderResearch["kind"];
       status: "unknown" | "unavailable";
@@ -192,6 +218,13 @@ export type BuilderResearchResult =
       };
     };
 export function parseBuilderResearch(value: unknown): BuilderResearch;
+export function createResearchEvidence(
+  value: ResearchEvidenceRequest,
+  page: Extract<
+    BuilderResearchResult,
+    { kind: "web_read"; status: "completed" }
+  >["result"],
+): ResearchEvidence;
 export function serializeBuilderResearch(value: unknown): string;
 export function parseBuilderResearchResult(
   tool: BuilderResearch,
