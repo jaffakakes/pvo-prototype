@@ -4,7 +4,7 @@
 
 ## Status — 7 October 2026
 
-**US$1 approved by the user at 08:09 UTC, 7 October 2026**, for the single diagnostic deployment below. **1G.04 is unchecked.** Four preparation/upload attempts stopped before any Worker/application/namespace creation; no runtime case passed. Owned upload processes, credentials and registry cleanup are verified. The host-network uploader is ready to retry within the same allowance. The existing product still runs generated services through Dynamic Workers. Preserve its completed 1E/1F evidence. This proof cannot by itself complete the replacement, manual publication, component connection or final beta acceptance.
+**US$1 approved by the user at 08:09 UTC, 7 October 2026**, for the single diagnostic deployment below. **1G.04 is unchecked.** Six preparation/upload attempts stopped before any Worker/application/namespace creation; no runtime case passed. Owned upload processes, credentials and registry cleanup are verified. The final host HTTP/1.1 transfer also failed; all attempts are cleaned up and provider selection is being reconsidered. The existing product still runs generated services through Dynamic Workers. Preserve its completed 1E/1F evidence. This proof cannot by itself complete the replacement, manual publication, component connection or final beta acceptance.
 
 In everyday terms: first verify that a disposable hosted computer can run the exact saved JavaScript, return an answer, and disappear without leaving private files or background programs behind. Then connect that proven execution effect to the existing service and independent tests.
 
@@ -94,3 +94,24 @@ Expanded dry run `.wrangler/cloud-agent-infrastructure/workspace-UmWuf0/report.j
 ### Host HTTP/2 transfer failure
 
 Run `49dd6f6fbd17f3768631571c`, journal `.wrangler/cloud-agent-infrastructure/workspace-O5pPHN/report.json`, failed on the large blob with a peer HTTP/2 protocol error before deployment. Initial namespace inventory timed out; cleanup-only recovery verified absence at 09:05:46 UTC. The next diagnostic selects HTTP/1.1 for crane using Go's [documented HTTP/2 switch](https://pkg.go.dev/net/http#hdr-HTTP_2); TLS and certificate verification remain enabled. Three focused transport/process checks pass. No Node case or task completion is claimed.
+
+
+## Final HTTP/1.1 transfer outcome
+
+Run `e91b5fb3ee3cdbef090e4316`, journal `.wrangler/cloud-agent-infrastructure/workspace-YaTlya/report.json`, ended with repeated `write: broken pipe` errors while uploading the large Node layer. The driver recorded the original failure before cleanup. All owned resource/image inventories and local credential/archive removal were verified at **09:16:37 UTC, 7 October 2026**; driver/upload processes are absent. No Worker/application/namespace or Node test execution occurred. The six recorded attempts therefore provide no hosted runtime acceptance. Provider-managed unreferenced blob collection and final billing remain outside these observations.
+
+## Provider reassessment — 7 October 2026
+
+The user explicitly says Cloudflare is optional and asks what works with Node.js. This is a researched shortlist, not a new implementation contract or a claim that a substitute has passed Restyle's acceptance tests.
+
+| Candidate | Documented capability | Restyle-specific work still required |
+| --- | --- | --- |
+| [Modal Sandboxes](https://modal.com/docs/guide/sandboxes) | Designed for untrusted user/agent code. Can use [public registry images](https://modal.com/docs/guide/existing-images), including a pinned Node runtime, with [outbound network blocking](https://modal.com/docs/guide/sandbox-networking). | Verify callable control API from the existing Cloudflare coordinator, immutable base/runner identity, launch/stop reconciliation, full guest cleanup, pricing and latency. Its JavaScript SDK documents Node/Deno/Bun support; do not assume Workers compatibility. A sandbox instance is temporary; Restyle retains service identity/code/data outside it. |
+| [Fly Machines](https://docs.fly.io/machines/overview) | API-controlled virtual machines; [Node.js support](https://docs.fly.io/js) and [remote image builds](https://docs.fly.io/reference/builders). | Prove generated-code network restrictions and owner isolation as well as exact image, termination, replay and cost controls. Plain ability to host Node does not complete those gates. |
+| [Render](https://render.com/docs/deploy-node-express-app) | Managed Node.js web services built from source. | Good conventional server hosting candidate; separately establish whether its control and isolation model fits per-owner generated-code execution before selecting it for that role. |
+
+**Recommendation for evaluation:** Modal is a promising next candidate because its documented sandbox controls match the isolated execution role. This is an architectural judgment, not a provider benchmark or final selection. Keep the current service registry, saved drafts, durable data, independent expected results and component protocol; replace the compute effect and its accounting/cleanup integration if the candidate passes. Do not add a parallel Container product or move all of Restyle solely to change generated-code execution.
+
+Cloudflare also documents [default-policy public registry images](https://developers.cloudflare.com/containers/guides/image-management/) and [native start/exec/network controls](https://developers.cloudflare.com/containers/api/durable-object-container/). Pulling an exact base image in the cloud and supplying the verified runner could avoid uploading the large runtime from this Mac. That design has not been implemented or tested. The observed failures establish a transfer problem, not a general inability to run Node or a proven provider outage.
+
+Before any replacement-provider paid test, prepare its exact executable plan, required secure account setup and dated cost estimate. The existing US$1 approval names the Cloudflare diagnostic; no funds or account signup have been transferred to another provider. Keep all six roadmap gates unchecked until their original behavior requirements pass.
