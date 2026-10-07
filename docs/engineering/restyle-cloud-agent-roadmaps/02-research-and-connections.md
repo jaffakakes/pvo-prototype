@@ -21,7 +21,7 @@ The creator's actual goal determines the plan. Restaurant bookings and the other
 
 ## 2A. Research the required capability
 
-- [ ] **2A.01** Extend the existing public web tools with structured evidence: source URL, time checked, supported operation, access requirements, uncertainty, and what still needs testing.
+- [x] **2A.01** Extend the existing public web tools with structured evidence: source URL, time checked, supported operation, access requirements, uncertainty, and what still needs testing.
 - [ ] **2A.02** Let the agent inspect the creator's available connection names and permissions without seeing credentials.
 - [ ] **2A.03** Record whether the next operation is available, needs account setup, needs new adapter code, requires a manual step, or remains unverified.
 - [ ] **2A.04** Check actual integration documentation and available access for the requested operation. A feature visible on a website does not establish permission to use its private API.
@@ -31,6 +31,8 @@ The creator's actual goal determines the plan. Restaurant bookings and the other
 **Finished when:** different requests produce relevant evidence, capability decisions, and focused questions under the acceptance cases above. The agent follows the creator's choice, reuses existing answers, and changes its plan when the request or evidence changes. Fixture tests cover each access/outcome branch; a real researched service verifies that the tools also work outside fixtures. Restaurant-specific success alone is insufficient.
 
 **Where to start:** [web tools](../../../server/web/routes.js), [web research design](../web-search.md), and [assistant web instructions](../../../server/assistant/native/webPrompt.js).
+
+**2A.01 evidence, 8 October 2026:** the saved-task planner now records `web_evidence` against an actual same-task page read, with platform-supplied provenance and separately labelled model interpretation. Closed fields, exact excerpts, task ownership, restart/replay, history, cleanup and the saved runner are tested. A real public documentation read is recorded separately from controlled lifecycle tests; no live account integration or model-quality gate is claimed. See [verification](../web-search.md#verification--8-october-2026) and [current progress](../restyle-cloud-agent-progress.md). The other 2A gates remain unchecked.
 
 ## 2B. Connect one external account securely
 
