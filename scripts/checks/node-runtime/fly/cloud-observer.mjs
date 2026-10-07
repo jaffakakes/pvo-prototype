@@ -35,7 +35,7 @@ export function cloudControllerConfiguration(options) {
 export async function observeCloudController(machine, resources) {
   const { report, save } = resources;
   const deadline = Date.now() + 540000;
-  const startupDeadline = Date.now() + 30000;
+  const startupDeadline = Date.now() + 120000;
   let startRequested = false;
   let hasStarted = false;
   let previousPhase;
@@ -55,7 +55,20 @@ export async function observeCloudController(machine, resources) {
       startRequested = true;
       report.controllerStartAttempted = true;
       await save();
-      await requireFly(resources.request, "POST", `${machine.path}/start`, {});
+      try {
+        await requireFly(
+          resources.request,
+          "POST",
+          `${machine.path}/start`,
+          {},
+        );
+      } catch (error) {
+        if (!["TypeError", "AbortError", "TimeoutError"].includes(error.name))
+          throw error;
+        // The start may have succeeded. Observe this exact Machine; never send another start.
+        report.controllerStartUncertain = true;
+        await save();
+      }
     } else if (state.state === "started") {
       hasStarted = true;
       let remote;
@@ -128,7 +141,7 @@ export async function observeCloudController(machine, resources) {
       );
     }
     if (!hasStarted && Date.now() > startupDeadline)
-      throw new Error("Cloud controller did not start within thirty seconds");
+      throw new Error("Cloud controller did not start within two minutes");
     await delay(1500);
   }
   throw new Error("Cloud proof outside deadline reached");

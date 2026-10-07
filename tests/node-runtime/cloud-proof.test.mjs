@@ -95,3 +95,55 @@ test("cloud proof discovers an uncertain create and preserves foreign Machines",
   await assert.rejects(resources.cleanup(), /Unexpected Machine/);
   assert.equal(calls.filter((call) => call.method === "DELETE").length, count);
 });
+
+test("cloud observation recovers a lost start reply without starting another controller", async () => {
+  const { observeCloudController } =
+    await import("../../scripts/checks/node-runtime/fly/cloud-observer.mjs");
+  const { NODE_RUNTIME } =
+    await import("../../server/cloud-services/node/runtime.js");
+  const report = {
+    id: "a".repeat(24),
+    app: "restyle-node-proof-" + "a".repeat(24),
+    sourceDigest: "b".repeat(64),
+    machines: [],
+  };
+  let starts = 0;
+  const resources = {
+    report,
+    save: async () => {},
+    request: async (method, path) => {
+      if (path.endsWith("/start")) {
+        starts++;
+        throw Object.assign(new Error("start reply lost"), {
+          name: "TimeoutError",
+        });
+      }
+      return {
+        ok: true,
+        status: 200,
+        data: {
+          state: starts ? "started" : "stopped",
+          image_ref: { digest: NODE_RUNTIME.baseImage.split("@")[1] },
+        },
+      };
+    },
+  };
+  const machine = {
+    path: "/apps/owned/machines/1234567890abcd",
+    record: { id: "1234567890abcd" },
+    command: async () =>
+      JSON.stringify({
+        ...report,
+        phase: "passed",
+        checks: [],
+        controllerId: "1234567890abcd",
+        runtimeCasesPassed: true,
+        runtimeCleanupVerified: true,
+        build: { sourceDigest: report.sourceDigest },
+      }),
+  };
+  await observeCloudController(machine, resources);
+  assert.equal(starts, 1);
+  assert.equal(report.controllerStartUncertain, true);
+  assert.equal(report.runtimeCasesPassed, true);
+});

@@ -254,13 +254,13 @@ test("Fly waits for initial creation to settle before starting a Machine", async
   let state = "created";
   let inspections = 0;
   let starts = 0;
+  let afterStart = 0;
   const resources = {
     path: "/apps/owned",
     request: async (method, path) => {
       if (path.endsWith("/start")) {
         assert.equal(state, "stopped");
         starts++;
-        state = "started";
         return ok({});
       }
       if (path.endsWith("/exec"))
@@ -274,6 +274,7 @@ test("Fly waits for initial creation to settle before starting a Machine", async
           }),
         });
       if (++inspections === 2) state = "stopped";
+      if (starts && ++afterStart === 2) state = "started";
       return ok({
         state,
         image_ref: { digest: NODE_RUNTIME.baseImage.split("@")[1] },
@@ -367,4 +368,42 @@ test("sandbox capability requires observed denial and privilege separation after
     },
   ])
     await assert.rejects(checkGvisor(machine(changed)), assert.AssertionError);
+});
+
+test("Fly execution dispatch stays small and cannot run a changed saved payload", async () => {
+  const { nodeExecutionBody } =
+    await import("../../server/cloud-services/node/container.js");
+  const calls = [];
+  const resources = {
+    path: "/apps/owned",
+    request: async (method, path, body) => {
+      calls.push(body);
+      return ok({
+        stdout: JSON.stringify({ status: 200, body: '{"result":"accepted"}' }),
+      });
+    },
+  };
+  const bundle = {
+    entrypoint: "src/main.mjs",
+    files: [{ path: "src/main.mjs", content: "//" + "x".repeat(100000) }],
+    dependencies: [],
+  };
+  const invocation = { input: { literal: "';$(not-a-command)" } };
+  const machine = new FlyProofMachine(
+    resources,
+    { id: "1234567890abcd" },
+    {
+      bridgePath: "/runtime/transport.mjs",
+      invocationBody: nodeExecutionBody(bundle, invocation),
+    },
+  );
+  assert.deepEqual(await machine.execute(bundle, invocation), {
+    result: "accepted",
+  });
+  assert.equal(calls[0].cmd, "'node' '/runtime/transport.mjs' '--execute'");
+  await assert.rejects(
+    machine.execute(bundle, { input: { literal: "changed" } }),
+    { code: "invalid_input" },
+  );
+  assert.equal(calls.length, 1);
 });

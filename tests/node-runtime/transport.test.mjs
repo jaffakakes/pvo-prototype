@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
-async function transport(events) {
+async function transport(events, body = null) {
   // Exercise the actual transport when process exit precedes pipe closure, as Node permits.
   const bootstrap = `
 import childProcess from 'node:child_process';
@@ -11,15 +11,16 @@ import fs from 'node:fs';
 import {EventEmitter} from 'node:events';
 import {syncBuiltinESMExports} from 'node:module';
 fs.writeFileSync=()=>{};
-childProcess.spawn=()=>{
+const originalRead=fs.readFileSync, originalStat=fs.statSync;
+const body=originalRead(0,"utf8")||null;
+fs.readFileSync=(path,...args)=>path==='/control/invocation.json'?body:originalRead(path,...args);
+fs.statSync=(path,...args)=>path==='/control/invocation.json'?{size:Buffer.byteLength(body)}:originalStat(path,...args);
+childProcess.spawn=(program,argumentsForSpawn)=>{
  const child=new EventEmitter();child.stdout=new EventEmitter();child.kill=()=>true;
  setTimeout(()=>{${events}},10);return child;
 };
 syncBuiltinESMExports();`;
-  const input = Buffer.from(JSON.stringify({ path: "/ready" })).toString(
-    "base64",
-  );
-  const { stdout } = await promisify(execFile)(
+  const running = promisify(execFile)(
     process.execPath,
     [
       "--import",
@@ -28,10 +29,12 @@ syncBuiltinESMExports();`;
         "../../server/cloud-services/node/guest/transport.mjs",
         import.meta.url,
       ).pathname,
-      input,
+      body === null ? "--ready" : "--execute",
     ],
     { timeout: 5000, maxBuffer: 512 * 1024 },
   );
+  running.child.stdin.end(body ?? "");
+  const { stdout } = await running;
   return JSON.parse(stdout);
 }
 
@@ -57,4 +60,23 @@ test("host transport rejects an incomplete reply and an unsuccessful child", asy
     ),
     { status: 503, body: "" },
   );
+});
+
+test("host transport preserves a maximum-size reply containing JSON escapes", async () => {
+  const reply = await transport(
+    `child.stdout.emit('data',Buffer.from(JSON.stringify({status:200,body:'\\u0000'.repeat(65536)})));child.emit('exit',0,null);child.emit('close',0,null);`,
+  );
+  assert.equal(reply.status, 200);
+  assert.equal(Buffer.byteLength(reply.body), 65536);
+});
+
+test("host transport loads the large saved invocation without putting it in the provider command", async () => {
+  const body = JSON.stringify({
+    literal: "日本語 '';$(not-a-command)".repeat(15000),
+  });
+  const reply = await transport(
+    `const start=argumentsForSpawn.indexOf('/runtime/bridge.mjs')+1; const actual=JSON.parse(Buffer.from(argumentsForSpawn.slice(start).join(''),'base64').toString('utf8')); if(actual.path!=='/execute'||actual.body!==body) throw new Error('Payload changed'); child.stdout.emit('data',Buffer.from('{"status":200,"body":"delivered"}')); child.emit('close',0,null);`,
+    body,
+  );
+  assert.deepEqual(reply, { status: 200, body: "delivered" });
 });

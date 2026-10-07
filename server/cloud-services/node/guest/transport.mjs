@@ -1,25 +1,20 @@
 import { spawn } from "node:child_process";
-import { writeFileSync, writeSync } from "node:fs";
+import { readFileSync, statSync, writeFileSync, writeSync } from "node:fs";
 import { sandboxFlags } from "./sandbox.mjs";
 
-// Trusted host transport permits only the fixed sandbox bridge. Input is data, never a command.
-const chunks = process.argv.slice(2);
-const encoded = chunks.join("");
-if (
-  chunks.some((chunk) => chunk.length > 65536) ||
-  encoded.length > 1600 * 1024 ||
-  !/^[A-Za-z0-9+/]*={0,2}$/.test(encoded)
-)
-  process.exit(2);
-const input = Buffer.from(encoded, "base64");
-if (input.length > 1200 * 1024 || input.toString("base64") !== encoded)
-  process.exit(2);
-const request = JSON.parse(input.toString("utf8"));
-if (
-  !["/ready", "/execute"].includes(request.path) ||
-  (request.path === "/execute" && typeof request.body !== "string")
-)
-  process.exit(2);
+// The provider command stays tiny. Source is data in one fixed host-only file, never a command.
+const [mode, ...extra] = process.argv.slice(2);
+if (extra.length || !["--ready", "--execute"].includes(mode)) process.exit(2);
+let request = { path: "/ready" };
+if (mode === "--execute") {
+  const path = "/control/invocation.json";
+  if (statSync(path).size > 1152 * 1024) process.exit(2);
+  request = { path: "/execute", body: readFileSync(path, "utf8") };
+}
+const input = Buffer.from(JSON.stringify(request));
+if (input.length > 1200 * 1024) process.exit(2);
+// Local argv avoids the provider's smaller command-body limit and Linux's per-argument ceiling.
+const chunks = input.toString("base64").match(/.{1,65536}/g) ?? [];
 
 // Host-only metadata makes interrupted transport diagnosable without retaining service data.
 const observation = {

@@ -20,6 +20,8 @@ export class FlyProofMachine {
       image = NODE_RUNTIME.baseImage,
       bridgePath = "/runtime/bridge.mjs",
       executionMs = NODE_LIMITS.executionMs,
+      preparationMs = NODE_LIMITS.startupMs,
+      invocationBody = null,
     } = {},
   ) {
     this.resources = resources;
@@ -28,11 +30,14 @@ export class FlyProofMachine {
     this.image = image;
     this.bridgePath = bridgePath;
     this.executionMs = executionMs;
+    this.preparationMs = preparationMs;
+    this.invocationBody = invocationBody;
   }
   async start() {
     const { request } = this.resources;
     const expected = this.image.split("@")[1];
-    const deadline = Date.now() + NODE_LIMITS.startupMs;
+    const startedAt = Date.now();
+    let deadline = startedAt + this.preparationMs;
     const remaining = () => {
       const value = deadline - Date.now();
       if (value <= 0) throw nodeExecutionError("startup_timeout");
@@ -40,6 +45,7 @@ export class FlyProofMachine {
     };
     try {
       let startRequested = false;
+      let hasStarted = false;
       for (;;) {
         const state = await requireFly(request, "GET", this.path, undefined, {
           timeoutMs: remaining(),
@@ -50,6 +56,9 @@ export class FlyProofMachine {
           "Fly resolved a different immutable runtime image",
         );
         if (state.state === "stopped" && !startRequested) {
+          this.preparedMs = Date.now() - startedAt;
+          deadline = Date.now() + NODE_LIMITS.startupMs;
+          startRequested = true;
           await requireFly(
             request,
             "POST",
@@ -57,10 +66,14 @@ export class FlyProofMachine {
             {},
             { timeoutMs: remaining() },
           );
-          startRequested = true;
           continue;
         }
         if (state.state === "started") {
+          if (!startRequested && !hasStarted) {
+            this.preparedMs = Date.now() - startedAt;
+            deadline = Date.now() + NODE_LIMITS.startupMs;
+          }
+          hasStarted = true;
           try {
             const ready = await this.bridge(
               { path: "/ready" },
@@ -78,7 +91,7 @@ export class FlyProofMachine {
           }
         }
         if (
-          (state.state === "stopped" && startRequested) ||
+          (state.state === "stopped" && hasStarted) ||
           ["destroyed", "failed"].includes(state.state)
         )
           throw new Error(
@@ -142,7 +155,11 @@ export class FlyProofMachine {
   async bridge(payload, timeoutMs = 4000) {
     const encoded = Buffer.from(JSON.stringify(payload)).toString("base64");
     const chunks = encoded.match(/.{1,65536}/g) ?? [];
-    const raw = await this.command(["node", this.bridgePath, ...chunks], {
+    const args =
+      this.invocationBody === null
+        ? chunks
+        : [payload.path === "/ready" ? "--ready" : "--execute"];
+    const raw = await this.command(["node", this.bridgePath, ...args], {
       timeoutMs,
     });
     let reply;
@@ -176,6 +193,8 @@ export class FlyProofMachine {
   async execute(bundle, invocation) {
     try {
       const body = nodeExecutionBody(bundle, invocation);
+      if (this.invocationBody !== null && body !== this.invocationBody)
+        throw nodeExecutionError("invalid_input");
       if (
         Buffer.byteLength(body) > NODE_LIMITS.requestBytes ||
         Buffer.byteLength(JSON.stringify(invocation)) >

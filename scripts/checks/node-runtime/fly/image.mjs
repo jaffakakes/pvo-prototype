@@ -16,6 +16,7 @@ export const IMAGE_PROOF = Object.freeze({
   builderRootfsGiB: 4,
   estimateUsd: 1,
   transportDeadlineMs: 5000,
+  imagePreparationMs: 120000,
 });
 
 export async function imageBuildFiles(app, token) {

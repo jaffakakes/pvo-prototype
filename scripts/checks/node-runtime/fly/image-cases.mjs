@@ -4,6 +4,7 @@ import { inspectRuntimeStartup } from "./startup.mjs";
 import { networkProbeProgram } from "./network.mjs";
 import { IMAGE_PROOF, runtimeConfiguration } from "./image.mjs";
 import { exerciseNode } from "../exercise.mjs";
+import { nodeExecutionBody } from "../../../../server/cloud-services/node/container.js";
 import { parseNodeBundle } from "../../../../packages/pvo-assistant/services/index.js";
 
 export async function runImageCases(resources) {
@@ -17,31 +18,42 @@ export async function runImageCases(resources) {
     report.checks.push(row);
     await save();
     console.log(`Checking ${label}`);
-    const record = await resources.createMachine([], (options) =>
-      runtimeConfiguration(report.build.image, options),
+    const bundle = parseNodeBundle({
+      entrypoint: "src/main.mjs",
+      files: [{ path: "src/main.mjs", content: source }, ...extraFiles],
+      dependencies,
+    });
+    const invocation = {
+      operation: "probe",
+      input: {},
+      state: { retained: "outside guest" },
+      now: 0,
+    };
+    const invocationBody = nodeExecutionBody(bundle, invocation);
+    const record = await resources.createMachine(
+      [
+        {
+          guest_path: "/control/invocation.json",
+          raw_value: Buffer.from(invocationBody).toString("base64"),
+        },
+      ],
+      (options) => runtimeConfiguration(report.build.image, options),
     );
     const machine = new FlyProofMachine(resources, record, {
       image: report.build.image,
       bridgePath: "/runtime/transport.mjs",
       executionMs: IMAGE_PROOF.transportDeadlineMs,
+      preparationMs: IMAGE_PROOF.imagePreparationMs,
+      invocationBody,
     });
     try {
       const startup = Date.now();
       await machine.start();
       row.startupMs = Date.now() - startup;
-      const bundle = parseNodeBundle({
-        entrypoint: "src/main.mjs",
-        files: [{ path: "src/main.mjs", content: source }, ...extraFiles],
-        dependencies,
-      });
+      row.imagePreparationMs = machine.preparedMs;
       let value;
       try {
-        value = await machine.execute(bundle, {
-          operation: "probe",
-          input: {},
-          state: { retained: "outside guest" },
-          now: 0,
-        });
+        value = await machine.execute(bundle, invocation);
         assert.equal(failure, null, "Expected execution failure did not occur");
       } catch (error) {
         if (!failure) throw error;
