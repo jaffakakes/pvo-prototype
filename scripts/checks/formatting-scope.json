@@ -593,5 +593,6 @@
   "scripts/checks/node-runtime/fly/network.mjs",
   "scripts/checks/node-runtime/fly/resources.mjs",
   "scripts/checks/node-runtime/fly/run.mjs",
-  "tests/node-runtime/fly.test.mjs"
+  "tests/node-runtime/fly.test.mjs",
+  "scripts/checks/node-runtime/fly/namespace.mjs"
 ]

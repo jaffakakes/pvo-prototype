@@ -59,7 +59,11 @@ export class FlyProofMachine {
             assert.equal(ready.runnerDigest, NODE_RUNTIME.runnerDigest);
             return;
           } catch (error) {
-            if (error.code !== "startup_pending") throw error;
+            if (
+              error.code !== "startup_pending" &&
+              !["AbortError", "TimeoutError"].includes(error.name)
+            )
+              throw error;
           }
         }
         if (

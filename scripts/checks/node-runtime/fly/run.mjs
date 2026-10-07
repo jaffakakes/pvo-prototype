@@ -8,13 +8,19 @@ import {
 } from "./config.mjs";
 import { flyProofResources } from "./resources.mjs";
 import { FlyProofMachine } from "./machine.mjs";
+import { checkLinuxIsolation } from "./namespace.mjs";
 import { checkFlyNetwork } from "./network.mjs";
 import { exerciseNode } from "../exercise.mjs";
 import { parseNodeBundle } from "../../../../packages/pvo-assistant/services/index.js";
 
 const [mode, org, journal] = process.argv.slice(2);
 assert.ok(
-  ["--dry-run", "--run-approved-fly-proof", "--cleanup"].includes(mode),
+  [
+    "--dry-run",
+    "--run-approved-fly-proof",
+    "--run-approved-namespace-proof",
+    "--cleanup",
+  ].includes(mode),
 );
 if (mode === "--cleanup") assert.ok(journal, "Supply the recorded report.json");
 const files = mode === "--cleanup" ? [] : await flyRunnerFiles();
@@ -91,45 +97,54 @@ try {
     report.plan.approved = true;
     await resources.save();
     await resources.createApp();
-    await withMachine(
-      "Network positive control (fixed diagnostic only)",
-      (machine) => checkFlyNetwork(machine, true),
-    );
-    await resources.restrictNetwork();
-    await withMachine("Direct IPv4/IPv6 TCP/UDP denial", (machine) =>
-      checkFlyNetwork(machine, false),
-    );
-    report.networkProbePassed = true;
-    await resources.save();
-    await exerciseNode(
-      (label, source, { dependencies = [], failure = null } = {}) =>
-        withMachine(label, async (machine) => {
-          const bundle = parseNodeBundle({
-            entrypoint: "src/main.mjs",
-            files: [{ path: "src/main.mjs", content: source }],
-            dependencies,
-          });
-          try {
-            const value = await machine.execute(bundle, {
-              operation: "probe",
-              input: {},
-              state: { retained: "outside guest" },
-              now: 0,
+    if (mode === "--run-approved-namespace-proof") {
+      report.namespaceCapability = await withMachine(
+        "Linux namespace capability (fixed program only)",
+        checkLinuxIsolation,
+      );
+      report.namespaceCapabilityPassed = true;
+      await resources.save();
+    } else {
+      await withMachine(
+        "Network positive control (fixed diagnostic only)",
+        (machine) => checkFlyNetwork(machine, true),
+      );
+      await resources.restrictNetwork();
+      await withMachine("Direct IPv4/IPv6 TCP/UDP denial", (machine) =>
+        checkFlyNetwork(machine, false),
+      );
+      report.networkProbePassed = true;
+      await resources.save();
+      await exerciseNode(
+        (label, source, { dependencies = [], failure = null } = {}) =>
+          withMachine(label, async (machine) => {
+            const bundle = parseNodeBundle({
+              entrypoint: "src/main.mjs",
+              files: [{ path: "src/main.mjs", content: source }],
+              dependencies,
             });
-            assert.equal(
-              failure,
-              null,
-              "Expected execution failure did not occur",
-            );
-            return value;
-          } catch (error) {
-            if (!failure) throw error;
-            assert.equal(error.code, failure);
-            return null;
-          }
-        }),
-    );
-    report.runtimeCasesPassed = true;
+            try {
+              const value = await machine.execute(bundle, {
+                operation: "probe",
+                input: {},
+                state: { retained: "outside guest" },
+                now: 0,
+              });
+              assert.equal(
+                failure,
+                null,
+                "Expected execution failure did not occur",
+              );
+              return value;
+            } catch (error) {
+              if (!failure) throw error;
+              assert.equal(error.code, failure);
+              return null;
+            }
+          }),
+      );
+      report.runtimeCasesPassed = true;
+    }
     report.estimate = {
       date: "2026-10-07",
       computeUpperBoundUsd:

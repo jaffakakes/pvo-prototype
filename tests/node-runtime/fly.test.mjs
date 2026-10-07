@@ -322,3 +322,33 @@ test("Fly guest bridge receives bounded UTF-8 input through encoded arguments", 
     body: "日本語 ';$(not-a-command)",
   });
 });
+
+test("Fly readiness retries a short transport timeout within the startup deadline", async () => {
+  let attempts = 0;
+  const resources = {
+    path: "/apps/owned",
+    request: async (method, path) => {
+      if (path.endsWith("/exec")) {
+        if (++attempts === 1)
+          throw Object.assign(new Error("temporary transport timeout"), {
+            name: "TimeoutError",
+          });
+        return ok({
+          stdout: JSON.stringify({
+            status: 200,
+            body: JSON.stringify({
+              nodeVersion: NODE_RUNTIME.nodeVersion,
+              runnerDigest: NODE_RUNTIME.runnerDigest,
+            }),
+          }),
+        });
+      }
+      return ok({
+        state: "started",
+        image_ref: { digest: NODE_RUNTIME.baseImage.split("@")[1] },
+      });
+    },
+  };
+  await new FlyProofMachine(resources, { id: "1234567890abcd" }).start();
+  assert.equal(attempts, 2);
+});
