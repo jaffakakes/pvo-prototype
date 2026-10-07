@@ -6,6 +6,14 @@ import type {
 } from "../releases/index.js";
 import type { ServiceJson, ServiceOperation } from "../services/index.js";
 import type { TaskReference } from "../tasks/index.js";
+export const SERVICE_ATTACHMENT_BYTES: number;
+export type PublishedServiceOperations = {
+  service: import("../hosting/index.js").HostedServiceRecord;
+  operations: ServiceAttachmentReceipt[];
+};
+export function parsePublishedServiceOperations(
+  value: unknown,
+): PublishedServiceOperations;
 
 export type ServiceInputBinding =
   | { kind: "literal"; value: ServiceJson }

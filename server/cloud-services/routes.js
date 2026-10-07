@@ -1,10 +1,11 @@
 import { SERVICE_DRAFT_LIMITS } from "../../packages/pvo-assistant/services/index.js";
+import { SERVICE_ATTACHMENT_BYTES } from "../../packages/pvo-assistant/attachments/index.js";
 import { getAccountSession } from "../auth/sessions.js";
 import { checkOrigin, HttpError, json, readJson } from "../http.js";
 import { HOSTED_SERVICE_LIMITS } from "../../packages/pvo-assistant/hosting/index.js";
 
 const servicePath =
-  /^\/api\/services\/(service-[a-f0-9]{64})(?:\/(try|operate|actions|activate|pause|delete|reset_test|draft|records))?$/;
+  /^\/api\/services\/(service-[a-f0-9]{64})(?:\/(try|operate|actions|activate|pause|delete|reset_test|draft|records|operations|attachment))?$/;
 const componentTryPath =
   /^\/api\/services\/(service-[a-f0-9]{64})\/releases\/(release-[a-f0-9]{64})\/try$/;
 function routeTarget(path) {
@@ -71,6 +72,7 @@ export async function hostedServiceRoute(request, env, config) {
       (list && !creating) ||
       target?.kind === null ||
       target?.kind === "records" ||
+      target?.kind === "operations" ||
       (draft && request.method === "GET");
     if (request.method !== (reading ? "GET" : "POST"))
       throw new HttpError(
@@ -91,9 +93,11 @@ export async function hostedServiceRoute(request, env, config) {
       ? null
       : await readJson(
           request,
-          draft
-            ? SERVICE_DRAFT_LIMITS.bytes + 1024
-            : HOSTED_SERVICE_LIMITS.requestBytes,
+          target?.kind === "attachment"
+            ? SERVICE_ATTACHMENT_BYTES
+            : draft
+              ? SERVICE_DRAFT_LIMITS.bytes + 1024
+              : HOSTED_SERVICE_LIMITS.requestBytes,
         );
     if (["try", "operate", "actions", "component_try"].includes(kind)) {
       let authority;
@@ -120,20 +124,28 @@ export async function hostedServiceRoute(request, env, config) {
     }
     if (typeof env.ASSISTANT_TASKS?.getByName !== "function")
       throw new HttpError(503, "Service management is unavailable.");
-    if (!reading && !creating && !draft && input?.kind !== kind)
+    if (
+      !reading &&
+      !creating &&
+      !draft &&
+      kind !== "attachment" &&
+      input?.kind !== kind
+    )
       throw new HttpError(
         400,
         "The service control does not match this operation.",
       );
-    const operation = creating
-      ? { kind: "create", input }
-      : draft
-        ? { kind: reading ? "readDraft" : "saveDraft", id, input }
-        : list
-          ? { kind: "list" }
-          : reading
-            ? { kind: kind === "records" ? "records" : "read", id }
-            : { kind: "control", id, input };
+    const operation = ["operations", "attachment"].includes(kind)
+      ? { kind, id, input }
+      : creating
+        ? { kind: "create", input }
+        : draft
+          ? { kind: reading ? "readDraft" : "saveDraft", id, input }
+          : list
+            ? { kind: "list" }
+            : reading
+              ? { kind: kind === "records" ? "records" : "read", id }
+              : { kind: "control", id, input };
     const result = await rpc(() =>
       env.ASSISTANT_TASKS.getByName(`owner:${owner.id}`).manageServices(
         owner.id,

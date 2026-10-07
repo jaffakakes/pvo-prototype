@@ -7,5 +7,5 @@ export {
 } from "./record.js";
 export { transitionTask } from "./transitions.js";
 export { parseTaskProposal, taskProposalSchema } from "./proposal.js";
-export { parseTaskReference } from "./reference.js";
+export { parseTaskReference, parseOwnedProjectLink } from "./reference.js";
 export { assertTaskExecution } from "./transition-guards.js";

@@ -12,7 +12,7 @@ The owner catalog in the task coordinator records publication intent and support
 
 An action contains exactly `{actionId,operation,input}`. IDs are bounded opaque identifiers. The trusted HTTP route supplies creator/public authority and test/live scope separately. Browser flags cannot select live mode, owner identity, saved state or time.
 
-- `POST /api/services/{serviceId}/releases/{releaseId}/try` is the component test route. The server derives `component_test` authority from the signed session and exact editor origin, requires the current selected test release, and admits only public operations. Payload flags cannot select live records or private creator operations; private creator receipts cannot be replayed here.
+- `POST /api/services/{serviceId}/releases/{releaseId}/try` is the component test route. The server derives `component_test` authority from the signed session and exact editor origin, requires the selected test release or the exact host-confirmed retained release, and admits only public operations. Payload flags cannot select live records or private creator operations; private creator receipts cannot be replayed here.
 - `POST /api/services/{serviceId}/try` requires the creator's signed session and the editor's exact origin. It uses the selected inactive test release and its own persistent test records.
 - `POST /api/services/{serviceId}/actions` admits only an active service's public operation surface. Its CORS permits exported-file/public-player calls and does not grant cookie-based creator permissions. Public requests never gain creator access from a cookie.
 - Public and private replies contain only `{actionId,result}`. Entire saved state, owner IDs, source and platform reports are not returned with an action.

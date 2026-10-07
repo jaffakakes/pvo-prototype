@@ -10,7 +10,7 @@ import {
   type ServiceReleaseIdentity,
 } from "../../../../packages/pvo-assistant/releases/index.js";
 import type { HostedServiceSummary } from "../../../../packages/pvo-assistant/hosting/index.js";
-import { ownedTaskReference } from "../assistant/taskProjectLink";
+import { ownedProjectReference } from "../assistant/taskProjectLink";
 import {
   prepareComponentTestRecovery,
   type ComponentTestScope,
@@ -48,7 +48,7 @@ export function prepareExportServices(
     }
   }
   if (!releases.size) return undefined;
-  const reference = ownedTaskReference(
+  const reference = ownedProjectReference(
     scope.assistantTaskLinks,
     scope.localId,
     scope.ownerId,

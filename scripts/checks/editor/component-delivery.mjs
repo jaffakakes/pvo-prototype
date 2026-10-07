@@ -12,6 +12,7 @@ export async function checkComponentDelivery({
   fixture,
   origin,
   page,
+  alreadyPublished = false,
 }) {
   const activations = [],
     errors = [];
@@ -78,50 +79,62 @@ export async function checkComponentDelivery({
     });
     const dialog = page.getByRole("dialog", { name: "Export", exact: true });
     await dialog.getByRole("button", { name: /Export and share/ }).click();
-    await page
-      .getByRole("heading", { name: "Export failed", exact: true })
-      .waitFor();
-    await page.evaluate(async () => {
-      window.deliveryArtifact = (
-        await import("/src/state/export/exportArtifactStore.ts")
-      ).useExportArtifact.getState().prepared.artifact;
-    });
-    assert.equal(activations.length, 1);
-    const lostReply = page.waitForEvent("requestfailed", {
-      predicate: (request) =>
-        new URL(request.url()).pathname.endsWith("/activate"),
-    });
-    await page.getByRole("button", { name: "Retry", exact: true }).click();
-    await lostReply;
-    await page
-      .getByRole("heading", { name: "Export failed", exact: true })
-      .waitFor();
-    assert.equal(activations.length, 2);
-    assert.deepEqual(
-      activations[0],
-      activations[1],
-      "Retry preserves the saved activation identity.",
-    );
-    await fixture.restart();
-    await page.getByRole("button", { name: "Retry", exact: true }).click();
     const share = page.locator("[data-share-panel]");
-    await share.waitFor();
-    await share
-      .getByText("Link sharing isn’t available yet.", { exact: true })
-      .waitFor();
-    assert.equal(
-      activations.length,
-      2,
-      "Read-back recovers committed activation without another POST.",
-    );
-    assert(
-      await page.evaluate(
-        async () =>
-          (
-            await import("/src/state/export/exportArtifactStore.ts")
-          ).useExportArtifact.getState().artifact === window.deliveryArtifact,
-      ),
-    );
+    if (!alreadyPublished) {
+      await page
+        .getByRole("heading", { name: "Export failed", exact: true })
+        .waitFor();
+      await page.evaluate(async () => {
+        window.deliveryArtifact = (
+          await import("/src/state/export/exportArtifactStore.ts")
+        ).useExportArtifact.getState().prepared.artifact;
+      });
+      assert.equal(activations.length, 1);
+      const lostReply = page.waitForEvent("requestfailed", {
+        predicate: (request) =>
+          new URL(request.url()).pathname.endsWith("/activate"),
+      });
+      await page.getByRole("button", { name: "Retry", exact: true }).click();
+      await lostReply;
+      await page
+        .getByRole("heading", { name: "Export failed", exact: true })
+        .waitFor();
+      assert.equal(activations.length, 2);
+      assert.deepEqual(
+        activations[0],
+        activations[1],
+        "Retry preserves the saved activation identity.",
+      );
+      await fixture.restart();
+      await page.getByRole("button", { name: "Retry", exact: true }).click();
+      await share.waitFor();
+      await share
+        .getByText("Link sharing isn’t available yet.", { exact: true })
+        .waitFor();
+      assert.equal(
+        activations.length,
+        2,
+        "Read-back recovers committed activation without another POST.",
+      );
+      assert(
+        await page.evaluate(
+          async () =>
+            (
+              await import("/src/state/export/exportArtifactStore.ts")
+            ).useExportArtifact.getState().artifact === window.deliveryArtifact,
+        ),
+      );
+    } else {
+      await share.waitFor();
+      await share
+        .getByText("Link sharing isn’t available yet.", { exact: true })
+        .waitFor();
+      assert.equal(
+        activations.length,
+        0,
+        "An already published Container does not need reactivation",
+      );
+    }
     const downloadEvent = page.waitForEvent("download");
     await share.locator("[data-download-again]").click();
     const download = await downloadEvent;
@@ -265,8 +278,8 @@ export async function checkComponentDelivery({
     );
     assert.equal(
       activations.length,
-      2,
-      "Publication never repeats a recovered activation.",
+      alreadyPublished ? 0 : 2,
+      "Publication never repeats an activation.",
     );
     const template = assets.get("/player/published.html").body.toString();
     const values = {
@@ -338,7 +351,9 @@ export async function checkComponentDelivery({
       .getByRole("button", { name: "Close export", exact: true })
       .click();
     console.log(
-      "Connected export: real render/package, failed activation, exact retry, lost committed reply, Worker restart, download with publishing disabled, private-field exclusion, cookie-free cross-origin live submission, pause-gated publication and exact upload retry passed.",
+      alreadyPublished
+        ? "Published Container connection: normal render/download, private-field exclusion, cookie-free cross-origin live submission, pause-gated publication and exact upload retry passed."
+        : "Connected export: real render/package, failed activation, exact retry, lost committed reply, Worker restart, download with publishing disabled, private-field exclusion, cookie-free cross-origin live submission, pause-gated publication and exact upload retry passed.",
     );
   } finally {
     await context.unroute(serviceRoutes, serviceHandler);

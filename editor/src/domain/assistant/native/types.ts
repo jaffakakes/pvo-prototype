@@ -29,6 +29,6 @@ export type NativePreparation = {
   signal?: { readonly aborted: boolean };
   /** Only actual completed tools registered by this task can supply tracking coordinates. */
   trackingEvidence?: readonly NativeTrackingEvidence[];
-  /** Only the authenticated saved-result workflow may supply this separate service receipt. */
+  /** Only authenticated saved-result or owned-Container workflows may supply this separate service receipt. */
   attachment?: ServiceAttachmentAuthorization;
 };

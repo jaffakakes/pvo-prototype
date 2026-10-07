@@ -31,6 +31,9 @@ export type TaskReference = {
   projectId: string;
   taskId: string;
 };
+export type OwnedProjectLink = Omit<TaskReference, "taskId"> & {
+  taskId: string | null;
+};
 export type TaskContext = {
   fingerprint: string;
   currentSceneId: string;
@@ -174,6 +177,7 @@ export const TASK_FAILURES: Readonly<
 >;
 export function parseTaskInput(value: unknown): TaskInput;
 export function parseTaskReference(value: unknown): TaskReference;
+export function parseOwnedProjectLink(value: unknown): OwnedProjectLink;
 export function parseTaskRecord(value: unknown): TaskRecord;
 export function createTask(
   input: unknown,

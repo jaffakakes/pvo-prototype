@@ -67,6 +67,7 @@ export function selectTestRelease(
 export function serviceCallScope(
   service: HostedServiceRecord | null,
   authority: ServiceCallAuthority,
+  requestedReleaseRetained?: boolean,
 ): ServiceCallScope;
 export function prepareHostedInvocation(
   agreement: ServiceAgreement,

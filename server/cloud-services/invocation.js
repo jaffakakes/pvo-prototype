@@ -14,7 +14,18 @@ function available(host, serviceId, authority) {
   const service = host.store.service();
   if (!service || service.identity.serviceId !== serviceId)
     throw serviceCallError("unavailable", "This service is unavailable.");
-  return { service, scope: serviceCallScope(service, authority) };
+  const requested =
+    authority.kind === "component_test"
+      ? host.store.row(authority.releaseId)
+      : null;
+  return {
+    service,
+    scope: serviceCallScope(
+      service,
+      authority,
+      !!(requested?.body && requested.retained),
+    ),
+  };
 }
 /** The route owns authority. Generated code receives only its validated invocation and never saves state itself. */
 export async function invokeHostedAction(host, serviceId, authority, value) {
