@@ -2,14 +2,22 @@
 // The provider's exec endpoint does not deliver stdin on the tested Machines path.
 // Arguments contain bounded base64 chunks, never executable source fragments.
 import { request as httpRequest } from "node:http";
-const encoded = process.argv.slice(2).join("");
-if (encoded.length > 1600 * 1024 || !/^[A-Za-z0-9+/]*={0,2}$/.test(encoded))
+const [mode, ...parts] = process.argv.slice(2);
+if (!["--ready", "--execute"].includes(mode)) process.exit(2);
+const encoded = parts.join("");
+if (
+  encoded.length > 1536 * 1024 ||
+  !/^[A-Za-z0-9+/]*={0,2}$/.test(encoded) ||
+  (mode === "--ready" && encoded.length)
+)
   process.exit(2);
 const input = Buffer.from(encoded, "base64");
-if (input.length > 1200 * 1024 || input.toString("base64") !== encoded)
+if (input.length > 1152 * 1024 || input.toString("base64") !== encoded)
   process.exit(2);
-const request = JSON.parse(input.toString("utf8"));
-if (!["/ready", "/execute"].includes(request.path)) process.exit(2);
+const request = {
+  path: mode === "--ready" ? "/ready" : "/execute",
+  body: input.toString("utf8"),
+};
 const signal = AbortSignal.timeout(2000);
 let finished = false;
 const finish = (status, body = "") => {

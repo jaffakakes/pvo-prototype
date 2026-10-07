@@ -8,7 +8,7 @@ export const IMAGE_PROOF = Object.freeze({
   region: "iad",
   maxMachines: 10,
   lifetimeMs: 60 * 60_000,
-  machineLifetimeSeconds: 120,
+  machineLifetimeSeconds: 180,
   memoryMiB: 1024,
   maxConcurrent: 2,
   builderMemoryMiB: 1024,
@@ -91,6 +91,7 @@ export function runtimeConfiguration(image, options) {
   const value = flyMachineConfiguration(options);
   value.config.image = image;
   value.config.guest.memory_mb = IMAGE_PROOF.memoryMiB;
+  value.config.init.exec[2] = String(IMAGE_PROOF.machineLifetimeSeconds);
   value.config.init.exec[4] = "/runtime/supervisor.mjs";
   return value;
 }

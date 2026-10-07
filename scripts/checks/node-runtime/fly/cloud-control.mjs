@@ -31,7 +31,29 @@ const save = async () => {
   await rename("/runtime/proof-status.next", "/runtime/proof-status.json");
 };
 await save();
-const resources = cloudProofResources(flyApi(token), report, save);
+const api = flyApi(token);
+const resources = cloudProofResources(
+  async (...args) => {
+    const result = await api(...args);
+    if (!result.ok && result.status !== 404) {
+      const reason =
+        typeof result.data?.error === "string" ? result.data.error : "";
+      report.providerFailure = {
+        method: args[0],
+        path: args[1],
+        status: result.status,
+        reason: reason
+          .replaceAll(token, "[redacted]")
+          .replaceAll(Buffer.from(token).toString("base64"), "[redacted]")
+          .slice(0, 2048),
+      };
+      await save();
+    }
+    return result;
+  },
+  report,
+  save,
+);
 async function build() {
   const child = spawn(process.execPath, ["/build-input/prepare.mjs"], {
     detached: true,

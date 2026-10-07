@@ -1,19 +1,44 @@
 import { spawn } from "node:child_process";
 import { readFileSync, statSync, writeFileSync, writeSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { sandboxFlags } from "./sandbox.mjs";
 
-// The provider command stays tiny. Source is data in one fixed host-only file, never a command.
+// The provider command stays tiny. Source is data in fixed host-only files, never a command.
 const [mode, ...extra] = process.argv.slice(2);
 if (extra.length || !["--ready", "--execute"].includes(mode)) process.exit(2);
 let request = { path: "/ready" };
 if (mode === "--execute") {
   const path = "/control/invocation.json";
-  if (statSync(path).size > 1152 * 1024) process.exit(2);
-  request = { path: "/execute", body: readFileSync(path, "utf8") };
+  if (statSync(path).size > 256) process.exit(2);
+  const manifest = JSON.parse(readFileSync(path, "utf8"));
+  if (
+    !Number.isInteger(manifest.parts) ||
+    manifest.parts < 1 ||
+    manifest.parts > 80 ||
+    !Number.isInteger(manifest.bytes) ||
+    manifest.bytes < 1 ||
+    manifest.bytes > 1152 * 1024 ||
+    !/^[a-f0-9]{64}$/.test(manifest.sha256)
+  )
+    process.exit(2);
+  const parts = [];
+  for (let index = 0; index < manifest.parts; index++) {
+    const partPath = `/control/invocation/${String(index).padStart(3, "0")}`;
+    if (statSync(partPath).size > (index === 0 ? 700000 : 6144))
+      process.exit(2);
+    parts.push(readFileSync(partPath));
+  }
+  const body = Buffer.concat(parts);
+  if (
+    body.length !== manifest.bytes ||
+    createHash("sha256").update(body).digest("hex") !== manifest.sha256
+  )
+    process.exit(2);
+  request = { path: "/execute", body: body.toString("utf8") };
 }
-const input = Buffer.from(JSON.stringify(request));
-if (input.length > 1200 * 1024) process.exit(2);
-// Local argv avoids the provider's smaller command-body limit and Linux's per-argument ceiling.
+const input = Buffer.from(request.body ?? "");
+if (input.length > 1152 * 1024) process.exit(2);
+// Encode admitted bytes once: JSON-encoding them again could double escaped source past Linux's argv limit.
 const chunks = input.toString("base64").match(/.{1,65536}/g) ?? [];
 
 // Host-only metadata makes interrupted transport diagnosable without retaining service data.
@@ -41,6 +66,7 @@ const child = spawn(
     "service",
     "/usr/local/bin/node",
     "/runtime/bridge.mjs",
+    mode,
     ...chunks,
   ],
   { stdio: ["ignore", "pipe", "ignore"], env: { PATH: "/usr/bin:/bin" } },

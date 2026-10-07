@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import { prepareFlyInput, uploadFlyInput } from "./input.mjs";
 import { FlyProofMachine } from "./machine.mjs";
 import { inspectRuntimeStartup } from "./startup.mjs";
 import { networkProbeProgram } from "./network.mjs";
@@ -30,14 +32,9 @@ export async function runImageCases(resources) {
       now: 0,
     };
     const invocationBody = nodeExecutionBody(bundle, invocation);
-    const record = await resources.createMachine(
-      [
-        {
-          guest_path: "/control/invocation.json",
-          raw_value: Buffer.from(invocationBody).toString("base64"),
-        },
-      ],
-      (options) => runtimeConfiguration(report.build.image, options),
+    const delivery = prepareFlyInput(invocationBody);
+    const record = await resources.createMachine(delivery.files, (options) =>
+      runtimeConfiguration(report.build.image, options),
     );
     const machine = new FlyProofMachine(resources, record, {
       image: report.build.image,
@@ -51,6 +48,10 @@ export async function runImageCases(resources) {
       await machine.start();
       row.startupMs = Date.now() - startup;
       row.imagePreparationMs = machine.preparedMs;
+      const uploadStarted = Date.now();
+      await uploadFlyInput(machine, delivery);
+      row.uploadMs = Date.now() - uploadStarted;
+      row.invocationBytes = Buffer.byteLength(invocationBody);
       let value;
       try {
         value = await machine.execute(bundle, invocation);
@@ -95,15 +96,24 @@ export function execute({state}){return {result:{network,uid:process.getuid(),ho
   assert.ok(
     boundary.result.status.some((line) => /^NoNewPrivs:\s+1$/.test(line)),
   );
+  const filler = "//" + "\\".repeat(50000);
   const bounded = await withRuntime(
-    "Large accepted source delivery",
-    `export function execute({state}){return {result:'delivered',state};}`,
+    "Large escaped source delivery",
+    `import {readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+export function execute({state}){return {result:Array.from({length:9},(_,index)=>{const bytes=readFileSync(new URL('./filler'+index+'.mjs',import.meta.url));return {bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')};}),state};}`,
     {
       extraFiles: Array.from({ length: 9 }, (_, index) => ({
         path: `src/filler${index}.mjs`,
-        content: "//" + "x".repeat(100000),
+        content: filler,
       })),
     },
   );
-  assert.equal(bounded.result, "delivered");
+  assert.deepEqual(
+    bounded.result,
+    Array(9).fill({
+      bytes: Buffer.byteLength(filler),
+      sha256: createHash("sha256").update(filler).digest("hex"),
+    }),
+  );
 }

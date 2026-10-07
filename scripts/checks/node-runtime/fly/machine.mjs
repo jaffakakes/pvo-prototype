@@ -22,6 +22,7 @@ export class FlyProofMachine {
       executionMs = NODE_LIMITS.executionMs,
       preparationMs = NODE_LIMITS.startupMs,
       invocationBody = null,
+      clock = { now: () => Date.now(), sleep: delay },
     } = {},
   ) {
     this.resources = resources;
@@ -32,6 +33,9 @@ export class FlyProofMachine {
     this.executionMs = executionMs;
     this.preparationMs = preparationMs;
     this.invocationBody = invocationBody;
+    this.clock = clock;
+    this.commandTail = Promise.resolve();
+    this.nextCommandAt = 0;
   }
   async start() {
     const { request } = this.resources;
@@ -105,7 +109,25 @@ export class FlyProofMachine {
       throw error;
     }
   }
-  async command(command, { timeoutMs = 4000 } = {}) {
+  command(command, { timeoutMs = 4000 } = {}) {
+    const deadline = this.clock.now() + timeoutMs;
+    const operation = this.commandTail.then(async () => {
+      const waiting = Math.max(0, this.nextCommandAt - this.clock.now());
+      if (waiting) await this.clock.sleep(waiting);
+      const remaining = deadline - this.clock.now();
+      if (remaining <= 0)
+        throw new DOMException(
+          "Fly command admission timed out",
+          "TimeoutError",
+        );
+      // The provider allows one exec per second per Machine. Include queue time in the outside deadline.
+      this.nextCommandAt = this.clock.now() + 1100;
+      return this.runCommand(command, remaining);
+    });
+    this.commandTail = operation.catch(() => {});
+    return operation;
+  }
+  async runCommand(command, timeoutMs) {
     const data = await requireFly(
       this.resources.request,
       "POST",
@@ -153,12 +175,10 @@ export class FlyProofMachine {
     return data.stdout;
   }
   async bridge(payload, timeoutMs = 4000) {
-    const encoded = Buffer.from(JSON.stringify(payload)).toString("base64");
+    const encoded = Buffer.from(payload.body ?? "").toString("base64");
     const chunks = encoded.match(/.{1,65536}/g) ?? [];
-    const args =
-      this.invocationBody === null
-        ? chunks
-        : [payload.path === "/ready" ? "--ready" : "--execute"];
+    const mode = payload.path === "/ready" ? "--ready" : "--execute";
+    const args = this.invocationBody === null ? [mode, ...chunks] : [mode];
     const raw = await this.command(["node", this.bridgePath, ...args], {
       timeoutMs,
     });

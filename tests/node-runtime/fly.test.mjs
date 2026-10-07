@@ -203,12 +203,7 @@ test("Fly checks immutable identity, withholds source until ready and rejects ma
   };
   const machine = new FlyProofMachine(resources, { id: "1234567890abcd" });
   await machine.start();
-  assert.equal(
-    bodies[0].cmd,
-    "'node' '/runtime/bridge.mjs' '" +
-      Buffer.from(JSON.stringify({ path: "/ready" })).toString("base64") +
-      "'",
-  );
+  assert.equal(bodies[0].cmd, "'node' '/runtime/bridge.mjs' '--ready'");
   assert.equal("stdin" in bodies[0], false);
   resources.request = async () =>
     ok({ exit_code: 0, stdout: JSON.stringify({ status: 999, body: "{}" }) });
@@ -406,4 +401,40 @@ test("Fly execution dispatch stays small and cannot run a changed saved payload"
     { code: "invalid_input" },
   );
   assert.equal(calls.length, 1);
+});
+
+test("Fly exec commands are paced per Machine and expired queued commands never dispatch", async () => {
+  let now = 0;
+  const calls = [];
+  const machine = new FlyProofMachine(
+    {
+      path: "/apps/owned",
+      request: async () => {
+        calls.push(now);
+        return ok({ stdout: "accepted" });
+      },
+    },
+    { id: "1234567890abcd" },
+    {
+      clock: {
+        now: () => now,
+        sleep: async (milliseconds) => {
+          now += milliseconds;
+        },
+      },
+    },
+  );
+  const results = await Promise.allSettled([
+    machine.command(["fixed"]),
+    machine.command(["expired"], { timeoutMs: 500 }),
+    machine.command(["fixed"]),
+    machine.command(["fixed"]),
+  ]);
+  assert.deepEqual(calls, [0, 1100, 2200]);
+  assert.equal(results[1].status, "rejected");
+  assert.equal(results[1].reason.name, "TimeoutError");
+  assert.equal(
+    results.filter((result) => result.status === "fulfilled").length,
+    3,
+  );
 });
