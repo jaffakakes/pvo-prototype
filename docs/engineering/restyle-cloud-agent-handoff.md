@@ -2,7 +2,19 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
-## Latest scope: finish Roadmap 1 through beta; five tasks remain
+## Latest scope: Roadmap 1 complete through beta
+
+**75/134 complete; no Roadmap 1 checkbox remains.** Continue from `origin/feature/restyle-containers`, [draft PR #106](https://github.com/jaffakakes/pvo-prototype/pull/106), or its verified successor. Local checkout: `/Users/christinasmacbook/.codex/worktrees/restyle-containers/pvo-prototype`. Source `ef1deaa` contains the final attachment-clock fix. The [current progress](restyle-cloud-agent-progress.md) records the final completion commit and checks; [integrated acceptance](restyle-node-product-acceptance.md#verified-result--7-october-2026) contains portable evidence.
+
+All 1A–1G and the twelve transferred management/update tasks are verified. Actual hosted Node/library execution, lost-publication recovery, durable replies, invalid/update/rollback behavior, editor/Try/export/two-player calls, forced compute interruption, retention, pause/delete and cleanup pass. Existing 1E/1F model-generated demonstration evidence remains preserved. A device-clock defect found by the live test is fixed and verified with a sixty-second clock difference.
+
+**Beta:** `restyle-editor-shell-0aeb35ad18374509`, built from combined `59dda41` and served by Desktop `dist/` on 4173. Served assets and activated service worker verified; old assets and generated output preserved, no forced reload. The local server is static: it has no configured service/task APIs. The cloud service path was verified in an isolated environment whose resources are now removed. Permanent hosting and production are separate deployment decisions.
+
+**Cleanup:** all three attempts’ Machines/apps/app keys are removed; both completed manifests are absent; diagnostic Workers/namespaces are removed. The organization test key is revoked and owned local credentials removed. Unrelated Lumo preserved. Provider blob collection and invoice total are not verified. Missing private journals on another machine is not a reason to repeat paid proofs.
+
+**Next task: 2A.01**, structured source/time/access/uncertainty evidence in the existing research tools. The current request ends at completed Roadmap 1; wait for the user's next implementation request. Preserve all 134 stable IDs and the existing authorities. Production remains explicitly prohibited until the whole roadmap is done, the user tests beta and gives release approval. No integration merge, Actions work or unreleased branch deletion is authorized.
+
+## Historical 1G checkpoints: finish Roadmap 1 through beta; five tasks remain
 
 Continue `feature/restyle-containers`, `/Users/christinasmacbook/.codex/worktrees/restyle-containers/pvo-prototype`, [draft PR #106](https://github.com/jaffakakes/pvo-prototype/pull/106). **70/134 complete; five tasks remain in Roadmap 1: 1G.04/05/06, 4C.06 and 1G.08.** The checked update/management controls are 4B.01–07 and 4C.01/02/04/05; 1G.01–03 and 1G.07 are also verified. These do not claim the Node execution replacement is complete.
 
