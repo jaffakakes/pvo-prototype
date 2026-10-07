@@ -29,3 +29,9 @@ export {
   SERVICE_FAILURE_CODES,
   parseServiceRecords,
 } from "./records.js";
+
+export {
+  SERVICE_CONNECTION_LIMITS,
+  parseServiceConnectionReport,
+  parseServiceConnections,
+} from "./connections.js";

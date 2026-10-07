@@ -1,3 +1,5 @@
+import { ownedHost } from "./ownership.js";
+import { checkRecordedConnections } from "./connections.js";
 import { parseServicePublication } from "../../packages/pvo-assistant/releases/index.js";
 import {
   parseServiceControl,
@@ -9,16 +11,6 @@ import {
 } from "../../packages/pvo-assistant/hosting/index.js";
 import { contentDigest } from "../contentDigest.js";
 
-export function ownedHost(host, serviceId, ownerId) {
-  const service = host.store.service();
-  if (
-    !service ||
-    service.identity.serviceId !== serviceId ||
-    service.identity.ownerId !== ownerId
-  )
-    throw serviceCallError("unavailable", "This service is unavailable.");
-  return service;
-}
 export function inspectHostedService(host, serviceId, ownerId) {
   ownedHost(host, serviceId, ownerId);
   host.store.expire(host.now());
@@ -93,6 +85,7 @@ export async function controlHostedService(host, serviceId, ownerId, value) {
         candidate,
         snapshot.state,
       );
+      checkRecordedConnections(host, candidate, snapshot.state);
       host.actions.initializeLive(state);
       host.store.retain(control.releaseId);
     }
@@ -117,6 +110,7 @@ export async function controlHostedService(host, serviceId, ownerId, value) {
       host.store.deleteReleases();
       host.actions.clearAll();
       host.drafts.clear();
+      host.connections.clear();
     }
     if (host.calls.active) host.calls.cancel(host.calls.active.resourceId);
     const receipt = {

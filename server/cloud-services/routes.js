@@ -1,11 +1,19 @@
+import { ownedPublication } from "../publishing/repository.js";
+import {
+  object,
+  id as opaqueId,
+} from "../../packages/pvo-assistant/tasks/validation.js";
 import { SERVICE_DRAFT_LIMITS } from "../../packages/pvo-assistant/services/index.js";
 import { SERVICE_ATTACHMENT_BYTES } from "../../packages/pvo-assistant/attachments/index.js";
 import { getAccountSession } from "../auth/sessions.js";
 import { checkOrigin, HttpError, json, readJson } from "../http.js";
-import { HOSTED_SERVICE_LIMITS } from "../../packages/pvo-assistant/hosting/index.js";
+import {
+  HOSTED_SERVICE_LIMITS,
+  SERVICE_CONNECTION_LIMITS,
+} from "../../packages/pvo-assistant/hosting/index.js";
 
 const servicePath =
-  /^\/api\/services\/(service-[a-f0-9]{64})(?:\/(try|operate|actions|activate|pause|delete|reset_test|draft|records|operations|attachment))?$/;
+  /^\/api\/services\/(service-[a-f0-9]{64})(?:\/(try|operate|actions|activate|pause|delete|reset_test|draft|records|operations|attachment|connections|publication))?$/;
 const componentTryPath =
   /^\/api\/services\/(service-[a-f0-9]{64})\/releases\/(release-[a-f0-9]{64})\/try$/;
 function routeTarget(path) {
@@ -73,6 +81,7 @@ export async function hostedServiceRoute(request, env, config) {
       target?.kind === null ||
       target?.kind === "records" ||
       target?.kind === "operations" ||
+      (target?.kind === "connections" && request.method === "GET") ||
       (draft && request.method === "GET");
     if (request.method !== (reading ? "GET" : "POST"))
       throw new HttpError(
@@ -93,11 +102,13 @@ export async function hostedServiceRoute(request, env, config) {
       ? null
       : await readJson(
           request,
-          target?.kind === "attachment"
-            ? SERVICE_ATTACHMENT_BYTES
-            : draft
-              ? SERVICE_DRAFT_LIMITS.bytes + 1024
-              : HOSTED_SERVICE_LIMITS.requestBytes,
+          target?.kind === "connections"
+            ? SERVICE_CONNECTION_LIMITS.requestBytes
+            : target?.kind === "attachment"
+              ? SERVICE_ATTACHMENT_BYTES
+              : draft
+                ? SERVICE_DRAFT_LIMITS.bytes + 1024
+                : HOSTED_SERVICE_LIMITS.requestBytes,
         );
     if (["try", "operate", "actions", "component_try"].includes(kind)) {
       let authority;
@@ -128,24 +139,48 @@ export async function hostedServiceRoute(request, env, config) {
       !reading &&
       !creating &&
       !draft &&
-      kind !== "attachment" &&
+      !["attachment", "connections", "publication"].includes(kind) &&
       input?.kind !== kind
     )
       throw new HttpError(
         400,
         "The service control does not match this operation.",
       );
-    const operation = ["operations", "attachment"].includes(kind)
-      ? { kind, id, input }
-      : creating
-        ? { kind: "create", input }
-        : draft
-          ? { kind: reading ? "readDraft" : "saveDraft", id, input }
-          : list
-            ? { kind: "list" }
-            : reading
-              ? { kind: kind === "records" ? "records" : "read", id }
-              : { kind: "control", id, input };
+    let publication;
+    if (kind === "publication") {
+      try {
+        object(input, ["exportId", "publicationId"], "Published connection");
+        opaqueId(input.exportId, "Export reference");
+        opaqueId(input.publicationId, "Publication reference");
+      } catch {
+        throw new HttpError(400, "The published connection report is invalid.");
+      }
+      const row = await ownedPublication(env.DB, input.publicationId, owner.id);
+      if (row.status !== "ready" || row.format !== "pvo")
+        throw new HttpError(409, "The published PVO is not ready.");
+      publication = { id: row.id, title: row.title };
+    }
+    const operation =
+      kind === "publication"
+        ? {
+            kind: "recordPublication",
+            id,
+            exportId: input.exportId,
+            publication,
+          }
+        : kind === "connections"
+          ? { kind: reading ? "connections" : "recordConnections", id, input }
+          : ["operations", "attachment"].includes(kind)
+            ? { kind, id, input }
+            : creating
+              ? { kind: "create", input }
+              : draft
+                ? { kind: reading ? "readDraft" : "saveDraft", id, input }
+                : list
+                  ? { kind: "list" }
+                  : reading
+                    ? { kind: kind === "records" ? "records" : "read", id }
+                    : { kind: "control", id, input };
     const result = await rpc(() =>
       env.ASSISTANT_TASKS.getByName(`owner:${owner.id}`).manageServices(
         owner.id,

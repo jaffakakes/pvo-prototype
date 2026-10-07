@@ -1,3 +1,9 @@
+import { ServiceConnectionStore } from "./connectionStore.js";
+import {
+  inspectServiceConnections,
+  reportServiceConnections,
+  recordServicePublication,
+} from "./connections.js";
 import { DraftWriters } from "./draftWriters.js";
 import { inspectServiceRecords } from "./records.js";
 import {
@@ -40,6 +46,7 @@ export class HostedService extends DurableObject {
     this.actions = new ServiceActionStore(ctx.storage.sql);
     this.calls = new ServiceCallQueue();
     this.controls = new ServiceControlStore(ctx.storage.sql);
+    this.connections = new ServiceConnectionStore(ctx.storage.sql);
   }
   now() {
     return Date.now();
@@ -186,6 +193,28 @@ export class HostedService extends DurableObject {
     return hostedReply(() =>
       this.ctx.storage.transactionSync(() =>
         resolvePublishedAttachment(this, serviceId, ownerId, input),
+      ),
+    );
+  }
+  connectionReport(serviceId, ownerId, value = null) {
+    return hostedReply(() =>
+      this.ctx.storage.transactionSync(() =>
+        value === null
+          ? inspectServiceConnections(this, serviceId, ownerId)
+          : reportServiceConnections(this, serviceId, ownerId, value),
+      ),
+    );
+  }
+  recordPublication(serviceId, ownerId, exportId, publication) {
+    return hostedReply(() =>
+      this.ctx.storage.transactionSync(() =>
+        recordServicePublication(
+          this,
+          serviceId,
+          ownerId,
+          exportId,
+          publication,
+        ),
       ),
     );
   }

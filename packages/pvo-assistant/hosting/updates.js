@@ -40,7 +40,7 @@ export function prepareReleaseActivation(previous, candidate, state) {
   } catch {
     throw serviceCallError(
       "incompatible_version",
-      "This version cannot use the existing service contract or records. The current version is unchanged.",
+      "This version cannot use the existing service contract or records. Plan changes to saved records as a separate data-change task. The current version is unchanged.",
     );
   }
 }

@@ -169,3 +169,44 @@ export function prepareReleaseActivation(
   candidate: ServiceAgreement,
   state: unknown,
 ): import("../services/index.js").ServiceJson;
+
+export const SERVICE_CONNECTION_LIMITS: Readonly<{
+  records: number;
+  exports: number;
+  components: number;
+  publications: number;
+  requestBytes: number;
+  storedBytes: number;
+  bytes: number;
+}>;
+export type ServiceConnectedComponent = {
+  sceneId: string;
+  sceneName: string;
+  componentId: string;
+  componentName: string;
+  releaseId: string;
+  operation: string;
+};
+export type ServiceConnectionReport = {
+  kind: "project" | "export";
+  referenceId: string;
+  projectId: string;
+  title: string;
+  expectedRevision: number;
+  components: ServiceConnectedComponent[];
+};
+export type ServiceConnectionRecord = {
+  report: ServiceConnectionReport;
+  revision: number;
+  recordedAt: number;
+  publications: { id: string; title: string; recordedAt: number }[];
+};
+export type ServiceConnections = {
+  service: HostedServiceRecord;
+  observedAt: number;
+  records: ServiceConnectionRecord[];
+};
+export function parseServiceConnectionReport(
+  value: unknown,
+): ServiceConnectionReport;
+export function parseServiceConnections(value: unknown): ServiceConnections;

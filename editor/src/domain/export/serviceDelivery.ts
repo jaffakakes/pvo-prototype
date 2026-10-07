@@ -1,3 +1,4 @@
+import { componentConnectionLabels } from "../services/connectionReports";
 import {
   matchesComponentServiceRequest,
   parseComponentServiceConnection,
@@ -25,6 +26,10 @@ export type ExportServicePlan = {
   projectId: string;
   origin: string;
   releases: ServiceReleaseIdentity[];
+  connections: {
+    serviceId: string;
+    components: import("../../../../packages/pvo-assistant/hosting/index.js").ServiceConnectedComponent[];
+  }[];
 };
 
 export function prepareExportServices(
@@ -32,6 +37,10 @@ export function prepareExportServices(
   scope: ComponentTestScope,
 ): ExportServicePlan | undefined {
   const releases = new Map<string, ServiceReleaseIdentity>();
+  const connections = new Map<
+    string,
+    import("../../../../packages/pvo-assistant/hosting/index.js").ServiceConnectedComponent[]
+  >();
   for (const scene of snapshot.scenes) {
     for (const component of scene.components) {
       if (!component.serviceConnection) continue;
@@ -45,6 +54,15 @@ export function prepareExportServices(
           "Components use different versions of the same service. Reconnect them before exporting.",
         );
       releases.set(identity.serviceId, identity);
+      const components = connections.get(identity.serviceId) ?? [];
+      components.push({
+        ...componentConnectionLabels(scene.name, component),
+        sceneId: scene.id,
+        componentId: component.id,
+        releaseId: identity.resourceId,
+        operation: selected.connection.connection.operation,
+      });
+      connections.set(identity.serviceId, components);
     }
   }
   if (!releases.size) return undefined;
@@ -61,6 +79,10 @@ export function prepareExportServices(
     projectId: reference.projectId,
     origin: scope.origin,
     releases: [...releases.values()],
+    connections: [...connections].map(([serviceId, components]) => ({
+      serviceId,
+      components,
+    })),
   };
 }
 

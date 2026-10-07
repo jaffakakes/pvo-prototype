@@ -464,6 +464,7 @@ export async function taskFixture({
     };
     return {
       request,
+      database: () => mf.getD1Database("DB"),
       cookie,
       otherCookie,
       project: (localId = "local-draft", options = {}) =>

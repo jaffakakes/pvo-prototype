@@ -565,5 +565,18 @@
   "tests/service-validation/report.test.mjs",
   "tests/service-validation/runtime.test.mjs",
   "tests/service-validation/task.helpers.mjs",
-  "tests/service-validation/task.test.mjs"
+  "tests/service-validation/task.test.mjs",
+  "packages/pvo-assistant/hosting/connections.js",
+  "server/cloud-services/connectionStore.js",
+  "server/cloud-services/connections.js",
+  "server/cloud-services/ownership.js",
+  "tests/service-actions/connections.test.mjs",
+  "editor/src/domain/services/connectionReports.ts",
+  "editor/src/infrastructure/services/connections.ts",
+  "editor/src/state/services/connectionSync.ts",
+  "editor/src/features/services/connectionSyncWorkflow.ts",
+  "editor/src/features/services/useConnectionSync.ts",
+  "editor/src/features/services/exportConnections.ts",
+  "editor/src/features/services/ContainerUses.tsx",
+  "tests/service-delivery/connections.test.mjs"
 ]

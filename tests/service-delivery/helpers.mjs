@@ -8,6 +8,8 @@ const bundle = buildSync({
   stdin: {
     contents: `
     export * from "./editor/src/domain/export/serviceDelivery.ts";
+    export * from "./editor/src/domain/services/connectionReports.ts";
+    export * from "./editor/src/features/services/connectionSyncWorkflow.ts";
     export * from "./editor/src/features/export/activateExportServices.ts";
     export { buildPvoManifest } from "./editor/src/domain/export/manifest.ts";
     export * from "./editor/src/domain/publishing/exportSnapshot.ts";

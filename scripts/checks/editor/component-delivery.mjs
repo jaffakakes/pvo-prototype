@@ -232,6 +232,28 @@ export async function checkComponentDelivery({
       }
       if (path.endsWith("/content")) {
         uploads.push(request.postDataBuffer());
+        if (uploads.length > 1) {
+          const db = await fixture.database();
+          await db
+            .prepare(
+              `INSERT INTO publications(id,owner_id,idempotency_key,title,filename,format,content_type,bytes,created_at,expires_at,status)
+            VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET status='ready'`,
+            )
+            .bind(
+              publication.id,
+              identity.ownerId,
+              publication.id,
+              reservations[0].title,
+              reservations[0].filename,
+              "pvo",
+              reservations[0].contentType,
+              uploads[1].length,
+              Date.now(),
+              Date.now() + 86400000,
+              "ready",
+            )
+            .run();
+        }
         return route.fulfill({
           status: uploads.length === 1 ? 503 : 200,
           json:
@@ -267,6 +289,18 @@ export async function checkComponentDelivery({
       .getByRole("textbox", { name: "Published PVO link", exact: true })
       .waitFor();
     assert.equal(reservations.length, 2);
+    const recorded = await fixture.request(
+      `/api/services/${identity.serviceId}/connections`,
+    );
+    expectStatus(recorded, 200);
+    const exportedUse = recorded.body.records.find(
+      (record) => record.report.kind === "export",
+    );
+    assert.equal(exportedUse.report.components[0].operation, "join");
+    assert.deepEqual(
+      exportedUse.publications.map((link) => link.id),
+      [publication.id],
+    );
     assert.equal(
       reservations[0].idempotencyKey,
       reservations[1].idempotencyKey,

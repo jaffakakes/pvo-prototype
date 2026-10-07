@@ -249,6 +249,120 @@ try {
     page,
     alreadyPublished: true,
   });
+  await page.waitForFunction(
+    async () =>
+      (
+        await import("/src/state/services/connectionSync.ts")
+      ).useConnectionSync.getState().phase === "saved",
+  );
+  let dependencies = (
+    await fixture.request(
+      `/api/services/${service.identity.serviceId}/connections`,
+    )
+  ).body;
+  assert.equal(
+    dependencies.records.find((record) => record.report.kind === "project")
+      .report.components.length,
+    1,
+  );
+  assert.equal(
+    dependencies.records.find((record) => record.report.kind === "export")
+      .publications.length,
+    1,
+  );
+  await page.evaluate(() =>
+    window.resultProbe.useCapture.getState().patch({ sheet: "more" }),
+  );
+  await page
+    .getByRole("button", { name: "Open Containers", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Connections and exports", exact: true })
+    .click();
+  const uses = page.getByRole("region", {
+    name: "Container connections and exports",
+    exact: true,
+  });
+  await uses
+    .getByText("Project: Existing Container", { exact: true })
+    .waitFor();
+  await uses.locator("details").last().locator("summary").click();
+  await uses.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "/tmp/restyle-container-uses-desktop.png" });
+  let removalReports = 0;
+  const removalRoute = `**/api/services/${service.identity.serviceId}/connections`;
+  const loseRemoval = async (route) => {
+    const request = route.request(),
+      body = request.postData() ? request.postDataJSON() : null;
+    if (body?.kind === "project" && body.components.length === 0) {
+      removalReports++;
+      const saved = await fixture.request(new URL(request.url()).pathname, {
+        body,
+      });
+      expectStatus(saved, 200);
+      return route.abort("connectionfailed");
+    }
+    return route.fallback();
+  };
+  await context.route(removalRoute, loseRemoval);
+  await page.evaluate(
+    (id) => window.resultProbe.useCapture.getState().deleteComponent(id),
+    local.id,
+  );
+  await uses
+    .getByRole("button", { name: "Retry connection report", exact: true })
+    .waitFor();
+  await context.unroute(removalRoute, loseRemoval);
+  await fixture.restart();
+  await uses
+    .getByRole("button", { name: "Retry connection report", exact: true })
+    .click();
+  await page.waitForFunction(
+    async () =>
+      (
+        await import("/src/state/services/connectionSync.ts")
+      ).useConnectionSync.getState().phase === "saved",
+  );
+  assert.equal(
+    removalReports,
+    1,
+    "Lost committed removal report recovers by read-back after restart",
+  );
+  dependencies = (
+    await fixture.request(
+      `/api/services/${service.identity.serviceId}/connections`,
+    )
+  ).body;
+  assert.equal(
+    dependencies.records.find((record) => record.report.kind === "project")
+      .report.components.length,
+    0,
+  );
+  assert.equal(
+    dependencies.records.find((record) => record.report.kind === "export")
+      .report.components.length,
+    1,
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page
+    .getByRole("button", { name: "Open Containers", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Connections and exports", exact: true })
+    .click();
+  await uses
+    .getByText("Project: Existing Container", { exact: true })
+    .waitFor();
+  await page.screenshot({ path: "/tmp/restyle-container-uses-phone.png" });
+  assert.equal(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > innerWidth,
+    ),
+    false,
+  );
+  console.log(
+    "Recorded project/export/published-link dependencies survive local removal; automatic saved reports and desktop/phone management view passed.",
+  );
   assert.deepEqual(errors, []);
   console.log(
     "Existing Container connection passed: actual controls/typed mapping, compiler, one Undo step, saved reload, real Try and interrupted replay, normal download and published cross-origin viewers. No model, workshop or paid resources.",
