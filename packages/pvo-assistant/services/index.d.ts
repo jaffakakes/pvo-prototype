@@ -211,3 +211,18 @@ export function serializeServiceDraftSave(value: unknown): string;
 export function newServiceDraftContent(
   description: string,
 ): ServiceDraftContent;
+
+export type NodeLibrary = {
+  name: string;
+  version: string;
+  registryIntegrity: string;
+  files: ServiceSourceFile[];
+};
+export type NodeBundle = {
+  entrypoint: string;
+  files: ServiceSourceFile[];
+  dependencies: NodeLibrary[];
+};
+export function parseNodeDependencies(value: unknown): NodeLibrary[];
+export function supportedNodeLibraries(): NodeLibrary[];
+export function parseNodeBundle(value: unknown): NodeBundle;

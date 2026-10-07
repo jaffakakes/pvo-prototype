@@ -1,0 +1,61 @@
+# Node.js Container provider proof
+
+[Contract](restyle-containers-contract.md) · [Roadmap 1G](restyle-cloud-agent-roadmaps/1g-containers.md) · [Progress](restyle-cloud-agent-progress.md)
+
+## Status — 7 October 2026
+
+Preparation only. **1G.04 is unchecked.** No Node proof has been deployed and no new paid 1G run is authorized. The existing product still runs generated services through Dynamic Workers. Preserve its completed 1E/1F evidence. This proof cannot by itself complete the replacement, manual publication, component connection or final beta acceptance.
+
+In everyday terms: first verify that a disposable hosted computer can run the exact saved JavaScript, return an answer, and disappear without leaving private files or background programs behind. Then connect that proven execution effect to the existing service and independent tests.
+
+## Reviewed runnable plan
+
+- Use [the existing resource journal](../../scripts/checks/cloud-agent-infrastructure/proof-resources.mjs) with [the Node diagnostic](../../scripts/checks/node-runtime/run.mjs). One uniquely named diagnostic Worker, one Container application, one SQLite namespace and one uniquely owned runtime-image repository. No production route, model calls, external volume or app configuration changes.
+- Run at most two instances through exactly two private controller IDs. Cloudflare's Durable Object-managed policy rejects `max_instances`; the fixed slot selection and durable lease enforce concurrency. No public route accepts another slot name.
+- Stop admitting new work after 60 minutes. Maximum 100 starts across this diagnostic's lifetime, enforced as 50 per slot including earlier UTC days. Each guest lease is at most 45 seconds, with 30-second readiness, 2-second execution and 5-second cleanup attempts. An uncertain destroy retains the slot and its durable cleanup alarm.
+- Use Node **24.20.0**, Linux/amd64 base **`node@sha256:6642ef280aebc09c4541bee0b15c9f89f0f3f3c247ddee79ae1d37eddfdcbbaa`** and the runner digest in [runtime.js](../../server/cloud-services/node/runtime.js). Provider image identity, Node version and runner bytes are checked before source execution.
+- Only the three guest files enter the Docker build context. Checked nanoid **5.1.6** bytes and its MIT notice are retained in source; tarball SHA-512 was verified before extraction. Changed or unsupported lock bytes fail before admission. No installation scripts or package downloads occur inside a guest.
+- Disable guest Internet access. Keep credentials, databases, expected test answers and lifecycle authority outside it. The generated reply is untrusted. The controller bounds input/output and destroys the entire instance, including descendants, before reuse.
+
+The initial run checks exact Node/library execution; a later fresh guest cannot see an earlier temporary file; outbound network is denied; an infinite loop times out; oversized output is rejected; spawned children disappear with the guest. Each case verifies no remaining instance/lease. Independent validation, durable service data/replay, owner/test/live separation, pause/delete and lost publication/control responses are subsequent integration cases under the same numbered tasks; do not claim them from this first runtime probe.
+
+## Cost and approval
+
+Proposed authorization: **one diagnostic deployment, up to US$1 estimated total**, within the above 60-minute/100-start bounds. This is a bounded test allowance, not a model-turn or overall goal limit. The conservative compute estimate uses two provisioned lite instances for the full hour (approximately US$0.01451 at the rates recorded in the contract); actual short invocations should be lower. Worker/Durable Object operations, registry/storage and networking add costs. Provider billing may arrive later; the allowance is an operational estimate, not an instantaneous invoice cap.
+
+The Container contract requires scoped approval after preparing the executable plan. Earlier 1F spending is closed and does not fund this distinct test. Approval is pending. Continue local implementation while awaiting the answer; do not run the paid command merely because a dry-run passed.
+
+## Commands and recovery
+
+Run from the active source checkout. Credentials are read from the existing secure local Cloudflare setup; never paste them into chat or these documents. The account ID is public configuration.
+
+```sh
+# Read-only account checks plus local build; no deployment or paid execution.
+node scripts/checks/node-runtime/run.mjs 84880ccf8f98bb789d58cbea5436a645 --dry-run
+
+# Only after this proof's explicit approval; prints its private report path first.
+node scripts/checks/node-runtime/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-approved-node-proof
+
+# Recover an interrupted deployment using its exact journal; cannot create resources.
+node scripts/checks/node-runtime/run.mjs 84880ccf8f98bb789d58cbea5436a645 --cleanup /absolute/path/to/report.json
+```
+
+The journal saves ownership, expiry, names and an attempted-upload flag before remote mutation. Cleanup revokes execution and destroys guests, then removes the application, Worker and namespace, discovers uploaded tags only in the pre-recorded unique repository, deletes them and verifies absence. A lost upload/deletion response is reconciled by identity; failed inspection keeps cleanup pending. Only after all owned resources are absent are local diagnostic secrets removed. Local logs/journals retain evidence. The local image cache can remain for further tests; it has no running compute charges.
+
+## Evidence so far
+
+- Local Docker proof: six cases passed; all six containers removed. Apple Silicon amd64 emulation needed one CPU locally. The initial 1/16 CPU run timed out and was removed. This does **not** prove provider lite readiness/performance. Receipt `restyle-node-proof-hlTnvj/report.json` in the OS temporary directory; `/tmp/restyle-node-local-proof.log`.
+- Fourteen final focused tests pass: real workerd/SQLite admission/replay/metering/restart/cancellation/uncertain destruction; exact library admission; outside-guest byte/UTF-8/runtime checks; bounded recovery-only image cleanup. `/tmp/restyle-node-all-focused.log`.
+- Wrangler local deployment dry-run passed for journal `.wrangler/cloud-agent-infrastructure/workspace-t0WAAb/report.json`, proof ID `b7b2ffc2440bab0d1c4071ce`. Registry inventory confirmed its unique image name unused. `attempted:false`, `dryRunPassed:true`, `cleanupVerified:true`; no upload, instances or namespaces were created. Initial dry-run configuration failures are recorded in progress.
+- Full `npm run check` passed 1,512 tests, 837 syntax / 908 dependency / 545 formatting checks; strict editor types pass. Final cleanup-lock correction is covered by the fourteen focused tests above.
+- Current verified beta is `restyle-editor-shell-cc5dbc01f8df1631`. No runtime change has been delivered to beta or production by this preparation.
+
+## Resource register
+
+| Run | Authorization | Remote creation | Outcome / cleanup |
+| --- | --- | --- | --- |
+| Initial Node runtime proof | Pending | None | Prepared; await scoped approval |
+
+After the paid run, record its exact journal, runtime image digest, start/elapsed usage, checks and cleanup result here before marking any roadmap task. Full task completion also requires the canonical Node package/runtime replacement and its remaining integration gates.
+
+Provider references: [Container lifecycle API](https://developers.cloudflare.com/containers/api/durable-object-container/), [image management](https://developers.cloudflare.com/containers/guides/image-management/), [image cleanup commands](https://developers.cloudflare.com/containers/reference/wrangler-commands/) and [pricing](https://developers.cloudflare.com/containers/platform/pricing/), checked 7 October 2026. Provider documentation describes capabilities; only the recorded executions establish proof.

@@ -64,6 +64,8 @@ Update through the existing inactive publication and activation journal. The cur
 
 ## Minimum provider proof before enabling Node.js hosting
 
+The [runnable Node proof and cleanup plan](restyle-node-provider-proof.md) records the current preparation and authorization state.
+
 Prepare a dedicated diagnostic Worker/application with no production routes or binding changes. Use fixed reviewed source initially, then the real editor path in 1G.08. Record resource names, limits, permission and expiry before creation; retain the journal and verify removal afterward.
 
 Required evidence: immutable image/runtime match; a supported locked library executes without package-network access; private readiness and bounded output; network denied; infinite loop and spawned descendant stopped by whole-instance destruction; fresh request cannot see an earlier file; exact bytes restored after destruction; records/replay survive while workshop is absent; wrong owner and test/live isolation; pause/delete prevent viewer restart; lost start/deploy/control replies reconcile without duplicate committed effects; all owned resources absent after cleanup.
