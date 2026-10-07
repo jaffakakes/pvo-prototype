@@ -11,7 +11,12 @@ import { SERVICE_RUNTIME } from "../../../packages/pvo-assistant/services/index.
 /** Build only the unchanged trusted runtime. No creator source or validation expectations enter the builder. */
 export async function prepareProductImage(resources, credential) {
   const prepared = await imageBuildFiles(resources.report.app, credential);
-  const content = "await import('./prepare.mjs'); setInterval(() => {}, 1000);";
+  const content = [
+    "import { mkdir } from 'node:fs/promises';",
+    "await mkdir('/runtime', { recursive: true });",
+    "await import('./prepare.mjs');",
+    "setInterval(() => {}, 1000);",
+  ].join("\n");
   prepared.files.push({
     guest_path: "/build-input/build-only.mjs",
     raw_value: Buffer.from(content).toString("base64"),
@@ -44,14 +49,24 @@ export async function prepareProductImage(resources, credential) {
           {},
         );
       } else if (state.state === "started") {
-        const raw = await machine.command(
-          [
-            "node",
-            "-e",
-            "try{process.stdout.write(require('node:fs').readFileSync('/runtime/image-status.json','utf8'))}catch{process.stdout.write('{\"phase\":\"starting\"}')}",
-          ],
-          { timeoutMs: 12000 },
-        );
+        let raw;
+        try {
+          raw = await machine.command(
+            [
+              "node",
+              "-e",
+              "try{process.stdout.write(require('node:fs').readFileSync('/runtime/image-status.json','utf8'))}catch{process.stdout.write('{\"phase\":\"starting\"}')}",
+            ],
+            { timeoutMs: 12000 },
+          );
+        } catch (error) {
+          if (error.code !== "runtime_unavailable") throw error;
+          // This command only reads build status; a boot-time unavailable reply can be polled safely.
+          resources.report.buildPollUnavailable = Date.now();
+          await resources.save();
+          await delay(2000);
+          continue;
+        }
         const status = JSON.parse(raw);
         if (status.phase !== previous) {
           console.log(`Node image: ${status.phase}`);
@@ -68,7 +83,10 @@ export async function prepareProductImage(resources, credential) {
           );
           return status.image;
         }
-      } else if (["failed", "destroyed"].includes(state.state))
+      } else if (
+        ["failed", "destroyed"].includes(state.state) ||
+        (state.state === "stopped" && started)
+      )
         throw new Error("Image builder stopped unexpectedly");
       await delay(2000);
     }

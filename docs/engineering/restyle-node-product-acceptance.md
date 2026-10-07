@@ -27,4 +27,4 @@ The cleanup-only command must reopen the same journals, never create replacement
 
 Record real check results, runtime/package identities, execution counts/durations, failed attempts, costs/uncertainty and cleanup in progress. Run relevant full source/type checks and actual editor/player acceptance, then rebuild/deliver beta with old hashed assets retained and the served service-worker revision verified. Check each numbered task only when its complete evidence passes. Production remains deferred until the user tests beta and explicitly approves release.
 
-Status: preparation in progress; no new resource created by this plan.
+Status: live acceptance in progress. Preparation is committed as `524838e`. The first attempt `run-deYEYE` stopped during builder setup and cleaned its Machine/app/key. The corrected attempt is `run-dGfXoa`; its builder reproduced the approved immutable image and was removed before service execution. Cloud journal `workspace-uefOob` records the isolated Worker and four namespaces. No gate is newly checked until checks and cleanup finish.
