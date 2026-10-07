@@ -2,9 +2,15 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
-## Latest scope: finish Roadmap 1 through beta; 1G.02 next
+## Current work in progress: 1G.03
 
-The user requested all remaining Roadmap 1 work, including Containers, and explicitly prohibited production release. **1G.01 is verified; 56/134 complete, 78 remain.** Read [current progress](restyle-cloud-agent-progress.md) and the [Container implementation contract](restyle-containers-contract.md). Active checkout is `feature/restyle-containers` at `/Users/christinasmacbook/.codex/worktrees/restyle-containers/pvo-prototype`, from current fetched dev plus the explicitly retained first-release prerequisite `e17bbdb`. Start 1G.02 saved drafts/editor, then continue the full ordered 1G checklist. No new provider proof has run. Production stays unchanged; the existing beta and 1F evidence below remain valid.
+Read the newest [progress checkpoint](restyle-cloud-agent-progress.md) before editing. AI continuation is implemented in pending files and under verification; **1G.03 is not checked yet**. Reuse those changes in the active Containers checkout, not the Desktop source. Six Worker/SQLite tests and strict types pass; browser/full checks/beta are still pending. No new paid proof or production action is authorized or started.
+
+## Latest scope: finish Roadmap 1 through beta; 1G.03 next
+
+The user requested all remaining Roadmap 1 work, including Containers, with no production release. **1G.01–1G.02 are verified; 57/134 complete, 77 remain.** Read [current progress](restyle-cloud-agent-progress.md) and [the Container contract](restyle-containers-contract.md). Continue in `feature/restyle-containers`, `/Users/christinasmacbook/.codex/worktrees/restyle-containers/pvo-prototype`, source `e235095`, [draft PR #106](https://github.com/jaffakakes/pvo-prototype/pull/106). This branch explicitly includes the unmerged verified first-release prerequisite. Draft storage and manual editing pass 1,492 tests, strict types and real local Worker/browser recovery/conflict/account tests. Beta `restyle-editor-shell-8fcb72093309aa4a` is delivered and verified with prior assets retained.
+
+Next is **1G.03**, AI continuation on the same saved draft through the existing durable task system; use workshops only for execution. Then finish the full ordered checklist. No new provider proof or paid resources exist yet. Owned Vite 5319 is active. The static beta build and local API bridge tests are separate from future Node hosting and backend availability. Preserve the 1E/1F evidence below. Production remains unchanged until the user tests the finished work and approves release.
 
 ## Previous scope: 1F complete through beta; next 1G.01
 

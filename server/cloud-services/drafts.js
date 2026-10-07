@@ -24,7 +24,13 @@ export function readHostedDraft(host, serviceId, ownerId) {
     );
   return draft;
 }
-export async function saveHostedDraft(host, serviceId, ownerId, value) {
+export async function saveHostedDraft(
+  host,
+  serviceId,
+  ownerId,
+  value,
+  grant = null,
+) {
   readHostedDraft(host, serviceId, ownerId);
   let command;
   try {
@@ -38,6 +44,7 @@ export async function saveHostedDraft(host, serviceId, ownerId, value) {
   const digest = await contentDigest(serializeServiceDraftSave(command));
   return host.ctx.storage.transactionSync(() => {
     readHostedDraft(host, serviceId, ownerId);
+    if (grant) host.draftWriters.admit(grant, host.now());
     return host.drafts.save(command, digest, host.now());
   });
 }

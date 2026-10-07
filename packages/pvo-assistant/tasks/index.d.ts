@@ -40,12 +40,16 @@ export type TaskContext = {
     source: { structure: string; style: string; logic: string };
   }>;
 };
+export type ContainerTaskContext = {
+  fingerprint: string;
+  container: { serviceId: string; revision: number };
+};
 export type TaskInput = {
   operationId: string;
   projectId: string;
   request: string;
   examples: Array<{ id: string; input: string; expected: string }>;
-  context: TaskContext;
+  context: TaskContext | ContainerTaskContext;
 };
 export type TaskProposal = { examples: TaskInput["examples"] };
 export function parseTaskProposal(value: unknown): TaskProposal;

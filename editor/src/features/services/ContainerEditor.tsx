@@ -1,3 +1,4 @@
+import { ContainerAssistant } from "./ContainerAssistant";
 import { useState } from "react";
 import {
   parseServiceDraftContent,
@@ -255,6 +256,11 @@ export function ContainerEditor({
             </button>
           </div>
           {check && <p role="status">{check}</p>}
+          <ContainerAssistant
+            draft={buffer.base}
+            disabled={busy || dirty || pending || conflict}
+            refresh={() => void session.refresh()}
+          />
         </>
       )}
     </section>

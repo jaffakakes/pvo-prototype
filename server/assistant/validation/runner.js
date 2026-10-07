@@ -51,7 +51,11 @@ function completeReport(coordinator, claimed, state, report, error = null) {
   checkpoint(
     coordinator,
     claimed,
-    report?.status === "passed" ? "host" : "build",
+    report?.status === "passed"
+      ? claimed.input.context.container
+        ? "draft_sync"
+        : "host"
+      : "build",
   );
 }
 

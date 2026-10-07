@@ -13,6 +13,22 @@ import {
 } from "./validation.js";
 
 export function validateContext(value) {
+  if (value && Object.hasOwn(value, "container")) {
+    object(value, ["fingerprint", "container"], "Container task context");
+    text(value.fingerprint, limits.fingerprintBytes, "Draft fingerprint");
+    object(
+      value.container,
+      ["serviceId", "revision"],
+      "Saved Container target",
+    );
+    id(value.container.serviceId, "Container identity");
+    integer(
+      value.container.revision,
+      Number.MAX_SAFE_INTEGER,
+      "Starting draft revision",
+    );
+    return;
+  }
   object(
     value,
     ["fingerprint", "currentSceneId", "scenes", "components"],

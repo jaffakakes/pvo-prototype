@@ -1,9 +1,30 @@
 import {
   matchPreparedTaskResult,
+  matchDraftTaskResult,
+  prepareDraftTaskResult,
   prepareTaskResult,
   serializePreparedTaskResult,
 } from "../../../packages/pvo-assistant/results/index.js";
 import { HttpError } from "../../http.js";
+
+const matchResult = (value, task) =>
+  task.input.context.container
+    ? matchDraftTaskResult(value, task)
+    : matchPreparedTaskResult(value, task);
+async function encodedResult(body, id) {
+  const bytes = new TextEncoder().encode(body);
+  const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
+  return {
+    body,
+    artifact: {
+      id,
+      bytes: bytes.byteLength,
+      sha256: Array.from(hash, (byte) =>
+        byte.toString(16).padStart(2, "0"),
+      ).join(""),
+    },
+  };
+}
 
 /** Bounded immutable result bytes share the owner's SQLite transaction with ready state. */
 export class TaskResults {
@@ -17,22 +38,17 @@ export class TaskResults {
     const body = serializePreparedTaskResult(
       prepareTaskResult(task, operations, attachment),
     );
-    const bytes = new TextEncoder().encode(body);
-    const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
-    return {
-      body,
-      artifact: {
-        id: task.id,
-        bytes: bytes.byteLength,
-        sha256: Array.from(hash, (byte) =>
-          byte.toString(16).padStart(2, "0"),
-        ).join(""),
-      },
-    };
+    return encodedResult(body, task.id);
+  }
+  encodeDraft(task, draft) {
+    return encodedResult(
+      JSON.stringify(prepareDraftTaskResult(task, draft)),
+      task.id,
+    );
   }
 
   save(task, encoded) {
-    matchPreparedTaskResult(JSON.parse(encoded.body), task);
+    matchResult(JSON.parse(encoded.body), task);
     const existing = this.sql
       .exec(
         "SELECT sha256, bytes, body FROM task_results WHERE task_id = ?",
@@ -77,7 +93,7 @@ export class TaskResults {
         503,
         "The prepared result is unavailable. Retry later.",
       );
-    matchPreparedTaskResult(JSON.parse(stored.body), task);
+    matchResult(JSON.parse(stored.body), task);
     return stored.body;
   }
 

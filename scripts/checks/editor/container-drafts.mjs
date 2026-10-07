@@ -6,7 +6,35 @@ import {
 } from "../../../tests/assistant-task-server/helpers.mjs";
 import { ORIGIN } from "../../../tests/assistant-task-server/helpers.mjs";
 import { installAssistantAvailabilityFixture } from "./assistant-fixture.mjs";
-const f = await taskFixture({ services: true });
+const f = await taskFixture({
+  services: true,
+  planner: async (request) => {
+    const task = await request.json(),
+      draft = task.draftContext;
+    if (!task.questions.length)
+      return Response.json({
+        kind: "ask",
+        prompt: "Which comment should I add?",
+        choices: ["Reviewed together"],
+      });
+    if (draft.revision === 4) return Response.json({ kind: "done" });
+    if (!draft.read)
+      return Response.json({ kind: "read", path: "src/main.mjs", offset: 0 });
+    return Response.json({
+      kind: "write",
+      expectedRevision: draft.revision,
+      files: [
+        {
+          path: "src/main.mjs",
+          content: draft.read.content + "\n// Reviewed together",
+        },
+      ],
+      entrypoint: draft.metadata.entrypoint,
+      tests: draft.metadata.tests,
+      agreementJson: JSON.stringify(draft.metadata.agreement),
+    });
+  },
+});
 const browser = await chromium.launch({
   executablePath:
     process.env.CHROME_PATH ||
@@ -19,6 +47,7 @@ const context = await browser.newContext({
 });
 let cookie = f.cookie,
   lost = true,
+  lostTask = true,
   page;
 const saves = [],
   errors = [];
@@ -34,7 +63,7 @@ try {
     await route.fulfill({ status: r.status, json: r.body });
   });
   await context.route(
-    /\/api\/(services(\/.*)?|assistant\/projects)$/,
+    /\/api\/(services(\/.*)?|assistant\/(projects|tasks(\/.*)?))$/,
     async (route) => {
       const req = route.request(),
         url = new URL(req.url()),
@@ -45,6 +74,15 @@ try {
         session: cookie,
         headers: { Origin: ORIGIN },
       });
+      if (url.pathname === "/api/assistant/tasks" && body && lostTask) {
+        lostTask = false;
+        expectStatus(r, 201);
+        await route.fulfill({
+          status: 503,
+          json: { error: "Lost task creation reply" },
+        });
+        return;
+      }
       if (url.pathname.endsWith("/draft") && body) {
         saves.push(body);
         if (lost) {
@@ -153,6 +191,50 @@ try {
   await page
     .getByText("Draft fields checked on this device.", { exact: false })
     .waitFor();
+  await page
+    .getByLabel("Changes to this Container")
+    .fill("Add a comment to my saved draft");
+  await page
+    .getByRole("button", { name: "Continue with AI", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Retry editing task", exact: true })
+    .waitFor();
+  await f.restart();
+  await open();
+  await page.getByRole("button", { name: "Open code", exact: true }).click();
+  await page
+    .getByLabel("Which comment should I add?")
+    .fill("Reviewed together");
+  await page.getByRole("button", { name: "Save answer", exact: true }).click();
+  await page
+    .getByText("Changes are saved. Refresh the code", { exact: false })
+    .waitFor();
+  await code.fill("// local edit while AI finishes");
+  await page
+    .getByRole("button", { name: "Refresh saved code", exact: true })
+    .click();
+  await page
+    .getByText("A newer revision is saved.", { exact: false })
+    .waitFor();
+  assert.equal(await code.inputValue(), "// local edit while AI finishes");
+  await page
+    .getByRole("button", {
+      name: "Discard local edits and use saved draft",
+      exact: true,
+    })
+    .click();
+  assert.equal(
+    await code.inputValue(),
+    "// local work survives reload\n// Reviewed together",
+  );
+  const tasks = await f.request(
+    `/api/assistant/tasks?project=${remote.body.identity.projectId}`,
+  );
+  expectStatus(tasks, 200);
+  assert.equal(tasks.body.tasks.length, 1);
+  assert.equal(tasks.body.tasks[0].state, "ready");
+  assert.equal(tasks.body.tasks[0].usage.toolCalls, 0);
   await code.scrollIntoViewIfNeeded();
   await page.screenshot({ path: "/tmp/restyle-containers-desktop.png" });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -162,6 +244,18 @@ try {
   await page.getByRole("button", { name: "Open code", exact: true }).click();
   await code.scrollIntoViewIfNeeded();
   await page.screenshot({ path: "/tmp/restyle-containers-phone.png" });
+  await f.control({ action: "time", now: tasks.body.tasks[0].expiresAt + 1 });
+  await f.control({ action: "sweep" });
+  await open();
+  await page.getByRole("button", { name: "Open code", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Clear expired editing task", exact: true })
+    .click();
+  await page.getByLabel("Changes to this Container").waitFor();
+  assert.equal(
+    await code.inputValue(),
+    "// local work survives reload\n// Reviewed together",
+  );
   cookie = f.otherCookie;
   await page.evaluate(async () => {
     await (
@@ -172,7 +266,7 @@ try {
   assert.equal(await code.count(), 0);
   assert.deepEqual(errors, []);
   console.log(
-    "Containers: creation, manual editing, lost committed reply/exact replay, real host restart, local reload, concurrent-author conflict/reapply, device checks and account isolation passed.",
+    "Containers: creation, manual editing, lost committed reply/exact replay, real host restart, local reload, concurrent-author conflict/reapply, device checks, AI question/reload/answer, lost task creation recovery, same-draft editing, expired-task recovery and account isolation passed.",
   );
 } catch (error) {
   await page

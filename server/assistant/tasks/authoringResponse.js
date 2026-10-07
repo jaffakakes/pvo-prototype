@@ -1,3 +1,4 @@
+import { prepareDraftResponse } from "../drafts/authoring.js";
 import { taskClaim, transitionGuard } from "./executionClaim.js";
 import { transitionTask } from "../../../packages/pvo-assistant/tasks/index.js";
 import { AuthoringRepairError } from "./repairFeedback.js";
@@ -18,6 +19,9 @@ export function authoringInput(coordinator, task) {
       progress: coordinator.progress.context(task),
     },
     stepId: task.stepId,
+    ...(task.input.context.container
+      ? { draft: coordinator.drafts.context(task.id) }
+      : {}),
     ...(task.stepId === "attach"
       ? { attachment: attachmentPlanningContext(coordinator, task) }
       : {}),
@@ -47,6 +51,8 @@ export async function prepareAuthoringResponse(
       );
     }
   }
+  if (task.input.context.container && task.stepId === "plan")
+    return prepareDraftResponse(coordinator, task, response);
   if (task.stepId === "attach") {
     try {
       return await prepareTaskAttachment(coordinator, task, response);
@@ -135,7 +141,8 @@ export function finishAuthoringAttempt(
   let command = response;
   if (response?.evidence) command = response.command;
   else if (claimed.stepId === "build") command = prepared?.command;
-  else if (claimed.stepId === "attach") command = response?.command;
+  else if (claimed.stepId === "attach" || response?.draftState)
+    command = response?.command;
   const repair =
     code === "invalid_result" &&
     feedback &&
@@ -176,6 +183,11 @@ export function finishAuthoringAttempt(
       coordinator.attempts.task(claimed.id),
       response.encoded,
     );
+  if (accepted && response?.draftState) {
+    coordinator.drafts.write(claimed.id, response.draftState);
+    if (response.builder)
+      coordinator.builders.write(claimed.id, response.builder);
+  }
   if (accepted && prepared)
     coordinator.builders.write(claimed.id, prepared.state);
 }

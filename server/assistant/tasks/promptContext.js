@@ -99,7 +99,7 @@ export function authoringMessages(instructions, input, maximum) {
   }
   if (fits()) return messages();
 
-  for (const component of value.input.context.components) {
+  for (const component of value.input.context.components ?? []) {
     if (fits()) break;
     delete component.source;
     component.sourceProjection = omitted("input");

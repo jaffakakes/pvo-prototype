@@ -1,3 +1,10 @@
+import { planDraftEdit } from "../drafts/planner.js";
+import { runDraftStep } from "../drafts/runner.js";
+import { TaskDrafts } from "../drafts/repository.js";
+import {
+  prepareDraftTaskCreation,
+  reconcileDraftStops,
+} from "../drafts/creation.js";
 import { manageHostedServices } from "../../cloud-services/management.js";
 import { ServiceCatalog } from "../../cloud-services/catalog.js";
 import { runHostingStep } from "../hosting/runner.js";
@@ -53,6 +60,7 @@ export class AssistantTasks extends DurableObject {
     super(ctx, env);
     this.repository = new TaskRepository(ctx.storage.sql);
     this.results = new TaskResults(ctx.storage.sql);
+    this.drafts = new TaskDrafts(ctx.storage.sql);
     this.services = new ServiceCatalog(ctx.storage.sql);
     this.providers = new ProviderOperations(
       ctx.storage.sql,
@@ -93,6 +101,15 @@ export class AssistantTasks extends DurableObject {
     } else throw new Error("Unsupported internal task operation");
     const digest =
       operation.kind === "create" ? await creationDigest(input) : null;
+    let startingDraft = null;
+    try {
+      if (operation.kind === "create")
+        startingDraft = await prepareDraftTaskCreation(this, ownerId, input);
+    } catch (error) {
+      if (error instanceof HttpError)
+        return { error: error.message, status: error.status };
+      throw error;
+    }
     // SQL state and its next alarm commit together. No provider/network effects occur here.
     const result = await this.ctx.storage.transaction(async () => {
       const now = this.now();
@@ -101,6 +118,7 @@ export class AssistantTasks extends DurableObject {
       this.noteTerminal(now);
       repository.maintain(now, this.heldTasks());
       this.results.prune();
+      this.drafts.prune();
       this.evidence.prune();
       this.repairs.prune();
       this.progress.prune();
@@ -116,13 +134,17 @@ export class AssistantTasks extends DurableObject {
               return {
                 project: repository.project(input.localId, randomId(), now),
               };
-            case "create":
-              return repository.create(input, {
+            case "create": {
+              const created = repository.create(input, {
                 id: randomId(),
                 ownerId,
                 now,
                 inputDigest: digest,
               });
+              if (startingDraft)
+                this.drafts.initialize(created.task.id, startingDraft);
+              return created;
+            }
             case "list":
               return repository.list(input, now);
             case "read":
@@ -146,12 +168,22 @@ export class AssistantTasks extends DurableObject {
         if (!(error instanceof HttpError)) throw error;
         result = { error: error.message, status: error.status };
       }
+      if (operation.kind === "stop" && result.task?.input.context.container)
+        this.drafts.stopping(result.task.id, now);
       this.noteTerminal(now);
       await this.scheduleMaintenance(now);
       return result;
     });
     if (operation.kind === "stop" && result.task?.state === "stopped")
       this.active.get(operation.id)?.abort();
+    if (operation.kind === "stop" && result.task?.input.context.container)
+      await reconcileDraftStops(this);
+    if (operation.kind === "stop" && this.drafts.get(operation.id)?.stopPending)
+      return {
+        error:
+          "The editing task is stopped, but an in-flight save is still being fenced. Retry to confirm.",
+        status: 503,
+      };
     return result;
   }
 
@@ -320,6 +352,8 @@ export class AssistantTasks extends DurableObject {
   }
 
   plan(task, signal, input) {
+    if (task.input.context.container && task.stepId === "plan")
+      return planDraftEdit(task, input.draft, this.env, signal, input.evidence);
     if (task.stepId === "attach")
       return planTaskAttachment(
         task,
@@ -356,6 +390,7 @@ export class AssistantTasks extends DurableObject {
   async scheduleMaintenance(now) {
     const times = [
       this.repository.nextMaintenance(now),
+      ...this.drafts.pendingStops().map((entry) => entry.stopPending.nextAt),
       this.attempts.nextBudgetWakeup(),
       this.research.nextWakeup(now),
       this.validation.nextWakeup(now),
@@ -380,13 +415,18 @@ export class AssistantTasks extends DurableObject {
 
   async alarm() {
     await this.transaction(() => this.noteTerminal(this.now()));
+    await reconcileDraftStops(this);
     await reconcileTaskServices(this);
     await reconcileTaskWorkspaces(this);
     // Durable wakeups run independently of HTTP requests. Each invocation owns at most two steps.
     for (let index = 0; index < 2; index++) {
       const claimed = await this.transaction(() => this.claimNext());
       if (!claimed) break;
-      if (claimed.stepId === "host") await runHostingStep(this, claimed);
+      if (
+        ["draft_apply", "draft_sync", "draft_finish"].includes(claimed.stepId)
+      )
+        await runDraftStep(this, claimed);
+      else if (claimed.stepId === "host") await runHostingStep(this, claimed);
       else if (claimed.stepId === "validate")
         await runServiceValidation(this, claimed);
       else if (
