@@ -2,7 +2,7 @@
 
 [Roadmap overview](../restyle-cloud-agent-roadmap.md) · [Architecture](../restyle-cloud-agent-architecture.md#containers-the-next-product-feature) · [Current evidence](../restyle-cloud-agent-progress.md)
 
-**Status: implementation started, 7 October 2026.** 1E/1F are verified through beta. **1G.01–1G.03 are complete**; the [implementation contract](../restyle-containers-contract.md) records the shared draft/release rules, zero-workshop cases and required Node.js proof. Remaining implementation and provider acceptance stay unchecked. Production is deferred until the user tests the finished work in beta.
+**Status: implementation started, 7 October 2026.** 1E/1F are verified through beta. **1G.01–1G.03 and 4B.07/4C.04/4C.05 are complete**; the [implementation contract](../restyle-containers-contract.md) records the shared draft/release rules, zero-workshop cases and required Node.js proof. Remaining implementation and provider acceptance stay unchecked. Production is deferred until the user tests the finished work in beta.
 
 ## The simple version
 
@@ -137,7 +137,7 @@ There are **eight new tasks**. Twelve existing unchecked update/management tasks
 - [ ] **4B.04** Keep the active release unchanged while tests run.
 - [ ] **4B.05** Switch only the verified service/component connection as one recorded release action. Preserve the prior release for recovery while it remains safe to run against current records.
 - [ ] **4B.06** Test a failed update and restore service availability without replaying external writes.
-- [ ] **4B.07** Explain what editor Undo can restore and which live changes require a separate reversal.
+- [x] **4B.07** Explain what editor Undo can restore and which live changes require a separate reversal.
 
 - [ ] **1G.07** Let a component select a checked operation on an owned published Container using the existing attachment command, typed field mapping, compiler/history and approved-host policy. Reuse activation checks for download/publication, server-authorized Try and public player action replay. No manual server URL or creator administration data enters the PVO.
 
@@ -145,8 +145,8 @@ There are **eight new tasks**. Twelve existing unchecked update/management tasks
 
 - [ ] **4C.01** Show which projects and published components use each service and which account connections they need.
 - [ ] **4C.02** Add useful views of remaining quotas, approximate cost, recent results, and failures.
-- [ ] **4C.04** Let creators inspect retained data and choose the allowed cleanup action.
-- [ ] **4C.05** Explain the effects of pause and deletion on new submissions, accepted jobs, and stored records before applying the selected operation.
+- [x] **4C.04** Let creators inspect retained data and choose the allowed cleanup action.
+- [x] **4C.05** Explain the effects of pause and deletion on new submissions, accepted jobs, and stored records before applying the selected operation.
 - [ ] **4C.06** Verify periodic cleanup removes only abandoned resources and expired records covered by the agreed retention rule.
 
 These transferred tasks cover the basic Container service in 1G. Account connections and durable viewer jobs remain unavailable until Roadmaps 2/3 implement them; those later milestones extend the same controls and rerun their affected acceptance, rather than creating another management feature. Forwarded downloads cannot be fully enumerated, so the UI must say when impact counts are incomplete.
@@ -175,3 +175,10 @@ Use `packages/pvo-assistant/{services,releases,hosting,attachments}` for shared 
 This milestone includes JavaScript/Node.js only. PVO Logic remains restricted. Plugins, a marketplace, sharing Containers with other creators and installer-specific credentials are outside this update. External account integrations and long-running viewer jobs keep their existing Roadmap 2/3 owners. Other languages and runtimes stay future capability work.
 
 Next after Containers: [Roadmap 2 — research and connections](02-research-and-connections.md). [Roadmap 4](04-maintenance-and-expansion.md) retains diagnosis, connection-health/operational monitoring and further expansion; it reuses this service system.
+
+
+## Records and control evidence — 7 October 2026
+
+**4B.07, 4C.04 and 4C.05 are verified through beta.** Source `cbeb95b` in draft #106 adds private records/usage/results/failure inspection, a confirmed test-only reset using the existing replay-safe control transaction, and pre-action pause/delete/Undo explanations. Full **1,524 tests**, strict editor types, **27 service-action tests** and actual desktop/phone acceptance pass. Lost reset reply, server/page restart and exact replay preserve live records, old successful replies and usage. Combined beta `13b7c9e` passes build/types/32 focused cases and is served as **`restyle-editor-shell-703ca799167be3d0`** on 4173; actual bytes and activated service worker verified. [Progress](../restyle-cloud-agent-progress.md) records logs, guarded backup and cleanup.
+
+These management/UI tasks use the current hosted-service authority. **4C.02 remains partial:** operation/reply quotas and recent outcomes are visible, but provider costs and complete resource accounting need the Node adapter. Node execution/validation/deployment, connection impact and final provider acceptance remain unchecked. No production deployment or paid 1G resource was created.
