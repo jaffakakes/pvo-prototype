@@ -38,7 +38,7 @@ test(
       );
       assert.equal(end.stepId, "attach");
       assert.equal(end.result, null);
-      assert.equal(end.usage.toolCalls, 4);
+      assert.equal(end.usage.toolCalls, 7);
       const entries = await catalog(f);
       assert.equal(entries.length, 1);
       const { service, releases } = entries[0],
@@ -145,7 +145,7 @@ test(
       );
       assert.equal(end.stepId, "attach", JSON.stringify(end));
       assert.equal(end.retries, 1);
-      assert.equal(end.usage.toolCalls, 4);
+      assert.equal(end.usage.toolCalls, 7);
       assert.equal(end.usage.reservedToolCalls, 0);
       const after = (await rows(f))[0];
       assert.equal(after.identity.resourceId, before.identity.resourceId);

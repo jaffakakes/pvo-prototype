@@ -88,6 +88,7 @@ export class ServiceNodeExecution extends DurableObject {
         "execution_closed",
         "execution_cancelled",
         "runtime_unavailable",
+        "startup_timeout",
         "runtime_mismatch",
         "output_limit",
         "invalid_reply",

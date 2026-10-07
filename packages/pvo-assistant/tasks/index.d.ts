@@ -19,6 +19,8 @@ export type TaskWaitReason =
   | "model_allowance"
   | "workspace_capacity"
   | "workspace_allowance"
+  | "service_capacity"
+  | "service_allowance"
   | "spending_permission";
 export type TaskFailure = { code: TaskFailureCode; stepId: string };
 export type TaskArtifact = { id: string; sha256: string; bytes: number };

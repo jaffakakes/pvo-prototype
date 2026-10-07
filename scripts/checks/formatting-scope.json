@@ -538,6 +538,7 @@
   "tests/service-packages/package.test.mjs",
   "tests/service-packages/types.fixture.ts",
   "tests/service-packages/types.test.mjs",
+  "tests/service-validation/capacity.test.mjs",
   "tests/service-validation/execution.test.mjs",
   "tests/service-validation/fixtures.mjs",
   "tests/service-validation/report.test.mjs",

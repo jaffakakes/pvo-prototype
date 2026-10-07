@@ -339,7 +339,7 @@ test(
         checked.artifacts[0].artifact.identity.sourceDigest,
         computer.observation.source.digest,
       );
-      assert.equal(checked.attempts.length, 2);
+      assert.equal(checked.attempts.length, 5);
       assert.ok(
         checked.attempts.every(
           (attempt) => attempt.settled && attempt.status === "completed",
@@ -358,8 +358,8 @@ test(
       assert.equal(host.observation.state, "available");
       assert.equal(
         ready.usage.toolCalls,
-        revisions + 7 * 3 + 2 + 1,
-        "Writes, workshop tools, package capture, independent case and publication are charged once",
+        revisions + 7 * 3 + 5 + 1,
+        "Writes, workshop tools, package capture, independent steps and publication are charged once",
       );
       const result = await fixture.request(path(original) + "/result");
       expectStatus(result, 200);

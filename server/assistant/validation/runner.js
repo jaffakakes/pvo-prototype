@@ -72,7 +72,7 @@ async function fail(coordinator, claimed, code) {
   });
 }
 
-/** One durable capture or case per claim. No generated code sees test expectations or report authority. */
+/** One durable capture or test step per claim. No generated code sees test expectations or report authority. */
 export async function runServiceValidation(coordinator, claimed) {
   const state = coordinator.builders.get(claimed.id),
     review = builderReviewRequest(state);
@@ -89,11 +89,12 @@ export async function runServiceValidation(coordinator, claimed) {
   }
   const input = saved
     ? {
-        kind: "case",
+        kind: "step",
         policy: SERVICE_TEST_POLICY,
         round: state.round,
         identity: saved.artifact.identity,
         index: saved.report.cases.length,
+        step: saved.cursor.step,
       }
     : {
         kind: "capture",
@@ -118,7 +119,8 @@ export async function runServiceValidation(coordinator, claimed) {
     let artifact = null,
       result = null,
       artifactError = false,
-      unavailable = false;
+      unavailable = false,
+      wait = null;
     try {
       await withAssistantDeadline(
         async (signal) => {
@@ -132,9 +134,10 @@ export async function runServiceValidation(coordinator, claimed) {
           )
             throw new Error("Validation claim ended.");
           if (saved) {
-            result = await coordinator.runValidationCase(
+            result = await coordinator.runValidationStep(
               saved.artifact,
               input.index,
+              saved.cursor,
               signal,
             );
             return;
@@ -154,19 +157,44 @@ export async function runServiceValidation(coordinator, claimed) {
         Math.max(
           1,
           Math.min(
-            SERVICE_TEST_LIMITS.caseMs + 1000,
+            SERVICE_TEST_LIMITS.stepMs + 1000,
             row.deadlineAt - coordinator.now(),
           ),
         ),
         controller.signal,
       );
-    } catch {
+    } catch (error) {
       unavailable = true;
+      if (
+        !controller.signal.aborted &&
+        [
+          "execution_capacity",
+          "execution_allowance",
+          "cleanup_unconfirmed",
+          "startup_timeout",
+        ].includes(error?.code)
+      )
+        wait = {
+          kind: "wait",
+          reason:
+            error.code === "execution_allowance"
+              ? "service_allowance"
+              : "service_capacity",
+          nextRunAt: Math.max(
+            coordinator.now() + 1000,
+            Number.isSafeInteger(error.retryAt)
+              ? error.retryAt
+              : coordinator.now() + 60000,
+          ),
+        };
     }
     await coordinator.transaction(() => {
       const outcome = unavailable
         ? "interrupted"
-        : artifactError || (saved && result?.status !== "passed")
+        : artifactError ||
+            (saved &&
+              result?.caseResult &&
+              result.caseResult.status !== "passed")
           ? "failed"
           : "completed";
       if (
@@ -190,7 +218,7 @@ export async function runServiceValidation(coordinator, claimed) {
         const task = coordinator.validation.task(claimed.id);
         coordinator.repository.update(
           task.id,
-          {
+          wait ?? {
             kind: "fail",
             failure: { code: "execution_failed", stepId: "validate" },
           },
@@ -208,7 +236,7 @@ export async function runServiceValidation(coordinator, claimed) {
         coordinator.artifacts.save(claimed.id, state.round, artifact);
         checkpoint(coordinator, claimed, "validate");
       } else {
-        const next = coordinator.artifacts.append(
+        const next = coordinator.artifacts.advance(
           claimed.id,
           state.round,
           result,

@@ -146,3 +146,27 @@ test("only source modules and invocation enter the guest, never generated tests"
   ]);
   assert.equal(JSON.stringify(body).includes("private expected answer"), false);
 });
+
+test("startup and transport failures remain infrastructure failures rather than false source-test failures", async () => {
+  const signal = new AbortController().signal;
+  const slow = new NodeContainer({
+    setInactivityTimeout: async () => {
+      throw Object.assign(new Error("deadline"), { status: 504 });
+    },
+  });
+  await assert.rejects(
+    slow.ready(() => {}, signal),
+    { code: "startup_timeout" },
+  );
+  const broken = new NodeContainer({
+    getTcpPort: () => ({
+      fetch: async () => {
+        throw new Error("connection lost");
+      },
+    }),
+  });
+  await assert.rejects(
+    broken.execute({ files: [] }, {}, () => {}, signal),
+    { code: "runtime_unavailable" },
+  );
+});

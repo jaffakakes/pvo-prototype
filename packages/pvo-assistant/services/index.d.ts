@@ -109,7 +109,7 @@ export const SERVICE_TEST_POLICY: "restyle-service-checks-v1";
 export const SERVICE_TEST_LIMITS: Readonly<{
   cpuMs: number;
   invocationMs: number;
-  caseMs: number;
+  stepMs: number;
   invocationBytes: number;
   replyBytes: number;
   reportBytes: number;

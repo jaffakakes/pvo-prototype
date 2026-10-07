@@ -18,6 +18,10 @@ const waitMessages = {
     "Model capacity is busy. Your progress is saved and work will resume automatically.",
   model_allowance:
     "The current model allowance is used. Your progress is saved and work will resume when it resets.",
+  service_capacity:
+    "Waiting for a free hosted test slot. Saved work will continue automatically.",
+  service_allowance:
+    "Waiting for hosted test allowance to reset. Saved work will continue automatically.",
   workspace_capacity:
     "A build computer is not available yet. Your progress is saved and Restyle will try again automatically.",
   workspace_allowance:

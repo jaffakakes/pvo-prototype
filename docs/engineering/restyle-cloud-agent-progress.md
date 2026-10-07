@@ -4,7 +4,17 @@
 
 Last checkpoint: **7 October 2026**. Recheck Git and provider state before relying on the dated operational details below.
 
-## Current checkpoint — 1G.04 Node runtime preparation, partial and unchecked
+## Current checkpoint — durable validation steps implemented; final checks and beta in progress
+
+**58/134 complete; 1G.04/05 remain unchecked.** Active `feature/restyle-containers`, same checkout and draft #106. Prepared Node proof source `c8b2424` is pushed; this batch adds the checkpointed validation needed for cold starts. The scoped US$1 cloud-proof question is still pending. No paid 1G dispatch, production change or Actions inspection.
+
+- **Change:** the existing validation journal now runs one independently checked behavior step per claim and atomically saves its bounded state cursor with the receipt/usage. A restart retries only the unfinished step. A completed case still requires all its steps; public artifact/report authority is unchanged. Hosted slot/allowance waits retain the exact source and cursor and resume automatically at the trusted retry time. Stop fences waiting/in-flight work. Node startup or transport problems are distinguished from generated-code failures.
+- **Verification:** 17 validation tests, two new capacity/Stop tests, fourteen Node tests, fourteen provider/recovery/goal-continuation tests and four hosted-service tests pass; strict editor types and the actual Containers draft/manual/AI/reload/conflict/account browser journey pass. The initial full run exposed old diagnostic calls and usage counters that assumed one attempt per whole case; updated them to the new step contract. One stale test process tree was stopped; no provider resource was involved. The subsequent full run passed 1,514/1,516 with only two old hosting counters; both are corrected and four affected tests pass. A final `npm run check` is running in `/tmp/restyle-step-complete-check.log`.
+- **Source:** `server/assistant/validation/`, coordinator method, shared test limit/wait reasons, saved-task copy, controlled fixtures, regression tests and current contracts. Exact changed paths are in this commit. No runtime fallback or data migration was added. The product generated-service package remains Dynamic Workers until the proven Node replacement lands.
+- **Beta:** current served revision is still `restyle-editor-shell-cc5dbc01f8df1631`. Merge this source into the existing combined checkout after verification, build and deliver with assets before HTML/SW. Its prior dirty output is backed up at `/Users/christinasmacbook/.codex/backups/restyle-node-step-combined-before-v90tn_39`; expected Desktop hashes `/tmp/restyle-node-step-beta-expected.json`. User session must not be reloaded.
+- **Exact next:** finish final full checks, combined beta build/delivery and fresh served-worker verification; record the receipt. Then run the prepared Node diagnostic if its scoped approval arrives and continue canonical Node package/host/validation integration. While approval is pending, manual test/publish commands can be implemented on the existing task and service authorities; they must freeze the exact saved draft and use this same independent gate. Keep 1G.04/05 and all unverified tasks unchecked. Preserve all earlier 1E/1F evidence and production hold.
+
+## Previous checkpoint — 1G.04 Node runtime preparation, partial and unchecked
 
 **58/134 complete; 1G.04 remains unchecked.** Continue in `feature/restyle-containers`, `/Users/christinasmacbook/.codex/worktrees/restyle-containers/pvo-prototype`, following committed beta checkpoint `a4ead1c` / draft #106. Production stays on hold; no paid 1G resources have been created.
 

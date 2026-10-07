@@ -67,42 +67,47 @@ export class NodeContainer {
     });
   }
   async ready(assertCurrent, signal) {
-    return withAssistantDeadline(
-      async (current) => {
-        await this.container.setInactivityTimeout(limits.leaseMs);
-        const image = this.container.images.runtime;
-        for (;;) {
-          current.throwIfAborted();
-          assertCurrent();
-          try {
-            const inspected = await this.container.inspect();
+    try {
+      return await withAssistantDeadline(
+        async (current) => {
+          await this.container.setInactivityTimeout(limits.leaseMs);
+          const image = this.container.images.runtime;
+          for (;;) {
             current.throwIfAborted();
             assertCurrent();
-            if (inspected?.image && inspected.image !== image)
-              throw nodeExecutionError("runtime_mismatch");
-            if (inspected?.image === image) {
-              const response = await this.container
-                .getTcpPort(8080)
-                .fetch("http://runtime/ready", { signal: current });
-              const ready = await readNodeReply(response, 1024, current);
-              if (
-                ready.nodeVersion !== NODE_RUNTIME.nodeVersion ||
-                ready.runnerDigest !== NODE_RUNTIME.runnerDigest
-              )
+            try {
+              const inspected = await this.container.inspect();
+              current.throwIfAborted();
+              assertCurrent();
+              if (inspected?.image && inspected.image !== image)
                 throw nodeExecutionError("runtime_mismatch");
-              return ready;
+              if (inspected?.image === image) {
+                const response = await this.container
+                  .getTcpPort(8080)
+                  .fetch("http://runtime/ready", { signal: current });
+                const ready = await readNodeReply(response, 1024, current);
+                if (
+                  ready.nodeVersion !== NODE_RUNTIME.nodeVersion ||
+                  ready.runnerDigest !== NODE_RUNTIME.runnerDigest
+                )
+                  throw nodeExecutionError("runtime_mismatch");
+                return ready;
+              }
+            } catch (error) {
+              if (error?.code === "runtime_mismatch") throw error;
+              current.throwIfAborted();
+              assertCurrent();
             }
-          } catch (error) {
-            if (error?.code === "runtime_mismatch") throw error;
-            current.throwIfAborted();
-            assertCurrent();
+            await new Promise((resolve) => setTimeout(resolve, 100));
           }
-          await new Promise((resolve) => setTimeout(resolve, 100));
-        }
-      },
-      limits.startupMs,
-      signal,
-    );
+        },
+        limits.startupMs,
+        signal,
+      );
+    } catch (error) {
+      if (error?.status === 504) throw nodeExecutionError("startup_timeout");
+      throw error;
+    }
   }
   async execute(bundle, invocation, assertCurrent, signal) {
     const body = JSON.stringify({
@@ -122,14 +127,20 @@ export class NodeContainer {
       async (current) => {
         current.throwIfAborted();
         assertCurrent();
-        const response = await this.container
-          .getTcpPort(8080)
-          .fetch("http://runtime/execute", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body,
-            signal: current,
-          });
+        let response;
+        try {
+          response = await this.container
+            .getTcpPort(8080)
+            .fetch("http://runtime/execute", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body,
+              signal: current,
+            });
+        } catch (error) {
+          current.throwIfAborted();
+          throw nodeExecutionError("runtime_unavailable");
+        }
         return readNodeReply(response, limits.replyBytes, current);
       },
       limits.executionMs,

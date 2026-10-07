@@ -15,7 +15,7 @@ export const SERVICE_TEST_POLICY = "restyle-service-checks-v1";
 export const SERVICE_TEST_LIMITS = Object.freeze({
   cpuMs: 50,
   invocationMs: 2000,
-  caseMs: 20000,
+  stepMs: 55000,
   invocationBytes: 64 * 1024,
   replyBytes: 64 * 1024,
   reportBytes: 48 * 1024,

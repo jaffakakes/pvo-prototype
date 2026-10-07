@@ -126,3 +126,10 @@ An expired inactive host does not end an unfinished goal. After the original pub
 `progress.js` retains at most three current task-owned cursors: tools, reviews and history. Each records the last semantic signature, accepted round, answer count and consecutive identical observations. Replaying the same committed round does not increment it. Full evidence stays in the existing receipt/report journals. Three consecutive identical observations produce a saved help question before the next inference; an answer allows a new approach. These conservative comparisons do not claim to recognize every possible unproductive cycle.
 
 Progress commits with accepted builder feedback, report/checkpoint or history selection. A failed progress write is resumable and does not repeat an already journaled tool. Questions use the current claim and ordinary saved-answer boundary; Stop fences late work. Safe terminal-content cleanup prunes the cursors. This metadata cannot grant permission, approve a release, replace a report or mark a task Ready.
+
+
+## Checkpointed independent validation
+
+Each validation claim captures a package or executes one saved behavior step. The private artifact row keeps a bounded `{step,state}` cursor for its current case. A matching reply advances that cursor atomically with the attempt receipt and usage settlement; only the last passing step appends a completed case. Restart retains earlier checked steps, and a lost reply retries only its unfinished step. The public report remains bound to the exact saved artifact and cannot be supplied by generated code or the browser.
+
+The `service_capacity` and `service_allowance` wait reasons preserve the artifact/cursor and schedule the trusted retry time without sending source for model repair. Stop prevents wakeup and late checkpoints. Startup timeouts use capacity waiting; unavailable transport remains a recoverable execution failure. These are resource-period constraints, not a total goal/model-turn limit.
