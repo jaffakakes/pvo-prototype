@@ -26,7 +26,8 @@ const context = await browser.newContext({
 });
 let cookie = fixture.cookie,
   lost = true,
-  lostReset = true;
+  lostReset = true,
+  usageUnavailable = false;
 const commands = [],
   errors = [];
 let page;
@@ -74,6 +75,12 @@ try {
       await route.fulfill({ status: 503, json: { error: "Lost reset reply" } });
       return;
     }
+    if (
+      url.pathname.endsWith("/records") &&
+      reply.status === 200 &&
+      usageUnavailable
+    )
+      reply.body.compute = { state: "unavailable" };
     await route.fulfill({ status: reply.status, json: reply.body });
   });
   page = await context.newPage();
@@ -92,14 +99,25 @@ try {
         (await import("/src/app/projectAutosave.ts")).getProjectStorageStatus()
           .phase === "ready",
     );
+    await page.locator("#root[inert]").waitFor({ state: "hidden" });
     await page.evaluate(async () => {
       await (
         await import("/src/state/auth/authGateStore.ts")
       ).refreshAccountSession();
-      (await import("/src/state/captureStore.ts")).useCapture
-        .getState()
-        .patch({ sheet: "more" });
     });
+    if (page.viewportSize().width >= 900) {
+      await page
+        .getByRole("button", { name: "Project settings", exact: true })
+        .click();
+      await page
+        .getByRole("button", { name: "More settings", exact: true })
+        .click();
+    } else {
+      await page
+        .locator("header")
+        .getByRole("button", { name: "More", exact: true })
+        .click();
+    }
     await page
       .getByRole("button", { name: "Open Containers", exact: true })
       .click();
@@ -145,6 +163,32 @@ try {
     name: "Test records 1",
     exact: true,
   });
+  const computeArea = page.getByRole("region", {
+    name: "Compute and cost",
+    exact: true,
+  });
+  await computeArea.getByText("estimated compute", { exact: false }).waitFor();
+  assert.equal(
+    await computeArea
+      .getByRole("rowheader", { name: "Viewer actions", exact: true })
+      .count(),
+    1,
+  );
+  await computeArea.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "/tmp/restyle-compute-desktop.png" });
+  usageUnavailable = true;
+  await page
+    .getByRole("button", { name: "Refresh records and usage", exact: true })
+    .click();
+  await computeArea
+    .getByText("Compute usage is unavailable.", { exact: false })
+    .waitFor();
+  assert.equal(await computeArea.getByRole("table").count(), 0);
+  usageUnavailable = false;
+  await page
+    .getByRole("button", { name: "Refresh records and usage", exact: true })
+    .click();
+  await computeArea.getByText("estimated compute", { exact: false }).waitFor();
   await liveArea.getByText("View records", { exact: true }).click();
   await testArea.getByText("View records", { exact: true }).click();
   assert(
@@ -277,6 +321,9 @@ try {
   await page
     .getByRole("button", { name: "Records and usage", exact: true })
     .click();
+  await computeArea.getByText("estimated compute", { exact: false }).waitFor();
+  await computeArea.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "/tmp/restyle-compute-phone.png" });
   await liveArea.getByText("View records", { exact: true }).click();
   await liveArea.scrollIntoViewIfNeeded();
   await page.screenshot({ path: "/tmp/restyle-records-phone.png" });
@@ -350,6 +397,7 @@ try {
     "Service manager passed: real HTTP/workerd/SQLite lifecycle, lost activation response and reload, exact retry, checked version selection/rollback without losing records, pause/resume, owner switch, explicit deletion, desktop and phone. No paid resources.",
   );
 } catch (error) {
+  console.error("Browser errors:", errors);
   await page
     ?.screenshot({ path: "/tmp/restyle-services-failure.png" })
     .catch(() => {});

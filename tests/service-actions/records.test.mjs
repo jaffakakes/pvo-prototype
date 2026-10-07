@@ -70,6 +70,11 @@ test(
       assert.equal(tests.usage.calls, 20);
       assert.equal(tests.usage.executions, 8);
       assert.equal(tests.receipts.count, 8);
+      assert.equal(parsed.compute.state, "available");
+      assert.equal(parsed.compute.periods.live.starts, 1);
+      assert.equal(parsed.compute.periods.test.starts, 8);
+      assert.ok(parsed.compute.estimate.completedUsd > 0);
+      assert.ok(parsed.storageBytes > 0);
       assert.equal(tests.results.length, SERVICE_RECORD_LIMITS.results);
       assert.equal(tests.results[0].actionId, "test-7");
       assert.equal(tests.failures.length, SERVICE_RECORD_LIMITS.failures);
@@ -83,7 +88,12 @@ test(
         "inspection consumes no invocation quota",
       );
       await f.restart();
-      assert.deepEqual((await records(f, service)).body, before.body);
+      const after = (await records(f, service)).body;
+      assert.deepEqual(after.areas, before.body.areas);
+      assert.deepEqual(after.service, before.body.service);
+      assert.deepEqual(after.compute.periods, before.body.compute.periods);
+      assert.deepEqual(after.compute.capacity, before.body.compute.capacity);
+      assert.deepEqual(after.compute.estimate, before.body.compute.estimate);
       const changed = structuredClone(parsed);
       changed.areas[0].recordsJson = "not json";
       assert.throws(() => parseServiceRecords(changed));

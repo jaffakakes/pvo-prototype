@@ -1,7 +1,7 @@
 import { parseNodeBundle } from "../../../packages/pvo-assistant/services/index.js";
 import { withAssistantDeadline } from "../../assistant/deadline.js";
 import { NODE_LIMITS as limits } from "./runtime.js";
-import { nodeExecutionError } from "./container.js";
+import { nodeExecutionError } from "./protocol.js";
 
 /** Private two-slot compute admission. Ownership and state authority are supplied by the service/validator. */
 export async function executeNodeBundle(

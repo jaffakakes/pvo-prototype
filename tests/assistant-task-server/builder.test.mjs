@@ -15,6 +15,7 @@ const agreement = () => ({ kind: "agreement", agreement: dinnerAgreement() });
 const batch = (calls, review = null) => ({ kind: "tools", calls, review });
 const review = (reference) => ({
   kind: "review",
+  libraries: [],
   ...reference,
   entrypoint: "src/service.mjs",
   tests: ["tests/service.test.mjs"],

@@ -58,6 +58,7 @@ function nextBuild(context) {
     ]);
   return {
     kind: "review",
+    libraries: [],
     ...reference,
     entrypoint: "src/service.mjs",
     tests: ["tests/service.test.mjs"],

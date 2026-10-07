@@ -1,3 +1,4 @@
+import { fixtureNodeEffect } from "../node-runtime/fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -28,11 +29,13 @@ export async function taskFixture({
   hostControl = null,
   draftControl = null,
   spending = true,
+  productionLeases = false,
 } = {}) {
   modules ??= bundleWorkerModules({
     stdin: {
       resolveDir: process.cwd(),
       contents: `
+    export { FixtureNodeExecution } from "./tests/node-runtime/fixture-worker.js";
     export { TestBudget, TestWorkspace } from './tests/assistant-workspaces/controlled-worker.js';
     import { installCheckedDiagnostic } from "./scripts/checks/cloud-agent-recovery/checked-fixture.js";
     import { taskResearchTools } from "./server/assistant/builder/researchTools.js";
@@ -58,9 +61,9 @@ export async function taskFixture({
         return result;
       }
       async publish(value) { this.ctx.storage.sql.exec("INSERT INTO calls (id,count) VALUES (?,1) ON CONFLICT(id) DO UPDATE SET count=count+1",value.identity.resourceId); return super.publish(value); }
-      async executePackage(source,invocation,signal) {
+      async executePackage(source,invocation,mode,signal) {
         if(this.env.HOST_CONTROL) await this.env.HOST_CONTROL.fetch('https://control.test',{method:'POST',body:JSON.stringify({phase:'before',invocation})});
-        return super.executePackage(source,invocation,signal);
+        return super.executePackage(source,invocation,mode,signal);
       }
       async diagnostic(action) {
         if(action==='stop-draft-writer')await this.stopDraftTask(this.store.service().identity.serviceId,this.store.service().identity.ownerId,'expired-writer');
@@ -97,7 +100,7 @@ export async function taskFixture({
       pausePlanning() { this.planningPaused = true; }
       async alarm() { if (!this.planningPaused) return super.alarm(); }
       stepTimeoutMs() { return this.env.CONTROLLED_PLAN ? 1000 : super.stepTimeoutMs(); }
-      leaseMs() { return this.env.CONTROLLED_PLAN ? 1500 : super.leaseMs(); }
+      leaseMs(task) { return this.env.CONTROLLED_PLAN && !this.env.PRODUCTION_LEASES ? 1500 : super.leaseMs(task); }
       async plan(task, signal, input) {
         if (!this.env.CONTROLLED_PLAN) return super.plan(task, signal, input);
         return (await this.env.PLANNER.fetch("https://planner.test/", { method: "POST", body: JSON.stringify({ ...task, draftContext: input?.draft ?? null, builderContext: input?.build ?? null, attachmentContext: input?.attachment ?? null, evidenceContext: input?.evidence ?? null }), signal })).json();
@@ -172,7 +175,7 @@ export async function taskFixture({
       }
       async resolveAttachment(ownerId,id,guard,command) { return resolveTaskAttachment(this,await this.claimForOperation(ownerId,id,guard),command); }
       serviceCatalog() { return this.services.services().map(service=>({service,releases:this.services.releases(service.identity.serviceId)})); }
-      async runValidationStep(artifact, index, cursor, signal) {
+      async runValidationStep(claimed, artifact, index, cursor, signal) {
         const control = async phase => {
           if (!this.env.VALIDATION_CONTROL) return;
           const decision = await (await this.env.VALIDATION_CONTROL.fetch("https://validation-control.test", {method:"POST", body:JSON.stringify({phase,index,step:cursor.step,identity:artifact.identity})})).json();
@@ -180,7 +183,7 @@ export async function taskFixture({
           if (decision.wait) throw Object.assign(new Error("Controlled capacity"),decision.wait);
         };
         await control("before");
-        const result = await super.runValidationStep(artifact,index,cursor,signal);
+        const result = await super.runValidationStep(claimed,artifact,index,cursor,signal);
         await control("after");
         return result;
       }
@@ -341,10 +344,12 @@ export async function taskFixture({
         SESSION_SECRET: SECRET,
         BROKEN: broken,
         CONTROLLED_PLAN: Boolean(planner),
+        PRODUCTION_LEASES: productionLeases,
         CONTROLLED_CLOCK: clock,
         CONTROLLED_SPENDING: spending,
       },
-      ...(planner ||
+      ...(services ||
+      planner ||
       providerControl ||
       workspaces ||
       researchFetch ||
@@ -353,6 +358,7 @@ export async function taskFixture({
       draftControl
         ? {
             serviceBindings: {
+              NODE_FIXTURE: fixtureNodeEffect,
               ...(planner ? { PLANNER: planner } : {}),
               ...(validationControl
                 ? { VALIDATION_CONTROL: validationControl }
@@ -368,7 +374,7 @@ export async function taskFixture({
             },
           }
         : {}),
-      ...(services ? { workerLoaders: { SERVICE_LOADER: {} } } : {}),
+
       ...(storage
         ? {
             durableObjects: {
@@ -387,6 +393,10 @@ export async function taskFixture({
                 : {}),
               ...(services
                 ? {
+                    SERVICE_NODE_EXECUTION: {
+                      className: "FixtureNodeExecution",
+                      useSQLite: true,
+                    },
                     SERVICE_HOSTS: {
                       className: "TestHostedService",
                       useSQLite: true,

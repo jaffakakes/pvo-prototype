@@ -12,6 +12,7 @@ import {
 } from "../tasks/validation.js";
 import { TASK_LIMITS } from "../tasks/index.js";
 import {
+  resolveNodeLibraries,
   parseServiceAgreement,
   parseServiceFilePath,
   SERVICE_PACKAGE_LIMITS,
@@ -30,7 +31,7 @@ const fields = {
   research: ["calls"],
   ask: ["prompt", "choices"],
   tools: ["calls", "review"],
-  review: ["revision", "digest", "entrypoint", "tests"],
+  review: ["revision", "digest", "entrypoint", "tests", "libraries"],
 };
 
 /** Closed model output; agreement comes before any generated source and cannot be replaced. */
@@ -82,6 +83,7 @@ export function parseBuilderDecision(value, { hasAgreement, available }) {
     parseBuilderDecision(value.review, { hasAgreement, available });
   }
   if (kind === "review") {
+    resolveNodeLibraries(value.libraries);
     integer(value.revision, Number.MAX_SAFE_INTEGER, "Source revision", 1);
     digest(value.digest, "Saved source digest");
     parseServiceFilePath(value.entrypoint);

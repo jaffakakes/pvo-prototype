@@ -99,7 +99,7 @@ Retain separate test and live data. Node.js receives only the admitted call and 
 
 Source, release bundle, reports, selected version, records and receipts must survive both workshop deletion and live-instance destruction. Memory, local disk and shutdown callbacks cannot be their only copy. A sleeping instance can restart automatically; a paused or deleted service cannot. Cold starts have a deadline and a truthful retryable outcome, with the original action identity retained.
 
-Cloudflare remains the first provider candidate. Its [Container lifecycle](https://developers.cloudflare.com/containers/concepts/architecture/) documents temporary disks and a distinct ready state; its [Durable Object Container API](https://developers.cloudflare.com/containers/api/durable-object-container/) provides host-controlled start, networking and stop operations. These are provider capabilities, not evidence that Restyle's proposed adapter has passed. Recheck them in the implementation proof.
+**Fly.io is the selected Node execution provider (7 October).** The user chose their existing account after six Cloudflare image-upload attempts failed before runtime execution. Fly Machines can pull the pinned public Node image directly. Preserve the existing Restyle task/service/data authorities and replace only the generated-code execution effect once its isolation, runtime and cleanup proof passes. The prepared Cloudflare controller and all earlier evidence remain recorded; they are not a second active product runtime. Follow [the current Fly proof](../restyle-node-provider-proof.md#current-decision--flyio-7-october-2026).
 
 ## Updates, controls and costs use existing foundations
 
@@ -111,7 +111,7 @@ Cloudflare remains the first provider candidate. Its [Container lifecycle](https
 
 **Limits/costs:** extend existing admission and usage accounting for instance size, CPU/runtime, idle lifetime, startup time, concurrency, starts, build/package download bytes, stored bundles/data/receipts and logs. Bound test and live usage separately, plus service/owner/platform totals. Reserve capacity before work, meter outside the guest, reconcile uncertain starts and stop owned processes at the limit. Do not reintroduce an arbitrary total model-turn or goal-age ceiling: save progress and wait for capacity or actual spending permission.
 
-Show build/test usage separately from ongoing hosting/storage, with a dated estimate and known uncertainty. Sleeping compute can stop consuming runtime while retained storage still has costs. Include Worker/Durable Object, storage, logs and network charges in estimates; provider billing is not an instantaneous application spending cap. Consult current [Container pricing](https://developers.cloudflare.com/containers/platform/pricing/) before a paid proof. Previous US$1/US$15 batches are closed; this documentation authorizes no new spend.
+Show build/test usage separately from ongoing hosting/storage, with a dated estimate and known uncertainty. Sleeping compute can stop consuming runtime while retained storage still has costs. Include Worker/Durable Object, storage, logs and network charges in estimates; provider billing is not an instantaneous application spending cap. Use current Fly compute/storage/network prices for the selected execution provider, and retain Cloudflare platform/storage charges where still applicable. The latest proof records the user-approved US$1 test and provider change; earlier closed 1F/workspace budgets are not additional allowances.
 
 ## Ordered implementation checklist
 
@@ -206,3 +206,35 @@ Combined `ef5c02b` passes build/types/28 focused tests and is delivered as **`re
 | 4C.01 | Containers shows named projects/components, recorded exports and published links. A lost project report has explicit retry and read-back recovery. Current services use Restyle storage and require no external account connection. |
 
 Source **`6b1e772`**, plus Node cleanup-race repair **`a68ee92`**, passes **1,535 full tests**, strict types, twenty final label/report/delivery tests and actual editor/player/manual-draft browser acceptance. The current host is still Dynamic Workers; these tests do not claim hosted Node acceptance. Combined **`d697988`** passes build/types/**41 tests** and is delivered as **`restyle-editor-shell-2be2aa4028e49099`**, verified on actual beta 4173 with activated service worker and 128 retained older hashed assets. [Progress](../restyle-cloud-agent-progress.md) records receipts, the initial failures/fixes and exact remaining tasks. No paid 1G resources or production release.
+
+
+## Retention and measurement preparation — 7 October 2026
+
+Source `460d9fc` verifies service alarms removing expired AI writer permissions and abandoned test data while retaining active/paused source, drafts, exports and accepted replies. Source `d6bd04a` extends the prepared Node controller with private per-owner/service/mode accounting, separate startup/execution/cleanup time, payload/result bytes, pending cleanup and dated compute-only proof estimates. Uncertain destruction retains both capacity and its accounting record through restart; idle alarms expire old usage without requiring another call.
+
+Full **1,541 tests**, strict types, nineteen Node cases and the updated provider diagnostic dry run pass. Combined `7c70253` passes build/types/37 focused tests and is delivered as **`restyle-editor-shell-a97baa97a23cffcd`**, served files/activated service worker verified, 130 older hashed assets retained. No paid provider test ran; scoped approval is pending. **All six remaining gates stay unchecked.** These changes prepare 4C.02/06; they do not prove the Node hosting path or supply a complete provider cost view. [Progress](../restyle-cloud-agent-progress.md) records receipts, limitations and the exact next action.
+
+
+## Shared Fly transport preparation — 7 October 2026
+
+The successful cloud proof's byte-checked upload and paced commands now share code with the prepared product Fly adapter. Full **1,591 tests**, syntax, dependency and formatting checks pass locally, including lost start replies and cancellation before a late start. This is preparatory implementation: the current product still executes Dynamic Workers and beta is unchanged. The [progress checkpoint](../restyle-cloud-agent-progress.md) names the pending files and next durable-controller binding. All six remaining gates stay unchecked; the isolated eight-case provider proof and earlier 1E/1F evidence are preserved.
+
+
+## Durable Fly binding preparation — 7 October 2026
+
+The existing Node compute lease now owns the Fly create/start/destroy obligation, with no second service catalog. Full **1,598 tests** and all **76 Node runtime cases** pass, including actual local durable restarts with controlled provider replies. The product package, independent validation and hosting still use Dynamic Workers; deadlines, Fly accounting and final Node beta acceptance remain unfinished. See the [current checkpoint](../restyle-cloud-agent-progress.md). All six remaining gates remain unchecked.
+
+
+## Resource deadline and Fly profile preparation — 7 October 2026
+
+The prepared Node resource lease, independent-validation claim and host-recognized Container request now allow time for the proved large upload. Ordinary requests/model/workshop claims retain their existing short limits, with cancellation and outside cleanup enforced. Accounting uses the actual Fly `iad` shared-1x / 1 GiB profile and a dated compute-only estimate, with other charges explicitly excluded. The [provider notes](../restyle-node-provider-proof.md#product-resource-deadlines-and-fly-estimate--7-october-2026) record bounds and pricing; [progress](../restyle-cloud-agent-progress.md) records verification. The product runtime replacement, complete cost UI and final beta acceptance remain pending. All six gates stay unchecked.
+
+
+## Canonical Node integration — 7 October 2026
+
+Current source replaces the Worker package/loader with one pinned Node runtime and retained supported-library bytes. AI/manual authoring, independent validation and the existing host share that artifact; source/runtime/lock changes invalidate prior reports. The offline workshop restores the reviewed catalog without downloads. Full **1,602 tests**, editor types and source checks pass, including actual local Node execution and workerd/SQLite/RPC lifecycles with controlled effects. The [progress checkpoint](../restyle-cloud-agent-progress.md) separates these from the completed isolated Fly proof. Configured Fly product acceptance, library/cost UI and final beta delivery remain pending; no checkbox changes or production release are claimed. Completed 1E/1F evidence is retained, and superseded paid creation drivers are retired with cleanup retained.
+
+
+## Library selection and private compute views — 7 October 2026
+
+Current source adds exact supported-library selection to the existing draft editor and private compute/cost/storage projection to Records and usage. Full **1,605 tests**, editor types and desktop/phone browser acceptance pass locally. The [current checkpoint](../restyle-cloud-agent-progress.md) records the save-fixture race, lifecycle/ownership checks, unavailable-metering behavior and cost exclusions. Final visual confirmation passes; configured Fly product acceptance and Node beta delivery remain pending. All six remaining tasks stay unchecked; earlier 1E/1F evidence remains unchanged.

@@ -1,4 +1,5 @@
-export { SERVICE_PACKAGE_LIMITS, SERVICE_RUNTIME } from "./limits.js";
+export { SERVICE_RUNTIME, parseServiceRuntime } from "./runtime.js";
+export { SERVICE_PACKAGE_LIMITS, SERVICE_EXECUTION_LIMITS } from "./limits.js";
 export {
   parseServiceAgreement,
   serializeServiceAgreement,
@@ -42,5 +43,7 @@ export {
 export {
   parseNodeBundle,
   parseNodeDependencies,
+  resolveNodeLibraries,
+  nodeLibraryIds,
   supportedNodeLibraries,
 } from "./nodeBundle.js";

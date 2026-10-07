@@ -63,6 +63,7 @@ export type BuilderDecision =
       digest: string;
       entrypoint: string;
       tests: string[];
+      libraries: string[];
     };
 export const BUILDER_LIMITS: Readonly<{
   batchCalls: number;

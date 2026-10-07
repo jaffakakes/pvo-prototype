@@ -1,5 +1,6 @@
 import {
   parseServiceDraftContent,
+  resolveNodeLibraries,
   parseServiceFiles,
   parseServiceFilePath,
 } from "../../../packages/pvo-assistant/services/index.js";
@@ -15,7 +16,14 @@ import { TASK_LIMITS } from "../../../packages/pvo-assistant/tasks/index.js";
 
 const fields = {
   read: ["path", "offset"],
-  write: ["expectedRevision", "files", "entrypoint", "tests", "agreementJson"],
+  write: [
+    "expectedRevision",
+    "files",
+    "entrypoint",
+    "tests",
+    "agreementJson",
+    "libraries",
+  ],
   replace: ["expectedRevision", "path", "start", "end", "content"],
   ask: ["prompt", "choices"],
   execute: ["reason"],
@@ -30,6 +38,7 @@ export function parseDraftDecision(value) {
     integer(value.offset, 128 * 1024, "Read offset");
   }
   if (kind === "write") {
+    resolveNodeLibraries(value.libraries);
     integer(
       value.expectedRevision,
       Number.MAX_SAFE_INTEGER - 1,
@@ -95,6 +104,7 @@ export function prepareDraftEdit(saved, decision, actionId) {
       ...(decision.kind === "write"
         ? {
             entrypoint: decision.entrypoint,
+            dependencies: resolveNodeLibraries(decision.libraries),
             tests: decision.tests,
             agreement: JSON.parse(decision.agreementJson),
           }

@@ -7,6 +7,7 @@ import {
 import { readServiceRecords } from "../../infrastructure/services/client";
 import { useAuthGate } from "../../state/auth/authGateStore";
 import styles from "./ServicesPanel.module.css";
+import { ContainerCompute } from "./ContainerCompute";
 
 const failureLabels: Record<string, string> = {
   invalid_input: "The submitted fields did not match the operation.",
@@ -184,6 +185,10 @@ export function ContainerRecords({
             hosted operation counts exclude AI calls, development workshops and
             independent checks. They are not a provider bill.
           </p>
+          <ContainerCompute
+            compute={current.records.compute}
+            storageBytes={current.records.storageBytes}
+          />
           {!current.records.areas.length && (
             <p>Test a saved draft to create its first records area.</p>
           )}

@@ -10,19 +10,19 @@ import { contentDigest } from "../../../server/contentDigest.js";
 import { runServiceStep } from "../../../server/assistant/validation/cases.js";
 
 // Fixed recovery diagnostic, not a generated product template. No request supplies source or URLs.
-const source = `import {env} from 'cloudflare:workers';
+const source = `
 export async function execute({input,state}) {
   if (input.spin) { while(true) {} }
   if (input.big) return {result:'x'.repeat(70000),state};
   let blocked=false; try {await fetch('https://example.com');} catch {blocked=true;}
-  return {result:{answer:input.value*2,blocked,keys:Object.keys(env),auth:null},state};
+  return {result:{answer:input.value*2,blocked,keys:Object.keys(process.env).filter(name=>/SECRET|TOKEN|KEY/.test(name)),auth:null},state};
 }`;
 const field = (name, schema) => ({ name, description: name, schema });
 const record = (...fields) => ({ type: "object", fields });
 const number = { type: "integer", minimum: 0, maximum: 1000 },
   bool = { type: "boolean" },
   nil = { type: "null" };
-export async function recoveryCheckedService(loader) {
+export async function recoveryCheckedService(namespace, scope) {
   const agreement = {
     description: "Verify isolated inactive service recovery.",
     state: { schema: nil, initial: null },
@@ -92,12 +92,13 @@ export async function recoveryCheckedService(loader) {
     packageDigest: await contentDigest(serializeServicePackage(pkg)),
   };
   const result = await runServiceStep(
-    loader,
+    namespace,
     pkg,
     agreement,
     agreementDigest,
     0,
     { step: 0, state: agreement.cases[0].initialState },
+    scope,
   );
   const report = appendServiceCaseResult(
     newServiceTestReport(agreement, identity),

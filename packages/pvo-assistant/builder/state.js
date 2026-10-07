@@ -264,7 +264,9 @@ export function recordBuilderReview(value, feedback) {
     feedback.review.revision === review.revision &&
       feedback.review.digest === review.digest &&
       feedback.review.entrypoint === review.entrypoint &&
-      JSON.stringify(feedback.review.tests) === JSON.stringify(review.tests),
+      JSON.stringify(feedback.review.tests) === JSON.stringify(review.tests) &&
+      JSON.stringify(feedback.review.libraries) ===
+        JSON.stringify(review.libraries),
     "Report belongs to a different review request.",
   );
   return parseBuilderState({ ...state, reviewFeedback: feedback });

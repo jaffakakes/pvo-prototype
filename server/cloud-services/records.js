@@ -4,9 +4,24 @@ import {
   serviceCallError,
 } from "../../packages/pvo-assistant/hosting/index.js";
 import { ownedHost } from "./ownership.js";
+import { readNodeUsage } from "./node/usage.js";
 
+/** Authorize before private compute reads; recheck lifecycle after awaiting them. */
+export async function inspectServiceRecords(host, serviceId, ownerId) {
+  const service = ownedHost(host, serviceId, ownerId);
+  if (service.state === "deleted")
+    throw serviceCallError("unavailable", "This Container has been deleted.");
+  const compute = await readNodeUsage(
+    host.env.SERVICE_NODE_EXECUTION,
+    ownerId,
+    serviceId,
+  );
+  return host.ctx.storage.transactionSync(() =>
+    recordsSnapshot(host, serviceId, ownerId, compute),
+  );
+}
 /** One transaction reads the authoritative host; this never invokes generated code. */
-export function inspectServiceRecords(host, serviceId, ownerId) {
+function recordsSnapshot(host, serviceId, ownerId, compute) {
   const service = ownedHost(host, serviceId, ownerId);
   if (service.state === "deleted")
     throw serviceCallError("unavailable", "This Container has been deleted.");
@@ -35,5 +50,7 @@ export function inspectServiceRecords(host, serviceId, ownerId) {
     service: host.store.service(),
     observedAt,
     areas,
+    compute,
+    storageBytes: host.ctx.storage.sql.databaseSize,
   });
 }

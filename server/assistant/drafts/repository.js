@@ -56,7 +56,7 @@ export class TaskDrafts {
     if (value) {
       value.stopPending ||= {
         nextAt: now,
-        expiresAt: now + TASK_LIMITS.leaseMs,
+        expiresAt: now + TASK_LIMITS.defaultLeaseMs,
         attempts: 0,
       };
       this.write(taskId, value);

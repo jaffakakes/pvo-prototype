@@ -1,15 +1,9 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 
 /** Matches the pinned Wrangler named-image repository; every proof uses a unique class. */
 export function proofImageRepository(id) {
   assert.match(id, /^[a-f0-9]{24}$/);
-  const className = `RestyleNode${id}`;
-  const hash = createHash("sha256")
-    .update(`${className}\0runtime`)
-    .digest("hex")
-    .slice(0, 12);
-  return `cloudflare-dev/${className.toLowerCase()}-runtime-${hash}`;
+  return `restyle-workspace-proof-${id}-restylenode${id}-runtime`;
 }
 
 export async function listProofImages(resource, run) {

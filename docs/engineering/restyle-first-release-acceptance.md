@@ -12,7 +12,7 @@ The temporary workshop writes and tests the code. The separately hosted service 
 
 ## Implementation and evidence boundary
 
-- Driver: [run.mjs](../../scripts/checks/cloud-agent-first-release/run.mjs).
+- Historical driver (retired with the 1G Node contract; cleanup remains available): [run.mjs](https://github.com/jaffakakes/pvo-prototype/blob/ef28a092c20f9d983a66106f905259b495aeabc6/scripts/checks/cloud-agent-first-release/run.mjs).
 - Requests: [scenarios.js](../../scripts/checks/cloud-agent-first-release/scenarios.js). They contain natural-language requests, acceptance examples and one anticipated creator answer, with no generated source, agreement, test report or model decision.
 - [Diagnostic task subclass](../../scripts/checks/cloud-agent-first-release/tasks.js) uses the production planning/build/attachment functions, saved task runner, real workspace provider and independent validation. An optional model adapter parameter enables usage measurement; the production default is unchanged.
 - [Worker](../../scripts/checks/cloud-agent-first-release/worker.js) exposes private test controls. Only the existing public viewer action route is cookie-free. Model credentials stay in a Worker secret, outside prompts, generated source, workspaces and browser responses.
@@ -194,7 +194,8 @@ PR #105 is ready. GitHub rejected the normal exact-head merge (`4eadb6a`) under 
 Invocation from the active checkout, under the recorded completion authorization:
 
 ```sh
-node scripts/checks/cloud-agent-first-release/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-approved-1f --scenario=equipment
+# Historical completed command; the creation driver is now retired.
+# node scripts/checks/cloud-agent-first-release/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-approved-1f --scenario=equipment
 ```
 
 Use privately supplied `RUNPOD_API_KEY` or a nonempty `apikey` in the Runpod CLI configuration. The script never prints the key. A file existing is not sufficient: the first approved launch found an empty key and stopped before any resource creation or charge. On this Mac, the user can enter it privately with:

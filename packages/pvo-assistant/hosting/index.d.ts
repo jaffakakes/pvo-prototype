@@ -161,8 +161,61 @@ export type ServiceRecords = {
   service: HostedServiceRecord;
   observedAt: number;
   areas: ServiceRecordsArea[];
+  storageBytes: number;
+  compute: ServiceCompute;
 };
 export function parseServiceRecords(value: unknown): ServiceRecords;
+
+export type ServiceComputeMode = "live" | "test" | "validation" | "probe";
+export type ServiceComputeCounters = {
+  starts: number;
+  milliseconds: number;
+  startupMilliseconds: number;
+  executionMilliseconds: number;
+  cleanupMilliseconds: number;
+  admittedBytes: number;
+  resultBytes: number;
+};
+export type ServiceCompute =
+  | { state: "unavailable" }
+  | {
+      state: "available";
+      observedAt: number;
+      periodStartAt: number;
+      resetsAt: number;
+      capacity: {
+        slots: number;
+        busySlots: number;
+        ownerRemaining: number;
+        ownerLimit: number;
+        platformRemaining: number;
+        platformLimit: number;
+      };
+      periods: Record<ServiceComputeMode, ServiceComputeCounters>;
+      pending: {
+        mode: ServiceComputeMode;
+        startedAt: number;
+        deadlineAt: number;
+        phase: "running" | "cleanup";
+        milliseconds: number;
+      }[];
+      estimate: {
+        checkedOn: string;
+        machineSecondUsd: number;
+        completedUsd: number;
+        pendingUsd: number;
+      };
+      instance: {
+        provider: "fly";
+        region: "iad";
+        cpuKind: "shared";
+        cpus: 1;
+        memoryMiB: 1024;
+      };
+    };
+export const SERVICE_COMPUTE_MODES: readonly ServiceComputeMode[];
+export const SERVICE_COMPUTE_COUNTERS: readonly (keyof ServiceComputeCounters)[];
+export function parseServiceCompute(value: unknown): ServiceCompute;
 
 export function prepareReleaseActivation(
   previous: ServiceAgreement | null,

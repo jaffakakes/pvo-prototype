@@ -54,16 +54,31 @@ export type ServiceAgreement = {
 export type ServiceSourceFile = { path: string; content: string };
 export type ServicePackage = {
   agreementDigest: string;
-  runtime: "cloudflare-workers-esm";
+  runtime: ServiceRuntime;
   entrypoint: string;
-  dependencies: [];
+  dependencies: NodeLibrary[];
   files: ServiceSourceFile[];
   tests: string[];
 };
 export type ServiceExecute = (
   invocation: ServiceInvocation,
 ) => ServiceReply | Promise<ServiceReply>;
-export const SERVICE_RUNTIME: "cloudflare-workers-esm";
+export type ServiceRuntime = Readonly<{
+  name: "nodejs-esm";
+  nodeVersion: string;
+  baseImage: string;
+  runnerDigest: string;
+  imageDigest: string;
+}>;
+export const SERVICE_RUNTIME: ServiceRuntime;
+export function parseServiceRuntime(value: unknown): ServiceRuntime;
+export const SERVICE_EXECUTION_LIMITS: Readonly<{
+  leaseMs: number;
+  cleanupMs: number;
+  requestMs: number;
+  validationStepMs: number;
+  validationClaimMs: number;
+}>;
 export const SERVICE_PACKAGE_LIMITS: Readonly<{
   operations: number;
   cases: number;
@@ -107,7 +122,6 @@ export function matchServicePackage(
 
 export const SERVICE_TEST_POLICY: "restyle-service-checks-v1";
 export const SERVICE_TEST_LIMITS: Readonly<{
-  cpuMs: number;
   invocationMs: number;
   stepMs: number;
   invocationBytes: number;
@@ -187,7 +201,7 @@ export type ServiceDraftContent = {
   entrypoint: string;
   files: ServiceSourceFile[];
   tests: string[];
-  dependencies: [];
+  dependencies: NodeLibrary[];
 };
 export type ServiceDraft = {
   identity: { serviceId: string; ownerId: string; projectId: string };
@@ -226,3 +240,5 @@ export type NodeBundle = {
 export function parseNodeDependencies(value: unknown): NodeLibrary[];
 export function supportedNodeLibraries(): NodeLibrary[];
 export function parseNodeBundle(value: unknown): NodeBundle;
+export function resolveNodeLibraries(value: unknown): NodeLibrary[];
+export function nodeLibraryIds(value: unknown): string[];

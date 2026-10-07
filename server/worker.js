@@ -7,3 +7,4 @@ export { RenderContainer } from "./render/container.js";
 export { HostedService } from "./cloud-services/host.js";
 export { AssistantWorkspace } from "./assistant/workspaces/coordinator.js";
 export { WorkspaceBudget } from "./assistant/workspaces/budget.js";
+export { ServiceNodeExecution } from "./cloud-services/node/coordinator.js";

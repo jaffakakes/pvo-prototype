@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
 import { bundleWorkerModules } from "../worker-bundle.helpers.mjs";
-import { serviceWorkerCode } from "../../server/cloud-services/packageExecution.js";
+import { fixtureNodeEffect } from "../node-runtime/fixture.mjs";
+import { supportedNodeLibraries } from "../../packages/pvo-assistant/services/index.js";
 import {
   packageFor,
   dinnerAgreement,
@@ -16,6 +17,7 @@ async function fixture() {
     stdin: {
       resolveDir: process.cwd(),
       contents: `
+    export { FixtureNodeExecution } from "./tests/node-runtime/fixture-worker.js";
     import {executeServicePackage} from './server/cloud-services/packageExecution.js';
     import {runServiceStep} from './server/assistant/validation/cases.js';
     export default {async fetch(request,env) {
@@ -25,11 +27,11 @@ async function fixture() {
         if(value.agreement) {
           let cursor={step:0,state:value.agreement.cases[0].initialState};
           for(;;) {
-            const observation=await runServiceStep(env.LOADER,value.source,value.agreement,value.source.agreementDigest,0,cursor,request.signal);
+            const observation=await runServiceStep(env.SERVICE_NODE_EXECUTION,value.source,value.agreement,value.source.agreementDigest,0,cursor,{ownerId:"owner",serviceId:"service",mode:"validation"},request.signal);
             if(observation.caseResult){result=observation.caseResult;break;}
             cursor={step:cursor.step+1,state:observation.state};
           }
-        } else result=await executeServicePackage(env.LOADER,value.source,value.input,request.signal);
+        } else result=await executeServicePackage(env.SERVICE_NODE_EXECUTION,value.source,value.input,{ownerId:"owner",serviceId:"service",mode:"test"},request.signal);
         return Response.json(result);
       } catch(error) {return Response.json({error:error.code ?? 'rejected'},{status:409});}
     }};`,
@@ -40,7 +42,13 @@ async function fixture() {
       name: "trusted-service-test",
       modules: await modules,
       compatibilityDate: "2026-10-03",
-      workerLoaders: { LOADER: {} },
+      durableObjects: {
+        SERVICE_NODE_EXECUTION: {
+          className: "FixtureNodeExecution",
+          useSQLite: true,
+        },
+      },
+      serviceBindings: { NODE_FIXTURE: fixtureNodeEffect },
       bindings: { PLATFORM_SECRET: "must-never-reach-generated-code" },
     }),
   );
@@ -57,18 +65,8 @@ async function fixture() {
   };
 }
 
-test("Worker code includes only explicit source modules and fixed isolation limits", () => {
-  const code = serviceWorkerCode(packageFor());
-  assert.deepEqual(code.env, {});
-  assert.equal(code.globalOutbound, null);
-  assert.deepEqual(code.limits, { cpuMs: 50, subRequests: 0 });
-  assert.ok(code.modules["src/service.mjs"].js);
-  assert.ok(!code.modules["tests/service.test.mjs"]);
-  assert.ok(!JSON.stringify(code).includes("must-never-reach"));
-});
-
 test(
-  "actual isolated multi-module Workers pass both saved behavior agreements without running generated tests",
+  "Node fixtures pass both saved behavior agreements through actual worker RPC without running generated tests",
   { timeout: 15000 },
   async () => {
     const f = await fixture();
@@ -94,7 +92,7 @@ test(
 );
 
 test(
-  "actual runtime rejects wrong behavior, forged pass claims, invalid imports and excess output",
+  "Node integration rejects wrong behavior, forged pass claims, invalid imports and excess output",
   { timeout: 15000 },
   async () => {
     const f = await fixture();
@@ -131,31 +129,22 @@ test(
   },
 );
 
-test(
-  "fresh runtime has no shared globals, parent bindings or outbound HTTP access",
-  { timeout: 15000 },
-  async () => {
-    const f = await fixture();
-    try {
-      const source =
-        packageFor(`import {env} from 'cloudflare:workers'; import fs from 'node:fs'; let count=0;
-      export async function execute({state}) {let blocked=false;try{await fetch('https://example.com');}catch{blocked=true;}
-      let privateFilesBlocked=false;try{fs.readFileSync('/etc/passwd','utf8');}catch{privateFilesBlocked=true;}
-      return {result:{blocked,privateFilesBlocked,keys:Object.keys(env),count:++count},state};}`);
-      for (let i = 0; i < 2; i++) {
-        const result = await f.call({ source, input: { state: null } });
-        assert.deepEqual(result.body, {
-          result: {
-            blocked: true,
-            privateFilesBlocked: true,
-            keys: [],
-            count: 1,
-          },
-          state: null,
-        });
-      }
-    } finally {
-      await f.close();
+test("Node built-ins and exact retained libraries run in fresh fixture processes without platform credentials", async () => {
+  const f = await fixture();
+  try {
+    const source =
+      packageFor(`import {createHash} from 'node:crypto'; import {customAlphabet} from 'nanoid'; let count=0;
+      export function execute({state}) { return {result:{hash:createHash('sha256').update('restyle').digest('hex'),id:customAlphabet('r',4)(),count:++count,secret:process.env.PLATFORM_SECRET ?? null},state}; }`);
+    source.dependencies = supportedNodeLibraries();
+    for (let i = 0; i < 2; i++) {
+      const result = await f.call({ source, input: { state: null } });
+      assert.equal(result.status, 200);
+      assert.equal(result.body.result.id, "rrrr");
+      assert.match(result.body.result.hash, /^[a-f0-9]{64}$/);
+      assert.equal(result.body.result.count, 1);
+      assert.equal(result.body.result.secret, null);
     }
-  },
-);
+  } finally {
+    await f.close();
+  }
+});

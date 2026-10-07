@@ -1,4 +1,5 @@
 import type { TryServiceRequest } from "./createTryServiceRequests";
+import { SERVICE_EXECUTION_LIMITS } from "../../../../packages/pvo-assistant/services/index.js";
 import {
   createPvoRuntime,
   PVO_SPEC_VERSION,
@@ -157,6 +158,15 @@ export function createTryRuntimeBridge(host: Host) {
                   interactionId(context),
                 ),
               );
+          },
+          requestTimeoutMs: (_request, context) => {
+            const interaction = context.previewInteraction;
+            return active() &&
+              interaction &&
+              typeof interaction === "object" &&
+              serviceRequests.has(interaction)
+              ? SERVICE_EXECUTION_LIMITS.requestMs
+              : undefined;
           },
           request: ({ url, ...options }, context) => {
             const interaction = context.previewInteraction;

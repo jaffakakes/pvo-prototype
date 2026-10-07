@@ -12,12 +12,13 @@ import { executeServicePackage } from "../../cloud-services/packageExecution.js"
 
 /** One isolated step. Its checked state is checkpointed before the next guest starts. */
 export async function runServiceStep(
-  loader,
+  namespace,
   source,
   agreement,
   agreementDigest,
   index,
   cursor,
+  scope,
   signal,
 ) {
   agreement = parseServiceAgreement(agreement);
@@ -62,9 +63,10 @@ export async function runServiceStep(
           now: step.now,
         });
         const reply = await executeServicePackage(
-          loader,
+          namespace,
           source,
           invocation,
+          scope,
           current,
         );
         current.throwIfAborted();

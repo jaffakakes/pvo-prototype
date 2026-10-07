@@ -7,7 +7,7 @@ import { executeServicePackage } from "./packageExecution.js";
 
 /** Private creator test: its state/time are supplied here, with no path to live records or permissions. */
 export async function probeInactiveService(
-  loader,
+  namespace,
   publication,
   value,
   now,
@@ -22,9 +22,14 @@ export async function probeInactiveService(
     now,
   });
   const reply = await executeServicePackage(
-    loader,
+    namespace,
     publication.artifact.package,
     invocation,
+    {
+      ownerId: publication.identity.ownerId,
+      serviceId: publication.identity.serviceId,
+      mode: "probe",
+    },
     signal,
   );
   const checked = parseServiceReply(agreement, invocation, reply);

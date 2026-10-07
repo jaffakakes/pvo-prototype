@@ -1,3 +1,4 @@
+import { nodeLibraryIds } from "../../../packages/pvo-assistant/services/index.js";
 import { prepareDraftResponse } from "./authoring.js";
 import {
   hasCurrentClaim,
@@ -54,8 +55,9 @@ export async function runDraftTestPreparation(coordinator, claimed) {
     if (write?.result?.status !== "completed" || !write.result.result)
       throw new Error("The frozen draft has not been restored.");
     const { revision, digest } = write.result.result;
-    const { entrypoint, tests } = coordinator.drafts.get(claimed.id).draft
-      .content;
+    const { entrypoint, tests, dependencies } = coordinator.drafts.get(
+      claimed.id,
+    ).draft.content;
     // A recovered/interrupted batch starts a new owned workshop from the same saved bytes.
     // Unknown effects and old-computer cleanup are reconciled by the existing task scheduler.
     const decision = {
@@ -64,7 +66,14 @@ export async function runDraftTestPreparation(coordinator, claimed) {
         { kind: "workspace_start", revision, digest },
         { kind: "workspace_test", revision, digest, paths: tests },
       ],
-      review: { kind: "review", revision, digest, entrypoint, tests },
+      review: {
+        kind: "review",
+        revision,
+        digest,
+        entrypoint,
+        tests,
+        libraries: nodeLibraryIds(dependencies),
+      },
     };
     await commit((task, guard) => {
       const prepared = coordinator.builders.prepare(

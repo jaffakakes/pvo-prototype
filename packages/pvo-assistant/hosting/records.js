@@ -13,6 +13,7 @@ import { SERVICE_PACKAGE_LIMITS } from "../services/limits.js";
 import { SERVICE_CATALOG_LIMITS } from "../releases/index.js";
 import { parseHostedService } from "./service.js";
 import { HOSTED_SERVICE_LIMITS } from "./actions.js";
+import { parseServiceCompute } from "./compute.js";
 
 export const SERVICE_RECORD_LIMITS = Object.freeze({
   results: 5,
@@ -108,7 +109,13 @@ function area(value) {
 }
 /** Private diagnostic projection only; it cannot authorize a call or a release. */
 export function parseServiceRecords(value) {
-  object(value, ["service", "observedAt", "areas"], "Service records");
+  object(
+    value,
+    ["service", "observedAt", "areas", "storageBytes", "compute"],
+    "Service records",
+  );
+  integer(value.storageBytes, Number.MAX_SAFE_INTEGER, "Service storage bytes");
+  const compute = parseServiceCompute(value.compute);
   const service = parseHostedService(value.service);
   time(value.observedAt, "Records observation time");
   list(
@@ -130,5 +137,11 @@ export function parseServiceRecords(value) {
   )
     throw new Error("Service records observation conflicts.");
   boundedJson(value, SERVICE_RECORD_LIMITS.bytes, "Service records");
-  return { service, observedAt: value.observedAt, areas };
+  return {
+    service,
+    observedAt: value.observedAt,
+    areas,
+    storageBytes: value.storageBytes,
+    compute,
+  };
 }

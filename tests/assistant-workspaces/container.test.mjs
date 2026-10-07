@@ -1,3 +1,4 @@
+import { supportedNodeLibraries } from "../../packages/pvo-assistant/services/index.js";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import {
@@ -135,6 +136,19 @@ test("the actual restore program writes exact bytes and rejects existing files, 
       await readFile(join(root, "src/service.mjs"), "utf8"),
       files()[0].content,
     );
+    for (const library of supportedNodeLibraries())
+      for (const file of library.files)
+        assert.equal(
+          await readFile(
+            join(root, "node_modules", library.name, file.path),
+            "utf8",
+          ),
+          file.content,
+        );
+    const { customAlphabet } = await import(
+      new URL("file://" + join(root, "node_modules/nanoid/index.js"))
+    );
+    assert.equal(customAlphabet("r", 4)(), "rrrr");
     await assert.rejects(
       provider.restore({ files: files() }, () => {}),
       /restoration failed/,

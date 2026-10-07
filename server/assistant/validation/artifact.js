@@ -5,6 +5,7 @@ import {
   serializeServicePackage,
   serializeServiceFiles,
   SERVICE_RUNTIME,
+  resolveNodeLibraries,
 } from "../../../packages/pvo-assistant/services/index.js";
 import { parseWorkspaceSnapshot } from "../../../packages/pvo-assistant/workspaces/index.js";
 import {
@@ -40,7 +41,7 @@ export async function prepareServiceArtifact(builder, value) {
       agreementDigest,
       runtime: SERVICE_RUNTIME,
       entrypoint: review.entrypoint,
-      dependencies: [],
+      dependencies: resolveNodeLibraries(review.libraries),
       files: source.files,
       tests: review.tests,
     },

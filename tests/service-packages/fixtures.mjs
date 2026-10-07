@@ -1,3 +1,4 @@
+import { SERVICE_RUNTIME } from "../../packages/pvo-assistant/services/index.js";
 export const field = (name, schema) => ({
   name,
   description: `Value of ${name}.`,
@@ -152,7 +153,7 @@ export function equipmentAgreement() {
 
 export const sourcePackage = (agreementDigest = "a".repeat(64)) => ({
   agreementDigest,
-  runtime: "cloudflare-workers-esm",
+  runtime: SERVICE_RUNTIME,
   entrypoint: "src/service.mjs",
   dependencies: [],
   files: [

@@ -5,6 +5,14 @@ import {
   removeProofImages,
 } from "../../scripts/checks/cloud-agent-infrastructure/proof-images.mjs";
 
+test("registry ownership uses the deployed named image, not the local development cache", () => {
+  assert.equal(
+    proofImageRepository("6a0868727a1b5ab1fb09b420"),
+    "restyle-workspace-proof-6a0868727a1b5ab1fb09b420-restylenode6a0868727a1b5ab1fb09b420-runtime",
+  );
+  assert.throws(() => proofImageRepository("../other"));
+});
+
 test("image cleanup removes only the recorded unique repository and verifies absence", async () => {
   const resource = {
     imageRepository: proofImageRepository("a".repeat(24)),

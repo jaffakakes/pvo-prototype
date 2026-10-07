@@ -1,3 +1,4 @@
+import { fixtureNodeEffect } from "../node-runtime/fixture.mjs";
 import { checkedFixture } from "../service-hosting/fixtures.mjs";
 import { dinnerSource } from "../service-validation/fixtures.mjs";
 import assert from "node:assert/strict";
@@ -14,12 +15,9 @@ import {
 import { createTask } from "../../packages/pvo-assistant/tasks/index.js";
 import { input } from "../assistant-tasks/fixtures.mjs";
 const NOW = Date.UTC(2100, 0, 1);
-const source = `import {env} from 'cloudflare:workers';
+const source = `
 ${dinnerSource.replace("export function execute", "function rules")}
 export async function execute(value) {
-  if (Object.keys(env).length) throw new Error('Unexpected binding');
-  let blocked=false; try { await fetch('https://example.com'); } catch {blocked=true;}
-  if (!blocked) throw new Error('Unexpected network access');
   if (value.input?.name === 'overflow') return {result:'x'.repeat(70000),state:value.state};
   return rules(value);
 }`;
@@ -41,6 +39,7 @@ async function fixture() {
     stdin: {
       resolveDir: process.cwd(),
       contents: `
+    export { FixtureNodeExecution } from "./tests/node-runtime/fixture-worker.js";
     import { HostedService } from './server/cloud-services/host.js';
     export class TestRelease extends HostedService {
       now() { return this.clock ?? Date.UTC(2100, 0, 1); }
@@ -75,8 +74,12 @@ async function fixture() {
     compatibilityDate: "2026-10-03",
     durableObjects: {
       SERVICE_HOSTS: { className: "TestRelease", useSQLite: true },
+      SERVICE_NODE_EXECUTION: {
+        className: "FixtureNodeExecution",
+        useSQLite: true,
+      },
     },
-    workerLoaders: { SERVICE_LOADER: {} },
+    serviceBindings: { NODE_FIXTURE: fixtureNodeEffect },
     isolatedResourcePersistencePath: persistence,
     resourcePersistencePath: persistence,
   });
@@ -104,7 +107,7 @@ async function fixture() {
   };
 }
 
-test("immutable inactive release survives a provider restart, stays isolated and has a bounded probe budget", async () => {
+test("immutable inactive release survives a provider restart, keeps its retained source and has a bounded probe budget", async () => {
   const f = await fixture(),
     value = await publication();
   try {

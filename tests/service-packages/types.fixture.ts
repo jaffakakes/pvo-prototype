@@ -26,7 +26,7 @@ const schema: ServiceValueSchema = {
 };
 // @ts-expect-error Runtime requires the platform-supported target.
 source.runtime = "unrestricted-node";
-// @ts-expect-error The initial package lock admits no external dependencies.
+// @ts-expect-error A library lock requires retained bytes and registry integrity.
 source.dependencies = [{ name: "anything", version: "latest" }];
 // @ts-expect-error Test claims are not a source-package capability.
 source.passed = true;

@@ -16,6 +16,7 @@ import { create, until } from "./task.helpers.mjs";
 
 const write = (context, content) => ({
   kind: "write",
+  libraries: [],
   expectedRevision: context.revision,
   files: [{ path: "src/main.mjs", content }],
   entrypoint: context.metadata.entrypoint,
@@ -163,6 +164,7 @@ test(
           ],
           review: {
             kind: "review",
+            libraries: [],
             ...ref,
             entrypoint: "src/service.mjs",
             tests: ["tests/service.test.mjs"],

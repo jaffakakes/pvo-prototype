@@ -14,7 +14,8 @@ export function authorizeWorkspaceExecution(state, value, now) {
   const grant = parseWorkspaceGrant(value);
   requireTask(!state.closed, "Workspace is closed.");
   requireTask(
-    grant.expiresAt > now && grant.expiresAt - now <= TASK_LIMITS.leaseMs,
+    grant.expiresAt > now &&
+      grant.expiresAt - now <= TASK_LIMITS.defaultLeaseMs,
     "Workspace execution grant expired or exceeds its lifetime.",
   );
   requireTask(

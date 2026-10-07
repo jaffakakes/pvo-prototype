@@ -1,10 +1,7 @@
 import { parseNodeBundle } from "../../../packages/pvo-assistant/services/index.js";
 import { DurableObject } from "cloudflare:workers";
-import {
-  NodeContainer,
-  nodeExecutionError,
-  nodeExecutionBody,
-} from "./container.js";
+import { FlyNodeContainer } from "./fly/container.js";
+import { nodeExecutionError, nodeExecutionBody } from "./protocol.js";
 import { NodeMetering } from "./metering.js";
 import { NODE_LIMITS as limits } from "./runtime.js";
 import { withAssistantDeadline } from "../../assistant/deadline.js";
@@ -17,9 +14,9 @@ const id = (value) =>
 export class ServiceNodeExecution extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
-    this.native = this.containerAdapter();
     this.active = null;
     this.cleaning = null;
+    this.starting = null;
     this.metering = new NodeMetering(ctx.storage.sql);
     ctx.storage.sql
       .exec(`CREATE TABLE IF NOT EXISTS node_lease(id INTEGER PRIMARY KEY CHECK(id=1),body TEXT NOT NULL);
@@ -29,8 +26,26 @@ export class ServiceNodeExecution extends DurableObject {
   now() {
     return Date.now();
   }
-  containerAdapter() {
-    return new NodeContainer(this.ctx.container);
+  containerAdapter(execution) {
+    const current = () => {
+      const lease = this.lease();
+      if (!lease || lease.id !== execution)
+        throw nodeExecutionError("execution_cancelled");
+      return lease;
+    };
+    return new FlyNodeContainer({
+      app: this.env.SERVICE_NODE_FLY_APP,
+      token: this.env.SERVICE_NODE_FLY_TOKEN,
+      image: this.env.SERVICE_NODE_FLY_IMAGE,
+      read: () => current().provider ?? null,
+      write: (provider) =>
+        this.ctx.storage.transactionSync(() => {
+          const lease = current();
+          if (provider && provider.execution !== execution)
+            throw nodeExecutionError("runtime_mismatch");
+          this.save({ ...lease, provider });
+        }),
+    });
   }
   lease() {
     const row = this.ctx.storage.sql
@@ -145,6 +160,7 @@ export class ServiceNodeExecution extends DurableObject {
         "execution_cancelled",
         "runtime_unavailable",
         "startup_timeout",
+        "timeout",
         "runtime_mismatch",
         "output_limit",
         "invalid_reply",
@@ -202,6 +218,8 @@ export class ServiceNodeExecution extends DurableObject {
       limits.requestBytes
     )
       throw nodeExecutionError("input_limit");
+    // Validate configured effects before reserving paid capacity. The adapter reads only this lease.
+    const native = this.containerAdapter(request.id);
     const lease = await this.ctx.storage.transaction(async () => {
       const sql = this.ctx.storage.sql;
       this.prune(now);
@@ -254,12 +272,29 @@ export class ServiceNodeExecution extends DurableObject {
         async (signal) => {
           this.assertCurrent(lease);
           signal.throwIfAborted();
-          this.native.start(lease.id);
-          await this.native.ready(() => this.assertCurrent(lease), signal);
+          const starting = Promise.resolve().then(() => {
+            this.assertCurrent(lease);
+            signal.throwIfAborted();
+            return native.start(
+              lease.id,
+              nodeExecutionBody(bundle, request.invocation),
+              () => this.assertCurrent(lease),
+              signal,
+            );
+          });
+          this.starting = { id: lease.id, promise: starting };
+          try {
+            await starting;
+          } finally {
+            if (this.starting?.id === lease.id) this.starting = null;
+          }
+          this.assertCurrent(lease);
+          signal.throwIfAborted();
+          await native.ready(() => this.assertCurrent(lease), signal);
           await this.markReady(lease.id);
           this.assertCurrent(lease);
           signal.throwIfAborted();
-          reply = await this.native.execute(
+          reply = await native.execute(
             bundle,
             request.invocation,
             () => this.assertCurrent(lease),
@@ -346,7 +381,11 @@ export class ServiceNodeExecution extends DurableObject {
     }
   }
   async destroyAndRelease(id) {
-    await this.native.destroy();
+    // A pending create can finish after cancellation. It must settle before absence is accepted.
+    // Provider adapters also retain creation intent for recovery after this object restarts.
+    if (this.starting?.id === id) await this.starting.promise.catch(() => {});
+    const provider = this.lease()?.provider;
+    if (provider) await this.containerAdapter(id).destroy(id);
     await this.ctx.storage.transaction(async () => {
       const actual = this.lease();
       if (!actual || actual.id !== id || actual.phase !== "cleanup") return;

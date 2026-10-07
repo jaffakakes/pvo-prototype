@@ -33,11 +33,13 @@ test("interrupted diagnostic reopens its exact journal for deletion only and rem
   };
   let resources;
   try {
-    resources = await prepareResources(accountId);
+    resources = await prepareResources(accountId, {
+      runCommand: async () => ({ stdout: "CLI ended without deploying" }),
+    });
     const resource = await resources.prepare("workspace", {
       entrypoint: "scripts/checks/cloud-agent-first-release/worker.js",
       containerClassName: "AcceptanceWorkspace",
-      loaderBinding: "SERVICE_LOADER",
+      loaderBinding: "DIAGNOSTIC_LOADER",
       bindings: [
         { name: "ASSISTANT_WORKSPACES", class_name: "AcceptanceWorkspace" },
       ],
@@ -45,7 +47,7 @@ test("interrupted diagnostic reopens its exact journal for deletion only and rem
       secrets: { RUNPOD_API_KEY: "local-model-secret" },
     });
     const config = JSON.parse(await readFile(resource.config, "utf8"));
-    assert.equal(config.worker_loaders[0].binding, "SERVICE_LOADER");
+    assert.equal(config.worker_loaders[0].binding, "DIAGNOSTIC_LOADER");
     assert.equal(config.containers[0].class_name, "AcceptanceWorkspace");
     assert.equal(config.vars.ASSISTANT_PROVIDER, "runpod");
     assert.ok(!JSON.stringify(config).includes("local-model-secret"));
@@ -54,6 +56,12 @@ test("interrupted diagnostic reopens its exact journal for deletion only and rem
         "local-model-secret",
       ),
     );
+    await assert.rejects(
+      resources.deploy(resource),
+      /without an installed Worker/,
+    );
+    assert.equal(resource.attempted, true);
+    assert.notEqual(resource.deploymentVerified, true);
     resource.attempted = true; // Lost deployment response; recovery must look up its recorded identity.
     await resources.save();
     const recovered = await prepareResources(accountId, {

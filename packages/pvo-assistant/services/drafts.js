@@ -8,6 +8,7 @@ import {
   boundedJson,
   requireTask,
 } from "../tasks/validation.js";
+import { parseNodeDependencies } from "./nodeBundle.js";
 import { parseServiceAgreement } from "./agreement.js";
 import { parseServiceFiles, parseServiceFilePath } from "./files.js";
 import { canonicalJson } from "./json.js";
@@ -46,7 +47,7 @@ export function parseServiceDraftContent(value) {
     requireTask(path.startsWith("tests/"), "Tests must be under tests/.");
   }
   unique(value.tests, "Selected tests");
-  list(value.dependencies, 0, "Supported locked dependencies");
+  parseNodeDependencies(value.dependencies);
   boundedJson(value, SERVICE_DRAFT_LIMITS.bytes, "Container draft");
   return structuredClone(value);
 }

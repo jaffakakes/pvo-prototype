@@ -143,3 +143,57 @@
 .recordEvents li + li {
   margin-block-start: 12px;
 }
+
+.libraries {
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--q14);
+  border-radius: 8px;
+}
+.libraries legend {
+  padding-inline: 4px;
+  font-weight: 600;
+}
+.panel .libraryOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding-block: 6px;
+  cursor: pointer;
+}
+.panel .libraryOption input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--highlight);
+}
+.libraries:disabled {
+  opacity: 0.6;
+}
+.libraries:disabled .libraryOption {
+  cursor: default;
+}
+.usageTableWrap {
+  overflow-x: auto;
+}
+.usageTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: left;
+}
+.usageTable caption {
+  text-align: left;
+  margin-bottom: 8px;
+}
+.usageTable th,
+.usageTable td {
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--q14);
+  vertical-align: top;
+}

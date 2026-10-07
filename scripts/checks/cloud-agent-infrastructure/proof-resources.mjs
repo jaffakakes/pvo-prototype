@@ -12,12 +12,13 @@ import {
 } from "./proof-images.mjs";
 
 import { proofCommand } from "./proof-command.mjs";
+import { uploadProofImage } from "./proof-image-upload.mjs";
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 
 // Owns only the randomly named deployments recorded in this run's journal.
 export async function prepareResources(
   accountId,
-  { resumeReport = null } = {},
+  { resumeReport = null, runCommand = proofCommand } = {},
 ) {
   const token = await readCloudflareToken();
   const read = createAccountReader({ accountId, token });
@@ -249,7 +250,7 @@ export async function prepareResources(
   }
 
   function run(resource, args) {
-    return proofCommand(resource, args, {
+    return runCommand(resource, args, {
       root,
       directory,
       token,
@@ -276,12 +277,26 @@ export async function prepareResources(
       null,
       "A cleanup-only journal cannot deploy resources",
     );
-    await command(resource, true);
+    await dryRun(resource);
     resource.attempted = true;
     await save();
     console.log(`Deploying ${resource.name}`);
+    if (resource.imageRepository)
+      await uploadProofImage(resource, { accountId, token, directory, save });
     await command(resource, false);
     await discover(resource);
+    const worker = await read(`workers/scripts/${resource.name}/settings`);
+    assert.ok(
+      worker.ok,
+      "Deployment command finished without an installed Worker",
+    );
+    assert.ok(resource.namespaceIds.length, "Deployment namespace is missing");
+    if (resource.kind === "workspace")
+      assert.ok(
+        resource.applicationIds.length,
+        "Deployment application is missing",
+      );
+    resource.deploymentVerified = true;
     await save();
   }
 
@@ -306,6 +321,18 @@ export async function prepareResources(
     ];
     await save();
     return apps;
+  }
+
+  async function dryRun(resource) {
+    if (resource.imageRepository)
+      await uploadProofImage(resource, {
+        accountId,
+        token,
+        directory,
+        save,
+        dryRun: true,
+      });
+    await command(resource, true);
   }
 
   async function call(
@@ -451,7 +478,7 @@ export async function prepareResources(
     save,
     prepare,
     deploy,
-    dryRun: (resource) => command(resource, true),
+    dryRun,
     ready,
     call,
     remove,

@@ -15,8 +15,7 @@ export const INACTIVE_SERVICE_LIMITS = Object.freeze({
   inputBytes: SERVICE_TEST_LIMITS.invocationBytes,
   outputBytes: SERVICE_TEST_LIMITS.replyBytes,
   probes: 20,
-  cpuMs: SERVICE_TEST_LIMITS.cpuMs,
-  probeMs: SERVICE_TEST_LIMITS.invocationMs,
+  probeMs: SERVICE_TEST_LIMITS.stepMs,
 });
 
 /** Shape validation grants no authority. The task adapter selects its own saved artifact and report. */

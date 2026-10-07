@@ -4,10 +4,8 @@ import {
   parseNodeBundle,
   supportedNodeLibraries,
 } from "../../packages/pvo-assistant/services/index.js";
-import {
-  readNodeReply,
-  NodeContainer,
-} from "../../server/cloud-services/node/container.js";
+import { LocalNodeProbe } from "../../scripts/checks/node-runtime/local-container.mjs";
+import { readNodeReply } from "../../server/cloud-services/node/protocol.js";
 import { NODE_RUNTIME } from "../../server/cloud-services/node/runtime.js";
 import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
@@ -85,13 +83,13 @@ test("pinned runtime identity is checked before generated execution", async () =
     }),
   };
   await assert.rejects(
-    new NodeContainer(native).ready(() => {}, signal),
+    new LocalNodeProbe(native).ready(() => {}, signal),
     { code: "runtime_mismatch" },
   );
   assert.equal(fetches, 1);
   native.inspect = async () => ({ image: image.replace(/a$/, "b") });
   await assert.rejects(
-    new NodeContainer(native).ready(() => {}, signal),
+    new LocalNodeProbe(native).ready(() => {}, signal),
     { code: "runtime_mismatch" },
   );
   assert.equal(
@@ -128,7 +126,7 @@ test("only source modules and invocation enter the guest, never generated tests"
       },
     }),
   };
-  await new NodeContainer(native).execute(
+  await new LocalNodeProbe(native).execute(
     {
       entrypoint: "src/main.mjs",
       files: [
@@ -149,7 +147,7 @@ test("only source modules and invocation enter the guest, never generated tests"
 
 test("startup and transport failures remain infrastructure failures rather than false source-test failures", async () => {
   const signal = new AbortController().signal;
-  const slow = new NodeContainer({
+  const slow = new LocalNodeProbe({
     setInactivityTimeout: async () => {
       throw Object.assign(new Error("deadline"), { status: 504 });
     },
@@ -158,7 +156,7 @@ test("startup and transport failures remain infrastructure failures rather than 
     slow.ready(() => {}, signal),
     { code: "startup_timeout" },
   );
-  const broken = new NodeContainer({
+  const broken = new LocalNodeProbe({
     getTcpPort: () => ({
       fetch: async () => {
         throw new Error("connection lost");

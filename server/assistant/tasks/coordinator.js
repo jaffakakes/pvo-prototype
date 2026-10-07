@@ -1,4 +1,5 @@
 import { draftTestResults } from "../drafts/testResults.js";
+import { SERVICE_EXECUTION_LIMITS } from "../../../packages/pvo-assistant/services/index.js";
 import { runDraftTestPreparation } from "../drafts/testing.js";
 import { planDraftEdit } from "../drafts/planner.js";
 import { runDraftStep } from "../drafts/runner.js";
@@ -8,6 +9,7 @@ import {
   reconcileDraftStops,
 } from "../drafts/creation.js";
 import { manageHostedServices } from "../../cloud-services/management.js";
+import { ownedServiceId } from "../../cloud-services/releaseContract.js";
 import { ServiceCatalog } from "../../cloud-services/catalog.js";
 import { runHostingStep } from "../hosting/runner.js";
 import { ServiceArtifacts } from "../validation/artifacts.js";
@@ -34,7 +36,10 @@ import { serviceProvider } from "./serviceProvider.js";
 import { publishTaskService, reconcileTaskServices } from "./providerRunner.js";
 
 import { TaskResults } from "./results.js";
-import { assertTaskExecution } from "../../../packages/pvo-assistant/tasks/index.js";
+import {
+  assertTaskExecution,
+  TASK_LIMITS,
+} from "../../../packages/pvo-assistant/tasks/index.js";
 import { TaskAttempts } from "./attempts.js";
 import { planSavedTask, savedPlannerAvailable } from "./planner.js";
 import { runAuthoringStep, settleAuthoringBudgets } from "./runner.js";
@@ -331,17 +336,24 @@ export class AssistantTasks extends DurableObject {
   validationAvailable() {
     return Boolean(
       this.workspaceProvider() &&
-      typeof this.env.SERVICE_LOADER?.load === "function",
+      typeof this.env.SERVICE_NODE_EXECUTION?.getByName === "function",
     );
   }
-  runValidationStep(artifact, index, cursor, signal) {
+  async runValidationStep(claimed, artifact, index, cursor, signal) {
     return runServiceStep(
-      this.env.SERVICE_LOADER,
+      this.env.SERVICE_NODE_EXECUTION,
       artifact.package,
       artifact.agreement,
       artifact.identity.agreementDigest,
       index,
       cursor,
+      {
+        ownerId: claimed.ownerId,
+        serviceId:
+          claimed.input.context.container?.serviceId ??
+          (await ownedServiceId(claimed)),
+        mode: "validation",
+      },
       signal,
     );
   }
@@ -349,8 +361,10 @@ export class AssistantTasks extends DurableObject {
   stepTimeoutMs() {
     return 45000;
   }
-  leaseMs() {
-    return 60000;
+  leaseMs(task) {
+    return task?.stepId === "validate"
+      ? SERVICE_EXECUTION_LIMITS.validationClaimMs
+      : TASK_LIMITS.defaultLeaseMs;
   }
   spendingAllowed(task, capability) {
     return taskSpendingAllowed(this.env, task.ownerId, capability, this.now());

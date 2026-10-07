@@ -5,6 +5,7 @@ import {
   unique,
   boundedJson,
   requireTask,
+  text,
 } from "../tasks/validation.js";
 import { parseServiceFiles, parseServiceFilePath } from "./files.js";
 import { SERVICE_PACKAGE_LIMITS } from "./limits.js";
@@ -16,6 +17,24 @@ const libraries = new Map([[nanoid.name, canonicalJson(nanoid)]]);
 export function parseNodeDependencies(value) {
   list(value, libraries.size, "Supported locked libraries");
   for (const dependency of value) {
+    object(
+      dependency,
+      ["name", "version", "registryIntegrity", "files"],
+      "Locked library",
+    );
+    for (const key of ["name", "version", "registryIntegrity"])
+      text(dependency[key], 256, "Library " + key);
+    list(dependency.files, 32, "Library files");
+    for (const file of dependency.files) {
+      object(file, ["path", "content"], "Library file");
+      text(file.path, 256, "Library path");
+      text(
+        file.content,
+        SERVICE_PACKAGE_LIMITS.fileBytes,
+        "Library source",
+        true,
+      );
+    }
     requireTask(
       dependency &&
         libraries.get(dependency.name) === canonicalJson(dependency),
@@ -46,4 +65,24 @@ export function parseNodeBundle(value) {
   parseNodeDependencies(value.dependencies);
   boundedJson(value, SERVICE_PACKAGE_LIMITS.packageBytes, "Node source bundle");
   return structuredClone(value);
+}
+
+/** Model/manual selections resolve only to the platform's retained, reviewed bytes. */
+export function resolveNodeLibraries(value) {
+  list(value, libraries.size, "Selected Node libraries");
+  unique(value, "Selected Node libraries");
+  const supported = supportedNodeLibraries();
+  return value.map((selected) => {
+    text(selected, 256, "Selected Node library");
+    const library = supported.find(
+      ({ name, version }) => selected === `${name}@${version}`,
+    );
+    requireTask(!!library, "Select a supported exact Node library version.");
+    return library;
+  });
+}
+export function nodeLibraryIds(value) {
+  return parseNodeDependencies(value).map(
+    ({ name, version }) => `${name}@${version}`,
+  );
 }

@@ -24,7 +24,7 @@ The **workshop** is a temporary development computer. A **Container** is the sav
 
 ## Tested artifact and Node.js contract
 
-Replace `cloudflare-workers-esm` with one `nodejs-esm` package contract when the Node adapter lands. Update package declarations, planner/tool schemas, source, tests, fixtures and current documentation together; no fallback reader or second runtime. Keep the named `execute({operation,input,state,now})` boundary and current bounded schemas.
+The source implementation now replaces `cloudflare-workers-esm` with one `nodejs-esm` package contract. Update package declarations, planner/tool schemas, source, tests, fixtures and current documentation together; no fallback reader or second runtime. Keep the named `execute({operation,input,state,now})` boundary and current bounded schemas.
 
 The package digest covers source/test files, agreement digest, exact runtime identity, entry point and locked dependency identities/bytes. The runtime identity records a digest-pinned base image, exact Node version and platform runner version. Resolve these immutable values in the bounded proof before enabling the adapter. Reject a runtime mismatch instead of silently running another version.
 
@@ -61,6 +61,10 @@ Keep same-owner/same-project attachment, public versus creator operation audienc
 Drafts survive task expiry and idle-instance destruction until explicit service deletion. Retain the latest draft plus bounded mutation receipts, not unbounded full-source history. Published releases and live data keep the existing limits; inactive abandoned release cleanup must not delete a saved draft. Test records can be explicitly reset without changing live records; clearing live records needs an explicit supported operation with a visible impact statement, not a generic SQL editor.
 
 Update through the existing inactive publication and activation journal. The current release stays live during editing/tests. Activation checks all recorded connection agreements and the current live state, switches one service revision, and retains prior safe releases. Rollback changes code while preserving today's data and action receipts. Incompatible updates fail without rewriting data. Lists of connections must disclose that forwarded files cannot all be counted.
+
+## Selected provider and retained responsibilities
+
+The user selected **Fly.io on 7 October 2026**. Use a private Fly Machines execution effect, subject to [its runtime/isolation/cleanup proof](restyle-node-provider-proof.md). Keep drafts, releases, live/test records, ownership, task continuation and attachments in their existing Restyle authorities. Fly receives only admitted execution input and the exact checked artifact; its credential stays in the trusted adapter. Replace the prepared Cloudflare-specific execution effect when verified, without a dual-runtime fallback or a second service manager. The Cloudflare facts and estimates below document the original preparation; they are not Fly pricing or proof. The source now routes independent validation, inactive probes and hosted live/test calls through this one Node contract. The last delivered beta still uses Dynamic Workers; configured product Fly acceptance and a new beta remain pending.
 
 ## Minimum provider proof before enabling Node.js hosting
 
@@ -102,3 +106,12 @@ Every activation checks recorded retained agreements and today’s live records 
 **Separate data-change task when compatibility fails:** identify the current service/release and record schema, the desired schema, the exact transformation for every existing record (including missing/invalid values), which connected inputs/results change, how to preserve action identities, and an independently checked recovery plan using the records present at execution time. Preserve the current service until that plan is explicitly reviewed and implemented. This milestone does not execute a conversion, silently reset records, add migrations or bypass the checked contract. The failure message points to this separate task.
 
 Update verification maps to 4B.01–06: same saved manual/AI draft builds an inactive candidate; active code remains available during failed/generated/independent tests; exact activation replies recover through restart; operation/state incompatibility leaves live records intact; compatible earlier code can be selected without replaying accepted writes. The underlying Node runtime replacement remains a separate unchecked gate even when these runtime-independent update controls pass.
+
+
+## Node usage and library controls — 7 October 2026
+
+Manual library selection edits the existing saved draft. AI decisions select the same exact supported IDs, resolved by the platform to retained bytes; neither author can use a prior report after changing the selected package. The browser never installs packages or starts compute for selection/saving.
+
+The private records snapshot now includes actual service SQLite bytes and an aggregate of the two private execution-slot counters. The service host authorizes the owner before reading those counters and rechecks deletion afterward. Live, test, independent validation and readiness remain separate. Daily capacity is shared across the owner's services and across the platform, with an explicit reset time; this is not a lifetime goal/model-turn limit. Unfinished execution/cleanup remains a separate obligation and estimate. Missing or inconsistent accounting is shown as unavailable, not free usage.
+
+The UI uses the dated [Fly compute basis](restyle-node-provider-proof.md#product-resource-deadlines-and-fly-estimate--7-october-2026). This measures admission through confirmed destruction and can exceed billed running time. AI/workshops, image builds/registry, stopped root filesystems, Worker/Durable Object requests/duration/storage, network/logs, subscriptions and tax are excluded; allowances are not deducted. Measured SQLite bytes include source, releases, data, receipts and database overhead, but exclude shared task/compute stores and do not measure GB-months. The view is a useful estimate with explicit gaps, not a total bill. Private accounting expires under the existing thirty-day retention rule; a still-owned cleanup obligation is retained until settled. No new data or execution authority is introduced.

@@ -49,6 +49,7 @@ export async function installCheckedDiagnostic(coordinator, claimed, checked) {
     );
     const review = {
       kind: "review",
+      libraries: [],
       revision: 1,
       digest: artifact.identity.sourceDigest,
       entrypoint: artifact.package.entrypoint,

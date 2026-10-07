@@ -6,7 +6,9 @@ import {
   requireTask as requireService,
   unique,
 } from "../tasks/validation.js";
-import { SERVICE_PACKAGE_LIMITS as limits, SERVICE_RUNTIME } from "./limits.js";
+import { SERVICE_PACKAGE_LIMITS as limits } from "./limits.js";
+import { parseServiceRuntime } from "./runtime.js";
+import { parseNodeDependencies } from "./nodeBundle.js";
 import { canonicalJson } from "./json.js";
 import { parseServiceFilePath, parseServiceFiles } from "./files.js";
 
@@ -25,18 +27,13 @@ export function parseServicePackage(value) {
     "Service source package",
   );
   digest(value.agreementDigest, "Saved agreement digest");
-  requireService(
-    value.runtime === SERVICE_RUNTIME,
-    "Unsupported service runtime.",
-  );
+  parseServiceRuntime(value.runtime);
   parseServiceFilePath(value.entrypoint);
   requireService(
     value.entrypoint.startsWith("src/"),
     "Service entry point must be a source module.",
   );
-  // This initial target has a closed, empty lock. A later package adapter must
-  // enforce resolution, integrity and network policy before accepting packages.
-  list(value.dependencies, 0, "Locked service dependencies");
+  parseNodeDependencies(value.dependencies);
   parseServiceFiles(value.files);
   const paths = value.files.map((file) => file.path);
   requireService(

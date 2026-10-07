@@ -75,7 +75,11 @@ export function claimNextTask(coordinator) {
       continue;
     const claimed = coordinator.repository.update(
       task.id,
-      { kind: "claim", claimId: randomId(), leaseMs: coordinator.leaseMs() },
+      {
+        kind: "claim",
+        claimId: randomId(),
+        leaseMs: coordinator.leaseMs(task),
+      },
       {
         ownerId: task.ownerId,
         expectedRevision: task.revision,
