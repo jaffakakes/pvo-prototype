@@ -191,3 +191,60 @@ test("expiry clears stale question content and permits explicit pending-request 
     f.session.dispose();
   }
 });
+
+test("saved capacity and permission waits have honest status, retain answers, and allow Stop or recheck", async () => {
+  const f = fixture();
+  try {
+    await f.adapters.change(f.task(), {
+      kind: "answer",
+      questionId: "date",
+      value: "Friday",
+      operationId: "answer",
+    });
+    const queued = f.task();
+    const guard = (task) => ({
+      ownerId: task.ownerId,
+      expectedRevision: task.revision,
+      now: task.updatedAt,
+      claim: task.claim
+        ? { id: task.claim.id, generation: task.generation }
+        : null,
+    });
+    const active = transitionTask(
+      queued,
+      { kind: "claim", claimId: "worker", leaseMs: 60000 },
+      guard(queued),
+    );
+    for (const reason of [
+      "model_capacity",
+      "model_allowance",
+      "spending_permission",
+    ]) {
+      const waiting = transitionTask(
+        active,
+        {
+          kind: "wait",
+          reason,
+          nextRunAt:
+            reason === "spending_permission" ? null : active.updatedAt + 60000,
+        },
+        guard(active),
+      );
+      const status = api.savedTaskStatus(waiting);
+      assert.equal(status.label, "Waiting");
+      assert.equal(status.canStop, true);
+      assert.equal(status.canResume, true);
+      assert.equal(status.question, null);
+      assert.match(
+        status.message,
+        reason === "spending_permission" ? /permission/ : /progress is saved/,
+      );
+      f.adapters.read = async () => waiting;
+      await f.session.start();
+      assert.equal(f.views.at(-1).task.questions[0].answer.value, "Friday");
+      assert.equal(f.views.at(-1).error, null);
+    }
+  } finally {
+    f.session.dispose();
+  }
+});

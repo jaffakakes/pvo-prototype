@@ -1,6 +1,6 @@
 # Restyle cloud agent: from an idea to a working component
 
-Status: architecture proposal, 5 October 2026. This document describes a proposed product, not functionality already available in Restyle.
+Status: product architecture, updated 7 October 2026. The [progress log](restyle-cloud-agent-progress.md) distinguishes verified implementation from planned capabilities. Containers implementation follows the completed 1F beta; source, provider and delivered-beta status are recorded separately. Existing 1E/1F completion evidence is preserved.
 
 For ordered implementation tasks and completion checks, start with the [implementation roadmaps](restyle-cloud-agent-roadmap.md).
 
@@ -52,9 +52,9 @@ Think of the system as an assistant with a notebook, a workshop, and a place to 
 | Restyle conversation | Where the creator makes a request, answers questions, connects accounts, and sees progress. |
 | Task coordinator | Keeps track of what needs doing, what has succeeded, and what the agent needs next. |
 | Research tools | Read websites and documentation, inspect available connections, and check how a service can be used. |
-| Cloud workspace | An isolated computer where the agent writes code, installs tools, and tests its work. |
+| Temporary VM / workshop | An isolated computer where the agent writes code, tries ideas and runs tests; it stops after the work is saved. |
 | Connection vault | Protects account connections and private keys used by the finished service. |
-| Live service hosting | Runs the finished backend whenever a component or an outside event needs it. |
+| Restyle Container | The creator's saved hosted Node.js service, used by components after publication; implemented in 1G with acceptance tracked separately. |
 | Saved records | Store replies, bookings, service code, settings, and progress so they survive restarts. |
 | Restyle gateway | A stable online address that checks each request and sends it to the correct service. |
 | PVO component | The visible form, buttons, choices, and results that the viewer uses. |
@@ -64,8 +64,10 @@ flowchart TD
   Creator["Creator asks Restyle"] --> Agent["Agent and saved task"]
   Agent <--> Research["Research and available connections"]
   Agent <--> Questions["Follow-up questions and account setup"]
-  Agent --> Workshop["Temporary cloud workspace"]
-  Workshop --> Check["Build and test"]
+  Agent --> Draft["Saved draft and local preview"]
+  Draft -->|Development tools needed| Workshop["Temporary cloud workspace"]
+  Workshop --> Draft
+  Draft --> Check["Independent release tests"]
   Check --> Release["Deploy a service release"]
   Release --> Service["Live service"]
   Release --> Link["Connect the PVO component"]
@@ -79,6 +81,41 @@ flowchart TD
 ~~~
 
 The agent builds the feature during authoring. The finished feature then works for viewers without keeping that building conversation or its temporary computer open.
+
+## Containers: the next product feature
+
+Think of four simple jobs:
+
+| Part | Everyday comparison | Purpose and lifetime |
+| --- | --- | --- |
+| **VM / workshop** | A workshop where something is built | The AI writes code, experiments and tests. It can shut down after saving the work. |
+| **Container** | The finished service handling visitors | Runs approved Node.js code for viewers. Restyle can let an instance sleep and start another when needed. |
+| **Saved storage** | A filing cabinet | Keeps drafts, published code, test reports and viewer records when either computer stops. |
+| **Component** | A front desk | The visible form or button sends an allowed request and shows its result. |
+
+For a dinner RSVP, the AI uses the workshop to build and test the capacity rule. The Container runs that rule when someone presses Join. Saved storage remembers who joined. The component shows whether their place was accepted.
+
+Technically, the workshop itself can use a provider container. The product terms distinguish purpose: temporary development and hosted viewer execution. A published service does not require one computer to run forever; its saved identity and data must outlive each instance.
+
+Creators get a **Containers** destination outside Components. They can open the JavaScript the AI built, change it manually, ask the AI to continue from the same saved draft, test it and publish an approved version. Both editing paths use the same save command and independent tests. Editing a draft leaves the published version serving viewers until the checked replacement is activated.
+
+**Reuse the existing service system.** A Container keeps the existing service identity, owner/project rules, releases, data, retry receipts and management commands. Evolve the current service manager and replace its generated-code execution adapter with Node.js Container hosting. Add a durable editable draft and code views. Keep one task runner, one publication flow, one data authority and one component attachment contract.
+
+The current source uses one checked **Node.js** package/runtime through a private Fly execution adapter. Independent validation, inactive probes and live/test calls share the artifact and controller. Saved source, records and replies remain in the existing Restyle service. Beta `restyle-editor-shell-0aeb35ad18374509` contains the Node contract and management views. [Integrated Fly acceptance](restyle-node-product-acceptance.md#verified-result--7-october-2026) and cleanup pass; the static beta has no service/task API configured. The workshop separately runs development tools and restores the platform’s supported libraries offline. Historical Worker test results remain valid evidence of the earlier implementation.
+
+A component chooses an approved operation on a published Container; Restyle supplies the checked connection. There is no external hosting setup or server URL to paste. **PVO Logic stays its own restricted language.** The backend source is JavaScript for Node.js.
+
+[1G Containers](restyle-cloud-agent-roadmaps/1g-containers.md) owns this plan. It follows 1F, adds eight unchecked tasks and brings twelve existing update/management tasks forward without changing their IDs. Plugins, a marketplace, sharing Containers with other creators and installer-specific credentials are outside this update. Roadmaps 2/3 keep their existing integration and background-job responsibilities.
+
+## Use the device and cloud for the jobs they suit
+
+Editing, component previews and supported lightweight checks run on the user's device. Saving the shared draft and tracking the AI's progress use the existing server. A conversation, follow-up answer or simple code edit does not itself require starting a workshop.
+
+Start a temporary cloud workshop when development actually needs package installation, Node.js tools or heavier execution. Save its work outside the machine and stop unused compute. Local work may pause when the browser closes; already authorized cloud work resumes from its saved task. The UI must distinguish unsaved local edits, saved progress, running work and waiting work.
+
+Restyle independently checks the exact release in its controlled Node.js environment before publishing. A local test result gives feedback but cannot authorize publication. The finished Container and shared records remain hosted so viewers can use them when the creator's phone or computer is off.
+
+This can reduce workshop costs; hosted model calls, release checks, live hosting and storage still cost money. Measure those categories separately. The first version reuses the current editor, sandbox, task runner and workspace tools. A full local Node.js installation or second local agent is outside this milestone. Follow [1G's device/cloud rules and acceptance](restyle-cloud-agent-roadmaps/1g-containers.md#where-work-runs-use-the-device-first-where-it-fits).
 
 ## When the agent needs a cloud computer
 
@@ -198,9 +235,9 @@ These are proposed responsibilities. They should be introduced as working featur
 
 Generated creator services should be stored and deployed as separately owned services. Creating a dinner component should not rewrite or redeploy Restyle's main application. Shared packages remain independent of editor, player, and server internals.
 
-The first implementation uses Cloudflare's [native container API](https://developers.cloudflare.com/containers/api/durable-object-container/) for temporary Linux workspaces and [Dynamic Workers](https://developers.cloudflare.com/dynamic-workers/) for separately stored and isolated JavaScript services. The [infrastructure proof](restyle-cloud-infrastructure-proof.md) passed in the actual Workers Paid account: the service kept working after the entire workspace deployment was deleted. The future product still needs saved tasks, generated-code validation, ownership, persistent service management, and PVO attachment. Workers for Platforms remains an alternative only if later requirements justify it; it is not required by the selected proof.
+The historical foundation used Cloudflare's [native container API](https://developers.cloudflare.com/containers/api/durable-object-container/) for temporary Linux workspaces and [Dynamic Workers](https://developers.cloudflare.com/dynamic-workers/) for isolated JavaScript service execution. The [infrastructure proof](restyle-cloud-infrastructure-proof.md) passed in the actual Workers Paid account after the workspace deployment was deleted. Saved tasks, independent validation, ownership and service management now exist on the implementation branch; the [current progress](restyle-cloud-agent-progress.md) records current provider and beta acceptance. These facts do not prove hosted Node.js readiness. 1G replaces the generated-service execution adapter while retaining the existing platform controls. On 7 October the user selected **Fly.io** for Node execution; its isolated Machines proof is [recorded separately](restyle-node-provider-proof.md). This does not move the existing task runner, durable records or workshop provider, and its successful isolated proof does not by itself establish final product/beta acceptance.
 
-Use a small hosted JavaScript or TypeScript service for the first implementation. Add other runtimes, such as a container for software that needs Linux or Python, when a concrete task requires them. The development workspace provider and live hosting provider can be different.
+The next product runtime is **JavaScript/Node.js in hosted Containers**, as requested. Use a pinned platform runtime and immutable checked service bundles, with durable records outside the guest. Replace the current generated-service runtime contract in one coordinated change; do not retain dual runtime fallbacks. Other languages and providers remain future work.
 
 The existing [architecture](architecture.md), [orb assistant design](orb-assistant.md), [publishing setup](cloudflare-publishing.md), and [release workflow](environments.md) remain the references for current behavior. Changes to the platform itself follow the repository's normal release process.
 
@@ -210,11 +247,13 @@ The existing [architecture](architecture.md), [orb assistant design](orb-assista
 
 A dinner RSVP could be one test, but the agent must also handle a different example, such as a shared equipment request, using newly generated logic. That demonstrates a general building capability rather than a single hard-coded restaurant feature.
 
-**Next: broaden the connections and setup experience.** Add more service connections, richer resumable questions, and an agreed manual alternative. Secure account setup is required as soon as an external account is used. Test that expired connections and missing answers lead to a useful next step.
+**Next: deliver Containers using the same service system.** Add the saved code editor and AI continuation, replace generated execution with checked Node.js hosting, and complete basic update/management work pulled forward from Roadmap 4. Verify draft, release and record survival after the workshop and hosted instance stop. Follow [1G](restyle-cloud-agent-roadmaps/1g-containers.md).
+
+**Then: broaden the connections and setup experience.** Add more service connections, richer resumable questions, and an agreed manual alternative. Secure account setup is required as soon as an external account is used. Test that expired connections and missing answers lead to a useful next step.
 
 **Then: support slower workflows.** Add saved viewer jobs, external event notifications, scheduling, and player controls for pending work and changing results. The saved authoring task that runs the build is already required in the first implementation.
 
-**Finally: improve maintenance and expand capabilities.** Let the agent inspect and repair existing services, test replacements, and explain their ongoing status and cost. Add richer controls and additional runtimes when concrete tasks require them.
+**Finally: deepen diagnosis and expand capabilities.** Reuse the update, cost and management controls delivered in 1G. Add diagnosis of real account/job failures, operational monitoring, richer controls and runtimes beyond Node.js when concrete tasks require them.
 
 Test failures as part of the complete path: closing the editor during work, restarting the workspace, losing provider access, pressing twice, updating a published component, and failing after an external action may already have happened.
 

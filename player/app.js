@@ -1,3 +1,4 @@
+import { createPlayerServiceRequests } from "./services/requests.js";
 import { createPlaybackTransitionState } from "./playback/transition-state.js";
 import { createPlaybackSession } from "./playback/session.js";
 import { readPlayerElements } from "./ui/elements.js";
@@ -19,6 +20,7 @@ import { createPlayerLayout } from "./ui/layout.js";
 
 mountPlayerShell();
 const session = createPlaybackSession();
+const services = createPlayerServiceRequests();
 const refs = readPlayerElements();
 refs.video.muted = true;
 const publication = readPublication(
@@ -44,12 +46,15 @@ const visibility = createComponentQueries({
 
 const overlays = createOverlayRenderer({
   session,
+  services,
   refs: { frame: refs.frame, overlay: refs.overlay, video: refs.video },
   adapters: {
     visibleComponents: (...args) => visibility.visibleComponents(...args),
     activeClip: (...args) => timeline.activeClip(...args),
     elapsedTime: (...args) => timeline.elapsedTime(...args),
     handleCustomAction: (...args) => actions.handleCustomAction(...args),
+    recoverServiceSubmission: (...args) =>
+      actions.recoverServiceSubmission(...args),
     setStatus: (...args) => controls.setStatus(...args),
   },
 });
@@ -109,6 +114,7 @@ const controls = createPlayerControls({
 
 const runtime = createActionRuntimeAdapter({
   session,
+  services,
   refs: { frame: refs.frame },
   adapters: {
     renderOverlays: (...args) => overlays.renderOverlays(...args),
@@ -123,6 +129,7 @@ const runtime = createActionRuntimeAdapter({
 
 const actions = createComponentActions({
   session,
+  services,
   adapters: {
     componentCanReceiveResponse: (...args) =>
       visibility.componentCanReceiveResponse(...args),

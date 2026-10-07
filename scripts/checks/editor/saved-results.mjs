@@ -1,15 +1,47 @@
+import { checkComponentDelivery } from "./component-delivery.mjs";
+import { checkComponentTry } from "./component-try.mjs";
+import { attachment } from "../../../tests/service-attachments/fixtures.mjs";
+import { checkedFixture } from "../../../tests/service-hosting/fixtures.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { chromium } from "playwright-core";
 import {
   taskFixture,
+  NOW,
   ORIGIN,
   expectStatus,
 } from "../../../tests/assistant-task-server/helpers.mjs";
 import { installAssistantAvailabilityFixture } from "./assistant-fixture.mjs";
 
-const editorUrl = process.env.EDITOR_URL || "http://127.0.0.1:5295/";
-const fixture = await taskFixture();
+const sourceUrl = process.env.EDITOR_URL || "http://127.0.0.1:5295/";
+const editorUrl = ORIGIN + "/";
+const origin = ORIGIN;
+const fixture = await taskFixture({
+  services: true,
+  clock: NOW,
+  origin,
+  planner: async (request) => {
+    const task = await request.json();
+    const command = attachment(task.attachmentContext.releaseId);
+    command.component.sceneId = task.input.context.currentSceneId;
+    command.component.source = {
+      structure:
+        '<form><heading>Join dinner</heading><field name="guest" kind="name" label="Name"/><submit>Join</submit></form>',
+      style: "",
+      logic: `on submit { request(${JSON.stringify({
+        url: task.attachmentContext.url,
+        method: "POST",
+        body: JSON.stringify({
+          operation: "join",
+          input: command.connection.input,
+        }),
+        onSuccess: { kind: "continue" },
+        onError: null,
+      })}); }`,
+    };
+    return Response.json(command);
+  },
+});
 const browser = await chromium.launch({
   executablePath:
     process.env.CHROME_PATH ||
@@ -43,14 +75,56 @@ async function ready(localId) {
     localId,
   );
 }
-async function finish(task) {
+async function finish(task, connected = false) {
   const claimed = await fixture.control({
     action: "step",
     id: task.id,
     command: { kind: "claim", claimId: "result-worker", leaseMs: 60000 },
   });
   expectStatus(claimed, 200);
-  const current = claimed.body;
+  let current = claimed.body;
+  if (connected) {
+    for (const command of [
+      { kind: "checkpoint", stepId: "host" },
+      { kind: "claim", claimId: "publisher", leaseMs: 60000 },
+    ]) {
+      const step = await fixture.control({
+        action: "step",
+        id: task.id,
+        command,
+      });
+      expectStatus(step, 200);
+      current = step.body;
+    }
+    expectStatus(
+      await fixture.control({
+        action: "publish",
+        id: task.id,
+        checked: await checkedFixture(),
+        guard: {
+          expectedRevision: current.revision,
+          claim: { id: current.claim.id, generation: current.generation },
+        },
+      }),
+      200,
+    );
+    expectStatus(
+      await fixture.control({
+        action: "step",
+        id: task.id,
+        command: { kind: "checkpoint", stepId: "attach" },
+      }),
+      200,
+    );
+    expectStatus(await fixture.control({ action: "sweep" }), 200);
+    const completed = await fixture.request(`/api/assistant/tasks/${task.id}`);
+    assert.equal(
+      completed.body.task.state,
+      "ready",
+      JSON.stringify(completed.body.task.failure),
+    );
+    return completed.body.task;
+  }
   const result = await fixture.control({
     action: "complete",
     id: task.id,
@@ -110,6 +184,29 @@ async function ask(text, expectedCount) {
   return task;
 }
 try {
+  // Match the isolated coordinator and host clock for receipt freshness checks.
+  await context.addInitScript((now) => {
+    Date.now = () => now;
+  }, NOW);
+  // Serve local source under the same HTTPS origin as the controlled real Worker API.
+  // This exercises the production origin contract without weakening auth or request admission.
+  await context.route(origin + "/**", async (route) => {
+    const target = new URL(route.request().url());
+    const response = await route.fetch({
+      url: new URL(target.pathname + target.search, sourceUrl).href,
+    });
+    await route.fulfill({ response });
+  });
+  await context.route(/\/api\/services(?:\/.*)?$/, async (route) => {
+    const request = route.request(),
+      url = new URL(request.url());
+    const response = await fixture.request(url.pathname + url.search, {
+      method: request.method(),
+      ...(request.postData() ? { body: request.postDataJSON() } : {}),
+      headers: { Origin: origin },
+    });
+    await route.fulfill({ status: response.status, json: response.body });
+  });
   await installAssistantAvailabilityFixture(context);
   await context.route("**/api/publishing", (route) =>
     route.fulfill({
@@ -129,7 +226,7 @@ try {
       const response = await fixture.request(url.pathname + url.search, {
         body,
         method: request.method(),
-        headers: { Origin: ORIGIN },
+        headers: { Origin: origin },
       });
       if (url.pathname === "/api/assistant/tasks" && body)
         creations.push(response.body.task);
@@ -177,7 +274,7 @@ try {
   await page.locator("[data-assistant-orb]").click();
   const first = await ask("Build a component for me in the background", 1);
   await page.close();
-  const completed = await finish(first);
+  const completed = await finish(first, true);
   await fixture.restart();
   await ready(localId);
   assert.notEqual((await snapshot()).url, original.url);
@@ -205,6 +302,18 @@ try {
     { ...(await snapshot()), url: null },
     { components: 1, past: 1, ratio: "9:16", applied: 1, url: null },
   );
+  const connection = await page.evaluate(() => {
+    const state = window.resultProbe.useCapture.getState();
+    return {
+      connection: state.components[0].serviceConnection,
+      hosts: state.allowedDomains,
+      action: state.components[0].code.pvoCompiled.rules[0].action,
+    };
+  });
+  assert.equal(connection.connection.receipt.identity.taskId, first.id);
+  assert.equal(connection.connection.origin, origin);
+  assert.deepEqual(connection.hosts, [new URL(origin).host]);
+  assert.equal(connection.action.kind, "request");
   await page.screenshot({ path: "/tmp/restyle-saved-result-applied.png" });
   await page.evaluate(async () => {
     window.resultProbe.useCapture.getState().undo();
@@ -235,6 +344,32 @@ try {
   );
   await page.evaluate(() => window.resultProbe.useCapture.getState().redo());
   assert.equal((await snapshot()).components, 1);
+  assert.deepEqual(
+    await page.evaluate(
+      () =>
+        window.resultProbe.useCapture.getState().components[0]
+          .serviceConnection,
+    ),
+    connection.connection,
+  );
+  await checkComponentTry({
+    context,
+    fixture,
+    origin,
+    getPage: () => page,
+    reopen: async () => {
+      await page.close();
+      await fixture.restart();
+      await ready(localId);
+    },
+  });
+  await page
+    .getByRole("button", { name: "Open saved task", exact: true })
+    .click();
+  await checkComponentDelivery({ context, fixture, origin, page });
+  await page
+    .getByRole("button", { name: "Open saved task", exact: true })
+    .click();
   const second = await ask("Build another saved component", 2);
   await page.evaluate(async () => {
     window.resultProbe.useCapture.getState().edit({ ratio: "1:1" });
@@ -272,7 +407,7 @@ try {
   });
   assert.deepEqual(errors, []);
   console.log(
-    "Saved result: closed-page completion, runtime restart, stable media identity, atomic apply, duplicate/reload/Undo/Redo and changed-draft protection passed.",
+    "Saved connected result: actual compiler/host receipt, closed-page completion, runtime restart, stable media identity, atomic component/connection/host apply, duplicate/reload/Undo/Redo and changed-draft protection passed.",
   );
 } catch (error) {
   console.error(await page.locator("body").innerText());

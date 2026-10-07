@@ -1,3 +1,4 @@
+import { useProjectConnectionSync } from "../features/services/useConnectionSync";
 import { useEffect } from "react";
 import { Camera } from "../features/capture/Camera";
 import { UpdatePrompt } from "../features/update/UpdatePrompt";
@@ -17,6 +18,7 @@ import { useProjectNavigation } from "./useProjectNavigation";
 import { useWideLayout } from "../infrastructure/viewport";
 
 export default function App() {
+  useProjectConnectionSync();
   const appRef = useAppTouchGestures();
   const screen = useCapture(s => s.screen);
   const wide = useWideLayout();

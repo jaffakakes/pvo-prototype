@@ -1,3 +1,4 @@
+import { createTryRecovery } from "./createTryRecovery";
 import {
   freshTryMode,
   nextTryBoundary,
@@ -271,6 +272,11 @@ export function createTrySession(host: TrySessionHost) {
   }
 
   return {
+    ...createTryRecovery(
+      host,
+      () => trySessionEpoch,
+      responses.runComponentResponse,
+    ),
     beginComponentInteraction: diagnostics.begin,
     recordTryDiagnostic: diagnostics.record,
     observeTryDiagnostics: diagnostics.observer,
