@@ -36,6 +36,7 @@ export async function prepareServicePublication(
   checked,
   expiresAt,
   serviceId = null,
+  draftRevision = null,
 ) {
   const task = parseTaskRecord(value);
   checked = parseCheckedService(checked);
@@ -54,6 +55,7 @@ export async function prepareServicePublication(
       ),
     ),
     expiresAt,
+    draftRevision,
   };
   return verifyServicePublication({
     identity: { resourceId: await serviceResourceId(identity), ...identity },

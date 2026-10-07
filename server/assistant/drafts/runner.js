@@ -152,6 +152,8 @@ export async function runDraftStep(coordinator, claimed) {
               },
               () => {
                 state.draft = draft;
+                if (claimed.stepId === "draft_sync")
+                  state.testingRevision = draft.revision;
                 state.pending = null;
                 state.read = null;
                 coordinator.drafts.write(claimed.id, state);
@@ -162,9 +164,17 @@ export async function runDraftStep(coordinator, claimed) {
         }
         const latest = await read(coordinator, claimed);
         signal.throwIfAborted();
-        if (latest.revision !== state.draft.revision)
+        if (
+          latest.revision !== state.draft.revision &&
+          claimed.input.context.container.mode === "edit"
+        )
           return conflict(coordinator, claimed);
-        const encoded = await coordinator.results.encodeDraft(claimed, latest);
+        const encoded = await coordinator.results.encodeDraft(
+          claimed,
+          claimed.input.context.container.mode === "test"
+            ? state.draft
+            : latest,
+        );
         await coordinator.transaction(() =>
           update(
             coordinator,

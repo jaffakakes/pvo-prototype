@@ -114,6 +114,7 @@ export type ServiceControlReceipt = {
   at: number;
 };
 export type HostedServiceSummary = {
+  draftRevision: number | null;
   service: HostedServiceRecord;
   releases: import("../releases/index.js").ServiceObservation[];
 };

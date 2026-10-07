@@ -79,6 +79,7 @@ export async function prepareDraftResponse(coordinator, task, response) {
         null,
       );
       state.reason = decision.reason;
+      state.testingRevision = state.draft.revision;
       command.stepId = "build";
     }
     return { draftState: state, command, builder };

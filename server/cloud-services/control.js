@@ -27,7 +27,11 @@ export function inspectHostedService(host, serviceId, ownerId) {
   const releases = host.store
     .rows()
     .map((row) => host.store.observation(JSON.parse(row.identity), row));
-  return parseHostedSummary({ service, releases });
+  return parseHostedSummary({
+    service,
+    releases,
+    draftRevision: host.drafts.read()?.revision ?? null,
+  });
 }
 export async function controlHostedService(host, serviceId, ownerId, value) {
   ownedHost(host, serviceId, ownerId);
@@ -57,8 +61,17 @@ export async function controlHostedService(host, serviceId, ownerId, value) {
           "unavailable",
           "This checked release is unavailable.",
         );
-      const candidate = parseServicePublication(JSON.parse(row.body)).artifact
-        .agreement;
+      const publication = parseServicePublication(JSON.parse(row.body));
+      if (
+        !row.retained &&
+        publication.identity.draftRevision !== null &&
+        host.drafts.read()?.revision !== publication.identity.draftRevision
+      )
+        throw serviceCallError(
+          "state_changed",
+          "The draft has changed since this version was checked. Test the saved draft again before publishing.",
+        );
+      const candidate = publication.artifact.agreement;
       const previousRow = service.liveReleaseId
         ? host.store.row(service.liveReleaseId)
         : null;

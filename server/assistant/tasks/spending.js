@@ -44,6 +44,7 @@ export function taskSpendingAllowed(env, ownerId, capability, now) {
 export function taskSpendingCapability(task, builderStage) {
   if (task.stepId === "host") return "hosting";
   if (
+    task.input.context.container?.mode === "test" ||
     task.stepId === "validate" ||
     (task.stepId === "build" && builderStage !== "model")
   )

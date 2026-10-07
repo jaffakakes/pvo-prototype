@@ -48,11 +48,23 @@ function completeReport(coordinator, claimed, state, report, error = null) {
     state.round,
     reviewProgressEvidence(state, report, error),
   );
+  if (
+    claimed.input.context.container?.mode === "test" &&
+    report?.status !== "passed"
+  ) {
+    const task = coordinator.validation.task(claimed.id);
+    coordinator.repository.update(
+      task.id,
+      { kind: "fail", failure: { code: "tests_failed", stepId: "validate" } },
+      transitionGuard(task, coordinator.now(), taskClaim(task)),
+    );
+    return;
+  }
   checkpoint(
     coordinator,
     claimed,
     report?.status === "passed"
-      ? claimed.input.context.container
+      ? claimed.input.context.container?.mode === "edit"
         ? "draft_sync"
         : "host"
       : "build",

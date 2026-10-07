@@ -60,3 +60,14 @@ export function matchDraftTaskResult(
   value: unknown,
   task: TaskRecord,
 ): DraftTaskResult;
+
+export type DraftTestResults = {
+  ownerId: string;
+  taskId: string;
+  serviceId: string;
+  revision: number;
+  agreement: import("../services/index.js").ServiceAgreement | null;
+  generated: { exitCode: number; stdout: string; stderr: string } | null;
+  report: import("../services/index.js").ServiceTestReport | null;
+};
+export function parseDraftTestResults(value: unknown): DraftTestResults;

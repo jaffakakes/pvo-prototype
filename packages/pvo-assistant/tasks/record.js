@@ -303,7 +303,11 @@ function inputSnapshot(value) {
     value.examples.map((item) => [item.id, item.input, item.expected]),
     value.context.fingerprint,
     value.context.container
-      ? [value.context.container.serviceId, value.context.container.revision]
+      ? [
+          value.context.container.serviceId,
+          value.context.container.revision,
+          value.context.container.mode,
+        ]
       : value.context.components.map((item) => [
           item.id,
           item.sceneId,

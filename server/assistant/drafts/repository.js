@@ -30,6 +30,7 @@ export class TaskDrafts {
         read: null,
         pending: null,
         reason: null,
+        testingRevision: null,
         stopPending: false,
       });
   }

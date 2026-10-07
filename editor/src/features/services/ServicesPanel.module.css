@@ -29,7 +29,7 @@
   padding: 0;
   margin: 0;
 }
-.list li {
+.list > li {
   display: grid;
   gap: 10px;
   border: 1px solid var(--q14);
@@ -116,4 +116,13 @@
   min-height: 44px;
   display: flex;
   align-items: center;
+}
+
+.testOutput {
+  max-block-size: 14rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.85rem;
+  line-height: 1.5;
 }

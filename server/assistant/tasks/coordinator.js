@@ -1,3 +1,5 @@
+import { draftTestResults } from "../drafts/testResults.js";
+import { runDraftTestPreparation } from "../drafts/testing.js";
 import { planDraftEdit } from "../drafts/planner.js";
 import { runDraftStep } from "../drafts/runner.js";
 import { TaskDrafts } from "../drafts/repository.js";
@@ -94,7 +96,8 @@ export class AssistantTasks extends DurableObject {
       input = creationInput(operation.input);
     else if (operation.kind === "list")
       input = taskListInput(new URLSearchParams(operation.query));
-    else if (["read", "result"].includes(operation.kind)) taskId(operation.id);
+    else if (["read", "result", "tests"].includes(operation.kind))
+      taskId(operation.id);
     else if (["answers", "resume", "stop"].includes(operation.kind)) {
       taskId(operation.id);
       input = creatorCommand(operation.kind, operation.input);
@@ -149,6 +152,13 @@ export class AssistantTasks extends DurableObject {
               return repository.list(input, now);
             case "read":
               return { task: repository.read(operation.id, now) };
+            case "tests":
+              return {
+                tests: draftTestResults(
+                  this,
+                  repository.read(operation.id, now),
+                ),
+              };
             case "result":
               return {
                 body: this.results.read(repository.read(operation.id, now)),
@@ -435,6 +445,8 @@ export class AssistantTasks extends DurableObject {
         this.builders.stage(claimed.id) !== "model"
       )
         await runBuilderBatch(this, claimed);
+      else if (claimed.input.context.container?.mode === "test")
+        await runDraftTestPreparation(this, claimed);
       else await runAuthoringStep(this, claimed);
     }
     await settleAuthoringBudgets(this);

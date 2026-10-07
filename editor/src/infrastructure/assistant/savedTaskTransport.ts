@@ -1,3 +1,4 @@
+import { parseDraftTestResults } from "../../../../packages/pvo-assistant/results/index.js";
 import {
   parseTaskInput,
   parseTaskRecord,
@@ -146,4 +147,24 @@ export async function changeSavedTask(
     ).task,
     ref,
   );
+}
+
+export async function readDraftTests(task: TaskRecord, signal: AbortSignal) {
+  const report = parseDraftTestResults(
+    (
+      await requestTask(
+        `/api/assistant/tasks/${task.id}/tests`,
+        undefined,
+        signal,
+      )
+    ).tests,
+  );
+  if (
+    !("container" in task.input.context) ||
+    report.ownerId !== task.ownerId ||
+    report.taskId !== task.id ||
+    report.serviceId !== task.input.context.container.serviceId
+  )
+    throw new Error("The test report belongs to another task or Container.");
+  return report;
 }

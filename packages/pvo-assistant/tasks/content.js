@@ -18,10 +18,11 @@ export function validateContext(value) {
     text(value.fingerprint, limits.fingerprintBytes, "Draft fingerprint");
     object(
       value.container,
-      ["serviceId", "revision"],
+      ["serviceId", "revision", "mode"],
       "Saved Container target",
     );
     id(value.container.serviceId, "Container identity");
+    choice(value.container.mode, ["edit", "test"], "Container task mode");
     integer(
       value.container.revision,
       Number.MAX_SAFE_INTEGER,

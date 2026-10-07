@@ -154,3 +154,5 @@ export {
   prepareDraftTaskResult,
   matchDraftTaskResult,
 } from "./draft.js";
+
+export { parseDraftTestResults } from "./draftTests.js";

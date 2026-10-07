@@ -9,6 +9,8 @@ const failureMessages = {
   reconciliation_required:
     "An earlier action needs to be checked before work can continue.",
   execution_failed: "The current step could not be completed.",
+  tests_failed:
+    "The saved draft did not pass its tests. Its code and the published version are unchanged. Stop this task, fix the draft and test again.",
   invalid_result: "The result did not pass validation.",
   budget_exceeded: "This task reached its work limit.",
 };
@@ -83,7 +85,7 @@ function taskMessage(
   if (task.state === "ready") return "Your result is saved.";
   if (task.state === "stopped") {
     if ("container" in task.input.context)
-      return "AI editing has stopped. Refresh saved code to check any save that was already in progress. Published code is unchanged.";
+      return "Work on this draft has stopped. Refresh saved code to check any save that was already in progress. Published code is unchanged.";
     if (uncertain)
       return "Further work was stopped. An earlier action still needs its outcome checked.";
     return "Further work was stopped. Your saved progress is still available.";

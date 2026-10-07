@@ -1,3 +1,4 @@
+import { ContainerTests } from "./ContainerTests";
 import { useState } from "react";
 import type { ServiceDraft } from "../../../../packages/pvo-assistant/services/index.js";
 import { TASK_LIMITS } from "../../../../packages/pvo-assistant/tasks/index.js";
@@ -35,7 +36,7 @@ export function ContainerAssistant({
         <form
           onSubmit={(event) => {
             event.preventDefault();
-            if (valid && !disabled) session.start(draft, request);
+            if (valid && !disabled) session.start(draft, request, "edit");
           }}
         >
           <label>
@@ -51,20 +52,56 @@ export function ContainerAssistant({
           </button>
         </form>
       )}
-      {session.pending && (
-        <p role="status">Recovering the saved editing request…</p>
+      {session.canStart && (
+        <div>
+          <h4>Test saved draft</h4>
+          <p>
+            Run your selected tests and Restyle’s independent checks on revision{" "}
+            {draft.revision}. Testing uses cloud resources and leaves the
+            published version unchanged.
+          </p>
+          <button
+            type="button"
+            disabled={
+              disabled ||
+              session.busy ||
+              !draft.content.agreement ||
+              !draft.content.tests.length
+            }
+            onClick={() =>
+              session.start(
+                draft,
+                `Test saved draft revision ${draft.revision}`,
+                "test",
+              )
+            }
+          >
+            Test saved draft
+          </button>
+          {(!draft.content.agreement || !draft.content.tests.length) && (
+            <p>Save a behavior agreement and select test files first.</p>
+          )}
+        </div>
       )}
+      {session.pending && <p role="status">Recovering the saved task…</p>}
       {status && (
         <>
           <p role="status">
             {status.label} · {session.task!.input.request}
           </p>
           <p>
-            {session.task!.state === "ready"
-              ? "Changes are saved. Refresh the code to review them; any local edits will be kept for comparison."
-              : status.message}
+            {session.task!.state === "ready" &&
+            "container" in session.task!.input.context &&
+            session.task!.input.context.container.mode === "test"
+              ? `Draft revision ${session.task!.input.context.container.revision} passed its checks. Refresh Containers to review the checked version before publishing.`
+              : session.task!.state === "ready"
+                ? "Changes are saved. Refresh the code to review them; any local edits will be kept for comparison."
+                : status.message}
           </p>
         </>
+      )}
+      {session.task && (
+        <ContainerTests key={session.task.id} task={session.task} />
       )}
       {session.error && <p role="alert">{session.error}</p>}
       {status?.question && (
@@ -82,12 +119,12 @@ export function ContainerAssistant({
             onClick={session.clearExpired}
             disabled={session.busy}
           >
-            Clear expired editing task
+            Clear expired task
           </button>
         )}
         {session.error && (
           <button type="button" onClick={session.retry} disabled={session.busy}>
-            Retry editing task
+            Retry saved task
           </button>
         )}
         {status?.canResume && (
@@ -96,12 +133,12 @@ export function ContainerAssistant({
             onClick={session.resume}
             disabled={session.busy}
           >
-            Resume editing
+            Resume task
           </button>
         )}
         {status?.canStop && (
           <button type="button" onClick={session.stop} disabled={session.busy}>
-            Stop editing
+            Stop task
           </button>
         )}
         {session.task && (
