@@ -23,7 +23,9 @@ export class FlyMachineLifecycle {
       value &&
       (value.execution !== execution ||
         value.app !== this.app ||
-        value.image !== this.image)
+        typeof value.image !== "string" ||
+        !value.image.startsWith(`registry.fly.io/${this.app}@sha256:`) ||
+        !/@sha256:[a-f0-9]{64}$/.test(value.image))
     )
       throw nodeExecutionError("runtime_mismatch");
     return value;

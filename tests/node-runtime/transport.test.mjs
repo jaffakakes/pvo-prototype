@@ -5,12 +5,12 @@ import { promisify } from "node:util";
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { prepareFlyInput } from "../../scripts/checks/node-runtime/fly/input.mjs";
+import { prepareFlyInput } from "../../server/cloud-services/node/fly/input.js";
 
 async function transport(events, body = null, corrupt = false) {
   const directory = await mkdtemp(join(tmpdir(), "restyle-transport-"));
   if (body !== null) {
-    const delivery = prepareFlyInput(body);
+    const delivery = await prepareFlyInput(body);
     await mkdir(join(directory, "invocation"));
     await writeFile(
       join(directory, "invocation.json"),

@@ -1,3 +1,7 @@
+import {
+  FlyCommands,
+  readFlyReply,
+} from "../../../../server/cloud-services/node/fly/commands.js";
 import assert from "node:assert/strict";
 import { setTimeout as delay } from "node:timers/promises";
 import { requireFly } from "./api.mjs";
@@ -7,7 +11,6 @@ import {
 } from "../../../../server/cloud-services/node/runtime.js";
 import {
   nodeExecutionBody,
-  readNodeReply,
   nodeExecutionError,
 } from "../../../../server/cloud-services/node/protocol.js";
 
@@ -33,9 +36,41 @@ export class FlyProofMachine {
     this.executionMs = executionMs;
     this.preparationMs = preparationMs;
     this.invocationBody = invocationBody;
-    this.clock = clock;
-    this.commandTail = Promise.resolve();
-    this.nextCommandAt = 0;
+    this.commands = new FlyCommands(
+      async (...args) => {
+        const result = await this.resources.request(...args);
+        if (result.ok) {
+          const data = result.data;
+          this.lastCommand = {
+            fields: Object.keys(data ?? {}),
+            exitCode: data?.exit_code ?? 0,
+            exitSignal: data?.exit_signal ?? null,
+            stdoutBytes:
+              typeof data?.stdout === "string"
+                ? Buffer.byteLength(data.stdout)
+                : null,
+            stderr:
+              typeof data?.stderr === "string"
+                ? data.stderr.slice(0, 2048)
+                : null,
+          };
+          if (
+            (data?.exit_code ?? 0) !== 0 ||
+            (data?.exit_signal ?? 0) !== 0 ||
+            typeof data?.stdout !== "string"
+          ) {
+            this.resources.report.commandFailure = {
+              machine: this.record.id,
+              ...this.lastCommand,
+            };
+            await this.resources.save();
+          }
+        }
+        return result;
+      },
+      this.path,
+      clock,
+    );
   }
   async start() {
     const { request } = this.resources;
@@ -109,70 +144,8 @@ export class FlyProofMachine {
       throw error;
     }
   }
-  command(command, { timeoutMs = 4000 } = {}) {
-    const deadline = this.clock.now() + timeoutMs;
-    const operation = this.commandTail.then(async () => {
-      const waiting = Math.max(0, this.nextCommandAt - this.clock.now());
-      if (waiting) await this.clock.sleep(waiting);
-      const remaining = deadline - this.clock.now();
-      if (remaining <= 0)
-        throw new DOMException(
-          "Fly command admission timed out",
-          "TimeoutError",
-        );
-      // The provider allows one exec per second per Machine. Include queue time in the outside deadline.
-      this.nextCommandAt = this.clock.now() + 1100;
-      return this.runCommand(command, remaining);
-    });
-    this.commandTail = operation.catch(() => {});
-    return operation;
-  }
-  async runCommand(command, timeoutMs) {
-    const data = await requireFly(
-      this.resources.request,
-      "POST",
-      `${this.path}/exec`,
-      {
-        cmd: command
-          .map((value) => "'" + value.replaceAll("'", "'\"'\"'") + "'")
-          .join(" "),
-        timeout: Math.max(1, Math.ceil(timeoutMs / 1000)),
-      },
-      { timeoutMs },
-    );
-    // Fly omits the zero-valued exit_code field on successful commands.
-    const exitCode = data?.exit_code === undefined ? 0 : data.exit_code;
-    this.lastCommand = {
-      fields: Object.keys(data ?? {}),
-      exitCode,
-      exitSignal: data?.exit_signal ?? null,
-      stdoutBytes:
-        typeof data?.stdout === "string"
-          ? Buffer.byteLength(data.stdout)
-          : null,
-      stderr:
-        typeof data?.stderr === "string" ? data.stderr.slice(0, 2048) : null,
-    };
-    if (
-      exitCode !== 0 ||
-      (data?.exit_signal ?? 0) !== 0 ||
-      typeof data?.stdout !== "string"
-    ) {
-      // This is a private fixed-fixture diagnostic, never the product error surface.
-      this.resources.report.commandFailure = {
-        machine: this.record.id,
-        fields: data && typeof data === "object" ? Object.keys(data) : [],
-        exitCode: data?.exit_code ?? null,
-        exitSignal: data?.exit_signal ?? null,
-        stderr:
-          typeof data?.stderr === "string" ? data.stderr.slice(0, 2048) : null,
-      };
-      await this.resources.save();
-      throw nodeExecutionError("execution_failed");
-    }
-    if (Buffer.byteLength(data.stdout) > 160 * 1024)
-      throw nodeExecutionError("output_limit");
-    return data.stdout;
+  command(command, options = {}) {
+    return this.commands.command(command, { timeoutMs: 4000, ...options });
   }
   async bridge(payload, timeoutMs = 4000) {
     const encoded = Buffer.from(payload.body ?? "").toString("base64");
@@ -182,34 +155,23 @@ export class FlyProofMachine {
     const raw = await this.command(["node", this.bridgePath, ...args], {
       timeoutMs,
     });
-    let reply;
     try {
-      reply = JSON.parse(raw);
-    } catch {
-      this.resources.report.transportFailure = {
-        ...this.lastCommand,
-        raw: raw.slice(0, 512),
-      };
-      await this.resources.save();
-      throw nodeExecutionError("invalid_reply");
+      return await readFlyReply(
+        raw,
+        payload.path === "/ready" ? "ready" : "execute",
+      );
+    } catch (error) {
+      if (error.code === "invalid_reply") {
+        this.resources.report.transportFailure = {
+          ...this.lastCommand,
+          raw: raw.slice(0, 512),
+        };
+        await this.resources.save();
+      }
+      throw error;
     }
-    if (payload.path === "/ready" && [503, 504].includes(reply?.status))
-      throw nodeExecutionError("startup_pending");
-    if (reply?.status === 504) throw nodeExecutionError("timeout");
-    if (
-      !Number.isInteger(reply?.status) ||
-      reply.status < 200 ||
-      reply.status > 599 ||
-      [204, 205, 304].includes(reply.status) ||
-      typeof reply.body !== "string"
-    )
-      throw nodeExecutionError("invalid_reply");
-    return readNodeReply(
-      new Response(reply.body, { status: reply.status }),
-      NODE_LIMITS.replyBytes,
-      new AbortController().signal,
-    );
   }
+
   async execute(bundle, invocation) {
     try {
       const body = nodeExecutionBody(bundle, invocation);

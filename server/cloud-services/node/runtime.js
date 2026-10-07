@@ -6,6 +6,8 @@ export const NODE_RUNTIME = Object.freeze({
     "node@sha256:6642ef280aebc09c4541bee0b15c9f89f0f3f3c247ddee79ae1d37eddfdcbbaa",
   runnerDigest:
     "73dc5f1be4113b457ed0c64b4b3abc168e038ae092ae9a8c64a355718dc0c7dc",
+  imageDigest:
+    "sha256:9942e6c3dccc44a923c70ef9d8b3b7609b1a8338ea05b33ca80047952d0f449b",
 });
 export const NODE_LIMITS = Object.freeze({
   startupMs: 30000,

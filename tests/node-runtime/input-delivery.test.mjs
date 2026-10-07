@@ -4,14 +4,14 @@ import { createHash } from "node:crypto";
 import {
   prepareFlyInput,
   uploadFlyInput,
-} from "../../scripts/checks/node-runtime/fly/input.mjs";
+} from "../../server/cloud-services/node/fly/input.js";
 
 const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
 test("input delivery keeps create/exec requests small while retaining exact UTF-8 bytes", async () => {
   const body = JSON.stringify({
     source: '日本語";$(not-a-command)'.repeat(39000),
   });
-  const delivery = prepareFlyInput(body);
+  const delivery = await prepareFlyInput(body);
   assert.ok(JSON.stringify(delivery.files).length < 935000);
   const received = [Buffer.from(delivery.files[1].raw_value, "base64")];
   const machine = {
@@ -35,7 +35,7 @@ test("input delivery keeps create/exec requests small while retaining exact UTF-
 });
 
 test("failed upload settles before rejection and never dispatches the next part", async () => {
-  const delivery = prepareFlyInput("x".repeat(900000));
+  const delivery = await prepareFlyInput("x".repeat(900000));
   let calls = 0,
     settled = 0;
   const machine = {
@@ -49,4 +49,25 @@ test("failed upload settles before rejection and never dispatches the next part"
   await assert.rejects(uploadFlyInput(machine, delivery), /upload unavailable/);
   assert.equal(calls, 1);
   assert.equal(settled, 1);
+});
+
+test("cancelled upload cannot dispatch the next part", async () => {
+  const delivery = await prepareFlyInput("x".repeat(900000));
+  const controller = new AbortController();
+  let calls = 0;
+  const machine = {
+    command: async () => {
+      calls++;
+      controller.abort();
+      return "ignored";
+    },
+  };
+  await assert.rejects(
+    uploadFlyInput(machine, delivery, { signal: controller.signal }),
+  );
+  assert.equal(calls, 1);
+  await assert.rejects(
+    uploadFlyInput(machine, delivery, { signal: controller.signal }),
+  );
+  assert.equal(calls, 1);
 });

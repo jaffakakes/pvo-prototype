@@ -25,7 +25,11 @@ function fixture(request) {
       record = structuredClone(value);
     },
   };
-  return { open: () => new FlyMachineLifecycle(options), read: options.read };
+  return {
+    open: (overrides = {}) =>
+      new FlyMachineLifecycle({ ...options, ...overrides }),
+    read: options.read,
+  };
 }
 
 test("an uncertain creation holds its durable obligation through restart and late arrival", async () => {
@@ -133,4 +137,21 @@ test("definite create rejection can release its intent while ambiguous server er
       assert.equal(f.read(), null);
     }
   }
+});
+
+test("cleanup uses its saved immutable image when the configured runtime release changes", async () => {
+  let present = true;
+  const f = fixture(async (method) => {
+    if (method === "POST") return ok(machine());
+    if (method === "DELETE") {
+      present = false;
+      return ok({});
+    }
+    return present ? ok(machine()) : absent;
+  });
+  await f.open().create(execution, { config: {} });
+  await f
+    .open({ image: image.replace(/a{64}$/, "b".repeat(64)) })
+    .destroy(execution);
+  assert.equal(f.read(), null);
 });

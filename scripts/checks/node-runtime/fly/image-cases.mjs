@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { prepareFlyInput, uploadFlyInput } from "./input.mjs";
+import {
+  prepareFlyInput,
+  uploadFlyInput,
+} from "../../../../server/cloud-services/node/fly/input.js";
 import { FlyProofMachine } from "./machine.mjs";
 import { inspectRuntimeStartup } from "./startup.mjs";
 import { networkProbeProgram } from "./network.mjs";
@@ -32,7 +35,7 @@ export async function runImageCases(resources) {
       now: 0,
     };
     const invocationBody = nodeExecutionBody(bundle, invocation);
-    const delivery = prepareFlyInput(invocationBody);
+    const delivery = await prepareFlyInput(invocationBody);
     const record = await resources.createMachine(delivery.files, (options) =>
       runtimeConfiguration(report.build.image, options),
     );

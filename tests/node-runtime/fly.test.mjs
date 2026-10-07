@@ -182,6 +182,8 @@ test("Fly checks immutable identity, withholds source until ready and rejects ma
   const bodies = [];
   const resources = {
     path: "/apps/owned",
+    report: {},
+    save: async () => {},
     request: async (method, path, body) => {
       if (path.endsWith("/exec")) {
         bodies.push(body);
