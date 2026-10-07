@@ -2,7 +2,15 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
-## Latest scope: Roadmap 1 complete through beta
+## Latest scope: Roadmap 2 follows the actual request
+
+On **8 October 2026**, the user asked to continue Roadmap 2 here and clarified that examples must not become the product specification. Derive the plan, questions, fields, connections, and tests from the creator's actual goal. Follow [Roadmap 2's acceptance cases across different requests](restyle-cloud-agent-roadmaps/02-research-and-connections.md#build-from-the-creators-request), including an unfamiliar goal or changed requirements. Use existing capabilities when sufficient; do not require a connection for a request that needs none.
+
+**Active branch:** `feature/restyle-research-connections`, checkout `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`. It starts from fetched `origin/dev` (`cc2193e`) and explicitly includes verified Roadmap 1 prerequisite `e165121` by fast-forward. The preceding Containers branch and draft PR #106 remain intact. On another machine, fetch this branch and read its latest progress before continuing.
+
+**Next: 2A.01**, structured evidence in the existing public web tools, guided by each request. This checkpoint changes documentation only; **75/134 remain complete and all 24 Roadmap 2 tasks remain unchecked**. Preserve the beta and provider evidence below. No production, integration merge, Actions work, new paid resources, or unreleased branch deletion is part of this update.
+
+## Previous scope: Roadmap 1 complete through beta
 
 **75/134 complete; no Roadmap 1 checkbox remains.** Continue from `origin/feature/restyle-containers`, [draft PR #106](https://github.com/jaffakakes/pvo-prototype/pull/106), or its verified successor. Local checkout: `/Users/christinasmacbook/.codex/worktrees/restyle-containers/pvo-prototype`. Source `ef1deaa` contains the final attachment-clock fix. The [current progress](restyle-cloud-agent-progress.md) records the final completion commit and checks; [integrated acceptance](restyle-node-product-acceptance.md#verified-result--7-october-2026) contains portable evidence.
 
@@ -12,7 +20,7 @@ All 1A–1G and the twelve transferred management/update tasks are verified. Act
 
 **Cleanup:** all three attempts’ Machines/apps/app keys are removed; both completed manifests are absent; diagnostic Workers/namespaces are removed. The organization test key is revoked and owned local credentials removed. Unrelated Lumo preserved. Provider blob collection and invoice total are not verified. Missing private journals on another machine is not a reason to repeat paid proofs.
 
-**Next task: 2A.01**, structured source/time/access/uncertainty evidence in the existing research tools. The current request ends at completed Roadmap 1; wait for the user's next implementation request. Preserve all 134 stable IDs and the existing authorities. Production remains explicitly prohibited until the whole roadmap is done, the user tests beta and gives release approval. No integration merge, Actions work or unreleased branch deletion is authorized.
+**Next task at that checkpoint: 2A.01**, structured source/time/access/uncertainty evidence in the existing research tools. The 8 October request above now authorizes continuing Roadmap 2. Preserve all 134 stable IDs and the existing authorities. Production remains explicitly prohibited until the whole roadmap is done, the user tests beta and gives release approval. No integration merge, Actions work or unreleased branch deletion is authorized.
 
 ## Historical 1G checkpoints: finish Roadmap 1 through beta; five tasks remain
 

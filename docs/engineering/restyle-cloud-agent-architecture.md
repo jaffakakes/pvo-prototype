@@ -18,6 +18,8 @@ This is an open-ended building capability. Restaurant bookings, invitations, mes
 
 The creator should not need to know which server to buy, how to write an API, or where a password belongs. They should see questions about their goal, a secure way to connect accounts, progress, and a working result.
 
+**Request interpretation, clarified 8 October 2026:** derive the needed capabilities, questions, collected information, and success checks from each creator's actual request and project context. Reuse known answers and existing capabilities; a request that needs no external service should not be forced through account setup. When the goal changes, revise the plan and tests. Verify this behavior with unrelated and previously unused requests under [Roadmap 2's acceptance cases](restyle-cloud-agent-roadmaps/02-research-and-connections.md#build-from-the-creators-request). Examples are illustrations, not product templates or a fixed capability list.
+
 ## How it would feel to use
 
 The following is an illustrative conversation. The restaurant's rules would have to be researched for the actual request.

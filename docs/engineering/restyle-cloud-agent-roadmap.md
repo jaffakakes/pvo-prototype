@@ -46,10 +46,10 @@ Use the numbered tasks in the linked guide as the detailed checklist. The phase 
 | 1E | Verified service attached to component | 1C/1D receipts and existing editor/player boundaries | Try uses test permissions; file export and publication both use the correct live service |
 | 1F | First complete product release | 1B–1E gates | Two natural-language demonstrations; restart/failure checks; beta and authorized release evidence |
 | **1G — complete through beta** | Containers: saved manual/AI drafts, checked Node.js runtime, and existing service update/management flows | Completed 1E/1F; reuse 1B–1D | Exact tested Node.js release survives workshop/instance shutdown; both editing paths, attachments, costs and cleanup verified |
-| 2A | Research and saved capability decisions | Product sequence follows 1G; reuse 1B saved questions and web tools | Online, phone-only, and no-booking examples produce truthful available options |
+| 2A | Research and saved capability decisions | Product sequence follows 1G; reuse 1B saved questions and web tools | Unrelated requests produce relevant evidence, questions, and truthful options; changed goals revise the plan |
 | 2B | One secure account connection | 2A access decision and owner records | Connect, reload, expire, reconnect, revoke; another owner cannot use it |
 | 2C | Generated integration through controlled credentials | 1D and 2B; Roadmap 3 for long-running effects | Live supported operation; revocation and unknown-outcome handling |
-| 2D | Useful manual alternatives | 1B questions and 2A research | Chosen manual step stays pending; RSVP is never labelled a confirmed booking |
+| 2D | Useful manual alternatives | 1B questions and 2A research | Alternatives fit each goal; chosen manual steps stay pending until done, with no false completion claim |
 | 3A | Durable viewer jobs | 1D action identities; 2B for external connections | Browser/worker restarts preserve one logical job and an accurate result |
 | 3B | Provider callbacks and schedules | 3A reliable jobs | Invalid/duplicate/out-of-order events handled; cancelled schedules do not start |
 | 3C | Truthful pending/final component status | 3A/3B and 1E attachment | Private receipt access, safe refresh, correct Try/export/player behavior |
@@ -129,4 +129,4 @@ Production promotion follows dev → preprod → prod. After successful deployme
 
 ## Start here
 
-**Current request completed:** all Roadmap 1, including Containers, is verified through beta. Next is **2A.01** in [Roadmap 2](restyle-cloud-agent-roadmaps/02-research-and-connections.md), when implementation resumes. Preserve completed evidence and all stable task IDs. Production remains deferred.
+**Roadmap 1 completed; Roadmap 2 requested, 8 October 2026:** all Roadmap 1, including Containers, is verified through beta. Next is **2A.01** in [Roadmap 2](restyle-cloud-agent-roadmaps/02-research-and-connections.md). Its four stages must adapt to the actual request; the restaurant example is illustrative. See the [acceptance cases across different requests](restyle-cloud-agent-roadmaps/02-research-and-connections.md#build-from-the-creators-request). Preserve completed evidence and all stable task IDs. Production remains deferred.

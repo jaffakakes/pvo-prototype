@@ -2,9 +2,19 @@
 
 **Read this first when continuing.** Update this file after every verified task and before stopping. The [numbered roadmap checkboxes](restyle-cloud-agent-roadmap.md) are the authoritative completion list; this file holds the evidence and exact continuation point. Follow the [handoff procedure](restyle-cloud-agent-handoff.md).
 
-Last checkpoint: **7 October 2026**. Recheck Git and provider state before relying on the dated operational details below.
+Last checkpoint: **8 October 2026**. Recheck Git and provider state before relying on the dated operational details below.
 
-## Current checkpoint — Roadmap 1 complete through beta
+## Current checkpoint — Roadmap 2 request interpretation clarified
+
+The user asked to continue Roadmap 2, then clarified that the restaurant example must not determine the product's behavior. This documentation checkpoint makes the creator's actual goal govern research, questions, collected information, generated behavior, and independent success checks. **75/134 tasks remain checked; all 24 Roadmap 2 tasks remain unchecked.**
+
+- **Plan:** [Roadmap 2](restyle-cloud-agent-roadmaps/02-research-and-connections.md#build-from-the-creators-request) now requires acceptance across unrelated requests, including a previously unused goal or changed requirements without a special-case template. Cover usable/missing access, unavailable automation, uncertain evidence, and no need for an outside service. One real provider verifies that connection; controlled broader cases must not be presented as live integrations. Generalize the 2A/2D completion gates and the two unfinished example-specific task descriptions; all IDs and checkbox states are preserved.
+- **Source checkpoint:** `feature/restyle-research-connections`, `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`, starts from freshly fetched `origin/dev` (`cc2193e`) and fast-forwards the verified unreleased prerequisite `e165121`. This documentation commit contains Roadmap 2, roadmap overview, cloud-agent architecture, handoff, and this progress log. No Roadmap 2 PR is created yet; the preceding Containers draft #106 remains intact.
+- **Verification:** 302 local links, including 50 anchors, pass across 21 related documents. All 134 task IDs and checkbox states match `e165121`; only unfinished descriptions 2A.04 and 2D.01 are generalized. All 24 Roadmap 2 tasks remain unchecked. `git diff --check` passes, and the diff contains only the five documentation files. No application tests or rebuild are required for documentation-only changes.
+- **Resources/release:** no app code, paid resource, credential, hosting, or beta change. Roadmap 1 evidence and beta `restyle-editor-shell-0aeb35ad18374509` remain as recorded below. No integration/production merge or deployment, Actions work, or branch deletion.
+- **Exact next:** implement **2A.01** in existing public web tools. First read coding standards, architecture, web research design, callers, and tests; preserve existing saved-task/ownership/connection boundaries. Evaluate evidence against the actual requested operation, not restaurant-specific fields or branching. Update its checkbox only after implementation and verification.
+
+## Previous checkpoint — Roadmap 1 complete through beta
 
 **75/134 tasks checked; all Roadmap 1 tasks are complete, including 1G and its twelve transferred 4B/4C tasks.** Fifty-nine tasks remain in Roadmaps 2–4. Final completion evidence is in [integrated Node/Fly acceptance](restyle-node-product-acceptance.md#verified-result--7-october-2026). Latest implementation `ef1deaa`, documentation `d3ec1ad`; this work batch records final verification and completion in the same numbered roadmap. Active checkout `feature/restyle-containers`, `/Users/christinasmacbook/.codex/worktrees/restyle-containers/pvo-prototype`, draft [PR #106](https://github.com/jaffakakes/pvo-prototype/pull/106).
 
