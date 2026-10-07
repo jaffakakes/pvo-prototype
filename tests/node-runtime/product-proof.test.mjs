@@ -117,7 +117,12 @@ test(
         ...(process.env.RESTYLE_PRODUCT_BROWSER
           ? {
               browserCheck: (options) =>
-                checkProductBrowser({ ...options, origin, publicBridge: true }),
+                checkProductBrowser({
+                  ...options,
+                  origin,
+                  publicBridge: true,
+                  clientClockOffsetMs: -60000,
+                }),
             }
           : {}),
       });

@@ -14,6 +14,7 @@ export async function checkProductBrowser({
   call,
   record,
   publicBridge = false,
+  clientClockOffsetMs = 0,
 }) {
   const browser = await chromium.launch({
     executablePath:
@@ -25,6 +26,11 @@ export async function checkProductBrowser({
     viewport: { width: 1440, height: 900 },
     reducedMotion: "reduce",
   });
+  if (clientClockOffsetMs)
+    await context.addInitScript((offset) => {
+      const current = Date.now.bind(Date);
+      Date.now = () => current() + offset;
+    }, clientClockOffsetMs);
   const sourceUrl = process.env.EDITOR_URL || "http://127.0.0.1:5319/";
   const media = await readFile(
     new URL("../../../share/assets/preview.mp4", import.meta.url),

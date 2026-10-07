@@ -4,7 +4,15 @@
 
 Last checkpoint: **7 October 2026**. Recheck Git and provider state before relying on the dated operational details below.
 
-## Active continuation — integrated Node/Fly product acceptance preparation
+## Active continuation — device-clock correction; final integrated acceptance remains
+
+The second real run `run-dGfXoa` passed independent Node/library validation, lost-publication recovery, inactive probing, host restart/data/replay, invalid update rejection and checked update/rollback. Browser attachment then exposed a real client defect: it compared a fresh server observation to the device’s slower clock. The displayed “check readiness again” message was not an expired service. The shared/server rules remain unchanged; the client now builds its proposal using the authenticated observation time and the existing attachment endpoint rechecks current ownership, release and lifecycle.
+
+The actual editor/Try/downloaded-player/published-player rehearsal passes with the device clock deliberately **60 seconds behind** (`/tmp/restyle-node-product-clock-browser.log`). Strict editor types are running. Pending source is `connectionCommands.ts`, the acceptance browser clock option and its regression fixture. Rebuild/deliver beta for this app correction after committing it. All five remaining gates stay unchecked until final cloud/browser/retention/interruption acceptance and cleanup finish.
+
+Run 2’s Worker/four namespaces, compute and image manifest are removed. The app cleanup completed but scoped-key revocation initially rejected the expired login. The existing login was refreshed securely; exact-key revocation and app-absence verification are running, without creating replacements. Registry blob garbage collection is provider-managed and unverified. Retain the private journals/keys until cleanup confirms. Next run the same bounded acceptance with the corrected client; same US$1 total allowance, no production, integrations or Actions.
+
+## Previous continuation — integrated Node/Fly product acceptance preparation
 
 The user requested completion of Roadmap 1 through beta without stopping at partial implementation. Five gates remain unchecked: **1G.04/05/06, 4C.06, 1G.08**. The concrete [resource/cleanup plan](restyle-node-product-acceptance.md) reuses the approved US$1 isolated allowance; production, integration merges and Actions stay excluded.
 

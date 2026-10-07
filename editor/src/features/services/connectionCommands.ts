@@ -70,7 +70,9 @@ export async function connectContainerComponent(
     target,
     input,
     window.location.origin,
-    Date.now(),
+    // Build from the authenticated server observation; the device clock may be behind it.
+    // The subsequent server call still rechecks ownership, release and lifecycle.
+    receipt.readiness.observedAt,
   );
   const attachment = await verifyContainerAttachment(proposed, signal);
   current();
