@@ -594,5 +594,7 @@
   "scripts/checks/node-runtime/fly/resources.mjs",
   "scripts/checks/node-runtime/fly/run.mjs",
   "tests/node-runtime/fly.test.mjs",
-  "scripts/checks/node-runtime/fly/namespace.mjs"
+  "scripts/checks/node-runtime/fly/namespace.mjs",
+  "scripts/checks/node-runtime/fly/gvisor-guest.mjs",
+  "scripts/checks/node-runtime/fly/gvisor.mjs"
 ]

@@ -8,6 +8,7 @@ import {
 } from "./config.mjs";
 import { flyProofResources } from "./resources.mjs";
 import { FlyProofMachine } from "./machine.mjs";
+import { checkGvisor } from "./gvisor.mjs";
 import { checkLinuxIsolation } from "./namespace.mjs";
 import { checkFlyNetwork } from "./network.mjs";
 import { exerciseNode } from "../exercise.mjs";
@@ -19,6 +20,7 @@ assert.ok(
     "--dry-run",
     "--run-approved-fly-proof",
     "--run-approved-namespace-proof",
+    "--run-approved-sandbox-proof",
     "--cleanup",
   ].includes(mode),
 );
@@ -97,7 +99,14 @@ try {
     report.plan.approved = true;
     await resources.save();
     await resources.createApp();
-    if (mode === "--run-approved-namespace-proof") {
+    if (mode === "--run-approved-sandbox-proof") {
+      report.sandboxCapability = await withMachine(
+        "gVisor capability (fixed program only)",
+        checkGvisor,
+      );
+      report.sandboxCapabilityPassed = true;
+      await resources.save();
+    } else if (mode === "--run-approved-namespace-proof") {
       report.namespaceCapability = await withMachine(
         "Linux namespace capability (fixed program only)",
         checkLinuxIsolation,
@@ -150,9 +159,9 @@ try {
       computeUpperBoundUsd:
         FLY_PROOF.maxConcurrent *
         (FLY_PROOF.lifetimeMs / 3600000) *
-        (2.19 / 720),
+        (3.69 / 720),
       basis:
-        "iad shared-cpu-1x 256 MiB, all diagnostic wall time running; storage/network and other Restyle charges excluded",
+        "iad shared-cpu-1x 512 MiB, all diagnostic wall time running; storage/network and other Restyle charges excluded",
       invoice: false,
     };
     await resources.save();

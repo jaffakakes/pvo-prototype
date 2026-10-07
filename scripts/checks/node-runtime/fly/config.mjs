@@ -7,8 +7,8 @@ export const FLY_PROOF = Object.freeze({
   region: "iad",
   maxMachines: 12,
   lifetimeMs: 60 * 60_000,
-  machineLifetimeSeconds: 60,
-  memoryMiB: 256,
+  machineLifetimeSeconds: 120,
+  memoryMiB: 512,
   maxConcurrent: 1,
   estimateUsd: 1,
 });
@@ -35,7 +35,15 @@ export async function flyRunnerFiles() {
     new URL("./bridge.mjs", import.meta.url),
     "utf8",
   );
-  return [...sources, { path: "bridge.mjs", content: bridge }].map((file) => ({
+  const probe = await readFile(
+    new URL("./gvisor-guest.mjs", import.meta.url),
+    "utf8",
+  );
+  return [
+    ...sources,
+    { path: "bridge.mjs", content: bridge },
+    { path: "gvisor-guest.mjs", content: probe },
+  ].map((file) => ({
     guest_path: `/runtime/${file.path}`,
     raw_value: Buffer.from(file.content).toString("base64"),
   }));

@@ -352,3 +352,56 @@ test("Fly readiness retries a short transport timeout within the startup deadlin
   await new FlyProofMachine(resources, { id: "1234567890abcd" }).start();
   assert.equal(attempts, 2);
 });
+
+test("sandbox capability requires observed denial and privilege separation after a transient status timeout", async () => {
+  const { checkGvisor } =
+    await import("../../scripts/checks/node-runtime/fly/gvisor.mjs");
+  const actual = {
+    nodeVersion: NODE_RUNTIME.nodeVersion,
+    uid: 1000,
+    childUid: "1000",
+    gainedRoot: false,
+    network: [false, false, false, false],
+    hostFiles: [],
+    status: ["CapInh", "CapPrm", "CapEff", "CapBnd", "CapAmb"]
+      .map((key) => `${key}:\t0000000000000000`)
+      .concat("NoNewPrivs:\t1"),
+  };
+  function machine(value) {
+    let calls = 0;
+    return {
+      resources: { report: {}, save: async () => {} },
+      command: async () => {
+        calls++;
+        if (calls === 1)
+          return JSON.stringify({
+            tcp4: true,
+            tcp6: true,
+            udp4: true,
+            udp6: true,
+          });
+        if (calls === 2) return "{}";
+        if (calls === 3)
+          throw Object.assign(new Error("short request timeout"), {
+            name: "TimeoutError",
+          });
+        return JSON.stringify({ phase: "passed", result: { actual: value } });
+      },
+    };
+  }
+  assert.deepEqual((await checkGvisor(machine(actual))).actual, actual);
+  for (const changed of [
+    { ...actual, network: [false, true, false, false] },
+    { ...actual, uid: 0 },
+    { ...actual, childUid: "0" },
+    { ...actual, hostFiles: ["/runtime"] },
+    { ...actual, gainedRoot: true },
+    {
+      ...actual,
+      status: actual.status.map((line) =>
+        line.startsWith("CapEff") ? "CapEff:\t0000000000000001" : line,
+      ),
+    },
+  ])
+    await assert.rejects(checkGvisor(machine(changed)), assert.AssertionError);
+});
