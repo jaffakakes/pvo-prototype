@@ -42,10 +42,12 @@ export async function saveHostedDraft(
     );
   }
   const digest = await contentDigest(serializeServiceDraftSave(command));
-  return host.ctx.storage.transactionSync(() => {
+  return host.ctx.storage.transaction(async () => {
     readHostedDraft(host, serviceId, ownerId);
     if (grant) host.draftWriters.admit(grant, host.now());
-    return host.drafts.save(command, digest, host.now());
+    const result = host.drafts.save(command, digest, host.now());
+    await host.scheduleExpiry();
+    return result;
   });
 }
 export function parseDraftCreation(value) {

@@ -76,6 +76,35 @@ export class ServiceNodeExecution extends DurableObject {
     // Capacity per slot and UTC day, not a goal-wide model/tool-turn ceiling.
     return { platform: 500, owner: 50 };
   }
+  prune(now) {
+    const sql = this.ctx.storage.sql;
+    sql.exec("DELETE FROM node_receipts WHERE expires_at<=?", now);
+    sql.exec("DELETE FROM node_start_fence WHERE expires_at<=?", now);
+    // An unresolved lease still owns its accounting row, however old it is.
+    if (!this.lease())
+      sql.exec(
+        "DELETE FROM node_usage WHERE day<?",
+        Math.floor(now / DAY) - 30,
+      );
+  }
+  async scheduleMaintenance() {
+    const lease = this.lease();
+    if (lease) {
+      await this.ctx.storage.setAlarm(lease.nextAt);
+      return;
+    }
+    const sql = this.ctx.storage.sql;
+    const candidates = [
+      sql.exec("SELECT MIN(expires_at) AS at FROM node_receipts").one().at,
+      sql.exec("SELECT MIN(expires_at) AS at FROM node_start_fence").one().at,
+      sql.exec("SELECT (MIN(day)+31)*? AS at FROM node_usage", DAY).one().at,
+    ].filter((at) => at !== null);
+    if (candidates.length)
+      await this.ctx.storage.setAlarm(
+        Math.max(this.now() + 1, Math.min(...candidates)),
+      );
+    else await this.ctx.storage.deleteAlarm();
+  }
   async execute(request) {
     try {
       return { ok: true, value: await this.run(request) };
@@ -145,8 +174,7 @@ export class ServiceNodeExecution extends DurableObject {
       throw nodeExecutionError("input_limit");
     const lease = await this.ctx.storage.transaction(async () => {
       const sql = this.ctx.storage.sql;
-      sql.exec("DELETE FROM node_usage WHERE day<?", day - 30);
-      sql.exec("DELETE FROM node_receipts WHERE expires_at<=?", now);
+      this.prune(now);
       if (
         this.lease() ||
         (sql
@@ -311,7 +339,8 @@ export class ServiceNodeExecution extends DurableObject {
       );
       this.remember(id);
       this.ctx.storage.sql.exec("DELETE FROM node_lease WHERE id=1");
-      await this.ctx.storage.setAlarm(this.now() + limits.leaseMs);
+      this.prune(this.now());
+      await this.scheduleMaintenance();
     });
   }
   async cancel(id) {
@@ -320,7 +349,7 @@ export class ServiceNodeExecution extends DurableObject {
     this.remember(id);
     const lease = this.lease();
     if (!lease || lease.id !== id) {
-      if (!lease) await this.ctx.storage.setAlarm(this.now() + limits.leaseMs);
+      if (!lease) await this.scheduleMaintenance();
       return { closed: true };
     }
     this.active?.controller.abort();
@@ -331,14 +360,10 @@ export class ServiceNodeExecution extends DurableObject {
   async alarm() {
     const lease = this.lease();
     if (!lease) {
-      this.ctx.storage.sql.exec(
-        "DELETE FROM node_receipts WHERE expires_at<=?",
-        this.now(),
-      );
-      this.ctx.storage.sql.exec(
-        "DELETE FROM node_usage WHERE day<?",
-        Math.floor(this.now() / DAY) - 30,
-      );
+      await this.ctx.storage.transaction(async () => {
+        this.prune(this.now());
+        await this.scheduleMaintenance();
+      });
       return;
     }
     if (lease.phase === "running" && this.now() < lease.deadlineAt) {

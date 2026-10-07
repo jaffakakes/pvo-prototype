@@ -19,17 +19,20 @@ async function fixture(effect = async () => Response.json({})) {
       contents: `
     import { ServiceNodeExecution } from './server/cloud-services/node/coordinator.js';
     export class TestExecution extends ServiceNodeExecution {
+      now(){return this.clock??Date.now();}
+      setTime(now){this.clock=now;}
       containerAdapter(){const effect=async kind=>{const reply=await (await this.env.EFFECTS.fetch('https://effect.test',{method:'POST',body:JSON.stringify({kind})})).json();if(reply.fail)throw new Error('Controlled missing receipt');return reply;};return {
         start:()=>{this.started=effect('start');}, ready:async check=>{await this.started;check();},
         execute:()=>effect('execute'),destroy:()=>effect('destroy'),
       };}
       limits(){return {owner:2,platform:4};}
       sweep(){return this.alarm();}
-      diagnostic(){return {lease:this.lease(),usage:this.ctx.storage.sql.exec('SELECT * FROM node_usage').toArray()};}
+      async diagnostic(){return {lease:this.lease(),usage:this.ctx.storage.sql.exec('SELECT * FROM node_usage').toArray(),receipts:this.ctx.storage.sql.exec('SELECT * FROM node_receipts').toArray(),alarm:await this.ctx.storage.getAlarm()};}
     }
     export default {async fetch(request,env){const {kind,...input}=await request.json();const stub=env.RUNTIME.getByName('slot-0');
       if(kind==='execute')return Response.json(await stub.execute(input));
       if(kind==='cancel')return Response.json(await stub.cancel(input.id));
+      if(kind==='time'){await stub.setTime(input.now);return Response.json({});}
       if(kind==='cleanup'){await stub.sweep();return Response.json(await stub.diagnostic());}
       return Response.json(await stub.diagnostic());
     }};`,
@@ -268,6 +271,79 @@ test("a maintenance alarm during confirmed execution cleanup preserves the succe
     assert.equal((await f.call({ kind: "inspect" })).lease, null);
   } finally {
     release.resolve();
+    await f.close();
+  }
+});
+
+test("idle maintenance expires only elapsed replay fences and schedules usage retention without new calls", async () => {
+  const f = await fixture();
+  try {
+    const now = Date.UTC(2100, 0, 1, 12);
+    await f.call({ kind: "time", now });
+    assert.equal(
+      (await f.call({ ...request("retained"), expiresAt: now + 10000 })).ok,
+      true,
+    );
+    const original = await f.call({ kind: "inspect" });
+    assert.equal(original.receipts.length, 1);
+    assert.equal(original.alarm, now + 45000);
+    await f.restart();
+    await f.call({ kind: "time", now: original.alarm - 1 });
+    const early = await f.call({ kind: "cleanup" });
+    assert.equal(early.receipts.length, 1);
+    assert.equal(early.usage[0].starts, 1);
+    await f.call({ kind: "time", now: original.alarm });
+    const expired = await f.call({ kind: "cleanup" });
+    assert.deepEqual(expired.receipts, []);
+    assert.equal(expired.usage[0].starts, 1);
+    assert.equal(expired.alarm, Date.UTC(2100, 1, 1));
+    await f.restart();
+    await f.call({ kind: "time", now: expired.alarm });
+    const cleaned = await f.call({ kind: "cleanup" });
+    assert.deepEqual(cleaned.usage, []);
+    assert.equal(cleaned.alarm, null);
+  } finally {
+    await f.close();
+  }
+});
+
+test("an old unresolved destruction keeps its lease and metering row through admission and restarted cleanup", async () => {
+  let fail = true,
+    starts = 0;
+  const f = await fixture(async (r) => {
+    const { kind } = await r.json();
+    if (kind === "start") starts++;
+    return Response.json({ fail: kind === "destroy" && fail });
+  });
+  try {
+    const now = Date.UTC(2100, 0, 1, 12);
+    await f.call({ kind: "time", now });
+    assert.equal(
+      (await f.call({ ...request("uncertain"), expiresAt: now + 10000 })).code,
+      "cleanup_unconfirmed",
+    );
+    await f.restart();
+    const later = now + 32 * 86400000;
+    await f.call({ kind: "time", now: later });
+    assert.equal(
+      (await f.call({ ...request("waiting"), expiresAt: later + 10000 })).code,
+      "execution_capacity",
+    );
+    const stillOwned = await f.call({ kind: "cleanup" });
+    assert.equal(stillOwned.lease.id, "uncertain");
+    assert.equal(stillOwned.usage[0].starts, 1);
+    assert(stillOwned.alarm > later);
+    assert.equal(starts, 1);
+    fail = false;
+    const cleaned = await f.call({ kind: "cleanup" });
+    assert.equal(cleaned.lease, null);
+    assert.deepEqual(cleaned.usage, []);
+    assert.equal(
+      cleaned.receipts.length,
+      1,
+      "late dispatch remains fenced after confirmed cleanup",
+    );
+  } finally {
     await f.close();
   }
 });

@@ -62,7 +62,10 @@ export async function taskFixture({
         if(this.env.HOST_CONTROL) await this.env.HOST_CONTROL.fetch('https://control.test',{method:'POST',body:JSON.stringify({phase:'before',invocation})});
         return super.executePackage(source,invocation,signal);
       }
-      diagnostic(action) {
+      async diagnostic(action) {
+        if(action==='stop-draft-writer')await this.stopDraftTask(this.store.service().identity.serviceId,this.store.service().identity.ownerId,'expired-writer');
+        if(action==='sweep')await this.alarm();
+        if(['maintenance','sweep','stop-draft-writer'].includes(action))return {alarm:await this.ctx.storage.getAlarm(),releases:this.store.rows(),draft:this.drafts.read(),writers:this.ctx.storage.sql.exec('SELECT * FROM draft_writers').toArray(),failures:this.ctx.storage.sql.exec('SELECT * FROM service_failures').toArray(),connections:this.ctx.storage.sql.exec('SELECT * FROM service_connections').toArray()};
         return {controls:this.ctx.storage.sql.exec('SELECT COUNT(*) AS count FROM service_controls').one().count,service:this.store.service(),data:this.ctx.storage.sql.exec('SELECT namespace,body,version FROM service_data').toArray(),receipts:this.ctx.storage.sql.exec('SELECT namespace,id,body FROM service_actions').toArray(),usage:this.ctx.storage.sql.exec('SELECT * FROM service_usage').toArray()};
       }
       stats(identity) { return { calls: this.ctx.storage.sql.exec("SELECT count FROM calls WHERE id=?",identity.resourceId).toArray()[0]?.count ?? 0, sourcePresent: !!this.store.row(identity.resourceId)?.body }; }

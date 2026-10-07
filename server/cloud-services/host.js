@@ -145,7 +145,7 @@ export class HostedService extends DurableObject {
   }
   stopDraftTask(serviceId, ownerId, taskId) {
     return hostedReply(() =>
-      this.ctx.storage.transactionSync(() => {
+      this.ctx.storage.transaction(async () => {
         const service = this.store.service();
         if (
           !service ||
@@ -154,6 +154,7 @@ export class HostedService extends DurableObject {
         )
           throw new Error("Unknown draft owner.");
         this.draftWriters.stop(taskId, this.now());
+        await this.scheduleExpiry();
         return { stopped: true };
       }),
     );
@@ -226,7 +227,12 @@ export class HostedService extends DurableObject {
   }
   async scheduleExpiry() {
     this.cleanupDeletedReleases();
-    const next = this.store.nextExpiry();
+    this.draftWriters.expire(this.now());
+    const times = [
+      this.store.nextExpiry(),
+      this.draftWriters.nextExpiry(),
+    ].filter((at) => at !== null);
+    const next = times.length ? Math.min(...times) : null;
     if (next !== null) await this.ctx.storage.setAlarm(next);
     else await this.ctx.storage.deleteAlarm();
   }

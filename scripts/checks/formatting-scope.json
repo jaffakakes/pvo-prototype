@@ -524,6 +524,7 @@
   "tests/service-actions/invocation.test.mjs",
   "tests/service-actions/limits.test.mjs",
   "tests/service-actions/records.test.mjs",
+  "tests/service-actions/retention.test.mjs",
   "tests/service-actions/submissions.test.mjs",
   "tests/service-actions/update-fixtures.mjs",
   "tests/service-actions/updates.test.mjs",

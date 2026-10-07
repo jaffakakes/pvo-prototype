@@ -4,7 +4,18 @@
 
 Last checkpoint: **7 October 2026**. Recheck Git and provider state before relying on the dated operational details below.
 
-## Current checkpoint — dependency/update controls delivered; finish Node execution and accounting
+## Current checkpoint — automatic retention repaired; Node proof remains pending
+
+**69/134 complete; the same six Roadmap 1 gates remain unchecked.** Continue `feature/restyle-containers` in `/Users/christinasmacbook/.codex/worktrees/restyle-containers/pvo-prototype`, draft #106. This batch implements and verifies the local periodic-cleanup portion of **4C.06**; final Node integration/provider cleanup still needs its own evidence. Production and GitHub Actions remain excluded.
+
+- **Changes:** the existing service alarm now expires short-lived AI writer permissions as well as abandoned inactive releases. Draft saves/Stop schedule the earliest obligation atomically. Active/paused release source, saved draft, exported dependency records, live submissions and accepted action replies remain retained. Only expired unpublished release test data/results/usage/failures are removed; release tombstones continue to prevent resurrection.
+- **Prepared Node controller:** idle alarms reschedule themselves for usage retention even without another invocation. Expired cancellation receipts/start fences are removed on schedule. An unresolved destruction retains its slot, cleanup alarm and metering row even after thirty days; a competing call cannot erase that obligation. Usage rows older than thirty UTC days expire only after owned cleanup is confirmed.
+- **Checks:** **35 focused tests**, strict editor types and full **1,539/1,539 tests**, **858 syntax / 934 dependency / 581 formatting** pass. Logs `/tmp/restyle-periodic-cleanup-{focused,full,types}.log`. New real workerd/SQLite tests advance time through full restart, active/paused service retention, stopped AI grants, abandoned test cleanup, immutable export/source/draft retention and exact action replay. Node tests verify idle maintenance scheduling and uncertain destruction across restart; provider effects are controlled fixtures. Initial host tests used an unsupported release ID in the action body; corrected them to the actual release-scoped Try route, then all checks passed.
+- **Source/delivery:** this commit contains the cleanup implementation, tests and checkpoint. Combined beta rebuild/delivery follows; the previous verified beta remains `restyle-editor-shell-2be2aa4028e49099`. No browser behavior changed. No paid resource/guest was created.
+- **Network:** pushes of documentation checkpoint `fe1d2fd` and its PR-body refresh failed because GitHub DNS/API was unreachable; source `6b1e772`/`a68ee92` was already pushed. Keep local commits and retry the feature push after connectivity returns; never claim remote delivery from a local commit.
+- **Exact next:** rebuild/verify the existing combined beta with this cleanup batch and refresh guarded Desktop Markdown snapshots. Continue Node integration/resource accounting. The scoped US$1 Node proof question is still unanswered; do not dispatch its paid command before that answer. Full Node runtime replacement, independent gates, host integration, cost views, provider cleanup and final editor/player acceptance still prevent marking the six remaining tasks complete.
+
+## Previous checkpoint — dependency/update controls delivered; finish Node execution and accounting
 
 **69/134 complete; six Roadmap 1 tasks remain: 1G.04, 1G.05, 1G.06, 4C.02, 4C.06 and 1G.08. 4B.01–06 and 4C.01 are now checked.** Continue `feature/restyle-containers`, `/Users/christinasmacbook/.codex/worktrees/restyle-containers/pvo-prototype`, draft #106. Source `6b1e772` and Node cleanup repair `a68ee92` are pushed; this checkpoint records their verified beta delivery; no paid resources or production changes. US$1 Node proof answer is still pending.
 
