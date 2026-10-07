@@ -1,3 +1,4 @@
+import { supportedNodeLibraries } from "../../../packages/pvo-assistant/services/index.js";
 import {
   WORKSPACE_LIMITS as limits,
   workspaceCommandArguments,
@@ -11,7 +12,7 @@ const path = require('node:path');
 const root = process.argv[1];
 let input='';
 process.stdin.setEncoding('utf8');
-process.stdin.on('data', part => { input+=part; if (Buffer.byteLength(input)>1048576) process.exit(2); });
+process.stdin.on('data', part => { input+=part; if (Buffer.byteLength(input)>1179648) process.exit(2); });
 process.stdin.on('end', () => {
   function directory(name) {
     try { fs.mkdirSync(name); } catch (error) { if (error.code!=='EEXIST') throw error; }
@@ -19,8 +20,19 @@ process.stdin.on('end', () => {
     if (!stat.isDirectory() || stat.isSymbolicLink()) throw new Error('unsafe directory');
   }
   directory(root);
-  for (const file of JSON.parse(input)) {
+  const {files,libraries}=JSON.parse(input);
+  for (const file of files) {
     if (!/^(src|tests)\\/(?:[a-z0-9][a-z0-9_-]*\\/)*[a-z0-9][a-z0-9_.-]*\\.mjs$/.test(file.path) || file.path.includes('..')) throw new Error('unsafe path');
+    write(file);
+  }
+  for (const library of libraries) {
+    if (!/^[a-z0-9][a-z0-9_-]*$/.test(library.name)) throw new Error('unsafe library');
+    for (const file of library.files) {
+      if (!/^[A-Za-z0-9_.-]+(?:\\/[A-Za-z0-9_.-]+)*$/.test(file.path) || file.path.split('/').some(part=>part==='.'||part==='..')) throw new Error('unsafe library path');
+      write({path:'node_modules/'+library.name+'/'+file.path,content:file.content});
+    }
+  }
+  function write(file) {
     const target=path.join(root,file.path);
     let parent=root;
     for (const part of file.path.split('/').slice(0,-1)) { parent=path.join(parent,part); directory(parent); }
@@ -81,7 +93,12 @@ export class WorkspaceContainer {
   async restore(snapshot, assertCurrent) {
     await this.container.setInactivityTimeout(limits.sessionMs);
     assertCurrent();
-    const bytes = new TextEncoder().encode(JSON.stringify(snapshot.files));
+    const bytes = new TextEncoder().encode(
+      JSON.stringify({
+        files: snapshot.files,
+        libraries: supportedNodeLibraries(),
+      }),
+    );
     const process = await this.container.exec(["node", "-e", RESTORE, ROOT], {
       stdin: new ReadableStream({
         start(controller) {

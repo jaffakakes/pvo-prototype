@@ -24,7 +24,7 @@ The **workshop** is a temporary development computer. A **Container** is the sav
 
 ## Tested artifact and Node.js contract
 
-Replace `cloudflare-workers-esm` with one `nodejs-esm` package contract when the Node adapter lands. Update package declarations, planner/tool schemas, source, tests, fixtures and current documentation together; no fallback reader or second runtime. Keep the named `execute({operation,input,state,now})` boundary and current bounded schemas.
+The source implementation now replaces `cloudflare-workers-esm` with one `nodejs-esm` package contract. Update package declarations, planner/tool schemas, source, tests, fixtures and current documentation together; no fallback reader or second runtime. Keep the named `execute({operation,input,state,now})` boundary and current bounded schemas.
 
 The package digest covers source/test files, agreement digest, exact runtime identity, entry point and locked dependency identities/bytes. The runtime identity records a digest-pinned base image, exact Node version and platform runner version. Resolve these immutable values in the bounded proof before enabling the adapter. Reject a runtime mismatch instead of silently running another version.
 
@@ -64,7 +64,7 @@ Update through the existing inactive publication and activation journal. The cur
 
 ## Selected provider and retained responsibilities
 
-The user selected **Fly.io on 7 October 2026**. Use a private Fly Machines execution effect, subject to [its runtime/isolation/cleanup proof](restyle-node-provider-proof.md). Keep drafts, releases, live/test records, ownership, task continuation and attachments in their existing Restyle authorities. Fly receives only admitted execution input and the exact checked artifact; its credential stays in the trusted adapter. Replace the prepared Cloudflare-specific execution effect when verified, without a dual-runtime fallback or a second service manager. The Cloudflare facts and estimates below document the original preparation; they are not Fly pricing or proof. Product execution remains Dynamic Workers until the single Node contract is integrated.
+The user selected **Fly.io on 7 October 2026**. Use a private Fly Machines execution effect, subject to [its runtime/isolation/cleanup proof](restyle-node-provider-proof.md). Keep drafts, releases, live/test records, ownership, task continuation and attachments in their existing Restyle authorities. Fly receives only admitted execution input and the exact checked artifact; its credential stays in the trusted adapter. Replace the prepared Cloudflare-specific execution effect when verified, without a dual-runtime fallback or a second service manager. The Cloudflare facts and estimates below document the original preparation; they are not Fly pricing or proof. The source now routes independent validation, inactive probes and hosted live/test calls through this one Node contract. The last delivered beta still uses Dynamic Workers; configured product Fly acceptance and a new beta remain pending.
 
 ## Minimum provider proof before enabling Node.js hosting
 

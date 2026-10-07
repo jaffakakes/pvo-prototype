@@ -203,6 +203,7 @@ test("rechecking the same failing backend asks for help, then changed source can
         );
       return Response.json({
         kind: "review",
+        libraries: [],
         ...writes.at(-1).result.result,
         entrypoint: "src/service.mjs",
         tests: ["tests/service.test.mjs"],

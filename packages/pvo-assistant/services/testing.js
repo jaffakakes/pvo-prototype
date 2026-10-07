@@ -14,7 +14,6 @@ import { SERVICE_EXECUTION_LIMITS } from "./limits.js";
 
 export const SERVICE_TEST_POLICY = "restyle-service-checks-v1";
 export const SERVICE_TEST_LIMITS = Object.freeze({
-  cpuMs: 50,
   invocationMs: 2000,
   stepMs: SERVICE_EXECUTION_LIMITS.validationStepMs,
   invocationBytes: 64 * 1024,

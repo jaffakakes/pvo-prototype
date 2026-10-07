@@ -1,5 +1,9 @@
 import { BUILDER_RESEARCH_KINDS } from "./research.js";
-import { SERVICE_PACKAGE_LIMITS as service } from "../services/index.js";
+import {
+  SERVICE_PACKAGE_LIMITS as service,
+  supportedNodeLibraries,
+  nodeLibraryIds,
+} from "../services/index.js";
 import { TASK_LIMITS } from "../tasks/index.js";
 import { BUILDER_LIMITS } from "./decisions.js";
 
@@ -96,6 +100,10 @@ export function builderDecisionSchema(hasAgreement, definitions) {
     digest: { type: "string", pattern: "^[a-f0-9]{64}$" },
     entrypoint: string(160),
     tests: array(string(160), service.tests, 1),
+    libraries: array(
+      { enum: nodeLibraryIds(supportedNodeLibraries()) },
+      supportedNodeLibraries().length,
+    ),
   });
   const research = definitions.filter((tool) =>
     BUILDER_RESEARCH_KINDS.includes(tool.kind),

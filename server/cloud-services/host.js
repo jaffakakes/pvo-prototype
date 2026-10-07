@@ -108,7 +108,7 @@ export class HostedService extends DurableObject {
       this.store.consumeProbe(identity, this.now()),
     );
     const result = await probeInactiveService(
-      this.env.SERVICE_LOADER,
+      this.env.SERVICE_NODE_EXECUTION,
       publication,
       input,
       this.now(),
@@ -119,11 +119,13 @@ export class HostedService extends DurableObject {
       throw new HttpError(410, "Inactive service was cancelled.");
     return result;
   }
-  executePackage(source, invocation, signal) {
+  executePackage(source, invocation, mode, signal) {
+    const { ownerId, serviceId } = this.store.service().identity;
     return executeServicePackage(
-      this.env.SERVICE_LOADER,
+      this.env.SERVICE_NODE_EXECUTION,
       source,
       invocation,
+      { ownerId, serviceId, mode },
       signal,
     );
   }

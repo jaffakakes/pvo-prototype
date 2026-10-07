@@ -8,7 +8,10 @@ import {
   unique,
   requireTask,
 } from "../tasks/validation.js";
-import { SERVICE_RUNTIME, SERVICE_PACKAGE_LIMITS } from "../services/index.js";
+import {
+  parseServiceRuntime,
+  SERVICE_PACKAGE_LIMITS,
+} from "../services/index.js";
 import { parseServiceIdentity } from "./identity.js";
 
 export const SERVICE_CATALOG_LIMITS = Object.freeze({
@@ -63,10 +66,7 @@ export function parseOwnedRelease(value) {
     "Owned release",
   );
   parseServiceIdentity(value.identity);
-  requireTask(
-    value.runtime === SERVICE_RUNTIME,
-    "Unsupported service runtime.",
-  );
+  parseServiceRuntime(value.runtime);
   choice(
     value.state,
     ["pending", "inactive", "retained", "deleted"],

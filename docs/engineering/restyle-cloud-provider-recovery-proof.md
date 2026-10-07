@@ -22,7 +22,7 @@ The actual task coordinator and release code are imported into the diagnostic. O
 8. Stop a second task while its first publication is delayed. Cancel the missing identity; verify the late publication cannot resurrect it.
 9. Delete both release sources and the whole disposable Worker/namespaces. Verify provider absence and remove private proof secrets. Retain non-secret evidence and exact bundle hashes.
 
-The entry point is `node scripts/checks/cloud-agent-recovery/run.mjs <account-id> --run`. Run only after the new spending decision is recorded. The local `tests/cloud-services/proof.test.mjs` runs this acceptance sequence without the CPU spin case, because local workerd does not enforce that CPU limit. A Wrangler dry run validates the deployable bundle.
+This is historical acceptance evidence. The completed Dynamic Worker creation driver was retired when 1G replaced the generated-service runtime; its [exact prior source](https://github.com/jaffakakes/pvo-prototype/blob/ef28a092c20f9d983a66106f905259b495aeabc6/scripts/checks/cloud-agent-recovery/run.mjs) remains recorded. Cleanup-only recovery remains in `scripts/checks/cloud-agent-first-release/cleanup.mjs`. Current local tests exercise the same journals/RPC with repository-owned Node fixtures and controlled provider effects; they do not replace this earlier actual Cloudflare evidence or prove Fly isolation.
 
 ## Spending decision
 

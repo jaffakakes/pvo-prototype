@@ -83,6 +83,7 @@ export async function invokeHostedAction(host, serviceId, authority, value) {
           await host.executePackage(
             publication.artifact.package,
             invocation,
+            scope.namespace,
             controller.signal,
           ),
         );

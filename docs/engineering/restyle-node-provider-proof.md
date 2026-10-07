@@ -4,7 +4,7 @@
 
 ## Current decision — Fly.io, 7 October 2026
 
-The user selected **Fly.io** after the Cloudflare upload failures and connected their existing account. Use the existing **US$1 isolated test allowance** for the replacement proof described here; no larger subscription or production deployment is authorised. This is a change of execution provider, not a second Container product. The product still executes generated services through Dynamic Workers until the Node replacement is proved and integrated. **1G.04 remains unchecked.** Preserve all completed 1E/1F evidence and the six historical Cloudflare attempts below.
+The user selected **Fly.io** after the Cloudflare upload failures and connected their existing account. Use the existing **US$1 isolated test allowance** for the replacement proof described here; no larger subscription or production deployment is authorised. This is a change of execution provider, not a second Container product. Current source routes the single Node package through independent validation and hosting. The last delivered beta still uses Dynamic Workers; configured Fly product acceptance and final Node beta delivery remain pending. **1G.04 remains unchecked.** Preserve all completed 1E/1F evidence and the six historical Cloudflare attempts below.
 
 In everyday terms: Fly supplies the small computer that runs a Container's JavaScript. Restyle continues to own its saved code, records, tests and publish controls. The temporary development workshop remains separate. A running instance can disappear without deleting the saved Container.
 
@@ -212,3 +212,8 @@ The user explicitly says Cloudflare is optional and asks what works with Node.js
 Cloudflare also documents [default-policy public registry images](https://developers.cloudflare.com/containers/guides/image-management/) and [native start/exec/network controls](https://developers.cloudflare.com/containers/api/durable-object-container/). Pulling an exact base image in the cloud and supplying the verified runner could avoid uploading the large runtime from this Mac. That design has not been implemented or tested. The observed failures establish a transfer problem, not a general inability to run Node or a proven provider outage.
 
 Before any replacement-provider paid test, prepare its exact executable plan, required secure account setup and dated cost estimate. The existing US$1 approval names the Cloudflare diagnostic; no funds or account signup have been transferred to another provider. Keep all six roadmap gates unchecked until their original behavior requirements pass.
+
+
+### Canonical product integration checkpoint — 7 October 2026
+
+The current package contract records the exact proved Node/base/runner/image identities and retained supported-library bytes. The independent validator, inactive probe and live/test host now delegate to the same durable Fly execution controller; ownership/mode come from the existing task/service authority. The Worker loader contract is removed without a fallback. Full 1,602 tests and editor types pass locally. Repository-owned Node processes verify application behavior behind actual workerd RPC/SQLite; they are explicitly not another Fly isolation proof. The image bytes are unchanged from the eight-case provider proof. No application provider credentials/configuration or deployment is enabled yet. Library selection, full cost views and actual editor/player/Fly acceptance remain in the [current progress](restyle-cloud-agent-progress.md).

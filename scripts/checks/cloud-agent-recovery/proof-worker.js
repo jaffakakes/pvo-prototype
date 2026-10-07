@@ -1,3 +1,4 @@
+import { ownedServiceId } from "../../../server/cloud-services/releaseContract.js";
 import { installCheckedDiagnostic } from "./checked-fixture.js";
 import { recoveryCheckedService } from "./checked-service.js";
 import { AssistantTasks } from "../../../server/assistant/tasks/coordinator.js";
@@ -124,7 +125,11 @@ export class ProofTasks extends AssistantTasks {
     await installCheckedDiagnostic(
       this,
       claimed,
-      await recoveryCheckedService(this.env.SERVICE_LOADER),
+      await recoveryCheckedService(this.env.SERVICE_NODE_EXECUTION, {
+        ownerId: claimed.ownerId,
+        serviceId: await ownedServiceId(claimed),
+        mode: "validation",
+      }),
     );
     this.crashAfterPublication = mode === "recover";
     this.delayPublication = mode === "cancel";

@@ -1,11 +1,15 @@
+import { fixtureNodeEffect } from "../node-runtime/fixture.mjs";
 import test from "node:test";
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
 import { bundleWorkerModules } from "../worker-bundle.helpers.mjs";
 import { exerciseRecovery } from "../../scripts/checks/cloud-agent-recovery/exercise.mjs";
 
-test("the deployable recovery diagnostic exercises production journals and RPC in local workerd", async () => {
+test("the recovery diagnostic exercises production journals and RPC with local Node fixtures", async () => {
   const modules = await bundleWorkerModules({
-    entryPoints: ["scripts/checks/cloud-agent-recovery/proof-worker.js"],
+    stdin: {
+      resolveDir: process.cwd(),
+      contents: `export {default,ProofTasks,ProofRelease} from "./scripts/checks/cloud-agent-recovery/proof-worker.js"; export {FixtureNodeExecution} from "./tests/node-runtime/fixture-worker.js";`,
+    },
   });
   const mf = new Miniflare(
     convertV4MiniflareOptions({
@@ -14,9 +18,13 @@ test("the deployable recovery diagnostic exercises production journals and RPC i
       compatibilityDate: "2026-10-03",
       durableObjects: {
         PROOF_TASKS: { className: "ProofTasks", useSQLite: true },
+        SERVICE_NODE_EXECUTION: {
+          className: "FixtureNodeExecution",
+          useSQLite: true,
+        },
         SERVICE_HOSTS: { className: "ProofRelease", useSQLite: true },
       },
-      workerLoaders: { SERVICE_LOADER: {} },
+      serviceBindings: { NODE_FIXTURE: fixtureNodeEffect },
       bindings: {
         PROOF_ID: "local-diagnostic",
         PROOF_TOKEN: "local-only-private",

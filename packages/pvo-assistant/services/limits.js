@@ -19,8 +19,6 @@ export const SERVICE_PACKAGE_LIMITS = Object.freeze({
   tests: 8,
 });
 
-export const SERVICE_RUNTIME = "cloudflare-workers-esm";
-
 /** Per-invocation resource recovery bounds; a task may continue through additional saved steps. */
 export const SERVICE_EXECUTION_LIMITS = Object.freeze({
   leaseMs: 300000,

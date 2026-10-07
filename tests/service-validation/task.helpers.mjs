@@ -74,6 +74,7 @@ export function planner({
     }
     return Response.json({
       kind: "review",
+      libraries: [],
       ...writes.at(-1).result.result,
       entrypoint: "src/service.mjs",
       tests: ["tests/service.test.mjs"],

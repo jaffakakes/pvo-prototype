@@ -122,6 +122,7 @@ test("artifact preparation verifies frozen agreement and exact saved revision/fi
   );
   builder = acceptBuilderDecision(builder, {
     kind: "review",
+    libraries: [],
     revision: 1,
     digest: sourceDigest,
     entrypoint: "src/service.mjs",
@@ -133,6 +134,16 @@ test("artifact preparation verifies frozen agreement and exact saved revision/fi
   assert.equal(artifact.identity.sourceDigest, sourceDigest);
   assert.match(artifact.identity.packageDigest, /^[a-f0-9]{64}$/);
   assert.deepEqual(artifact.package.dependencies, []);
+  const withLibrary = structuredClone(builder);
+  withLibrary.decision.libraries = ["nanoid@5.1.6"];
+  const locked = await prepareServiceArtifact(withLibrary, snapshot);
+  assert.equal(locked.identity.sourceDigest, artifact.identity.sourceDigest);
+  assert.notEqual(
+    locked.identity.packageDigest,
+    artifact.identity.packageDigest,
+  );
+  assert.equal(locked.package.dependencies[0].version, "5.1.6");
+
   for (const change of [
     (value) => {
       value.revision = 2;
@@ -169,6 +180,7 @@ test("review failures allow repair with the same agreement, while pending or mis
   );
   const review = {
     kind: "review",
+    libraries: [],
     revision: 1,
     digest: key.sourceDigest,
     entrypoint: "src/service.mjs",
@@ -192,6 +204,13 @@ test("review failures allow repair with the same agreement, while pending or mis
   assert.throws(() =>
     recordBuilderReview(state, {
       review: { ...review, digest: "d".repeat(64) },
+      report,
+      error: null,
+    }),
+  );
+  assert.throws(() =>
+    recordBuilderReview(state, {
+      review: { ...review, libraries: ["nanoid@5.1.6"] },
       report,
       error: null,
     }),

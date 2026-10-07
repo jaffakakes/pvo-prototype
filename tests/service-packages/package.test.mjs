@@ -3,6 +3,8 @@ import { createHash } from "node:crypto";
 import test from "node:test";
 import {
   matchServicePackage,
+  supportedNodeLibraries,
+  resolveNodeLibraries,
   parseServiceFilePath,
   parseServicePackage,
   serializeServiceAgreement,
@@ -67,7 +69,7 @@ test("service paths reject traversal, absolute paths, hidden files, aliases and 
     assert.equal(parseServiceFilePath(path), path);
 });
 
-test("package requires existing unique entry point/tests and a closed empty dependency lock", () => {
+test("package requires existing unique entry point/tests and a closed supported dependency lock", () => {
   const mutations = [
     (p) => (p.runtime = "node-unrestricted"),
     (p) => p.dependencies.push({ name: "anything", version: "latest" }),
@@ -126,4 +128,42 @@ test("canonical package content keeps object key ordering irrelevant and source 
     serializeServicePackage(source),
     serializeServicePackage(altered),
   );
+});
+
+test("the checked identity includes exact runtime and retained library bytes; unsupported selections cannot enter it", () => {
+  const source = sourcePackage(),
+    before = serializeServicePackage(source);
+  source.dependencies = resolveNodeLibraries(["nanoid@5.1.6"]);
+  assert.deepEqual(source.dependencies, supportedNodeLibraries());
+  assert.notEqual(serializeServicePackage(source), before);
+  for (const key of Object.keys(source.runtime)) {
+    const changed = structuredClone(source);
+    changed.runtime[key] = "changed";
+    assert.throws(() => parseServicePackage(changed));
+  }
+  for (const field of ["version", "registryIntegrity"]) {
+    const changed = structuredClone(source);
+    changed.dependencies[0][field] = "changed";
+    assert.throws(() => parseServicePackage(changed));
+  }
+  const changed = structuredClone(source);
+  changed.dependencies[0].files[0].content += "changed";
+  assert.throws(() => parseServicePackage(changed));
+  for (const values of [
+    ["nanoid@latest"],
+    ["nanoid@5.1.6", "nanoid@5.1.6"],
+    ["unapproved@1.0.0"],
+  ])
+    assert.throws(() => resolveNodeLibraries(values));
+  const unsafe = structuredClone(source);
+  let read = false;
+  Object.defineProperty(unsafe.dependencies[0], "files", {
+    enumerable: true,
+    get() {
+      read = true;
+      throw new Error("accessor");
+    },
+  });
+  assert.throws(() => parseServicePackage(unsafe));
+  assert.equal(read, false);
 });

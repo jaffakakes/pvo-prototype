@@ -22,6 +22,7 @@ const agreed = () =>
 const tools = (calls, review = null) => ({ kind: "tools", calls, review });
 const review = {
   kind: "review",
+  libraries: [],
   revision: 1,
   digest,
   entrypoint: "src/service.mjs",

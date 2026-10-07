@@ -20,6 +20,7 @@ const definitions = builderToolDefinitions(BUILDER_TOOL_KINDS);
 const signal = () => new AbortController().signal;
 const review = {
   kind: "review",
+  libraries: [],
   revision: 1,
   digest: "d".repeat(64),
   entrypoint: "src/service.mjs",

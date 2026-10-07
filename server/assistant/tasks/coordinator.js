@@ -9,6 +9,7 @@ import {
   reconcileDraftStops,
 } from "../drafts/creation.js";
 import { manageHostedServices } from "../../cloud-services/management.js";
+import { ownedServiceId } from "../../cloud-services/releaseContract.js";
 import { ServiceCatalog } from "../../cloud-services/catalog.js";
 import { runHostingStep } from "../hosting/runner.js";
 import { ServiceArtifacts } from "../validation/artifacts.js";
@@ -335,17 +336,24 @@ export class AssistantTasks extends DurableObject {
   validationAvailable() {
     return Boolean(
       this.workspaceProvider() &&
-      typeof this.env.SERVICE_LOADER?.load === "function",
+      typeof this.env.SERVICE_NODE_EXECUTION?.getByName === "function",
     );
   }
-  runValidationStep(artifact, index, cursor, signal) {
+  async runValidationStep(claimed, artifact, index, cursor, signal) {
     return runServiceStep(
-      this.env.SERVICE_LOADER,
+      this.env.SERVICE_NODE_EXECUTION,
       artifact.package,
       artifact.agreement,
       artifact.identity.agreementDigest,
       index,
       cursor,
+      {
+        ownerId: claimed.ownerId,
+        serviceId:
+          claimed.input.context.container?.serviceId ??
+          (await ownedServiceId(claimed)),
+        mode: "validation",
+      },
       signal,
     );
   }

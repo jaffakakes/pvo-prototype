@@ -36,7 +36,6 @@ export const INACTIVE_SERVICE_LIMITS: Readonly<{
   inputBytes: number;
   outputBytes: number;
   probes: number;
-  cpuMs: number;
   probeMs: number;
 }>;
 export function parseCheckedService(value: unknown): CheckedService;

@@ -147,6 +147,7 @@ export async function runServiceValidation(coordinator, claimed) {
             throw new Error("Validation claim ended.");
           if (saved) {
             result = await coordinator.runValidationStep(
+              claimed,
               saved.artifact,
               input.index,
               saved.cursor,

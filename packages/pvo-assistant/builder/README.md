@@ -26,7 +26,7 @@ Inference and execution use separate task claims. Each saved batch contains up t
 
 After claim loss, cleanup and receipt lookup finish before recovery. The builder consumes already completed effects once and abandons remaining calls against the old computer. Missing output stays unknown. A reconciled failed builder batch may resume when active-task capacity is available; Stop never resumes. A completed review checkpoint resumes without another model or tool call.
 
-Model turns, tool calls, research reads, package reviews and computer sessions are accounted without a fixed goal-wide ceiling. The current notebook and recent model feedback stay bounded while settled receipts remain in owned journals. Answered questions archive durably, and every inference stage can select old evidence through the shared history reader. Routine recovery queries load outstanding work instead of full history. Resumable capacity waits remain in 1B.13. No Internet or dependencies are granted by a builder decision. The trusted service test gate is described in the [service contract](../services/README.md#independent-test-reports). Checked packages can advance through hosting and component preparation; runtime invocation and cloud product deployment remain later tasks.
+Model turns, tool calls, research reads, package reviews and computer sessions are accounted without a fixed goal-wide ceiling. The current notebook and recent model feedback stay bounded while settled receipts remain in owned journals. Answered questions archive durably, and every inference stage can select old evidence through the shared history reader. Routine recovery queries load outstanding work instead of full history. Resumable capacity waits remain in 1B.13. No Internet or arbitrary dependencies are granted by a builder decision. The trusted service test gate is described in the [service contract](../services/README.md#independent-test-reports). Checked packages can advance through hosting and component preparation; runtime invocation and cloud product deployment remain later tasks.
 
 ## Controlled public research
 
@@ -36,7 +36,7 @@ Results retain actual source URLs and retrieval times. Page text is at most 16,0
 
 `TaskResearch` saves the owned intent before a request, reserves one tool call, and saves its actual result before further inference. Exact request-ID replay returns the saved result and charges once; different input conflicts. On worker loss, an unfinished read settles as unknown and is not silently repeated. Stop cancels the request and blocks late evidence from advancing the builder. Private query/result content expires with the task. No workspace is started for research.
 
-The package policy remains the current **empty dependency lock**: standard JavaScript/Web APIs only. There is no package-install tool and the computer remains offline. Introducing dependencies requires a scoped resolver with pinned versions/integrity and a demonstrated need; it does not follow from a model asking for Internet access.
+Review decisions include `libraries`, a list of exact supported IDs (`nanoid@5.1.6` initially), or `[]`. The platform resolves these to retained reviewed bytes; model-provided lock contents, package installation and Internet are unavailable. The offline workshop receives the supported catalog from the trusted restore adapter; only the selected dependencies enter the hosted package. Their bytes and exact runtime identity change the package digest and invalidate earlier test approval.
 
 
 ## Independent review and repair

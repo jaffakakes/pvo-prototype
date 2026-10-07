@@ -39,7 +39,7 @@ test("interrupted diagnostic reopens its exact journal for deletion only and rem
     const resource = await resources.prepare("workspace", {
       entrypoint: "scripts/checks/cloud-agent-first-release/worker.js",
       containerClassName: "AcceptanceWorkspace",
-      loaderBinding: "SERVICE_LOADER",
+      loaderBinding: "DIAGNOSTIC_LOADER",
       bindings: [
         { name: "ASSISTANT_WORKSPACES", class_name: "AcceptanceWorkspace" },
       ],
@@ -47,7 +47,7 @@ test("interrupted diagnostic reopens its exact journal for deletion only and rem
       secrets: { RUNPOD_API_KEY: "local-model-secret" },
     });
     const config = JSON.parse(await readFile(resource.config, "utf8"));
-    assert.equal(config.worker_loaders[0].binding, "SERVICE_LOADER");
+    assert.equal(config.worker_loaders[0].binding, "DIAGNOSTIC_LOADER");
     assert.equal(config.containers[0].class_name, "AcceptanceWorkspace");
     assert.equal(config.vars.ASSISTANT_PROVIDER, "runpod");
     assert.ok(!JSON.stringify(config).includes("local-model-secret"));
