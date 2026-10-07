@@ -4,7 +4,11 @@
 
 Last checkpoint: **7 October 2026**. Recheck Git and provider state before relying on the dated operational details below.
 
-## Current checkpoint — Node resource measurements prepared; real provider proof pending
+## Active approved provider run — 7 October 2026, 08:09 UTC
+
+The user explicitly approved the pending **US$1** single Node diagnostic deployment. Start the prepared `scripts/checks/node-runtime/run.mjs` from `feature/restyle-containers`; record the emitted private `report.json` path here immediately. One Worker/application/namespace/image repository, at most two private slots, 100 starts, 60-minute creation deadline; no models, production routes or application deployment. Source/proof driver `d6bd04a`, current handoff `54139c8`; nineteen Node tests, 1,541 full tests and final dry run already pass. **No proof result or completion checkbox is claimed yet.** Recover cleanup from that exact journal after any interruption; never start a duplicate deployment because a reply is missing. Next: evaluate the provider results, then finish the single Node runtime/validation/host integration and remaining acceptance through beta.
+
+## Previous checkpoint — Node resource measurements prepared; real provider proof pending
 
 **69/134 complete; six Roadmap 1 tasks remain: 1G.04, 1G.05, 1G.06, 4C.02, 4C.06 and 1G.08.** Continue `feature/restyle-containers`, `/Users/christinasmacbook/.codex/worktrees/restyle-containers/pvo-prototype`, draft #106. This commit prepares private Node resource measurements and proof cost receipts; it does not enable the Node product runtime or complete the creator cost view. Product execution remains Dynamic Workers. Production stays untouched.
 

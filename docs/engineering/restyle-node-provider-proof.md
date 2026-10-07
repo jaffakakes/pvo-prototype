@@ -4,7 +4,7 @@
 
 ## Status — 7 October 2026
 
-Preparation only. **1G.04 is unchecked.** No Node proof has been deployed and no new paid 1G run is authorized. The existing product still runs generated services through Dynamic Workers. Preserve its completed 1E/1F evidence. This proof cannot by itself complete the replacement, manual publication, component connection or final beta acceptance.
+**US$1 approved by the user at 08:09 UTC, 7 October 2026**, for the single diagnostic deployment below. **1G.04 is unchecked.** The approved run is starting; it has not passed. The existing product still runs generated services through Dynamic Workers. Preserve its completed 1E/1F evidence. This proof cannot by itself complete the replacement, manual publication, component connection or final beta acceptance.
 
 In everyday terms: first verify that a disposable hosted computer can run the exact saved JavaScript, return an answer, and disappear without leaving private files or background programs behind. Then connect that proven execution effect to the existing service and independent tests.
 
@@ -21,9 +21,9 @@ The initial run checks exact Node/library execution; a later fresh guest cannot 
 
 ## Cost and approval
 
-Proposed authorization: **one diagnostic deployment, up to US$1 estimated total**, within the above 60-minute/100-start bounds. This is a bounded test allowance, not a model-turn or overall goal limit. The conservative compute estimate uses two provisioned lite instances for the full hour (approximately US$0.01451 at the rates recorded in the contract); actual short invocations should be lower. Worker/Durable Object operations, registry/storage and networking add costs. Provider billing may arrive later; the allowance is an operational estimate, not an instantaneous invoice cap.
+Approved authorization: **one diagnostic deployment, up to US$1 estimated total**, within the above 60-minute/100-start bounds. This is a bounded test allowance, not a model-turn or overall goal limit. The conservative compute estimate uses two provisioned lite instances for the full hour (approximately US$0.01451 at the rates recorded in the contract); actual short invocations should be lower. Worker/Durable Object operations, registry/storage and networking add costs. Provider billing may arrive later; the allowance is an operational estimate, not an instantaneous invoice cap.
 
-The Container contract requires scoped approval after preparing the executable plan. Earlier 1F spending is closed and does not fund this distinct test. Approval is pending. Continue local implementation while awaiting the answer; do not run the paid command merely because a dry-run passed.
+The Container contract requires scoped approval after preparing the executable plan. Earlier 1F spending is closed and does not fund this distinct test. The user has now explicitly approved US$1. Run the prepared diagnostic once within these bounds, record its journal before effects, verify cleanup, and use the provider evidence for the next implementation decision. This approval is separate from the closed 1F spending.
 
 ## Commands and recovery
 
@@ -54,7 +54,7 @@ The journal saves ownership, expiry, names and an attempted-upload flag before r
 
 | Run | Authorization | Remote creation | Outcome / cleanup |
 | --- | --- | --- | --- |
-| Initial Node runtime proof | Pending | None | Prepared; await scoped approval |
+| Initial Node runtime proof | US$1 approved, 7 October 08:09 UTC | Starting; journal will be recorded below | Not yet verified |
 
 After the paid run, record its exact journal, runtime image digest, start/elapsed usage, checks and cleanup result here before marking any roadmap task. Full task completion also requires the canonical Node package/runtime replacement and its remaining integration gates.
 
