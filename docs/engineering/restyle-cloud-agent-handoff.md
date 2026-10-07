@@ -2,7 +2,11 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
-## Latest scope: 1F complete through beta; next 1G.01
+## Latest scope: finish Roadmap 1 through beta; 1G.02 next
+
+The user requested all remaining Roadmap 1 work, including Containers, and explicitly prohibited production release. **1G.01 is verified; 56/134 complete, 78 remain.** Read [current progress](restyle-cloud-agent-progress.md) and the [Container implementation contract](restyle-containers-contract.md). Active checkout is `feature/restyle-containers` at `/Users/christinasmacbook/.codex/worktrees/restyle-containers/pvo-prototype`, from current fetched dev plus the explicitly retained first-release prerequisite `e17bbdb`. Start 1G.02 saved drafts/editor, then continue the full ordered 1G checklist. No new provider proof has run. Production stays unchanged; the existing beta and 1F evidence below remain valid.
+
+## Previous scope: 1F complete through beta; next 1G.01
 
 **All 1E and 1F are verified through beta; 55/134 complete, 79 remain.** Next implementation task **1G.01**, Containers. Active checkout `feature/restyle-first-release`, `/Users/christinasmacbook/.codex/worktrees/restyle-first-release/pvo-prototype`, [PR #105](https://github.com/jaffakakes/pvo-prototype/pull/105), ready and unmerged. Read the newest [progress](restyle-cloud-agent-progress.md) and [acceptance evidence](restyle-first-release-acceptance.md). When starting 1G, use a focused branch from current `origin/dev` and explicitly include this verified unreleased prerequisite; do not lose it because integration is pending.
 

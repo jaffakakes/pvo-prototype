@@ -4,7 +4,16 @@
 
 Last checkpoint: **7 October 2026**. Recheck Git and provider state before relying on the dated operational details below.
 
-## Current checkpoint — 1F complete through beta; production deferred by user
+## Current checkpoint — Containers contract verified; 1G.02 in progress
+
+**56/134 tasks complete; 78 remain.** The user requested finishing all remaining Roadmap 1 work, including 1G, with no production release. 1E/1F evidence and completed status remain intact. All implementation after 1G.01 stays unchecked until verified.
+
+- **Active source:** `feature/restyle-containers`, `/Users/christinasmacbook/.codex/worktrees/restyle-containers/pvo-prototype`, from fetched `origin/dev` (`cc2193e`) with explicit unreleased first-release prerequisite `e17bbdb` merged. Prior PR #105 remains unmerged; no integration or production promotion is claimed.
+- **1G.01 completed:** [implementation contract](restyle-containers-contract.md) reviewed against actual catalog, per-service host, release/activation, workspace, independent validation and attachment owners. Specifies one saved draft, revision/replay semantics, exact artifact/runtime identity, zero-workshop actions, permissions/retention, and the minimum provider proof. Current Node runtime remains unimplemented; Dynamic Worker evidence is preserved.
+- **Checks:** documentation links/content and `git diff --check`; no app changes in this contract checkpoint. Existing beta remains `restyle-editor-shell-e069ede11e8ff6b7`. No cloud resources created or paid runs started.
+- **Exact next task:** 1G.02, durable draft operations and Containers editor using the existing service boundary. Then 1G.03 and the ordered checklist. Record each verified task with checks and beta evidence. Keep Node proof resources/cost/cleanup planned before creation. No GitHub Actions inspection/polling/retries, production deployment or unreleased branch deletion.
+
+## Previous checkpoint — 1F complete through beta; production deferred by user
 
 **1F.01–1F.08 complete. 55/134 numbered tasks complete; 79 remain. Next: 1G.01, Containers.** On 7 October the user explicitly chose **Keep production release pending**, then clarified that production waits until everything is done and they have tested beta. The roadmap now makes verified beta delivery the 1F.08 completion gate and records production as a separate final gate after the full roadmap, user beta testing and explicit release approval. This is an authorized scope/sequence change, not a claim that production was deployed.
 
