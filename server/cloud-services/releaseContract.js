@@ -24,14 +24,9 @@ export const serviceResourceId = (identity) =>
       identity.operationId,
     ]),
   ).then((hash) => `release-${hash}`);
-export const ownedServiceId = (task, replacementAttempt = null) =>
+export const ownedServiceId = (task) =>
   serviceDigest(
-    JSON.stringify([
-      task.ownerId,
-      task.input.projectId,
-      task.id,
-      ...(replacementAttempt === null ? [] : [replacementAttempt]),
-    ]),
+    JSON.stringify([task.ownerId, task.input.projectId, task.id]),
   ).then((hash) => `service-${hash}`);
 
 /** Caller must retrieve the checked artifact from task-owned storage, never model/request JSON. */

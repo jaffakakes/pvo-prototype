@@ -85,7 +85,16 @@ test(
       await f.control({ action: "time", now: stopped.body.task.expiresAt + 1 });
       await f.control({ action: "sweep" });
       const retained = await catalog(f);
-      assert.equal(retained[0].service.state, "deleted");
+      assert.equal(retained[0].service.state, "inactive");
+      const draft = await f.request(
+        `/api/services/${release.identity.serviceId}/draft`,
+      );
+      expectStatus(draft, 200);
+      assert.deepEqual(
+        draft.body.content.files,
+        checked.artifact.package.files,
+        "Saved Container source survives task and inactive-release cleanup",
+      );
       assert.equal(retained[0].releases[0].state, "deleted");
       expectStatus(await f.request(path(task)), 404);
       assert.equal(

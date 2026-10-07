@@ -1,3 +1,9 @@
+import { ServiceDraftStore } from "./draftStore.js";
+import {
+  readHostedDraft,
+  saveHostedDraft,
+  initializeHostedDraft,
+} from "./drafts.js";
 import { ServiceControlStore } from "./controlStore.js";
 import { inspectHostedService, controlHostedService } from "./control.js";
 import { hostedReply } from "./rpcReply.js";
@@ -23,6 +29,7 @@ export class HostedService extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.store = new ServiceReleaseStore(ctx.storage.sql);
+    this.drafts = new ServiceDraftStore(ctx.storage.sql);
     this.actions = new ServiceActionStore(ctx.storage.sql);
     this.calls = new ServiceCallQueue();
     this.controls = new ServiceControlStore(ctx.storage.sql);
@@ -50,6 +57,22 @@ export class HostedService extends DurableObject {
     const body = serializeServicePublication(publication);
     return this.ctx.storage.transaction(async () => {
       const current = this.store.publish(identity, body, this.now());
+      if (current.body !== null) {
+        const { agreement, package: source } = publication.artifact;
+        this.drafts.initialize(
+          this.store.service().identity,
+          {
+            description: agreement.description,
+            agreement,
+            entrypoint: source.entrypoint,
+            files: source.files,
+            tests: source.tests,
+            dependencies: source.dependencies,
+          },
+          this.now(),
+        );
+      }
+
       await this.scheduleExpiry();
       return this.store.observation(identity, current);
     });
@@ -89,6 +112,17 @@ export class HostedService extends DurableObject {
       invocation,
       signal,
     );
+  }
+  initializeDraft(identity, description) {
+    return hostedReply(() =>
+      initializeHostedDraft(this, identity, description),
+    );
+  }
+  readDraft(serviceId, ownerId) {
+    return hostedReply(() => readHostedDraft(this, serviceId, ownerId));
+  }
+  saveDraft(serviceId, ownerId, input) {
+    return hostedReply(() => saveHostedDraft(this, serviceId, ownerId, input));
   }
   invoke(serviceId, authority, input) {
     return hostedReply(() =>

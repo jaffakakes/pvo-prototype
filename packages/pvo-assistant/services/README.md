@@ -67,3 +67,11 @@ Each capture or case reserves one accounted task tool call before dispatch. The 
 Local verification includes actual isolated workerd execution and durable restart tests with controlled model/workspace adapters. Production CPU enforcement and full live natural-language generation/hosting acceptance remain separate provider evidence and Roadmap 1F work.
 
 `parseServiceState(agreement, value)` validates retained records against a checked version's data schema and state byte bound without executing code or changing records. Hosted activation/update/rollback uses this public boundary; a new version's initial state is never a migration or a replacement for live records.
+
+## Saved Container drafts (1G.02)
+
+A `ServiceDraft` shares the hosted service's owner/project/service identity and adds a revision, update time and editable content. `parseServiceDraftContent` accepts bounded unfinished `.mjs` source, an optional behavior agreement, entry point and selected tests. Saving does not compile, run code, start a workshop, change live records or publish a release. The draft's dependency lock remains empty until the single Node.js contract replaces the current runtime in 1G.04.
+
+Authenticated `POST /api/services` creates a draft using an owned project, description and stable `actionId`. `GET /api/services/:serviceId/draft` reads it; `POST` saves `{actionId, expectedRevision, content}`. The host commits draft and bounded receipt atomically. Identical retry returns the original committed revision and the current draft; changed input with that ID or a stale revision conflicts. Wrong owners cannot read source. First generated publication initializes the draft, while later publications preserve manual edits.
+
+The editor retains account/service-scoped pending edits and exact save commands before network effects. Conflicts keep local edits until the creator explicitly chooses a version. Drafts survive task and inactive-release cleanup; explicit service deletion removes drafts and prevents stale saves. Independent execution and release validation remain separate gates. See [the Container contract](../../../docs/engineering/restyle-containers-contract.md).

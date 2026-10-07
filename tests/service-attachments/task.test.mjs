@@ -301,7 +301,11 @@ test("an expired inactive connection is replaced after cleanup and restart, keep
       fresh = rows.find((row) => row.id !== original.id);
     assert.equal(old.cancelled, true);
     assert.deepEqual(old.identity, original.identity);
-    assert.notEqual(fresh.identity.serviceId, old.identity.serviceId);
+    assert.equal(
+      fresh.identity.serviceId,
+      old.identity.serviceId,
+      "Replacement release keeps the saved Container",
+    );
     assert.notEqual(fresh.identity.resourceId, old.identity.resourceId);
     assert.equal(fresh.identity.expiresAt, later + 86400000);
     for (const key of [
@@ -342,7 +346,21 @@ test("an expired inactive connection is replaced after cleanup and restart, keep
       catalog.find(
         (item) => item.service.identity.serviceId === old.identity.serviceId,
       ).service.state,
-      "deleted",
+      "inactive",
+    );
+    assert.equal(
+      catalog.length,
+      1,
+      "Expired release recovery does not duplicate the saved Container",
+    );
+    const draft = await f.request(
+      `/api/services/${fresh.identity.serviceId}/draft`,
+    );
+    expectStatus(draft, 200);
+    assert.equal(
+      draft.body.revision,
+      0,
+      "Replacement publication preserves the original draft",
     );
     await f.restart();
     await f.control({ action: "time", now: later });

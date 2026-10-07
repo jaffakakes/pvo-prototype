@@ -87,6 +87,7 @@ export async function controlHostedService(host, serviceId, ownerId, value) {
     if (control.kind === "delete") {
       host.store.deleteReleases();
       host.actions.clearAll();
+      host.drafts.clear();
     }
     if (host.calls.active) host.calls.cancel(host.calls.active.resourceId);
     const receipt = {

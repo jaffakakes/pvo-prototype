@@ -1,3 +1,5 @@
+import { parseDraftCreation } from "./drafts.js";
+import { contentDigest } from "../contentDigest.js";
 import {
   parseHostedSummary,
   parseServiceControl,
@@ -52,6 +54,37 @@ export async function manageHostedServices(coordinator, ownerId, operation) {
   return hostedReply(async () => {
     taskId(ownerId);
     coordinator.repository.bindOwner(ownerId);
+    if (operation.kind === "create") {
+      const input = parseDraftCreation(operation.input);
+      try {
+        coordinator.repository.requireProject(input.projectId);
+      } catch {
+        throw serviceCallError("unavailable", "This project is unavailable.");
+      }
+      const serviceId = `service-${await contentDigest(JSON.stringify([ownerId, input.projectId, "draft", input.actionId]))}`;
+      const digest = await contentDigest(JSON.stringify(input));
+      const metadata = await coordinator.transaction(() =>
+        coordinator.services.create(
+          { serviceId, ownerId, projectId: input.projectId },
+          input.description,
+          digest,
+          coordinator.now(),
+        ),
+      );
+      if (metadata.state === "deleted")
+        throw serviceCallError(
+          "unavailable",
+          "This Container has been deleted.",
+        );
+      const result = await hostResult(() =>
+        stub(coordinator, serviceId).initializeDraft(
+          metadata.identity,
+          input.description,
+        ),
+      );
+      if (!result.ok) return { draftResult: result };
+      return { metadata, draft: result.value };
+    }
     if (operation.kind === "list")
       return {
         services: (await refreshOwnedServices(coordinator)).filter(
@@ -63,6 +96,19 @@ export async function manageHostedServices(coordinator, ownerId, operation) {
     if (!metadata || metadata.identity.ownerId !== ownerId)
       throw serviceCallError("unavailable", "This service is unavailable.");
     if (operation.kind === "read") return refreshOne(coordinator, metadata);
+    if (operation.kind === "readDraft" || operation.kind === "saveDraft") {
+      const result = await hostResult(() =>
+        operation.kind === "readDraft"
+          ? stub(coordinator, operation.id).readDraft(operation.id, ownerId)
+          : stub(coordinator, operation.id).saveDraft(
+              operation.id,
+              ownerId,
+              operation.input,
+            ),
+      );
+      return { draftResult: result };
+    }
+
     if (operation.kind !== "control")
       throw serviceCallError(
         "invalid_input",

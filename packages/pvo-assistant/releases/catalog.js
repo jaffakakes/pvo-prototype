@@ -91,3 +91,18 @@ export function parseOwnedRelease(value) {
   timestamps(value);
   return structuredClone(value);
 }
+
+/** Shared admission for manually created and AI-created service identities. */
+export function admitOwnedService(services, now) {
+  const day = Math.floor(now / 86400000) * 86400000;
+  if (
+    services.length >= SERVICE_CATALOG_LIMITS.identities ||
+    services.filter((item) => item.state !== "deleted").length >=
+      SERVICE_CATALOG_LIMITS.active ||
+    services.filter((item) => item.createdAt >= day).length >=
+      SERVICE_CATALOG_LIMITS.daily
+  )
+    throw Object.assign(new Error("Your Container limit has been reached."), {
+      code: "budget_exceeded",
+    });
+}

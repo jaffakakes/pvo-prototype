@@ -1,9 +1,10 @@
+import { SERVICE_DRAFT_LIMITS } from "../../packages/pvo-assistant/services/index.js";
 import { getAccountSession } from "../auth/sessions.js";
 import { checkOrigin, HttpError, json, readJson } from "../http.js";
 import { HOSTED_SERVICE_LIMITS } from "../../packages/pvo-assistant/hosting/index.js";
 
 const servicePath =
-  /^\/api\/services\/(service-[a-f0-9]{64})(?:\/(try|operate|actions|activate|pause|delete))?$/;
+  /^\/api\/services\/(service-[a-f0-9]{64})(?:\/(try|operate|actions|activate|pause|delete|draft))?$/;
 const componentTryPath =
   /^\/api\/services\/(service-[a-f0-9]{64})\/releases\/(release-[a-f0-9]{64})\/try$/;
 function routeTarget(path) {
@@ -64,7 +65,12 @@ export async function hostedServiceRoute(request, env, config) {
           headers: { "Cache-Control": "no-store" },
         }),
       );
-    const reading = list || target?.kind === null;
+    const creating = list && request.method === "POST";
+    const draft = target?.kind === "draft";
+    const reading =
+      (list && !creating) ||
+      target?.kind === null ||
+      (draft && request.method === "GET");
     if (request.method !== (reading ? "GET" : "POST"))
       throw new HttpError(
         405,
@@ -82,7 +88,12 @@ export async function hostedServiceRoute(request, env, config) {
       id = target?.id;
     const input = reading
       ? null
-      : await readJson(request, HOSTED_SERVICE_LIMITS.requestBytes);
+      : await readJson(
+          request,
+          draft
+            ? SERVICE_DRAFT_LIMITS.bytes + 1024
+            : HOSTED_SERVICE_LIMITS.requestBytes,
+        );
     if (["try", "operate", "actions", "component_try"].includes(kind)) {
       let authority;
       if (publicCall) authority = { kind: "public" };
@@ -108,22 +119,34 @@ export async function hostedServiceRoute(request, env, config) {
     }
     if (typeof env.ASSISTANT_TASKS?.getByName !== "function")
       throw new HttpError(503, "Service management is unavailable.");
-    if (!reading && input?.kind !== kind)
+    if (!reading && !creating && !draft && input?.kind !== kind)
       throw new HttpError(
         400,
         "The service control does not match this operation.",
       );
-    const operation = list
-      ? { kind: "list" }
-      : reading
-        ? { kind: "read", id }
-        : { kind: "control", id, input };
+    const operation = creating
+      ? { kind: "create", input }
+      : draft
+        ? { kind: reading ? "readDraft" : "saveDraft", id, input }
+        : list
+          ? { kind: "list" }
+          : reading
+            ? { kind: "read", id }
+            : { kind: "control", id, input };
     const result = await rpc(() =>
       env.ASSISTANT_TASKS.getByName(`owner:${owner.id}`).manageServices(
         owner.id,
         operation,
       ),
     );
+    if (result.draftResult) {
+      if (!result.draftResult.ok)
+        throw new HttpError(
+          result.draftResult.status,
+          result.draftResult.error,
+        );
+      return json(result.draftResult.value);
+    }
     if (result.control) {
       if (!result.control.ok)
         throw new HttpError(result.control.status, result.control.error);

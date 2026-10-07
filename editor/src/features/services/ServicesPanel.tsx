@@ -1,3 +1,5 @@
+import { ContainerEditor } from "./ContainerEditor";
+import { CreateContainer } from "./CreateContainer";
 import { useState } from "react";
 import { openSignIn } from "../../state/auth/authGateStore";
 import { useServices } from "./useServices";
@@ -7,11 +9,12 @@ import styles from "./ServicesPanel.module.css";
 export function ServicesPanel() {
   const { services, pending, busy, error, ownerId, refresh, control, retry } =
     useServices();
+  const [editing, setEditing] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   if (!ownerId)
     return (
       <div className={styles.panel}>
-        <p>Sign in to manage your services.</p>
+        <p>Sign in to manage your Containers.</p>
         <button type="button" onClick={() => openSignIn()}>
           Sign in
         </button>
@@ -20,14 +23,21 @@ export function ServicesPanel() {
   return (
     <div className={styles.panel}>
       <p>
-        Services belong to your account. Active services keep working after you
-        close Restyle or remove their component. Pausing keeps their records;
-        deleting removes their program and records.
+        Containers belong to your account. Published Containers keep working
+        after you close Restyle or remove their component. Pausing keeps their
+        records; deleting removes their program and records.
       </p>
+      <CreateContainer
+        ownerId={ownerId}
+        onCreated={(id) => {
+          setEditing(id);
+          void refresh();
+        }}
+      />
       <button type="button" disabled={busy} onClick={() => void refresh()}>
-        Refresh services
+        Refresh Containers
       </button>
-      {busy && <p role="status">Updating services…</p>}
+      {busy && <p role="status">Updating Containers…</p>}
       {error && <p role="alert">{error}</p>}
       {pending && (
         <div role="status">
@@ -42,7 +52,7 @@ export function ServicesPanel() {
       )}
       {!services.length && !busy && !error && (
         <p>
-          No services yet. Services built by the assistant will appear here.
+          No Containers yet. Containers built by the assistant will appear here.
         </p>
       )}
       <ul className={styles.list}>
@@ -55,7 +65,7 @@ export function ServicesPanel() {
               <h4>{item.metadata.description}</h4>
               <p>Status: {service?.state ?? "temporarily unavailable"}</p>
               <details>
-                <summary>Service details</summary>
+                <summary>Container details</summary>
                 <p className={styles.identifier}>{id}</p>
                 <p>
                   {item.summary?.releases.filter(
@@ -107,6 +117,20 @@ export function ServicesPanel() {
                   </p>
                 )}
               </details>
+              <button
+                type="button"
+                aria-expanded={editing === id}
+                onClick={() => setEditing(editing === id ? null : id)}
+              >
+                {editing === id ? "Close code" : "Open code"}
+              </button>
+              {editing === id && (
+                <ContainerEditor
+                  key={`${ownerId}:${id}`}
+                  ownerId={ownerId}
+                  serviceId={id}
+                />
+              )}
               <div className={styles.actions}>
                 {service?.state !== "active" && (
                   <button
@@ -118,8 +142,8 @@ export function ServicesPanel() {
                     onClick={() => control(item, "activate")}
                   >
                     {service?.state === "paused"
-                      ? "Resume service"
-                      : "Activate service"}
+                      ? "Resume Container"
+                      : "Publish checked version"}
                   </button>
                 )}
                 {service?.state === "active" && (
@@ -128,7 +152,7 @@ export function ServicesPanel() {
                     disabled={disabled}
                     onClick={() => control(item, "pause")}
                   >
-                    Pause service
+                    Pause Container
                   </button>
                 )}
                 <button
@@ -136,13 +160,13 @@ export function ServicesPanel() {
                   disabled={disabled}
                   onClick={() => setConfirmDelete(id)}
                 >
-                  Delete service
+                  Delete Container
                 </button>
               </div>
               {confirmDelete === id && (
                 <div>
                   <p>
-                    Delete this service and all its saved records? Existing
+                    Delete this Container and all its saved records? Existing
                     copies of the component will stop working.
                   </p>
                   <button
@@ -153,14 +177,14 @@ export function ServicesPanel() {
                       control(item, "delete");
                     }}
                   >
-                    Delete service permanently
+                    Delete Container permanently
                   </button>
                   <button
                     type="button"
                     disabled={busy}
                     onClick={() => setConfirmDelete(null)}
                   >
-                    Keep service
+                    Keep Container
                   </button>
                 </div>
               )}
@@ -169,9 +193,9 @@ export function ServicesPanel() {
         })}
       </ul>
       <details>
-        <summary>Current service limits</summary>
+        <summary>Current Container limits</summary>
         <p>
-          Up to 8 services and 4 versions per service. Each test or live data
+          Up to 8 Containers and 4 versions per service. Each test or live data
           area allows 256 new actions and 1,024 calls per day, with up to 512
           saved action results and 2 MiB of results. New actions stop at a
           limit; saved records are kept.

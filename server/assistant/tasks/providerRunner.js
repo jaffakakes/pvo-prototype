@@ -40,13 +40,12 @@ export async function publishTaskService(coordinator, claimed) {
   const operationId = `service-${claimed.generation}`;
   const prior = coordinator.providers.get(`${claimed.id}_${operationId}`);
   const retained = coordinator.providers.reusable(claimed.id);
-  const initialServiceId = await ownedServiceId(claimed);
+  // Expiring a release keeps its Container identity and saved draft. Explicit
+  // service deletion must never be bypassed by allocating a replacement ID.
   const serviceId =
     retained?.identity.serviceId ??
     prior?.identity.serviceId ??
-    (coordinator.services.service(initialServiceId)?.state === "deleted"
-      ? await ownedServiceId(claimed, operationId)
-      : initialServiceId);
+    (await ownedServiceId(claimed));
   const publication = await prepareServicePublication(
     claimed,
     operationId,

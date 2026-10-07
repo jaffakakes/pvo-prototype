@@ -7,7 +7,6 @@ import { taskSpendingCapability } from "./spending.js";
 export function claimNextTask(coordinator) {
   const now = coordinator.now();
   coordinator.noteTerminal(now);
-  coordinator.services.maintain(now);
   coordinator.repository.maintain(now, coordinator.heldTasks());
   for (const [id, controller] of coordinator.active) {
     const task = coordinator.attempts.task(id);

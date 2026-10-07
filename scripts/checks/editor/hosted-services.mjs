@@ -84,12 +84,12 @@ try {
         .patch({ sheet: "more" });
     });
     await page
-      .getByRole("button", { name: "Manage services", exact: true })
+      .getByRole("button", { name: "Open Containers", exact: true })
       .click();
   }
   await open();
   await page
-    .getByRole("button", { name: "Activate service", exact: true })
+    .getByRole("button", { name: "Publish checked version", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Retry saved action", exact: true })
@@ -99,7 +99,7 @@ try {
     .getByRole("button", { name: "Retry saved action", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Pause service", exact: true })
+    .getByRole("button", { name: "Pause Container", exact: true })
     .waitFor();
   await page
     .getByRole("button", { name: "Retry saved action", exact: true })
@@ -117,9 +117,9 @@ try {
     source: dinnerSource + "\n// A new checked version.",
   });
   await page
-    .getByRole("button", { name: "Refresh services", exact: true })
+    .getByRole("button", { name: "Refresh Containers", exact: true })
     .click();
-  await page.getByText("Service details", { exact: true }).click();
+  await page.getByText("Container details", { exact: true }).click();
   await page
     .getByRole("button", { name: "Use version 2", exact: true })
     .click();
@@ -142,18 +142,18 @@ try {
     "already_joined",
   );
   await page
-    .getByRole("button", { name: "Pause service", exact: true })
+    .getByRole("button", { name: "Pause Container", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Resume service", exact: true })
+    .getByRole("button", { name: "Resume Container", exact: true })
     .waitFor();
   expectStatus(await publicCall(fixture, service, action("paused")), 404);
   await page.setViewportSize({ width: 390, height: 844 });
   await page
-    .getByRole("button", { name: "Manage services", exact: true })
+    .getByRole("button", { name: "Open Containers", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Resume service", exact: true })
+    .getByRole("button", { name: "Resume Container", exact: true })
     .scrollIntoViewIfNeeded();
   await page.screenshot({ path: "/tmp/restyle-services-phone.png" });
   cookie = fixture.otherCookie;
@@ -162,10 +162,10 @@ try {
       await import("/src/state/auth/authGateStore.ts")
     ).refreshAccountSession();
   });
-  await page.getByText("No services yet.", { exact: false }).waitFor();
+  await page.getByText("No Containers yet.", { exact: false }).waitFor();
   assert.equal(
     await page
-      .getByRole("button", { name: "Resume service", exact: true })
+      .getByRole("button", { name: "Resume Container", exact: true })
       .count(),
     0,
   );
@@ -176,36 +176,38 @@ try {
     ).refreshAccountSession();
   });
   await page
-    .getByRole("button", { name: "Resume service", exact: true })
+    .getByRole("button", { name: "Resume Container", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Pause service", exact: true })
+    .getByRole("button", { name: "Pause Container", exact: true })
     .waitFor();
   await page
-    .getByRole("button", { name: "Delete service", exact: true })
+    .getByRole("button", { name: "Delete Container", exact: true })
     .click();
-  await page.getByRole("button", { name: "Keep service", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Keep Container", exact: true })
+    .click();
   assert.equal(
     (await publicCall(fixture, service, action("existing", "Viewer"))).body
       .result,
     "already_joined",
   );
   await page
-    .getByRole("button", { name: "Delete service", exact: true })
+    .getByRole("button", { name: "Delete Container", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Delete service permanently", exact: true })
+    .getByRole("button", { name: "Delete Container permanently", exact: true })
     .click();
-  await page.getByText("No services yet.", { exact: false }).waitFor();
+  await page.getByText("No Containers yet.", { exact: false }).waitFor();
   expectStatus(await publicCall(fixture, service, action("deleted")), 404);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page
-    .getByRole("button", { name: "Manage services", exact: true })
+    .getByRole("button", { name: "Open Containers", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Refresh services", exact: true })
+    .getByRole("button", { name: "Refresh Containers", exact: true })
     .scrollIntoViewIfNeeded();
-  await page.getByText("No services yet.", { exact: false }).waitFor();
+  await page.getByText("No Containers yet.", { exact: false }).waitFor();
   await page.screenshot({ path: "/tmp/restyle-services-desktop.png" });
   assert.deepEqual(errors, []);
   console.log(
