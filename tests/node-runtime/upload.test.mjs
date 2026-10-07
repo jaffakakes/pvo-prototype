@@ -49,35 +49,38 @@ test("only a completed owned upload selects a pinned deployment image and creden
         });
       },
       run: async (command, args, opts) => {
-        assert.equal(command, "docker");
         calls.push(args);
-        if (args[0] === "context")
-          return { stdout: "unix:///owned/docker.sock\n" };
-        if (args.includes("build")) {
+        if (command === "docker") {
+          if (args[0] === "context")
+            return { stdout: "unix:///owned/docker.sock\n" };
           assert.equal(
             args.includes("--config"),
             false,
-            "Local build keeps installed Docker CLI plugins",
+            "Local Docker keeps installed plugins",
           );
-          return { stdout: "built" };
+          assert.deepEqual(args.slice(0, 2), [
+            "--host",
+            "unix:///owned/docker.sock",
+          ]);
+          return { stdout: "built/exported" };
         }
-        assert.deepEqual(args.slice(0, 4), [
-          "--config",
+        assert.equal(command, "crane");
+        assert.equal(
+          opts.env.DOCKER_CONFIG,
           resolve(directory, "docker-credentials"),
-          "--host",
-          "unix:///owned/docker.sock",
-        ]);
+        );
+        if (args[0] === "version") return { stdout: "v0.22.1" };
         if (args.includes("login")) assert.equal(opts.input, "registry-secret");
         if (args.includes("push")) {
           assert.equal(saved, true);
-          assert.equal(opts.timeoutMs, 600000);
+          assert.equal(opts.timeoutMs, 1800000);
           if (fail)
             throw Object.assign(new Error("stalled"), {
               stderr: "registry-secret account-secret",
             });
         }
         return {
-          stdout: args.includes("inspect") ? JSON.stringify([image]) : "done",
+          stdout: args[0] === "digest" ? "sha256:" + "b".repeat(64) : "done",
         };
       },
     };
@@ -90,9 +93,26 @@ test("only a completed owned upload selects a pinned deployment image and creden
     assert.equal(resource.imageDigest, undefined);
     assert.equal(
       await readFile(resolve(directory, "image-push.log"), "utf8"),
-      "\n[redacted] [redacted]",
+      "\n[redacted] [redacted]\nstalled",
     );
     await assert.rejects(access(resolve(directory, "docker-credentials")));
+    const before = calls.length;
+    await uploadProofImage(
+      { ...resource, attempted: false },
+      {
+        ...options,
+        dryRun: true,
+        fetchImpl: async () => {
+          throw new Error("Dry run requested upload credentials");
+        },
+      },
+    );
+    assert.ok(
+      !calls
+        .slice(before)
+        .some((args) => args.includes("push") || args.includes("login")),
+    );
+    assert.deepEqual(JSON.parse(await readFile(resource.config)), original);
     fail = false;
     await uploadProofImage(resource, options);
     assert.equal(resource.imageDigest, image);

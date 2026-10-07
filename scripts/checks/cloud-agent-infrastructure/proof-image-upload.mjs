@@ -6,44 +6,66 @@ import { proofProcess } from "./proof-process.mjs";
 /** Upload the owned image explicitly; Wrangler receives only its immutable registry reference. */
 export async function uploadProofImage(
   resource,
-  { accountId, token, directory, save, run = proofProcess, fetchImpl = fetch },
+  {
+    accountId,
+    token,
+    directory,
+    save,
+    run = proofProcess,
+    fetchImpl = fetch,
+    crane = process.env.RESTYLE_CRANE_BIN ?? "crane",
+    dryRun = false,
+  },
 ) {
   assert.equal(resource.imageOwnershipVerified, true);
-  assert.equal(resource.attempted, true);
+  if (!dryRun) assert.equal(resource.attempted, true);
   const config = JSON.parse(await readFile(resource.config, "utf8"));
   const source = config.containers[0].images.runtime;
   assert.ok(source.dockerfile && source.build_context);
   const registry = "registry.cloudflare.com";
   const tag = `${registry}/${accountId}/${resource.imageRepository}:proof`;
   const dockerConfig = resolve(directory, "docker-credentials");
+  const archive = resolve(directory, "runtime-image.tar");
   await mkdir(dockerConfig, { mode: 0o700 });
   let password = "";
-  async function docker(label, args, input, timeoutMs = 60_000) {
+  async function command(label, binary, args, input, timeoutMs = 60_000) {
     let result;
     try {
-      result = await run(
-        "docker",
-        [...(label === "build" ? [] : ["--config", dockerConfig]), ...args],
-        {
-          input,
-          timeoutMs,
-        },
-      );
+      result = await run(binary, args, {
+        input,
+        timeoutMs,
+        env:
+          binary === "docker"
+            ? process.env
+            : { ...process.env, DOCKER_CONFIG: dockerConfig },
+      });
       return result;
     } catch (error) {
       result = error;
       throw new Error(`Image ${label} failed; see private image-${label}.log`);
     } finally {
-      let diagnostic = `${result?.stdout ?? ""}\n${result?.stderr ?? ""}`;
+      let diagnostic = `${result?.stdout ?? ""}\n${result?.stderr ?? ""}${result instanceof Error ? "\n" + result.message : ""}`;
       for (const secret of [token, password])
         if (secret) diagnostic = diagnostic.replaceAll(secret, "[redacted]");
+      diagnostic = diagnostic.replace(
+        /(https:\/\/[^\s?"']+)\?[^\s"']+/g,
+        "$1?[redacted]",
+      );
       await writeFile(resolve(directory, `image-${label}.log`), diagnostic, {
         mode: 0o600,
       });
     }
   }
   try {
-    // Use the local daemon explicitly; an isolated Docker config contains no saved account login.
+    const version = await command("tool", crane, ["version"]);
+    assert.equal(
+      version.stdout.trim().replace(/^v/, ""),
+      "0.22.1",
+      "Use the reviewed crane v0.22.1 uploader",
+    );
+    resource.imageUploader = { name: "crane", version: "v0.22.1" };
+    await save();
+    // Build locally; upload from the host rather than through Docker Desktop networking.
     const context = await run("docker", [
       "context",
       "inspect",
@@ -53,8 +75,9 @@ export async function uploadProofImage(
     const dockerHost = context.stdout.trim();
     assert.match(dockerHost, /^unix:\/\//);
     const host = ["--host", dockerHost];
-    await docker(
+    await command(
       "build",
+      "docker",
       [
         ...host,
         "build",
@@ -70,6 +93,25 @@ export async function uploadProofImage(
       undefined,
       300_000,
     );
+    await command(
+      "archive",
+      "docker",
+      [...host, "image", "save", "--output", archive, tag],
+      undefined,
+      300_000,
+    );
+    const expected = (
+      await command("local-digest", crane, [
+        "digest",
+        "--tarball",
+        archive,
+        tag,
+      ])
+    ).stdout.trim();
+    assert.match(expected, /^sha256:[a-f0-9]{64}$/);
+    resource.imageLocalDigest = expected;
+    await save();
+    if (dryRun) return;
     const response = await fetchImpl(
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/containers/registries/${registry}/credentials`,
       {
@@ -79,7 +121,7 @@ export async function uploadProofImage(
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          expiration_minutes: 15,
+          expiration_minutes: 45,
           permissions: ["push", "pull"],
         }),
         redirect: "error",
@@ -95,10 +137,11 @@ export async function uploadProofImage(
       "Registry upload credentials unavailable",
     );
     password = body.result.password;
-    await docker(
+    await command(
       "login",
+      crane,
       [
-        ...host,
+        "auth",
         "login",
         "--password-stdin",
         "--username",
@@ -109,24 +152,16 @@ export async function uploadProofImage(
     );
     resource.imageTags = [`${resource.imageRepository}:proof`];
     await save();
-    await docker("push", [...host, "push", tag], undefined, 600_000);
-    const inspected = await docker("inspect", [
-      ...host,
-      "image",
-      "inspect",
-      "--format",
-      "{{json .RepoDigests}}",
-      tag,
-    ]);
-    const image = JSON.parse(inspected.stdout).find((value) =>
-      value.startsWith(
-        `${registry}/${accountId}/${resource.imageRepository}@sha256:`,
-      ),
+    await command("push", crane, ["push", archive, tag], undefined, 1_800_000);
+    const actual = (
+      await command("remote-digest", crane, ["digest", tag])
+    ).stdout.trim();
+    assert.equal(
+      actual,
+      expected,
+      "Remote image differs from the built archive",
     );
-    assert.ok(
-      image && /@sha256:[a-f0-9]{64}$/.test(image),
-      "Uploaded image digest unavailable",
-    );
+    const image = `${registry}/${accountId}/${resource.imageRepository}@${actual}`;
     resource.imageDigest = image;
     await save();
     config.containers[0].images.runtime = { image };
@@ -135,5 +170,6 @@ export async function uploadProofImage(
     });
   } finally {
     await rm(dockerConfig, { recursive: true, force: true });
+    await rm(archive, { force: true });
   }
 }

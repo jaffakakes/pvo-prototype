@@ -4,7 +4,7 @@
 
 ## Status — 7 October 2026
 
-**US$1 approved by the user at 08:09 UTC, 7 October 2026**, for the single diagnostic deployment below. **1G.04 is unchecked.** Two upload attempts stopped before any Worker/application/namespace creation; no runtime case passed. Their owned upload process and registry cleanup are verified. The supervised uploader will retry within the same allowance. The existing product still runs generated services through Dynamic Workers. Preserve its completed 1E/1F evidence. This proof cannot by itself complete the replacement, manual publication, component connection or final beta acceptance.
+**US$1 approved by the user at 08:09 UTC, 7 October 2026**, for the single diagnostic deployment below. **1G.04 is unchecked.** Four preparation/upload attempts stopped before any Worker/application/namespace creation; no runtime case passed. Owned upload processes, credentials and registry cleanup are verified. The host-network uploader is ready to retry within the same allowance. The existing product still runs generated services through Dynamic Workers. Preserve its completed 1E/1F evidence. This proof cannot by itself complete the replacement, manual publication, component connection or final beta acceptance.
 
 In everyday terms: first verify that a disposable hosted computer can run the exact saved JavaScript, return an answer, and disappear without leaving private files or background programs behind. Then connect that proven execution effect to the existing service and independent tests.
 
@@ -30,7 +30,10 @@ The Container contract requires scoped approval after preparing the executable p
 Run from the active source checkout. Credentials are read from the existing secure local Cloudflare setup; never paste them into chat or these documents. The account ID is public configuration.
 
 ```sh
-# Read-only account checks plus local build; no deployment or paid execution.
+# Use the reviewed crane 0.22.1 binary; another agent can install the same version on its host.
+export RESTYLE_CRANE_BIN="$PWD/.wrangler/tools/crane-v0.22.1/crane"
+
+# Read-only account checks plus local build/archive/digest; no upload or paid execution.
 node scripts/checks/node-runtime/run.mjs 84880ccf8f98bb789d58cbea5436a645 --dry-run
 
 # Only after this proof's explicit approval; prints its private report path first.
@@ -40,7 +43,7 @@ node scripts/checks/node-runtime/run.mjs 84880ccf8f98bb789d58cbea5436a645 --run-
 node scripts/checks/node-runtime/run.mjs 84880ccf8f98bb789d58cbea5436a645 --cleanup /absolute/path/to/report.json
 ```
 
-The journal saves ownership, expiry, names and an attempted-upload flag before remote mutation. The uploader owns the Docker command group, uses temporary registry credentials and a ten-minute transfer deadline, and deploys only a confirmed immutable image reference. Wrangler no longer launches the remote Docker upload. Timeout is a failure even when a wrapper exits zero. Cleanup revokes execution and destroys guests, then removes the application, Worker and namespace, discovers uploaded tags only in the pre-recorded unique repository, deletes them and verifies absence. A lost upload/deletion response is reconciled by identity; failed inspection keeps cleanup pending. Only after all owned resources are absent are local diagnostic secrets removed. Local logs/journals retain evidence. The local image cache can remain for further tests; it has no running compute charges.
+The journal saves ownership, expiry, names and an attempted-upload flag before remote mutation. Docker builds and exports locally. The pinned crane 0.22.1 CLI uploads through the host network with temporary registry credentials and a thirty-minute transfer deadline inside the diagnostic lifetime. The driver owns command groups and compares local archive and remote digests before deploying the immutable image reference. Wrangler no longer launches the remote Docker upload. Timeout is a failure even when a wrapper exits zero. Cleanup revokes execution and destroys guests, then removes the application, Worker and namespace, discovers uploaded tags only in the pre-recorded unique repository, deletes them and verifies absence. A lost upload/deletion response is reconciled by identity; failed inspection keeps cleanup pending. Only after all owned resources are absent are local diagnostic secrets removed. Local logs/journals retain evidence. The local image cache can remain for further tests; it has no running compute charges.
 
 ## Evidence so far
 
@@ -57,6 +60,7 @@ The journal saves ownership, expiry, names and an attempted-upload flag before r
 | Initial upload attempt `6a0868727a1b5ab1fb09b420` | US$1 approved, 7 October 08:09 UTC | No Worker/application/namespace/image observed | CLI ended early; zero runtime cases. Exact account and corrected registry inventories empty; journal `.wrangler/cloud-agent-infrastructure/workspace-wulZFc/report.json`. |
 | Upload retry `3e382dce0a1bec8557d0ad52` | Same US$1 allowance | No Worker/application/namespace; Docker transfer timed out | Exact orphan push PID 84307 stopped; journal reopened and cleanup reverified. `.wrangler/cloud-agent-infrastructure/workspace-aNuEpQ/report.json`. Zero runtime cases. |
 | Supervised preparation `a6640c1769252c957eef4d8a` | Same allowance; no remote upload | Local Docker plugin lookup failed | Corrected and locally built successfully; resource inventories empty. `.wrangler/cloud-agent-infrastructure/workspace-CAB14R/report.json`. |
+| Supervised Docker upload `aabd63702deec2c3219e46ea` | Same US$1 allowance | Image transfer failed before Worker/application/namespace | Docker Desktop network connection closed during the 50.8 MB Node layer. Process absent; registry/resource/credential cleanup verified. Journal `workspace-eiEg5u/report.json` under the same private directory. |
 
 After the paid run, record its exact journal, runtime image digest, start/elapsed usage, checks and cleanup result here before marking any roadmap task. Full task completion also requires the canonical Node package/runtime replacement and its remaining integration gates.
 
@@ -80,3 +84,9 @@ The same prepared execution controller now records admitted payload bytes, retur
 The proof driver retains those snapshots and a dated gross compute estimate in each result receipt. Memory/disk provisioning and an assumed full-CPU estimate use [the rechecked pricing](https://developers.cloudflare.com/containers/platform/pricing/). Reserved wall time includes startup/cleanup and can exceed billed running time. Included allowances and all non-Node charges are explicitly excluded; pending time is separate. This preparation must not be presented as a complete Container bill or as completed 4C.02.
 
 Nineteen focused Node cases and **1,541 full behavior tests** pass, plus strict editor types. The updated diagnostic dry run passes with no attempted creation: `.wrangler/cloud-agent-infrastructure/workspace-OWODtO/report.json`, `dryRunPassed:true`, `cleanupVerified:true`. Logs `/tmp/restyle-node-metering-{tests-final,full,types,dry-run}.log`. Scope approval is still pending, no paid proof ran, and all six remaining Roadmap 1 gates remain unchecked.
+
+## Host-network uploader preparation — 7 October 2026
+
+The first direct upstream CLI download timed out. The Homebrew arm64 Tahoe 0.22.1 bottle was then downloaded and its published SHA-256 checked (`52b52a75d91903ce0526e221a68b366f26ade0bf6cd6cedcc5907bcb2ad0c31e`) before extracting only crane into the checkout's ignored tools folder; no global installation. [Upstream installation](https://github.com/google/go-containerregistry/tree/v0.22.1/cmd/crane) and [push format](https://github.com/google/go-containerregistry/blob/v0.22.1/cmd/crane/doc/crane_push.md) describe the supported archive upload. The runnable proof requires that exact version, uses stdin for login, redacts URL query tokens, and removes credentials/archive after success or failure.
+
+Expanded dry run `.wrangler/cloud-agent-infrastructure/workspace-UmWuf0/report.json` verifies the actual tool, local image build, archive and digest, then the Worker bundle without upload: `dryRunPassed:true`, `attempted:false`, `cleanupVerified:true`. Full **1,545 tests** pass; `/tmp/restyle-node-host-upload-{dry-run,full}.log`. No hosted Node test or roadmap completion is claimed from this preparation.

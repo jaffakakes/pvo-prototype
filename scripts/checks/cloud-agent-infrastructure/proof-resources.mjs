@@ -277,7 +277,7 @@ export async function prepareResources(
       null,
       "A cleanup-only journal cannot deploy resources",
     );
-    await command(resource, true);
+    await dryRun(resource);
     resource.attempted = true;
     await save();
     console.log(`Deploying ${resource.name}`);
@@ -321,6 +321,18 @@ export async function prepareResources(
     ];
     await save();
     return apps;
+  }
+
+  async function dryRun(resource) {
+    if (resource.imageRepository)
+      await uploadProofImage(resource, {
+        accountId,
+        token,
+        directory,
+        save,
+        dryRun: true,
+      });
+    await command(resource, true);
   }
 
   async function call(
@@ -466,7 +478,7 @@ export async function prepareResources(
     save,
     prepare,
     deploy,
-    dryRun: (resource) => command(resource, true),
+    dryRun,
     ready,
     call,
     remove,
