@@ -115,6 +115,8 @@ try {
           row.status = "passed";
           row.durationMs = Date.now() - startedAt;
           row.usage = state.data.usage;
+          row.metering = state.data.metering;
+          row.estimate = state.data.estimate;
           await resources.save();
           return result.data.value;
         },

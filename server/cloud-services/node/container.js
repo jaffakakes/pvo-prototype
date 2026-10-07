@@ -6,6 +6,17 @@ export const nodeExecutionError = (code) =>
     code,
   });
 
+/** Exact admitted payload; generated tests never enter hosted execution. */
+export function nodeExecutionBody(bundle, invocation) {
+  return JSON.stringify({
+    bundle: {
+      ...bundle,
+      files: bundle.files.filter((file) => file.path.startsWith("src/")),
+    },
+    invocation,
+  });
+}
+
 /** Bound bytes outside the guest, even if generated code replaces the private HTTP listener. */
 export async function readNodeReply(response, maximum, signal) {
   if (!response.ok) {
@@ -110,13 +121,7 @@ export class NodeContainer {
     }
   }
   async execute(bundle, invocation, assertCurrent, signal) {
-    const body = JSON.stringify({
-      bundle: {
-        ...bundle,
-        files: bundle.files.filter((file) => file.path.startsWith("src/")),
-      },
-      invocation,
-    });
+    const body = nodeExecutionBody(bundle, invocation);
     if (
       new TextEncoder().encode(body).length > limits.requestBytes ||
       new TextEncoder().encode(JSON.stringify(invocation)).length >

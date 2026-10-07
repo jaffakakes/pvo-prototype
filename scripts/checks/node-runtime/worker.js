@@ -1,4 +1,5 @@
 import { ServiceNodeExecution } from "../../../server/cloud-services/node/coordinator.js";
+import { estimateNodeCompute } from "../../../server/cloud-services/node/cost.js";
 import {
   NODE_LIMITS,
   NODE_RUNTIME,
@@ -34,12 +35,15 @@ export class ProofExecution extends ServiceNodeExecution {
     return super.run(request);
   }
   async diagnostic() {
+    const metering = this.usage("proof-owner", "proof-service");
     return {
       lease: this.lease(),
       running: this.ctx.container.running,
       instance: await this.ctx.container.inspect(),
       runtime: NODE_RUNTIME,
       usage: this.ctx.storage.sql.exec("SELECT * FROM node_usage").toArray(),
+      metering,
+      estimate: estimateNodeCompute(metering),
     };
   }
   async dispose() {

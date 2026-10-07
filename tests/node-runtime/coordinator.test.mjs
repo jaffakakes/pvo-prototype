@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
 import { bundleWorkerModules } from "../worker-bundle.helpers.mjs";
+import { estimateNodeCompute } from "../../server/cloud-services/node/cost.js";
 
 const deferred = () => {
   let resolve;
@@ -33,6 +34,7 @@ async function fixture(effect = async () => Response.json({})) {
       if(kind==='execute')return Response.json(await stub.execute(input));
       if(kind==='cancel')return Response.json(await stub.cancel(input.id));
       if(kind==='time'){await stub.setTime(input.now);return Response.json({});}
+      if(kind==='usage')return Response.json(await stub.usage(input.ownerId,input.serviceId));
       if(kind==='cleanup'){await stub.sweep();return Response.json(await stub.diagnostic());}
       return Response.json(await stub.diagnostic());
     }};`,
@@ -344,6 +346,151 @@ test("an old unresolved destruction keeps its lease and metering row through adm
       "late dispatch remains fenced after confirmed cleanup",
     );
   } finally {
+    await f.close();
+  }
+});
+
+test("read-only metering separates owners, services and phases and never hides pending cleanup in completed costs", async () => {
+  const entered = deferred(),
+    release = deferred();
+  let starts = 0,
+    hold = false;
+  const f = await fixture(async (r) => {
+    const { kind } = await r.json();
+    if (kind === "start") starts++;
+    if (kind === "execute" && hold) {
+      entered.resolve();
+      await release.promise;
+    }
+    return Response.json({
+      result: "private result must not appear in usage",
+      state: {},
+    });
+  });
+  try {
+    const now = Date.UTC(2100, 0, 1, 12);
+    await f.call({ kind: "time", now });
+    const scope = {
+      kind: "usage",
+      ownerId: "creator",
+      serviceId: "service-one",
+    };
+    const empty = await f.call(scope);
+    assert.equal(empty.capacity.ownerRemaining, 2);
+    assert.equal(empty.capacity.busy, false);
+    assert.equal(starts, 0, "inspection starts no compute");
+    hold = true;
+    const running = f.call({
+      ...request("measured"),
+      mode: "validation",
+      expiresAt: now + 10000,
+    });
+    await entered.promise;
+    await f.call({ kind: "time", now: now + 1200 });
+    const pending = await f.call(scope);
+    assert.equal(pending.capacity.ownerRemaining, 1);
+    assert.equal(pending.periods.validation.starts, 1);
+    assert.equal(pending.periods.validation.milliseconds, 0);
+    assert.equal(pending.pending.milliseconds, 1200);
+    const other = await f.call({ ...scope, ownerId: "other" });
+    assert.equal(other.capacity.busy, true);
+    assert.equal(other.pending, null);
+    assert.equal(other.periods.validation.starts, 0);
+    assert.equal(other.capacity.ownerRemaining, 2);
+    assert.equal(
+      (await f.call({ ...scope, serviceId: "different" })).pending,
+      null,
+    );
+    const expected = estimateNodeCompute(pending);
+    assert.equal(expected.completed.validation.withFullCpuUsd, 0);
+    assert(Math.abs(expected.pending.withFullCpuUsd - 0.000002418) < 1e-12);
+    assert.equal(expected.allowancesApplied, false);
+    release.resolve();
+    assert.equal((await running).ok, true);
+    const done = await f.call(scope);
+    assert.equal(done.pending, null);
+    const total = done.periods.validation;
+    assert.equal(total.milliseconds, 1200);
+    assert.equal(
+      total.startupMilliseconds +
+        total.executionMilliseconds +
+        total.cleanupMilliseconds,
+      total.milliseconds,
+    );
+    assert.equal(total.executionMilliseconds, 1200);
+    assert(total.admittedBytes > 0);
+    assert(total.resultBytes > 0);
+    assert.equal(done.periods.live.starts, 0);
+    assert(!JSON.stringify(done).includes("private result"));
+    await f.restart();
+    await f.call({ kind: "time", now: now + 1200 });
+    assert.deepEqual(await f.call(scope), done);
+    assert.equal(starts, 1);
+  } finally {
+    release.resolve();
+    await f.close();
+  }
+});
+
+test("metering records startup and uncertain shutdown outside the guest and settles each phase once", async () => {
+  const starting = deferred(),
+    ready = deferred(),
+    executing = deferred(),
+    done = deferred();
+  let failCleanup = true;
+  const f = await fixture(async (r) => {
+    const { kind } = await r.json();
+    if (kind === "start") {
+      starting.resolve();
+      await ready.promise;
+    }
+    if (kind === "execute") {
+      executing.resolve();
+      await done.promise;
+    }
+    return Response.json({ fail: kind === "destroy" && failCleanup });
+  });
+  try {
+    const now = Date.UTC(2100, 0, 1, 12);
+    await f.call({ kind: "time", now });
+    const scope = {
+      kind: "usage",
+      ownerId: "creator",
+      serviceId: "service-one",
+    };
+    const running = f.call({
+      ...request("timed"),
+      mode: "live",
+      expiresAt: now + 10000,
+    });
+    await starting.promise;
+    await f.call({ kind: "time", now: now + 500 });
+    ready.resolve();
+    await executing.promise;
+    await f.call({ kind: "time", now: now + 700 });
+    done.resolve();
+    assert.equal((await running).code, "cleanup_unconfirmed");
+    await f.restart();
+    await f.call({ kind: "time", now: now + 2700 });
+    const uncertain = await f.call(scope);
+    assert.equal(uncertain.pending.phase, "cleanup");
+    assert.equal(uncertain.pending.milliseconds, 2700);
+    assert.equal(uncertain.periods.live.milliseconds, 0);
+    assert.equal(uncertain.periods.live.starts, 1);
+    failCleanup = false;
+    await f.call({ kind: "cleanup" });
+    const measured = await f.call(scope);
+    assert.equal(measured.pending, null);
+    const usage = measured.periods.live;
+    assert.equal(usage.milliseconds, 2700);
+    assert.equal(usage.startupMilliseconds, 500);
+    assert.equal(usage.executionMilliseconds, 200);
+    assert.equal(usage.cleanupMilliseconds, 2000);
+    await f.call({ kind: "cleanup" });
+    assert.deepEqual((await f.call(scope)).periods, measured.periods);
+  } finally {
+    ready.resolve();
+    done.resolve();
     await f.close();
   }
 });

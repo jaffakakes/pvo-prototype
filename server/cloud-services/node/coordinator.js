@@ -1,6 +1,11 @@
 import { parseNodeBundle } from "../../../packages/pvo-assistant/services/index.js";
 import { DurableObject } from "cloudflare:workers";
-import { NodeContainer, nodeExecutionError } from "./container.js";
+import {
+  NodeContainer,
+  nodeExecutionError,
+  nodeExecutionBody,
+} from "./container.js";
+import { NodeMetering } from "./metering.js";
 import { NODE_LIMITS as limits } from "./runtime.js";
 import { withAssistantDeadline } from "../../assistant/deadline.js";
 
@@ -15,9 +20,9 @@ export class ServiceNodeExecution extends DurableObject {
     this.native = this.containerAdapter();
     this.active = null;
     this.cleaning = null;
+    this.metering = new NodeMetering(ctx.storage.sql);
     ctx.storage.sql
       .exec(`CREATE TABLE IF NOT EXISTS node_lease(id INTEGER PRIMARY KEY CHECK(id=1),body TEXT NOT NULL);
-      CREATE TABLE IF NOT EXISTS node_usage(day INTEGER NOT NULL,owner_id TEXT NOT NULL,service_id TEXT NOT NULL,mode TEXT NOT NULL,starts INTEGER NOT NULL,milliseconds INTEGER NOT NULL,PRIMARY KEY(day,owner_id,service_id,mode));
       CREATE TABLE IF NOT EXISTS node_receipts(id TEXT PRIMARY KEY,expires_at INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS node_start_fence(id INTEGER PRIMARY KEY CHECK(id=1),expires_at INTEGER NOT NULL);`);
   }
@@ -75,6 +80,28 @@ export class ServiceNodeExecution extends DurableObject {
   limits() {
     // Capacity per slot and UTC day, not a goal-wide model/tool-turn ceiling.
     return { platform: 500, owner: 50 };
+  }
+  usage(ownerId, serviceId) {
+    if (!id(ownerId) || !id(serviceId))
+      throw nodeExecutionError("invalid_input");
+    return this.ctx.storage.transactionSync(() =>
+      this.metering.snapshot(
+        ownerId,
+        serviceId,
+        this.limits(),
+        this.lease(),
+        this.now(),
+      ),
+    );
+  }
+  async markReady(id) {
+    await this.ctx.storage.transaction(async () => {
+      const lease = this.lease();
+      if (!lease || lease.id !== id || lease.phase !== "running")
+        throw nodeExecutionError("execution_cancelled");
+      lease.readyAt = this.now();
+      this.save(lease);
+    });
   }
   prune(now) {
     const sql = this.ctx.storage.sql;
@@ -164,6 +191,9 @@ export class ServiceNodeExecution extends DurableObject {
     } catch {
       throw nodeExecutionError("invalid_input");
     }
+    const admittedBytes = new TextEncoder().encode(
+      nodeExecutionBody(bundle, request.invocation),
+    ).length;
     const now = this.now(),
       day = Math.floor(now / DAY);
     // Private callers select the owned snapshot. Guest JSON never supplies admission or lifecycle authority.
@@ -191,20 +221,8 @@ export class ServiceNodeExecution extends DurableObject {
       )
         throw nodeExecutionError("execution_closed");
       const counts = this.limits();
-      const total = sql
-        .exec(
-          "SELECT COALESCE(SUM(starts),0) AS count FROM node_usage WHERE day=?",
-          day,
-        )
-        .one().count;
-      const owner = sql
-        .exec(
-          "SELECT COALESCE(SUM(starts),0) AS count FROM node_usage WHERE day=? AND owner_id=?",
-          day,
-          request.ownerId,
-        )
-        .one().count;
-      if (total >= counts.platform || owner >= counts.owner)
+      const used = this.metering.counts(day, request.ownerId);
+      if (used.platform >= counts.platform || used.owner >= counts.owner)
         throw nodeExecutionError("execution_allowance");
       const value = {
         id: request.id,
@@ -213,6 +231,9 @@ export class ServiceNodeExecution extends DurableObject {
         mode: request.mode,
         day,
         startedAt: now,
+        readyAt: null,
+        finishedAt: null,
+        resultBytes: 0,
         deadlineAt: request.expiresAt,
         phase: "running",
         cleanupAttempts: 0,
@@ -220,13 +241,7 @@ export class ServiceNodeExecution extends DurableObject {
       };
       this.save(value);
       this.remember(value.id);
-      sql.exec(
-        "INSERT INTO node_usage(day,owner_id,service_id,mode,starts,milliseconds) VALUES(?,?,?,?,1,0) ON CONFLICT(day,owner_id,service_id,mode) DO UPDATE SET starts=starts+1",
-        day,
-        request.ownerId,
-        request.serviceId,
-        request.mode,
-      );
+      this.metering.reserve(value, admittedBytes);
       await this.ctx.storage.setAlarm(value.deadlineAt);
       return value;
     });
@@ -241,6 +256,7 @@ export class ServiceNodeExecution extends DurableObject {
           signal.throwIfAborted();
           this.native.start(lease.id);
           await this.native.ready(() => this.assertCurrent(lease), signal);
+          await this.markReady(lease.id);
           this.assertCurrent(lease);
           signal.throwIfAborted();
           reply = await this.native.execute(
@@ -259,7 +275,7 @@ export class ServiceNodeExecution extends DurableObject {
       failure = error;
     } finally {
       try {
-        await this.beginCleanup(lease.id);
+        await this.beginCleanup(lease.id, reply);
         // Do not release capacity or a result until whole-guest destruction is confirmed.
         await this.cleanup(lease.id, true);
       } finally {
@@ -273,11 +289,16 @@ export class ServiceNodeExecution extends DurableObject {
     if (failure) throw failure;
     return reply;
   }
-  async beginCleanup(id) {
+  async beginCleanup(id, reply) {
     return this.ctx.storage.transaction(async () => {
       const lease = this.lease();
       if (!lease || lease.id !== id) return;
       if (lease.phase === "cleanup") return;
+      lease.finishedAt = this.now();
+      lease.resultBytes =
+        reply === undefined
+          ? 0
+          : new TextEncoder().encode(JSON.stringify(reply)).length;
       lease.phase = "cleanup";
       lease.nextAt = this.now();
       this.save(lease);
@@ -329,14 +350,7 @@ export class ServiceNodeExecution extends DurableObject {
     await this.ctx.storage.transaction(async () => {
       const actual = this.lease();
       if (!actual || actual.id !== id || actual.phase !== "cleanup") return;
-      this.ctx.storage.sql.exec(
-        "UPDATE node_usage SET milliseconds=milliseconds+? WHERE day=? AND owner_id=? AND service_id=? AND mode=?",
-        Math.max(0, this.now() - actual.startedAt),
-        actual.day,
-        actual.ownerId,
-        actual.serviceId,
-        actual.mode,
-      );
+      this.metering.settle(actual, this.now());
       this.remember(id);
       this.ctx.storage.sql.exec("DELETE FROM node_lease WHERE id=1");
       this.prune(this.now());
