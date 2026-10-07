@@ -50,3 +50,7 @@ export {
 } from "./transport.js";
 
 export { recoverServiceSubmissionFields } from "./recovery.js";
+export {
+  SERVICE_ATTACHMENT_BYTES,
+  parsePublishedServiceOperations,
+} from "./published.js";

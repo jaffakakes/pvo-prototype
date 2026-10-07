@@ -5,7 +5,7 @@ import {
   resolveServiceSubmissionInput,
 } from "../../../../packages/pvo-assistant/attachments/index.js";
 import {
-  ownedTaskReference,
+  ownedProjectReference,
   type TaskProjectLinks,
 } from "../assistant/taskProjectLink";
 import type { ComponentResponse, PvoComponent } from "../project/model";
@@ -56,7 +56,7 @@ function prepareComponentTestSelection(
       "This component's service request changed. Reconnect it before testing.",
     );
   }
-  const reference = ownedTaskReference(
+  const reference = ownedProjectReference(
     scope.assistantTaskLinks,
     scope.localId,
     scope.ownerId,

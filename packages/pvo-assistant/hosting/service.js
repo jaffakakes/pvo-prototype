@@ -63,7 +63,11 @@ export function selectTestRelease(service, releaseId, now) {
   });
 }
 /** Authority is supplied by trusted routes, never parsed from the action's JSON. */
-export function serviceCallScope(service, authority) {
+export function serviceCallScope(
+  service,
+  authority,
+  requestedReleaseRetained = false,
+) {
   if (!service || service.state === "deleted")
     throw serviceCallError("unavailable", "This service is unavailable.");
   if (authority.kind === "public") {
@@ -81,8 +85,8 @@ export function serviceCallScope(service, authority) {
   if (authority.kind === "component_test") {
     if (
       authority.ownerId !== service.identity.ownerId ||
-      !service.testReleaseId ||
-      authority.releaseId !== service.testReleaseId
+      (authority.releaseId !== service.testReleaseId &&
+        !requestedReleaseRetained)
     )
       throw serviceCallError(
         "unavailable",
@@ -90,7 +94,7 @@ export function serviceCallScope(service, authority) {
       );
     return {
       namespace: "test",
-      releaseId: service.testReleaseId,
+      releaseId: authority.releaseId,
       audience: "public",
     };
   }

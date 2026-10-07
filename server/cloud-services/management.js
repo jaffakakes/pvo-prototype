@@ -103,6 +103,19 @@ export async function manageHostedServices(coordinator, ownerId, operation) {
       if (!result.ok) return { control: result };
       return result.value;
     }
+    if (operation.kind === "operations" || operation.kind === "attachment") {
+      const result = await hostResult(() =>
+        operation.kind === "operations"
+          ? stub(coordinator, operation.id).operations(operation.id, ownerId)
+          : stub(coordinator, operation.id).attachment(
+              operation.id,
+              ownerId,
+              operation.input,
+            ),
+      );
+      if (!result.ok) return { control: result };
+      return result.value;
+    }
     if (operation.kind === "readDraft" || operation.kind === "saveDraft") {
       const result = await hostResult(() =>
         operation.kind === "readDraft"

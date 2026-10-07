@@ -7,6 +7,7 @@ export async function checkComponentTry({
   origin,
   getPage,
   reopen,
+  expectedLiveReleaseId = null,
 }) {
   const wires = [];
   let loseReply = true;
@@ -134,12 +135,12 @@ export async function checkComponentTry({
     );
     assert.equal(
       summary.body.summary.service.liveReleaseId,
-      null,
-      "Try must not activate live hosting",
+      expectedLiveReleaseId,
+      "Try must not change live hosting",
     );
     await stop();
     console.log(
-      "Component Try passed real compiler/iframe input, saved intent, lost successful HTTP reply, page + server restart, exact replay and distinct next action with inactive hosting.",
+      "Component Try passed real compiler/iframe input, saved intent, lost successful HTTP reply, page + server restart, exact replay and distinct next action without changing live hosting.",
     );
   } finally {
     await context.unroute(pattern, routeHandler);

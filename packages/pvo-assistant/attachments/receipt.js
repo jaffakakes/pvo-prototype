@@ -6,7 +6,7 @@ import {
 import { parseServiceOperation } from "../services/index.js";
 import { choice, object, requireTask, time } from "../tasks/validation.js";
 
-/** Parsing validates data, not its provenance. Only the trusted saved-task transport supplies receipts. */
+/** Parsing validates data, not its provenance. Only authenticated saved-task or owned-Container transports supply receipts. */
 export function parseServiceAttachmentReceipt(value) {
   object(
     value,

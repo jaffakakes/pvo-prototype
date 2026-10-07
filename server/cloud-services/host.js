@@ -1,5 +1,9 @@
 import { DraftWriters } from "./draftWriters.js";
 import { inspectServiceRecords } from "./records.js";
+import {
+  publishedServiceOperations,
+  resolvePublishedAttachment,
+} from "./attachments.js";
 import { ServiceDraftStore } from "./draftStore.js";
 import {
   readHostedDraft,
@@ -168,6 +172,20 @@ export class HostedService extends DurableObject {
     return hostedReply(() =>
       this.ctx.storage.transactionSync(() =>
         inspectServiceRecords(this, serviceId, ownerId),
+      ),
+    );
+  }
+  operations(serviceId, ownerId) {
+    return hostedReply(() =>
+      this.ctx.storage.transactionSync(() =>
+        publishedServiceOperations(this, serviceId, ownerId),
+      ),
+    );
+  }
+  attachment(serviceId, ownerId, input) {
+    return hostedReply(() =>
+      this.ctx.storage.transactionSync(() =>
+        resolvePublishedAttachment(this, serviceId, ownerId, input),
       ),
     );
   }
