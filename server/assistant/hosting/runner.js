@@ -32,7 +32,10 @@ export async function runHostingStep(coordinator, claimed) {
       throw Object.assign(new Error("Inactive service is unavailable."), {
         code: "execution_failed",
       });
-    await commit({ kind: "checkpoint", stepId: "attach" });
+    await commit({
+      kind: "checkpoint",
+      stepId: claimed.input.context.container ? "draft_finish" : "attach",
+    });
   } catch (error) {
     const code = [
       "invalid_result",

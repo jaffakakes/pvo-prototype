@@ -168,7 +168,35 @@ export function useContainerDraft(serviceId: string, ownerId: string) {
       );
     }
   };
+  const refresh = async () => {
+    const controller = scope.current,
+      before = current.current;
+    if (!controller || !valid(controller) || lock.current || before?.pending)
+      return;
+    lock.current = true;
+    setBusy(true);
+    setError(null);
+    try {
+      const latest = await readDraft(serviceId, ownerId, controller.signal);
+      if (!valid(controller)) return;
+      setRemote(latest);
+      if (!dirty && current.current === before) {
+        const next = fromRemote(latest);
+        current.current = next;
+        setBuffer(next);
+      }
+    } catch {
+      if (valid(controller))
+        setError("Couldn’t refresh the draft. Your local edits are kept.");
+    } finally {
+      if (valid(controller)) {
+        lock.current = false;
+        setBusy(false);
+      }
+    }
+  };
   return {
+    refresh,
     buffer,
     remote,
     busy,

@@ -78,6 +78,8 @@ function taskMessage(
   }
   if (task.state === "ready") return "Your result is saved.";
   if (task.state === "stopped") {
+    if ("container" in task.input.context)
+      return "AI editing has stopped. Refresh saved code to check any save that was already in progress. Published code is unchanged.";
     if (uncertain)
       return "Further work was stopped. An earlier action still needs its outcome checked.";
     return "Further work was stopped. Your saved progress is still available.";

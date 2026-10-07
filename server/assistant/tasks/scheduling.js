@@ -87,7 +87,11 @@ export function claimNextTask(coordinator) {
       claimed.stepId === "build"
         ? coordinator.builders.stage(claimed.id)
         : null;
+    const draftEffect =
+      claimed.input.context.container &&
+      ["draft_apply", "draft_sync", "draft_finish"].includes(claimed.stepId);
     const tools =
+      draftEffect ||
       ["validate", "host"].includes(claimed.stepId) ||
       (claimed.stepId === "build" && stage !== "model");
     let code = null;
@@ -100,6 +104,7 @@ export function claimNextTask(coordinator) {
     )
       code = "reconciliation_required";
     else if (
+      !draftEffect &&
       !coordinator.spendingAllowed(
         claimed,
         taskSpendingCapability(claimed, stage),
@@ -117,9 +122,16 @@ export function claimNextTask(coordinator) {
       );
       continue;
     } else if (
-      !["plan", "build", "validate", "host", "attach"].includes(
-        claimed.stepId,
-      ) ||
+      ![
+        "plan",
+        "build",
+        "validate",
+        "host",
+        "attach",
+        "draft_apply",
+        "draft_sync",
+        "draft_finish",
+      ].includes(claimed.stepId) ||
       (["host", "attach"].includes(claimed.stepId) &&
         !coordinator.serviceProvider()) ||
       (claimed.stepId === "validate" && !coordinator.validationAvailable()) ||

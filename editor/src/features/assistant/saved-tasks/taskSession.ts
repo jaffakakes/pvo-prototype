@@ -132,7 +132,10 @@ export function createSavedTaskSession(
           throw new SavedTaskHttpError(409);
       } else if (action.kind === "stop" && latest.state === "stopped")
         return latest;
-      else if (action.kind === "resume" && latest.state !== "failed")
+      else if (
+        action.kind === "resume" &&
+        !["failed", "waiting"].includes(latest.state)
+      )
         return latest;
       return adapters.change(latest, action, signal);
     });

@@ -4,7 +4,16 @@
 
 Last checkpoint: **7 October 2026**. Recheck Git and provider state before relying on the dated operational details below.
 
-## Current checkpoint — saved Container drafts verified; continue 1G.03
+## Current checkpoint — 1G.03 implementation verified; beta delivery pending
+
+**1G.03 remains unchecked until beta delivery; 57/134 complete.** Active `feature/restyle-containers`, `/Users/christinasmacbook/.codex/worktrees/restyle-containers/pvo-prototype`, draft PR #106. This batch extends the existing task coordinator with Container context, bounded draft reads/range edits, same-command revision checks, saved questions, exact pending saves, private execution-grant/Stop fencing and an owned draft result. Required execution restores the draft through the existing builder/workspace/independent validation/hosting pipeline; checked changes return to the same service identity and remain inactive. The editor reuses the saved-task session for AI questions, progress, retries and Stop. Manual buffers survive refresh and expired tasks can be cleared without deleting source.
+
+- **Verified:** full `npm run check`, **1,500/1,500** tests; strict editor types; native provider response protocol and Unicode large-file edits; actual local Worker/SQLite lost-save/restart/exact retry, manual conflict/question/resume, late inference and dispatched-save Stop fences, and one cleaned execution workshop with the same inactive service. Real browser tests cover lost task creation, page/server restart, question/answer, AI continuation, local-buffer preservation, expired-task recovery, desktop/mobile and account isolation. Logs `/tmp/restyle-draft-{full-check,final-types,ai-browser-final,final-focused,final-format-check}.log`. New UI detector has no findings. The first browser attempt encountered the known stale Vite module graph after extraction; restarting only owned 5319 fixed it, and both clean browser runs passed.
+- **Evidence limits:** controlled model/workspace effects with real local Worker, SQLite, compiler and independent execution; no claim of live Node.js hosting or cloud product availability. Dynamic Worker runtime replacement remains 1G.04. The final bounded Stop-reconciliation deadline and expired-link UI refinement received focused/browser/type checks after the full suite.
+- **Pending delivery:** last verified beta is `restyle-editor-shell-8fcb72093309aa4a`. Commit this source/evidence, back up combined output, merge the commit into `/private/tmp/restyle-controls-beta-c02da18`, build/type-check, then guarded assets-first delivery to Desktop port 4173 and verify fresh editor/player/service-worker bytes. Only then check 1G.03 and update the count to 58/134.
+- **Resources and scope:** only owned local Vite 5319 and disposable local test runtimes. No paid calls/new cloud deployment, production, remote merge, Actions polling or branch deletion. Next after delivery: **1G.04**, real bounded Node runtime; prepare the runnable proof/resource/cleanup plan before new paid-test authorization.
+
+## Previous checkpoint — saved Container drafts verified; continue 1G.03
 
 **57/134 numbered tasks complete; 77 remain. 1G.01–1G.02 verified.** Continue all remaining Roadmap 1 tasks through beta, as the user requested. Production remains prohibited until the finished work is tested and approved by the user.
 

@@ -26,6 +26,7 @@ export async function taskFixture({
   researchFetch = null,
   validationControl = null,
   hostControl = null,
+  draftControl = null,
   spending = true,
 } = {}) {
   modules ??= bundleWorkerModules({
@@ -45,6 +46,17 @@ export async function taskFixture({
       constructor(ctx, env) { super(ctx, env); ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS calls (id TEXT PRIMARY KEY, count INTEGER NOT NULL)"); }
       now() { return this.clock ?? this.env.CONTROLLED_CLOCK ?? (this.env.CONTROLLED_PLAN ? Date.now() : Date.UTC(2100, 0, 1)); }
       setTime(now) { this.clock=now; }
+      async saveTaskDraft(serviceId, ownerId, input, grant) {
+        const control = async phase => {
+          if (!this.env.DRAFT_CONTROL) return;
+          const response = await this.env.DRAFT_CONTROL.fetch("https://draft-control.test", {method:"POST",body:JSON.stringify({phase,input,grant})});
+          if ((await response.json()).fail) throw new Error("Controlled draft RPC failure");
+        };
+        await control("before");
+        const result = await super.saveTaskDraft(serviceId,ownerId,input,grant);
+        await control("after");
+        return result;
+      }
       async publish(value) { this.ctx.storage.sql.exec("INSERT INTO calls (id,count) VALUES (?,1) ON CONFLICT(id) DO UPDATE SET count=count+1",value.identity.resourceId); return super.publish(value); }
       async executePackage(source,invocation,signal) {
         if(this.env.HOST_CONTROL) await this.env.HOST_CONTROL.fetch('https://control.test',{method:'POST',body:JSON.stringify({phase:'before',invocation})});
@@ -85,7 +97,7 @@ export async function taskFixture({
       leaseMs() { return this.env.CONTROLLED_PLAN ? 1500 : super.leaseMs(); }
       async plan(task, signal, input) {
         if (!this.env.CONTROLLED_PLAN) return super.plan(task, signal, input);
-        return (await this.env.PLANNER.fetch("https://planner.test/", { method: "POST", body: JSON.stringify({ ...task, builderContext: input?.build ?? null, attachmentContext: input?.attachment ?? null, evidenceContext: input?.evidence ?? null }), signal })).json();
+        return (await this.env.PLANNER.fetch("https://planner.test/", { method: "POST", body: JSON.stringify({ ...task, draftContext: input?.draft ?? null, builderContext: input?.build ?? null, attachmentContext: input?.attachment ?? null, evidenceContext: input?.evidence ?? null }), signal })).json();
       }
       providerTimeoutMs() { return 500; }
       serviceProvider() {
@@ -333,7 +345,8 @@ export async function taskFixture({
       workspaces ||
       researchFetch ||
       validationControl ||
-      hostControl
+      hostControl ||
+      draftControl
         ? {
             serviceBindings: {
               ...(planner ? { PLANNER: planner } : {}),
@@ -347,6 +360,7 @@ export async function taskFixture({
                 : {}),
               ...(providerControl ? { PROVIDER_CONTROL: providerControl } : {}),
               ...(hostControl ? { HOST_CONTROL: hostControl } : {}),
+              ...(draftControl ? { DRAFT_CONTROL: draftControl } : {}),
             },
           }
         : {}),

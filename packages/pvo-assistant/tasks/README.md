@@ -8,6 +8,14 @@ Import through `packages/pvo-assistant/tasks/index.js`; [index.d.ts](index.d.ts)
 
 The current contract includes `currentSceneId`, at most 32 scene summaries (`id`, `name`, duration up to one day), and the existing eight component source summaries. Scene IDs are unique, every component belongs to a declared scene, and the current scene exists. Media bytes/URLs and private request bodies stay out of this projection. A component explicitly labels `sourceVisibility` as `full` or `design`; a redacted design is not an editable original request source. This supplies placement and route context for saved component preparation while retaining the 128 KiB input bound.
 
+## Container editing context (1G.03)
+
+The same saved-task runner also accepts `{fingerprint, container: {serviceId, revision}}` instead of scene/component context. Trusted creation reads that exact owned service draft and checks its project and revision. Exact creation replay recovers the original task even after the draft changes. The source snapshot stays in private task storage, outside the small public task record.
+
+Container planning reads bounded file chunks and proposes full named-file writes or Unicode code-point range replacements. Both use the service's revision-checked draft command. The task saves its exact pending command before dispatch; an uncertain reply retries that identity rather than creating another edit. Newer manual writes produce a saved question and preserve the newer source. Short-lived private execution grants and Stop fences reject delayed writes; unresolved fences retry with bounded deadlines/backoff until confirmed or every possible old grant has expired.
+
+Draft edits/questions start no workshop. A recorded execution reason restores the saved source through the existing builder/workspace tools. Independent validation gates the same immutable artifact; accepted source returns to the same draft and hosting prepares an inactive release on that same service. The `container_draft` result identifies saved code, never component mutations, live activation or publication authority. Browser closure leaves the task running; Stop retains saved source and the live version. This stage still uses the existing generated-service runtime; the Node replacement is 1G.04.
+
 ## Public functions
 
 | Function | Responsibility |

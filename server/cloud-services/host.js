@@ -1,3 +1,4 @@
+import { DraftWriters } from "./draftWriters.js";
 import { ServiceDraftStore } from "./draftStore.js";
 import {
   readHostedDraft,
@@ -30,6 +31,7 @@ export class HostedService extends DurableObject {
     super(ctx, env);
     this.store = new ServiceReleaseStore(ctx.storage.sql);
     this.drafts = new ServiceDraftStore(ctx.storage.sql);
+    this.draftWriters = new DraftWriters(ctx.storage.sql);
     this.actions = new ServiceActionStore(ctx.storage.sql);
     this.calls = new ServiceCallQueue();
     this.controls = new ServiceControlStore(ctx.storage.sql);
@@ -123,6 +125,26 @@ export class HostedService extends DurableObject {
   }
   saveDraft(serviceId, ownerId, input) {
     return hostedReply(() => saveHostedDraft(this, serviceId, ownerId, input));
+  }
+  saveTaskDraft(serviceId, ownerId, input, grant) {
+    return hostedReply(() =>
+      saveHostedDraft(this, serviceId, ownerId, input, grant),
+    );
+  }
+  stopDraftTask(serviceId, ownerId, taskId) {
+    return hostedReply(() =>
+      this.ctx.storage.transactionSync(() => {
+        const service = this.store.service();
+        if (
+          !service ||
+          service.identity.serviceId !== serviceId ||
+          service.identity.ownerId !== ownerId
+        )
+          throw new Error("Unknown draft owner.");
+        this.draftWriters.stop(taskId, this.now());
+        return { stopped: true };
+      }),
+    );
   }
   invoke(serviceId, authority, input) {
     return hostedReply(() =>

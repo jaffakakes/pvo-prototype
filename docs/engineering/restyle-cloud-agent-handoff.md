@@ -2,6 +2,10 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
+## Current work in progress: 1G.03
+
+Read the newest [progress checkpoint](restyle-cloud-agent-progress.md) before editing. AI continuation is implemented in pending files and under verification; **1G.03 is not checked yet**. Reuse those changes in the active Containers checkout, not the Desktop source. Six Worker/SQLite tests and strict types pass; browser/full checks/beta are still pending. No new paid proof or production action is authorized or started.
+
 ## Latest scope: finish Roadmap 1 through beta; 1G.03 next
 
 The user requested all remaining Roadmap 1 work, including Containers, with no production release. **1G.01–1G.02 are verified; 57/134 complete, 77 remain.** Read [current progress](restyle-cloud-agent-progress.md) and [the Container contract](restyle-containers-contract.md). Continue in `feature/restyle-containers`, `/Users/christinasmacbook/.codex/worktrees/restyle-containers/pvo-prototype`, source `e235095`, [draft PR #106](https://github.com/jaffakakes/pvo-prototype/pull/106). This branch explicitly includes the unmerged verified first-release prerequisite. Draft storage and manual editing pass 1,492 tests, strict types and real local Worker/browser recovery/conflict/account tests. Beta `restyle-editor-shell-8fcb72093309aa4a` is delivered and verified with prior assets retained.

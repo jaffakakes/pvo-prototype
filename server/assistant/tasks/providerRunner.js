@@ -43,6 +43,7 @@ export async function publishTaskService(coordinator, claimed) {
   // Expiring a release keeps its Container identity and saved draft. Explicit
   // service deletion must never be bypassed by allocating a replacement ID.
   const serviceId =
+    claimed.input.context.container?.serviceId ??
     retained?.identity.serviceId ??
     prior?.identity.serviceId ??
     (await ownedServiceId(claimed));
