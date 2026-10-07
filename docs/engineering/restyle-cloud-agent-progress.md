@@ -4,7 +4,16 @@
 
 Last checkpoint: **7 October 2026**. Recheck Git and provider state before relying on the dated operational details below.
 
-## Active checkpoint — library selection and private compute/cost views verified locally
+## Active checkpoint — 4C.02 complete through beta; five Roadmap 1 gates remain
+
+**70/134 checked.** Source **`bdda340` is committed and pushed** in draft #106. Eighteen guarded Desktop snapshots were refreshed through it (backup `restyle-records-handoff-na3ud4r_`). This documentation checkpoint records verified beta delivery and marks 4C.02; it does not complete configured product Fly acceptance.
+
+- **Checks and beta:** full 1,605 tests and 915 syntax / 951 dependency / 640 formatting checks pass. Strict types, final actual draft/management browser journeys and desktop/phone visual inspection pass; Impeccable detector has no findings. Combined **`6d76aa6`**, `/private/tmp/restyle-node-beta-bdda340`, passes `npm run build`, editor types and **23** focused tests. Logs `/tmp/restyle-node-ui-beta-{build,types,tests,served}.log`. Vite emitted its existing large-bundle advisory; build succeeded.
+- **Delivered:** **`restyle-editor-shell-2625ed5f550e6744`** is served from Desktop `dist/` on 4173. The actual bundle, shared package files and a fresh client's activated service worker are verified. Backup `~/.codex/backups/restyle-node-ui-beta-2gea13_a` preserves previous and built output; **131** old hashed assets retained. Assets preceded HTML/service worker, and no existing editing session was reloaded. The earlier combined build checkout and its pending generated output remain untouched.
+- **Scope:** 4C.02 supplies remaining compute/operation/reply allowances, measured service storage, useful dated estimates with complete exclusions, pending cleanup, recent results and safe failures. It is not a full provider bill. The delivered app uses the Node contract; the local static beta server has no service/task API and no remote product configuration/deployment occurred. No new cloud resource, credential or cost this batch. Five tasks remain: **1G.04/05/06, 4C.06 and 1G.08**.
+- **Exact next:** prepare the bounded real product Fly acceptance around the existing checked Node artifact, task publication journal, service host and durable execution slots. Reuse the pinned image; record resources/deadline/estimated cost and cleanup recovery before effects, then obtain secure same-scope Fly setup. Verify independently checked publication, data/replay across instance and host restart, update/rollback, ownership, pause/delete and retention. Finish editor/player acceptance and any resulting beta changes. Keep previous 1E/1F evidence, Lumo and unrelated services intact. No production or Actions.
+
+## Previous checkpoint — library selection and private compute/cost views verified locally
 
 **69/134 checked; the same six Roadmap 1 gates remain unchecked.** Canonical Node source **`d806731` is now pushed** in draft #106; the earlier transient GitHub push errors are resolved. Eighteen guarded Desktop snapshots are current through that commit (backup `restyle-records-handoff-jjnwfui3`). This commit checkpoints the verified UI/accounting batch. No cloud resource or credential was created. Production, integration merges and Actions remain untouched.
 
