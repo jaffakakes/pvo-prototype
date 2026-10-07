@@ -501,6 +501,7 @@
   "tests/native-assistant-server.test.mjs",
   "tests/node-runtime/admission.test.mjs",
   "tests/node-runtime/client.test.mjs",
+  "tests/node-runtime/command.test.mjs",
   "tests/node-runtime/coordinator.test.mjs",
   "tests/node-runtime/images.test.mjs",
   "tests/player-animation-interaction.test.mjs",

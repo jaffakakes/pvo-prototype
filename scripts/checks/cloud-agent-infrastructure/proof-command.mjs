@@ -11,8 +11,19 @@ export async function proofCommand(
   args,
   { root, directory, token, secrets = [] },
 ) {
+  const diagnosticFile = resolve(
+    directory,
+    `${resource.kind}-${args[0]}-${args.includes("--dry-run") ? "dry-run" : "command"}.log`,
+  );
+  async function record(result) {
+    let diagnostic = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
+    for (const secret of [token, ...secrets])
+      if (typeof secret === "string" && secret)
+        diagnostic = diagnostic.replaceAll(secret, "[redacted]");
+    await writeFile(diagnosticFile, diagnostic, { mode: 0o600 });
+  }
   try {
-    return await exec(
+    const result = await exec(
       process.execPath,
       [
         resolve(root, "node_modules/wrangler/bin/wrangler.js"),
@@ -32,13 +43,12 @@ export async function proofCommand(
         },
       },
     );
+    await record(result);
+    return result;
   } catch (error) {
-    let diagnostic = `${error.stdout ?? ""}\n${error.stderr ?? ""}`;
-    for (const secret of [token, ...secrets])
-      if (typeof secret === "string" && secret)
-        diagnostic = diagnostic.replaceAll(secret, "[redacted]");
-    const file = resolve(directory, `${resource.kind}-command-error.log`);
-    await writeFile(file, diagnostic, { mode: 0o600 });
-    throw new Error(`Proof command failed; see private diagnostic ${file}`);
+    await record(error);
+    throw new Error(
+      `Proof command failed; see private diagnostic ${diagnosticFile}`,
+    );
   }
 }

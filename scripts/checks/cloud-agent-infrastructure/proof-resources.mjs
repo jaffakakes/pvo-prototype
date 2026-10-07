@@ -17,7 +17,7 @@ const root = fileURLToPath(new URL("../../../", import.meta.url));
 // Owns only the randomly named deployments recorded in this run's journal.
 export async function prepareResources(
   accountId,
-  { resumeReport = null } = {},
+  { resumeReport = null, runCommand = proofCommand } = {},
 ) {
   const token = await readCloudflareToken();
   const read = createAccountReader({ accountId, token });
@@ -249,7 +249,7 @@ export async function prepareResources(
   }
 
   function run(resource, args) {
-    return proofCommand(resource, args, {
+    return runCommand(resource, args, {
       root,
       directory,
       token,
@@ -282,6 +282,18 @@ export async function prepareResources(
     console.log(`Deploying ${resource.name}`);
     await command(resource, false);
     await discover(resource);
+    const worker = await read(`workers/scripts/${resource.name}/settings`);
+    assert.ok(
+      worker.ok,
+      "Deployment command finished without an installed Worker",
+    );
+    assert.ok(resource.namespaceIds.length, "Deployment namespace is missing");
+    if (resource.kind === "workspace")
+      assert.ok(
+        resource.applicationIds.length,
+        "Deployment application is missing",
+      );
+    resource.deploymentVerified = true;
     await save();
   }
 

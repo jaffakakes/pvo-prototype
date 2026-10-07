@@ -4,7 +4,7 @@
 
 ## Status — 7 October 2026
 
-**US$1 approved by the user at 08:09 UTC, 7 October 2026**, for the single diagnostic deployment below. **1G.04 is unchecked.** The approved run is starting; it has not passed. The existing product still runs generated services through Dynamic Workers. Preserve its completed 1E/1F evidence. This proof cannot by itself complete the replacement, manual publication, component connection or final beta acceptance.
+**US$1 approved by the user at 08:09 UTC, 7 October 2026**, for the single diagnostic deployment below. **1G.04 is unchecked.** The first upload stopped before resource creation; no runtime case passed. A corrected runner will retry within the same allowance. The existing product still runs generated services through Dynamic Workers. Preserve its completed 1E/1F evidence. This proof cannot by itself complete the replacement, manual publication, component connection or final beta acceptance.
 
 In everyday terms: first verify that a disposable hosted computer can run the exact saved JavaScript, return an answer, and disappear without leaving private files or background programs behind. Then connect that proven execution effect to the existing service and independent tests.
 
@@ -54,7 +54,7 @@ The journal saves ownership, expiry, names and an attempted-upload flag before r
 
 | Run | Authorization | Remote creation | Outcome / cleanup |
 | --- | --- | --- | --- |
-| Initial Node runtime proof | US$1 approved, 7 October 08:09 UTC | Starting; journal will be recorded below | Not yet verified |
+| Initial upload attempt `6a0868727a1b5ab1fb09b420` | US$1 approved, 7 October 08:09 UTC | No Worker/application/namespace/image observed | CLI ended early; zero runtime cases. Exact account and corrected registry inventories empty; journal `.wrangler/cloud-agent-infrastructure/workspace-wulZFc/report.json`. |
 
 After the paid run, record its exact journal, runtime image digest, start/elapsed usage, checks and cleanup result here before marking any roadmap task. Full task completion also requires the canonical Node package/runtime replacement and its remaining integration gates.
 

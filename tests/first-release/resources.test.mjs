@@ -33,7 +33,9 @@ test("interrupted diagnostic reopens its exact journal for deletion only and rem
   };
   let resources;
   try {
-    resources = await prepareResources(accountId);
+    resources = await prepareResources(accountId, {
+      runCommand: async () => ({ stdout: "CLI ended without deploying" }),
+    });
     const resource = await resources.prepare("workspace", {
       entrypoint: "scripts/checks/cloud-agent-first-release/worker.js",
       containerClassName: "AcceptanceWorkspace",
@@ -54,6 +56,12 @@ test("interrupted diagnostic reopens its exact journal for deletion only and rem
         "local-model-secret",
       ),
     );
+    await assert.rejects(
+      resources.deploy(resource),
+      /without an installed Worker/,
+    );
+    assert.equal(resource.attempted, true);
+    assert.notEqual(resource.deploymentVerified, true);
     resource.attempted = true; // Lost deployment response; recovery must look up its recorded identity.
     await resources.save();
     const recovered = await prepareResources(accountId, {
