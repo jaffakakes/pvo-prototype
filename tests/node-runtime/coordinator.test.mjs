@@ -235,7 +235,37 @@ test("overlapping cancellation cannot start a second destroy or free a still-cle
     assert.equal((await executing).ok, false);
     assert.equal(destroys, 1);
     assert.equal((await f.call({ kind: "inspect" })).lease, null);
-    assert.equal((await f.call(request("replacement"))).ok, true);
+    const replacement = await f.call(request("replacement"));
+    assert.equal(replacement.ok, true, JSON.stringify(replacement));
+  } finally {
+    release.resolve();
+    await f.close();
+  }
+});
+
+test("a maintenance alarm during confirmed execution cleanup preserves the successful result and owns only one destroy", async () => {
+  const entered = deferred(),
+    release = deferred();
+  let destroys = 0;
+  const f = await fixture(async (request) => {
+    if ((await request.json()).kind === "destroy") {
+      destroys++;
+      entered.resolve();
+      await release.promise;
+    }
+    return Response.json({ result: "ok", state: {} });
+  });
+  try {
+    const executing = f.call(request("completed"));
+    await entered.promise;
+    const sweeping = await f.call({ kind: "cleanup" });
+    assert.equal(sweeping.lease.phase, "cleanup");
+    assert.equal((await f.call(request("waiting"))).code, "execution_capacity");
+    release.resolve();
+    const result = await executing;
+    assert.equal(result.ok, true, JSON.stringify(result));
+    assert.equal(destroys, 1);
+    assert.equal((await f.call({ kind: "inspect" })).lease, null);
   } finally {
     release.resolve();
     await f.close();

@@ -3,7 +3,7 @@ import {
   parseServiceRecords,
   serviceCallError,
 } from "../../packages/pvo-assistant/hosting/index.js";
-import { ownedHost } from "./control.js";
+import { ownedHost } from "./ownership.js";
 
 /** One transaction reads the authoritative host; this never invokes generated code. */
 export function inspectServiceRecords(host, serviceId, ownerId) {

@@ -197,6 +197,16 @@ try {
     });
     await route.fulfill({ response });
   });
+  await context.route(/\/api\/services(?:\/.*)?$/, async (route) => {
+    const request = route.request(),
+      url = new URL(request.url());
+    const response = await fixture.request(url.pathname + url.search, {
+      method: request.method(),
+      ...(request.postData() ? { body: request.postDataJSON() } : {}),
+      headers: { Origin: origin },
+    });
+    await route.fulfill({ status: response.status, json: response.body });
+  });
   await installAssistantAvailabilityFixture(context);
   await context.route("**/api/publishing", (route) =>
     route.fulfill({

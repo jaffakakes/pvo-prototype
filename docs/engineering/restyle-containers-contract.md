@@ -86,8 +86,19 @@ The existing host now serves a bounded owner-only records snapshot and daily ope
 `reset_test` extends the existing revision-fenced control command, with an exact release ID and the same persistent retry receipt as pause/delete/activate. It restores only that release’s starting test records, retains usage and successful action identities, and fences unfinished commits. It cannot clear live records, remove replay protection or reactivate a paused Container. The UI confirms resets, pause and deletion and explains which effects editor Undo cannot reverse. Remaining cost/connection views and Node provider acceptance still have their own unchecked gates.
 
 
-## Existing published operation connection — implemented locally
+## Existing published operation connection — verified through beta
 
 Creators select a component, its unused control and a published public operation from Containers. Typed form-field or fixed-value mapping goes through the existing checked attachment command, real PVO compiler, approved-host rules and one Undo transaction. The server rechecks same owner/original project and the exact current retained release. Project-only account associations support this without an AI task, model call or workshop. Copies drop the private association.
 
 Actual browser acceptance covers saved reload, Undo/Redo, owner-authorized Try with separate records and interrupted action replay, normal download/publication and cookie-free viewers on another origin. A newer test draft does not retarget an already attached retained version. No manual host URL or creator administration data enters the PVO. Recorded connection/export impact remains separate 4B.02/4C.01 work; Node execution acceptance remains unchecked.
+
+
+## Recorded uses and checked updates
+
+The existing per-service store now keeps a private dependency index beside releases. The editor reports locally saved project connections; a failed report shows a retry while preserving the previous list. Export readiness records the immutable dependency snapshot before file/link delivery. Ready owned PVO links are associated with that export. Containers shows named projects, component/operation identifiers, prepared exports and recorded publication links, with an explicit warning that forwarded/downloaded viewers cannot all be counted. This is dependency metadata, not a second service registry or source store.
+
+Every activation checks recorded retained agreements and today’s live records in the same transaction as release selection/control replay. An incompatible update leaves the current version and data untouched. The prior code remains available for a compatible rollback; original viewer action IDs keep their original replies. External writes/jobs are not enabled yet, so this milestone proves Restyle record/reply preservation; Roadmaps 2/3 must extend the same protection to external effects.
+
+**Separate data-change task when compatibility fails:** identify the current service/release and record schema, the desired schema, the exact transformation for every existing record (including missing/invalid values), which connected inputs/results change, how to preserve action identities, and an independently checked recovery plan using the records present at execution time. Preserve the current service until that plan is explicitly reviewed and implemented. This milestone does not execute a conversion, silently reset records, add migrations or bypass the checked contract. The failure message points to this separate task.
+
+Update verification maps to 4B.01–06: same saved manual/AI draft builds an inactive candidate; active code remains available during failed/generated/independent tests; exact activation replies recover through restart; operation/state incompatibility leaves live records intact; compatible earlier code can be selected without replaying accepted writes. The underlying Node runtime replacement remains a separate unchecked gate even when these runtime-independent update controls pass.

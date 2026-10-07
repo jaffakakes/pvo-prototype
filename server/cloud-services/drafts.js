@@ -9,7 +9,7 @@ import {
   id,
   text,
 } from "../../packages/pvo-assistant/tasks/validation.js";
-import { ownedHost } from "./control.js";
+import { ownedHost } from "./ownership.js";
 import { contentDigest } from "../contentDigest.js";
 
 export function readHostedDraft(host, serviceId, ownerId) {

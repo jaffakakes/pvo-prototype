@@ -59,3 +59,8 @@ The journal saves ownership, expiry, names and an attempted-upload flag before r
 After the paid run, record its exact journal, runtime image digest, start/elapsed usage, checks and cleanup result here before marking any roadmap task. Full task completion also requires the canonical Node package/runtime replacement and its remaining integration gates.
 
 Provider references: [Container lifecycle API](https://developers.cloudflare.com/containers/api/durable-object-container/), [image management](https://developers.cloudflare.com/containers/guides/image-management/), [image cleanup commands](https://developers.cloudflare.com/containers/reference/wrangler-commands/) and [pricing](https://developers.cloudflare.com/containers/platform/pricing/), checked 7 October 2026. Provider documentation describes capabilities; only the recorded executions establish proof.
+
+
+### Local cleanup race follow-up
+
+The dependency/update full suite exposed a maintenance alarm aborting an already-completed execution while its guest destruction was pending. The controller now aborts overdue running work only; a successful result waits for existing cleanup confirmation. Explicit cancellation continues to reject late results. A deterministic held-destruction/alarm regression and all fifteen Node runtime tests pass (`/tmp/restyle-runtime-race-fixed.log`). This is local controller evidence; the paid provider proof remains pending and no guest was created.

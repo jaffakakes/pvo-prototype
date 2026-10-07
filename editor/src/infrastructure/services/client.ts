@@ -38,7 +38,7 @@ async function request(
   if (!response.ok)
     throw new ServiceRequestError(
       response.status === 422
-        ? "This version is incompatible with the existing service. Its current version is unchanged."
+        ? "This version changes the connected fields or cannot use the saved records. Changes to records need a separate data-change task. The current version is unchanged."
         : response.status === 401
           ? "Sign in again to manage your services."
           : response.status === 409

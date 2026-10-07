@@ -116,6 +116,28 @@ export async function manageHostedServices(coordinator, ownerId, operation) {
       if (!result.ok) return { control: result };
       return result.value;
     }
+    if (
+      ["connections", "recordConnections", "recordPublication"].includes(
+        operation.kind,
+      )
+    ) {
+      const result = await hostResult(() =>
+        operation.kind === "recordPublication"
+          ? stub(coordinator, operation.id).recordPublication(
+              operation.id,
+              ownerId,
+              operation.exportId,
+              operation.publication,
+            )
+          : stub(coordinator, operation.id).connectionReport(
+              operation.id,
+              ownerId,
+              operation.kind === "recordConnections" ? operation.input : null,
+            ),
+      );
+      if (!result.ok) return { control: result };
+      return result.value;
+    }
     if (operation.kind === "readDraft" || operation.kind === "saveDraft") {
       const result = await hostResult(() =>
         operation.kind === "readDraft"

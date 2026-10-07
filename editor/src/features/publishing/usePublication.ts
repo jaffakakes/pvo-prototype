@@ -1,3 +1,4 @@
+import { recordPublishedConnections } from "../services/exportConnections";
 import { prepareExportDelivery } from "../export/prepareExportDelivery";
 import { useEffect, useRef, useState } from "react";
 import type {
@@ -168,6 +169,13 @@ export function usePublication(artifact: CompletedExport) {
         );
         checkAccount();
       }
+      checkAccount();
+      await recordPublishedConnections(
+        artifact,
+        reserved.id,
+        controller.signal,
+        checkAccount,
+      );
       checkAccount();
       setExportPublication(artifact.snapshotId, reserved, input.idempotencyKey);
     } catch (error) {

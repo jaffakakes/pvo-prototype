@@ -1,3 +1,4 @@
+import { ContainerUses } from "./ContainerUses";
 import { ContainerConnection } from "./ContainerConnection";
 import { ContainerEditor } from "./ContainerEditor";
 import { ContainerRecords } from "./ContainerRecords";
@@ -11,6 +12,7 @@ import styles from "./ServicesPanel.module.css";
 export function ServicesPanel() {
   const { services, pending, busy, error, ownerId, refresh, control, retry } =
     useServices();
+  const [uses, setUses] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [records, setRecords] = useState<string | null>(null);
@@ -147,6 +149,23 @@ export function ServicesPanel() {
               </button>
               {editing === id && (
                 <ContainerEditor
+                  key={`${ownerId}:${id}`}
+                  ownerId={ownerId}
+                  serviceId={id}
+                />
+              )}
+              <button
+                type="button"
+                aria-expanded={uses === id}
+                disabled={!service}
+                onClick={() => setUses(uses === id ? null : id)}
+              >
+                {uses === id
+                  ? "Close connections and exports"
+                  : "Connections and exports"}
+              </button>
+              {uses === id && service && (
+                <ContainerUses
                   key={`${ownerId}:${id}`}
                   ownerId={ownerId}
                   serviceId={id}

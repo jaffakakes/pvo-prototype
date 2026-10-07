@@ -7,7 +7,7 @@ import {
 } from "../../packages/pvo-assistant/attachments/index.js";
 import { serviceCallError } from "../../packages/pvo-assistant/hosting/index.js";
 import { object, id } from "../../packages/pvo-assistant/tasks/validation.js";
-import { ownedHost } from "./control.js";
+import { ownedHost } from "./ownership.js";
 
 function published(host, serviceId, ownerId) {
   const service = ownedHost(host, serviceId, ownerId);
