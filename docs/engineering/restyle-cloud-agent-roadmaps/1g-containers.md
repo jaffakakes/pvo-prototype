@@ -2,7 +2,7 @@
 
 [Roadmap overview](../restyle-cloud-agent-roadmap.md) · [Architecture](../restyle-cloud-agent-architecture.md#containers-the-next-product-feature) · [Current evidence](../restyle-cloud-agent-progress.md)
 
-**Status: implementation started, 7 October 2026.** 1E/1F are verified through beta. **1G.01–1G.03 and 4B.07/4C.04/4C.05 are complete**; the [implementation contract](../restyle-containers-contract.md) records the shared draft/release rules, zero-workshop cases and required Node.js proof. Remaining implementation and provider acceptance stay unchecked. Production is deferred until the user tests the finished work in beta.
+**Status: implementation started, 7 October 2026.** 1E/1F are verified through beta. **1G.01–1G.03, 1G.07 and 4B.07/4C.04/4C.05 are complete**; the [implementation contract](../restyle-containers-contract.md) records the shared draft/release rules, zero-workshop cases and required Node.js proof. Remaining implementation and provider acceptance stay unchecked. Production is deferred until the user tests the finished work in beta.
 
 ## The simple version
 
@@ -139,7 +139,7 @@ There are **eight new tasks**. Twelve existing unchecked update/management tasks
 - [ ] **4B.06** Test a failed update and restore service availability without replaying external writes.
 - [x] **4B.07** Explain what editor Undo can restore and which live changes require a separate reversal.
 
-- [ ] **1G.07** Let a component select a checked operation on an owned published Container using the existing attachment command, typed field mapping, compiler/history and approved-host policy. Reuse activation checks for download/publication, server-authorized Try and public player action replay. No manual server URL or creator administration data enters the PVO.
+- [x] **1G.07** Let a component select a checked operation on an owned published Container using the existing attachment command, typed field mapping, compiler/history and approved-host policy. Reuse activation checks for download/publication, server-authorized Try and public player action replay. No manual server URL or creator administration data enters the PVO.
 
 ### D. Finish the same management surface
 
@@ -182,3 +182,10 @@ Next after Containers: [Roadmap 2 — research and connections](02-research-and-
 **4B.07, 4C.04 and 4C.05 are verified through beta.** Source `cbeb95b` in draft #106 adds private records/usage/results/failure inspection, a confirmed test-only reset using the existing replay-safe control transaction, and pre-action pause/delete/Undo explanations. Full **1,524 tests**, strict editor types, **27 service-action tests** and actual desktop/phone acceptance pass. Lost reset reply, server/page restart and exact replay preserve live records, old successful replies and usage. Combined beta `13b7c9e` passes build/types/32 focused cases and is served as **`restyle-editor-shell-703ca799167be3d0`** on 4173; actual bytes and activated service worker verified. [Progress](../restyle-cloud-agent-progress.md) records logs, guarded backup and cleanup.
 
 These management/UI tasks use the current hosted-service authority. **4C.02 remains partial:** operation/reply quotas and recent outcomes are visible, but provider costs and complete resource accounting need the Node adapter. Node execution/validation/deployment, connection impact and final provider acceptance remain unchecked. No production deployment or paid 1G resource was created.
+
+
+## Existing Container connection evidence — 7 October 2026
+
+**1G.07 complete through beta.** Source `b7d3e94` adds owned published operation selection, typed field/literal mapping and a real compiler/native attachment transaction. The existing project link supports manual connections without an AI task; exact retained Try versions keep separate test records. The original AI-result path remains verified. Full **1,529 tests**, strict types, ten project/checkpoint tests, actual desktop/phone connection and editor/download/published-player browser journeys pass. Cross-origin viewers use no creator cookie; private administration data stays outside the PVO.
+
+Combined `ef5c02b` passes build/types/28 focused tests and is delivered as **`restyle-editor-shell-d22007c2d6d3923a`** on actual beta 4173. Served bundle/shared bytes and activated service worker verified; 127 older hashed assets retained with no forced reload. See [progress](../restyle-cloud-agent-progress.md) for receipts. This runtime-independent attachment milestone does not complete Node hosting, recorded connection/export impact or final provider acceptance. No model/workshop/paid resources or production deployment.

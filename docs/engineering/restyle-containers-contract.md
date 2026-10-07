@@ -86,7 +86,7 @@ The existing host now serves a bounded owner-only records snapshot and daily ope
 `reset_test` extends the existing revision-fenced control command, with an exact release ID and the same persistent retry receipt as pause/delete/activate. It restores only that release’s starting test records, retains usage and successful action identities, and fences unfinished commits. It cannot clear live records, remove replay protection or reactivate a paused Container. The UI confirms resets, pause and deletion and explains which effects editor Undo cannot reverse. Remaining cost/connection views and Node provider acceptance still have their own unchecked gates.
 
 
-## Existing published operation connection — implemented locally
+## Existing published operation connection — verified through beta
 
 Creators select a component, its unused control and a published public operation from Containers. Typed form-field or fixed-value mapping goes through the existing checked attachment command, real PVO compiler, approved-host rules and one Undo transaction. The server rechecks same owner/original project and the exact current retained release. Project-only account associations support this without an AI task, model call or workshop. Copies drop the private association.
 
