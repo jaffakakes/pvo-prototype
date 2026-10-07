@@ -2,15 +2,11 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
-## Current work in progress: 1G.03
+## Latest scope: finish Roadmap 1 through beta; 1G.04 next
 
-Read the newest [progress checkpoint](restyle-cloud-agent-progress.md) before editing. AI continuation is implemented in pending files and under verification; **1G.03 is not checked yet**. Reuse those changes in the active Containers checkout, not the Desktop source. Six Worker/SQLite tests and strict types pass; browser/full checks/beta are still pending. No new paid proof or production action is authorized or started.
+The user requested all remaining Roadmap 1 work, including Containers, with no production release. **1G.01–1G.03 are verified; 58/134 complete, 76 remain.** Read [current progress](restyle-cloud-agent-progress.md) and [the Container contract](restyle-containers-contract.md). Continue in `feature/restyle-containers`, `/Users/christinasmacbook/.codex/worktrees/restyle-containers/pvo-prototype`, source **`9e0b1b4`**, [draft PR #106](https://github.com/jaffakakes/pvo-prototype/pull/106). It explicitly includes the unmerged verified first-release prerequisite. Draft/manual/AI editing passes 1,500 tests, strict types, real local Worker/browser recovery/conflict/Stop/account tests. Beta **`restyle-editor-shell-cc5dbc01f8df1631`** is delivered and verified with prior assets retained.
 
-## Latest scope: finish Roadmap 1 through beta; 1G.03 next
-
-The user requested all remaining Roadmap 1 work, including Containers, with no production release. **1G.01–1G.02 are verified; 57/134 complete, 77 remain.** Read [current progress](restyle-cloud-agent-progress.md) and [the Container contract](restyle-containers-contract.md). Continue in `feature/restyle-containers`, `/Users/christinasmacbook/.codex/worktrees/restyle-containers/pvo-prototype`, source `e235095`, [draft PR #106](https://github.com/jaffakakes/pvo-prototype/pull/106). This branch explicitly includes the unmerged verified first-release prerequisite. Draft storage and manual editing pass 1,492 tests, strict types and real local Worker/browser recovery/conflict/account tests. Beta `restyle-editor-shell-8fcb72093309aa4a` is delivered and verified with prior assets retained.
-
-Next is **1G.03**, AI continuation on the same saved draft through the existing durable task system; use workshops only for execution. Then finish the full ordered checklist. No new provider proof or paid resources exist yet. Owned Vite 5319 is active. The static beta build and local API bridge tests are separate from future Node hosting and backend availability. Preserve the 1E/1F evidence below. Production remains unchanged until the user tests the finished work and approves release.
+Next is **1G.04**, the real hosted Node.js execution replacement and provider proof. No paid 1G resources or proof exist yet. Docker CLI is installed but its daemon was stopped when inspected. Owned Vite 5319 is active. Keep the same task, service, draft, validation, hosting and attachment authorities; replace the execution effect underneath them. Static beta delivery and controlled API bridge evidence do not establish live Node hosting or product backend availability. Preserve completed 1E/1F evidence. Production remains unchanged until the user tests the finished work and approves release.
 
 ## Previous scope: 1F complete through beta; next 1G.01
 
@@ -30,7 +26,7 @@ The planning update preserved then-partial 1E and unfinished 1F. At the later 1E
 
 Planning work lives on `docs/restyle-node-containers-roadmap` in `/Users/christinasmacbook/.codex/worktrees/restyle-node-containers-roadmap/pvo-prototype`; the code prerequisite is `25321a7` on `feature/restyle-runtime-actions` / draft #103. Inspect the planning diff relative to that prerequisite to see only this documentation work. Desktop snapshots are refreshed only after checking existing content. The older separate proposal at `f62583f` is superseded in scope, not current implementation guidance.
 
-Implementation has now completed 1E and 1F through beta; continue with 1G.01. Use the latest progress receipt for current beta delivery. Explain **VM = development workshop**, **Container = hosted viewer service**, **durable storage = saved code and records**, **Component = visible controls**. Technical use of provider containers for both compute roles does not merge their lifetimes.
+Implementation has now completed 1E, 1F and 1G.01–03 through beta; continue with 1G.04. Use the latest progress receipt for current beta delivery. Explain **VM = development workshop**, **Container = hosted viewer service**, **durable storage = saved code and records**, **Component = visible controls**. Technical use of provider containers for both compute roles does not merge their lifetimes.
 
 ## Review status and portable restart
 
@@ -40,9 +36,9 @@ Implementation has now completed 1E and 1F through beta; continue with 1G.01. Us
 
 **On this Mac:** use the active implementation checkout above. It includes reviewed plan `9c0b07b`. Desktop Markdown files are guarded reading copies; Desktop app source is not this implementation. Preserve its pending generated output.
 
-**On another machine:** fetch `origin/feature/restyle-first-release` or its verified merged successor. Read that branch's latest progress and handoff first. The preceding planning branch remains `origin/docs/restyle-node-containers-roadmap`; its reviewed plan is included in the implementation history. Use a clean checkout/worktree without resetting another checkout. A branch is not evidence of deployment. Committed evidence is sufficient to resume; missing private local logs do not justify rerunning completed paid proofs.
+**On another machine:** fetch `origin/feature/restyle-containers` or its verified merged successor. Read that branch's latest progress and handoff first. The preceding planning branch remains `origin/docs/restyle-node-containers-roadmap`; its reviewed plan is included in the implementation history. Use a clean checkout/worktree without resetting another checkout. A branch is not evidence of deployment. Committed evidence is sufficient to resume; missing private local logs do not justify rerunning completed paid proofs.
 
-**Continuation:** start Containers at **1G.01** using the exact implementation action in progress. Recheck newer evidence; never infer completion from the plan. After each verified item, update its one checkbox and the progress log in the same batch. Before interruption, save changed files, checks run/unrun, resources, uncertainty and the exact next action. No Codex-specific tool or previous chat is required.
+**Continuation:** continue Containers at **1G.04** using the exact implementation action in progress. Recheck newer evidence; never infer completion from the plan. After each verified item, update its one checkbox and the progress log in the same batch. Before interruption, save changed files, checks run/unrun, resources, uncertainty and the exact next action. No Codex-specific tool or previous chat is required.
 
 ## The user's goal
 

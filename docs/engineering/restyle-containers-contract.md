@@ -74,4 +74,4 @@ Provider facts checked against the [Container API](https://developers.cloudflare
 
 ## Verification and continuation
 
-1G.01 is a contract/documentation task: review this contract against actual service, release, task/workspace, validation and attachment owners; verify links and retain the recorded 1E/1F evidence. Next, implement 1G.02 saved drafts and the Containers editor using the existing service manager. Keep every unverified implementation checkbox unchecked. Finish Roadmap 1 through beta only; user beta acceptance and production are separate later gates.
+1G.01 is a contract/documentation task: review this contract against actual service, release, task/workspace, validation and attachment owners; verify links and retain the recorded 1E/1F evidence. The later 1G.02–03 checkpoints verify saved drafts and manual/AI editing through beta. Next is 1G.04 hosted Node.js execution and provider acceptance. Keep every unverified implementation checkbox unchecked. Finish Roadmap 1 through beta only; user beta acceptance and production are separate later gates.
