@@ -8,7 +8,7 @@ import {
 import { planDraftEdit } from "../../server/assistant/drafts/planner.js";
 import { create, claim } from "../assistant-tasks/fixtures.mjs";
 
-test("bounded Unicode reads and revision-checked range edits preserve the rest of a large file", () => {
+test("bounded Unicode reads and revision-checked exact edits preserve the rest of a large file", () => {
   const file = {
     path: "src/main.mjs",
     content: "a".repeat(4094) + "🧪" + "z".repeat(70000),
@@ -34,9 +34,8 @@ test("bounded Unicode reads and revision-checked range edits preserve the rest o
     kind: "replace",
     expectedRevision: 12,
     path: file.path,
-    start: 4094,
-    end: 4095,
-    content: "CHECK",
+    oldText: "🧪",
+    newText: "CHECK",
   });
   const edited = prepareDraftEdit(saved, decision, "edit-one");
   assert.equal(
@@ -48,7 +47,26 @@ test("bounded Unicode reads and revision-checked range edits preserve the rest o
     prepareDraftEdit(saved, { ...decision, expectedRevision: 11 }, "stale"),
   );
   assert.throws(() =>
-    prepareDraftEdit(saved, { ...decision, end: 128 * 1024 }, "outside"),
+    prepareDraftEdit(
+      saved,
+      { ...decision, oldText: "missing text" },
+      "outside",
+    ),
+  );
+  assert.throws(
+    () => prepareDraftEdit(saved, { ...decision, oldText: "aa" }, "ambiguous"),
+    /more than once/,
+  );
+  assert.throws(() => parseDraftDecision({ ...decision, oldText: "" }));
+  assert.throws(() =>
+    parseDraftDecision({
+      kind: "replace",
+      expectedRevision: 12,
+      path: file.path,
+      start: 0,
+      end: 1,
+      content: "old shape",
+    }),
   );
   assert.throws(() => parseDraftDecision({ ...decision, publish: true }));
   assert.throws(() =>
@@ -78,9 +96,8 @@ test("identical AI edits cannot advance a saved revision; a real metadata edit r
     kind: "replace",
     expectedRevision: 3,
     path: file.path,
-    start: 0,
-    end: Array.from(file.content).length,
-    content: file.content,
+    oldText: file.content,
+    newText: file.content,
   };
   assert.throws(
     () => prepareDraftEdit(saved, replace, "same-source"),
@@ -90,7 +107,7 @@ test("identical AI edits cannot advance a saved revision; a real metadata edit r
     () =>
       prepareDraftEdit(
         saved,
-        { ...replace, start: 0, end: 0, content: "" },
+        { ...replace, oldText: "export", newText: "export" },
         "empty-insertion",
       ),
     /already saved/,
@@ -142,6 +159,46 @@ test("draft planning uses the native content protocol and rejects invented tools
       },
     },
   };
+  // Requested behavior changes must be allowed to update expectations; repairs keep theirs frozen.
+  await planDraftEdit(task, {}, env, new AbortController().signal, null, {
+    generate: async ({ messages }) => {
+      assert.match(
+        messages[0].content,
+        /Update the selected source tests and behavior agreement/,
+      );
+      assert.doesNotMatch(
+        messages[0].content,
+        /Preserve the original agreement/,
+      );
+      return { content: { kind: "done" } };
+    },
+  });
+  await planDraftEdit(
+    {
+      ...task,
+      input: {
+        ...task.input,
+        context: {
+          ...task.input.context,
+          container: { ...task.input.context.container, mode: "repair" },
+        },
+      },
+    },
+    {},
+    env,
+    new AbortController().signal,
+    null,
+    {
+      generate: async ({ messages }) => {
+        assert.match(
+          messages[0].content,
+          /Preserve the original agreement and independent cases/,
+        );
+        assert.match(messages[0].content, /Diagnose with exact evidenceKeys/);
+        return { content: { kind: "done" } };
+      },
+    },
+  );
   const result = await planDraftEdit(
     task,
     { revision: 1, files: [], read: null },

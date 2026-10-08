@@ -141,6 +141,18 @@ export function ContainerAssistant({
         />
       )}
       <div className={styles.actions}>
+        {session.creationConflict && (
+          <button
+            type="button"
+            disabled={session.busy || disabled}
+            onClick={() => {
+              session.clearCreationConflict();
+              refresh();
+            }}
+          >
+            Use latest saved draft
+          </button>
+        )}
         {session.expired && (
           <button
             type="button"

@@ -35,6 +35,7 @@ const empty: SavedTaskView = {
 export function useContainerTask(ownerId: string, serviceId: string) {
   const [link, setLink] = useState<DraftTaskLink | null>(null);
   const [loaded, setLoaded] = useState("");
+  const [creationConflict, setCreationConflict] = useState("");
   const [result, setResult] = useState<{
     identity: string;
     view: SavedTaskView;
@@ -92,7 +93,20 @@ export function useContainerTask(ownerId: string, serviceId: string) {
       },
       change: changeSavedTask,
       recover: async (signal) => {
-        const task = check(await createSavedTask(link.input, signal));
+        if (current()) setCreationConflict("");
+        let task: TaskRecord;
+        try {
+          task = check(await createSavedTask(link.input, signal));
+        } catch (error) {
+          if (
+            current() &&
+            !link.reference &&
+            error instanceof SavedTaskHttpError &&
+            error.status === 409
+          )
+            setCreationConflict(identity);
+          throw error;
+        }
         if (!current())
           throw new DOMException("Editing session ended", "AbortError");
         const next = {
@@ -164,6 +178,31 @@ export function useContainerTask(ownerId: string, serviceId: string) {
   return {
     ...view,
     start,
+    creationConflict: creationConflict === identity && !link?.reference,
+    clearCreationConflict: () => {
+      if (
+        creationConflict !== identity ||
+        link?.reference ||
+        view.busy ||
+        useAuthGate.getState().user?.id !== ownerId
+      )
+        return;
+      try {
+        saveDraftTaskLink(ownerId, serviceId, null);
+        setLink(null);
+        setResult(null);
+        setCreationConflict("");
+      } catch {
+        setResult({
+          identity,
+          view: {
+            ...view,
+            error:
+              "Couldn’t clear this unstarted request. Retry after restoring browser storage.",
+          },
+        });
+      }
+    },
     clearExpired: () => {
       if (!view.expired || useAuthGate.getState().user?.id !== ownerId) return;
       try {
@@ -181,7 +220,7 @@ export function useContainerTask(ownerId: string, serviceId: string) {
         });
       }
     },
-    pending: !!link && !view.task,
+    pending: !!link && !view.task && !view.error,
     canStart:
       loaded === scope &&
       (!link ||

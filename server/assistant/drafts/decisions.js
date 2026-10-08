@@ -27,7 +27,7 @@ const fields = {
     "agreementJson",
     "libraries",
   ],
-  replace: ["expectedRevision", "path", "start", "end", "content"],
+  replace: ["expectedRevision", "path", "oldText", "newText"],
   ask: ["prompt", "choices"],
   execute: ["reason"],
   done: [],
@@ -60,9 +60,8 @@ export function parseDraftDecision(value) {
       "Draft revision",
     );
     parseServiceFilePath(value.path);
-    integer(value.start, 128 * 1024, "Replacement start");
-    integer(value.end, 128 * 1024, "Replacement end", value.start);
-    text(value.content, 128 * 1024, "Replacement source", true);
+    text(value.oldText, 128 * 1024, "Exact source to replace");
+    text(value.newText, 128 * 1024, "Replacement source", true);
   }
   if (kind === "ask") {
     text(value.prompt, TASK_LIMITS.questionBytes, "Question");
@@ -85,17 +84,21 @@ export function prepareDraftEdit(saved, decision, actionId) {
   if (decision.kind === "replace") {
     const file = files.get(decision.path);
     requireTask(!!file, "Choose a saved file path.");
-    const points = Array.from(file.content);
+    const start = file.content.indexOf(decision.oldText);
     requireTask(
-      decision.end <= points.length,
-      "Replacement is outside the saved file.",
+      start >= 0,
+      "The exact source text was not found. Read the current file and copy its existing text exactly.",
+    );
+    requireTask(
+      file.content.indexOf(decision.oldText, start + 1) === -1,
+      "The source text occurs more than once. Include enough surrounding text to identify exactly one change.",
     );
     files.set(file.path, {
       path: file.path,
       content:
-        points.slice(0, decision.start).join("") +
-        decision.content +
-        points.slice(decision.end).join(""),
+        file.content.slice(0, start) +
+        decision.newText +
+        file.content.slice(start + decision.oldText.length),
     });
   } else for (const file of decision.files) files.set(file.path, file);
   const content = parseServiceDraftContent({
