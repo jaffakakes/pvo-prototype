@@ -1,3 +1,4 @@
+import { parseConnectionSetup } from "../connections/setup.js";
 import { TASK_FAILURES, TASK_LIMITS as limits } from "./limits.js";
 import {
   choice,
@@ -135,7 +136,19 @@ export function validateFailure(value) {
 }
 
 export function validateQuestion(value) {
-  object(value, ["id", "revision", "prompt", "choices", "answer"], "Question");
+  object(
+    value,
+    [
+      "id",
+      "revision",
+      "prompt",
+      "choices",
+      "answer",
+      ...(value?.connection ? ["connection"] : []),
+    ],
+    "Question",
+  );
+  if (value.connection) parseConnectionSetup(value.connection);
   id(value.id, "Question ID");
   integer(value.revision, 1, "Question revision");
   text(value.prompt, limits.questionBytes, "Question prompt");
@@ -144,7 +157,23 @@ export function validateQuestion(value) {
     text(option, limits.choiceBytes, "Question choice");
   unique(value.choices, "Question choices");
   if (value.answer !== null) {
-    object(value.answer, ["operationId", "value", "answeredAt"], "Answer");
+    object(
+      value.answer,
+      [
+        "operationId",
+        "value",
+        "answeredAt",
+        ...(value.answer.connectionId ? ["connectionId"] : []),
+      ],
+      "Answer",
+    );
+    if (value.answer.connectionId) {
+      requireTask(
+        Boolean(value.connection),
+        "Only account setup can save a connection reference.",
+      );
+      id(value.answer.connectionId, "Saved connection reference");
+    }
     id(value.answer.operationId, "Answer operation ID");
     text(value.answer.value, limits.answerBytes, "Answer text");
     time(value.answer.answeredAt, "Answer time");

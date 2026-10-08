@@ -1,3 +1,4 @@
+import { connectionSetupAvailable } from "../../connections/credentials.js";
 import { capabilityContext } from "../builder/capabilityResearch.js";
 import { prepareDraftResponse } from "../drafts/authoring.js";
 import { taskClaim, transitionGuard } from "./executionClaim.js";
@@ -11,12 +12,21 @@ import { contentDigest } from "../../contentDigest.js";
 
 /** Hash the exact saved decision context before reserving an inference. */
 export async function authoringInput(coordinator, task) {
+  coordinator.accountConnections.expire();
   return {
     input: task.input,
     questions: task.questions,
     evidence: {
       ...coordinator.evidence.context(task),
       capabilities: await capabilityContext(coordinator, task),
+      connectionSetup: connectionSetupAvailable(coordinator.env)
+        ? {
+            provider: "github",
+            operations: ["github_repository_read", "github_issues_list"],
+            credentialEntry: "private_form",
+            generatedServiceAccess: false,
+          }
+        : null,
       repair: coordinator.repairs.context(task),
       progress: coordinator.progress.context(task),
     },
@@ -104,6 +114,7 @@ export async function prepareAuthoringResponse(
   try {
     const decision = parseBuilderDecision(response, {
       hasAgreement: input.build.agreement !== null,
+      connectionSetup: connectionSetupAvailable(coordinator.env),
       available: coordinator.builderToolDefinitions().map((tool) => tool.kind),
     });
     const agreementDigest =

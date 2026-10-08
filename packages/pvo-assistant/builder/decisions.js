@@ -1,3 +1,4 @@
+import { parseConnectionSetup } from "../connections/setup.js";
 import { parseBuilderResearch } from "./research.js";
 import {
   boundedJson,
@@ -31,21 +32,37 @@ const fields = {
   research: ["calls"],
   ask_research: ["prompt", "choices", "calls"],
   ask: ["prompt", "choices"],
+  connect_account: ["setup", "purpose"],
   tools: ["calls", "review"],
   review: ["revision", "digest", "entrypoint", "tests", "libraries"],
 };
 
 /** Closed model output; agreement comes before any generated source and cannot be replaced. */
-export function parseBuilderDecision(value, { hasAgreement, available }) {
+export function parseBuilderDecision(
+  value,
+  { hasAgreement, available, connectionSetup = false },
+) {
   const kind = value && Object.getOwnPropertyDescriptor(value, "kind")?.value;
   object(value, ["kind", ...(fields[kind] ?? [])], "Builder decision");
   choice(
     kind,
     hasAgreement
-      ? ["ask", "tools", "research", "ask_research", "review"]
-      : ["ask", "agreement", "research", "ask_research"],
+      ? [
+          "ask",
+          "connect_account",
+          "tools",
+          "research",
+          "ask_research",
+          "review",
+        ]
+      : ["ask", "connect_account", "agreement", "research", "ask_research"],
     "Builder stage",
   );
+  if (kind === "connect_account") {
+    requireTask(connectionSetup, "Private account setup is unavailable.");
+    value = { ...value, setup: parseConnectionSetup(value.setup) };
+    text(value.purpose, 1024, "Connection purpose");
+  }
   if (kind === "agreement") parseServiceAgreement(value.agreement);
   if (["ask", "ask_research"].includes(kind)) {
     text(value.prompt, TASK_LIMITS.questionBytes, "Builder question");
@@ -85,7 +102,11 @@ export function parseBuilderDecision(value, { hasAgreement, available }) {
       value.review?.kind === "review",
       "A batch can only request review after success.",
     );
-    parseBuilderDecision(value.review, { hasAgreement, available });
+    parseBuilderDecision(value.review, {
+      hasAgreement,
+      available,
+      connectionSetup,
+    });
   }
   if (kind === "review") {
     resolveNodeLibraries(value.libraries);

@@ -1,3 +1,7 @@
+import {
+  accountConnectionRoute,
+  isAccountConnectionRoute,
+} from "./connections/routes.js";
 import { hostedServiceRoute, isServiceRoute } from "./cloud-services/routes.js";
 import { configuration } from "./config.js";
 import { releaseRoute } from "./releases/routes.js";
@@ -27,6 +31,8 @@ export async function handleRequest(request, env) {
   const url = new URL(request.url);
   const config = configuration(env, url.origin);
   try {
+    if (isAccountConnectionRoute(url.pathname))
+      return await accountConnectionRoute(request, env, config);
     if (isServiceRoute(url.pathname))
       return await hostedServiceRoute(request, env, config);
     if (url.pathname.startsWith("/api/web/")) return await webRoute(request);

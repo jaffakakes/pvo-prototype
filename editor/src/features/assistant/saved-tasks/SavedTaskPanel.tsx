@@ -1,3 +1,4 @@
+import { ConnectionsPanel } from "../../account-connections/ConnectionsPanel";
 import { TaskAnswer } from "./TaskAnswer";
 import { SavedTaskResult } from "./SavedTaskResult";
 import { savedTaskStatus } from "../../../domain/assistant/savedTaskStatus";
@@ -46,7 +47,23 @@ export function SavedTaskPanel() {
           .
         </p>
       )}
-      {status?.question && (
+      {status?.question?.connection && session.task && !session.signedOut && (
+        <ConnectionsPanel
+          key={`${session.task.ownerId}:${session.task.id}:${status.question.id}`}
+          taskSetup={{
+            task: session.task,
+            question: status.question,
+            updated: session.retry,
+            decline: () => {
+              void session.answer(
+                status.question!.id,
+                "Continue without this connection",
+              );
+            },
+          }}
+        />
+      )}
+      {status?.question && !status.question.connection && (
         <TaskAnswer
           key={`${session.task!.id}:${status.question.id}`}
           question={status.question}

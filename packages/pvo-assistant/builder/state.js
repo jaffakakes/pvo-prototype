@@ -57,6 +57,7 @@ export function parseBuilderState(value) {
     parseBuilderDecision(value.decision, {
       hasAgreement: value.decision.kind !== "agreement",
       available: [...BUILDER_TOOL_KINDS, ...BUILDER_RESEARCH_KINDS],
+      connectionSetup: true,
     });
     requireTask(value.round > 0, "A decision needs a saved round.");
     if (value.decision.kind === "agreement")
@@ -157,6 +158,7 @@ export function acceptBuilderDecision(value, decision, agreementDigest) {
   decision = parseBuilderDecision(decision, {
     hasAgreement: state.agreement !== null,
     available: [...BUILDER_TOOL_KINDS, ...BUILDER_RESEARCH_KINDS],
+    connectionSetup: true,
   });
   const agreement =
     decision.kind === "agreement"

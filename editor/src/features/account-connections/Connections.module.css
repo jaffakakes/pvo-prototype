@@ -1,0 +1,77 @@
+.panel {
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.panel p {
+  margin: 8px 0;
+}
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.list li {
+  padding-block: 14px;
+  border-bottom: 1px solid var(--q14);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-block: 10px;
+}
+.form {
+  display: grid;
+  gap: 8px;
+  margin-block: 16px;
+}
+.form label {
+  font-weight: 700;
+}
+.form input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--q14);
+  border-radius: 8px;
+  background: var(--input);
+  color: var(--text);
+  font: inherit;
+  caret-color: var(--accent);
+}
+.form a {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.panel button {
+  min-height: 40px;
+  color: var(--text);
+  background: var(--input);
+  border: 1px solid var(--q14);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+.panel button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.panel button:focus-visible,
+.form input:focus-visible,
+.form a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.panel button:hover:enabled {
+  background: var(--q14);
+}
+@media (max-width: 600px) {
+  .panel button {
+    min-height: 44px;
+  }
+}

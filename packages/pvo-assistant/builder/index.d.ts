@@ -46,6 +46,11 @@ export function parseBuilderReadResult(
 ): BuilderReadResult;
 export function serializeBuilderTool(value: unknown): string;
 export type BuilderDecision =
+  | {
+      kind: "connect_account";
+      setup: import("../connections/index.js").ConnectionSetup;
+      purpose: string;
+    }
   | { kind: "research"; calls: BuilderResearch[] }
   | {
       kind: "ask_research";
@@ -82,6 +87,7 @@ export function parseBuilderDecision(
   value: unknown,
   stage: {
     hasAgreement: boolean;
+    connectionSetup?: boolean;
     available: readonly (BuilderTool["kind"] | BuilderResearch["kind"])[];
   },
 ): BuilderDecision;
@@ -92,6 +98,7 @@ export function builderDecisionSchema(
     description: string;
     schema: object;
   }>,
+  connectionSetup?: boolean,
 ): object;
 
 export type BuilderReviewFeedback = {

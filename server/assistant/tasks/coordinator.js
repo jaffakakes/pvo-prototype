@@ -1,3 +1,8 @@
+import {
+  AccountConnections,
+  manageAccountConnections,
+  installedConnectionProvider,
+} from "../../connections/management.js";
 import { ConnectionCatalog } from "../../connections/catalog.js";
 import { draftTestResults } from "../drafts/testResults.js";
 import { SERVICE_EXECUTION_LIMITS } from "../../../packages/pvo-assistant/services/index.js";
@@ -71,6 +76,7 @@ export class AssistantTasks extends DurableObject {
     this.drafts = new TaskDrafts(ctx.storage.sql);
     this.services = new ServiceCatalog(ctx.storage.sql);
     this.connections = new ConnectionCatalog(ctx.storage.sql);
+    this.accountConnections = new AccountConnections(this);
     this.providers = new ProviderOperations(
       ctx.storage.sql,
       this.repository,
@@ -303,6 +309,13 @@ export class AssistantTasks extends DurableObject {
       });
       return task;
     });
+  }
+
+  manageConnections(ownerId, operation) {
+    return manageAccountConnections(this, ownerId, operation);
+  }
+  connectionProvider() {
+    return installedConnectionProvider();
   }
 
   manageServices(ownerId, operation) {

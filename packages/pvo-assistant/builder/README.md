@@ -18,7 +18,7 @@ The list/read views use saved source outside the computer. Files changed by untr
 
 ## Saved construction loop
 
-The server planner first saves an immutable behavior agreement, including examples, before it can request source tools. Its closed decisions are `ask`, `ask_research`, `research`, `agreement`, `tools` and `review`. The schema advertises only tools backed by configured adapters. Model output cannot choose platform commands, credentials, task ownership or deployment readiness.
+The server planner first saves an immutable behavior agreement, including examples, before it can request source tools. Its closed decisions are `ask`, `ask_research`, `connect_account`, `research`, `agreement`, `tools` and `review`. The schema advertises only tools backed by configured adapters. Model output cannot choose platform commands, credentials, task ownership or deployment readiness.
 
 `state.js` owns the pure stage and cursor rules. `server/assistant/builder/repository.js` stores the agreement, last validated decision, cursor and bounded recent feedback in task-owned SQLite. The inference journal and builder decision commit with the task checkpoint. The operation journal retains the complete bounded tool receipts; model context projects recent feedback and omits large previous write contents. Private builder data expires with task retention.
 
@@ -60,3 +60,7 @@ Large valid contexts use the shared `promptContext.js` projection. It first remo
 `connections_read` returns only owned account metadata, with a catalog version and a four-record page cursor. `capability_record` records a request-specific proposed/selected outcome in the same research journal. Available external operations require documented support plus a current connected account, an installed adapter and its actual required permissions. Every result is planning-only; no model tool can install an adapter, write account metadata or obtain credentials.
 
 `ask_research` saves a question plus up to two independent read-research calls. Only the saved calls may run while the question is pending; outcome decisions and workspace operations wait. Answering during the batch preserves its claim. The batch then queues the next inference or waits for the answer. Saved choices include freshness against source/account/answer changes, with complete history retained. See the [research contract](../../../docs/engineering/restyle-research-contract.md) for ownership, limits, verification and 2B/2C continuation.
+
+## Private account setup
+
+When the server has configured protected storage, `connect_account` saves a typed account question with an installed provider, repository scope and purpose. It is a waiting decision, never a research/tool batch or a credential field. The creator uses the private form or selects an existing matching connection. A trusted answer retains `connectionId` in the same task and archived question history. Ordinary chat answers cannot forge that reference. Account setup and provider reads do not grant generated Container code access; that separate connection interface remains 2C. See the [connection contract](../../../docs/engineering/restyle-account-connections.md).

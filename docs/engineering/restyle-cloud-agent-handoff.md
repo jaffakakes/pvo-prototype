@@ -2,6 +2,10 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
+## Active task: complete 2B, 8 October 2026
+
+The user requested **all 2B**. Initial source implementation is pending on the active branch below: encrypted private GitHub setup, controlled reads, lifecycle, saved account questions and UI. Full 1,642 tests, strict types and actual editor/settings lifecycle checks pass. The real private account setup and beta delivery remain; the isolated form at port 5322 is waiting for the creator. **No 2B checkbox is complete yet.** Read the newest [progress checkpoint](restyle-cloud-agent-progress.md) and [connection contract](restyle-account-connections.md) before continuing. Do not reuse CLI tokens; private account setup must use the reviewed form. No production, integration merge, Actions work or new paid infrastructure is authorized.
+
 ## Latest scope: Roadmap 2 follows the actual request
 
 On **8 October 2026**, the user asked to continue Roadmap 2 here and clarified that examples must not become the product specification. Derive the plan, questions, fields, connections, and tests from the creator's actual goal. Follow [Roadmap 2's acceptance cases across different requests](restyle-cloud-agent-roadmaps/02-research-and-connections.md#build-from-the-creators-request), including an unfamiliar goal or changed requirements. Use existing capabilities when sufficient; do not require a connection for a request that needs none.
@@ -10,7 +14,9 @@ On **8 October 2026**, the user asked to continue Roadmap 2 here and clarified t
 
 **All 2A verified; next numbered task: 2B.01.** **81/134 complete; eighteen Roadmap 2 tasks remain unchecked.** This batch adds credential-free account inspection, saved capability decisions against actual documentation/permissions, independent research while a question is pending, and retained/freshness-aware answers and choices. Full 1,630 tests, strict types, sixteen focused checks, actual editor/phone/reload acceptance and the real public-document → decision → local restart proof pass. Read the [research contract](restyle-research-contract.md) for exact evidence and remaining 2B/2C boundaries. There is no real provider account setup or provider-action proof yet.
 
-**Immediate continuation before leaving this batch:** commit the verified source, combine it with previous beta `e380a5a`, build and deliver to actual Desktop `dist/` at 4173 using the preserved expected hashes, then verify the served service worker and update progress. Current beta remains `restyle-editor-shell-628989e48949276b` until that delivery. Source Vite 5320 is owned by this verification and should be stopped afterward. Backend checks use local Worker fixtures; static beta has no service/task API configured. No production, integration merge, Actions work, new paid resources or unreleased branch deletion. The current progress gives exact paths and next action.
+**Current beta:** source **`b6b6dbe` is pushed** on the branch above; combined **`f8e282f`**, `/private/tmp/restyle-research-beta-b6b6dbe`, delivers **`restyle-editor-shell-0dda4f2b021cf77e`** from actual Desktop `dist/` at 4173. Build/types/29 focused checks, served files and fresh activated service worker pass. Backup `~/.codex/backups/restyle-2a-beta-bp55_es5`; 135 old hashed assets retained without forced reload. Owned Vite 5320, test/browser processes and test storage are cleaned up. Backend verification uses local Worker/SQLite and real public-document reads; static beta has no service/task API configured. No production, integration merge, Actions work, new paid resources or unreleased branch deletion.
+
+**Exact next: 2B.01**, choose one real integration with accessible account and test support. All 2A is finished. Do not invent a provider preference from the calendar/restaurant/work-tracker examples. Read [progress](restyle-cloud-agent-progress.md) for the completion commit and delivery evidence; ordinary Git/Node tools and the committed files are sufficient on another machine.
 
 ## Previous scope: Roadmap 1 complete through beta
 

@@ -26,6 +26,13 @@ const fields = {
   ask: ["question"],
   ask_research: ["question"],
   answer: ["questionId", "questionRevision", "operationId", "value"],
+  answer_connection: [
+    "questionId",
+    "questionRevision",
+    "operationId",
+    "value",
+    "connectionId",
+  ],
   complete: ["result"],
   fail: ["failure"],
   resume: [],
@@ -158,6 +165,7 @@ function applyCommand(task, command, guard) {
       );
       break;
     case "answer":
+    case "answer_connection":
       return answerQuestion(task, command);
     case "complete":
       validateResult(command.result);
@@ -236,12 +244,26 @@ function answerQuestion(task, command) {
     (item) => item.id === command.questionId,
   );
   requireTask(question, "Question was not found.");
+  if (command.kind === "answer_connection") {
+    requireTask(
+      Boolean(question.connection),
+      "This question does not request an account.",
+    );
+    id(command.connectionId, "Saved connection reference");
+  } else
+    requireTask(
+      !question.connection ||
+        command.value === "Continue without this connection",
+      "Use private account setup to connect, or explicitly continue without it.",
+    );
   const used = task.questions.find(
     (item) => item.answer?.operationId === command.operationId,
   );
   if (used) {
     requireTask(
-      used === question && used.answer.value === command.value,
+      used === question &&
+        used.answer.value === command.value &&
+        used.answer.connectionId === command.connectionId,
       "Answer identity conflicts with its original input.",
     );
     return true;
@@ -258,6 +280,9 @@ function answerQuestion(task, command) {
     operationId: command.operationId,
     value: command.value,
     answeredAt: task.updatedAt,
+    ...(command.kind === "answer_connection"
+      ? { connectionId: command.connectionId }
+      : {}),
   };
   question.revision++;
   if (task.state === "waiting_for_answer") finishClaim(task, "queued");
