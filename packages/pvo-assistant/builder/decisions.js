@@ -11,7 +11,7 @@ import {
   text,
   unique,
 } from "../tasks/validation.js";
-import { TASK_LIMITS } from "../tasks/index.js";
+import { TASK_LIMITS, parseManualAlternative } from "../tasks/index.js";
 import {
   resolveNodeLibraries,
   parseServiceAgreement,
@@ -28,6 +28,7 @@ export const BUILDER_LIMITS = Object.freeze({
   promptBytes: 640 * 1024,
 });
 const fields = {
+  manual_alternative: ["proposal"],
   agreement: ["agreement"],
   research: ["calls"],
   ask_research: ["prompt", "choices", "calls"],
@@ -55,7 +56,14 @@ export function parseBuilderDecision(
           "ask_research",
           "review",
         ]
-      : ["ask", "connect_account", "agreement", "research", "ask_research"],
+      : [
+          "ask",
+          "connect_account",
+          "manual_alternative",
+          "agreement",
+          "research",
+          "ask_research",
+        ],
     "Builder stage",
   );
   if (kind === "connect_account") {
@@ -63,6 +71,7 @@ export function parseBuilderDecision(
     value = { ...value, setup: parseConnectionSetup(value.setup) };
     text(value.purpose, 1024, "Connection purpose");
   }
+  if (kind === "manual_alternative") parseManualAlternative(value.proposal);
   if (kind === "agreement") parseServiceAgreement(value.agreement);
   if (["ask", "ask_research"].includes(kind)) {
     text(value.prompt, TASK_LIMITS.questionBytes, "Builder question");

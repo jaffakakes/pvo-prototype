@@ -55,7 +55,8 @@ export function parseBuilderState(value) {
   }
   if (value.decision !== null) {
     parseBuilderDecision(value.decision, {
-      hasAgreement: value.decision.kind !== "agreement",
+      hasAgreement:
+        value.agreement !== null && value.decision.kind !== "agreement",
       available: [...BUILDER_TOOL_KINDS, ...BUILDER_RESEARCH_KINDS],
       connectionSetup: true,
     });

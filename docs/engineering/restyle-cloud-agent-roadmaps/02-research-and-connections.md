@@ -71,13 +71,15 @@ This should remain extensible to researched services. The first integration prov
 
 ## 2D. Make manual alternatives useful
 
-- [ ] **2D.01** Let the agent propose a useful alternative suited to the request when automation is unavailable, explaining how the outcome changes. Examples include preparing a draft, collecting information for a person, or opening a supported provider flow; they are not a fixed fallback menu.
-- [ ] **2D.02** Save the creator's choice before changing the component's promise.
-- [ ] **2D.03** Add required form fields through existing component commands. Explain what collected data will be used for.
-- [ ] **2D.04** Record manual follow-up as pending until a person marks it completed or an actual service result confirms completion.
-- [ ] **2D.05** Preserve automatic and manual steps in the same saved task so returning later does not lose context.
+- [x] **2D.01** Let the agent propose a useful alternative suited to the request when automation is unavailable, explaining how the outcome changes. Examples include preparing a draft, collecting information for a person, or opening a supported provider flow; they are not a fixed fallback menu.
+- [x] **2D.02** Save the creator's choice before changing the component's promise.
+- [x] **2D.03** Add required form fields through existing component commands. Explain what collected data will be used for.
+- [x] **2D.04** Record manual follow-up as pending until a person marks it completed or an actual service result confirms completion.
+- [x] **2D.05** Preserve automatic and manual steps in the same saved task so returning later does not lose context.
 
 **Finished when:** creators with different goals can choose useful manual alternatives, preserve their original context, and see which work remains pending. Neither the editor nor the viewer reports the original external action as completed from a preparatory step alone. For example, an RSVP does not confirm a booking, and preparing a work request does not prove it was submitted.
+
+**Verified 8 October 2026:** all five 2D tasks pass source, saved-runner and actual desktop/phone editor acceptance. See [manual alternatives](../restyle-manual-alternatives.md) for the current contract, evidence and limits; [progress](../restyle-cloud-agent-progress.md) records beta delivery separately. Earlier real 2B/2C account and cloud proof is preserved.
 
 ## Complete this roadmap
 

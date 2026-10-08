@@ -188,6 +188,12 @@ export class TaskRepository {
       );
     let next;
     try {
+      if (
+        command.kind === "resolve_manual" &&
+        (this.questions.answer(task.id, command.operationId) ||
+          this.history.get(task.id, command.operationId))
+      )
+        throw new Error("A saved operation already uses this identity.");
       const archived = ["record_operation", "reconcile_operation"].includes(
         command.kind,
       )

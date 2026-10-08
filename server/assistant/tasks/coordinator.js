@@ -111,7 +111,7 @@ export class AssistantTasks extends DurableObject {
       input = taskListInput(new URLSearchParams(operation.query));
     else if (["read", "result", "tests"].includes(operation.kind))
       taskId(operation.id);
-    else if (["answers", "resume", "stop"].includes(operation.kind)) {
+    else if (["answers", "resume", "stop", "manual"].includes(operation.kind)) {
       taskId(operation.id);
       input = creatorCommand(operation.kind, operation.input);
     } else throw new Error("Unsupported internal task operation");

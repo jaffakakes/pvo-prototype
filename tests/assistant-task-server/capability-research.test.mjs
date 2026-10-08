@@ -1,3 +1,4 @@
+import { alternative } from "../assistant-tasks/manual.fixture.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { expectStatus, path, NOW } from "./helpers.mjs";
@@ -277,7 +278,11 @@ test(
               id: "choose",
               revision: 0,
               prompt: "Access changed. Prepare a manual availability request?",
-              choices: ["Prepare a request"],
+              choices: ["Use this alternative"],
+              alternative: alternative({
+                originalOutcome: decision().operation,
+                preparedOutcome: "Prepare a request for a person to handle.",
+              }),
               answer: null,
             },
           },
@@ -293,7 +298,7 @@ test(
             questionId: "choose",
             questionRevision: 0,
             operationId: "answer-choice",
-            value: "Prepare a request",
+            value: "Use this alternative",
           },
         }),
         200,
@@ -330,6 +335,20 @@ test(
       expectStatus(
         await fixture.request(`${path(task)}/stop`, {
           body: { expectedRevision: task.revision },
+        }),
+        200,
+      );
+      task = await current(fixture, task);
+      expectStatus(
+        await fixture.request(`${path(task)}/manual`, {
+          body: {
+            expectedRevision: task.revision,
+            questionId: "choose",
+            stepId: "book",
+            operationId: "cancel-manual",
+            status: "cancelled",
+            note: "No longer needed for this test.",
+          },
         }),
         200,
       );
@@ -370,6 +389,14 @@ test(
                     ? "Collect details for a person to handle?"
                     : `Missing requirement ${index}?`,
                 choices: [],
+                ...(index === 0
+                  ? {
+                      alternative: alternative({
+                        originalOutcome: decision().operation,
+                        preparedOutcome: "Collect details for a person",
+                      }),
+                    }
+                  : {}),
                 answer: null,
               },
             },
@@ -384,8 +411,7 @@ test(
               questionId: `choice-${index}`,
               questionRevision: 0,
               operationId: `answer-${index}`,
-              value:
-                index === 0 ? "Yes, collect details only" : `Choice ${index}`,
+              value: index === 0 ? "Use this alternative" : `Choice ${index}`,
             },
           }),
           200,
@@ -416,7 +442,7 @@ test(
         prompt: "collect details for a person to handle?",
       });
       expectStatus(prior, 200);
-      assert.equal(prior.body.answer.value, "Yes, collect details only");
+      assert.equal(prior.body.answer.value, "Use this alternative");
       const chosen = decision({
         status: "manual",
         outcome: "Collect details for a person",

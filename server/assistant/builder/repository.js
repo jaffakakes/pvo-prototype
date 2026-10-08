@@ -10,6 +10,10 @@ import {
   builderContext,
   recordBuilderReview,
 } from "../../../packages/pvo-assistant/builder/index.js";
+import {
+  ACCEPT_ALTERNATIVE,
+  DECLINE_ALTERNATIVE,
+} from "../../../packages/pvo-assistant/tasks/index.js";
 import { hasCurrentClaim } from "../tasks/executionClaim.js";
 
 /** Saved decisions and tool cursor. The task coordinator supplies the enclosing SQL transaction. */
@@ -56,11 +60,17 @@ export class TaskBuilders {
       decision,
       agreementDigest,
     );
-    if (["ask", "ask_research", "connect_account"].includes(decision.kind)) {
+    if (
+      ["ask", "ask_research", "connect_account", "manual_alternative"].includes(
+        decision.kind,
+      )
+    ) {
       const prompt =
         decision.kind === "connect_account"
           ? `Connect GitHub repository ${decision.setup.repository}. ${decision.purpose}`
-          : decision.prompt;
+          : decision.kind === "manual_alternative"
+            ? `Use this alternative? ${decision.proposal.preparedOutcome}`
+            : decision.prompt;
       const previous = this.tasks.questions.findAnswered(
         this.task(claimed.id),
         prompt,
@@ -72,7 +82,7 @@ export class TaskBuilders {
       return {
         state,
         command: {
-          kind: decision.kind === "connect_account" ? "ask" : decision.kind,
+          kind: decision.kind === "ask_research" ? "ask_research" : "ask",
           question: {
             id: `question-${this.task(claimed.id).archivedQuestions + this.task(claimed.id).questions.length + 1}`,
             revision: 0,
@@ -80,7 +90,12 @@ export class TaskBuilders {
             choices:
               decision.kind === "connect_account"
                 ? ["Continue without this connection"]
-                : decision.choices,
+                : decision.kind === "manual_alternative"
+                  ? [ACCEPT_ALTERNATIVE, DECLINE_ALTERNATIVE]
+                  : decision.choices,
+            ...(decision.kind === "manual_alternative"
+              ? { alternative: decision.proposal }
+              : {}),
             ...(decision.kind === "connect_account"
               ? { connection: decision.setup }
               : {}),

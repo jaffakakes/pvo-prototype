@@ -1,3 +1,4 @@
+import { ManualAlternative } from "./ManualAlternative";
 import { useId, useState } from "react";
 import {
   TASK_LIMITS,
@@ -28,6 +29,9 @@ export function TaskAnswer({
         if (valid && !busy) answer(question.id, value.trim());
       }}
     >
+      {question.alternative && (
+        <ManualAlternative proposal={question.alternative} />
+      )}
       <label htmlFor={inputId}>{question.prompt}</label>
       {question.choices.length > 0 && (
         <div className={styles.choices} aria-label="Suggested answers">

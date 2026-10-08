@@ -46,6 +46,7 @@ export function createSavedTaskSession(
   };
   let timer: ReturnType<typeof setTimeout> | undefined;
   let answer: Extract<SavedTaskAction, { kind: "answer" }> | null = null;
+  let manual: Extract<SavedTaskAction, { kind: "manual" }> | null = null;
   const current = () => !signal.aborted && adapters.current();
   const publish = (values: Partial<SavedTaskView>) => {
     if (!current()) return;
@@ -116,6 +117,20 @@ export function createSavedTaskSession(
       );
       if (!current()) throw new DOMException("Session ended", "AbortError");
       publish({ task: latest });
+      if (action.kind === "manual") {
+        const step = latest.manualPlans
+          .find((plan) => plan.questionId === action.questionId)
+          ?.steps.find((item) => item.id === action.stepId);
+        if (step?.resolution) {
+          if (
+            step.resolution.operationId === action.operationId &&
+            step.resolution.status === action.status &&
+            step.resolution.note === action.note
+          )
+            return latest;
+          throw new SavedTaskHttpError(409);
+        }
+      }
       if (action.kind === "answer") {
         const question = latest.questions.find(
           (item) => item.id === action.questionId,
@@ -153,6 +168,29 @@ export function createSavedTaskSession(
           operationId: adapters.operationId(),
         };
       return act(answer);
+    },
+    resolveManual(
+      questionId: string,
+      stepId: string,
+      status: "completed" | "cancelled",
+      note: string,
+    ) {
+      if (
+        !manual ||
+        manual.questionId !== questionId ||
+        manual.stepId !== stepId ||
+        manual.status !== status ||
+        manual.note !== note
+      )
+        manual = {
+          kind: "manual",
+          questionId,
+          stepId,
+          status,
+          note,
+          operationId: adapters.operationId(),
+        };
+      return act(manual);
     },
     dispose() {
       clearTimeout(timer);

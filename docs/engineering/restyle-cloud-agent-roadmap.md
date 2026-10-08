@@ -2,7 +2,7 @@
 
 **Continuing with Claude Code or Codex:** read [current progress](restyle-cloud-agent-progress.md), then the [handoff/restart guide](restyle-cloud-agent-handoff.md). Every checklist item now has a stable task ID. After each verified task, check it off and save its evidence and exact next action. Root [AGENTS.md](../../AGENTS.md) and [CLAUDE.md](../../CLAUDE.md) require this workflow.
 
-Status: **Roadmap 1 and all 2A–2C verified, 8 October 2026 — 94/134 complete; 40 remain.** Connected Containers pass source checks, beta and the real-account/Fly/editor/viewer/revocation test; its temporary resources and private key copies are cleaned up. **Next: 2D.01**, manual alternatives, when requested. Source **`5695c39`** is pushed and beta **`restyle-editor-shell-e6fc1f6312778640`** is delivered and verified. See the [connected Container evidence](restyle-connected-services.md#verified-cloud-acceptance--8-october-2026) and [progress](restyle-cloud-agent-progress.md). Permanent hosting, PR integration and production remain separate. Production is prohibited until the user tests the finished roadmap and approves release.
+Status: **Roadmaps 1 and 2 verified in source, 8 October 2026 — 99/134 complete; 35 remain.** All five 2D tasks pass saved-runner and actual desktop/phone editor acceptance; beta delivery is the current finishing step. See the [manual-alternative contract](restyle-manual-alternatives.md) and [progress](restyle-cloud-agent-progress.md). The existing real 2B/2C proof is preserved. **Next numbered task: 3A.01**, durable viewer jobs. PR integration, permanent backend hosting and production remain separate; production stays prohibited until the finished roadmap is tested by the user and release is approved.
 
 **Historical planning update, 6 October:** [1G Containers](restyle-cloud-agent-roadmaps/1g-containers.md) is the next product feature after 1F, before Roadmap 2. It extends the existing service system with editable saved drafts and hosted Node.js execution. Eight new unchecked tasks are added; twelve existing unchecked 4B/4C tasks are moved into that plan, with their IDs and wording retained. No completed work is reset. The user confirmed preserving the currently recorded partial 1E / unfinished 1F status. The planning update itself changed documentation only; implementation has now resumed.
 
@@ -18,7 +18,7 @@ On **7 October 2026**, the user confirmed: **“We won’t release to production
 
 Use the **device** for editing, previews and supported lightweight checks. Use the **temporary cloud workshop** when development needs tools, packages or heavier execution. Keep **independent publication checks** in Restyle's controlled environment and **finished viewer services/records** hosted so they work when the creator's device is off. No permanently running VM per creator is planned.
 
-This refines existing 1G.01–03 and 1G.05/08; it adds no new task IDs or parallel agent/runtime system. See [where work runs](restyle-cloud-agent-roadmaps/1g-containers.md#where-work-runs-use-the-device-first-where-it-fits). Implementation has progressed to **87/134 complete**. The user has now requested implementation to continue; preserve this distinction throughout subsequent tasks.
+This refines existing 1G.01–03 and 1G.05/08; it adds no new task IDs or parallel agent/runtime system. See [where work runs](restyle-cloud-agent-roadmaps/1g-containers.md#where-work-runs-use-the-device-first-where-it-fits). Implementation has progressed to **99/134 complete**. The user has now requested implementation to continue; preserve this distinction throughout subsequent tasks.
 
 ## The four roadmaps
 
@@ -48,8 +48,8 @@ Use the numbered tasks in the linked guide as the detailed checklist. The phase 
 | **1G — complete through beta** | Containers: saved manual/AI drafts, checked Node.js runtime, and existing service update/management flows | Completed 1E/1F; reuse 1B–1D | Exact tested Node.js release survives workshop/instance shutdown; both editing paths, attachments, costs and cleanup verified |
 | **2A — complete** | Research and saved capability decisions | Product sequence follows 1G; reuse 1B saved questions and web tools | Unrelated requests produce relevant evidence, questions, and truthful options; changed goals revise the plan |
 | **2B — complete** | One secure account connection | 2A access decision and owner records | Connect, reload, expire, reconnect, revoke; another owner cannot use it |
-| 2C | Generated integration through controlled credentials | 1D and 2B; Roadmap 3 for long-running effects | Live supported operation; revocation and unknown-outcome handling |
-| 2D | Useful manual alternatives | 1B questions and 2A research | Alternatives fit each goal; chosen manual steps stay pending until done, with no false completion claim |
+| **2C — complete** | Generated integration through controlled credentials | 1D and 2B; Roadmap 3 for long-running effects | Live supported operation; revocation and unknown-outcome handling |
+| **2D — complete in source** | Useful manual alternatives | 1B questions and 2A research | Alternatives fit each goal; chosen manual steps stay pending until done, with no false completion claim |
 | 3A | Durable viewer jobs | 1D action identities; 2B for external connections | Browser/worker restarts preserve one logical job and an accurate result |
 | 3B | Provider callbacks and schedules | 3A reliable jobs | Invalid/duplicate/out-of-order events handled; cancelled schedules do not start |
 | 3C | Truthful pending/final component status | 3A/3B and 1E attachment | Private receipt access, safe refresh, correct Try/export/player behavior |

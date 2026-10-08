@@ -2,6 +2,14 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
+## Current continuation — all 2D verified; deliver beta before stopping
+
+**99/134 checked; Roadmaps 1 and 2 are complete in source.** The 8 October user request authorized all 2D. Continue on `feature/restyle-research-connections` in `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`, draft PR #107. Read the newest [progress](restyle-cloud-agent-progress.md) and [manual-alternative contract](restyle-manual-alternatives.md). Full 1,661 tests, strict types, sixteen focused tests and actual desktop/phone editor application/Try/restart/uncertain-reply/account-switch acceptance pass. Source changes and completion checkboxes are in this batch.
+
+**Next concrete action:** commit, combine with current beta `da6797e` in an isolated build checkout, build/check and deliver to actual Desktop `dist/` at4173 using its recorded hash guard and backup. Verify the served revision and activated service worker. Then push the focused branch, refresh Desktop reading copies and record final evidence here and in progress. Source Vite5324 may be stopped after verifying ownership. No paid proof, key setup or external account action is needed.
+
+Manual follow-up extends the existing task; it is not a viewer background queue. The next numbered task is **3A.01**, [durable viewer jobs](restyle-cloud-agent-roadmaps/03-background-work.md#3a-save-and-run-background-jobs), after this beta delivery. Keep all earlier 1E/1F/1G and real 2B/2C evidence. Production stays prohibited until the whole roadmap and user beta testing are finished and release is explicitly approved. No integration merge, Actions work or unreleased branch deletion.
+
 ## Active task: 2C complete — next 2D.01 when requested
 
 **94/134 complete; all seven 2C tasks are verified through beta and isolated cloud acceptance.** Source `5695c39` is pushed on `feature/restyle-research-connections`, checkout `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`. Operational checkpoint `74d4bb8` is pushed; this documentation batch adds final acceptance. [Draft PR #107](https://github.com/jaffakakes/pvo-prototype/pull/107) remains open and unmerged. Full 1,653 tests, strict editor types, focused recovery checks and actual desktop/phone/editor/player acceptance remain passing.

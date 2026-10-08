@@ -1,3 +1,4 @@
+import { alternative } from "../assistant-tasks/manual.fixture.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
@@ -110,8 +111,26 @@ test("the same rules cover unrelated requested operations, without requiring acc
   );
   const selectedAnswer = {
     ...question(),
-    answer: { operationId: "choice", value: "Collect requests", answeredAt: 1 },
+    alternative: alternative({
+      originalOutcome: tool.operation,
+      preparedOutcome: tool.outcome,
+    }),
+    answer: {
+      operationId: "choice",
+      value: "Use this alternative",
+      answeredAt: 1,
+    },
   };
+  assert.throws(
+    () =>
+      createCapabilityDecision(
+        tool,
+        facts({
+          selectedAnswer: { ...selectedAnswer, alternative: undefined },
+        }),
+      ),
+    /creator's choice/,
+  );
   assert.equal(
     createCapabilityDecision(tool, facts({ selectedAnswer })).decision.outcome,
     tool.outcome,

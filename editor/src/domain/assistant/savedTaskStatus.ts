@@ -1,5 +1,6 @@
 import {
   TASK_FAILURES,
+  hasPendingManualSteps,
   type TaskRecord,
 } from "../../../../packages/pvo-assistant/tasks/index.js";
 
@@ -49,7 +50,10 @@ export function savedTaskStatus(task: TaskRecord) {
   );
   const message = taskMessage(task, buildUnavailable, uncertain);
   return {
-    label,
+    label:
+      task.state === "ready" && hasPendingManualSteps(task)
+        ? "Ready · follow-up pending"
+        : label,
     message,
     canStop: [
       "queued",
@@ -81,7 +85,10 @@ function taskMessage(
       return "Planning is saved. Building hosted services is not available yet.";
     return failureMessages[task.failure.code];
   }
-  if (task.state === "ready") return "Your result is saved.";
+  if (task.state === "ready")
+    return hasPendingManualSteps(task)
+      ? "Your component is prepared. The agreed manual steps still need a person."
+      : "Your result is saved.";
   if (task.state === "stopped") {
     if ("container" in task.input.context)
       return "Work on this draft has stopped. Refresh saved code to check any save that was already in progress. Published code is unchanged.";
