@@ -399,16 +399,23 @@ test(
 );
 
 test(
-  "small source and test context survives alternating reads while unrelated large source stays bounded",
+  "source and expanded test context survives alternating reads while unrelated large source stays bounded",
   { timeout: 25000 },
   async () => {
     const original = [
       { path: "src/main.mjs", content: "// creator source 🧪" },
-      { path: "tests/manual.test.mjs", content: "// creator test" },
+      {
+        path: "tests/manual.test.mjs",
+        content: "// creator test\n" + "// Unicode regression 🧪\n".repeat(250),
+      },
       {
         path: "src/large.mjs",
         content: "// large manual file\n" + "x".repeat(60000),
       },
+      ...Array.from({ length: 14 }, (_, index) => ({
+        path: `src/retained${index}.mjs`,
+        content: "// bounded current context\n" + "x".repeat(10000),
+      })),
     ];
     const f = await taskFixture({
       services: true,
@@ -421,6 +428,15 @@ test(
         assert.equal(main.content, original[0].content);
         assert.equal(checks.content, original[1].content);
         assert.equal(Object.hasOwn(large, "content"), false);
+        const inline = d.files.filter((file) => Object.hasOwn(file, "content"));
+        assert.ok(inline.length < d.files.length - 1);
+        assert.ok(
+          inline.reduce(
+            (sum, file) => sum + new TextEncoder().encode(file.content).length,
+            0,
+          ) <=
+            128 * 1024,
+        );
         if (!d.read)
           return Response.json({ kind: "read", path: main.path, offset: 0 });
         if (d.read.path === main.path)
@@ -457,7 +473,7 @@ test(
           ...original[1],
           content: original[1].content + "\n// regression added",
         },
-        original[2],
+        ...original.slice(2),
       ]);
     } finally {
       await f.close();

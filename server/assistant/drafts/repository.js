@@ -40,17 +40,20 @@ export class TaskDrafts {
     const saved = this.get(taskId);
     if (!saved) throw new Error("The owned draft working copy is missing.");
     const { files, ...metadata } = saved.draft.content;
+    let remainingInlineBytes = 128 * 1024;
     return {
       identity: saved.draft.identity,
       revision: saved.draft.revision,
       metadata,
       files: files.map((file) => {
         const bytes = new TextEncoder().encode(file.content).length;
+        const include = bytes <= 16 * 1024 && bytes <= remainingInlineBytes;
+        if (include) remainingInlineBytes -= bytes;
         return {
           path: file.path,
           bytes,
           codePoints: Array.from(file.content).length,
-          ...(bytes <= 4096 ? { content: file.content } : {}),
+          ...(include ? { content: file.content } : {}),
         };
       }),
       read: saved.read,
