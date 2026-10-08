@@ -41,6 +41,9 @@ test("the beta deployment admits only the owned beta resource set", () => {
     (value) => {
       value.vars.RUNPOD_API_KEY = "private-credential";
     },
+    (value) => {
+      value.vars.ASSISTANT_TASK_SPENDING = "[]";
+    },
   ]) {
     const changed = structuredClone(config);
     mutate(changed);

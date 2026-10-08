@@ -29,12 +29,15 @@ if (!dryRun) {
     "ACCOUNT_CONNECTION_KEY",
     "RELEASE_NOTIFY_TOKEN",
     "RUNPOD_API_KEY",
+    "ASSISTANT_TASK_SPENDING",
   ]) {
     if (typeof secrets[name] !== "string" || !secrets[name].trim())
       throw new Error(
         `Configure the private beta secret ${name} before deployment.`,
       );
   }
+  if (!Array.isArray(JSON.parse(secrets.ASSISTANT_TASK_SPENDING)))
+    throw new Error("Configure a private beta account-grant array.");
 }
 const args = [
   join(root, "node_modules/wrangler/bin/wrangler.js"),

@@ -2,7 +2,17 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
-## Current checkpoint — beta backend online; Fly and owner sign-in pending
+## Current checkpoint — Fly connected; beta owner sign-in pending
+
+**BETA.01–03 complete; BETA.04–05 unchecked.** All 134 Roadmap 1–4 implementation boxes retain their verified status. Production is prohibited; agent email is paused. Read the [beta deployment checklist/Fly evidence](restyle-beta-backend.md) and newest [progress](restyle-cloud-agent-progress.md).
+
+**Source:** `origin/codex/restyle-beta-backend`, checkout `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`, attached [draft PR #110](https://github.com/jaffakakes/pvo-prototype/pull/110), open/unmerged. Earlier source `dbf4e5b`/handoff `d05c982` are pushed; this work batch records Fly completion and private account-policy configuration. Fetch this branch on Windows/Claude Code. Desktop Markdown files are guarded reading copies.
+
+**Verified:** creator-approved Fly login, dedicated private `restyle-beta-node` app and exact pinned Node image, actual product-adapter/retained-library invocation, complete builder/probe Machine destruction and temporary registry-key revocation. The successful app/image are retained; no Machine remains running. Beta Worker `08a71df1-aa1b-40c2-a77b-6f141fe96036` has only the app-scoped execution key, expiring **7 November 2026, 19:13:01 UTC**. Keys/journals stay private under `~/.codex/secure/restyle-beta-backend/`. `ASSISTANT_TASK_SPENDING` is now a private Worker secret, initially `[]`, rejected in tracked beta vars. Five focused deployment/Fly cases, live beta bindings, anonymous/private API boundaries and unchanged production version/storage pass. Final full source checks pass **1,699/1,699**; **485 local links/anchors** and all 134 prior task descriptions/completed states are verified. Existing app/service-worker release remains `restyle-editor-shell-7bbb710096de4c50`; local beta4173 and the editing session are preserved.
+
+**Exact next: BETA.04.** The human beta email sign-in at https://restyle-beta.jaffakakes28.workers.dev/editor/ is pending. Do not invent an owner, use a fake account, bypass sign-in or grant wildcard access. Once actual ownership is verified, privately enable that owner's approved capabilities, then prove saved task/Container draft recovery, independent validation and execution through this deployed Worker. The direct Fly runtime probe does not prove the authenticated coordinator/user lifecycle. BETA.05 completes affected browser/recovery evidence, resource/cost/cleanup accounting and portable GitHub handoff. Renew the app-scoped key before recorded expiry. Do not repeat paid proofs merely because a local log is missing on another computer. No production, integration merge, Actions, unreleased-branch deletion, external message or agent email.
+
+## Previous checkpoint — beta backend online; Fly and owner sign-in pending
 
 The creator requested connecting the ongoing backend, with **production prohibited** and agent email paused. Read the [separate beta deployment checklist](restyle-beta-backend.md) and newest [progress](restyle-cloud-agent-progress.md). All **134 Roadmap 1–4 implementation boxes** remain complete. **BETA.01–02 complete; BETA.03–05 unchecked.**
 
