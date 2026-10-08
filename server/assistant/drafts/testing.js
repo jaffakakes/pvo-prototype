@@ -1,3 +1,4 @@
+import { finishRepairBaseline } from "../maintenance/repair.js";
 import { nodeLibraryIds } from "../../../packages/pvo-assistant/services/index.js";
 import { prepareDraftResponse } from "./authoring.js";
 import {
@@ -40,6 +41,19 @@ export async function runDraftTestPreparation(coordinator, claimed) {
       failedTest.result.status === "completed" &&
       failedTest.result.result?.exitCode !== 0
     ) {
+      if (coordinator.drafts.get(claimed.id)?.maintenance?.phase === "baseline") {
+        await commit(() => finishRepairBaseline(coordinator, claimed, null, failedTest.result.result));
+        return;
+      }
+      if (claimed.input.context.container?.mode === "repair") {
+        await commit((task, guard) => {
+          const saved=coordinator.drafts.get(task.id);
+          saved.maintenance.lastGenerated=failedTest.result.result;
+          coordinator.drafts.write(task.id,saved);
+          coordinator.repository.update(task.id,{kind:"checkpoint",stepId:"plan"},guard);
+        });
+        return;
+      }
       await commit((task, guard) =>
         coordinator.repository.update(
           task.id,

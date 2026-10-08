@@ -1,3 +1,4 @@
+import { inspectServiceMaintenance } from "./maintenance.js";
 import { creatorJobSummary } from "../../packages/pvo-assistant/jobs/index.js";
 import { ServiceAccountStore } from "./accountStore.js";
 import { receiveJobProviderEvent } from "./jobs/providerUpdates.js";
@@ -205,6 +206,9 @@ export class HostedService extends DurableObject {
         jobs: this.jobs.all().map(creatorJobSummary),
       };
     });
+  }
+  maintenance(serviceId, ownerId) {
+    return hostedReply(() => inspectServiceMaintenance(this, serviceId, ownerId));
   }
   inspect(serviceId, ownerId) {
     return hostedReply(() =>

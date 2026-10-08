@@ -1,6 +1,18 @@
 # Restyle cloud agent: current progress and handoff log
 
-## Current checkpoint — Roadmaps 1–3 complete through beta
+## Current checkpoint — Roadmap 4 in progress
+
+The creator authorized completing all Roadmap 4 and paused account-linked agent email. No production, integration merge, Actions work or unreleased branch deletion. Focused branch `codex/restyle-maintenance` starts at fetched `origin/dev` (`cc2193e`) and fast-forwards the unreleased Roadmap 1–3 prerequisite `d44254d`; no integration branch changes. Active source checkout remains `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`.
+
+**126/134 checked. 4A.01 and 4C.03/07 verified.** Private read-only health observations cover scoped deployed source/version history, bounded dependency inventory, metadata-only account status, sanitized failure codes, job status and compute availability. Account expiry, permissions, unresolved actions/jobs, daily/saved/compute limits and missing recorded/live releases have truthful existing recovery paths. They are derived from durable records, so hiding a notice cannot resolve a fault. Ownership, no viewer input/record leakage, restart persistence and no call/data mutation pass.
+
+**Checks:** `/tmp/restyle-4-maintenance-tests3.log`: 6/7 pass; the only failing test used the account fixture's fixed year-2100 clock, which prevents ordinary real-time task alarms. The fixture is being corrected; no product success is claimed for that test yet. Earlier focused suite 27/28 passed; its missing-release/limit fixture used the wrong SQL conflict target, now corrected and passing. Strict editor types and all five prior manual-draft tests pass. App source/UI/beta delivery remain pending. All owned resources are disposable local fixture SQLite, native Node processes and browser contexts; no cloud resources, live provider credentials/effects or model inference.
+
+**Pending files:** repair mode in the existing task/draft workflow, baseline testing, evidence-backed diagnosis, preserved agreements, same-service inactive checked releases, private repair report and Container health/repair controls. Backend repair and passing-baseline rejection pass actual independent Node/SQLite tests. These tasks remain unchecked pending complete lifecycle/browser acceptance.
+
+**Exact next:** finish 4A.02–06 lifecycle and disconnected-account acceptance; implement 4D's regression countercheck (original fails, repair passes) in the same saved workspace journal; verify updates/rollback with existing jobs/accounts; run affected browsers, full checks and combined beta delivery. Preserve Roadmaps 1–3 evidence. Agent email remains paused.
+
+## Previous checkpoint — Roadmaps 1–3 complete through beta
 
 **123/134 checked. All 24 Roadmap 3 tasks are complete; eleven tasks remain in Roadmap 4.** Application source **`a9941bc` is committed/pushed** on `codex/restyle-background-work`, checkout `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`. This completion commit adds final diagnostics/proof/cleanup records. [Draft PR #108](https://github.com/jaffakakes/pvo-prototype/pull/108) stays open/unmerged. Read the [background-work contract and portable proof](restyle-background-work.md#verified-acceptance--8-october-2026).
 

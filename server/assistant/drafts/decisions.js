@@ -15,7 +15,9 @@ import {
 import { TASK_LIMITS } from "../../../packages/pvo-assistant/tasks/index.js";
 
 const fields = {
+  diagnose: ["stage", "evidenceKeys", "summary"],
   read: ["path", "offset"],
+  read_published: ["path", "offset"],
   write: [
     "expectedRevision",
     "files",
@@ -33,7 +35,7 @@ export function parseDraftDecision(value) {
   const kind = value?.kind;
   choice(kind, Object.keys(fields), "Draft decision");
   object(value, ["kind", ...fields[kind]], "Draft decision");
-  if (kind === "read") {
+  if (["read", "read_published"].includes(kind)) {
     parseServiceFilePath(value.path);
     integer(value.offset, 128 * 1024, "Read offset");
   }

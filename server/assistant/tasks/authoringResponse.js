@@ -1,3 +1,4 @@
+import { refreshRepairObservation } from "../maintenance/observation.js";
 import { requireManualChoice } from "../builder/manualAlternatives.js";
 import { connectionSetupAvailable } from "../../connections/credentials.js";
 import { requireConnectionResearch } from "../builder/connectionResearch.js";
@@ -15,6 +16,7 @@ import { contentDigest } from "../../contentDigest.js";
 /** Hash the exact saved decision context before reserving an inference. */
 export async function authoringInput(coordinator, task) {
   coordinator.accountConnections.expire();
+  await refreshRepairObservation(coordinator, task);
   return {
     input: task.input,
     questions: task.questions,

@@ -1,3 +1,4 @@
+import { acceptRepairDecision } from "../maintenance/repair.js";
 import { prepareWorkspaceIdentity } from "../workspaces/identity.js";
 import {
   parseDraftDecision,
@@ -30,8 +31,14 @@ export async function prepareDraftResponse(coordinator, task, response) {
   try {
     const decision = parseDraftDecision(response);
     const state = coordinator.drafts.get(task.id);
+    acceptRepairDecision(state, decision);
     let command = { kind: "checkpoint", stepId: "plan" },
       builder = null;
+    if (decision.kind === "read_published") {
+      const published = state.maintenance?.snapshot.published;
+      if (!published) throw new Error("No published source is available.");
+      state.read = {...readDraftFile({draft:{revision:state.draft.revision,content:published.source}},decision.path,decision.offset),published:true};
+    }
     if (decision.kind === "read")
       state.read = readDraftFile(state, decision.path, decision.offset);
     if (["write", "replace"].includes(decision.kind)) {

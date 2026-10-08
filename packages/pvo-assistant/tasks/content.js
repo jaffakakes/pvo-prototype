@@ -24,7 +24,7 @@ export function validateContext(value) {
       "Saved Container target",
     );
     id(value.container.serviceId, "Container identity");
-    choice(value.container.mode, ["edit", "test"], "Container task mode");
+    choice(value.container.mode, ["edit", "test", "repair"], "Container task mode");
     integer(
       value.container.revision,
       Number.MAX_SAFE_INTEGER,

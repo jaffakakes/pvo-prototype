@@ -1,3 +1,4 @@
+import { finishRepairBaseline, requireRepairArtifact } from "../maintenance/repair.js";
 import { reviewProgressEvidence } from "../tasks/progressEvidence.js";
 import {
   SERVICE_TEST_LIMITS,
@@ -48,6 +49,15 @@ function completeReport(coordinator, claimed, state, report, error = null) {
     state.round,
     reviewProgressEvidence(state, report, error),
   );
+  if (finishRepairBaseline(coordinator, claimed, report)) return;
+  if (claimed.input.context.container?.mode === "repair" && report?.status !== "passed") {
+    const state = coordinator.drafts.get(claimed.id);
+    state.maintenance.lastCheck = report;
+    coordinator.drafts.write(claimed.id, state);
+    checkpoint(coordinator, claimed, "plan");
+    return;
+  }
+
   if (
     claimed.input.context.container?.mode === "test" &&
     report?.status !== "passed"
@@ -64,7 +74,7 @@ function completeReport(coordinator, claimed, state, report, error = null) {
     coordinator,
     claimed,
     report?.status === "passed"
-      ? claimed.input.context.container?.mode === "edit"
+      ? ["edit", "repair"].includes(claimed.input.context.container?.mode)
         ? "draft_sync"
         : "host"
       : "build",
@@ -163,6 +173,7 @@ export async function runServiceValidation(coordinator, claimed) {
           // A missing/mismatched snapshot is a concrete source failure; a failed lookup is unavailable.
           try {
             artifact = await prepareServiceArtifact(state, observation?.source);
+            requireRepairArtifact(coordinator, claimed, artifact);
           } catch {
             artifactError = true;
           }

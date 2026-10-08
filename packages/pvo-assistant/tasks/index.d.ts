@@ -48,7 +48,7 @@ export type TaskContext = {
 };
 export type ContainerTaskContext = {
   fingerprint: string;
-  container: { serviceId: string; revision: number; mode: "edit" | "test" };
+  container: { serviceId: string; revision: number; mode: "edit" | "test" | "repair" };
 };
 export type TaskInput = {
   operationId: string;
