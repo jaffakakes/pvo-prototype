@@ -76,7 +76,9 @@ export function parseBuilderState(value) {
       value.round === 0 && value.agreement === null,
       "Builder initialization is incomplete.",
     );
-  const calls = ["tools", "research"].includes(value.decision?.kind)
+  const calls = ["tools", "research", "ask_research"].includes(
+    value.decision?.kind,
+  )
     ? value.decision.calls.length
     : 0;
   integer(value.cursor, calls, "Tool batch cursor");
@@ -139,7 +141,7 @@ export function builderStage(value) {
       ? "model"
       : "review";
   if (
-    ["tools", "research"].includes(state.decision?.kind) &&
+    ["tools", "research", "ask_research"].includes(state.decision?.kind) &&
     state.batchEnd === null
   )
     return "tools";

@@ -38,6 +38,7 @@ export async function taskFixture({
     export { FixtureNodeExecution } from "./tests/node-runtime/fixture-worker.js";
     export { TestBudget, TestWorkspace } from './tests/assistant-workspaces/controlled-worker.js';
     import { installCheckedDiagnostic } from "./scripts/checks/cloud-agent-recovery/checked-fixture.js";
+    import { capabilityContext } from "./server/assistant/builder/capabilityResearch.js";
     import { taskResearchTools } from "./server/assistant/builder/researchTools.js";
     import { publicResearch } from "./server/assistant/builder/researchProvider.js";
     import { reconcileTaskWorkspaces } from './server/assistant/tasks/workspaceRunner.js';
@@ -191,6 +192,9 @@ export async function taskFixture({
       researchProvider() { return this.env.RESEARCH ? publicResearch({ fetch: (url, init) => this.env.RESEARCH.fetch(url, init) }) : super.researchProvider(); }
       async researchTool(ownerId, id, tool, operationId, guard) { return taskResearchTools(this, await this.claimForOperation(ownerId,id,guard)).execute(tool,operationId); }
       researchRows() { return this.research.entries(); }
+      questionReuse(ownerId,id,prompt) { this.repository.bindOwner(ownerId); return this.repository.questions.findAnswered(this.repository.read(id,this.now()),prompt); }
+      saveConnection(ownerId, connection, expectedRevision) { this.repository.bindOwner(ownerId); return this.connections.save(connection,expectedRevision); }
+      async capabilityContext(ownerId, id) { this.repository.bindOwner(ownerId); return capabilityContext(this, this.repository.read(id,this.now())); }
       builderState(id) { return this.builders.get(id); }
       disableWorkspaces() { this.workspacesDisabled = true; }
       async reconcileWorkspaces() { await reconcileTaskWorkspaces(this); return this.workspaceRows(); }
@@ -272,7 +276,10 @@ export async function taskFixture({
         const stub = env.ASSISTANT_TASKS.getByName("owner:" + owner.id);
         try {
           if (action === "validation-state") return json(await stub.validationState(args.id));
+          if (action === "save-connection") return json(await stub.saveConnection(owner.id,args.connection,args.expectedRevision));
+          if (action === "capability-context") return json(await stub.capabilityContext(owner.id,args.id));
           if (action === "research-tool") return json(await stub.researchTool(owner.id,args.id,args.tool,args.operationId,args.guard));
+          if (action === "question-reuse") return json(await stub.questionReuse(owner.id,args.id,args.prompt));
           if (action === "research-rows") return json(await stub.researchRows());
           if (action === "builder-state") return json(await stub.builderState(args.id));
           if (action === "workspace-budget") {

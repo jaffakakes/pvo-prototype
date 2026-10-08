@@ -1,3 +1,4 @@
+import { capabilityContext } from "../builder/capabilityResearch.js";
 import { prepareDraftResponse } from "../drafts/authoring.js";
 import { taskClaim, transitionGuard } from "./executionClaim.js";
 import { transitionTask } from "../../../packages/pvo-assistant/tasks/index.js";
@@ -9,12 +10,13 @@ import { prepareTaskAttachment } from "../attachments/preparation.js";
 import { contentDigest } from "../../contentDigest.js";
 
 /** Hash the exact saved decision context before reserving an inference. */
-export function authoringInput(coordinator, task) {
+export async function authoringInput(coordinator, task) {
   return {
     input: task.input,
     questions: task.questions,
     evidence: {
       ...coordinator.evidence.context(task),
+      capabilities: await capabilityContext(coordinator, task),
       repair: coordinator.repairs.context(task),
       progress: coordinator.progress.context(task),
     },
@@ -74,6 +76,16 @@ export async function prepareAuthoringResponse(
         !["plan", "build"].includes(response.stepId)
       )
         throw new Error("Planning can only advance to build.");
+      if (
+        response.kind === "ask" &&
+        coordinator.repository.questions.findAnswered(
+          task,
+          response.question?.prompt ?? "",
+        )
+      )
+        throw new Error(
+          "Reuse the saved answer; explain changed evidence before asking a different question.",
+        );
       transitionTask(task, response, {
         ownerId: task.ownerId,
         expectedRevision: task.revision,

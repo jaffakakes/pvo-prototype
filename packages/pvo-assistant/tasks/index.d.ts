@@ -120,7 +120,7 @@ export type TaskCommand =
   | { kind: "claim"; claimId: string; leaseMs: number }
   | { kind: "checkpoint"; stepId: string }
   | { kind: "wait"; reason: TaskWaitReason; nextRunAt: number | null }
-  | { kind: "ask"; question: TaskQuestion }
+  | { kind: "ask" | "ask_research"; question: TaskQuestion }
   | {
       kind: "answer";
       questionId: string;

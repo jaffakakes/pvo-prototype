@@ -29,11 +29,24 @@ export async function runAuthoringStep(coordinator, claimed) {
     )
       return;
     if (
-      await coordinator.transaction(() =>
+      !claimed.questions.some((question) => question.answer === null) &&
+      (await coordinator.transaction(() =>
         askForProgressHelp(coordinator, claimed),
-      )
+      ))
     )
       return;
+    if (claimed.questions.some((question) => question.answer === null)) {
+      await coordinator.transaction(() => {
+        const task = coordinator.attempts.task(claimed.id);
+        if (coordinator.attempts.current(claimed, coordinator.now()))
+          coordinator.repository.update(
+            task.id,
+            { kind: "checkpoint", stepId: "build" },
+            transitionGuard(task, coordinator.now(), taskClaim(task)),
+          );
+      });
+      return;
+    }
     const operationId = `inference-${claimed.generation}`;
     const identity = await taskBudgetIdentity(
       claimed,
@@ -42,7 +55,7 @@ export async function runAuthoringStep(coordinator, claimed) {
     );
     let input;
     try {
-      input = authoringInput(coordinator, claimed);
+      input = await authoringInput(coordinator, claimed);
     } catch {
       await coordinator.transaction(() => {
         if (!coordinator.attempts.current(claimed, coordinator.now())) return;

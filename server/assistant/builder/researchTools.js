@@ -1,3 +1,4 @@
+import { recordCapability } from "./capabilityResearch.js";
 import {
   parseBuilderResearch,
   parseBuilderResearchResult,
@@ -15,12 +16,16 @@ export function taskResearchTools(coordinator, claimed) {
   return {
     definitions: [
       ...(provider?.definitions ?? []),
-      ...builderResearchDefinitions(["web_evidence"]),
+      ...builderResearchDefinitions([
+        "web_evidence",
+        "connections_read",
+        "capability_record",
+      ]),
     ],
     async execute(value, operationId) {
       const tool = parseBuilderResearch(value);
       parseWorkspaceOperationId(operationId);
-      if (!provider && tool.kind !== "web_evidence")
+      if (!provider && ["web_read", "web_search"].includes(tool.kind))
         throw new Error("Public research is unavailable.");
       const digest = await contentDigest(serializeBuilderResearch(tool));
       let row = await coordinator.transaction(() =>
@@ -57,6 +62,27 @@ export function taskResearchTools(coordinator, claimed) {
               signal.throwIfAborted();
               if (!coordinator.builders.current(claimed, coordinator.now()))
                 throw new DOMException("Task stopped", "AbortError");
+              if (tool.kind === "connections_read")
+                return {
+                  kind: tool.kind,
+                  status: "completed",
+                  result: coordinator.connections.page(tool.after),
+                };
+              if (tool.kind === "capability_record") {
+                try {
+                  return parseBuilderResearchResult(tool, {
+                    kind: tool.kind,
+                    status: "completed",
+                    result: await recordCapability(coordinator, claimed, tool),
+                  });
+                } catch {
+                  return {
+                    kind: tool.kind,
+                    status: "unavailable",
+                    result: null,
+                  };
+                }
+              }
               if (tool.kind === "web_evidence") {
                 const source = coordinator.research.get(
                   claimed.id,

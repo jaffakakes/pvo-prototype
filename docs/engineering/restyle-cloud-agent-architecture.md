@@ -260,3 +260,7 @@ A dinner RSVP could be one test, but the agent must also handle a different exam
 Test failures as part of the complete path: closing the editor during work, restarting the workspace, losing provider access, pressing twice, updating a published component, and failing after an external action may already have happened.
 
 The first release is ready when a creator can ask for a new working feature, answer only the necessary questions, try it safely, publish it, and later manage the service that makes it work. Claims of successful messages, reservations, or other external actions must come from the actual service result.
+
+## Implemented research and saved choices
+
+See the [2A research contract](restyle-research-contract.md) for public documentation research, credential-free account inspection, saved choices, independent research during questions, and the remaining secure setup/provider effects in 2B/2C. These extend the existing saved task and start no workshop.

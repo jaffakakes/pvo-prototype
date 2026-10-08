@@ -64,10 +64,9 @@ export function savedTaskStatus(task: TaskRecord) {
         !!task.failure &&
         !buildUnavailable &&
         TASK_FAILURES[task.failure.code].retryable),
-    question:
-      task.state === "waiting_for_answer"
-        ? (task.questions.find((item) => item.answer === null) ?? null)
-        : null,
+    question: !["ready", "stopped"].includes(task.state)
+      ? (task.questions.find((item) => item.answer === null) ?? null)
+      : null,
   };
 }
 
@@ -90,6 +89,11 @@ function taskMessage(
       return "Further work was stopped. An earlier action still needs its outcome checked.";
     return "Further work was stopped. Your saved progress is still available.";
   }
+  if (
+    ["queued", "running"].includes(task.state) &&
+    task.questions.some((question) => question.answer === null)
+  )
+    return "You can answer now while independent research finishes. Other work waits for your answer.";
   if (task.state === "waiting_for_answer")
     return "Your answer will be saved before work continues.";
   return "You can close Restyle and return to this task.";

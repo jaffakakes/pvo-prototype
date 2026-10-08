@@ -25,6 +25,20 @@ export function batchProgressEvidence(state) {
     } = tool;
     let result = structuredClone(feedback.result);
     if (!result || typeof result !== "object") return null;
+    if (tool.kind === "capability_record") {
+      observations.push({
+        request: { kind: tool.kind, key: tool.key },
+        result: {
+          status: result.status,
+          basisDigest: result.result?.basisDigest ?? null,
+        },
+      });
+      continue;
+    }
+    if (tool.kind === "connections_read" && result.result) {
+      for (const connection of result.result.connections)
+        delete connection.revision;
+    }
     if (tool.kind === "web_evidence") {
       // Rewording an interpretation or reciting a newer receipt is not new external evidence.
       observations.push({

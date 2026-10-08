@@ -111,3 +111,7 @@ The editor stores an exact pending `TaskInput` beside its local checkpoint befor
 ## Saved capacity waits
 
 `TaskRecord.wait` is required and null outside `waiting`; inside it contains one approved `reason`. A trusted worker uses `{kind: "wait", reason, nextRunAt}` after settling its operations and usage. Model/workspace capacity and allowance waits need a future wakeup; spending permission has none. Stop clears the wait and fences all later claims. Resume queues the same goal for fresh authorization; it never grants credit or skips reservation. Waiting tasks still consume retained active-task storage, preserve their original input/cursor/history, and have no goal expiry. Model output cannot issue this platform command.
+
+### Independent research and a saved question
+
+The trusted `ask_research` transition is build-only. It saves one question and queues the already saved independent research batch; queued/running/waiting/failed build records can retain that pending question. Answering while the batch is active preserves the worker claim. A checkpoint with an unanswered question can only stay in build and becomes `waiting_for_answer`. Completion/hosting cannot carry it forward. Stop preserves the question and remains terminal. The research adapter admits only the saved read calls and the workspace adapter rejects pending questions; no extra model turns or dependent effects run while waiting. See the [research contract](../../../docs/engineering/restyle-research-contract.md).

@@ -2,7 +2,7 @@
 
 **Continuing with Claude Code or Codex:** read [current progress](restyle-cloud-agent-progress.md), then the [handoff/restart guide](restyle-cloud-agent-handoff.md). Every checklist item now has a stable task ID. After each verified task, check it off and save its evidence and exact next action. Root [AGENTS.md](../../AGENTS.md) and [CLAUDE.md](../../CLAUDE.md) require this workflow.
 
-Status: **Roadmap 1 complete through beta, 7 October 2026 — 75/134 tasks verified; 59 remain in Roadmaps 2–4.** All 1A–1G and the twelve transferred 4B/4C tasks pass their gates. Real Node/Fly integration, independent validation, editor/player acceptance, interrupted compute recovery, retention and cleanup are recorded in [final acceptance](restyle-node-product-acceptance.md#verified-result--7-october-2026). Beta `restyle-editor-shell-0aeb35ad18374509` is delivered and verified. Permanent cloud availability, PR integration and production remain separate. **Next: 2A.01**, structured research evidence. Production is explicitly prohibited until the user tests the finished roadmap and approves release.
+Status: **Roadmap 1 and all 2A verified, 8 October 2026 — 81/134 tasks complete; 53 remain in Roadmaps 2–4.** Read the [research contract](restyle-research-contract.md) for account inspection, saved capability decisions, independent research during questions, and exact proof limits. Source checks pass; this work batch is completing beta delivery in [progress](restyle-cloud-agent-progress.md). Permanent hosting, PR integration and production remain separate. **Next numbered task: 2B.01**, select one accessible real integration. Production is explicitly prohibited until the user tests the finished roadmap and approves release.
 
 **Historical planning update, 6 October:** [1G Containers](restyle-cloud-agent-roadmaps/1g-containers.md) is the next product feature after 1F, before Roadmap 2. It extends the existing service system with editable saved drafts and hosted Node.js execution. Eight new unchecked tasks are added; twelve existing unchecked 4B/4C tasks are moved into that plan, with their IDs and wording retained. No completed work is reset. The user confirmed preserving the currently recorded partial 1E / unfinished 1F status. The planning update itself changed documentation only; implementation has now resumed.
 
@@ -18,7 +18,7 @@ On **7 October 2026**, the user confirmed: **“We won’t release to production
 
 Use the **device** for editing, previews and supported lightweight checks. Use the **temporary cloud workshop** when development needs tools, packages or heavier execution. Keep **independent publication checks** in Restyle's controlled environment and **finished viewer services/records** hosted so they work when the creator's device is off. No permanently running VM per creator is planned.
 
-This refines existing 1G.01–03 and 1G.05/08; it adds no new task IDs or parallel agent/runtime system. See [where work runs](restyle-cloud-agent-roadmaps/1g-containers.md#where-work-runs-use-the-device-first-where-it-fits). Implementation has progressed to **75/134 complete**. The user has now requested implementation to continue; preserve this distinction throughout subsequent tasks.
+This refines existing 1G.01–03 and 1G.05/08; it adds no new task IDs or parallel agent/runtime system. See [where work runs](restyle-cloud-agent-roadmaps/1g-containers.md#where-work-runs-use-the-device-first-where-it-fits). Implementation has progressed to **81/134 complete**. The user has now requested implementation to continue; preserve this distinction throughout subsequent tasks.
 
 ## The four roadmaps
 
@@ -129,4 +129,4 @@ Production promotion follows dev → preprod → prod. After successful deployme
 
 ## Start here
 
-**Roadmap 1 completed; Roadmap 2 requested, 8 October 2026:** all Roadmap 1, including Containers, is verified through beta. Next is **2A.01** in [Roadmap 2](restyle-cloud-agent-roadmaps/02-research-and-connections.md). Its four stages must adapt to the actual request; the restaurant example is illustrative. See the [acceptance cases across different requests](restyle-cloud-agent-roadmaps/02-research-and-connections.md#build-from-the-creators-request). Preserve completed evidence and all stable task IDs. Production remains deferred.
+**Roadmap 1 and all 2A verified, 8 October 2026:** next is **2B.01** in [Roadmap 2](restyle-cloud-agent-roadmaps/02-research-and-connections.md). Its four stages must adapt to the actual request; the restaurant example is illustrative. See the [acceptance cases across different requests](restyle-cloud-agent-roadmaps/02-research-and-connections.md#build-from-the-creators-request). Preserve completed evidence and all stable task IDs. Production remains deferred.

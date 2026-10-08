@@ -222,7 +222,12 @@ function validateHistory(value) {
   const pending = value.questions.filter((item) => item.answer === null).length;
   let validPending = pending === 0;
   if (value.state === "waiting_for_answer") validPending = pending === 1;
-  if (value.state === "stopped") validPending = pending <= 1;
+  if (
+    value.state === "stopped" ||
+    (value.stepId === "build" &&
+      ["queued", "running", "waiting", "failed"].includes(value.state))
+  )
+    validPending = pending <= 1;
   requireTask(
     validPending,
     "Unanswered questions do not match the task state.",

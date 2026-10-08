@@ -22,13 +22,17 @@ The result separates `source` from `assessment` and always has `verification: "s
 
 The note is saved through `TaskResearch` with the existing current-claim, Stop, replay, history, ownership and retention rules. It consumes one recorded tool call, starts no workshop, makes no additional network request and replays without a second charge. Rewording the assessment or changing a receipt/time cannot manufacture new external evidence for unchanged-progress detection. The pure contract lives in [researchEvidence.js](../../packages/pvo-assistant/builder/researchEvidence.js); [researchTools.js](../../server/assistant/builder/researchTools.js) resolves the trusted source and journals the result.
 
-This tool belongs to the durable cloud-task planner. The foreground editor's existing `web_search`/`web_read` observations and the public HTTP routes retain their current contract; they do not expose an unowned evidence-write endpoint. No separate evidence database or account-connection system is introduced.
+This tool belongs to the durable cloud-task planner. The foreground editor's existing `web_search`/`web_read` observations and the public HTTP routes retain their current contract; they do not expose an unowned evidence-write endpoint. The evidence note itself introduces no separate database. Subsequent 2A work adds account metadata inspection and saved decisions in the same owner/task system, described below.
 
 ### Verification — 8 October 2026
 
 The real public-web adapter read Google's [Calendar free/busy documentation](https://developers.google.com/workspace/calendar/api/v3/reference/freebusy/query) at **2026-10-07T23:40:45.248Z** (8 October in the user's timezone), without truncation. A structured note retained that source/time, three matching short excerpts, the described operation, access questions, uncertainty about optional authorization for the intended calendar, and remaining account/timezone/error tests. This is public-document research, not a connected Calendar integration or a tested booking operation; no account credentials or Calendar API calls were used.
 
 Separate controlled Worker/SQLite tests prove task ownership, refusal of another task's source, invalid source/excerpt rejection, original-time preservation, replay after restart with no extra fetch/charge, history recovery, retention cleanup, and the saved runner's read → note → follow-up path without a workshop. Five contract/planner/progress tests cover closed fields, Unicode bounds, explicit uncertainty, semantic-verification limits and unchanged-evidence handling. The existing public-fetch/research suite separately retains network, Stop and interrupted-read checks. These are controlled planner tests, not a live model quality evaluation across Roadmap 2 requests.
+
+## Available connections and saved choices
+
+The rest of **2A** adds `connections_read`, `capability_record` and the `ask_research` decision. They inspect credential-free account metadata, record planning readiness against actual task evidence and permissions, and keep a question answerable while its predeclared independent research finishes. Saved choices and archived answers are reused; changed account or source facts require reconsideration. Real account setup remains 2B. Read the [research contract and verification](restyle-research-contract.md), including the real public-document → account inspection → saved decision → restart proof and the controlled multi-request/editor acceptance.
 
 ## Saved font library
 

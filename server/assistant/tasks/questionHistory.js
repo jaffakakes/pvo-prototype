@@ -30,6 +30,23 @@ export class TaskQuestionHistory {
     return row ? JSON.parse(row.body) : null;
   }
 
+  findAnswered(task, prompt) {
+    const normalized = prompt.trim().toLowerCase();
+    const recent = task.questions.find(
+      (question) =>
+        question.answer && question.prompt.trim().toLowerCase() === normalized,
+    );
+    if (recent) return recent;
+    const row = this.sql
+      .exec(
+        "SELECT body FROM task_question_history WHERE task_id=? AND lower(trim(json_extract(body,'$.prompt')))=? LIMIT 1",
+        task.id,
+        normalized,
+      )
+      .toArray()[0];
+    return row ? JSON.parse(row.body) : null;
+  }
+
   archive(before, next) {
     const current = new Set(next.questions.map((item) => item.id));
     const removed = before.questions.filter((item) => !current.has(item.id));

@@ -1,5 +1,8 @@
 import { transitionTask } from "../../../packages/pvo-assistant/tasks/index.js";
-import { parseBuilderResearchResult } from "../../../packages/pvo-assistant/builder/index.js";
+import {
+  parseBuilderResearchResult,
+  serializeBuilderResearch,
+} from "../../../packages/pvo-assistant/builder/index.js";
 import {
   hasCurrentClaim,
   taskClaim,
@@ -61,6 +64,24 @@ export class TaskResearch {
     if (!hasCurrentClaim(task, claimed, now)) return null;
     if (task.stepId !== "build")
       throw new Error("Research requires a build claim.");
+    if (task.questions.some((question) => question.answer === null)) {
+      const saved = this.sql
+        .exec("SELECT body FROM task_builders WHERE task_id=?", task.id)
+        .toArray()[0];
+      const state = saved ? JSON.parse(saved.body) : null;
+      const expected =
+        state?.decision?.kind === "ask_research"
+          ? state.decision.calls[state.cursor]
+          : null;
+      if (
+        operationId !== `build-${state?.round}-${state?.cursor}` ||
+        !expected ||
+        serializeBuilderResearch(expected) !== serializeBuilderResearch(tool)
+      )
+        throw new Error(
+          "Only the saved independent research may run while an answer is pending.",
+        );
+    }
     const prior = this.get(task.id, operationId);
     if (prior) {
       if (prior.inputDigest !== inputDigest)

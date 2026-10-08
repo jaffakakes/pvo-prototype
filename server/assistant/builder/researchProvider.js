@@ -26,7 +26,7 @@ export function publicResearch({ fetch: send = globalThis.fetch } = {}) {
     definitions: builderResearchDefinitions(["web_search", "web_read"]),
     async execute(value, signal) {
       const tool = parseBuilderResearch(value);
-      if (tool.kind === "web_evidence")
+      if (!["web_search", "web_read"].includes(tool.kind))
         throw new Error("Evidence requires the saved task's source journal.");
       try {
         const options = { fetch: send, signal, timeoutMs: 10000 };
