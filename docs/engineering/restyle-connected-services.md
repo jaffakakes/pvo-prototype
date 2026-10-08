@@ -29,7 +29,7 @@ Before any new paid/cloud acceptance, record the exact resources, budget, deadli
 
 ## Current evidence
 
-Local implementation passes **1,653 tests**, strict editor types, ten focused connected/proof cases and actual desktop/phone approval, private write opt-in, offline Try, export/two-viewer and uncertain-action inspection. The same cloud acceptance driver passes its full local browser rehearsal. Only controlled provider responses and real local Node/SQLite are claimed here. **The real-account/Fly proof, cleanup and final beta delivery are pending**; see [progress](restyle-cloud-agent-progress.md). The first provider is an example, not a prescribed workflow.
+Local implementation passes **1,653 tests**, strict editor types, ten focused connected/proof cases and actual desktop/phone approval, private write opt-in, offline Try, export/two-viewer and uncertain-action inspection. The same cloud acceptance driver passes its full local browser rehearsal. Source `5695c39` is pushed. Combined `da6797e` passes build/types/57 checks and delivers beta `restyle-editor-shell-e6fc1f6312778640`; actual served modules and activated service worker pass. Only controlled provider responses and real local Node/SQLite are claimed here. **The real-account/Fly proof and cleanup are pending**; see [progress](restyle-cloud-agent-progress.md). The first provider is an example, not a prescribed workflow.
 
 ## Isolated cloud acceptance prepared for approval
 
