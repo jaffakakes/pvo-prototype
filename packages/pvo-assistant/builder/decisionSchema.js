@@ -84,12 +84,28 @@ const agreement = object({
 });
 
 /** Only the current phase's choices enter the model schema; runtime validation remains authoritative. */
-export function builderDecisionSchema(hasAgreement, definitions) {
+export function builderDecisionSchema(
+  hasAgreement,
+  definitions,
+  connectionSetup = false,
+) {
   const ask = object({
     kind: { const: "ask" },
     prompt: string(TASK_LIMITS.questionBytes),
     choices: array(string(TASK_LIMITS.choiceBytes), TASK_LIMITS.choices),
   });
+  const setup = connectionSetup
+    ? [
+        object({
+          kind: { const: "connect_account" },
+          setup: object({
+            provider: { const: "github" },
+            repository: string(140),
+          }),
+          purpose: string(1024),
+        }),
+      ]
+    : [];
   const review = object({
     kind: { const: "review" },
     revision: {
@@ -146,6 +162,7 @@ export function builderDecisionSchema(hasAgreement, definitions) {
     anyOf: hasAgreement
       ? [
           ask,
+          ...setup,
           ...(workspace.length
             ? [
                 object({
@@ -164,6 +181,7 @@ export function builderDecisionSchema(hasAgreement, definitions) {
         ]
       : [
           ask,
+          ...setup,
           object({ kind: { const: "agreement" }, agreement }),
           ...researchChoices,
         ],

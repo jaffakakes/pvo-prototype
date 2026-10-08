@@ -1,3 +1,4 @@
+import { ConnectionsPanel } from "../account-connections/ConnectionsPanel";
 import { useId, useState } from "react";
 import type { Ratio } from "../../domain/project/model";
 import { RATIOS } from "../../domain/project/ratio";
@@ -74,6 +75,8 @@ export function MoreSettings() {
   const repliesId = useId();
   const servicesId = useId();
   const [showServices, setShowServices] = useState(false);
+  const [showConnections, setShowConnections] = useState(false);
+  const connectionsId = useId();
 
   return (
     <div className={styles.content}>
@@ -283,6 +286,24 @@ export function MoreSettings() {
         {showReplies && (
           <div id={repliesId}>
             <ReplyInbox />
+          </div>
+        )}
+      </section>
+      <section className={styles.section} aria-label="Connected accounts">
+        <h3>Connected accounts</h3>
+        <div className={styles.actions}>
+          <button
+            type="button"
+            aria-expanded={showConnections}
+            aria-controls={connectionsId}
+            onClick={() => setShowConnections(!showConnections)}
+          >
+            {showConnections ? "Close connections" : "Manage connections"}
+          </button>
+        </div>
+        {showConnections && (
+          <div id={connectionsId}>
+            <ConnectionsPanel key={user?.id ?? "signed-out"} />
           </div>
         )}
       </section>

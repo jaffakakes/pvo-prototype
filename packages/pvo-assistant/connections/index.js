@@ -68,3 +68,9 @@ export function parseConnectionPage(value) {
   if (value.next !== null) id(value.next, "Next connection cursor");
   return structuredClone(value);
 }
+
+export {
+  parseConnectionSetup,
+  parseConnectionInvocation,
+  GITHUB_OPERATIONS,
+} from "./setup.js";

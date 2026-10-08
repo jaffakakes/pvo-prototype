@@ -1,3 +1,4 @@
+import { connectionSetupAvailable } from "../../connections/credentials.js";
 import { AuthoringRepairError } from "../tasks/repairFeedback.js";
 import { researchInstructions } from "./researchPrompt.js";
 import { authoringMessages } from "../tasks/promptContext.js";
@@ -65,7 +66,11 @@ export async function planSavedBuild(
     {
       messages,
       schema: withEvidenceSchema(
-        builderDecisionSchema(hasAgreement, definitions),
+        builderDecisionSchema(
+          hasAgreement,
+          definitions,
+          connectionSetupAvailable(env),
+        ),
       ),
       maxTokens: 6000,
       temperature: 0.2,
@@ -93,6 +98,7 @@ export async function planSavedBuild(
     if (decision?.kind === "history") return parseEvidenceRequest(decision);
     return parseBuilderDecision(decision, {
       hasAgreement,
+      connectionSetup: connectionSetupAvailable(env),
       available: definitions.map((tool) => tool.kind),
     });
   } catch (error) {

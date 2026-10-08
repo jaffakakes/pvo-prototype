@@ -199,7 +199,7 @@ export class TaskRepository {
         transitionTask({ ...task, operations: [archived] }, command, guard);
         return task;
       }
-      if (command.kind === "answer") {
+      if (["answer", "answer_connection"].includes(command.kind)) {
         const answered = this.questions.answer(task.id, command.operationId);
         const question = this.questions.get(task.id, command.questionId);
         if (answered || question) {

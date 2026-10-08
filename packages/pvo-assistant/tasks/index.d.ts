@@ -65,7 +65,13 @@ export type TaskQuestion = {
   revision: number;
   prompt: string;
   choices: string[];
-  answer: null | { operationId: string; value: string; answeredAt: number };
+  connection?: import("../connections/index.js").ConnectionSetup;
+  answer: null | {
+    operationId: string;
+    value: string;
+    answeredAt: number;
+    connectionId?: string;
+  };
 };
 export type TaskOperation = {
   id: string;
@@ -127,6 +133,14 @@ export type TaskCommand =
       questionRevision: number;
       operationId: string;
       value: string;
+    }
+  | {
+      kind: "answer_connection";
+      questionId: string;
+      questionRevision: number;
+      operationId: string;
+      value: string;
+      connectionId: string;
     }
   | { kind: "complete"; result: TaskResult }
   | { kind: "fail"; failure: TaskFailure }

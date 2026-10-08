@@ -85,3 +85,7 @@ node scripts/checks/cloud-agent-research/public-proof.mjs
 ```
 
 The delivered local beta remains static unless its service/task APIs are separately configured. Source completion, local browser verification, beta assets, permanent cloud hosting, PR merge and production are separate statuses. Production remains prohibited until the user tests the finished roadmap and explicitly approves release.
+
+## Following stage: private connections
+
+The [2B connection boundary](restyle-account-connections.md) extends the catalog with private account setup, controlled provider reads and saved task connection answers. Metadata permissions describe the exact Restyle operations allowed for the saved repository after successful probes; they are not a report of every permission on a token. In particular, a successful public repository read does not establish private-repository access. The completed 2A evidence above remains historical; current 2B completion and real-provider acceptance are recorded in progress.

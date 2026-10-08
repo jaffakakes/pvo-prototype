@@ -2,6 +2,10 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
+## Active task: complete 2B, 8 October 2026
+
+The user requested **all 2B**. Initial source implementation is pending on the active branch below: encrypted private GitHub setup, controlled reads, lifecycle, saved account questions and UI. Full 1,642 tests, strict types and actual editor/settings lifecycle checks pass. The real private account setup and beta delivery remain; the isolated form at port 5322 is waiting for the creator. **No 2B checkbox is complete yet.** Read the newest [progress checkpoint](restyle-cloud-agent-progress.md) and [connection contract](restyle-account-connections.md) before continuing. Do not reuse CLI tokens; private account setup must use the reviewed form. No production, integration merge, Actions work or new paid infrastructure is authorized.
+
 ## Latest scope: Roadmap 2 follows the actual request
 
 On **8 October 2026**, the user asked to continue Roadmap 2 here and clarified that examples must not become the product specification. Derive the plan, questions, fields, connections, and tests from the creator's actual goal. Follow [Roadmap 2's acceptance cases across different requests](restyle-cloud-agent-roadmaps/02-research-and-connections.md#build-from-the-creators-request), including an unfamiliar goal or changed requirements. Use existing capabilities when sufficient; do not require a connection for a request that needs none.

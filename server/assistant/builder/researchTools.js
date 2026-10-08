@@ -62,12 +62,14 @@ export function taskResearchTools(coordinator, claimed) {
               signal.throwIfAborted();
               if (!coordinator.builders.current(claimed, coordinator.now()))
                 throw new DOMException("Task stopped", "AbortError");
-              if (tool.kind === "connections_read")
+              if (tool.kind === "connections_read") {
+                coordinator.accountConnections.expire();
                 return {
                   kind: tool.kind,
                   status: "completed",
                   result: coordinator.connections.page(tool.after),
                 };
+              }
               if (tool.kind === "capability_record") {
                 try {
                   return parseBuilderResearchResult(tool, {

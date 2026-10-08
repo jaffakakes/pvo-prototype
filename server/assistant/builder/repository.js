@@ -56,10 +56,14 @@ export class TaskBuilders {
       decision,
       agreementDigest,
     );
-    if (["ask", "ask_research"].includes(decision.kind)) {
+    if (["ask", "ask_research", "connect_account"].includes(decision.kind)) {
+      const prompt =
+        decision.kind === "connect_account"
+          ? `Connect GitHub repository ${decision.setup.repository}. ${decision.purpose}`
+          : decision.prompt;
       const previous = this.tasks.questions.findAnswered(
         this.task(claimed.id),
-        decision.prompt,
+        prompt,
       );
       if (previous)
         throw new Error(
@@ -68,12 +72,18 @@ export class TaskBuilders {
       return {
         state,
         command: {
-          kind: decision.kind,
+          kind: decision.kind === "connect_account" ? "ask" : decision.kind,
           question: {
             id: `question-${this.task(claimed.id).archivedQuestions + this.task(claimed.id).questions.length + 1}`,
             revision: 0,
-            prompt: decision.prompt,
-            choices: decision.choices,
+            prompt,
+            choices:
+              decision.kind === "connect_account"
+                ? ["Continue without this connection"]
+                : decision.choices,
+            ...(decision.kind === "connect_account"
+              ? { connection: decision.setup }
+              : {}),
             answer: null,
           },
         },
