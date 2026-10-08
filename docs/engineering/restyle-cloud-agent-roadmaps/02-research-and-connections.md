@@ -22,17 +22,19 @@ The creator's actual goal determines the plan. Restaurant bookings and the other
 ## 2A. Research the required capability
 
 - [x] **2A.01** Extend the existing public web tools with structured evidence: source URL, time checked, supported operation, access requirements, uncertainty, and what still needs testing.
-- [ ] **2A.02** Let the agent inspect the creator's available connection names and permissions without seeing credentials.
-- [ ] **2A.03** Record whether the next operation is available, needs account setup, needs new adapter code, requires a manual step, or remains unverified.
-- [ ] **2A.04** Check actual integration documentation and available access for the requested operation. A feature visible on a website does not establish permission to use its private API.
-- [ ] **2A.05** Ask a focused follow-up only when the evidence or creator's intent is insufficient. Continue independent work while waiting.
-- [ ] **2A.06** Save the chosen outcome. Reuse prior answers until the creator changes the request or new evidence invalidates them.
+- [x] **2A.02** Let the agent inspect the creator's available connection names and permissions without seeing credentials.
+- [x] **2A.03** Record whether the next operation is available, needs account setup, needs new adapter code, requires a manual step, or remains unverified.
+- [x] **2A.04** Check actual integration documentation and available access for the requested operation. A feature visible on a website does not establish permission to use its private API.
+- [x] **2A.05** Ask a focused follow-up only when the evidence or creator's intent is insufficient. Continue independent work while waiting.
+- [x] **2A.06** Save the chosen outcome. Reuse prior answers until the creator changes the request or new evidence invalidates them.
 
 **Finished when:** different requests produce relevant evidence, capability decisions, and focused questions under the acceptance cases above. The agent follows the creator's choice, reuses existing answers, and changes its plan when the request or evidence changes. Fixture tests cover each access/outcome branch; a real researched service verifies that the tools also work outside fixtures. Restaurant-specific success alone is insufficient.
 
 **Where to start:** [web tools](../../../server/web/routes.js), [web research design](../web-search.md), and [assistant web instructions](../../../server/assistant/native/webPrompt.js).
 
-**2A.01 evidence, 8 October 2026:** the saved-task planner now records `web_evidence` against an actual same-task page read, with platform-supplied provenance and separately labelled model interpretation. Closed fields, exact excerpts, task ownership, restart/replay, history, cleanup and the saved runner are tested. A real public documentation read is recorded separately from controlled lifecycle tests; no live account integration or model-quality gate is claimed. See [verification](../web-search.md#verification--8-october-2026) and [current progress](../restyle-cloud-agent-progress.md). The other 2A gates remain unchecked.
+**2A.01 evidence, 8 October 2026:** the saved-task planner now records `web_evidence` against an actual same-task page read, with platform-supplied provenance and separately labelled model interpretation. Closed fields, exact excerpts, task ownership, restart/replay, history, cleanup and the saved runner are tested. A real public documentation read is recorded separately from controlled lifecycle tests; no live account integration or model-quality gate is claimed. See [verification](../web-search.md#verification--8-october-2026) and [current progress](../restyle-cloud-agent-progress.md). Subsequent 2A.02–06 are verified in the following completion record; the original 2A.01 evidence remains intact.
+
+**2A.02–06 evidence, 8 October 2026:** account metadata inspection, all five readiness branches, actual documentation/access checks, independent research during a saved question, and retained/invalidation-aware choices are verified. Full 1,630 tests and strict editor types pass; sixteen focused regression checks, six unrelated controlled saved-runner requests, actual editor/phone/reload acceptance and a real public-document → saved decision → restart proof pass. See the [research contract](../restyle-research-contract.md#verification--8-october-2026) and [progress](../restyle-cloud-agent-progress.md) for exact boundaries and beta delivery. No real external account setup, provider action or live model quality evaluation is claimed. Next is 2B.01, selecting one actual integration.
 
 ## 2B. Connect one external account securely
 

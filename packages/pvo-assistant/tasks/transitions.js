@@ -24,6 +24,7 @@ const fields = {
   checkpoint: ["stepId"],
   wait: ["reason", "nextRunAt"],
   ask: ["question"],
+  ask_research: ["question"],
   answer: ["questionId", "questionRevision", "operationId", "value"],
   complete: ["result"],
   fail: ["failure"],
@@ -40,6 +41,7 @@ const workerCommands = [
   "checkpoint",
   "wait",
   "ask",
+  "ask_research",
   "complete",
   "fail",
   "record_operation",
@@ -108,8 +110,18 @@ function applyCommand(task, command, guard) {
         !hasUnsettledOperations(task.operations),
         "Reconcile unfinished operations before advancing steps.",
       );
+      requireTask(
+        !task.questions.some((question) => question.answer === null) ||
+          command.stepId === "build",
+        "Answer the pending question before dependent work.",
+      );
       task.stepId = command.stepId;
-      finishClaim(task, "queued");
+      finishClaim(
+        task,
+        task.questions.some((question) => question.answer === null)
+          ? "waiting_for_answer"
+          : "queued",
+      );
       break;
     case "wait":
       requireSettledUsage(task);
@@ -125,6 +137,12 @@ function applyCommand(task, command, guard) {
       task.wait = { reason: command.reason };
       task.nextRunAt = command.nextRunAt;
       break;
+    case "ask_research":
+      requireTask(
+        task.stepId === "build",
+        "Independent research requires the build step.",
+      );
+    // Both commands save the same question; only the independent research batch stays queued.
     case "ask":
       validateQuestion(command.question);
       requireTask(
@@ -134,7 +152,10 @@ function applyCommand(task, command, guard) {
       );
       requireSettledUsage(task);
       task.questions.push(structuredClone(command.question));
-      finishClaim(task, "waiting_for_answer");
+      finishClaim(
+        task,
+        command.kind === "ask_research" ? "queued" : "waiting_for_answer",
+      );
       break;
     case "answer":
       return answerQuestion(task, command);
@@ -226,7 +247,9 @@ function answerQuestion(task, command) {
     return true;
   }
   requireTask(
-    task.state === "waiting_for_answer" &&
+    ["waiting_for_answer", "queued", "running", "waiting", "failed"].includes(
+      task.state,
+    ) &&
       question.answer === null &&
       question.revision === command.questionRevision,
     "Question is no longer awaiting this answer.",
@@ -237,7 +260,7 @@ function answerQuestion(task, command) {
     answeredAt: task.updatedAt,
   };
   question.revision++;
-  finishClaim(task, "queued");
+  if (task.state === "waiting_for_answer") finishClaim(task, "queued");
   return false;
 }
 

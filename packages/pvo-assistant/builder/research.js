@@ -1,4 +1,10 @@
 import {
+  CAPABILITY_RESEARCH_KINDS,
+  parseCapabilityResearch,
+  parseCapabilityResult,
+  capabilityDefinitions,
+} from "./capabilities.js";
+import {
   object,
   text,
   choice,
@@ -16,6 +22,7 @@ export const BUILDER_RESEARCH_KINDS = Object.freeze([
   "web_search",
   "web_read",
   "web_evidence",
+  ...CAPABILITY_RESEARCH_KINDS,
 ]);
 export const BUILDER_RESEARCH_LIMITS = Object.freeze({
   queryBytes: 200,
@@ -43,6 +50,8 @@ function url(value) {
 export function parseBuilderResearch(value) {
   const kind = value && Object.getOwnPropertyDescriptor(value, "kind")?.value;
   choice(kind, BUILDER_RESEARCH_KINDS, "Public research kind");
+  if (CAPABILITY_RESEARCH_KINDS.includes(kind))
+    return parseCapabilityResearch(value);
   if (kind === "web_evidence") return parseResearchEvidence(value);
   object(
     value,
@@ -61,7 +70,11 @@ export function parseBuilderResearch(value) {
 }
 export function serializeBuilderResearch(value) {
   const tool = parseBuilderResearch(value);
-  if (tool.kind === "web_evidence") return JSON.stringify(tool);
+  if (
+    tool.kind === "web_evidence" ||
+    CAPABILITY_RESEARCH_KINDS.includes(tool.kind)
+  )
+    return JSON.stringify(tool);
   return JSON.stringify(
     tool.kind === "web_search"
       ? { kind: tool.kind, query: tool.query }
@@ -85,6 +98,8 @@ export function parseBuilderResearchResult(tool, value) {
       value.result === null,
       "Unavailable research cannot invent evidence.",
     );
+  else if (CAPABILITY_RESEARCH_KINDS.includes(tool.kind))
+    parseCapabilityResult(tool, value.result);
   else if (tool.kind === "web_evidence")
     parseResearchEvidenceResult(tool, value.result);
   else {
@@ -143,7 +158,8 @@ export function parseBuilderResearchResult(tool, value) {
 export function builderResearchDefinitions(available) {
   return BUILDER_RESEARCH_KINDS.filter((kind) => available.includes(kind)).map(
     (kind) =>
-      kind === "web_evidence"
+      capabilityDefinitions.find((definition) => definition.kind === kind) ??
+      (kind === "web_evidence"
         ? researchEvidenceDefinition
         : {
             kind,
@@ -174,6 +190,6 @@ export function builderResearchDefinitions(available) {
                     }),
               },
             },
-          },
+          }),
   );
 }

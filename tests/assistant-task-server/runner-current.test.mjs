@@ -12,6 +12,7 @@ test("a committed Stop prevents inference even before its cancellation signal is
     active: new Map(),
     repairs: { context: () => null },
     progress: { context: () => [], question: () => null },
+    research: { sql: { exec: () => ({ toArray: () => [] }) } },
     evidence: {
       context: () => ({
         archivedQuestions: 0,

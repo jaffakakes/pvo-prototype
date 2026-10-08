@@ -1,3 +1,4 @@
+import { ConnectionCatalog } from "../../connections/catalog.js";
 import { draftTestResults } from "../drafts/testResults.js";
 import { SERVICE_EXECUTION_LIMITS } from "../../../packages/pvo-assistant/services/index.js";
 import { runDraftTestPreparation } from "../drafts/testing.js";
@@ -69,6 +70,7 @@ export class AssistantTasks extends DurableObject {
     this.results = new TaskResults(ctx.storage.sql);
     this.drafts = new TaskDrafts(ctx.storage.sql);
     this.services = new ServiceCatalog(ctx.storage.sql);
+    this.connections = new ConnectionCatalog(ctx.storage.sql);
     this.providers = new ProviderOperations(
       ctx.storage.sql,
       this.repository,

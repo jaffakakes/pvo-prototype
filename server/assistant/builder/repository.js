@@ -56,11 +56,19 @@ export class TaskBuilders {
       decision,
       agreementDigest,
     );
-    if (decision.kind === "ask")
+    if (["ask", "ask_research"].includes(decision.kind)) {
+      const previous = this.tasks.questions.findAnswered(
+        this.task(claimed.id),
+        decision.prompt,
+      );
+      if (previous)
+        throw new Error(
+          `Reuse saved answer ${previous.id}. If evidence changed, explain the change in the new question.`,
+        );
       return {
         state,
         command: {
-          kind: "ask",
+          kind: decision.kind,
           question: {
             id: `question-${this.task(claimed.id).archivedQuestions + this.task(claimed.id).questions.length + 1}`,
             revision: 0,
@@ -70,6 +78,7 @@ export class TaskBuilders {
           },
         },
       };
+    }
     return {
       state,
       command: {

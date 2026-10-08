@@ -95,6 +95,8 @@ export class WorkspaceOperations {
   begin(claimed, identity, kind, operationId, inputDigest, now) {
     let task = this.task(claimed.id);
     if (!hasCurrentClaim(task, claimed, now)) return null;
+    if (task.questions.some((question) => question.answer === null))
+      throw new Error("Answer the pending question before workspace work.");
     if (task.stepId !== "build")
       throw new Error("Workspace operations require the build step.");
     if (

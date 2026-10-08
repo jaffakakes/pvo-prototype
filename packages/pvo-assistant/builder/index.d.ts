@@ -48,6 +48,12 @@ export function serializeBuilderTool(value: unknown): string;
 export type BuilderDecision =
   | { kind: "research"; calls: BuilderResearch[] }
   | {
+      kind: "ask_research";
+      prompt: string;
+      choices: string[];
+      calls: Exclude<BuilderResearch, { kind: "capability_record" }>[];
+    }
+  | {
       kind: "agreement";
       agreement: import("../services/index.js").ServiceAgreement;
     }
@@ -177,10 +183,38 @@ export type ResearchEvidence = {
   assessment: ResearchAssessment;
   verification: "source_text_only";
 };
+export type CapabilityDecision = {
+  kind: "capability_record";
+  key: string;
+  operation: string;
+  outcome: string;
+  selection: "proposed" | "selected";
+  status:
+    "available" | "needs_account" | "needs_adapter" | "manual" | "unverified";
+  reason: string;
+  basis: {
+    type: "component_logic" | "container_state" | "external";
+    evidenceIds: string[];
+    connectionReadId: string | null;
+    connectionId: string | null;
+    adapterOperation: string | null;
+    permissions: string[];
+  };
+  answerQuestionId: string | null;
+};
+export type SavedCapabilityDecision = {
+  decision: CapabilityDecision;
+  basisDigest: string;
+  connectionRevision: number | null;
+  answerCount: number;
+  verification: "planning_only";
+};
 export type BuilderResearch =
   | { kind: "web_search"; query: string }
   | { kind: "web_read"; url: string }
-  | ResearchEvidenceRequest;
+  | ResearchEvidenceRequest
+  | { kind: "connections_read"; after: string | null }
+  | CapabilityDecision;
 export const BUILDER_RESEARCH_KINDS: readonly BuilderResearch["kind"][];
 export const BUILDER_RESEARCH_LIMITS: Readonly<{
   queryBytes: number;
@@ -189,6 +223,16 @@ export const BUILDER_RESEARCH_LIMITS: Readonly<{
   textBytes: number;
 }>;
 export type BuilderResearchResult =
+  | {
+      kind: "connections_read";
+      status: "completed";
+      result: import("../connections/index.js").ConnectionPage;
+    }
+  | {
+      kind: "capability_record";
+      status: "completed";
+      result: SavedCapabilityDecision;
+    }
   | { kind: "web_evidence"; status: "completed"; result: ResearchEvidence }
   | {
       kind: BuilderResearch["kind"];
@@ -237,3 +281,16 @@ export function builderResearchDefinitions(
   description: string;
   schema: object;
 }>;
+
+export function createCapabilityDecision(
+  value: CapabilityDecision,
+  facts: {
+    connection: import("../connections/index.js").ConnectionMetadata | null;
+    evidence: ResearchEvidence[];
+    selectedAnswer: import("../tasks/index.js").TaskQuestion | null;
+    previous: SavedCapabilityDecision | null;
+    basisDigest: string;
+    currentBasisDigest: string;
+    answerCount: number;
+  },
+): SavedCapabilityDecision;

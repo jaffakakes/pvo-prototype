@@ -111,8 +111,30 @@ export function builderDecisionSchema(hasAgreement, definitions) {
   const workspace = definitions.filter(
     (tool) => !BUILDER_RESEARCH_KINDS.includes(tool.kind),
   );
+  const independent = research.filter(
+    (tool) => tool.kind !== "capability_record",
+  );
   const researchChoices = research.length
     ? [
+        ...(independent.length
+          ? [
+              object({
+                kind: { const: "ask_research" },
+                prompt: string(TASK_LIMITS.questionBytes),
+                choices: array(
+                  string(TASK_LIMITS.choiceBytes),
+                  TASK_LIMITS.choices,
+                ),
+                calls: array(
+                  {
+                    anyOf: independent.map((tool) => tool.schema),
+                  },
+                  2,
+                  1,
+                ),
+              }),
+            ]
+          : []),
         object({
           kind: { const: "research" },
           calls: array({ anyOf: research.map((tool) => tool.schema) }, 2, 1),

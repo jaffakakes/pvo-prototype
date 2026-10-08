@@ -29,6 +29,7 @@ export const BUILDER_LIMITS = Object.freeze({
 const fields = {
   agreement: ["agreement"],
   research: ["calls"],
+  ask_research: ["prompt", "choices", "calls"],
   ask: ["prompt", "choices"],
   tools: ["calls", "review"],
   review: ["revision", "digest", "entrypoint", "tests", "libraries"],
@@ -41,23 +42,27 @@ export function parseBuilderDecision(value, { hasAgreement, available }) {
   choice(
     kind,
     hasAgreement
-      ? ["ask", "tools", "research", "review"]
-      : ["ask", "agreement", "research"],
+      ? ["ask", "tools", "research", "ask_research", "review"]
+      : ["ask", "agreement", "research", "ask_research"],
     "Builder stage",
   );
   if (kind === "agreement") parseServiceAgreement(value.agreement);
-  if (kind === "ask") {
+  if (["ask", "ask_research"].includes(kind)) {
     text(value.prompt, TASK_LIMITS.questionBytes, "Builder question");
     list(value.choices, TASK_LIMITS.choices, "Builder choices");
     for (const item of value.choices)
       text(item, TASK_LIMITS.choiceBytes, "Builder choice");
     unique(value.choices, "Builder choices");
   }
-  if (kind === "research") {
+  if (["research", "ask_research"].includes(kind)) {
     list(value.calls, 2, "Public research batch");
     requireTask(value.calls.length > 0, "Research must request evidence.");
     for (const call of value.calls) {
       const parsed = parseBuilderResearch(call);
+      requireTask(
+        kind !== "ask_research" || parsed.kind !== "capability_record",
+        "Waiting research cannot decide the unanswered outcome.",
+      );
       requireTask(
         available.includes(parsed.kind),
         "Public research is unavailable.",
