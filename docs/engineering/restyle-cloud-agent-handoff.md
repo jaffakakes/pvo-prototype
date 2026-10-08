@@ -12,7 +12,7 @@ This is the restart guide for **Claude Code, Codex, or another coding agent**. I
 
 Fetch this focused GitHub branch on Windows or another machine. Desktop Markdown files are guarded reading copies, now including the 2D contract; branch source remains authoritative. Production is prohibited until the whole roadmap and user beta testing are finished and release is explicitly approved. No integration merge, Actions work or unreleased branch deletion. Keep PR #107 draft.
 
-## Active task: 2C complete — next 2D.01 when requested
+## Previous checkpoint: 2C complete
 
 **94/134 complete; all seven 2C tasks are verified through beta and isolated cloud acceptance.** Source `5695c39` is pushed on `feature/restyle-research-connections`, checkout `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`. Operational checkpoint `74d4bb8` is pushed; this documentation batch adds final acceptance. [Draft PR #107](https://github.com/jaffakakes/pvo-prototype/pull/107) remains open and unmerged. Full 1,653 tests, strict editor types, focused recovery checks and actual desktop/phone/editor/player acceptance remain passing.
 
@@ -26,7 +26,7 @@ Fetch this focused GitHub branch on Windows or another machine. Desktop Markdown
 
 The following 2B status is preserved historical evidence; the active 2C checkpoint above supplies current source, beta and next task.
 
-## Current status: all 2B complete, 8 October 2026
+## Previous checkpoint: all 2B complete, 8 October 2026
 
 The requested **2B milestone is finished through beta. 87/134 tasks are complete; twelve Roadmap 2 tasks remain in 2C/2D.** Private GitHub setup, encrypted credentials, approved read-only operations, lifecycle controls and same-task resume are verified. Full **1,642 tests**, strict types and actual editor desktop/phone/reload/settings acceptance pass. The real GitHub lifecycle proof passed at **05:37:18 UTC** and its local credentials/storage/processes are cleaned up. Read the newest [progress checkpoint](restyle-cloud-agent-progress.md) and [connection contract](restyle-account-connections.md) for portable evidence and its limits.
 
