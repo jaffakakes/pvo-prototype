@@ -3,6 +3,7 @@ import type { CompiledPvoComponent, PvoLanguageSource } from "../../../../../pac
 import type { ComponentType, ProjectSnapshot } from "../../project/model";
 import type { NativeTrackingEvidence } from "../../animation/trackingEvidence";
 import type { AppliedFont } from "../../../../../packages/pvo-fonts/index.js";
+import type { ServiceAttachmentAuthorization } from "../../../../../packages/pvo-assistant/attachments/index.js";
 
 export type NativePlaybackOperation = Extract<NativeOperation, { kind: "playback.seek" | "playback.play" | "playback.pause" }>;
 export type NativeBatch = {
@@ -13,6 +14,11 @@ export type NativeBatch = {
   playback: NativePlaybackOperation[];
   exportFormat: "pvo" | null;
   advancedEditingEnabled: boolean;
+  attachment?: {
+    authorization: ServiceAttachmentAuthorization;
+    sceneId: string;
+    componentId: string;
+  };
 };
 export type NativePreparation = {
   fonts?: ReadonlyMap<string, AppliedFont>;
@@ -23,4 +29,6 @@ export type NativePreparation = {
   signal?: { readonly aborted: boolean };
   /** Only actual completed tools registered by this task can supply tracking coordinates. */
   trackingEvidence?: readonly NativeTrackingEvidence[];
+  /** Only authenticated saved-result or owned-Container workflows may supply this separate service receipt. */
+  attachment?: ServiceAttachmentAuthorization;
 };

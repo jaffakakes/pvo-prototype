@@ -261,3 +261,89 @@ test("malformed, foreign-project, credential-bearing and unbounded associations 
     assert.throws(() => api.validateCheckpoint(bad));
   }
 });
+
+test("manual Container project links survive saves without an AI task and preserve a later task", () => {
+  reset();
+  const initialRequest = api.beginTaskLinkRequest();
+  const request = api.linkSavedProject(initialRequest, "server-project");
+  api.assertTaskLinkRequest(request);
+  assert.throws(() => api.assertTaskLinkRequest(initialRequest), /changed/);
+  assert.equal(api.currentTaskReference(), null);
+  assert.deepEqual(
+    api.ownedProjectReference(
+      state().assistantTaskLinks,
+      "local-project",
+      "owner-one",
+    ),
+    {
+      ownerId: "owner-one",
+      projectId: "server-project",
+    },
+  );
+  assert.equal(
+    api.ownedProjectReference(
+      state().assistantTaskLinks,
+      "local-project",
+      "other-owner",
+    ),
+    null,
+  );
+  assert.equal(
+    api.ownedProjectReference(
+      state().assistantTaskLinks,
+      "other-local",
+      "owner-one",
+    ),
+    null,
+  );
+  const saved = api.storeCheckpoint(
+    api.captureCheckpoint(state()),
+    new Map(),
+    now,
+  );
+  const restored = api.restoreCheckpoint(structuredClone(saved), new Map());
+  assert.deepEqual(restored.assistantTaskLinks.accounts, [
+    { ...ref(), taskId: null },
+  ]);
+  assert.equal(
+    api.copyProjectCheckpoint(saved, "copied-project", "Copy", now + 1)
+      .assistantTaskLinks,
+    undefined,
+  );
+  state().patch({ assistantTaskLinks: restored.assistantTaskLinks });
+  link();
+  api.linkSavedProject(api.beginTaskLinkRequest(), "server-project");
+  assert.deepEqual(api.currentTaskReference(), ref());
+  assert.throws(
+    () => api.linkSavedProject(api.beginTaskLinkRequest(), "another-project"),
+    /different server project/,
+  );
+  const stale = api.beginTaskLinkRequest();
+  account("owner-two");
+  assert.throws(() => api.linkSavedProject(stale, "server-project"), /changed/);
+  assert.equal(api.currentTaskReference(), null);
+});
+
+test("project-only links reject unsupported fields and malformed identifiers at the save boundary", () => {
+  reset();
+  api.linkSavedProject(api.beginTaskLinkRequest(), "server-project");
+  const saved = api.storeCheckpoint(
+    api.captureCheckpoint(state()),
+    new Map(),
+    now,
+  );
+  for (const patch of [
+    { taskId: undefined },
+    { ownerId: "" },
+    { projectId: "https://private.example" },
+    { credential: "secret" },
+    { taskId: 7 },
+  ]) {
+    const invalid = structuredClone(saved);
+    Object.assign(invalid.assistantTaskLinks.accounts[0], patch);
+    assert.throws(() => api.validateCheckpoint(invalid));
+  }
+  const invalid = structuredClone(saved);
+  delete invalid.assistantTaskLinks.accounts[0].taskId;
+  assert.throws(() => api.validateCheckpoint(invalid));
+});

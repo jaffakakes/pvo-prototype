@@ -1,3 +1,4 @@
+import type { TryServiceHost } from "./createTryServiceRequests";
 import type { CaptureState } from "../../state/types";
 import type { PvoRequestFailure } from "../../../../packages/pvo-sdk/index.js";
 import type { TryDiagnosticSink } from "./createTryDiagnostics";
@@ -24,6 +25,7 @@ export type TrySessionState = Pick<
 >;
 export type TrySessionHost = {
   diagnostics?: TryDiagnosticSink;
+  services?: TryServiceHost;
   getState(): TrySessionState;
   request: typeof fetch;
   publishRuntimeState(state: Record<string, unknown> | null): void;
