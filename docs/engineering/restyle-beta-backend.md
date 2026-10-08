@@ -16,6 +16,21 @@ In plain terms: give the beta app its own online memory and engine. Keep saved t
 - [x] **BETA.04** Serve the existing checked beta app with the backend on one HTTPS origin; verify real sign-in, owner-scoped tasks/Containers, save/reload and authorized execution without production access.
 - [x] **BETA.05** Verify browser and service operation/recovery, record retained resources, cost controls and cleanup; save the GitHub and portable handoff with the exact beta URL.
 
+## Full AI journey acceptance — 8 October 2026
+
+The creator explicitly requested a fresh end-to-end test of the complete natural-language AI builder, beyond the earlier manually prepared diagnostic Container. Production remains prohibited. Use a separate local project, **AI guestbook end-to-end test**, and synthetic names/messages. Preserve the creator’s original edit and all earlier completion evidence.
+
+Exact request:
+
+> Create a shared guestbook component. Visitors enter a display name and a short message and press Sign guestbook. Save each entry in a hosted Container so it is still there after closing and reopening the video. Show the latest saved entries and a clear confirmation after signing. Keep the form on screen until the visitor submits it. This is a beta demo with made-up names; do not send emails or contact any outside service.
+
+- [ ] **E2E.01** Submit that request through the actual beta assistant; retain the saved task, necessary answers and AI-generated source without substituting manually written code.
+- [ ] **E2E.02** Let the existing runner test/repair the generated code in the workshop and pass independent checks; review and apply the checked Component/Container through normal product controls.
+- [ ] **E2E.03** Exercise the actual connected form, normal beta export/viewer path and reopen recovery with synthetic entries; verify retained records and honest displayed results.
+- [ ] **E2E.04** Pause the demonstration after verification, confirm compute cleanup, record any fixes/checks and update the committed portable handoff. Keep the isolated demo for creator review.
+
+**In progress:** test project `f50029e0-0255-472b-b23b-0253dad07dd7` is created. The exact request was submitted through the real assistant and appears in a saved cloud task as **Working**. No generated Container or passing code report is claimed yet. Private intent is recorded in the existing deployment journal; existing owner grants and runtime are reused. No new account connection, outside message, production deployment or arbitrary model-turn cap.
+
 ## Planned ownership
 
 | Resource | Beta target | Lifetime |

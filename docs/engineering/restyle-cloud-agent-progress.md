@@ -1,6 +1,10 @@
 # Restyle cloud agent: current progress and handoff log
 
-## Current checkpoint — ongoing beta backend verified and connected
+## Current checkpoint — full AI guestbook journey in progress
+
+The creator now explicitly authorizes a real natural-language request through the connected beta, so the AI must generate the draft and Component itself. Read the [four separate E2E acceptance steps](restyle-beta-backend.md#full-ai-journey-acceptance--8-october-2026). Earlier all 134 implementation tasks and BETA.01–05 remain complete; the manual diagnostic proof is preserved and does not count as this new AI-generation acceptance. Separate project **AI guestbook end-to-end test**, `f50029e0-0255-472b-b23b-0253dad07dd7`, uses synthetic entries; original human edit is untouched. Source branch remains `codex/restyle-beta-backend`, draft PR #110 open/unmerged. The real foreground request creates a saved cloud task marked **Working**. Its local project link survives a full page reload; normal existing Clerk handoff is verified. No generated source/Container or passing report is claimed yet. This documentation checkpoint records the started acceptance. Exact next **E2E.01**: inspect the recovered task, answer any necessary intent question, and let the AI generate its own source. Production/integration merges/Actions/branch deletion/agent email remain prohibited. Private journal records resource intent and cleanup obligations.
+
+## Previous checkpoint — ongoing beta backend verified and connected
 
 **BETA.01–05 complete; all 134 Roadmap 1–4 implementation checkboxes preserved.** Production remains prohibited; agent email is paused. The connected beta is **https://restyle-beta.jaffakakes28.workers.dev/editor/**. The creator’s password minimum is now **8** in Clerk Development with other protections unchanged, and actual human signup/verification plus normal account handoff pass. Only the real verified owner has private model/workspace/hosting access, expiring **7 November 2026, 19:13:01 UTC**. Current guarded beta Worker **`277592c9-18f0-4784-ab58-a2b4ca95c6ba`** has independent beta D1/R2 and SQLite namespaces. Production Worker timestamp/storage are unchanged.
 
