@@ -18,7 +18,7 @@ import {
   parseServiceFilePath,
   SERVICE_PACKAGE_LIMITS,
 } from "../services/index.js";
-import { parseBuilderTool } from "./tools.js";
+import { BUILDER_TOOL_KINDS, parseBuilderTool } from "./tools.js";
 
 export const BUILDER_LIMITS = Object.freeze({
   batchCalls: 4,
@@ -44,6 +44,12 @@ export function parseBuilderDecision(
   { hasAgreement, available, connectionSetup = false },
 ) {
   const kind = value && Object.getOwnPropertyDescriptor(value, "kind")?.value;
+  requireTask(
+    !BUILDER_TOOL_KINDS.includes(kind),
+    hasAgreement
+      ? 'A workspace tool cannot be the top-level builder decision. Return {"kind":"tools","calls":[the workspace tool object],"review":null}. Keep the tool kind and its fields inside calls.'
+      : "A workspace tool cannot be the top-level builder decision. Propose a valid behavior agreement before generating source or using workspace tools.",
+  );
   object(value, ["kind", ...(fields[kind] ?? [])], "Builder decision");
   choice(
     kind,

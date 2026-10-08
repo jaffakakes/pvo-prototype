@@ -110,6 +110,36 @@ test("builder schema exposes only the current stage and actually available tools
   );
 });
 
+test("a top-level workspace tool gets actionable repair feedback and the corrected batch remains validated", async () => {
+  const tool = { kind: "workspace_list" };
+  assert.throws(
+    () => parseBuilderDecision(tool, stage(false)),
+    /Propose a valid behavior agreement/,
+  );
+  await assert.rejects(
+    planSavedBuild(
+      claim(create()),
+      { agreement: dinnerAgreement() },
+      definitions,
+      provider(tool).env,
+      signal(),
+    ),
+    (error) =>
+      error.code === "invalid_result" &&
+      error.feedback.message.includes('"kind":"tools"') &&
+      error.feedback.message.includes('"review":null') &&
+      error.feedback.message.includes("inside calls"),
+  );
+  const batch = { kind: "tools", calls: [tool], review: null };
+  assert.deepEqual(parseBuilderDecision(batch, stage(true)), batch);
+  assert.throws(() =>
+    parseBuilderDecision(
+      { ...batch, calls: [{ ...tool, ownerId: "invented" }] },
+      stage(true),
+    ),
+  );
+});
+
 test("the builder inference uses saved task goals and feedback without platform credentials", async () => {
   const task = claim(create());
   const agreement = dinnerAgreement();

@@ -173,6 +173,11 @@ export class AssistantTasks extends DurableObject {
             case "diagnostics": {
               const task = repository.read(operation.id, now);
               return {
+                reference: {
+                  ownerId: task.ownerId,
+                  projectId: task.input.projectId,
+                  taskId: task.id,
+                },
                 stepId: task.stepId,
                 repair: this.repairs.context(task),
               };

@@ -13,7 +13,15 @@ test("private authoring diagnostics explain a rejected plan without restarting o
     const route = path(task) + "/diagnostics";
     const initial = await fixture.request(route);
     expectStatus(initial, 200);
-    assert.deepEqual(initial.body, { stepId: "plan", repair: null });
+    assert.deepEqual(initial.body, {
+      reference: {
+        ownerId: task.ownerId,
+        projectId: task.input.projectId,
+        taskId: task.id,
+      },
+      stepId: "plan",
+      repair: null,
+    });
     await fixture.control({ action: "sweep" });
     await fixture.control({ action: "sweep" });
     const before = (await fixture.request(path(task))).body.task;

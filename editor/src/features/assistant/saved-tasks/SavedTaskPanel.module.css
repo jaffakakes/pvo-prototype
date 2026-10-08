@@ -121,3 +121,9 @@
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+.proposal {
+  max-height: 18rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

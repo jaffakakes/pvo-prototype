@@ -9,6 +9,7 @@ import {
   type TaskReference,
 } from "../../../../packages/pvo-assistant/tasks/index.js";
 import { AssistantServiceError } from "../../domain/assistant/failure";
+import { parseBuildDiagnostic } from "../../domain/assistant/buildDiagnostics";
 import { readAssistantJson } from "./serviceResponse";
 
 export class SavedTaskHttpError extends Error {
@@ -61,6 +62,21 @@ async function requestTask(
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new AssistantServiceError(422);
   return value as Record<string, unknown>;
+}
+
+export async function readBuildDiagnostic(
+  reference: TaskReference,
+  signal: AbortSignal,
+) {
+  const ref = parseTaskReference(reference);
+  return parseBuildDiagnostic(
+    await requestTask(
+      `/api/assistant/tasks/${ref.taskId}/diagnostics`,
+      undefined,
+      signal,
+    ),
+    ref,
+  );
 }
 
 export async function resolveTaskProject(

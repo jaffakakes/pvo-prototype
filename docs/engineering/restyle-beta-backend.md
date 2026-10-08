@@ -29,7 +29,7 @@ Exact request:
 - [ ] **E2E.03** Exercise the actual connected form, normal beta export/viewer path and reopen recovery with synthetic entries; verify retained records and honest displayed results.
 - [ ] **E2E.04** Pause the demonstration after verification, confirm compute cleanup, record any fixes/checks and update the committed portable handoff. Keep the isolated demo for creator review.
 
-**In progress:** test project `f50029e0-0255-472b-b23b-0253dad07dd7` is created. The exact request was submitted through the real assistant and appears in a saved cloud task as **Working**. No generated Container or passing code report is claimed yet. Private intent is recorded in the existing deployment journal; existing owner grants and runtime are reused. No new account connection, outside message, production deployment or arbitrary model-turn cap.
+**In progress:** test project `f50029e0-0255-472b-b23b-0253dad07dd7` owns actual saved task `ABb5x-Z_nvH_EaaxCsUR_w`; the exact request and answer survive reopening. The accepted agreement reaches `build`, where the AI proposes guestbook source/tests but repeatedly returns a top-level workspace command instead of the required batch. No source write or passing code report is claimed. Owned inline **Build check details** now exposes that real rejection; strict validation stays enforced. The general batch-feedback correction is being verified before resuming the same task. See the [current progress](restyle-cloud-agent-progress.md) for checks and delivered versions. Existing owner grant/runtime are reused; no outside message or production release.
 
 ## Planned ownership
 

@@ -1,6 +1,7 @@
 import { ManualFollowUps } from "./ManualFollowUps";
 import { ConnectionsPanel } from "../../account-connections/ConnectionsPanel";
 import { TaskAnswer } from "./TaskAnswer";
+import { BuildDiagnostic } from "./BuildDiagnostic";
 import { SavedTaskResult } from "./SavedTaskResult";
 import { savedTaskStatus } from "../../../domain/assistant/savedTaskStatus";
 import { openSignIn } from "../../../state/auth/authGateStore";
@@ -75,20 +76,7 @@ export function SavedTaskPanel() {
         />
       )}
       {session.task && status?.question?.id.startsWith("repair-help-") && (
-        <details className={styles.history}>
-          <summary>Build check details</summary>
-          <p>
-            The rejected plan and the check that failed are private to your
-            account. Opening these details does not restart the task.
-          </p>
-          <a
-            href={`/api/assistant/tasks/${session.task.id}/diagnostics`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Open private diagnostic
-          </a>
-        </details>
+        <BuildDiagnostic task={session.task} />
       )}
       {session.task?.questions.some((question) => question.answer) && (
         <details className={styles.history}>
