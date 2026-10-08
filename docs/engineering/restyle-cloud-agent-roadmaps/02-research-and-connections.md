@@ -38,16 +38,20 @@ The creator's actual goal determines the plan. Restaurant bookings and the other
 
 ## 2B. Connect one external account securely
 
-- [ ] **2B.01** Choose one real integration for the first implementation based on accessible account and test support. Document the exact operations it enables.
-- [ ] **2B.02** Build the required secure connection flow: provider sign-in or a private key-entry screen. Save a connection reference in the task.
-- [ ] **2B.03** Keep credentials in the server's protected connection store. Exclude them from model context, workspace files, PVO files, diagnostics, and public URLs.
-- [ ] **2B.04** Add a controlled server adapter that attaches credentials only for approved destinations and operations. An arbitrary URL in generated code cannot receive them.
+- [x] **2B.01** Choose one real integration for the first implementation based on accessible account and test support. Document the exact operations it enables.
+- [x] **2B.02** Build the required secure connection flow: provider sign-in or a private key-entry screen. Save a connection reference in the task.
+- [x] **2B.03** Keep credentials in the server's protected connection store. Exclude them from model context, workspace files, PVO files, diagnostics, and public URLs.
+- [x] **2B.04** Add a controlled server adapter that attaches credentials only for approved destinations and operations. An arbitrary URL in generated code cannot receive them.
 - [ ] **2B.05** Provide connection status, reconnect, and disconnect operations. Check creator ownership and scope on every call.
-- [ ] **2B.06** Continue the saved task after account setup without repeating answered questions or completed deployments.
+- [x] **2B.06** Continue the saved task after account setup without repeating answered questions or completed deployments.
 
 **Finished when:** connect, reload, resume, expire, reconnect, and revoke an account. Each state has a usable next step, and another creator cannot invoke the connection.
 
 **Where to start:** [account identity](../../../server/identity.js), [HTTP helpers](../../../server/http.js), and the focused service/task owners introduced in Roadmap 1. Give connection storage and provider-specific calls their own responsibilities.
+
+**2B implementation evidence, 8 October 2026:** GitHub read-only repository/issue operations are installed through the private setup and encrypted account store. Fixed provider destinations, ownership/revision checks, secret exclusion, typed saved answers and same-task resume pass controlled provider/Worker and actual editor checks. Full **1,642 tests**, strict types, desktop/phone/reload and account-switch acceptance pass. Source `9068ce0` is pushed; combined beta `14e33f0` passes build/types/49 focused checks and is delivered as `restyle-editor-shell-9ba9e267c3671ed5`, with served files and activated service worker verified. See the [connection contract](../restyle-account-connections.md#verification-checkpoint--8-october-2026) and [progress](../restyle-cloud-agent-progress.md).
+
+**Remaining gate: 2B.05 real-account lifecycle acceptance.** Its controls are implemented and pass controlled tests, but the real private GitHub setup is waiting for the creator's short-lived token. Keep this checkbox and the overall 2B milestone unfinished until authenticated connect/read, restart/resume, expiry, reconnect, other-owner rejection, disconnect and cleanup pass. The public repository does not prove private-repository permission. Static beta delivery does not configure permanent account/task APIs, and generated Container access remains 2C.
 
 ## 2C. Let generated services use the connection
 
