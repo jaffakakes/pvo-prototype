@@ -38,8 +38,8 @@ test("a model reply near its deadline retains a claim long enough to settle exac
     const task = await saved(fixture);
     await started;
     const running = await state(fixture, task);
-    // Model decoding and receipt settlement may extend beyond the former 60-second claim.
-    await fixture.control({ action: "time", now: running.updatedAt + 65000 });
+    // Model decoding and receipt settlement may extend beyond the former shorter planning claims.
+    await fixture.control({ action: "time", now: running.updatedAt + 185000 });
     release();
     const result = await until(
       () => state(fixture, task),

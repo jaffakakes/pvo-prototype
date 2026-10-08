@@ -70,8 +70,8 @@ import {
   taskListInput,
 } from "./input.js";
 
-// Allow the native model's full text attempt, then leave time to settle its receipt.
-const AUTHORING_TIMEOUT_MS = 60000;
+// Saved code edits may return a full test/agreement; leave time to settle the receipt.
+const AUTHORING_TIMEOUT_MS = 180000;
 const AUTHORING_CLAIM_MS = AUTHORING_TIMEOUT_MS + 15000;
 
 /** Private binding: only trusted routes select the object using the authenticated owner. */
