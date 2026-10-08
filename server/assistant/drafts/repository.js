@@ -44,11 +44,15 @@ export class TaskDrafts {
       identity: saved.draft.identity,
       revision: saved.draft.revision,
       metadata,
-      files: files.map((file) => ({
-        path: file.path,
-        bytes: new TextEncoder().encode(file.content).length,
-        codePoints: Array.from(file.content).length,
-      })),
+      files: files.map((file) => {
+        const bytes = new TextEncoder().encode(file.content).length;
+        return {
+          path: file.path,
+          bytes,
+          codePoints: Array.from(file.content).length,
+          ...(bytes <= 4096 ? { content: file.content } : {}),
+        };
+      }),
       read: saved.read,
       executionReason: saved.reason,
       maintenance: saved.maintenance

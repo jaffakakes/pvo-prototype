@@ -397,3 +397,70 @@ test(
     }
   },
 );
+
+test(
+  "small source and test context survives alternating reads while unrelated large source stays bounded",
+  { timeout: 25000 },
+  async () => {
+    const original = [
+      { path: "src/main.mjs", content: "// creator source 🧪" },
+      { path: "tests/manual.test.mjs", content: "// creator test" },
+      {
+        path: "src/large.mjs",
+        content: "// large manual file\n" + "x".repeat(60000),
+      },
+    ];
+    const f = await taskFixture({
+      services: true,
+      planner: async (request) => {
+        const { draftContext: d } = await request.json();
+        if (d.revision !== 1) return Response.json({ kind: "done" });
+        const main = d.files.find((file) => file.path === original[0].path);
+        const checks = d.files.find((file) => file.path === original[1].path);
+        const large = d.files.find((file) => file.path === original[2].path);
+        assert.equal(main.content, original[0].content);
+        assert.equal(checks.content, original[1].content);
+        assert.equal(Object.hasOwn(large, "content"), false);
+        if (!d.read)
+          return Response.json({ kind: "read", path: main.path, offset: 0 });
+        if (d.read.path === main.path)
+          return Response.json({ kind: "read", path: checks.path, offset: 0 });
+        return Response.json({
+          ...write(d, main.content + "\n// requested edit"),
+          files: [
+            { path: main.path, content: main.content + "\n// requested edit" },
+            {
+              path: checks.path,
+              content: checks.content + "\n// regression added",
+            },
+          ],
+        });
+      },
+    });
+    try {
+      const c = await create(f, { files: original });
+      const ready = await until(
+        f,
+        c.task,
+        (task) => task.state === "ready" || task.state === "failed",
+      );
+      assert.equal(ready.state, "ready");
+      await f.restart();
+      const draft = (await f.request(c.draftPath)).body;
+      assert.equal(draft.revision, 2);
+      assert.deepEqual(draft.content.files, [
+        {
+          ...original[0],
+          content: original[0].content + "\n// requested edit",
+        },
+        {
+          ...original[1],
+          content: original[1].content + "\n// regression added",
+        },
+        original[2],
+      ]);
+    } finally {
+      await f.close();
+    }
+  },
+);
