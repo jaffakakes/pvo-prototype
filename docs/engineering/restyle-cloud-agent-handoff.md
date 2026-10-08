@@ -2,11 +2,23 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
-## Current continuation — finish all Roadmap 3
+## Current checkpoint — Roadmap 4 final delivery
 
-**122/134 checked. All 3A/3B/3C and 3D.02–05 are verified; only 3D.01 remains in Roadmap 3.** Continue `codex/restyle-background-work` in `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`. Read the top [progress checkpoint](restyle-cloud-agent-progress.md) and [current contract](restyle-background-work.md). Source remains pending; previous Roadmap 2 beta remains active.
+The creator authorized completing all Roadmap 4 and paused agent email. **133/134 checked**; all 4A/4C and 4D.01–02 are verified. Source is on `codex/restyle-maintenance` in `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`, based on fetched `origin/dev` plus the unreleased Roadmap1–3 prerequisite `d44254d`. Read the current [progress](restyle-cloud-agent-progress.md) and [maintenance contract](restyle-maintenance.md).
 
-**Exact next:** finish the controlled real-email driver rehearsal, actual Resend acceptance and cleanup, finish UI review and beta delivery, then commit/push completion evidence. Creator/player/normal export acceptance pass. The first live driver sent zero emails because its test clock was frozen; its local input/storage were removed. Existing cloud proof needs no paid repeat. Account-linked agent email is later 4D. Production, integration merges, Actions and unreleased-branch deletion remain prohibited.
+Full1,695 checks, strict editor types, focused countercheck/manual-conflict/update/rollback/account health cases and actual creator/component/export/player browsers pass. No live model inference, provider message or paid cloud resource was required; unchanged existing provider/runtime acceptance is preserved. Source is pending after the initial checkpoint commit.
+
+**Exact next: 4D.03 final delivery.** Finish final visual/format/link checks; commit/push and create/attach a draft PR to `dev`; prepare an isolated combined beta from previous `fcdb0bc`, build and deliver assets before HTML/SW into actual Desktop `dist/` at4173, preserving pending output and old hashed assets. Verify served bytes and actual activated service worker; stop owned source5327; record cleanup/evidence, final checkboxes and guarded Desktop reading snapshots in Git. No source/integration branch merge, Actions, production or deletion of unreleased branches. Agent email remains paused.
+
+## Previous checkpoint — Roadmaps 1–3 complete through beta
+
+**123/134 checked; all 24 Roadmap 3 tasks are complete. Eleven Roadmap 4 tasks remain.** Continue from **`origin/codex/restyle-background-work`**, application source `a9941bc` plus this final proof/handoff commit, [draft PR #108](https://github.com/jaffakakes/pvo-prototype/pull/108), open/unmerged. Checkout `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`. Read the top [progress checkpoint](restyle-cloud-agent-progress.md) and [background-work contract/portable acceptance](restyle-background-work.md#verified-acceptance--8-october-2026).
+
+**Verified:** all 1,686 tests, strict editor types, actual desktop/phone creator/player/normal PVO export, offline compiled Try, restart/recovery/ownership and controlled failure/callback/schedule/retention gates. Actual Resend acceptance, lost-reply reconciliation with the same message ID/key, saved guest reply and delivered-to-mail-server status pass at **14:11:24–14:12:28 UTC on 8 October**. Local test storage/credential copies are removed and setup/source listeners stopped; provider key revocation is not claimed. No paid cloud resource or model inference.
+
+**Beta delivered:** combined `fcdb0bc`, `/private/tmp/restyle-background-beta-a9941bc`, build/types/34 focused checks; actual Desktop `dist/` at4173 serves **`restyle-editor-shell-11e6efbf44f761ab`**, with exact module/new UI/activated service-worker verification. Backup retained, 142 old hashed assets preserved, no forced reload. Static beta has no permanently configured task/account/service APIs. Fresh design review disposition **ship** and documentation handoff are complete.
+
+**Exact next: 4A.01**, when Roadmap 4 is requested. Do not continue new product work under the completed Roadmap 3 authorization. Preserve all completed evidence; missing private local logs do not justify rerunning paid or live provider proofs. Account-linked agent email is later 4D. Production, integration merges, Actions and unreleased-branch deletion remain prohibited until the rest of the roadmap, user beta testing and explicit release approval.
 
 ## Previous checkpoint — all Roadmap 2 complete through beta
 
@@ -112,7 +124,7 @@ This historical checkpoint completed 1E, 1F and 1G.01–03 through beta. The act
 
 **On this Mac:** use the active implementation checkout above. It includes reviewed plan `9c0b07b`. Desktop Markdown files are guarded reading copies; Desktop app source is not this implementation. Preserve its pending generated output.
 
-**On another machine:** fetch the active `origin/feature/restyle-research-connections` branch above; it includes the verified `feature/restyle-containers` prerequisite. Read that branch's latest progress and handoff first. The preceding planning branch remains `origin/docs/restyle-node-containers-roadmap`; its reviewed plan is included in the implementation history. Use a clean checkout/worktree without resetting another checkout. A branch is not evidence of deployment. Committed evidence is sufficient to resume; missing private local logs do not justify rerunning completed paid proofs.
+**On another machine:** fetch the active `origin/codex/restyle-background-work` branch above; it includes verified Roadmap 1/2 prerequisites. Read that branch's latest progress and handoff first. The preceding planning branch remains `origin/docs/restyle-node-containers-roadmap`; its reviewed plan is included in the implementation history. Use a clean checkout/worktree without resetting another checkout. A branch is not evidence of deployment. Committed evidence is sufficient to resume; missing private local logs do not justify rerunning completed paid proofs.
 
 **Continuation:** use the active task at the top and the exact next action in progress; the older 1G.04 instruction is historical. Recheck newer evidence; never infer completion from the plan. After each verified item, update its one checkbox and the progress log in the same batch. Before interruption, save changed files, checks run/unrun, resources, uncertainty and the exact next action. No Codex-specific tool or previous chat is required.
 

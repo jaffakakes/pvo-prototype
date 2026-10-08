@@ -71,6 +71,8 @@ export async function taskFixture({
         return super.executePackage(source,invocation,mode,signal);
       }
       async diagnostic(action) {
+        if(action==='drop-live-release')this.ctx.storage.sql.exec('UPDATE service_releases SET body=NULL WHERE id=?',this.store.service().liveReleaseId);
+        if(action==='exhaust-calls')this.ctx.storage.sql.exec('INSERT INTO service_usage(namespace,day,calls,executions) VALUES(?,?,1024,256) ON CONFLICT(namespace) DO UPDATE SET day=excluded.day,calls=1024,executions=256','live',Math.floor(this.now()/86400000));
         if(action==='stop-draft-writer')await this.stopDraftTask(this.store.service().identity.serviceId,this.store.service().identity.ownerId,'expired-writer');
         if(action==='sweep')await this.alarm();
         if(['maintenance','sweep','stop-draft-writer'].includes(action))return {alarm:await this.ctx.storage.getAlarm(),releases:this.store.rows(),draft:this.drafts.read(),writers:this.ctx.storage.sql.exec('SELECT * FROM draft_writers').toArray(),failures:this.ctx.storage.sql.exec('SELECT * FROM service_failures').toArray(),connections:this.ctx.storage.sql.exec('SELECT * FROM service_connections').toArray()};
@@ -105,6 +107,7 @@ export async function taskFixture({
         this.ctx.storage.sql.exec("INSERT INTO test_spending (id,body) VALUES (1,?) ON CONFLICT(id) DO UPDATE SET body=excluded.body",JSON.stringify(grants));
       }
       pausePlanning() { this.planningPaused = true; }
+      async resumePlanning() { this.planningPaused = false; await this.scheduleMaintenance(this.now()); }
       // Real host-clock diagnostics seed authoring manually; only service alarms should run automatically.
       async alarm() { if (!this.planningPaused && (!this.env.REAL_CLOCK || this.env.CONTROLLED_PLAN)) return super.alarm(); }
       stepTimeoutMs() { return this.env.CONTROLLED_PLAN ? 1000 : super.stepTimeoutMs(); }
@@ -334,6 +337,7 @@ export async function taskFixture({
           if (action === "inspect") return json(await stub.inspect());
           if (action === "sweep") return json(await stub.sweep());
           if (action === "fail-result-write") { await stub.failResultWrite(); return json({ ok: true }); }
+          if (action === "resume-planning") { await stub.resumePlanning(); return json({ok:true}); }
           if (action === "results") return json({ count: await stub.resultCount() });
           if (action === "complete") return json(await stub.completePreparedResult(owner.id, args.id, args.operations, args.guard));
           if (action === "step") return json(await stub.step(owner.id, args.id, args.command, args.expectedRevision));

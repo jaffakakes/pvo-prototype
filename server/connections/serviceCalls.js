@@ -53,6 +53,30 @@ export async function accountServiceCommand(coordinator, ownerId, kind, input) {
     );
     return { removedCompleted: true };
   }
+  if (kind === "service_metadata") {
+    object(input, ["connectionId", "permission"], "Connection health");
+    id(input.connectionId, "Connection");
+    if (
+      ![
+        "repository:read",
+        "issues:read",
+        "issues:write",
+        "email:send",
+      ].includes(input.permission)
+    )
+      throw new HttpError(400, "Unknown permission.");
+    manager.expire();
+    const current = manager.get(input.connectionId);
+    return {
+      id: current.id,
+      status:
+        current.connection.status === "connected" &&
+        !current.connection.permissions.includes(input.permission)
+          ? "permission_missing"
+          : current.connection.status,
+      expiresAt: current.details.expiresAt,
+    };
+  }
   const checking = kind === "service_check";
   object(
     input,

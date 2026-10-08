@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile, writeFile, mkdir, rm, access } from "node:fs/promises";
 import { homedir } from "node:os";
 import { randomBytes, createHash } from "node:crypto";
+import { createServer } from "node:http";
 import { setTimeout as delay } from "node:timers/promises";
 import { fixture as accountFixture } from "../../../tests/account-connections/helpers.mjs";
 import {
@@ -24,6 +25,26 @@ const privatePath = homedir() + "/.codex/secure/restyle-3/resend.json";
 const controlled = process.argv.includes("--controlled");
 const provider = controlled ? emailProvider() : null;
 if (provider) provider.event = "delivered";
+const senderServer = provider
+  ? createServer(async (request, response) => {
+      try {
+        const parts = [];
+        for await (const part of request) parts.push(part);
+        const body = Buffer.concat(parts);
+        const result = await provider.fetch(
+          new Request("https://api.resend.com" + request.url, {
+            method: request.method,
+            headers: request.headers,
+            ...(body.length ? { body } : {}),
+          }),
+        );
+        response.writeHead(result.status, Object.fromEntries(result.headers));
+        response.end(Buffer.from(await result.arrayBuffer()));
+      } catch {
+        response.writeHead(500).end();
+      }
+    })
+  : null;
 const reportPath =
   homedir() +
   `/.codex/backups/restyle-3-${controlled ? "controlled" : "live"}.json`;
@@ -37,6 +58,9 @@ const report = {
     controlled
       ? "One controlled email identity, no real provider calls"
       : "One real email to the creator-approved address; at most three allowed by private consent",
+    ...(controlled
+      ? ["One temporary local HTTP sender for native transport rehearsal"]
+      : []),
   ],
   cloudResources: [],
   realProviderPosts: 0,
@@ -112,6 +136,7 @@ const connectionFetch = async (request) => {
     const key = request.headers.get("Idempotency-Key");
     assert.match(key, /^[a-f0-9]{64}$/);
     identities.add(key);
+    report.providerRequestIdentity = key;
     assert.ok(
       identities.size <= 1,
       "Only one real email identity is allowed by this diagnostic.",
@@ -125,22 +150,52 @@ const connectionFetch = async (request) => {
       url.pathname === "/emails" ||
         url.pathname === `/emails/${report.providerId}`,
     );
-  const response = provider
-    ? await provider.fetch(
-        new Request(url, {
-          method: request.method,
-          headers: request.headers,
-          ...(body ? { body } : {}),
-        }),
-      )
-    : await fetch(url, {
+  report.forwardedHeaderNames = [...request.headers.keys()];
+  report.hostMatchedProvider = request.headers.get("host") === url.host;
+  // The local service-binding bridge adds transport headers. Native fetch owns
+  // Host and Content-Length; forward only the provider's application headers.
+  const headers = Object.fromEntries(
+    ["authorization", "content-type", "idempotency-key"].flatMap((name) => {
+      const value = request.headers.get(name);
+      return value === null ? [] : [[name, value]];
+    }),
+  );
+  let response;
+  try {
+    response = await fetch(
+      senderServer
+        ? `http://127.0.0.1:${senderServer.address().port}${url.pathname}${url.search}`
+        : url,
+      {
         method: request.method,
-        headers: request.headers,
+        headers,
         ...(body ? { body } : {}),
         redirect: "manual",
         signal: AbortSignal.timeout(12000),
-      });
+      },
+    );
+  } catch (error) {
+    report.transportError = /^[A-Z_]{1,100}$/.test(error.cause?.code ?? "")
+      ? error.cause.code
+      : error.name;
+    await save();
+    throw new Error("Native provider transport failed.");
+  }
   const bytes = await response.arrayBuffer();
+  if (body) {
+    report.providerHttpStatus = response.status;
+    if (!response.ok) {
+      const detail = new TextDecoder().decode(bytes);
+      report.providerFailure = /only send testing emails/i.test(detail)
+        ? "starter_sender_recipient_restricted"
+        : /domain.*(?:not verified|unverified)/i.test(detail)
+          ? "sender_domain_unverified"
+          : response.status === 429
+            ? "provider_rate_limited"
+            : `provider_http_${response.status}`;
+    }
+    await save();
+  }
   if (body && response.ok && !lost) {
     const value = JSON.parse(new TextDecoder().decode(bytes));
     assert.match(value.id, /^[a-f0-9-]{36}$/);
@@ -156,6 +211,10 @@ const connectionFetch = async (request) => {
   });
 };
 try {
+  if (senderServer)
+    await new Promise((resolve) =>
+      senderServer.listen(0, "127.0.0.1", resolve),
+    );
   const checked = await checkedAcceptance();
   report.checks.push(
     "Independent expected cases executed in local Node; duplicate acceptance/capacity do not request email",
@@ -345,6 +404,7 @@ try {
       report.cleanup.fixtureRemoved = true;
     }
   }
+  if (senderServer) await new Promise((resolve) => senderServer.close(resolve));
   if (!controlled && report.status === "passed") {
     await rm(privatePath, { force: true });
     report.cleanup.privateInputRemoved = true;

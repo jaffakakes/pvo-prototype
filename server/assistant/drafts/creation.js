@@ -53,6 +53,14 @@ export async function prepareDraftTaskCreation(coordinator, ownerId, input) {
       400,
       "Save a behavior agreement and select tests before testing this draft.",
     );
+  if (
+    target.mode === "repair" &&
+    (!draft.content.agreement || !draft.content.tests.length)
+  )
+    throw new HttpError(
+      400,
+      "Save agreed behavior and test files before investigating this Container.",
+    );
   return draft;
 }
 export async function reconcileDraftStops(coordinator) {

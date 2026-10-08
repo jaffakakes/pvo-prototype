@@ -1,3 +1,5 @@
+import { prepareRegressionContinuation } from "../maintenance/regression.js";
+import { finishRepairBaseline } from "../maintenance/repair.js";
 import { nodeLibraryIds } from "../../../packages/pvo-assistant/services/index.js";
 import { prepareDraftResponse } from "./authoring.js";
 import {
@@ -32,6 +34,20 @@ export async function runDraftTestPreparation(coordinator, claimed) {
     if (claimed.stepId !== "build")
       throw new Error("Unexpected manual test step.");
     const state = coordinator.builders.get(claimed.id);
+    const countercheck = await prepareRegressionContinuation(
+      coordinator,
+      claimed,
+      state,
+    );
+    if (countercheck) {
+      await commit((task, guard) => {
+        coordinator.drafts.write(task.id, countercheck.draftState);
+        if (countercheck.builder)
+          coordinator.builders.write(task.id, countercheck.builder);
+        coordinator.repository.update(task.id, countercheck.command, guard);
+      });
+      return;
+    }
     const failedTest = state.feedback.findLast(
       (row) => row.kind === "workspace_test",
     );
@@ -40,6 +56,33 @@ export async function runDraftTestPreparation(coordinator, claimed) {
       failedTest.result.status === "completed" &&
       failedTest.result.result?.exitCode !== 0
     ) {
+      if (
+        coordinator.drafts.get(claimed.id)?.maintenance?.phase === "baseline"
+      ) {
+        await commit(() =>
+          finishRepairBaseline(
+            coordinator,
+            claimed,
+            null,
+            failedTest.result.result,
+          ),
+        );
+        return;
+      }
+      if (claimed.input.context.container?.mode === "repair") {
+        await commit((task, guard) => {
+          const saved = coordinator.drafts.get(task.id);
+          saved.maintenance.lastGenerated = failedTest.result.result;
+          saved.maintenance.phase = "diagnose";
+          coordinator.drafts.write(task.id, saved);
+          coordinator.repository.update(
+            task.id,
+            { kind: "checkpoint", stepId: "plan" },
+            guard,
+          );
+        });
+        return;
+      }
       await commit((task, guard) =>
         coordinator.repository.update(
           task.id,
@@ -66,14 +109,18 @@ export async function runDraftTestPreparation(coordinator, claimed) {
         { kind: "workspace_start", revision, digest },
         { kind: "workspace_test", revision, digest, paths: tests },
       ],
-      review: {
-        kind: "review",
-        revision,
-        digest,
-        entrypoint,
-        tests,
-        libraries: nodeLibraryIds(dependencies),
-      },
+      review:
+        coordinator.drafts.get(claimed.id)?.maintenance?.phase ===
+        "countercheck"
+          ? null
+          : {
+              kind: "review",
+              revision,
+              digest,
+              entrypoint,
+              tests,
+              libraries: nodeLibraryIds(dependencies),
+            },
     };
     await commit((task, guard) => {
       const prepared = coordinator.builders.prepare(

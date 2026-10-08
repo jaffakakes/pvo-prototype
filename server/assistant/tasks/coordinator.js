@@ -1,3 +1,6 @@
+import { repairReport } from "../maintenance/repair.js";
+import { baselineRunning } from "../maintenance/repair.js";
+import { runInitialRepairBaseline } from "../maintenance/observation.js";
 import {
   AccountConnections,
   manageAccountConnections,
@@ -167,6 +170,7 @@ export class AssistantTasks extends DurableObject {
               return { task: repository.read(operation.id, now) };
             case "tests":
               return {
+                repair: repairReport(this.drafts.get(operation.id) ?? {}),
                 tests: draftTestResults(
                   this,
                   repository.read(operation.id, now),
@@ -474,7 +478,17 @@ export class AssistantTasks extends DurableObject {
         this.builders.stage(claimed.id) !== "model"
       )
         await runBuilderBatch(this, claimed);
-      else if (claimed.input.context.container?.mode === "test")
+      else if (
+        claimed.input.context.container?.mode === "repair" &&
+        !this.drafts.get(claimed.id)?.maintenance
+      )
+        await runInitialRepairBaseline(this, claimed);
+      else if (
+        claimed.input.context.container?.mode === "test" ||
+        baselineRunning(this, claimed) ||
+        (claimed.input.context.container?.mode === "repair" &&
+          claimed.stepId === "build")
+      )
         await runDraftTestPreparation(this, claimed);
       else await runAuthoringStep(this, claimed);
     }

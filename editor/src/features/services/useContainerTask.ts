@@ -129,7 +129,7 @@ export function useContainerTask(ownerId: string, serviceId: string) {
   const start = (
     draft: ServiceDraft,
     request: string,
-    mode: "edit" | "test",
+    mode: "edit" | "test" | "repair",
   ) => {
     if (loaded !== scope || useAuthGate.getState().user?.id !== ownerId) return;
     if (link && (!view.task || !["ready", "stopped"].includes(view.task.state)))

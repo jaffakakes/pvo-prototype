@@ -14,7 +14,7 @@ import {
 } from "../../packages/pvo-assistant/hosting/index.js";
 
 const servicePath =
-  /^\/api\/services\/(service-[a-f0-9]{64})(?:\/(try|operate|actions|jobs|job-receipt|job-control|activate|pause|delete|reset_test|draft|records|operations|attachment|connections|publication|account-access|resume-account-action))?$/;
+  /^\/api\/services\/(service-[a-f0-9]{64})(?:\/(try|operate|actions|jobs|job-receipt|job-control|activate|pause|delete|reset_test|draft|maintenance|records|operations|attachment|connections|publication|account-access|resume-account-action))?$/;
 const componentTryPath =
   /^\/api\/services\/(service-[a-f0-9]{64})\/releases\/(release-[a-f0-9]{64})\/try$/;
 function routeTarget(path) {
@@ -91,6 +91,7 @@ export async function hostedServiceRoute(request, env, config) {
       (list && !creating) ||
       target?.kind === null ||
       target?.kind === "records" ||
+      target?.kind === "maintenance" ||
       target?.kind === "operations" ||
       (target?.kind === "jobs" && request.method === "GET") ||
       (target?.kind === "connections" && request.method === "GET") ||
@@ -135,6 +136,12 @@ export async function hostedServiceRoute(request, env, config) {
       );
       return finish(json(result, kind === "jobs" && !reading ? 202 : 200));
     }
+    if (kind === "maintenance")
+      return json(
+        await rpc(() =>
+          env.SERVICE_HOSTS.getByName(id).maintenance(id, owner.id),
+        ),
+      );
     if (kind === "resume-account-action") {
       object(input, ["actionId"], "Saved outside action");
       opaqueId(input.actionId, "Saved action");

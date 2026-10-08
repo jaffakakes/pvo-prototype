@@ -1,3 +1,4 @@
+import { refreshRepairObservation } from "../maintenance/observation.js";
 import {
   parseServiceDraft,
   parseServiceDraftContent,
@@ -47,7 +48,9 @@ async function conflict(coordinator, claimed) {
         state.draft = latest;
         state.read = null;
         state.pending = null;
-        state.conflict = true;
+        state.conflict = claimed.input.context.container.mode !== "repair";
+        if (claimed.input.context.container.mode === "repair")
+          state.maintenance = null;
         coordinator.drafts.write(claimed.id, state);
       },
     );
@@ -61,6 +64,7 @@ export async function runDraftStep(coordinator, claimed) {
   try {
     await withAssistantDeadline(
       async (signal) => {
+        await refreshRepairObservation(coordinator, claimed);
         let state = coordinator.drafts.get(claimed.id);
         if (state.conflict) {
           await coordinator.transaction(() =>
@@ -154,6 +158,8 @@ export async function runDraftStep(coordinator, claimed) {
                 state.draft = draft;
                 if (claimed.stepId === "draft_sync")
                   state.testingRevision = draft.revision;
+                if (claimed.stepId === "draft_sync" && state.maintenance)
+                  state.maintenance.verifiedRevision = draft.revision;
                 state.pending = null;
                 state.read = null;
                 coordinator.drafts.write(claimed.id, state);
@@ -166,7 +172,7 @@ export async function runDraftStep(coordinator, claimed) {
         signal.throwIfAborted();
         if (
           latest.revision !== state.draft.revision &&
-          claimed.input.context.container.mode === "edit"
+          ["edit", "repair"].includes(claimed.input.context.container.mode)
         )
           return conflict(coordinator, claimed);
         const encoded = await coordinator.results.encodeDraft(

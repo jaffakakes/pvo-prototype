@@ -323,9 +323,12 @@ export async function manageAccountConnections(
             operation.kind,
             operation.input,
           )
-        : ["service_check", "service_invoke", "service_forget"].includes(
-              operation.kind,
-            )
+        : [
+              "service_check",
+              "service_metadata",
+              "service_invoke",
+              "service_forget",
+            ].includes(operation.kind)
           ? await accountServiceCommand(
               coordinator,
               ownerId,
