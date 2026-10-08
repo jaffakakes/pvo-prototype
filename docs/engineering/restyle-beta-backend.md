@@ -25,7 +25,7 @@ Exact request:
 > Create a shared guestbook component. Visitors enter a display name and a short message and press Sign guestbook. Save each entry in a hosted Container so it is still there after closing and reopening the video. Show the latest saved entries and a clear confirmation after signing. Keep the form on screen until the visitor submits it. This is a beta demo with made-up names; do not send emails or contact any outside service.
 
 - [x] **E2E.01** Submit that request through the actual beta assistant; retain the saved task, necessary answers and AI-generated source without substituting manually written code.
-- [ ] **E2E.02** Let the existing runner test/repair the generated code in the workshop and pass independent checks; review and apply the checked Component/Container through normal product controls.
+- [x] **E2E.02** Let the existing runner test/repair the generated code in the workshop and pass independent checks; review and apply the checked Component/Container through normal product controls.
 - [ ] **E2E.03** Exercise the actual connected form, normal beta export/viewer path and reopen recovery with synthetic entries; verify retained records and honest displayed results.
 - [ ] **E2E.04** Pause the demonstration after verification, confirm compute cleanup, record any fixes/checks and update the committed portable handoff. Keep the isolated demo for creator review.
 
