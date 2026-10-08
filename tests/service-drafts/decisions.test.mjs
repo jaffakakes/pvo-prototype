@@ -56,6 +56,68 @@ test("bounded Unicode reads and revision-checked range edits preserve the rest o
   );
 });
 
+test("identical AI edits cannot advance a saved revision; a real metadata edit remains possible", () => {
+  const file = { path: "src/main.mjs", content: "export const value = '🧪';" };
+  const saved = {
+    draft: {
+      revision: 3,
+      content: {
+        description: "Saved draft",
+        files: [
+          file,
+          { path: "tests/main.test.mjs", content: "// selected later" },
+        ],
+        entrypoint: file.path,
+        tests: [],
+        agreement: null,
+        dependencies: [],
+      },
+    },
+  };
+  const replace = {
+    kind: "replace",
+    expectedRevision: 3,
+    path: file.path,
+    start: 0,
+    end: Array.from(file.content).length,
+    content: file.content,
+  };
+  assert.throws(
+    () => prepareDraftEdit(saved, replace, "same-source"),
+    /already saved/,
+  );
+  assert.throws(
+    () =>
+      prepareDraftEdit(
+        saved,
+        { ...replace, start: 0, end: 0, content: "" },
+        "empty-insertion",
+      ),
+    /already saved/,
+  );
+  const write = {
+    kind: "write",
+    expectedRevision: 3,
+    files: [file],
+    entrypoint: file.path,
+    tests: [],
+    libraries: [],
+    agreementJson: "null",
+  };
+  assert.throws(
+    () => prepareDraftEdit(saved, write, "same-package"),
+    /already saved/,
+  );
+  const changed = prepareDraftEdit(
+    saved,
+    { ...write, tests: ["tests/main.test.mjs"] },
+    "select-test",
+  );
+  assert.deepEqual(changed.content.tests, ["tests/main.test.mjs"]);
+  assert.deepEqual(changed.content.files, saved.draft.content.files);
+  assert.equal(saved.draft.revision, 3);
+});
+
 test("draft planning uses the native content protocol and rejects invented tools or release authority", async () => {
   const task = claim(create());
   task.input.context = {

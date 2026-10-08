@@ -59,7 +59,7 @@ test(
         "passed",
       );
       assert.ok(
-        modelClaims.length > 0 && modelClaims.every((value) => value === 60000),
+        modelClaims.length > 0 && modelClaims.every((value) => value === 75000),
       );
     } finally {
       release.resolve();

@@ -16,6 +16,47 @@ async function until(read, predicate, timeout = 6000) {
 const state = (fixture, task) =>
   fixture.request(path(task)).then((result) => result.body.task);
 
+test("a model reply near its deadline retains a claim long enough to settle exactly once", async () => {
+  let entered, release;
+  const started = new Promise((resolve) => {
+    entered = resolve;
+  });
+  const pending = new Promise((resolve) => {
+    release = resolve;
+  });
+  let calls = 0;
+  const fixture = await taskFixture({
+    productionLeases: true,
+    planner: async () => {
+      calls++;
+      entered();
+      await pending;
+      return Response.json({ kind: "ask", question: question() });
+    },
+  });
+  try {
+    const task = await saved(fixture);
+    await started;
+    const running = await state(fixture, task);
+    // Model decoding and receipt settlement may extend beyond the former 60-second claim.
+    await fixture.control({ action: "time", now: running.updatedAt + 65000 });
+    release();
+    const result = await until(
+      () => state(fixture, task),
+      (value) => value.state === "waiting_for_answer",
+    );
+    assert.equal(calls, 1);
+    assert.equal(result.usage.modelTurns, 1);
+    assert.equal(result.usage.reservedModelTurns, 0);
+    assert.equal(result.operations[0].status, "completed");
+    await fixture.restart();
+    assert.deepEqual(await state(fixture, task), result);
+  } finally {
+    release();
+    await fixture.close();
+  }
+});
+
 test("a persisted alarm runs after creation returns, saves a question, and continues after runtime restart", async () => {
   const calls = [];
   const fixture = await taskFixture({

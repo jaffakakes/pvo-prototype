@@ -13,6 +13,7 @@ import {
   requireTask,
 } from "../../../packages/pvo-assistant/tasks/validation.js";
 import { TASK_LIMITS } from "../../../packages/pvo-assistant/tasks/index.js";
+import { canonicalJson } from "../../../packages/pvo-assistant/services/json.js";
 
 const fields = {
   diagnose: ["stage", "evidenceKeys", "summary"],
@@ -97,21 +98,26 @@ export function prepareDraftEdit(saved, decision, actionId) {
         points.slice(decision.end).join(""),
     });
   } else for (const file of decision.files) files.set(file.path, file);
+  const content = parseServiceDraftContent({
+    ...saved.draft.content,
+    files: [...files.values()],
+    ...(decision.kind === "write"
+      ? {
+          entrypoint: decision.entrypoint,
+          dependencies: resolveNodeLibraries(decision.libraries),
+          tests: decision.tests,
+          agreement: JSON.parse(decision.agreementJson),
+        }
+      : {}),
+  });
+  requireTask(
+    canonicalJson(content) !== canonicalJson(saved.draft.content),
+    "This change is already saved. Use the current source and revision to continue with the remaining tests, agreement or execution; do not repeat the same edit.",
+  );
   return {
     actionId,
     expectedRevision: decision.expectedRevision,
-    content: parseServiceDraftContent({
-      ...saved.draft.content,
-      files: [...files.values()],
-      ...(decision.kind === "write"
-        ? {
-            entrypoint: decision.entrypoint,
-            dependencies: resolveNodeLibraries(decision.libraries),
-            tests: decision.tests,
-            agreement: JSON.parse(decision.agreementJson),
-          }
-        : {}),
-    }),
+    content,
   };
 }
 export function readDraftFile(saved, path, offset) {

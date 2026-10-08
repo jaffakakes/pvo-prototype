@@ -70,6 +70,10 @@ import {
   taskListInput,
 } from "./input.js";
 
+// Allow the native model's full text attempt, then leave time to settle its receipt.
+const AUTHORING_TIMEOUT_MS = 60000;
+const AUTHORING_CLAIM_MS = AUTHORING_TIMEOUT_MS + 15000;
+
 /** Private binding: only trusted routes select the object using the authenticated owner. */
 export class AssistantTasks extends DurableObject {
   constructor(ctx, env) {
@@ -392,12 +396,15 @@ export class AssistantTasks extends DurableObject {
   }
 
   stepTimeoutMs() {
-    return 45000;
+    return AUTHORING_TIMEOUT_MS;
   }
   leaseMs(task) {
-    return task?.stepId === "validate"
-      ? SERVICE_EXECUTION_LIMITS.validationClaimMs
-      : TASK_LIMITS.defaultLeaseMs;
+    if (task?.stepId === "validate")
+      return SERVICE_EXECUTION_LIMITS.validationClaimMs;
+    const planning =
+      ["plan", "attach"].includes(task?.stepId) ||
+      (task?.stepId === "build" && this.builders.stage(task.id) === "model");
+    return planning ? AUTHORING_CLAIM_MS : TASK_LIMITS.defaultLeaseMs;
   }
   spendingAllowed(task, capability) {
     return taskSpendingAllowed(this.env, task.ownerId, capability, this.now());
