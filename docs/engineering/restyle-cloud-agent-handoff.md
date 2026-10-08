@@ -4,6 +4,8 @@ This is the restart guide for **Claude Code, Codex, or another coding agent**. I
 
 ## Current checkpoint — Fly connected; beta owner sign-in pending
 
+**Immediate interruption:** creator signup is blocked by Clerk development minimum **15**. The creator requested lowering it; **8** is prepared with compromised-password checks retained. No setting is changed. Clerk management login is complete. In the Development instance (`ins_3KEjeAMQnciqyLbSjxEec4Z4csA`), the password dialog has minimum 8 prepared and compromised-password rejection on. **Update is not submitted; final confirmation is pending.** Follow the [password continuation](restyle-beta-backend.md#pending-beta-password-requirement): after confirmation, save and independently reread the public policy. The creator completes their own password/signup. Resume BETA.04 afterward; no app rebuild or production change is needed.
+
 **BETA.01–03 complete; BETA.04–05 unchecked.** All 134 Roadmap 1–4 implementation boxes retain their verified status. Production is prohibited; agent email is paused. Read the [beta deployment checklist/Fly evidence](restyle-beta-backend.md) and newest [progress](restyle-cloud-agent-progress.md).
 
 **Source:** `origin/codex/restyle-beta-backend`, checkout `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`, attached [draft PR #110](https://github.com/jaffakakes/pvo-prototype/pull/110), open/unmerged. Verified Fly/private-policy source **`4c4f3db`** is committed/pushed; this final evidence checkpoint records the portable continuation. Earlier `dbf4e5b`/`d05c982` remain included. Fetch this branch on Windows/Claude Code. Desktop Markdown files are guarded reading copies.

@@ -39,6 +39,14 @@ Initial source/configuration `dbf4e5b` and verified Fly/private-policy source **
 
 Current next task: **BETA.04**. The creator approved the fresh Fly connection, and BETA.03 is verified. Actual beta account sign-in remains pending. Keep the private `ASSISTANT_TASK_SPENDING` policy empty until the actual owner is known. No owner grant, saved creator Container or end-to-end authenticated execution is claimed yet. BETA.05 remains unchecked.
 
+### Pending beta password requirement
+
+The creator requested removing the 15-character minimum while signing up. This rule belongs to the existing **Clerk development instance** (`known-dog-5044.clerk.accounts.dev`), not the Restyle form. A read-only request to its `/v1/environment` confirms `min_length: 15`, compromised-password checking enabled (`disable_hibp: false`), and compromised-password enforcement on sign-in enabled (`enforce_hibp_on_sign_in: true`). No setting has changed yet.
+
+The prepared change is **minimum length 15 → 8**, preserving the other password protections and targeting only that development instance. The creator completed Clerk management sign-in. Restyle’s **Development** environment is selected (`ins_3KEjeAMQnciqyLbSjxEec4Z4csA`); **User & authentication → Password → Update password requirements** is open with minimum **8** prepared and compromised-password rejection still on. **Update has not been submitted; final confirmation is pending.** No management credential is stored in the beta setup. Browser-control policy requires confirmation at the final action before reducing a password protection. Never bypass the hosted rule in the frontend or enter/submit the creator's new password. See [Clerk password rules](https://clerk.com/docs/guides/secure/password-protection-and-rules).
+
+After saving, independently reread the same public policy and verify minimum 8 with the other protections unchanged. Let the creator finish their own signup, then resume BETA.04 using the actual signed-in owner. This provider setting requires no application rebuild; BETA.04–05 remain unchecked until their authenticated checks pass. Production is unchanged.
+
 ## Fly connection verified — 8 October 2026
 
 The old login session expired. The creator completed fresh Fly session `28720`; CLI identity and the browser's connected confirmation agree. The dedicated **`restyle-beta-node`** app belongs to `japhet-de-souza`, using its own private network. No public app port/IP or unrelated app is configured by this setup.
