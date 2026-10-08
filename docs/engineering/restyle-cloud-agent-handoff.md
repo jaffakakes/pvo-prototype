@@ -2,13 +2,13 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
-## Active task: 2C final cloud acceptance — approval pending
+## Active task: 2C final cloud acceptance — US$1 approved
 
 **93/134 complete: 2C.01–03 and 2C.05–07 verified; 2C.04 remains unchecked.** The user authorized all2C. Source **`5695c39` is committed and pushed** on the active branch below. Full **1,653 tests**, strict types, actual desktop/phone approval, offline Try, exported/separate viewers, private write opt-in and uncertain-action inspection pass. The real Node/SQLite/browser proof uses controlled provider replies; the cloud driver’s local browser rehearsal and no-creation provider bundle also pass.
 
 **2C beta is delivered:** combined `da6797e`, `/private/tmp/restyle-connected-beta-5695c39`, build/types/57 checks and served files/player/editor/activated service worker pass. Actual Desktop `dist/` on4173 serves **`restyle-editor-shell-e6fc1f6312778640`**. Backup `~/.codex/backups/restyle-2c-beta-j9uonddq`; 138 old hashed assets retained, no forced reload. Static beta has no permanently configured task/account/service backend.
 
-**Exact next: 2C.04.** The separate US$1 one-deployment/one-hour test approval is pending. Both prior Fly/GitHub keys were removed; reconnect privately after approval. Use the [connected Container plan and commands](restyle-connected-services.md#isolated-cloud-acceptance-prepared-for-approval), verify actual account/Fly/editor/viewer/revocation behavior and cleanup, then mark the last checkbox. No new paid resources or provider writes have occurred. Read the [progress checkpoint](restyle-cloud-agent-progress.md) for resource ownership and local tool locations. No more implementation or broad test reruns are needed unless that proof reveals a defect. No production, integration merge, Actions or unreleased branch deletion.
+**Exact next: 2C.04.** The user approved the separate US$1 one-deployment/one-hour test on 8 October 2026. Both prior Fly/GitHub keys were removed; fresh private setup is next, followed by the prepared driver. Owned new credential files/receipts use `~/.codex/secure/restyle-2c/`; do not recover old keys. Use the [connected Container plan and commands](restyle-connected-services.md#isolated-cloud-acceptance-prepared-for-approval), verify actual account/Fly/editor/viewer/revocation behavior and cleanup, then mark the last checkbox. No new paid resources or provider writes have occurred. Read the [progress checkpoint](restyle-cloud-agent-progress.md) for resource ownership and local tool locations. No more implementation or broad test reruns are needed unless that proof reveals a defect. No production, integration merge, Actions or unreleased branch deletion.
 
 The following 2B status is preserved historical evidence; the active 2C checkpoint above supplies current source, beta and next task.
 
