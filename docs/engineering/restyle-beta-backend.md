@@ -113,4 +113,6 @@ npm run deploy:beta:built -- --dry-run
 npm run deploy:beta:built
 ```
 
+The guarded beta deploy command verifies the served staged revision after deployment and announces it through the existing authenticated release channel, so **New beta release** reaches open tabs. The creator chooses when to apply it; no editing tab is forcibly reloaded. A failed deployment or asset mismatch announces nothing.
+
 The same trusted Node image builder now admits the explicit beta app name as well as the existing disposable proof namespace. This changes no guest source, runtime image digest, execution privilege or independent test boundary. A prepared Worker configuration is not proof of a successful live request. After deployment, verify real sign-in, the current owner, saved task/draft recovery, independent checks and service execution, and confirm temporary Machines are gone.

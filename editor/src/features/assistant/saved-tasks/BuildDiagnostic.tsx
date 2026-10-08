@@ -31,7 +31,9 @@ export function BuildDiagnostic({ task }: { task: TaskRecord }) {
             </details>
           </>
         ) : (
-          <p>No rejected plan is saved for the current stage.</p>
+          <p>
+            Stage: {view.data.stepId}. No rejected plan is saved for this stage.
+          </p>
         ))}
     </details>
   );

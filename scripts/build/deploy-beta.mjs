@@ -4,6 +4,11 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { assertBetaDeployment } from "./beta-deployment-config.mjs";
+import {
+  announceDeployedRelease,
+  validateEditorReleaseRevision,
+  waitForDeployedRelease,
+} from "./wait-for-deployed-release.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const dryRun = process.argv.slice(2).includes("--dry-run");
@@ -12,10 +17,20 @@ if (process.argv.slice(2).some((value) => value !== "--dry-run"))
     "Use only --dry-run; beta targets come from the guarded configuration.",
   );
 const configFile = join(root, "wrangler.beta.jsonc");
-assertBetaDeployment(JSON.parse(await readFile(configFile, "utf8")));
+const config = assertBetaDeployment(
+  JSON.parse(await readFile(configFile, "utf8")),
+);
+const release = JSON.parse(
+  await readFile(
+    join(root, ".wrangler/beta/assets/editor/release.json"),
+    "utf8",
+  ),
+);
+const revision = validateEditorReleaseRevision(release.revision);
 const secretsFile =
   process.env.RESTYLE_BETA_SECRETS_FILE ||
   join(homedir(), ".codex/secure/restyle-beta-backend/worker-secrets.json");
+let secrets;
 if (!dryRun) {
   const details = await stat(secretsFile);
   if (
@@ -23,7 +38,7 @@ if (!dryRun) {
     (process.platform !== "win32" && details.mode & 0o077)
   )
     throw new Error("Beta Worker secrets require a private file.");
-  const secrets = JSON.parse(await readFile(secretsFile, "utf8"));
+  secrets = JSON.parse(await readFile(secretsFile, "utf8"));
   for (const name of [
     "SESSION_SECRET",
     "ACCOUNT_CONNECTION_KEY",
@@ -49,15 +64,30 @@ const args = [
     ? ["--dry-run", "--outdir", join(root, ".wrangler/beta/dry-run")]
     : ["--secrets-file", secretsFile]),
 ];
-const child = spawn(process.execPath, args, {
-  cwd: root,
-  stdio: "inherit",
-  env: { ...process.env, WRANGLER_SEND_METRICS: "false", CI: "true" },
+await new Promise((resolve, reject) => {
+  const child = spawn(process.execPath, args, {
+    cwd: root,
+    stdio: "inherit",
+    env: { ...process.env, WRANGLER_SEND_METRICS: "false", CI: "true" },
+  });
+  child.once("error", () =>
+    reject(new Error("The guarded beta deployment could not start.")),
+  );
+  child.once("exit", (code) =>
+    code === 0
+      ? resolve()
+      : reject(
+          new Error(`Beta deployment failed (${code}); no release announced.`),
+        ),
+  );
 });
-child.on("error", () => {
-  console.error("The guarded beta deployment could not start.");
-  process.exitCode = 1;
-});
-child.on("exit", (code) => {
-  process.exitCode = code ?? 1;
-});
+if (!dryRun) {
+  const origin = config.vars.PUBLIC_ORIGIN;
+  await waitForDeployedRelease({ origin, revision });
+  await announceDeployedRelease({
+    origin,
+    revision,
+    secret: secrets.RELEASE_NOTIFY_TOKEN,
+  });
+  console.log(`Beta release announced: ${revision}`);
+}

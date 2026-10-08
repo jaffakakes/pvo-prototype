@@ -1,3 +1,4 @@
+import { BuildDiagnostic } from "../assistant/saved-tasks/BuildDiagnostic";
 import { ContainerRepair } from "./ContainerRepair";
 import { ContainerTests } from "./ContainerTests";
 import { useState } from "react";
@@ -125,7 +126,10 @@ export function ContainerAssistant({
           <ContainerRepair task={session.task} />
         )}
       {session.task && (
-        <ContainerTests key={session.task.id} task={session.task} />
+        <>
+          <ContainerTests key={session.task.id} task={session.task} />
+          <BuildDiagnostic task={session.task} />
+        </>
       )}
       {session.error && <p role="alert">{session.error}</p>}
       {status?.question && (
