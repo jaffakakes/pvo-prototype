@@ -136,7 +136,12 @@ export async function hostedServiceRoute(request, env, config) {
       );
       return finish(json(result, kind === "jobs" && !reading ? 202 : 200));
     }
-    if (kind === "maintenance") return json(await rpc(() => env.SERVICE_HOSTS.getByName(id).maintenance(id, owner.id)));
+    if (kind === "maintenance")
+      return json(
+        await rpc(() =>
+          env.SERVICE_HOSTS.getByName(id).maintenance(id, owner.id),
+        ),
+      );
     if (kind === "resume-account-action") {
       object(input, ["actionId"], "Saved outside action");
       opaqueId(input.actionId, "Saved action");

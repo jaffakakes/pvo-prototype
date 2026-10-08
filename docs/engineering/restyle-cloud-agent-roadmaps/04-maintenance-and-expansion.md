@@ -6,6 +6,8 @@ Task IDs are stable. Checked items are verified work; update their evidence and 
 
 **Outcome:** a creator can ask Restyle to change or fix an existing connected component. The agent understands what is already deployed and can make a tested update.
 
+[Current maintenance contract and verification](../restyle-maintenance.md)
+
 **Depends on:** Roadmap 1 and [1G Containers](1g-containers.md), including saved source, Node.js releases, service controls and basic recovery. Roadmaps 2 and 3 are needed for any connected accounts or background jobs affected by an update.
 
 Core ownership, limits and lifecycle already exist in 1D; 1G extends them for editable Node.js Containers. Basic update/management work is scheduled once in 1G. This roadmap adds diagnosis and the later operational capabilities below.
@@ -13,11 +15,11 @@ Core ownership, limits and lifecycle already exist in 1D; 1G extends them for ed
 ## 4A. Let the agent inspect and repair an existing feature
 
 - [x] **4A.01** Give it a scoped view of the deployed source, component connection, release history, sanitized errors, job status, and connection availability.
-- [ ] **4A.02** Identify the failing stage before changing code: component input, gateway validation, backend rule, external account, provider, or result display.
-- [ ] **4A.03** Reuse the existing project and service identity. A repair should not create a duplicate guest list, account connection, or service unless the requested change requires it.
-- [ ] **4A.04** Reproduce the failure with safe test data in a workspace.
-- [ ] **4A.05** Change the smallest relevant part and add a meaningful regression check.
-- [ ] **4A.06** Report the verified outcome and any remaining external dependency.
+- [x] **4A.02** Identify the failing stage before changing code: component input, gateway validation, backend rule, external account, provider, or result display.
+- [x] **4A.03** Reuse the existing project and service identity. A repair should not create a duplicate guest list, account connection, or service unless the requested change requires it.
+- [x] **4A.04** Reproduce the failure with safe test data in a workspace.
+- [x] **4A.05** Change the smallest relevant part and add a meaningful regression check.
+- [x] **4A.06** Report the verified outcome and any remaining external dependency.
 
 **Finished when:** a broken connection and a backend rule bug produce different correct repairs. The agent preserves existing records and does not repeat completed viewer actions.
 
@@ -44,8 +46,8 @@ Remaining later work extends that manager:
 
 Implement these as separate follow-on tasks. Each needs a concrete demonstration.
 
-- [ ] **4D.01** Choose one real request that requires an additional capability and record its expected behavior and access needs.
-- [ ] **4D.02** Implement that capability through focused adapters and shared contracts; keep creator ownership, limits, and lifecycle controls intact.
+- [x] **4D.01** Choose one real request that requires an additional capability and record its expected behavior and access needs.
+- [x] **4D.02** Implement that capability through focused adapters and shared contracts; keep creator ownership, limits, and lifecycle controls intact.
 - [ ] **4D.03** Verify its concrete demonstration, failure/recovery behavior, and affected Try/export/player path; record the evidence before calling it available.
 
 | Capability | Evidence that it is needed | Proof before calling it ready |
@@ -70,3 +72,5 @@ Run the focused behavior checks and affected browser paths, then complete the sa
 4A.01 and 4C.03/07 are verified in the focused health acceptance: owner-only read-only source/version/attachment/account/job/error observations; no submitted guest data or secrets; expiring and disconnected access, persistent daily limits, and missing live/recorded releases after restart. UI/browser delivery is pending and recorded separately in progress. Existing 1G evidence remains complete.
 
 For 4D, the concrete additional request is stronger automatic repair: prove that a proposed regression test fails against the original saved code, then passes against the repair before independent validation. This extends 4A diagnosis with a countercheck in the same workshop/tool journal. It creates no runner, service or live action. Agent email remains paused. 4D is unchecked until that behavior and affected browser paths are verified.
+
+4A.02–06 and 4D.01–02 now pass actual local Node/workshop-command/SQLite and creator-browser acceptance. Backend-rule and disconnected-account faults produce distinct outcomes; repairs reuse the service and preserve records/replies through publication/rollback. Original-code counterchecks reject a test that does not reproduce the bug. Newer manual changes clear stale diagnosis and trigger a fresh baseline. All affected Try, normal export and standalone player paths pass. 4D.03 remains unchecked until final documentation, beta delivery and served revision verification are recorded. No agent email or production work.

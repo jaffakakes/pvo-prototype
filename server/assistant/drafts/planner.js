@@ -19,7 +19,12 @@ const text = { type: "string" },
   revision = { type: "integer", minimum: 0 };
 export const draftDecisionSchema = {
   anyOf: [
-    object({kind:{const:"diagnose"},stage:{enum:REPAIR_STAGES},evidenceKeys:{type:"array",maxItems:8,items:text},summary:text}),
+    object({
+      kind: { const: "diagnose" },
+      stage: { enum: REPAIR_STAGES },
+      evidenceKeys: { type: "array", maxItems: 8, items: text },
+      summary: text,
+    }),
     object({ kind: { const: "read" }, path, offset: revision }),
     object({ kind: { const: "read_published" }, path, offset: revision }),
     object({

@@ -81,7 +81,12 @@ export function ServicesPanel() {
             <li key={id}>
               <h4>{item.metadata.description}</h4>
               <p>Status: {service?.state ?? "temporarily unavailable"}</p>
-              <ContainerHealth key={`${ownerId}:${id}`} ownerId={ownerId} serviceId={id} revision={service?.revision ?? 0} />
+              <ContainerHealth
+                key={`${ownerId}:${id}`}
+                ownerId={ownerId}
+                serviceId={id}
+                revision={service?.revision ?? 0}
+              />
               {checkedCurrent && (
                 <ContainerAccountAccess
                   key={`${ownerId}:${id}:${checked.identity.resourceId}`}

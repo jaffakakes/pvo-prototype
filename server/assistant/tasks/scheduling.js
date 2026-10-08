@@ -94,10 +94,12 @@ export function claimNextTask(coordinator) {
     const draftEffect =
       claimed.input.context.container &&
       ["draft_apply", "draft_sync", "draft_finish"].includes(claimed.stepId);
-    const repairPhase = coordinator.drafts.get(claimed.id)?.maintenance?.phase ?? null;
+    const repairPhase =
+      coordinator.drafts.get(claimed.id)?.maintenance?.phase ?? null;
     const tools =
       claimed.input.context.container?.mode === "test" ||
-      (claimed.input.context.container?.mode === "repair" && (repairPhase !== "diagnose" || claimed.stepId === "build")) ||
+      (claimed.input.context.container?.mode === "repair" &&
+        (repairPhase !== "diagnose" || claimed.stepId === "build")) ||
       draftEffect ||
       ["validate", "host"].includes(claimed.stepId) ||
       (claimed.stepId === "build" && stage !== "model");

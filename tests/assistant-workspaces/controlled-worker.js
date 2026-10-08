@@ -63,12 +63,13 @@ export class TestWorkspace extends AssistantWorkspace {
     );
   }
   provider() {
-    const control = async (kind) => {
+    const control = async (kind, details = {}) => {
       const result = await (
         await this.env.CONTROL.fetch("https://control.test/", {
           method: "POST",
           body: JSON.stringify({
             kind,
+            ...details,
             resourceId: this.journal.state()?.identity.resourceId,
           }),
         })
@@ -95,11 +96,11 @@ export class TestWorkspace extends AssistantWorkspace {
         if (!vm.running) throw new Error("VM stopped");
         this.saveVM({ ...vm, files: snapshot.files });
       },
-      execute: async () => {
+      execute: async (command) => {
         const vm = this.vm();
         if (!vm.running) throw new Error("VM stopped");
         this.saveVM({ ...vm, executions: vm.executions + 1 });
-        const result = await control("execute");
+        const result = await control("execute", { command, files: vm.files });
         return {
           stdout: result.stdout ?? "ok",
           stderr: "",

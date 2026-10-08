@@ -27,17 +27,34 @@ export function draftQuestion(task, prompt, choices) {
 }
 
 /** Prepare a decision without effects. The inference receipt and working copy commit together. */
-export async function prepareDraftResponse(coordinator, task, response) {
+export async function prepareDraftResponse(
+  coordinator,
+  task,
+  response,
+  workingCopy = null,
+) {
   try {
     const decision = parseDraftDecision(response);
-    const state = coordinator.drafts.get(task.id);
+    const state = workingCopy ?? coordinator.drafts.get(task.id);
     acceptRepairDecision(state, decision);
     let command = { kind: "checkpoint", stepId: "plan" },
       builder = null;
     if (decision.kind === "read_published") {
       const published = state.maintenance?.snapshot.published;
       if (!published) throw new Error("No published source is available.");
-      state.read = {...readDraftFile({draft:{revision:state.draft.revision,content:published.source}},decision.path,decision.offset),published:true};
+      state.read = {
+        ...readDraftFile(
+          {
+            draft: {
+              revision: state.draft.revision,
+              content: published.source,
+            },
+          },
+          decision.path,
+          decision.offset,
+        ),
+        published: true,
+      };
     }
     if (decision.kind === "read")
       state.read = readDraftFile(state, decision.path, decision.offset);
@@ -53,7 +70,17 @@ export async function prepareDraftResponse(coordinator, task, response) {
       command = draftQuestion(task, decision.prompt, decision.choices);
     if (decision.kind === "done") command.stepId = "draft_finish";
     if (decision.kind === "execute") {
-      const { agreement, files } = state.draft.content;
+      const { agreement } = state.draft.content;
+      const files =
+        state.maintenance?.phase === "countercheck"
+          ? state.maintenance.original.files
+              .filter((file) => !state.draft.content.tests.includes(file.path))
+              .concat(
+                state.draft.content.files.filter((file) =>
+                  state.draft.content.tests.includes(file.path),
+                ),
+              )
+          : state.draft.content.files;
       if (!agreement)
         throw new Error(
           "Save a behavior agreement before requesting development execution.",

@@ -51,10 +51,24 @@ export function ContainerAssistant({
           <button type="submit" disabled={disabled || session.busy || !valid}>
             Continue with AI
           </button>
-          <button type="button" disabled={disabled || session.busy || !valid || !draft.content.agreement || !draft.content.tests.length} onClick={() => session.start(draft, request, "repair")}>
+          <button
+            type="button"
+            disabled={
+              disabled ||
+              session.busy ||
+              !valid ||
+              !draft.content.agreement ||
+              !draft.content.tests.length
+            }
+            onClick={() => session.start(draft, request, "repair")}
+          >
             Investigate and repair
           </button>
-          <p>Describe what went wrong. Restyle checks the saved code with test data before making a repair. Account problems receive a recovery step.</p>
+          <p>
+            Describe what went wrong. Restyle checks the saved code with test
+            data before making a repair. Account problems receive a recovery
+            step.
+          </p>
         </form>
       )}
       {session.canStart && (
@@ -105,7 +119,11 @@ export function ContainerAssistant({
           </p>
         </>
       )}
-      {session.task && "container" in session.task.input.context && session.task.input.context.container.mode === "repair" && <ContainerRepair task={session.task} />}
+      {session.task &&
+        "container" in session.task.input.context &&
+        session.task.input.context.container.mode === "repair" && (
+          <ContainerRepair task={session.task} />
+        )}
       {session.task && (
         <ContainerTests key={session.task.id} task={session.task} />
       )}

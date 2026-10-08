@@ -2,7 +2,15 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
-## Current checkpoint — Roadmaps 1–3 complete through beta
+## Current checkpoint — Roadmap 4 final delivery
+
+The creator authorized completing all Roadmap 4 and paused agent email. **133/134 checked**; all 4A/4C and 4D.01–02 are verified. Source is on `codex/restyle-maintenance` in `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`, based on fetched `origin/dev` plus the unreleased Roadmap1–3 prerequisite `d44254d`. Read the current [progress](restyle-cloud-agent-progress.md) and [maintenance contract](restyle-maintenance.md).
+
+Full1,695 checks, strict editor types, focused countercheck/manual-conflict/update/rollback/account health cases and actual creator/component/export/player browsers pass. No live model inference, provider message or paid cloud resource was required; unchanged existing provider/runtime acceptance is preserved. Source is pending after the initial checkpoint commit.
+
+**Exact next: 4D.03 final delivery.** Finish final visual/format/link checks; commit/push and create/attach a draft PR to `dev`; prepare an isolated combined beta from previous `fcdb0bc`, build and deliver assets before HTML/SW into actual Desktop `dist/` at4173, preserving pending output and old hashed assets. Verify served bytes and actual activated service worker; stop owned source5327; record cleanup/evidence, final checkboxes and guarded Desktop reading snapshots in Git. No source/integration branch merge, Actions, production or deletion of unreleased branches. Agent email remains paused.
+
+## Previous checkpoint — Roadmaps 1–3 complete through beta
 
 **123/134 checked; all 24 Roadmap 3 tasks are complete. Eleven Roadmap 4 tasks remain.** Continue from **`origin/codex/restyle-background-work`**, application source `a9941bc` plus this final proof/handoff commit, [draft PR #108](https://github.com/jaffakakes/pvo-prototype/pull/108), open/unmerged. Checkout `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`. Read the top [progress checkpoint](restyle-cloud-agent-progress.md) and [background-work contract/portable acceptance](restyle-background-work.md#verified-acceptance--8-october-2026).
 

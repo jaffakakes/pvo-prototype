@@ -51,12 +51,33 @@ export class TaskDrafts {
       })),
       read: saved.read,
       executionReason: saved.reason,
-      maintenance: saved.maintenance ? {
-        ...saved.maintenance,
-        snapshot: { ...saved.maintenance.snapshot, published: saved.maintenance.snapshot.published ? { releaseId:saved.maintenance.snapshot.published.releaseId, entrypoint:saved.maintenance.snapshot.published.source.entrypoint, files:saved.maintenance.snapshot.published.source.files.map(({path,content})=>({path,codePoints:Array.from(content).length})) } : null },
-        agreement: undefined, tests:undefined,
-        evidence:repairEvidence(saved.maintenance), report:repairReport(saved)
-      } : null,
+      maintenance: saved.maintenance
+        ? {
+            ...saved.maintenance,
+            snapshot: {
+              ...saved.maintenance.snapshot,
+              published: saved.maintenance.snapshot.published
+                ? {
+                    releaseId: saved.maintenance.snapshot.published.releaseId,
+                    entrypoint:
+                      saved.maintenance.snapshot.published.source.entrypoint,
+                    files:
+                      saved.maintenance.snapshot.published.source.files.map(
+                        ({ path, content }) => ({
+                          path,
+                          codePoints: Array.from(content).length,
+                        }),
+                      ),
+                  }
+                : null,
+            },
+            agreement: undefined,
+            tests: undefined,
+            original: undefined,
+            evidence: repairEvidence(saved.maintenance),
+            report: repairReport(saved),
+          }
+        : null,
     };
   }
   stopping(taskId, now) {

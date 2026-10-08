@@ -33,3 +33,5 @@ The [temporary workspace contract](workspaces/README.md) defines bounded draft f
 The [builder tool contract](builder/README.md) defines the bounded file/command views supplied by the saved-task workspace adapter. Availability and operation/usage receipts belong to trusted server code; model-driven construction and release approval are separate steps.
 
 The [background-work contract](../../docs/engineering/restyle-background-work.md) adds durable viewer jobs through the existing service host, typed receipt rules in `jobs/`, and a shared private receipt client/watcher. Resend is an installed fixed email path; credentials stay in the account owner and ordinary Try uses saved examples. No new PVO Logic syntax or model-turn limit is introduced.
+
+The `maintenance/` public entry point owns pure health/evidence and repair admission rules. Platform observations, workspace effects and source saves remain in their existing server owners. See [the maintenance contract](../../docs/engineering/restyle-maintenance.md).

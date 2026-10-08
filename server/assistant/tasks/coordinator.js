@@ -478,9 +478,17 @@ export class AssistantTasks extends DurableObject {
         this.builders.stage(claimed.id) !== "model"
       )
         await runBuilderBatch(this, claimed);
-      else if (claimed.input.context.container?.mode === "repair" && !this.drafts.get(claimed.id)?.maintenance)
+      else if (
+        claimed.input.context.container?.mode === "repair" &&
+        !this.drafts.get(claimed.id)?.maintenance
+      )
         await runInitialRepairBaseline(this, claimed);
-      else if (claimed.input.context.container?.mode === "test" || baselineRunning(this, claimed) || (claimed.input.context.container?.mode === "repair" && claimed.stepId === "build"))
+      else if (
+        claimed.input.context.container?.mode === "test" ||
+        baselineRunning(this, claimed) ||
+        (claimed.input.context.container?.mode === "repair" &&
+          claimed.stepId === "build")
+      )
         await runDraftTestPreparation(this, claimed);
       else await runAuthoringStep(this, claimed);
     }

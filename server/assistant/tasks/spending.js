@@ -45,7 +45,8 @@ export function taskSpendingCapability(task, builderStage, repairPhase = null) {
   if (task.stepId === "host") return "hosting";
   if (
     task.input.context.container?.mode === "test" ||
-    (task.input.context.container?.mode === "repair" && (repairPhase !== "diagnose" || task.stepId === "build")) ||
+    (task.input.context.container?.mode === "repair" &&
+      (repairPhase !== "diagnose" || task.stepId === "build")) ||
     task.stepId === "validate" ||
     (task.stepId === "build" && builderStage !== "model")
   )

@@ -208,7 +208,9 @@ export class HostedService extends DurableObject {
     });
   }
   maintenance(serviceId, ownerId) {
-    return hostedReply(() => inspectServiceMaintenance(this, serviceId, ownerId));
+    return hostedReply(() =>
+      inspectServiceMaintenance(this, serviceId, ownerId),
+    );
   }
   inspect(serviceId, ownerId) {
     return hostedReply(() =>

@@ -1,4 +1,7 @@
-import { finishRepairBaseline, requireRepairArtifact } from "../maintenance/repair.js";
+import {
+  finishRepairBaseline,
+  requireRepairArtifact,
+} from "../maintenance/repair.js";
 import { reviewProgressEvidence } from "../tasks/progressEvidence.js";
 import {
   SERVICE_TEST_LIMITS,
@@ -50,9 +53,13 @@ function completeReport(coordinator, claimed, state, report, error = null) {
     reviewProgressEvidence(state, report, error),
   );
   if (finishRepairBaseline(coordinator, claimed, report)) return;
-  if (claimed.input.context.container?.mode === "repair" && report?.status !== "passed") {
+  if (
+    claimed.input.context.container?.mode === "repair" &&
+    report?.status !== "passed"
+  ) {
     const state = coordinator.drafts.get(claimed.id);
     state.maintenance.lastCheck = report;
+    state.maintenance.phase = "diagnose";
     coordinator.drafts.write(claimed.id, state);
     checkpoint(coordinator, claimed, "plan");
     return;
