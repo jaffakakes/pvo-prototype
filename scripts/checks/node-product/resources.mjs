@@ -13,7 +13,14 @@ export const productBindings = [
 export async function productWorker(
   accountId,
   fly,
-  { token, image, cleanup = false, dryRun = false } = {},
+  {
+    token,
+    image,
+    cleanup = false,
+    dryRun = false,
+    entrypoint = "scripts/checks/node-product/worker.js",
+    secrets = {},
+  } = {},
 ) {
   const { report, save } = fly;
   const resources = await prepareResources(accountId, {
@@ -25,12 +32,12 @@ export async function productWorker(
     report.cloudJournal = resources.reportFile;
     await save();
     resource = await resources.prepare("node-product", {
-      entrypoint: "scripts/checks/node-product/worker.js",
+      entrypoint,
       bindings: productBindings,
       loaderBinding: false,
       expiresAt: report.startedAt + report.plan.lifetimeMs,
       vars: { SERVICE_NODE_FLY_APP: report.app, SERVICE_NODE_FLY_IMAGE: image },
-      secrets: { SERVICE_NODE_FLY_TOKEN: token },
+      secrets: { ...secrets, SERVICE_NODE_FLY_TOKEN: token },
     });
     const config = JSON.parse(await readFile(resource.config, "utf8"));
     config.vars.PUBLIC_ORIGIN = resource.url;

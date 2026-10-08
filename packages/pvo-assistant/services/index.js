@@ -47,3 +47,8 @@ export {
   nodeLibraryIds,
   supportedNodeLibraries,
 } from "./nodeBundle.js";
+
+export {
+  parseAccountRequest,
+  exampleAccountResult,
+} from "./accountBindings.js";

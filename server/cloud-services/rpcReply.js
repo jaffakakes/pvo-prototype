@@ -8,6 +8,7 @@ export async function hostedReply(operation) {
       forbidden: 403,
       invalid_input: 400,
       action_conflict: 409,
+      needs_checking: 409,
       state_changed: 409,
       budget_exceeded: 429,
       busy: 429,

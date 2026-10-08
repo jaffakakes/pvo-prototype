@@ -1,4 +1,5 @@
 import { connectionSetupAvailable } from "../../connections/credentials.js";
+import { requireConnectionResearch } from "../builder/connectionResearch.js";
 import { capabilityContext } from "../builder/capabilityResearch.js";
 import { prepareDraftResponse } from "../drafts/authoring.js";
 import { taskClaim, transitionGuard } from "./executionClaim.js";
@@ -24,7 +25,12 @@ export async function authoringInput(coordinator, task) {
             provider: "github",
             operations: ["github_repository_read", "github_issues_list"],
             credentialEntry: "private_form",
-            generatedServiceAccess: false,
+            generatedServiceAccess: true,
+            supportedPermissions: [
+              "repository:read",
+              "issues:read",
+              "issues:write",
+            ],
           }
         : null,
       repair: coordinator.repairs.context(task),
@@ -117,6 +123,8 @@ export async function prepareAuthoringResponse(
       connectionSetup: connectionSetupAvailable(coordinator.env),
       available: coordinator.builderToolDefinitions().map((tool) => tool.kind),
     });
+    if (decision.kind === "agreement")
+      requireConnectionResearch(coordinator, task, decision.agreement);
     const agreementDigest =
       decision.kind === "agreement"
         ? await contentDigest(serializeServiceAgreement(decision.agreement))

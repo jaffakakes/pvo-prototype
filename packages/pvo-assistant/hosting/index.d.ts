@@ -135,6 +135,14 @@ export const SERVICE_RECORD_LIMITS: Readonly<{
 }>;
 export const SERVICE_FAILURE_CODES: readonly string[];
 export type ServiceRecordsArea = {
+  pending: {
+    actionId: string;
+    operation: string;
+    releaseId: string;
+    status: "running" | "needs_checking";
+    startedAt: number;
+  } | null;
+
   mode: "live" | "test";
   releaseId: string;
   stored: boolean;
@@ -263,3 +271,22 @@ export function parseServiceConnectionReport(
   value: unknown,
 ): ServiceConnectionReport;
 export function parseServiceConnections(value: unknown): ServiceConnections;
+
+export type ServiceAccountAccess = {
+  ownerId: string;
+  serviceId: string;
+  releaseId: string;
+  approved: boolean;
+  bindings: Array<{
+    name: string;
+    operations: string[];
+    description: string;
+    permission: "repository:read" | "issues:read" | "issues:write";
+    method: "GET" | "POST";
+    documentation: string;
+    repository: string | null;
+    account: string | null;
+    error: string | null;
+  }>;
+};
+export function parseServiceAccountAccess(value: unknown): ServiceAccountAccess;

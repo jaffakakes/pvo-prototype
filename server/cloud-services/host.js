@@ -1,3 +1,7 @@
+import { ServiceAccountStore } from "./accountStore.js";
+import { accountCommand, serviceAccountAccess } from "./accountAccess.js";
+import { ownedHost } from "./ownership.js";
+import { serviceCallError } from "../../packages/pvo-assistant/hosting/index.js";
 import { ServiceConnectionStore } from "./connectionStore.js";
 import {
   inspectServiceConnections,
@@ -44,6 +48,7 @@ export class HostedService extends DurableObject {
     this.drafts = new ServiceDraftStore(ctx.storage.sql);
     this.draftWriters = new DraftWriters(ctx.storage.sql);
     this.actions = new ServiceActionStore(ctx.storage.sql);
+    this.accounts = new ServiceAccountStore(ctx.storage.sql);
     this.calls = new ServiceCallQueue();
     this.controls = new ServiceControlStore(ctx.storage.sql);
     this.connections = new ServiceConnectionStore(ctx.storage.sql);
@@ -174,8 +179,41 @@ export class HostedService extends DurableObject {
     );
   }
   control(serviceId, ownerId, input) {
+    return hostedReply(async () => {
+      const result = await controlHostedService(
+        this,
+        serviceId,
+        ownerId,
+        input,
+      );
+      if (
+        input.kind === "delete" &&
+        typeof this.env.ASSISTANT_TASKS?.getByName === "function"
+      )
+        await accountCommand(this, "service_forget", { serviceId });
+      return result;
+    });
+  }
+  resumeAccountAction(serviceId, ownerId, actionId) {
+    return hostedReply(async () => {
+      ownedHost(this, serviceId, ownerId);
+      const pending = this.accounts.pending("live");
+      if (!pending || pending.action.actionId !== actionId)
+        throw serviceCallError(
+          "unavailable",
+          "This saved action is unavailable.",
+        );
+      return invokeHostedAction(
+        this,
+        serviceId,
+        { kind: "creator", ownerId, mode: "live" },
+        pending.action,
+      );
+    });
+  }
+  accountAccess(serviceId, ownerId, input) {
     return hostedReply(() =>
-      controlHostedService(this, serviceId, ownerId, input),
+      serviceAccountAccess(this, serviceId, ownerId, input),
     );
   }
   records(serviceId, ownerId) {
@@ -220,6 +258,7 @@ export class HostedService extends DurableObject {
   cleanupDeletedReleases() {
     for (const id of this.store.deletedIds()) {
       this.actions.clearTest(id);
+      if (this.accounts.approval(id)) this.accounts.revoke(id);
       this.calls.cancel(id);
     }
   }

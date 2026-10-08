@@ -264,3 +264,7 @@ The first release is ready when a creator can ask for a new working feature, ans
 ## Implemented research and saved choices
 
 See the [2A research contract](restyle-research-contract.md) for public documentation research, credential-free account inspection, saved choices, independent research during questions, and the remaining secure setup/provider effects in 2B/2C. These extend the existing saved task and start no workshop.
+
+## Connected Container execution — 2C implementation
+
+The [connected Container contract](restyle-connected-services.md) extends the existing service host and account owner. The isolated Node code asks for a named action; trusted code checks the checked version’s approval, account scope and permission before attaching credentials. Results pass the declared schema before returning to a fresh Node instance. Normal Try and independent cases use saved examples. A durable receipt precedes an outside write; an uncertain outcome remains available for inspection without repeating that write. Callbacks, scheduled work and repeated background checks remain Roadmap 3.

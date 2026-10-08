@@ -8,11 +8,11 @@ An account connection is a locked key cabinet. The creator gives Restyle limited
 
 A saved task can request a connection, wait for setup, and continue from the same question. Existing answers, code and completed work stay saved. Disconnecting removes Restyle's stored key and blocks later calls. Deleting the token at the provider is a separate control available in the provider's settings.
 
-This is separate from the temporary workshop and the hosted Container. Neither receives the credential. Connecting an account alone does not give generated Container code access: that interface and external-effect lifecycle are Roadmap 2C.
+This is separate from the temporary workshop and the hosted Container. Neither receives the credential. Connecting an account alone does not give generated Container code access: the additional release-bound approval and external-effect lifecycle are described in [Roadmap 2C’s connected Container contract](restyle-connected-services.md).
 
 ## First installed provider
 
-**GitHub, read only, one named repository per connection.** Proposed because the creator already has a GitHub account and a repository with accessible test support; not because any example requires it. Provider preference was asked on 8 October; GitHub is the selected default while allowing the creator to choose another service. The current project repository is public, so reading it does not prove permission to private repositories. A live authenticated `/user` check is still mandatory, and private-repository access must only be claimed if separately exercised.
+**GitHub, one named repository per connection.** The completed 2B operations below are read-only. 2C adds separately approved Container recipes, including an optional issue-creation grant; see the [connected Container contract](restyle-connected-services.md). Proposed because the creator already has a GitHub account and a repository with accessible test support; not because any example requires it. Provider preference was asked on 8 October; GitHub is the selected default while allowing the creator to choose another service. The current project repository is public, so reading it does not prove permission to private repositories. A live authenticated `/user` check is still mandatory, and private-repository access must only be claimed if separately exercised.
 
 | Operation | Fixed provider request | Returned data |
 | --- | --- | --- |
@@ -20,7 +20,7 @@ This is separate from the temporary workshop and the hosted Container. Neither r
 | `github_repository_read` | `GET /repos/{saved owner}/{saved repository}` | Repository name, private flag and open issue/PR count |
 | `github_issues_list` | `GET /repos/{saved owner}/{saved repository}/issues?state=all&per_page=20&page={page}` | Up to twenty issue summaries, excluding pull requests, and a possible-more flag |
 
-No issue creation, comments, code changes, merges, deployment, Actions inspection, messages or provider writes. `repository:read` and `issues:read` are Restyle's enforced operation permissions, established by successful probes against that exact repository. They are not an introspection report of every permission on the submitted token. Public repository reads alone do not establish broader private access. A renamed repository must be reconnected with its current name; redirects are refused.
+These two 2B operations cannot create issues, comments, code changes, merges, deployments or messages, and cannot inspect Actions. The separate 2C interface allows only its installed method/path policy. `repository:read` and `issues:read` are Restyle's enforced operation permissions, established by successful probes against that exact repository. They are not an introspection report of every permission on the submitted token. Public repository reads alone do not establish broader private access. A renamed repository must be reconnected with its current name; redirects are refused.
 
 The private form accepts only a fine-grained GitHub token. Select one repository, Issues read permission and an expiry on GitHub. Metadata read permission is included there. Restyle's restriction still applies if a creator mistakenly supplies a broader fine-grained token; it cannot prove that the provider token has no additional permissions.
 
@@ -34,7 +34,7 @@ Checked official references on 8 October 2026: [GitHub token setup](https://docs
 - [Protected store](../../server/connections/store.js): account identity, saved repository scope, check/expiry times and an encrypted token. The wrapping key is the distinct Worker secret `ACCOUNT_CONNECTION_KEY`, exactly 32 random bytes encoded as 64 lowercase hex characters. Never commit it, print it, put it in a URL, or derive it from a model/task. Provision it through the host's secret manager. Losing or replacing this key requires reconnection; no legacy keyring or plaintext fallback is implemented.
 - [Credential adapter](../../server/connections/credentials.js): AES-GCM with a random nonce and owner/connection/revision bound as authenticated context. An envelope cannot be moved between owners, records or revisions. Disconnect and known invalidation erase the ciphertext; revocation metadata remains so IDs and permissions cannot silently be reused.
 - [Manager](../../server/connections/management.js): lifecycle, current scope and revision checks before and after asynchronous provider calls. An in-flight read cannot return a successful result after local disconnect or replacement. Already-dispatched provider reads cannot be recalled.
-- [GitHub adapter](../../server/connections/providers/github.js): attaches Authorization only to fixed HTTPS GitHub GET requests. No model-selected URL, method, headers or redirects. Bounded JSON is projected into a small result, and a reflected submitted token is rejected. Provider errors and headers never enter model context or client diagnostics.
+- [GitHub adapter](../../server/connections/providers/github.js): attaches Authorization only to the fixed HTTPS GitHub destination. The 2B operations are GET requests; [2C recipes](restyle-connected-services.md) add validated methods under installed policy. No arbitrary origin, private header control or redirects. Bounded JSON is projected into a small result, and a reflected submitted token is rejected. Provider errors and headers never enter model context or client diagnostics.
 
 ## Saved task setup
 
@@ -44,7 +44,7 @@ The public text-answer route cannot forge a successful connection answer. A crea
 
 ## Limits and deployment boundaries
 
-There are at most 32 retained connections per account, four per list page, a 4 KiB private request limit, a ten-second deadline per provider GET and a 256 KiB provider response limit. Issue pages contain at most twenty provider records and accept pages 1–1000. These are individual operation/storage bounds, not an overall agent-turn ceiling. GitHub rate-limit responses preserve the connection and ask the creator to retry later. Known token expiry or rejected access marks it as needing reconnection and removes the saved token.
+There are at most 32 retained connections per account, four per list page, a 4 KiB private request limit, a ten-second deadline per provider call and a 256 KiB provider response limit. Issue pages contain at most twenty provider records and accept pages 1–1000. These are individual operation/storage bounds, not an overall agent-turn ceiling. GitHub rate-limit responses preserve the connection and ask the creator to retry later. Known token expiry or rejected access marks it as needing reconnection and removes the saved token.
 
 No paid resources or permanent hosting are required for the local acceptance. The main beta currently serves static files; it has no configured account/task API. Delivering its UI does not deploy private connection storage. Production remains explicitly prohibited.
 
@@ -61,4 +61,4 @@ Full **1,642 tests**, strict editor types, source syntax/dependency/formatting c
 
 The real provider driver started before later expected-account-header, deadline and transport hardening. This is composite evidence: actual provider/authentication/lifecycle proof plus the final source's full controlled regression and browser checks. It is not labelled as a live run of the exact final commit. The safe receipt and cleanup are summarized in committed progress, so another agent does not need private logs or a repeated token test to continue.
 
-No live model-quality, private-repository access, provider write or generated-Container account invocation is claimed. **Next: 2C.01**, give a generated service an approved connection reference and operation while keeping enforcement and credentials in trusted platform code.
+That completed 2B proof claims no live model-quality, private-repository access, provider write or generated-Container account invocation. **The next task at that checkpoint was 2C.01**, give a generated service an approved connection reference and operation while keeping enforcement and credentials in trusted platform code.

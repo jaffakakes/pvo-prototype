@@ -2,6 +2,12 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
+## Active task: finish 2C hosted acceptance and beta
+
+The user authorized all 2C. **93/134 complete: 2C.01–03 and 2C.05–07 verified; 2C.04 remains unchecked.** Source passes 1,653 tests, strict types, actual editor/phone/Try/export/two-viewer and unknown-write recovery checks with controlled provider replies and real local Node. The cloud driver’s local browser rehearsal passes. Read the latest [progress checkpoint](restyle-cloud-agent-progress.md) and [connected Container contract](restyle-connected-services.md). The separate US$1 proof approval is pending; old Fly/GitHub private keys are removed. No new paid resources are created. Source checkpoint and 2C beta delivery are the next independent work; then the actual provider/Fly proof and cleanup are required. Do not mark all 2C complete from local rehearsal alone. No production, integration merge or Actions.
+
+The following 2B status is preserved historical evidence; the active 2C checkpoint above supplies the next task.
+
 ## Current status: all 2B complete, 8 October 2026
 
 The requested **2B milestone is finished through beta. 87/134 tasks are complete; twelve Roadmap 2 tasks remain in 2C/2D.** Private GitHub setup, encrypted credentials, approved read-only operations, lifecycle controls and same-task resume are verified. Full **1,642 tests**, strict types and actual editor desktop/phone/reload/settings acceptance pass. The real GitHub lifecycle proof passed at **05:37:18 UTC** and its local credentials/storage/processes are cleaned up. Read the newest [progress checkpoint](restyle-cloud-agent-progress.md) and [connection contract](restyle-account-connections.md) for portable evidence and its limits.

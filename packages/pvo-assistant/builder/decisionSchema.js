@@ -1,3 +1,7 @@
+import {
+  connectionSetupSchema,
+  connectionBindingsSchema,
+} from "../connections/schema.js";
 import { BUILDER_RESEARCH_KINDS } from "./research.js";
 import {
   SERVICE_PACKAGE_LIMITS as service,
@@ -47,7 +51,7 @@ const dataDescription = {
     }),
   ],
 };
-const agreement = object({
+const ordinaryAgreement = object({
   description: string(2048),
   state: object({ schema: data, initial: {} }),
   operations: array(
@@ -83,6 +87,22 @@ const agreement = object({
   ),
 });
 
+const connectedProperties = structuredClone(ordinaryAgreement.properties);
+const connectedStep = connectedProperties.cases.items.properties.steps.items;
+connectedProperties.cases.items.properties.steps.items = object({
+  ...connectedStep.properties,
+  requests: array(object({ connection: string(64), input: {} }), 4),
+});
+const agreement = {
+  anyOf: [
+    ordinaryAgreement,
+    object({
+      ...connectedProperties,
+      connections: connectionBindingsSchema(data),
+    }),
+  ],
+};
+
 /** Only the current phase's choices enter the model schema; runtime validation remains authoritative. */
 export function builderDecisionSchema(
   hasAgreement,
@@ -98,10 +118,7 @@ export function builderDecisionSchema(
     ? [
         object({
           kind: { const: "connect_account" },
-          setup: object({
-            provider: { const: "github" },
-            repository: string(140),
-          }),
+          setup: connectionSetupSchema(),
           purpose: string(1024),
         }),
       ]

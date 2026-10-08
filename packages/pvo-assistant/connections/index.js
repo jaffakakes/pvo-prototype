@@ -74,3 +74,11 @@ export {
   parseConnectionInvocation,
   GITHUB_OPERATIONS,
 } from "./setup.js";
+
+export {
+  ADAPTER_LIMITS,
+  adapterPolicy,
+  parseConnectionAdapter,
+  parseAdapterInput,
+  projectAdapterResult,
+} from "./adapters.js";

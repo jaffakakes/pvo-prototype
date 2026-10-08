@@ -20,6 +20,9 @@ export function ConnectionForm({
   useEffect(() => {
     secret.current?.focus();
   }, []);
+  const [writeIssues, setWriteIssues] = useState(
+    setup?.access === "issues_write",
+  );
   const [repository, setRepository] = useState(setup?.repository ?? "");
   return (
     <form
@@ -29,12 +32,17 @@ export function ConnectionForm({
         if (busy || !secret.current) return;
         const token = secret.current.value.trim();
         secret.current.value = "";
-        submit({ provider: "github", repository: repository.trim() }, token);
+        submit(
+          {
+            provider: "github",
+            repository: repository.trim(),
+            ...(writeIssues ? { access: "issues_write" as const } : {}),
+          },
+          token,
+        );
       }}
     >
-      <p>
-        Allow Restyle to read details and issues from one GitHub repository.
-      </p>
+      <p>Allow Restyle to use selected actions in one GitHub repository.</p>
       <label htmlFor={`${id}-repo`}>Repository</label>
       <input
         id={`${id}-repo`}
@@ -48,6 +56,15 @@ export function ConnectionForm({
         spellCheck={false}
         onChange={(event) => setRepository(event.currentTarget.value)}
       />
+      <label className={styles.permission}>
+        <input
+          type="checkbox"
+          checked={writeIssues}
+          disabled={busy || setup?.access === "issues_write"}
+          onChange={(event) => setWriteIssues(event.currentTarget.checked)}
+        />
+        Allow issue creation for Containers I approve
+      </label>
       <p>
         Create a{" "}
         <a
@@ -57,8 +74,9 @@ export function ConnectionForm({
         >
           fine-grained GitHub token
         </a>
-        . Select this repository only, give Issues read-only permission, and set
-        an expiry. Metadata read access is included by GitHub.
+        . Select this repository only, give Issues{" "}
+        {writeIssues ? "read and write" : "read-only"} permission, and set an
+        expiry. Metadata read access is included by GitHub.
       </p>
       <label htmlFor={`${id}-key`}>Private access token</label>
       <input

@@ -7,7 +7,20 @@ export const GITHUB_OPERATIONS = Object.freeze([
 
 /** Scope is chosen by the creator and stored by the platform, never an invocation URL. */
 export function parseConnectionSetup(value) {
-  object(value, ["provider", "repository"], "Connection setup");
+  object(
+    value,
+    [
+      "provider",
+      "repository",
+      ...(Object.hasOwn(value, "access") ? ["access"] : []),
+    ],
+    "Connection setup",
+  );
+  if (Object.hasOwn(value, "access"))
+    requireTask(
+      value.access === "issues_write",
+      "Unsupported account permission.",
+    );
   requireTask(
     value.provider === "github",
     "This provider has no installed connection adapter.",
@@ -19,7 +32,11 @@ export function parseConnectionSetup(value) {
     ) && !/[/.]\.($|\/)/.test(value.repository),
     "Use a GitHub owner/repository name.",
   );
-  return { provider: "github", repository: value.repository.toLowerCase() };
+  return {
+    provider: "github",
+    repository: value.repository.toLowerCase(),
+    ...(value.access ? { access: value.access } : {}),
+  };
 }
 
 export function parseConnectionInvocation(value) {

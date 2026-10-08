@@ -27,6 +27,7 @@ export const SERVICE_FAILURE_CODES = Object.freeze([
   "budget_exceeded",
   "invalid_result",
   "execution_failed",
+  "needs_checking",
 ]);
 
 function jsonText(value, maximum, path) {
@@ -46,6 +47,7 @@ function area(value) {
       "receipts",
       "results",
       "failures",
+      "pending",
     ],
     "Service records area",
   );
@@ -104,6 +106,21 @@ function area(value) {
       id(failure[key], key);
     time(failure.at, "Failure time");
     choice(failure.code, SERVICE_FAILURE_CODES, "Failure code");
+  }
+  if (value.pending !== null) {
+    object(
+      value.pending,
+      ["actionId", "operation", "releaseId", "status", "startedAt"],
+      "Pending outside action",
+    );
+    for (const key of ["actionId", "operation", "releaseId"])
+      id(value.pending[key], key);
+    choice(
+      value.pending.status,
+      ["running", "needs_checking"],
+      "Outside action status",
+    );
+    time(value.pending.startedAt, "Outside action start");
   }
   return structuredClone(value);
 }

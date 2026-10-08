@@ -55,15 +55,17 @@ The creator's actual goal determines the plan. Restaurant bookings and the other
 
 ## 2C. Let generated services use the connection
 
-- [ ] **2C.01** Give the service an approved connection reference and an agreed operation. Keep final access enforcement outside generated code.
-- [ ] **2C.02** Allow the agent to generate a new integration adapter when research establishes a usable service. Validate its destinations, methods, inputs, returned data, and requested permissions before registering it.
-- [ ] **2C.03** Keep generated integration code isolated. It calls the controlled connection interface; only trusted platform code attaches credentials. Generated code cannot inspect the resulting private headers or secret-bearing logs. An unfamiliar authentication method needs a separately reviewed platform adapter before that connection becomes available.
+- [x] **2C.01** Give the service an approved connection reference and an agreed operation. Keep final access enforcement outside generated code.
+- [x] **2C.02** Allow the agent to generate a new integration adapter when research establishes a usable service. Validate its destinations, methods, inputs, returned data, and requested permissions before registering it.
+- [x] **2C.03** Keep generated integration code isolated. It calls the controlled connection interface; only trusted platform code attaches credentials. Generated code cannot inspect the resulting private headers or secret-bearing logs. An unfamiliar authentication method needs a separately reviewed platform adapter before that connection becomes available.
 - [ ] **2C.04** Test against a provider's test environment or a controlled account. Keep normal Try separated from real effects.
-- [ ] **2C.05** Store a request receipt before any external write. Use the provider's duplicate-prevention mechanism where available and save its result.
-- [ ] **2C.06** If the provider's outcome is unclear, retain “needs checking” and inspect the existing action. Do not retry a potentially completed booking or message blindly.
-- [ ] **2C.07** Keep operations that need prolonged waiting, callbacks, or repeated status checks unavailable for live use until Roadmap 3 supplies that lifecycle.
+- [x] **2C.05** Store a request receipt before any external write. Use the provider's duplicate-prevention mechanism where available and save its result.
+- [x] **2C.06** If the provider's outcome is unclear, retain “needs checking” and inspect the existing action. Do not retry a potentially completed booking or message blindly.
+- [x] **2C.07** Keep operations that need prolonged waiting, callbacks, or repeated status checks unavailable for live use until Roadmap 3 supplies that lifecycle.
 
 **Finished when:** a component uses the connected service through a deployed backend, the workspace is off, and revoked permission blocks further calls. Report exactly what was verified: a provider accepting a message is not proof that it was delivered.
+
+**2C local implementation evidence, 8 October 2026:** **2C.01–03 and 2C.05–07 are complete.** Full 1,653 tests and strict editor types pass. Actual desktop/phone creator controls, independent request validation, offline Try, normal component export and separate viewers, explicit write opt-in, restart/unknown-result inspection and revocation pass with controlled provider replies and actual local Node/SQLite. The same cloud driver passes a local browser rehearsal. **2C.04 and the final deployed-backend gate remain unchecked** until the separately approved real-account/Fly proof and cleanup pass. New US$1 authorization is pending; no paid resources or real provider writes have been created. See the [connected Container contract and acceptance plan](../restyle-connected-services.md) and [progress](../restyle-cloud-agent-progress.md). Beta delivery is recorded separately.
 
 This should remain extensible to researched services. The first integration provides a worked example of the connection contract; its brand does not define the whole feature.
 

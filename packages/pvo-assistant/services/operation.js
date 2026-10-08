@@ -1,3 +1,4 @@
+import { validateConnectionResults } from "./accountBindings.js";
 import {
   boundedJson,
   object,
@@ -10,7 +11,19 @@ import { canonicalJson } from "./json.js";
 
 /** Internal rules consume a validated agreement; public entry points validate it first. */
 export function validateInvocation(agreement, value) {
-  object(value, ["operation", "input", "state", "now"], "Service invocation");
+  object(
+    value,
+    [
+      "operation",
+      "input",
+      "state",
+      "now",
+      ...(Object.hasOwn(value, "connectionResults")
+        ? ["connectionResults"]
+        : []),
+    ],
+    "Service invocation",
+  );
   const operation = agreement.operations.find(
     (item) => item.name === value.operation,
   );
@@ -28,6 +41,7 @@ export function validateInvocation(agreement, value) {
     limits.stateBytes,
     "Service state",
   );
+  validateConnectionResults(agreement, value);
   boundedJson(value, limits.envelopeBytes, "Service invocation");
   return operation;
 }
