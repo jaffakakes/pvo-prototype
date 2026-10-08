@@ -75,12 +75,15 @@ async function taskOperation(request, url) {
       input: creationInput(await readJson(request, TASK_LIMITS.inputBytes)),
     };
   const match =
-    /^\/api\/assistant\/tasks\/([A-Za-z0-9_-]{1,128})(?:\/(answers|resume|stop|manual|result|tests))?$/.exec(
+    /^\/api\/assistant\/tasks\/([A-Za-z0-9_-]{1,128})(?:\/(answers|resume|stop|manual|result|tests|diagnostics))?$/.exec(
       path,
     );
   if (match) {
     taskId(match[1]);
-    if (["result", "tests"].includes(match[2]) && request.method === "GET")
+    if (
+      ["result", "tests", "diagnostics"].includes(match[2]) &&
+      request.method === "GET"
+    )
       return { kind: match[2], id: match[1] };
     if (!match[2] && request.method === "GET")
       return { kind: "read", id: match[1] };

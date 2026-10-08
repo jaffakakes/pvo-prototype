@@ -74,6 +74,22 @@ export function SavedTaskPanel() {
           }}
         />
       )}
+      {session.task && status?.question?.id.startsWith("repair-help-") && (
+        <details className={styles.history}>
+          <summary>Build check details</summary>
+          <p>
+            The rejected plan and the check that failed are private to your
+            account. Opening these details does not restart the task.
+          </p>
+          <a
+            href={`/api/assistant/tasks/${session.task.id}/diagnostics`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open private diagnostic
+          </a>
+        </details>
+      )}
       {session.task?.questions.some((question) => question.answer) && (
         <details className={styles.history}>
           <summary>Saved answers</summary>

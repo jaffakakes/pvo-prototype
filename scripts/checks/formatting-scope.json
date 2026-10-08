@@ -592,6 +592,7 @@
   "tests/assistant-task-server/capacity.test.mjs",
   "tests/assistant-task-server/context.test.mjs",
   "tests/assistant-task-server/continuation.test.mjs",
+  "tests/assistant-task-server/diagnostics.test.mjs",
   "tests/assistant-task-server/evidence-planner.test.mjs",
   "tests/assistant-task-server/evidence.test.mjs",
   "tests/assistant-task-server/helpers.mjs",

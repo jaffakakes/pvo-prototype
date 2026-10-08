@@ -112,7 +112,9 @@ export class AssistantTasks extends DurableObject {
       input = creationInput(operation.input);
     else if (operation.kind === "list")
       input = taskListInput(new URLSearchParams(operation.query));
-    else if (["read", "result", "tests"].includes(operation.kind))
+    else if (
+      ["read", "result", "tests", "diagnostics"].includes(operation.kind)
+    )
       taskId(operation.id);
     else if (["answers", "resume", "stop", "manual"].includes(operation.kind)) {
       taskId(operation.id);
@@ -168,6 +170,13 @@ export class AssistantTasks extends DurableObject {
               return repository.list(input, now);
             case "read":
               return { task: repository.read(operation.id, now) };
+            case "diagnostics": {
+              const task = repository.read(operation.id, now);
+              return {
+                stepId: task.stepId,
+                repair: this.repairs.context(task),
+              };
+            }
             case "tests":
               return {
                 repair: repairReport(this.drafts.get(operation.id) ?? {}),

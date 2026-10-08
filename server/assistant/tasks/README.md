@@ -14,10 +14,13 @@ All responses are private (`Cache-Control: no-store`), with no cross-origin read
 | `POST /api/assistant/tasks` | Valid shared `TaskInput` with resolved project ID | `{task,created}`; 201 for new, 200 for exact replay |
 | `GET /api/assistant/tasks?project=ID&limit=20&before=ID` | Owned project required; optional limit 1–20 and opaque cursor | `{tasks,next}`; descending opaque ID, `next:null` at end |
 | `GET /api/assistant/tasks/:id` | None | `{task}` |
+| `GET /api/assistant/tasks/:id/diagnostics` | None; current owned task required | `{stepId,repair}`; bounded last rejected proposal/check, or `repair:null`; read-only |
 | `GET /api/assistant/tasks/:id/result` | None; owned ready task required | Canonical prepared-result JSON bytes, matching the saved artifact size and SHA-256 |
 | `POST /api/assistant/tasks/:id/answers` | `{expectedRevision,questionId,questionRevision:0,operationId,value}` | `{task}` |
 | `POST /api/assistant/tasks/:id/resume` | `{expectedRevision}` | `{task}` |
 | `POST /api/assistant/tasks/:id/stop` | `{expectedRevision}` | `{task}` |
+
+When a repeated validation failure asks for repair help, the editor links to this private diagnostic. The ordinary authenticated owner boundary applies, another owner receives 404 and anonymous access receives 401. Reading diagnostics does not claim/resume the task or invoke a provider; proposals remain untrusted and cannot grant publication or report success. The existing repair retention and UTF-8 bounds apply.
 
 Lists are bounded traversals, not a frozen snapshot during concurrent creation. Unknown extra query/body fields are rejected. Task input is bounded by the shared 128 KiB maximum. Question values support free text, including with suggested choices. Another owner's task/project returns the same 404 as an absent one. Anonymous access returns 401. Incorrect/stale state returns 409; refetch the task before deciding whether to retry. An exact repeated answer uses the **current task revision** and original answer identity/value, returning unchanged state. Stop is terminal for that task attempt.
 
