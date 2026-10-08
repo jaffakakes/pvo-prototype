@@ -35,7 +35,7 @@ Private deployment intent journal: `~/.codex/secure/restyle-beta-backend/journal
 
 Active branch `codex/restyle-beta-backend` starts at fetched `origin/dev` (`cc2193e`), explicitly fast-forwards completed implementation `eb8226b`, and includes the already verified combined beta `5063d97` at `c27c861`. This keeps the existing app and backend prerequisites together without changing an integration branch. The active source checkout is `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`.
 
-Source/configuration `dbf4e5b` is committed/pushed on the focused branch. [Draft PR #110](https://github.com/jaffakakes/pvo-prototype/pull/110) is attached, open and unmerged. Keep this draft pending the remaining deployment checks.
+Initial source/configuration `dbf4e5b` and verified Fly/private-policy source **`4c4f3db`** are committed/pushed on the focused branch. [Draft PR #110](https://github.com/jaffakakes/pvo-prototype/pull/110) is attached, open and unmerged. Keep this draft pending the remaining deployment checks.
 
 Current next task: **BETA.04**. The creator approved the fresh Fly connection, and BETA.03 is verified. Actual beta account sign-in remains pending. Keep the private `ASSISTANT_TASK_SPENDING` policy empty until the actual owner is known. No owner grant, saved creator Container or end-to-end authenticated execution is claimed yet. BETA.05 remains unchecked.
 
