@@ -64,3 +64,7 @@ Large valid contexts use the shared `promptContext.js` projection. It first remo
 ## Private account setup
 
 When the server has configured protected storage, `connect_account` saves a typed account question with an installed provider, repository scope and purpose. It is a waiting decision, never a research/tool batch or a credential field. The creator uses the private form or selects an existing matching connection. A trusted answer retains `connectionId` in the same task and archived question history. Ordinary chat answers cannot forge that reference. Account setup and provider reads do not grant generated Container code access; that separate connection interface remains 2C. See the [connection contract](../../../docs/engineering/restyle-account-connections.md).
+
+## Manual alternatives and follow-up
+
+See the [current 2D contract](../../../docs/engineering/restyle-manual-alternatives.md). The builder proposes a researched alternative before freezing its agreement; the existing saved question records explicit consent. `manualPlans` retains accepted proposals and creator-only completed/cancelled resolutions. `ready` means the prepared component exists; pending human work stays visible and keeps task content retained without running compute. Only after every human step is resolved and automatic work is terminal does normal retention start.

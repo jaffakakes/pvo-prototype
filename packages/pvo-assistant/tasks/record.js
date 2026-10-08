@@ -1,3 +1,4 @@
+import { validateManualPlans, hasPendingManualSteps } from "./manual.js";
 import { TASK_LIMITS as limits, TASK_STATES } from "./limits.js";
 import {
   boundedJson,
@@ -51,6 +52,7 @@ export function parseTaskRecord(value) {
       "claim",
       "questions",
       "archivedQuestions",
+      "manualPlans",
       "operations",
       "archivedOperations",
       "result",
@@ -92,7 +94,9 @@ export function parseTaskRecord(value) {
     value.createdAt <= value.updatedAt,
     "Task timestamps or retention are inconsistent.",
   );
-  const finished = ["ready", "stopped"].includes(value.state);
+  validateManualPlans(value.manualPlans, value.createdAt, value.updatedAt);
+  const finished =
+    ["ready", "stopped"].includes(value.state) && !hasPendingManualSteps(value);
   if (finished) {
     time(value.finishedAt, "Goal finish time");
     time(value.expiresAt, "Finished goal retention");
@@ -252,6 +256,11 @@ function validateHistory(value) {
     [
       value.input.operationId,
       ...value.operations.map((item) => item.id),
+      ...value.manualPlans.flatMap((plan) =>
+        plan.steps.flatMap((step) =>
+          step.resolution ? [step.resolution.operationId] : [],
+        ),
+      ),
       ...value.questions
         .filter((item) => item.answer)
         .map((item) => item.answer.operationId),
@@ -280,6 +289,7 @@ export function createTask(input, metadata) {
     claim: null,
     questions: [],
     archivedQuestions: 0,
+    manualPlans: [],
     operations: [],
     archivedOperations: 0,
     result: null,

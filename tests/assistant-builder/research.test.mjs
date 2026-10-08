@@ -55,7 +55,7 @@ test("public research can precede the agreement but cannot generate source, run 
   );
   assert.deepEqual(
     schema.anyOf.map((item) => item.properties.kind.const),
-    ["ask", "agreement", "ask_research", "research"],
+    ["ask", "agreement", "manual_alternative", "ask_research", "research"],
   );
   let state = beginBuilderBatch(
     acceptBuilderDecision(newBuilderState(), decision),

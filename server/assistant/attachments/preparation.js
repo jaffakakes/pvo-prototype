@@ -1,3 +1,4 @@
+import { validateManualComponent } from "../../../packages/pvo-assistant/tasks/index.js";
 import { AuthoringRepairError } from "../tasks/repairFeedback.js";
 import { parseServiceAttachmentCommand } from "../../../packages/pvo-assistant/attachments/index.js";
 import { validateNativeResult } from "../native/policy.js";
@@ -51,7 +52,12 @@ export async function prepareTaskAttachment(coordinator, task, value) {
         operations: [operation],
         observations: [],
       },
-      (type, source) => coordinator.compileAttachment(type, source),
+      async (type, source) => {
+        const compiled = await coordinator.compileAttachment(type, source);
+        if (source === operation.source)
+          validateManualComponent(task, compiled, command.connection.input);
+        return compiled;
+      },
       authorization,
     );
   } catch (error) {

@@ -1,3 +1,4 @@
+import { acceptManualAnswer, resolveManualStep } from "./manual.js";
 import { TASK_FAILURES, TASK_LIMITS as limits } from "./limits.js";
 import {
   checkpointTaskOperations,
@@ -25,6 +26,7 @@ const fields = {
   wait: ["reason", "nextRunAt"],
   ask: ["question"],
   ask_research: ["question"],
+  resolve_manual: ["questionId", "stepId", "operationId", "status", "note"],
   answer: ["questionId", "questionRevision", "operationId", "value"],
   answer_connection: [
     "questionId",
@@ -75,7 +77,9 @@ export function transitionTask(value, command, guard) {
     );
   requireTask(
     !["ready", "stopped"].includes(task.state) ||
-      ["reconcile_operation", "reconcile_usage"].includes(command.kind),
+      ["reconcile_operation", "reconcile_usage", "resolve_manual"].includes(
+        command.kind,
+      ),
     "This task attempt is terminal.",
   );
   checkpointTaskOperations(task, command.operation?.id ?? command.operationId);
@@ -167,6 +171,12 @@ function applyCommand(task, command, guard) {
     case "answer":
     case "answer_connection":
       return answerQuestion(task, command);
+    case "resolve_manual":
+      requireTask(
+        task.state !== "running",
+        "Wait for current work before recording a manual result.",
+      );
+      return resolveManualStep(task, command);
     case "complete":
       validateResult(command.result);
       task.result = structuredClone(command.result);
@@ -284,6 +294,7 @@ function answerQuestion(task, command) {
       ? { connectionId: command.connectionId }
       : {}),
   };
+  acceptManualAnswer(task, question);
   question.revision++;
   if (task.state === "waiting_for_answer") finishClaim(task, "queued");
   return false;

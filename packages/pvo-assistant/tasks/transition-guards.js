@@ -1,3 +1,4 @@
+import { hasPendingManualSteps } from "./manual.js";
 import { TASK_LIMITS } from "./limits.js";
 import { object, requireTask, time, integer, id } from "./validation.js";
 
@@ -44,7 +45,7 @@ export function requireRunningClaim(task, guard) {
 export function finishClaim(task, state) {
   task.state = state;
   task.wait = null;
-  if (["ready", "stopped"].includes(state)) {
+  if (["ready", "stopped"].includes(state) && !hasPendingManualSteps(task)) {
     task.finishedAt = task.updatedAt;
     task.expiresAt = task.finishedAt + TASK_LIMITS.retentionMs;
   }

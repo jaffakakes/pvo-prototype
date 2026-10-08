@@ -58,26 +58,28 @@ The creator's actual goal determines the plan. Restaurant bookings and the other
 - [x] **2C.01** Give the service an approved connection reference and an agreed operation. Keep final access enforcement outside generated code.
 - [x] **2C.02** Allow the agent to generate a new integration adapter when research establishes a usable service. Validate its destinations, methods, inputs, returned data, and requested permissions before registering it.
 - [x] **2C.03** Keep generated integration code isolated. It calls the controlled connection interface; only trusted platform code attaches credentials. Generated code cannot inspect the resulting private headers or secret-bearing logs. An unfamiliar authentication method needs a separately reviewed platform adapter before that connection becomes available.
-- [ ] **2C.04** Test against a provider's test environment or a controlled account. Keep normal Try separated from real effects.
+- [x] **2C.04** Test against a provider's test environment or a controlled account. Keep normal Try separated from real effects.
 - [x] **2C.05** Store a request receipt before any external write. Use the provider's duplicate-prevention mechanism where available and save its result.
 - [x] **2C.06** If the provider's outcome is unclear, retain “needs checking” and inspect the existing action. Do not retry a potentially completed booking or message blindly.
 - [x] **2C.07** Keep operations that need prolonged waiting, callbacks, or repeated status checks unavailable for live use until Roadmap 3 supplies that lifecycle.
 
 **Finished when:** a component uses the connected service through a deployed backend, the workspace is off, and revoked permission blocks further calls. Report exactly what was verified: a provider accepting a message is not proof that it was delivered.
 
-**2C local implementation evidence, 8 October 2026:** **2C.01–03 and 2C.05–07 are complete.** Full 1,653 tests and strict editor types pass. Actual desktop/phone creator controls, independent request validation, offline Try, normal component export and separate viewers, explicit write opt-in, restart/unknown-result inspection and revocation pass with controlled provider replies and actual local Node/SQLite. The same cloud driver passes a local browser rehearsal. **2C.04 and the final deployed-backend gate remain unchecked** until the separately approved real-account/Fly proof and cleanup pass. New US$1 authorization is pending; no paid resources or real provider writes have been created. See the [connected Container contract and acceptance plan](../restyle-connected-services.md) and [progress](../restyle-cloud-agent-progress.md). Beta delivery is recorded separately.
+**2C completed, 8 October 2026:** all seven tasks are checked. Full 1,653 tests, strict editor types, actual desktop/phone controls and local fault/recovery checks pass. The real read-only GitHub/Fly run then passed independent validation, approval/owner denial, Try, live results, restart/replay, actual editor attachment/export, two viewers after creator closure, and both revocations. Its one approved deployment used 15 Node starts over 7.53 minutes; all owned resources and local key copies are cleaned up. No real provider writes or live-model quality claim. See [portable acceptance evidence](../restyle-connected-services.md#verified-cloud-acceptance--8-october-2026) and [progress](../restyle-cloud-agent-progress.md). Source `5695c39` is pushed; combined `da6797e` passes build/types/57 checks and delivers verified beta `restyle-editor-shell-e6fc1f6312778640`. Permanent backend hosting and production release are separate.
 
 This should remain extensible to researched services. The first integration provides a worked example of the connection contract; its brand does not define the whole feature.
 
 ## 2D. Make manual alternatives useful
 
-- [ ] **2D.01** Let the agent propose a useful alternative suited to the request when automation is unavailable, explaining how the outcome changes. Examples include preparing a draft, collecting information for a person, or opening a supported provider flow; they are not a fixed fallback menu.
-- [ ] **2D.02** Save the creator's choice before changing the component's promise.
-- [ ] **2D.03** Add required form fields through existing component commands. Explain what collected data will be used for.
-- [ ] **2D.04** Record manual follow-up as pending until a person marks it completed or an actual service result confirms completion.
-- [ ] **2D.05** Preserve automatic and manual steps in the same saved task so returning later does not lose context.
+- [x] **2D.01** Let the agent propose a useful alternative suited to the request when automation is unavailable, explaining how the outcome changes. Examples include preparing a draft, collecting information for a person, or opening a supported provider flow; they are not a fixed fallback menu.
+- [x] **2D.02** Save the creator's choice before changing the component's promise.
+- [x] **2D.03** Add required form fields through existing component commands. Explain what collected data will be used for.
+- [x] **2D.04** Record manual follow-up as pending until a person marks it completed or an actual service result confirms completion.
+- [x] **2D.05** Preserve automatic and manual steps in the same saved task so returning later does not lose context.
 
 **Finished when:** creators with different goals can choose useful manual alternatives, preserve their original context, and see which work remains pending. Neither the editor nor the viewer reports the original external action as completed from a preparatory step alone. For example, an RSVP does not confirm a booking, and preparing a work request does not prove it was submitted.
+
+**Verified 8 October 2026:** all five 2D tasks pass source, saved-runner and actual desktop/phone editor acceptance. See [manual alternatives](../restyle-manual-alternatives.md) for the current contract, evidence and limits; [progress](../restyle-cloud-agent-progress.md) records beta delivery separately. Earlier real 2B/2C account and cloud proof is preserved.
 
 ## Complete this roadmap
 

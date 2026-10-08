@@ -119,3 +119,7 @@ The trusted `ask_research` transition is build-only. It saves one question and q
 ## Typed account questions
 
 A private setup question adds `connection: { provider: "github", repository }` to the ordinary saved question. Its trusted answer can add `connectionId`; it contains no credential. The server-only `answer_connection` transition uses the same claim, revision, archive and queued-resume rules as answering a question, preserving completed operation receipts. The creator text route only accepts the explicit choice to continue without this connection; it cannot choose a connection ID or claim successful setup. The authenticated manager verifies owner, provider, exact repository and connected status before answering. See [account connections](../../../docs/engineering/restyle-account-connections.md).
+
+## Manual alternatives and follow-up
+
+See the [current 2D contract](../../../docs/engineering/restyle-manual-alternatives.md). The builder proposes a researched alternative before freezing its agreement; the existing saved question records explicit consent. `manualPlans` retains accepted proposals and creator-only completed/cancelled resolutions. `ready` means the prepared component exists; pending human work stays visible and keeps task content retained without running compute. Only after every human step is resolved and automatic work is terminal does normal retention start.

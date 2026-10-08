@@ -1,3 +1,4 @@
+import { ACCEPT_ALTERNATIVE } from "../tasks/manual.js";
 import { requireTask } from "../tasks/validation.js";
 import {
   parseCapabilityResearch,
@@ -41,7 +42,10 @@ export function createCapabilityDecision(value, facts) {
   }
   if (tool.status === "manual" && tool.selection === "selected")
     requireTask(
-      selectedAnswer?.answer,
+      selectedAnswer?.alternative &&
+        selectedAnswer.answer?.value === ACCEPT_ALTERNATIVE &&
+        selectedAnswer.alternative.preparedOutcome === tool.outcome &&
+        selectedAnswer.alternative.originalOutcome === tool.operation,
       "Save the creator's choice before selecting a manual alternative.",
     );
   requireTask(

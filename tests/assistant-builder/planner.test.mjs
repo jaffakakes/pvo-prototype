@@ -90,7 +90,7 @@ test("builder schema exposes only the current stage and actually available tools
   const initial = builderDecisionSchema(false, definitions);
   assert.deepEqual(
     initial.anyOf.map((value) => value.properties.kind.const),
-    ["ask", "agreement"],
+    ["ask", "agreement", "manual_alternative"],
   );
   const available = builderDecisionSchema(
     true,

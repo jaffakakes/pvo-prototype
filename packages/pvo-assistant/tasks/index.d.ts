@@ -60,7 +60,42 @@ export type TaskInput = {
 export type TaskProposal = { examples: TaskInput["examples"] };
 export function parseTaskProposal(value: unknown): TaskProposal;
 export const taskProposalSchema: Readonly<Record<string, unknown>>;
+export type ManualAlternative = {
+  capabilityId: string;
+  originalOutcome: string;
+  preparedOutcome: string;
+  limitation: string;
+  notice: string;
+  fields: Array<{
+    name: string;
+    kind: "name" | "email" | "phone" | "short" | "number" | "yesno";
+    label: string;
+    purpose: string;
+  }>;
+  steps: Array<{ id: string; instruction: string }>;
+};
+export type ManualResolution = {
+  operationId: string;
+  status: "completed" | "cancelled";
+  note: string;
+  resolvedAt: number;
+};
+export type ManualPlan = {
+  questionId: string;
+  acceptedAt: number;
+  proposal: ManualAlternative;
+  steps: Array<{ id: string; resolution: ManualResolution | null }>;
+};
+export function parseManualAlternative(value: unknown): ManualAlternative;
+export function hasPendingManualSteps(task: TaskRecord): boolean;
+export function manualFieldLabel(
+  field: ManualAlternative["fields"][number],
+): string;
+export const ACCEPT_ALTERNATIVE: string;
+export const DECLINE_ALTERNATIVE: string;
+export const manualAlternativeSchema: Readonly<Record<string, unknown>>;
 export type TaskQuestion = {
+  alternative?: ManualAlternative;
   id: string;
   revision: number;
   prompt: string;
@@ -102,6 +137,7 @@ export type TaskRecord = {
   claim: null | { id: string; claimedAt: number; expiresAt: number };
   questions: TaskQuestion[];
   archivedQuestions: number;
+  manualPlans: ManualPlan[];
   operations: TaskOperation[];
   archivedOperations: number;
   result: TaskResult | null;
@@ -141,6 +177,14 @@ export type TaskCommand =
       operationId: string;
       value: string;
       connectionId: string;
+    }
+  | {
+      kind: "resolve_manual";
+      questionId: string;
+      stepId: string;
+      operationId: string;
+      status: "completed" | "cancelled";
+      note: string;
     }
   | { kind: "complete"; result: TaskResult }
   | { kind: "fail"; failure: TaskFailure }
@@ -211,3 +255,11 @@ export function transitionTask(
 ): TaskRecord;
 
 export function assertTaskExecution(task: TaskRecord, guard: TaskGuard): void;
+
+export function validateManualComponent(
+  task: TaskRecord,
+  compiled: {
+    structure: import("../../pvo-language/index.js").PvoLanguageStructure;
+  },
+  binding: import("../attachments/index.js").ServiceInputBinding,
+): void;

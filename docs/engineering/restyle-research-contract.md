@@ -10,6 +10,8 @@ When it needs a choice, Restyle saves a question. The creator can answer while a
 
 This uses the existing saved task. Public research starts no VM. The **VM is the temporary workshop** for code and tests; the **Container is the hosted Node.js service** used by viewers after publication; **PVO Logic** remains the separate restricted component language. Research notes and answers live outside the workshop and running service instance.
 
+The [2D manual-alternative contract](restyle-manual-alternatives.md) extends these decisions with explicit saved consent, agreed form fields and human follow-up that remains pending independently of component readiness.
+
 ## What is implemented
 
 | Part | Current behavior and boundary |
@@ -21,7 +23,7 @@ This uses the existing saved task. Public research starts no VM. The **VM is the
 | `ask_research` | Saves one question and up to two independent read-research calls. Only those exact saved calls can run before the answer. More research can follow in subsequent decisions; this is not a total model-turn ceiling. |
 | Saved answers/choices | The planner receives recent choices and their freshness. Complete research and archived answers remain available through the existing paged history. |
 
-There is **no real third-party account connection yet**. Restyle's Google login identifies the creator; its identity scopes do not grant Calendar or other provider access. The new metadata catalog is empty until trusted account setup populates it. Only controlled tests currently populate installed adapter operations. There is no public or model metadata-write endpoint. Real secure sign-in/key storage, reconnect/revoke flows and the first integration remain **2B**; enforcing credentials and actual provider calls from generated services remain **2C**. No provider was selected for 2B by this implementation.
+The [2B private account connection](restyle-account-connections.md) and [2C approved Container account access](restyle-connected-services.md) are now implemented and verified. GitHub is the installed provider; Restyle's Google login still does not grant Calendar or other provider access. The metadata catalog contains only actual installed operations and creator-owned connections. There is no public or model metadata-write endpoint. Historical 2A verification below predates those later capabilities.
 
 ## Ownership and responsibilities
 

@@ -1,3 +1,4 @@
+import { requireManualChoice } from "../builder/manualAlternatives.js";
 import { connectionSetupAvailable } from "../../connections/credentials.js";
 import { requireConnectionResearch } from "../builder/connectionResearch.js";
 import { capabilityContext } from "../builder/capabilityResearch.js";
@@ -20,6 +21,7 @@ export async function authoringInput(coordinator, task) {
     evidence: {
       ...coordinator.evidence.context(task),
       capabilities: await capabilityContext(coordinator, task),
+      manualPlans: task.manualPlans,
       connectionSetup: connectionSetupAvailable(coordinator.env)
         ? {
             provider: "github",
@@ -102,6 +104,8 @@ export async function prepareAuthoringResponse(
         throw new Error(
           "Reuse the saved answer; explain changed evidence before asking a different question.",
         );
+      if (response.question?.alternative)
+        throw new Error("Use the researched builder alternative decision.");
       transitionTask(task, response, {
         ownerId: task.ownerId,
         expectedRevision: task.revision,
@@ -123,6 +127,7 @@ export async function prepareAuthoringResponse(
       connectionSetup: connectionSetupAvailable(coordinator.env),
       available: coordinator.builderToolDefinitions().map((tool) => tool.kind),
     });
+    await requireManualChoice(coordinator, task, decision);
     if (decision.kind === "agreement")
       requireConnectionResearch(coordinator, task, decision.agreement);
     const agreementDigest =

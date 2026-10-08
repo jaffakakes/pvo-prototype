@@ -47,6 +47,10 @@ export function parseBuilderReadResult(
 export function serializeBuilderTool(value: unknown): string;
 export type BuilderDecision =
   | {
+      kind: "manual_alternative";
+      proposal: import("../tasks/index.js").ManualAlternative;
+    }
+  | {
       kind: "connect_account";
       setup: import("../connections/index.js").ConnectionSetup;
       purpose: string;

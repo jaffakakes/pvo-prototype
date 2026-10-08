@@ -2,11 +2,27 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
-## Active task: finish 2C hosted acceptance and beta
+## Current continuation — all 2D verified; deliver beta before stopping
 
-The user authorized all 2C. **93/134 complete: 2C.01–03 and 2C.05–07 verified; 2C.04 remains unchecked.** Source passes 1,653 tests, strict types, actual editor/phone/Try/export/two-viewer and unknown-write recovery checks with controlled provider replies and real local Node. The cloud driver’s local browser rehearsal passes. Read the latest [progress checkpoint](restyle-cloud-agent-progress.md) and [connected Container contract](restyle-connected-services.md). The separate US$1 proof approval is pending; old Fly/GitHub private keys are removed. No new paid resources are created. Source checkpoint and 2C beta delivery are the next independent work; then the actual provider/Fly proof and cleanup are required. Do not mark all 2C complete from local rehearsal alone. No production, integration merge or Actions.
+**99/134 checked; Roadmaps 1 and 2 are complete in source.** The 8 October user request authorized all 2D. Continue on `feature/restyle-research-connections` in `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`, draft PR #107. Read the newest [progress](restyle-cloud-agent-progress.md) and [manual-alternative contract](restyle-manual-alternatives.md). Full 1,661 tests, strict types, sixteen focused tests and actual desktop/phone editor application/Try/restart/uncertain-reply/account-switch acceptance pass. Source changes and completion checkboxes are in this batch.
 
-The following 2B status is preserved historical evidence; the active 2C checkpoint above supplies the next task.
+**Next concrete action:** commit, combine with current beta `da6797e` in an isolated build checkout, build/check and deliver to actual Desktop `dist/` at4173 using its recorded hash guard and backup. Verify the served revision and activated service worker. Then push the focused branch, refresh Desktop reading copies and record final evidence here and in progress. Source Vite5324 may be stopped after verifying ownership. No paid proof, key setup or external account action is needed.
+
+Manual follow-up extends the existing task; it is not a viewer background queue. The next numbered task is **3A.01**, [durable viewer jobs](restyle-cloud-agent-roadmaps/03-background-work.md#3a-save-and-run-background-jobs), after this beta delivery. Keep all earlier 1E/1F/1G and real 2B/2C evidence. Production stays prohibited until the whole roadmap and user beta testing are finished and release is explicitly approved. No integration merge, Actions work or unreleased branch deletion.
+
+## Active task: 2C complete — next 2D.01 when requested
+
+**94/134 complete; all seven 2C tasks are verified through beta and isolated cloud acceptance.** Source `5695c39` is pushed on `feature/restyle-research-connections`, checkout `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`. Operational checkpoint `74d4bb8` is pushed; this documentation batch adds final acceptance. [Draft PR #107](https://github.com/jaffakakes/pvo-prototype/pull/107) remains open and unmerged. Full 1,653 tests, strict editor types, focused recovery checks and actual desktop/phone/editor/player acceptance remain passing.
+
+**Final real cloud proof:** on 8 October 2026, 07:44:00–07:51:31 UTC, the one approved US$1 deployment used 15 bounded Node starts. Real GitHub read-only account access, independent Fly validation, exact-release/owner approval, offline Try, live provider-controlled result, host restart/replay, actual Component attachment/export and two separate viewers after creator closure all passed. Both release and account revocation blocked new calls. No real provider write or model inference. See the [portable evidence and limits](restyle-connected-services.md#verified-cloud-acceptance--8-october-2026).
+
+**Cleanup is complete.** Fly app/Machines/registry manifest, Worker/four SQLite namespaces, app/org test keys and all owned local plaintext copies/CLI logs are removed or revoked as appropriate. Both execution slots were empty before namespace deletion. The private GitHub connection was disconnected; its provider-issued token can still be deleted in GitHub settings. Source Vite5323 and setup/confirmation listeners are stopped. Safe journals/receipts remain; missing private local logs never justify repeating a paid proof. Provider blob collection and actual invoice are not verified. Read [progress](restyle-cloud-agent-progress.md) for exact resource IDs and the resolved local form/Fly refresh issues.
+
+**Beta remains delivered:** combined `da6797e`, build/types/57 checks and served editor/player/activated service worker verified. Actual Desktop `dist/` at4173 serves **`restyle-editor-shell-e6fc1f6312778640`**. Backup retained, 138 old assets preserved, no forced reload. No app source changed during final cloud acceptance, so no beta rebuild was necessary. Static beta has no permanent task/account/service APIs configured.
+
+**Next is 2D.01**, when requested: explain missing capabilities and offer useful manual alternatives through existing saved task/question/answer flows. All five 2D tasks remain unchecked. Fetch the focused branch above on Windows or another machine; Desktop Markdown files are guarded reading copies. No further 2C token, broad test rerun or paid run is required. No production, integration merge, Actions or unreleased branch deletion. Keep this PR draft until the user chooses integration/release.
+
+The following 2B status is preserved historical evidence; the active 2C checkpoint above supplies current source, beta and next task.
 
 ## Current status: all 2B complete, 8 October 2026
 

@@ -1,3 +1,4 @@
+import { ManualFollowUps } from "./ManualFollowUps";
 import { ConnectionsPanel } from "../../account-connections/ConnectionsPanel";
 import { TaskAnswer } from "./TaskAnswer";
 import { SavedTaskResult } from "./SavedTaskResult";
@@ -87,6 +88,15 @@ export function SavedTaskPanel() {
               ))}
           </dl>
         </details>
+      )}
+      {session.task && !session.signedOut && (
+        <ManualFollowUps
+          plans={session.task.manualPlans}
+          busy={session.busy || session.task.state === "running"}
+          resolve={(questionId, stepId, status, note) => {
+            void session.resolveManual(questionId, stepId, status, note);
+          }}
+        />
       )}
       {session.task?.state === "ready" && !session.signedOut && (
         <SavedTaskResult task={session.task} />

@@ -8,7 +8,7 @@ import {
   supportedNodeLibraries,
   nodeLibraryIds,
 } from "../services/index.js";
-import { TASK_LIMITS } from "../tasks/index.js";
+import { TASK_LIMITS, manualAlternativeSchema } from "../tasks/index.js";
 import { BUILDER_LIMITS } from "./decisions.js";
 
 const string = (maximum) => ({ type: "string", maxLength: maximum });
@@ -200,6 +200,10 @@ export function builderDecisionSchema(
           ask,
           ...setup,
           object({ kind: { const: "agreement" }, agreement }),
+          object({
+            kind: { const: "manual_alternative" },
+            proposal: manualAlternativeSchema,
+          }),
           ...researchChoices,
         ],
   });

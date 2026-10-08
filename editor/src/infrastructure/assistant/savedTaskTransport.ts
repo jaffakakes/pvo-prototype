@@ -113,6 +113,14 @@ function ownedResponse(value: unknown, ref: TaskReference) {
 
 export type SavedTaskAction =
   | { kind: "stop" | "resume" }
+  | {
+      kind: "manual";
+      questionId: string;
+      stepId: string;
+      operationId: string;
+      status: "completed" | "cancelled";
+      note: string;
+    }
   | { kind: "answer"; questionId: string; operationId: string; value: string };
 
 export async function changeSavedTask(
@@ -135,7 +143,16 @@ export async function changeSavedTask(
           operationId: action.operationId,
           value: action.value,
         }
-      : { expectedRevision: current.revision };
+      : action.kind === "manual"
+        ? {
+            expectedRevision: current.revision,
+            questionId: action.questionId,
+            stepId: action.stepId,
+            operationId: action.operationId,
+            status: action.status,
+            note: action.note,
+          }
+        : { expectedRevision: current.revision };
   const path = action.kind === "answer" ? "answers" : action.kind;
   return ownedResponse(
     (

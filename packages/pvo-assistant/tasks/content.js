@@ -1,3 +1,4 @@
+import { parseManualAlternative } from "./manual.js";
 import { parseConnectionSetup } from "../connections/setup.js";
 import { TASK_FAILURES, TASK_LIMITS as limits } from "./limits.js";
 import {
@@ -145,9 +146,15 @@ export function validateQuestion(value) {
       "choices",
       "answer",
       ...(value?.connection ? ["connection"] : []),
+      ...(value?.alternative ? ["alternative"] : []),
     ],
     "Question",
   );
+  requireTask(
+    !(value.connection && value.alternative),
+    "Ask about an account or an alternative separately.",
+  );
+  if (value.alternative) parseManualAlternative(value.alternative);
   if (value.connection) parseConnectionSetup(value.connection);
   id(value.id, "Question ID");
   integer(value.revision, 1, "Question revision");
