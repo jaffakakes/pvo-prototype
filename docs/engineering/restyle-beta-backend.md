@@ -48,7 +48,7 @@ Current next task: **BETA.03**, waiting for the human's fresh Fly CLI approval. 
 - **Browser:** exact served editor/player/receipt/shared modules and new UI bundle match the verified Roadmap 4 build. Actual desktop/phone email sign-in UI and fresh **activated** service worker pass at `restyle-editor-shell-7bbb710096de4c50`. This proves served assets/auth UI, not completed user sign-in or owned Container execution.
 - **Cleanup:** browser fixtures close in `finally`. No Fly builder, Machine or temporary registry credential exists yet. Retain the successful beta deployment/storage, protected combined-beta worktree and existing local beta server. Private journals record intent and outcomes; never commit credentials. Actual ongoing costs depend on use, with existing capacity/storage/watchdog controls; no invoice total is claimed.
 
-All 484 local links/anchors across 33 related documents pass; all 134 prior task IDs/descriptions/completion states are unchanged. The five separate BETA tasks record actual deployment progress.
+All 481 local links/anchors across 33 related documents pass; all 134 prior task IDs/descriptions/completion states are unchanged. The five separate BETA tasks record actual deployment progress.
 
 Logs on this Mac: `/tmp/restyle-beta-check-final.log`, `/tmp/restyle-beta-deployment-tests.log`, `/tmp/restyle-beta-language.log`, `/tmp/restyle-beta-compiler-regression.log`, `/tmp/restyle-beta-guarded-dry-run.log`, `/tmp/restyle-beta-model-preflight.log`, `/tmp/restyle-beta-served.log`. On another machine, committed resource identifiers, commands and these bounded evidence claims are sufficient for continuation; do not repeat live inference merely to replace a missing log.
 
