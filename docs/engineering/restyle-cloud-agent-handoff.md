@@ -2,7 +2,17 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
-## Current checkpoint — Roadmap 4 final delivery
+## Current checkpoint — Roadmaps 1–4 complete through beta
+
+**134/134 checked. No numbered task remains.** Account-linked agent email is paused. Source **`66681bc`** plus this final evidence commit is pushed on **`origin/codex/restyle-maintenance`**, [draft PR #109](https://github.com/jaffakakes/pvo-prototype/pull/109), open/unmerged. Active source checkout: `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`. Read the newest [progress checkpoint](restyle-cloud-agent-progress.md) and [maintenance portable acceptance](restyle-maintenance.md#verified-acceptance--8-october-2026). This branch includes the unreleased Roadmap 1–3 prerequisites; preserve their branches/PRs and real-provider evidence.
+
+**Verified:** private health and evidence-backed diagnosis, safe baseline, same-draft repair, actual original-fail/repaired-pass regression countercheck, unchanged independent tests, manual-conflict rebaseline, checked inactive release, preserved records/replies and no repeated completed actions through update/rollback. Full **1,695 tests**, strict types and actual creator desktop/phone/compiler Try/normal PVO export/public player/background receipt paths pass. Model/provider/provisioning choices are controlled for Roadmap 4; earlier live Fly/GitHub/Resend proofs remain valid for unchanged adapters. No new paid deployment, live email or agent email provisioning occurred.
+
+**Beta delivered:** combined `5063d97`, build/types/**43 focused checks**, actual Desktop beta4173 revision **`restyle-editor-shell-7bbb710096de4c50`**. Exact served files, new UI and a fresh activated service worker pass. Before/built output backed up at `~/.codex/backups/restyle-4-beta-ve10rsro`; 143 old hashed assets retained; no forced reload. Owned source5327 is stopped. App archival rejected the managed beta build checkout as protected by a pinned task/workspace, so it remains intact with its owned dependency symlink removed. Source checkout and beta server are preserved. Static beta has no permanently configured task/account/service APIs; permanent backend availability is a separate deployment task.
+
+**Next action:** await the user's beta review and explicit choice of further work. Do not invent Roadmap 5 or resume paused agent email. No integration merge, Actions work, production or deletion of unreleased branches is authorized. The protected release process follows user testing and explicit production approval. Claude Code or Windows can continue by fetching the focused branch and reading these committed records; private local receipts are optional and missing logs never justify rerunning completed paid proofs. Desktop Markdown files are guarded reading copies, not the active source checkout.
+
+## Previous checkpoint — Roadmap 4 final delivery
 
 The creator authorized completing all Roadmap 4 and paused agent email. **133/134 checked**; all 4A/4C and 4D.01–02 are verified. Source is on `codex/restyle-maintenance` in `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`, based on fetched `origin/dev` plus the unreleased Roadmap1–3 prerequisite `d44254d`. Read the current [progress](restyle-cloud-agent-progress.md) and [maintenance contract](restyle-maintenance.md).
 
@@ -124,7 +134,7 @@ This historical checkpoint completed 1E, 1F and 1G.01–03 through beta. The act
 
 **On this Mac:** use the active implementation checkout above. It includes reviewed plan `9c0b07b`. Desktop Markdown files are guarded reading copies; Desktop app source is not this implementation. Preserve its pending generated output.
 
-**On another machine:** fetch the active `origin/codex/restyle-background-work` branch above; it includes verified Roadmap 1/2 prerequisites. Read that branch's latest progress and handoff first. The preceding planning branch remains `origin/docs/restyle-node-containers-roadmap`; its reviewed plan is included in the implementation history. Use a clean checkout/worktree without resetting another checkout. A branch is not evidence of deployment. Committed evidence is sufficient to resume; missing private local logs do not justify rerunning completed paid proofs.
+**On another machine:** fetch the active `origin/codex/restyle-maintenance` branch above; it includes verified Roadmap 1–3 prerequisites. Read that branch's latest progress and handoff first. The preceding planning branch remains `origin/docs/restyle-node-containers-roadmap`; its reviewed plan is included in the implementation history. Use a clean checkout/worktree without resetting another checkout. A branch is not evidence of deployment. Committed evidence is sufficient to resume; missing private local logs do not justify rerunning completed paid proofs.
 
 **Continuation:** use the active task at the top and the exact next action in progress; the older 1G.04 instruction is historical. Recheck newer evidence; never infer completion from the plan. After each verified item, update its one checkbox and the progress log in the same batch. Before interruption, save changed files, checks run/unrun, resources, uncertainty and the exact next action. No Codex-specific tool or previous chat is required.
 
