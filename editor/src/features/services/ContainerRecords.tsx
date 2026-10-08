@@ -1,3 +1,4 @@
+import { ContainerPendingAction } from "./ContainerPendingAction";
 import { useEffect, useState } from "react";
 import {
   HOSTED_SERVICE_LIMITS as limits,
@@ -17,6 +18,8 @@ const failureLabels: Record<string, string> = {
   budget_exceeded: "A usage or saved-reply limit was reached.",
   invalid_result:
     "The program returned an invalid result. No records were saved.",
+  needs_checking:
+    "An outside action has an uncertain result. Resume its saved action to check it.",
   execution_failed: "The program could not finish. Retry the saved action.",
 };
 const pretty = (value: string) => JSON.stringify(JSON.parse(value), null, 2);
@@ -192,6 +195,18 @@ export function ContainerRecords({
           {!current.records.areas.length && (
             <p>Test a saved draft to create its first records area.</p>
           )}
+          {current.records.areas
+            .filter((area) => area.pending !== null)
+            .map((area) => (
+              <ContainerPendingAction
+                key={area.pending!.actionId}
+                ownerId={ownerId}
+                serviceId={serviceId}
+                pending={area.pending!}
+                disabled={disabled}
+                refresh={() => setReload((value) => value + 1)}
+              />
+            ))}
           {current.records.areas.map((area, index) => (
             <RecordArea
               key={`${area.mode}:${area.releaseId}:${revision}`}

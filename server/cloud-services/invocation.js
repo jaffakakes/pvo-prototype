@@ -1,3 +1,4 @@
+import { executeHostedConnections } from "./accountExecution.js";
 import {
   parseServiceAction,
   serializeServiceAction,
@@ -80,14 +81,23 @@ export async function invokeHostedAction(host, serviceId, authority, value) {
         const reply = checkedHostedReply(
           publication.artifact.agreement,
           invocation,
-          await host.executePackage(
-            publication.artifact.package,
+          await executeHostedConnections(host, {
+            publication,
+            action,
+            digest,
+            snapshot,
             invocation,
-            scope.namespace,
-            controller.signal,
-          ),
+            namespace,
+            signal: controller.signal,
+          }),
         );
         return host.ctx.storage.transactionSync(() => {
+          controller.signal.throwIfAborted();
+          if (namespace === "live")
+            host.accounts.requireApproval(
+              scope.releaseId,
+              publication.artifact.agreement.connections,
+            );
           const fresh = available(host, serviceId, authority);
           if (
             fresh.service.revision !== service.revision ||
@@ -115,6 +125,7 @@ export async function invokeHostedAction(host, serviceId, authority, value) {
             reply.state,
             receipt,
           );
+          host.accounts.finish(namespace);
           return { actionId: action.actionId, result: reply.result };
         });
       } finally {
@@ -124,6 +135,7 @@ export async function invokeHostedAction(host, serviceId, authority, value) {
     } catch (error) {
       // Diagnostics cannot replace a call's outcome or resurrect removed records.
       try {
+        host.accounts.fail(namespace, action.actionId);
         if (
           host.store.service()?.state !== "deleted" &&
           host.store.row(scope.releaseId)?.body

@@ -70,7 +70,9 @@ export function ConnectionsPanel({ taskSetup }: { taskSetup?: TaskSetup }) {
             <p>
               {item.account} ·{" "}
               {item.connection.status === "connected"
-                ? "Connected · read only"
+                ? item.connection.permissions.includes("issues:write")
+                  ? "Connected · issue creation allowed"
+                  : "Connected · read only"
                 : item.connection.status === "expired"
                   ? "Access needs attention · reconnect"
                   : "Disconnected"}
@@ -82,7 +84,9 @@ export function ConnectionsPanel({ taskSetup }: { taskSetup?: TaskSetup }) {
             )}
             <div className={styles.actions}>
               {pending?.repository.toLowerCase() === item.scope.repository &&
-                item.connection.status === "connected" && (
+                item.connection.status === "connected" &&
+                (pending.access !== "issues_write" ||
+                  item.connection.permissions.includes("issues:write")) && (
                   <button
                     disabled={session.busy}
                     type="button"

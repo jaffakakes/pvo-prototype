@@ -1,4 +1,9 @@
 import {
+  parseAccountRequest,
+  exampleAccountResult,
+  validateAccountBindings,
+} from "./accountBindings.js";
+import {
   boundedJson,
   id,
   list,
@@ -17,7 +22,13 @@ import { validateOperation } from "./operationSchema.js";
 export function parseServiceAgreement(value) {
   object(
     value,
-    ["description", "state", "operations", "cases"],
+    [
+      "description",
+      "state",
+      "operations",
+      "cases",
+      ...(Object.hasOwn(value, "connections") ? ["connections"] : []),
+    ],
     "Service agreement",
   );
   text(value.description, 2048, "Service description");
@@ -38,6 +49,7 @@ export function parseServiceAgreement(value) {
     value.operations.map((operation) => operation.name),
     "Operation names",
   );
+  validateAccountBindings(value);
   list(value.cases, limits.cases, "Behavior cases");
   requireService(
     value.cases.length > 0,
@@ -45,6 +57,7 @@ export function parseServiceAgreement(value) {
   );
   const covered = new Set();
   let count = 0;
+  const exercisedBindings = new Set();
   for (const scenario of value.cases) {
     object(
       scenario,
@@ -67,7 +80,25 @@ export function parseServiceAgreement(value) {
     );
     let state = scenario.initialState;
     for (const step of scenario.steps) {
-      object(step, ["operation", "input", "now", "expected"], "Behavior step");
+      object(
+        step,
+        [
+          "operation",
+          "input",
+          "now",
+          "expected",
+          ...(value.connections ? ["requests"] : []),
+        ],
+        "Behavior step",
+      );
+      if (value.connections) {
+        list(step.requests, 4, "Expected account requests");
+        for (const request of step.requests) {
+          parseAccountRequest(value, step.operation, request);
+          exampleAccountResult(value, step.operation, request);
+          exercisedBindings.add(request.connection);
+        }
+      }
       const invocation = {
         operation: step.operation,
         input: step.input,
@@ -87,6 +118,12 @@ export function parseServiceAgreement(value) {
   requireService(
     value.operations.every((operation) => covered.has(operation.name)),
     "Every operation needs a saved behavior case.",
+  );
+  requireService(
+    (value.connections ?? []).every((binding) =>
+      exercisedBindings.has(binding.name),
+    ),
+    "Every account binding needs an independently expected request case.",
   );
   boundedJson(value, limits.agreementBytes, "Service agreement");
   return structuredClone(value);

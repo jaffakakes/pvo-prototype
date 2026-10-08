@@ -1,3 +1,5 @@
+import { randomBytes } from "node:crypto";
+import { exerciseConnected } from "../connected-services/exercise.mjs";
 import assert from "node:assert/strict";
 import { readFile, access } from "node:fs/promises";
 import { constants } from "node:fs";
@@ -12,6 +14,7 @@ import { exerciseProduct } from "./exercise.mjs";
 import { checkProductBrowser } from "./browser.mjs";
 import { checkComputeRestart } from "./interruption.mjs";
 
+const connected = process.env.RESTYLE_NODE_ACCEPTANCE === "connected";
 const [mode, org, accountId, journal] = process.argv.slice(2);
 assert(["--dry-run", "--run-approved", "--cleanup"].includes(mode));
 assert.match(accountId ?? "", /^[a-f0-9]{32}$/);
@@ -22,6 +25,10 @@ if (!dryRun) {
   assert(process.env.RESTYLE_CRANE_BIN);
   await access(process.env.RESTYLE_CRANE_BIN, constants.X_OK);
 }
+let githubToken =
+  connected && !dryRun && !cleanup
+    ? (await readFile(process.env.RESTYLE_GITHUB_TOKEN_FILE, "utf8")).trim()
+    : null;
 const token = dryRun
   ? null
   : (await readFile(process.env.RESTYLE_FLY_TOKEN_FILE, "utf8")).trim();
@@ -78,6 +85,14 @@ try {
       token: scoped,
       image,
       dryRun,
+      ...(connected
+        ? {
+            entrypoint: "scripts/checks/connected-services/worker.js",
+            secrets: {
+              ACCOUNT_CONNECTION_KEY: randomBytes(32).toString("hex"),
+            },
+          }
+        : {}),
     });
     if (dryRun) {
       report.dryRunPassed = true;
@@ -90,17 +105,27 @@ try {
         await save();
         console.log(`Product check passed: ${name}`);
       };
-      await exerciseProduct({
-        call: worker.call,
-        record,
-        interruptionCheck: checkComputeRestart,
-        browserCheck: (options) =>
-          checkProductBrowser({
-            ...options,
-            origin: worker.resource.url,
-            directory: worker.resources.directory,
-          }),
-      });
+      const browserCheck = (options) =>
+        checkProductBrowser({
+          ...options,
+          origin: worker.resource.url,
+          directory: worker.resources.directory,
+        });
+      if (connected) {
+        await exerciseConnected({
+          call: worker.call,
+          record,
+          token: githubToken,
+          browserCheck,
+        });
+        githubToken = null;
+      } else
+        await exerciseProduct({
+          call: worker.call,
+          record,
+          interruptionCheck: checkComputeRestart,
+          browserCheck,
+        });
       report.productCasesPassed = true;
       await save();
     }
@@ -110,6 +135,7 @@ try {
     name: error.name,
     message: String(error.message)
       .replaceAll(token || "never-a-token", "[redacted]")
+      .replaceAll(githubToken || "never-a-github-token", "[redacted]")
       .slice(0, 2000),
   };
   await save();

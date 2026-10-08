@@ -75,3 +75,17 @@
     min-height: 44px;
   }
 }
+
+.permission {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}
+.form .permission input {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin: 0;
+  accent-color: var(--accent);
+}

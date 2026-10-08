@@ -13,7 +13,7 @@ import {
 } from "../../packages/pvo-assistant/hosting/index.js";
 
 const servicePath =
-  /^\/api\/services\/(service-[a-f0-9]{64})(?:\/(try|operate|actions|activate|pause|delete|reset_test|draft|records|operations|attachment|connections|publication))?$/;
+  /^\/api\/services\/(service-[a-f0-9]{64})(?:\/(try|operate|actions|activate|pause|delete|reset_test|draft|records|operations|attachment|connections|publication|account-access|resume-account-action))?$/;
 const componentTryPath =
   /^\/api\/services\/(service-[a-f0-9]{64})\/releases\/(release-[a-f0-9]{64})\/try$/;
 function routeTarget(path) {
@@ -110,6 +110,26 @@ export async function hostedServiceRoute(request, env, config) {
                 ? SERVICE_DRAFT_LIMITS.bytes + 1024
                 : HOSTED_SERVICE_LIMITS.requestBytes,
         );
+    if (kind === "resume-account-action") {
+      object(input, ["actionId"], "Saved outside action");
+      opaqueId(input.actionId, "Saved action");
+      return json(
+        await rpc(() =>
+          env.SERVICE_HOSTS.getByName(id).resumeAccountAction(
+            id,
+            owner.id,
+            input.actionId,
+          ),
+        ),
+      );
+    }
+    if (kind === "account-access") {
+      return json(
+        await rpc(() =>
+          env.SERVICE_HOSTS.getByName(id).accountAccess(id, owner.id, input),
+        ),
+      );
+    }
     if (["try", "operate", "actions", "component_try"].includes(kind)) {
       let authority;
       if (publicCall) authority = { kind: "public" };

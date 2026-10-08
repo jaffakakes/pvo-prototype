@@ -1,3 +1,4 @@
+import { executeConnectedOperation } from "./connectedExecution.js";
 import {
   parseServiceInvocation,
   parseServiceReply,
@@ -21,17 +22,23 @@ export async function probeInactiveService(
     state: agreement.state.initial,
     now,
   });
-  const reply = await executeServicePackage(
-    namespace,
-    publication.artifact.package,
+  const reply = await executeConnectedOperation({
+    agreement,
     invocation,
-    {
-      ownerId: publication.identity.ownerId,
-      serviceId: publication.identity.serviceId,
-      mode: "probe",
-    },
     signal,
-  );
+    execute: (input, current) =>
+      executeServicePackage(
+        namespace,
+        publication.artifact.package,
+        input,
+        {
+          ownerId: publication.identity.ownerId,
+          serviceId: publication.identity.serviceId,
+          mode: "probe",
+        },
+        current,
+      ),
+  });
   const checked = parseServiceReply(agreement, invocation, reply);
   return { status: 200, body: JSON.stringify(checked) };
 }

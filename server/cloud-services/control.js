@@ -43,6 +43,14 @@ export async function controlHostedService(host, serviceId, ownerId, value) {
         summary: inspectHostedService(host, serviceId, ownerId),
       };
     const next = planServiceControl(service, control, host.now());
+    if (
+      control.kind === "delete" &&
+      host.accounts.pending("live")?.writeStarted
+    )
+      throw serviceCallError(
+        "needs_checking",
+        "Check the saved outside action before deleting this Container. You can pause it or revoke access while its outcome is unresolved.",
+      );
     if (control.kind === "activate") {
       const row = host.store.row(control.releaseId);
       if (
@@ -64,6 +72,19 @@ export async function controlHostedService(host, serviceId, ownerId, value) {
           "The draft has changed since this version was checked. Test the saved draft again before publishing.",
         );
       const candidate = publication.artifact.agreement;
+      host.accounts.requireApproval(control.releaseId, candidate.connections);
+      const pending = host.accounts.pending("live");
+      if (pending?.writeStarted && pending.releaseId !== control.releaseId)
+        throw serviceCallError(
+          "needs_checking",
+          "Check the pending outside action before changing this Container version.",
+        );
+      if (
+        pending &&
+        !pending.writeStarted &&
+        pending.releaseId !== control.releaseId
+      )
+        host.accounts.finish("live");
       const previousRow = service.liveReleaseId
         ? host.store.row(service.liveReleaseId)
         : null;
@@ -111,6 +132,7 @@ export async function controlHostedService(host, serviceId, ownerId, value) {
       host.actions.clearAll();
       host.drafts.clear();
       host.connections.clear();
+      host.accounts.clear();
     }
     if (host.calls.active) host.calls.cancel(host.calls.active.resourceId);
     const receipt = {

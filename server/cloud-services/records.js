@@ -39,11 +39,13 @@ function recordsSnapshot(host, serviceId, ownerId, compute) {
         mode: "live",
         releaseId,
         ...host.actions.records("live", initial, observedAt),
+        pending: pendingRecord(host.accounts.pending("live")),
       });
     areas.push({
       mode: "test",
       releaseId,
       ...host.actions.records(`test:${releaseId}`, initial, observedAt),
+      pending: null,
     });
   }
   return parseServiceRecords({
@@ -53,4 +55,16 @@ function recordsSnapshot(host, serviceId, ownerId, compute) {
     compute,
     storageBytes: host.ctx.storage.sql.databaseSize,
   });
+}
+
+function pendingRecord(value) {
+  return value
+    ? {
+        actionId: value.action.actionId,
+        operation: value.action.operation,
+        releaseId: value.releaseId,
+        status: value.status,
+        startedAt: value.invocation.now,
+      }
+    : null;
 }

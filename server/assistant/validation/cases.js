@@ -1,3 +1,6 @@
+import { canonicalJson } from "../../../packages/pvo-assistant/services/json.js";
+import { exampleAccountResult } from "../../../packages/pvo-assistant/services/index.js";
+import { executeConnectedOperation } from "../../cloud-services/connectedExecution.js";
 import {
   parseServiceAgreement,
   parseServiceInvocation,
@@ -62,14 +65,37 @@ export async function runServiceStep(
           state,
           now: step.now,
         });
-        const reply = await executeServicePackage(
-          namespace,
-          source,
+        let completedRequests = 0;
+        const reply = await executeConnectedOperation({
+          agreement,
           invocation,
-          scope,
-          current,
-        );
+          signal: current,
+          invoke: agreement.connections
+            ? async (request, index) => {
+                if (
+                  canonicalJson(step.requests[index] ?? null) !==
+                  canonicalJson(request)
+                )
+                  throw new Error(
+                    "Generated request differs from the independent expected action.",
+                  );
+                completedRequests++;
+                return exampleAccountResult(
+                  agreement,
+                  invocation.operation,
+                  request,
+                );
+              }
+            : null,
+          execute: (input, signal) =>
+            executeServicePackage(namespace, source, input, scope, signal),
+        });
         current.throwIfAborted();
+        if (completedRequests !== (step.requests?.length ?? 0))
+          return failed(
+            "mismatch",
+            "Generated code did not perform the independently expected account requests.",
+          );
         const problem = inspectServiceReply(
           agreement,
           invocation,

@@ -56,7 +56,7 @@ Browser suspension cannot count as completed local tests or authorize new cloud 
 
 ## Retention, permissions and updates
 
-Keep same-owner/same-project attachment, public versus creator operation audiences, read/write permissions, and separate test/live data. External accounts, secrets, messaging and durable jobs remain unavailable until Roadmaps 2/3. Do not create plugin installation credentials or sharing between creators.
+Keep same-owner/same-project attachment, public versus creator operation audiences, read/write permissions, and separate test/live data. External account calls use the [Roadmap 2C controlled connection interface](restyle-connected-services.md); credentials remain private to the platform. Messaging adapters and durable background jobs require their separately reviewed capabilities in Roadmaps 2/3. Do not create plugin installation credentials or sharing between creators.
 
 Drafts survive task expiry and idle-instance destruction until explicit service deletion. Retain the latest draft plus bounded mutation receipts, not unbounded full-source history. Published releases and live data keep the existing limits; inactive abandoned release cleanup must not delete a saved draft. Test records can be explicitly reset without changing live records; clearing live records needs an explicit supported operation with a visible impact statement, not a generic SQL editor.
 
@@ -131,3 +131,7 @@ The platform operator supplies these private settings for an explicitly authoriz
 The current profile uses Fly `iad`, shared-1x and 1 GiB. Every invocation starts fresh private compute and destroys it before returning a successful result; source, records and action receipts stay in the existing service host. Missing configuration fails closed before reserving compute. Preserve image access and valid scoped credentials while the environment is enabled; preserve durable cleanup leases until all owned Machines are confirmed absent before decommissioning it.
 
 The isolated acceptance configures these values temporarily, verifies the complete path, then removes its resources. The local beta on port 4173 serves the app assets and update notification flow; its static server does not supply service/task APIs. A permanent beta/cloud backend requires a separately configured hosting environment and ongoing resources. Neither static asset delivery nor a passing disposable proof is a production deployment. Production remains explicitly deferred.
+
+## Connected operations — Roadmap 2C
+
+The pinned Node guest remains network-disabled and receives no credentials. A checked service agreement can name approved account operations. Generated code returns a bounded named request; the existing trusted host executes it and starts a fresh guest with checked result data. Drafts, manual/AI edits, independent validation, exact-release approval, Try/live separation and durable write receipts are defined in the [connected Container contract](restyle-connected-services.md). This adds no second service host or permanent workshop.

@@ -1,4 +1,8 @@
 import {
+  accountConnectionRoute,
+  isAccountConnectionRoute,
+} from "../../../server/connections/routes.js";
+import {
   authorize,
   mark,
   readBounded,
@@ -24,7 +28,9 @@ async function api(env, { path, method = "GET", body, foreign = false }) {
   if (
     url.origin !== origin ||
     !path.startsWith("/api/") ||
-    (!isServiceRoute(url.pathname) && !isTaskRoute(url.pathname)) ||
+    (!isServiceRoute(url.pathname) &&
+      !isTaskRoute(url.pathname) &&
+      !isAccountConnectionRoute(url.pathname)) ||
     !["GET", "POST"].includes(method)
   )
     throw new Error("Invalid diagnostic API request");
@@ -43,6 +49,7 @@ async function api(env, { path, method = "GET", body, foreign = false }) {
     headers: {
       Origin: origin,
       "Content-Type": "application/json",
+      "X-Restyle-Owner": owner.id,
       Cookie: `__Host-pvo-session=${cookie}`,
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -53,7 +60,11 @@ async function api(env, { path, method = "GET", body, foreign = false }) {
     DB: { prepare: () => ({ bind: () => ({ first: async () => owner }) }) },
   };
   const response = await (
-    isServiceRoute(url.pathname) ? hostedServiceRoute : assistantTaskRoute
+    isServiceRoute(url.pathname)
+      ? hostedServiceRoute
+      : isAccountConnectionRoute(url.pathname)
+        ? accountConnectionRoute
+        : assistantTaskRoute
   )(request, configured, { origin });
   return { status: response.status, body: await response.json() };
 }
@@ -71,6 +82,22 @@ export default {
     try {
       if (request.method === "DELETE" && pathname === "/") {
         await control.close();
+        const accounts = env.ASSISTANT_TASKS.getByName(
+          `owner:${productOwner(env)}`,
+        );
+        const listed = await accounts.manageConnections(productOwner(env), {
+          kind: "list",
+          input: { after: null },
+        });
+        if (listed.ok)
+          for (const item of listed.value.items)
+            await accounts.manageConnections(productOwner(env), {
+              kind: "disconnect",
+              input: {
+                id: item.connection.id,
+                expectedRevision: item.connection.revision,
+              },
+            });
         const slots = [];
         for (let i = 0; i < 2; i++)
           slots.push(

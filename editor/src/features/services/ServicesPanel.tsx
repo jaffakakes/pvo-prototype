@@ -1,3 +1,4 @@
+import { ContainerAccountAccess } from "./ContainerAccountAccess";
 import { ContainerUses } from "./ContainerUses";
 import { ContainerConnection } from "./ContainerConnection";
 import { ContainerEditor } from "./ContainerEditor";
@@ -79,6 +80,25 @@ export function ServicesPanel() {
             <li key={id}>
               <h4>{item.metadata.description}</h4>
               <p>Status: {service?.state ?? "temporarily unavailable"}</p>
+              {checkedCurrent && (
+                <ContainerAccountAccess
+                  key={`${ownerId}:${id}:${checked.identity.resourceId}`}
+                  ownerId={ownerId}
+                  serviceId={id}
+                  releaseId={checked.identity.resourceId}
+                  label="Checked version account access"
+                />
+              )}
+              {service?.liveReleaseId &&
+                service.liveReleaseId !== checked?.identity.resourceId && (
+                  <ContainerAccountAccess
+                    key={`${ownerId}:${id}:${service.liveReleaseId}`}
+                    ownerId={ownerId}
+                    serviceId={id}
+                    releaseId={service.liveReleaseId}
+                    label="Published version account access"
+                  />
+                )}
               <details>
                 <summary>Container details</summary>
                 <p className={styles.identifier}>{id}</p>

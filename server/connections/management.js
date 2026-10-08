@@ -1,3 +1,4 @@
+import { accountServiceCommand } from "./serviceCalls.js";
 import { GITHUB_OPERATIONS } from "../../packages/pvo-assistant/connections/index.js";
 import { HttpError } from "../http.js";
 import { taskId } from "../assistant/tasks/input.js";
@@ -217,7 +218,11 @@ export class AccountConnections {
           provider: "github",
           status: "connected",
           revision,
-          permissions: ["repository:read", "issues:read"],
+          permissions: [
+            "repository:read",
+            "issues:read",
+            ...(input.setup.access === "issues_write" ? ["issues:write"] : []),
+          ],
           operations: structuredClone(GITHUB_OPERATIONS),
         },
         input.expectedRevision,
@@ -247,7 +252,9 @@ export class AccountConnections {
       if (
         !question?.connection ||
         question.connection.repository !== current.details.scope.repository ||
-        question.connection.provider !== "github"
+        question.connection.provider !== "github" ||
+        (question.connection.access === "issues_write" &&
+          !current.connection.permissions.includes("issues:write"))
       )
         throw new HttpError(
           409,
@@ -284,11 +291,20 @@ export async function manageAccountConnections(
   try {
     return {
       ok: true,
-      value: await coordinator.accountConnections.execute(
-        ownerId,
+      value: ["service_check", "service_invoke", "service_forget"].includes(
         operation.kind,
-        operation.input,
-      ),
+      )
+        ? await accountServiceCommand(
+            coordinator,
+            ownerId,
+            operation.kind,
+            operation.input,
+          )
+        : await coordinator.accountConnections.execute(
+            ownerId,
+            operation.kind,
+            operation.input,
+          ),
     };
   } catch (error) {
     return {

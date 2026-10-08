@@ -15,7 +15,11 @@ export type ConnectionPage = {
 export function parseConnectionMetadata(value: unknown): ConnectionMetadata;
 export function parseConnectionPage(value: unknown): ConnectionPage;
 
-export type ConnectionSetup = { provider: "github"; repository: string };
+export type ConnectionSetup = {
+  provider: "github";
+  repository: string;
+  access?: "issues_write";
+};
 export type ConnectionInvocation =
   | { operation: "github_repository_read"; input: Record<string, never> }
   | { operation: "github_issues_list"; input: { page: number } };
@@ -25,3 +29,41 @@ export const GITHUB_OPERATIONS: ReadonlyArray<{
 }>;
 export function parseConnectionSetup(value: unknown): ConnectionSetup;
 export function parseConnectionInvocation(value: unknown): ConnectionInvocation;
+
+export type ConnectionAdapter = {
+  name: string;
+  description: string;
+  provider: "github";
+  method: "GET" | "POST";
+  path: Array<string | { input: string }>;
+  query: Array<{
+    name: "state" | "page" | "per_page" | "sort" | "direction";
+    value: string | { input: string };
+  }>;
+  input: import("../services/index.js").ServiceValueSchema;
+  result: import("../services/index.js").ServiceValueSchema;
+  responsePath: string[];
+  permission: "repository:read" | "issues:read" | "issues:write";
+  completion: "synchronous";
+  documentation: string;
+};
+export const ADAPTER_LIMITS: Readonly<{
+  bindings: number;
+  calls: number;
+  inputBytes: number;
+  resultBytes: number;
+}>;
+export function parseConnectionAdapter(value: unknown): ConnectionAdapter;
+export function adapterPolicy(adapter: ConnectionAdapter): {
+  permission: string;
+  effect: "read" | "write";
+  recovery: "none" | "github_issue_marker";
+};
+export function parseAdapterInput(
+  adapter: ConnectionAdapter,
+  value: unknown,
+): import("../services/index.js").ServiceJson;
+export function projectAdapterResult(
+  adapter: ConnectionAdapter,
+  value: unknown,
+): import("../services/index.js").ServiceJson;

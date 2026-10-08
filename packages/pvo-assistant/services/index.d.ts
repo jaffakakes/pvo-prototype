@@ -32,6 +32,7 @@ export type ServiceInvocation = {
   input: ServiceJson;
   state: ServiceJson;
   now: number;
+  connectionResults?: AccountCallResult[];
 };
 export type ServiceReply = { result: ServiceJson; state: ServiceJson };
 export type ServiceBehaviorCase = {
@@ -43,6 +44,7 @@ export type ServiceBehaviorCase = {
     input: ServiceJson;
     now: number;
     expected: ServiceReply;
+    requests?: AccountCallRequest[];
   }[];
 };
 export type ServiceAgreement = {
@@ -50,6 +52,7 @@ export type ServiceAgreement = {
   state: { schema: ServiceValueSchema; initial: ServiceJson };
   operations: ServiceOperation[];
   cases: ServiceBehaviorCase[];
+  connections?: ServiceAccountBinding[];
 };
 export type ServiceSourceFile = { path: string; content: string };
 export type ServicePackage = {
@@ -62,7 +65,10 @@ export type ServicePackage = {
 };
 export type ServiceExecute = (
   invocation: ServiceInvocation,
-) => ServiceReply | Promise<ServiceReply>;
+) =>
+  | ServiceReply
+  | { request: AccountCallRequest }
+  | Promise<ServiceReply | { request: AccountCallRequest }>;
 export type ServiceRuntime = Readonly<{
   name: "nodejs-esm";
   nodeVersion: string;
@@ -242,3 +248,23 @@ export function supportedNodeLibraries(): NodeLibrary[];
 export function parseNodeBundle(value: unknown): NodeBundle;
 export function resolveNodeLibraries(value: unknown): NodeLibrary[];
 export function nodeLibraryIds(value: unknown): string[];
+
+export type AccountCallRequest = { connection: string; input: ServiceJson };
+export type AccountCallResult = AccountCallRequest & { result: ServiceJson };
+export type ServiceAccountBinding = {
+  name: string;
+  connectionId: string;
+  operations: string[];
+  adapter: import("../connections/index.js").ConnectionAdapter;
+  examples: Array<{ input: ServiceJson; result: ServiceJson }>;
+};
+export function parseAccountRequest(
+  agreement: ServiceAgreement,
+  operation: string,
+  value: unknown,
+): AccountCallRequest;
+export function exampleAccountResult(
+  agreement: ServiceAgreement,
+  operation: string,
+  request: AccountCallRequest,
+): ServiceJson;

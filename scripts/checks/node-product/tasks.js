@@ -37,6 +37,13 @@ export class ProductTasks extends AssistantTasks {
       },
     };
   }
+  checkArtifact(scope, variant) {
+    return checkProductArtifact(
+      this.env.SERVICE_NODE_EXECUTION,
+      scope,
+      variant,
+    );
+  }
   async begin() {
     const ownerId = productOwner(this.env);
     const { project } = await this.execute(ownerId, {
@@ -64,8 +71,7 @@ export class ProductTasks extends AssistantTasks {
       { kind: "checkpoint", stepId: "validate" },
       { kind: "claim", claimId: "validate", leaseMs: 330000 },
     ]);
-    const checked = await checkProductArtifact(
-      this.env.SERVICE_NODE_EXECUTION,
+    const checked = await this.checkArtifact(
       { ownerId, serviceId: await ownedServiceId(claimed), mode: "validation" },
       "initial",
     );
@@ -118,8 +124,7 @@ export class ProductTasks extends AssistantTasks {
   async version(variant) {
     const row = this.providers.entries()[0];
     if (!row) throw new Error("Publish initial version first");
-    const checked = await checkProductArtifact(
-      this.env.SERVICE_NODE_EXECUTION,
+    const checked = await this.checkArtifact(
       {
         ownerId: row.identity.ownerId,
         serviceId: row.identity.serviceId,

@@ -38,28 +38,34 @@ The creator's actual goal determines the plan. Restaurant bookings and the other
 
 ## 2B. Connect one external account securely
 
-- [ ] **2B.01** Choose one real integration for the first implementation based on accessible account and test support. Document the exact operations it enables.
-- [ ] **2B.02** Build the required secure connection flow: provider sign-in or a private key-entry screen. Save a connection reference in the task.
-- [ ] **2B.03** Keep credentials in the server's protected connection store. Exclude them from model context, workspace files, PVO files, diagnostics, and public URLs.
-- [ ] **2B.04** Add a controlled server adapter that attaches credentials only for approved destinations and operations. An arbitrary URL in generated code cannot receive them.
-- [ ] **2B.05** Provide connection status, reconnect, and disconnect operations. Check creator ownership and scope on every call.
-- [ ] **2B.06** Continue the saved task after account setup without repeating answered questions or completed deployments.
+- [x] **2B.01** Choose one real integration for the first implementation based on accessible account and test support. Document the exact operations it enables.
+- [x] **2B.02** Build the required secure connection flow: provider sign-in or a private key-entry screen. Save a connection reference in the task.
+- [x] **2B.03** Keep credentials in the server's protected connection store. Exclude them from model context, workspace files, PVO files, diagnostics, and public URLs.
+- [x] **2B.04** Add a controlled server adapter that attaches credentials only for approved destinations and operations. An arbitrary URL in generated code cannot receive them.
+- [x] **2B.05** Provide connection status, reconnect, and disconnect operations. Check creator ownership and scope on every call.
+- [x] **2B.06** Continue the saved task after account setup without repeating answered questions or completed deployments.
 
 **Finished when:** connect, reload, resume, expire, reconnect, and revoke an account. Each state has a usable next step, and another creator cannot invoke the connection.
 
 **Where to start:** [account identity](../../../server/identity.js), [HTTP helpers](../../../server/http.js), and the focused service/task owners introduced in Roadmap 1. Give connection storage and provider-specific calls their own responsibilities.
 
+**2B implementation evidence, 8 October 2026:** GitHub read-only repository/issue operations are installed through the private setup and encrypted account store. Fixed provider destinations, ownership/revision checks, secret exclusion, typed saved answers and same-task resume pass controlled provider/Worker and actual editor checks. Full **1,642 tests**, strict types, desktop/phone/reload and account-switch acceptance pass. Source `9068ce0` is pushed; combined beta `14e33f0` passes build/types/49 focused checks and is delivered as `restyle-editor-shell-9ba9e267c3671ed5`, with served files and activated service worker verified. See the [connection contract](../restyle-account-connections.md#verification-checkpoint--8-october-2026) and [progress](../restyle-cloud-agent-progress.md).
+
+**2B.05 completion evidence, 8 October 2026:** the creator supplied the token through the private form. The actual GitHub proof passed at **05:37:18 UTC**: authenticated account `jaffakakes`, fixed public repository read, issue-list read (zero current summaries), same saved answer/task after Worker restart, expiry from the actual provider deadline using an advanced isolated clock, reconnection, another-owner rejection and local revocation. The encrypted key and exact local test storage are removed; owned form, Vite and Worker processes are stopped. Final source passes the separately recorded controlled hardening/browser checks. **All six 2B tasks are complete.** The public repository does not prove private-repository permission; no GitHub write or generated Container call was tested. Static beta delivery does not configure permanent account/task APIs. Next is **2C.01**.
+
 ## 2C. Let generated services use the connection
 
-- [ ] **2C.01** Give the service an approved connection reference and an agreed operation. Keep final access enforcement outside generated code.
-- [ ] **2C.02** Allow the agent to generate a new integration adapter when research establishes a usable service. Validate its destinations, methods, inputs, returned data, and requested permissions before registering it.
-- [ ] **2C.03** Keep generated integration code isolated. It calls the controlled connection interface; only trusted platform code attaches credentials. Generated code cannot inspect the resulting private headers or secret-bearing logs. An unfamiliar authentication method needs a separately reviewed platform adapter before that connection becomes available.
+- [x] **2C.01** Give the service an approved connection reference and an agreed operation. Keep final access enforcement outside generated code.
+- [x] **2C.02** Allow the agent to generate a new integration adapter when research establishes a usable service. Validate its destinations, methods, inputs, returned data, and requested permissions before registering it.
+- [x] **2C.03** Keep generated integration code isolated. It calls the controlled connection interface; only trusted platform code attaches credentials. Generated code cannot inspect the resulting private headers or secret-bearing logs. An unfamiliar authentication method needs a separately reviewed platform adapter before that connection becomes available.
 - [ ] **2C.04** Test against a provider's test environment or a controlled account. Keep normal Try separated from real effects.
-- [ ] **2C.05** Store a request receipt before any external write. Use the provider's duplicate-prevention mechanism where available and save its result.
-- [ ] **2C.06** If the provider's outcome is unclear, retain “needs checking” and inspect the existing action. Do not retry a potentially completed booking or message blindly.
-- [ ] **2C.07** Keep operations that need prolonged waiting, callbacks, or repeated status checks unavailable for live use until Roadmap 3 supplies that lifecycle.
+- [x] **2C.05** Store a request receipt before any external write. Use the provider's duplicate-prevention mechanism where available and save its result.
+- [x] **2C.06** If the provider's outcome is unclear, retain “needs checking” and inspect the existing action. Do not retry a potentially completed booking or message blindly.
+- [x] **2C.07** Keep operations that need prolonged waiting, callbacks, or repeated status checks unavailable for live use until Roadmap 3 supplies that lifecycle.
 
 **Finished when:** a component uses the connected service through a deployed backend, the workspace is off, and revoked permission blocks further calls. Report exactly what was verified: a provider accepting a message is not proof that it was delivered.
+
+**2C local implementation evidence, 8 October 2026:** **2C.01–03 and 2C.05–07 are complete.** Full 1,653 tests and strict editor types pass. Actual desktop/phone creator controls, independent request validation, offline Try, normal component export and separate viewers, explicit write opt-in, restart/unknown-result inspection and revocation pass with controlled provider replies and actual local Node/SQLite. The same cloud driver passes a local browser rehearsal. **2C.04 and the final deployed-backend gate remain unchecked** until the separately approved real-account/Fly proof and cleanup pass. New US$1 authorization is pending; no paid resources or real provider writes have been created. See the [connected Container contract and acceptance plan](../restyle-connected-services.md) and [progress](../restyle-cloud-agent-progress.md). Beta delivery is recorded separately.
 
 This should remain extensible to researched services. The first integration provides a worked example of the connection contract; its brand does not define the whole feature.
 

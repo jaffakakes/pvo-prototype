@@ -40,3 +40,5 @@ export {
   parseServiceConnectionReport,
   parseServiceConnections,
 } from "./connections.js";
+
+export { parseServiceAccountAccess } from "./accountAccess.js";
