@@ -23,6 +23,7 @@ export type ServiceOperation = {
   name: string;
   description: string;
   audience: "public" | "creator";
+  delivery?: "background";
   access: "read" | "write";
   input: ServiceValueSchema;
   result: ServiceValueSchema;

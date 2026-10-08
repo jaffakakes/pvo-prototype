@@ -8,7 +8,7 @@ Try and the player use the same `ServiceSubmission` record:
 
 - `target`: platform origin, service/release identifiers, one public operation's description and input/result schemas, and local replay scope. Try includes the current creator ID; public submissions contain `ownerId: null`.
 - `action`: the server's existing `{ actionId, operation, input }` envelope.
-- `response`: `null` while unresolved; the checked `{ actionId, result }` after success.
+- `response`: `null` before a saved response; ordinary operations use checked `{ actionId, result }`, while `delivery: "background"` operations use the closed `{ actionId, job }` receipt envelope. Live background intent also contains a private random `receiptKey`; it is never part of the public descriptor.
 
 `prepareServiceSubmissionTarget` projects this target from a checked component connection. It drops task/project ownership, generated source, private state, tests and readiness timestamps. The projection does not activate the service or authorize a call. Public export of this descriptor is separate later work.
 
@@ -79,3 +79,9 @@ The owned service boundary exposes `GET /api/services/:id/operations` and `POST 
 `editor/src/features/services/` offers component/control selection and typed form-field or literal bindings. The command uses the actual compiler and existing native attachment batch for one Undo step, preserves Structure/Style and unrelated rules, and rejects a changed project fingerprint. The existing private account/project link can contain `taskId: null`; this supports manual connections without creating a task. Checkpoints retain that association, copied projects drop it, and Try/export use the owned project rather than requiring an AI task.
 
 Component Try selects the exact checked retained release, even after a newer draft is tested. Only the trusted host can establish retention. It uses separate test records and public operations; downloads and publications reuse the current activation/readiness gate and public replay contract. This connection feature works with the current hosted runtime; replacing generated-service execution with Node.js has its separate 1G.04–06 and 1G.08 gates.
+
+## Background operations
+
+The [background-work contract](../../../docs/engineering/restyle-background-work.md) defines saved jobs, status evidence, privacy, schedules and limits. Live background submissions use `/jobs`; later `check()` and recovery use read-only `/job-receipt`. Losing the first acknowledgement does not require creating work again. Try keeps its release-specific offline route and wraps the example reply in the same job envelope. The host's existing `responses.<componentId>` state and templates work without new Logic syntax.
+
+`watchServiceReceipt` owns bounded sequential reads while a view exists and releases timers/requests on disposal. It never resumes server execution. `createReceiptLink` carries the private key in a fragment for another browser/device; `/receipt.html` reads only the one saved public result. Terminal results cannot regress. Clearing local storage and losing the link loses anonymous recovery.

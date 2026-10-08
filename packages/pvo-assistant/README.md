@@ -31,3 +31,5 @@ The [generated service contract](services/README.md) defines the behavior agreem
 The [temporary workspace contract](workspaces/README.md) defines bounded draft files, operation inputs and recovery rules. Private server adapters own its actual storage, compute reservations and Container lifecycle. Workspace tools are not yet connected to the model builder.
 
 The [builder tool contract](builder/README.md) defines the bounded file/command views supplied by the saved-task workspace adapter. Availability and operation/usage receipts belong to trusted server code; model-driven construction and release approval are separate steps.
+
+The [background-work contract](../../docs/engineering/restyle-background-work.md) adds durable viewer jobs through the existing service host, typed receipt rules in `jobs/`, and a shared private receipt client/watcher. Resend is an installed fixed email path; credentials stay in the account owner and ordinary Try uses saved examples. No new PVO Logic syntax or model-turn limit is introduced.

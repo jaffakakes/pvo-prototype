@@ -15,6 +15,7 @@ let modules;
 
 export async function taskFixture({
   origin = ORIGIN,
+  realClock = false,
   clock = null,
   storage = true,
   broken = false,
@@ -40,7 +41,7 @@ export async function taskFixture({
     export { FixtureNodeExecution } from "./tests/node-runtime/fixture-worker.js";
     export { TestBudget, TestWorkspace } from './tests/assistant-workspaces/controlled-worker.js';
     import { installCheckedDiagnostic } from "./scripts/checks/cloud-agent-recovery/checked-fixture.js";
-    import { githubAdapter } from "./server/connections/providers/github.js";
+    import { installedConnectionProvider } from "./server/connections/providers/installed.js";
     import { capabilityContext } from "./server/assistant/builder/capabilityResearch.js";
     import { taskResearchTools } from "./server/assistant/builder/researchTools.js";
     import { publicResearch } from "./server/assistant/builder/researchProvider.js";
@@ -51,8 +52,8 @@ export async function taskFixture({
     import { reconcileTaskServices } from "./server/assistant/tasks/providerRunner.js";
     export class TestHostedService extends HostedService {
       constructor(ctx, env) { super(ctx, env); ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS calls (id TEXT PRIMARY KEY, count INTEGER NOT NULL)"); }
-      now() { return this.clock ?? this.env.CONTROLLED_CLOCK ?? (this.env.CONTROLLED_PLAN ? Date.now() : Date.UTC(2100, 0, 1)); }
-      setTime(now) { this.clock=now; }
+      now() { return this.clock ?? this.env.CONTROLLED_CLOCK ?? ((this.env.REAL_CLOCK || this.env.CONTROLLED_PLAN) ? Date.now() : Date.UTC(2100, 0, 1)); }
+      setTime(now) { if (!this.env.REAL_CLOCK) this.clock=now; }
       async saveTaskDraft(serviceId, ownerId, input, grant) {
         const control = async phase => {
           if (!this.env.DRAFT_CONTROL) return;
@@ -90,8 +91,8 @@ export async function taskFixture({
     import { HttpError, json } from "./server/http.js";
     export class TestTasks extends AssistantTasks {
       constructor(ctx, env) { super(ctx,env);ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS test_spending (id INTEGER PRIMARY KEY, body TEXT NOT NULL)"); }
-      now() { return this.clock ?? this.env.CONTROLLED_CLOCK ?? (this.env.CONTROLLED_PLAN ? Date.now() : Date.UTC(2100, 0, 1)); }
-      connectionProvider() { return this.env.CONNECTION_API ? githubAdapter((url, options) => this.env.CONNECTION_API.fetch(url, options)) : super.connectionProvider(); }
+      now() { return this.clock ?? this.env.CONTROLLED_CLOCK ?? ((this.env.REAL_CLOCK || this.env.CONTROLLED_PLAN) ? Date.now() : Date.UTC(2100, 0, 1)); }
+      connectionProvider() { return this.env.CONNECTION_API ? installedConnectionProvider((url, options) => this.env.CONNECTION_API.fetch(url, options)) : super.connectionProvider(); }
       connectionStorage() { return this.ctx.storage.sql.exec("SELECT * FROM account_connection_secrets").toArray(); }
       plannerAvailable() { return this.planningPaused ? false : this.env.CONTROLLED_PLAN ? true : super.plannerAvailable(); }
       spendingAllowed(task, capability) {
@@ -104,7 +105,8 @@ export async function taskFixture({
         this.ctx.storage.sql.exec("INSERT INTO test_spending (id,body) VALUES (1,?) ON CONFLICT(id) DO UPDATE SET body=excluded.body",JSON.stringify(grants));
       }
       pausePlanning() { this.planningPaused = true; }
-      async alarm() { if (!this.planningPaused) return super.alarm(); }
+      // Real host-clock diagnostics seed authoring manually; only service alarms should run automatically.
+      async alarm() { if (!this.planningPaused && (!this.env.REAL_CLOCK || this.env.CONTROLLED_PLAN)) return super.alarm(); }
       stepTimeoutMs() { return this.env.CONTROLLED_PLAN ? 1000 : super.stepTimeoutMs(); }
       leaseMs(task) { return this.env.CONTROLLED_PLAN && !this.env.PRODUCTION_LEASES ? 1500 : super.leaseMs(task); }
       async plan(task, signal, input) {
@@ -354,6 +356,7 @@ export async function taskFixture({
       d1Databases: ["DB"],
       bindings: {
         PUBLIC_ORIGIN: origin,
+        REAL_CLOCK: realClock,
         SESSION_SECRET: SECRET,
         ACCOUNT_CONNECTION_KEY: connectionKey,
         BROKEN: broken,
@@ -496,6 +499,7 @@ export async function taskFixture({
       database: () => mf.getD1Database("DB"),
       cookie,
       otherCookie,
+      storagePath: persist,
       project: (localId = "local-draft", options = {}) =>
         request("/api/assistant/projects", { body: { localId }, ...options }),
       create: (projectId, overrides = {}, options = {}) =>

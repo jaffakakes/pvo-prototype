@@ -10,7 +10,7 @@ export {
   deferred,
   current,
 } from "../assistant-task-server/provider.helpers.mjs";
-export async function hosted(f, { source, agreement } = {}) {
+export async function hosted(f, { source, agreement, checked } = {}) {
   const project = await f.project();
   expectStatus(project, 200);
   const created = await f.create(project.body.project.id, {
@@ -30,7 +30,7 @@ export async function hosted(f, { source, agreement } = {}) {
   const published = await f.control({
     action: "publish",
     id: task.id,
-    checked: await checkedFixture(source, agreement),
+    checked: checked ?? (await checkedFixture(source, agreement)),
     guard: guard(task),
   });
   expectStatus(published, 200);

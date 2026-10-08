@@ -1,4 +1,5 @@
 import { ownedPublication } from "../publishing/repository.js";
+import { serviceWebhookRoute } from "./jobs/webhookRoute.js";
 import {
   object,
   id as opaqueId,
@@ -13,7 +14,7 @@ import {
 } from "../../packages/pvo-assistant/hosting/index.js";
 
 const servicePath =
-  /^\/api\/services\/(service-[a-f0-9]{64})(?:\/(try|operate|actions|activate|pause|delete|reset_test|draft|records|operations|attachment|connections|publication|account-access|resume-account-action))?$/;
+  /^\/api\/services\/(service-[a-f0-9]{64})(?:\/(try|operate|actions|jobs|job-receipt|job-control|activate|pause|delete|reset_test|draft|records|operations|attachment|connections|publication|account-access|resume-account-action))?$/;
 const componentTryPath =
   /^\/api\/services\/(service-[a-f0-9]{64})\/releases\/(release-[a-f0-9]{64})\/try$/;
 function routeTarget(path) {
@@ -56,10 +57,20 @@ async function rpc(call) {
 export async function hostedServiceRoute(request, env, config) {
   const url = new URL(request.url),
     target = routeTarget(url.pathname),
-    publicCall = target?.kind === "actions",
+    publicCall =
+      ["actions", "job-receipt"].includes(target?.kind) ||
+      (target?.kind === "jobs" && request.method !== "GET"),
     list = url.pathname === "/api/services";
   const finish = (response) => (publicCall ? cors(response) : response);
   try {
+    if (
+      typeof env.SERVICE_HOSTS?.getByName === "function" &&
+      config.origin === url.origin &&
+      !url.search
+    ) {
+      const webhook = await serviceWebhookRoute(request, env);
+      if (webhook) return webhook;
+    }
     if ((!target && !list) || url.search)
       throw new HttpError(404, "This service operation is unavailable.");
     if (
@@ -81,6 +92,7 @@ export async function hostedServiceRoute(request, env, config) {
       target?.kind === null ||
       target?.kind === "records" ||
       target?.kind === "operations" ||
+      (target?.kind === "jobs" && request.method === "GET") ||
       (target?.kind === "connections" && request.method === "GET") ||
       (draft && request.method === "GET");
     if (request.method !== (reading ? "GET" : "POST"))
@@ -110,6 +122,19 @@ export async function hostedServiceRoute(request, env, config) {
                 ? SERVICE_DRAFT_LIMITS.bytes + 1024
                 : HOSTED_SERVICE_LIMITS.requestBytes,
         );
+    if (["jobs", "job-receipt", "job-control"].includes(kind)) {
+      const host = env.SERVICE_HOSTS.getByName(id);
+      const result = await rpc(() =>
+        kind === "jobs"
+          ? reading
+            ? host.listJobs(id, owner.id)
+            : host.acceptJob(id, input)
+          : kind === "job-receipt"
+            ? host.jobReceipt(id, input)
+            : host.manageJob(id, owner.id, input),
+      );
+      return finish(json(result, kind === "jobs" && !reading ? 202 : 200));
+    }
     if (kind === "resume-account-action") {
       object(input, ["actionId"], "Saved outside action");
       opaqueId(input.actionId, "Saved action");

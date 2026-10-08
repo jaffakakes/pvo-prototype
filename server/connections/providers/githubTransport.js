@@ -1,5 +1,5 @@
 import { HttpError } from "../../http.js";
-import { GitHubAccessError } from "./githubErrors.js";
+import { ConnectionAccessError } from "../accessError.js";
 const API = "https://api.github.com";
 const MAX_BYTES = 256 * 1024;
 function beforeDeadline(promise, signal) {
@@ -68,7 +68,7 @@ export function githubTransport(fetcher = fetch, timeoutMs = 10000) {
           "GitHub is limiting requests. Try again later.",
         );
       if ([401, 403, 404].includes(response.status))
-        throw new GitHubAccessError();
+        throw new ConnectionAccessError();
       throw new HttpError(
         503,
         "GitHub did not return a usable response. Recheck the repository and retry.",

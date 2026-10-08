@@ -1,3 +1,4 @@
+import { ContainerJobs } from "./ContainerJobs";
 import { ContainerPendingAction } from "./ContainerPendingAction";
 import { useEffect, useState } from "react";
 import {
@@ -171,6 +172,13 @@ export function ContainerRecords({
   const current = view?.key === key ? view : null;
   return (
     <div className={styles.editor}>
+      <ContainerJobs
+        key={`${ownerId}:${serviceId}:${revision}`}
+        ownerId={ownerId}
+        serviceId={serviceId}
+        revision={revision}
+        disabled={disabled}
+      />
       <button type="button" onClick={() => setReload((value) => value + 1)}>
         Refresh records and usage
       </button>

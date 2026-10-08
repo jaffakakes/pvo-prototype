@@ -1,6 +1,7 @@
 import {
   parseConnectionSetup,
   parseConnectionInvocation,
+  parseResendCredential,
 } from "../../packages/pvo-assistant/connections/index.js";
 import {
   object,
@@ -28,7 +29,8 @@ export function connectionCommand(kind, value) {
         "Connection revision",
       );
       value = { ...value, setup: parseConnectionSetup(value.setup) };
-      if (
+      if (value.setup.provider === "resend") parseResendCredential(value.token);
+      else if (
         typeof value.token !== "string" ||
         !/^github_pat_[A-Za-z0-9_]{20,245}$/.test(value.token)
       )

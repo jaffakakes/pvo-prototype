@@ -80,3 +80,7 @@ AI continuation uses the same save command with an additional private, short-liv
 
 
 Hosted execution capacity or allowance saves a task wait with its retry time. The partial case and exact artifact remain unchanged; no repair inference runs merely because capacity is unavailable. Stop fences both waiting and in-flight validation. Startup/transport failures do not become false evidence of a source-code failure. The Node execution adapter is under `server/cloud-services/node/`; library admission is in `services/nodeBundle.js`. The isolated Fly proof is complete. Product configuration and full editor/player Node beta acceptance are separate gates; source integration alone does not establish live availability.
+
+## Background delivery
+
+An operation can declare `delivery: "background"` to use the same checked Node service with durable viewer jobs. The omitted field means immediate delivery. This is one current discriminated contract, not a second runtime. Provider request continuations still return synchronous bounded replies; the job owner separately tracks delivery callbacks/status. See the [background-work contract](../../../docs/engineering/restyle-background-work.md) for public receipts, schedules, test/live separation and limits.

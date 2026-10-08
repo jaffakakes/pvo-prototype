@@ -53,6 +53,7 @@ Implement these as separate follow-on tasks. Each needs a concrete demonstration
 | Richer live controls | A real task needs returned lists, availability slots, or editable server data. | The data-driven control behaves the same in Try, export, and the standalone player. |
 | Additional runtimes beyond Node.js | A required library or process cannot run in the Node.js Container environment delivered by 1G. | The same ownership, limits, deployment, pause/delete, and recovery contract works on the new runtime. |
 | Calling or connected-device actions | A chosen workflow requires an actual phone or device operation. | A real authorized connection performs the action and reports its available evidence truthfully. |
+| Account-linked agent email | Requested on 8 October 2026: give each Restyle account an agent email address linked to its creator and the creator’s verified email. This is later work, separate from Roadmap 3’s Resend connection. | Verify sender/domain ownership, keep verified user contact separate from agent identity, define who receives replies, authorize sending/receiving, and test account isolation, revocation, retention, costs and abuse limits before the agent uses it. |
 | More provider integrations | Research finds a service with usable access and a creator needs it. | The connection passes setup, test/live, revocation, and failure checks. |
 | Better automatic repair | Repeated failures have a safe, bounded fix. | The repair restores service and preserves existing records without repeating completed actions. |
 

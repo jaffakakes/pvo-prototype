@@ -4,13 +4,23 @@ import { serviceName, validateSchema } from "./values.js";
 export function validateOperation(value, budget) {
   object(
     value,
-    ["name", "description", "audience", "access", "input", "result"],
+    [
+      "name",
+      "description",
+      "audience",
+      "access",
+      "input",
+      "result",
+      ...(Object.hasOwn(value, "delivery") ? ["delivery"] : []),
+    ],
     "Service operation",
   );
   serviceName(value.name, "Operation name");
   text(value.description, 1024, "Operation description");
   choice(value.audience, ["public", "creator"], "Operation audience");
   choice(value.access, ["read", "write"], "Operation storage access");
+  if (Object.hasOwn(value, "delivery"))
+    choice(value.delivery, ["background"], "Operation delivery");
   validateSchema(value.input, budget);
   validateSchema(value.result, budget);
 }

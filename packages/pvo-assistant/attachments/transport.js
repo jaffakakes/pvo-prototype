@@ -1,5 +1,10 @@
+import { parseReceiptLink } from "./receiptLink.js";
+import { platformOrigin } from "./policy.js";
 import { SERVICE_PACKAGE_LIMITS } from "../services/index.js";
-import { parseServiceSubmissionTarget } from "./submissions.js";
+import {
+  parseServiceSubmissionTarget,
+  backgroundSubmission,
+} from "./submissions.js";
 
 /** Retains HTTP status for the SDK's existing request feedback without exposing response bodies. */
 export class ServiceSubmissionHttpError extends Error {
@@ -16,14 +21,45 @@ export async function sendServiceSubmission(request, target, fetcher, signal) {
     target.mode === "try"
       ? `/api/services/${target.serviceId}/releases/${target.releaseId}/try`
       : `/api/services/${target.serviceId}/actions`;
-  if (request.url !== `${target.origin}${path}` || request.method !== "POST")
+  const allowed = backgroundSubmission(target)
+    ? ["jobs", "job-receipt"].map(
+        (kind) => `${target.origin}/api/services/${target.serviceId}/${kind}`,
+      )
+    : [`${target.origin}${path}`];
+  if (!allowed.includes(request.url) || request.method !== "POST")
     throw new Error("Invalid service destination.");
+  return sendWire(
+    request,
+    target.mode === "try" ? "same-origin" : "omit",
+    fetcher,
+    signal,
+  );
+}
+
+export async function readServiceReceipt(origin, reference, fetcher, signal) {
+  platformOrigin(origin);
+  reference = parseReceiptLink(reference);
+  return sendWire(
+    {
+      url: `${origin}/api/services/${reference.serviceId}/job-receipt`,
+      body: JSON.stringify({
+        actionId: reference.actionId,
+        receiptKey: reference.receiptKey,
+      }),
+    },
+    "omit",
+    fetcher,
+    signal,
+  );
+}
+
+async function sendWire(request, credentials, fetcher, signal) {
   signal?.throwIfAborted();
   const response = await fetcher(request.url, {
     method: "POST",
     body: request.body,
     headers: { "Content-Type": "application/json" },
-    credentials: target.mode === "try" ? "same-origin" : "omit",
+    credentials,
     redirect: "error",
     referrerPolicy: "no-referrer",
     signal,
@@ -52,7 +88,7 @@ export async function sendServiceSubmission(request, target, fetcher, signal) {
       signal?.throwIfAborted();
       if (done) break;
       size += value.byteLength;
-      if (size > SERVICE_PACKAGE_LIMITS.resultBytes + 512)
+      if (size > SERVICE_PACKAGE_LIMITS.resultBytes + 1024)
         throw new Error("The service response is too large.");
       chunks.push(value);
     }

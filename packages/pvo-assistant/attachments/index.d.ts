@@ -113,7 +113,11 @@ export type ServiceSubmissionTarget = ServiceSubmissionScope & {
 export type ServiceSubmission = {
   target: ServiceSubmissionTarget;
   action: import("../hosting/index.js").ServiceAction;
-  response: import("../hosting/index.js").ServiceActionResult | null;
+  receiptKey?: string;
+  response:
+    | import("../hosting/index.js").ServiceActionResult
+    | import("../jobs/index.js").JobReceipt
+    | null;
 };
 export function parseServiceSubmissionTarget(
   value: unknown,
@@ -132,6 +136,7 @@ export function prepareServiceSubmission(
   target: ServiceSubmissionTarget,
   input: unknown,
   actionId: string,
+  receiptKey?: string,
 ): ServiceSubmission;
 /** Retries restore the saved input; they never read new form values. */
 export function retryServiceSubmission(
@@ -164,11 +169,18 @@ export type ServiceSubmissionContext = {
 export function createServiceSubmissionClient(adapters: {
   store: ServiceSubmissionStore;
   createId(): string;
+  createReceiptKey?(): string;
   send(
     request: ReturnType<typeof serviceSubmissionRequest>,
     signal?: AbortSignal,
   ): Promise<unknown>;
 }): {
+  check(
+    slot: string,
+    target: ServiceSubmissionTarget,
+    context: ServiceSubmissionContext,
+    expectedActionId?: string,
+  ): Promise<ServiceSubmission>;
   submit(
     slot: string,
     target: ServiceSubmissionTarget,
@@ -241,3 +253,8 @@ export function recoverServiceSubmissionFields(
   target: ServiceSubmissionTarget,
   binding: ServiceInputBinding,
 ): Record<string, ServiceJson>;
+
+export function backgroundSubmission(target: ServiceSubmissionTarget): boolean;
+export function submissionFinished(saved: ServiceSubmission): boolean;
+
+export function serviceReceiptLink(saved: ServiceSubmission): string;

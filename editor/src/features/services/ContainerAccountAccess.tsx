@@ -118,16 +118,39 @@ export function ContainerAccountAccess({
                   <li key={binding.name}>
                     <strong>{binding.description}</strong>
                     <p>
-                      {binding.repository ?? "Connect the required repository"}
+                      {binding.repository ?? "Connect the required account"}
                       {binding.account ? ` · ${binding.account}` : ""}
                     </p>
                     <p>
-                      {binding.method === "POST"
-                        ? "Can create issues"
-                        : "Can read selected information"}{" "}
+                      {binding.permission === "email:send"
+                        ? "Can send email to the approved recipient"
+                        : binding.method === "POST"
+                          ? "Can create issues"
+                          : "Can read selected information"}{" "}
                       · Used by {binding.operations.join(", ")}
                     </p>
                     {binding.error && <p>{binding.error}</p>}
+                    {binding.callbackPath && (
+                      <details>
+                        <summary>Set up email delivery updates</summary>
+                        <p>
+                          In Resend, add this webhook URL for email delivery
+                          events. Save its signing secret in your email
+                          connection. Without it, Restyle uses limited receipt
+                          checks.
+                        </p>
+                        <label>
+                          Delivery update URL
+                          <input
+                            readOnly
+                            value={
+                              new URL(binding.callbackPath, location.origin)
+                                .href
+                            }
+                          />
+                        </label>
+                      </details>
+                    )}
                   </li>
                 ))}
               </ul>

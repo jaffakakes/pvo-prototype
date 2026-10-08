@@ -67,7 +67,7 @@ export class TaskBuilders {
     ) {
       const prompt =
         decision.kind === "connect_account"
-          ? `Connect GitHub repository ${decision.setup.repository}. ${decision.purpose}`
+          ? `Connect ${decision.setup.provider === "github" ? `GitHub repository ${decision.setup.repository}` : `Resend sender ${decision.setup.from} for ${decision.setup.recipient}`}. ${decision.purpose}`
           : decision.kind === "manual_alternative"
             ? `Use this alternative? ${decision.proposal.preparedOutcome}`
             : decision.prompt;

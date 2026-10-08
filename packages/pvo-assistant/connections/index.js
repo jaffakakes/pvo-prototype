@@ -73,6 +73,8 @@ export {
   parseConnectionSetup,
   parseConnectionInvocation,
   GITHUB_OPERATIONS,
+  connectionScopeKey,
+  parseResendCredential,
 } from "./setup.js";
 
 export {

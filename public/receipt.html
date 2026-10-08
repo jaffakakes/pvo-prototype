@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; connect-src 'self'; script-src 'self'; style-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Your private receipt · Restyle</title>
+    <link rel="stylesheet" href="/receipt.css" />
+  </head>
+  <body>
+    <main>
+      <a class="brand" href="/">Restyle</a>
+      <h1>Your private receipt</h1>
+      <p id="status" role="status">Checking your saved request…</p>
+      <pre id="result" hidden></pre>
+      <button id="refresh" type="button">Check status</button>
+      <p class="notice">
+        This link opens one request’s public result. Anyone with the link can
+        read it, so keep it private. Completed receipts remain for 30 days;
+        uncertain results stay saved for the creator to inspect. If you lose
+        this link and the original browser’s saved receipt, Restyle cannot
+        identify this anonymous request for you.
+      </p>
+      <p class="notice">
+        “Email delivered” means the recipient’s mail server accepted it. It does
+        not mean the person read it, or that a booking was confirmed.
+      </p>
+    </main>
+    <script type="module" src="/receipt.js"></script>
+  </body>
+</html>

@@ -1,4 +1,9 @@
 import {
+  parseJobReceipt,
+  receiptFinished,
+  advanceJobReceipt,
+} from "../jobs/index.js";
+import {
   parseServiceOperation,
   SERVICE_PACKAGE_LIMITS,
 } from "../services/index.js";
@@ -118,7 +123,18 @@ export function resolveBoundSubmissionInput(binding, schema, fields) {
   return structuredClone(input);
 }
 
+export const backgroundSubmission = (target) =>
+  target.mode === "public" && target.operation.delivery === "background";
+export const submissionFinished = (saved) =>
+  saved.response !== null &&
+  (saved.target.operation.delivery !== "background" ||
+    receiptFinished(saved.response));
+
 function checkResponse(target, action, response) {
+  if (target.operation.delivery === "background") {
+    parseJobReceipt(response, action.actionId, target.operation.result);
+    return;
+  }
   object(response, ["actionId", "result"], "Submission response");
   requireTask(
     response.actionId === action.actionId,
@@ -134,7 +150,21 @@ function checkResponse(target, action, response) {
 
 /** Restore a saved client intent. Parsing a locally edited record grants no server authority. */
 export function parseServiceSubmission(value) {
-  object(value, ["target", "action", "response"], "Service submission");
+  object(
+    value,
+    [
+      "target",
+      "action",
+      "response",
+      ...(backgroundSubmission(value.target ?? {}) ? ["receiptKey"] : []),
+    ],
+    "Service submission",
+  );
+  if (backgroundSubmission(value.target ?? {}))
+    requireTask(
+      /^[a-f0-9]{64}$/.test(value.receiptKey),
+      "A background submission needs a private random receipt key.",
+    );
   const target = parseServiceSubmissionTarget(value.target);
   object(value.action, ["actionId", "operation", "input"], "Submission action");
   boundedValue(
@@ -166,12 +196,13 @@ export function snapshotSubmissionInput(target, input) {
 }
 
 /** The host generates a fresh unpredictable ID for each distinct submission, then persists this before sending. */
-export function prepareServiceSubmission(target, input, actionId) {
+export function prepareServiceSubmission(target, input, actionId, receiptKey) {
   target = parseServiceSubmissionTarget(target);
   return parseServiceSubmission({
     target,
     action: { actionId, operation: target.operation.name, input },
     response: null,
+    ...(backgroundSubmission(target) ? { receiptKey } : {}),
   });
 }
 
@@ -190,25 +221,67 @@ export function completeServiceSubmission(value, response) {
   const submission = parseServiceSubmission(value);
   checkResponse(submission.target, submission.action, response);
   requireTask(
-    submission.response === null ||
+    submission.target.operation.delivery === "background" ||
+      submission.response === null ||
       canonicalJson(submission.response) === canonicalJson(response),
     "A completed submission cannot change its result.",
   );
-  return { ...submission, response: structuredClone(response) };
+  return {
+    ...submission,
+    response:
+      submission.target.operation.delivery === "background"
+        ? advanceJobReceipt(submission.response, structuredClone(response))
+        : structuredClone(response),
+  };
 }
 
 /** Same canonical bytes on every attempt. The host adapter supplies transport, cancellation and credentials. */
 export function serviceSubmissionRequest(value) {
   const submission = parseServiceSubmission(value);
   requireTask(
-    submission.response === null,
+    submission.response === null || backgroundSubmission(submission.target),
     "This submission already has a saved response.",
   );
   const { target, action } = submission;
+  if (backgroundSubmission(target)) {
+    const checking = submission.response !== null;
+    return {
+      url: `${target.origin}/api/services/${target.serviceId}/${checking ? "job-receipt" : "jobs"}`,
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: canonicalJson(
+        checking
+          ? { actionId: action.actionId, receiptKey: submission.receiptKey }
+          : {
+              releaseId: target.releaseId,
+              action,
+              receiptKey: submission.receiptKey,
+              schedule: null,
+            },
+      ),
+    };
+  }
   return {
     url: `${target.origin}/api/services/${target.serviceId}/${target.mode === "try" ? `releases/${target.releaseId}/try` : "actions"}`,
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: serializeServiceAction(action),
+  };
+}
+
+export function serviceJobReceiptRequest(value) {
+  const saved = parseServiceSubmission(value);
+  requireTask(
+    backgroundSubmission(saved.target),
+    "This action has no background receipt.",
+  );
+  return {
+    url: `${saved.target.origin}/api/services/${saved.target.serviceId}/job-receipt`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: canonicalJson({
+      actionId: saved.action.actionId,
+      receiptKey: saved.receiptKey,
+    }),
   };
 }

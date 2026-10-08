@@ -87,9 +87,18 @@ export async function serviceAccountAccess(host, serviceId, ownerId, input) {
       permission: binding.adapter.permission,
       method: binding.adapter.method,
       documentation: binding.adapter.documentation,
-      repository: connection?.scope.repository ?? null,
+      repository:
+        connection?.scope.provider === "github"
+          ? connection.scope.repository
+          : connection
+            ? `${connection.scope.from} → ${connection.scope.recipient}`
+            : null,
       account: connection?.account ?? null,
       error,
+      callbackPath:
+        binding.adapter.provider === "resend"
+          ? `/api/services/${serviceId}/resend/${binding.connectionId}`
+          : null,
     });
   }
   const current = ownedHost(host, serviceId, ownerId);

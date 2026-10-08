@@ -54,6 +54,26 @@ export async function invokeHostedAction(host, serviceId, authority, value) {
     const publication = parseServicePublication(JSON.parse(row.body));
     const namespace =
       scope.namespace === "test" ? `test:${scope.releaseId}` : "live";
+    if (
+      namespace === "live" &&
+      host.jobs.get(action.actionId) &&
+      authority.jobId !== action.actionId
+    )
+      throw serviceCallError(
+        "action_conflict",
+        "This action belongs to saved background work. Open its receipt.",
+      );
+    if (
+      scope.namespace === "live" &&
+      publication.artifact.agreement.operations.find(
+        (item) => item.name === action.operation,
+      )?.delivery === "background" &&
+      authority.jobId !== action.actionId
+    )
+      throw serviceCallError(
+        "forbidden",
+        "This operation requires a saved background job.",
+      );
     try {
       host.actions.admit(namespace, now);
       const prior = replayServiceAction(

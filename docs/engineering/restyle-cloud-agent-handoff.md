@@ -2,7 +2,13 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
-## Current continuation — all Roadmap 2 complete through beta
+## Current continuation — finish all Roadmap 3
+
+**122/134 checked. All 3A/3B/3C and 3D.02–05 are verified; only 3D.01 remains in Roadmap 3.** Continue `codex/restyle-background-work` in `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`. Read the top [progress checkpoint](restyle-cloud-agent-progress.md) and [current contract](restyle-background-work.md). Source remains pending; previous Roadmap 2 beta remains active.
+
+**Exact next:** finish the controlled real-email driver rehearsal, actual Resend acceptance and cleanup, finish UI review and beta delivery, then commit/push completion evidence. Creator/player/normal export acceptance pass. The first live driver sent zero emails because its test clock was frozen; its local input/storage were removed. Existing cloud proof needs no paid repeat. Account-linked agent email is later 4D. Production, integration merges, Actions and unreleased-branch deletion remain prohibited.
+
+## Previous checkpoint — all Roadmap 2 complete through beta
 
 **99/134 checked; all Roadmap 1 and Roadmap 2 tasks are complete.** Source **`336b871`** is pushed on `feature/restyle-research-connections` in `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`, [draft PR #107](https://github.com/jaffakakes/pvo-prototype/pull/107), open/unmerged. This documentation checkpoint records final delivery. Full **1,661 tests**, strict types, sixteen final focused checks and actual desktop/phone editor acceptance pass. Read the newest [progress](restyle-cloud-agent-progress.md) and [manual-alternative contract](restyle-manual-alternatives.md).
 
