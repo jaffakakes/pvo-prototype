@@ -1,0 +1,146 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "restyle-beta",
+  "account_id": "84880ccf8f98bb789d58cbea5436a645",
+  "main": "server/worker.js",
+  "workers_dev": true,
+  "ai": {
+    "binding": "AI"
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "RELEASES",
+        "class_name": "ReleaseChannel"
+      },
+      {
+        "name": "ASSISTANT_BUDGET",
+        "class_name": "AssistantBudget"
+      },
+      {
+        "name": "ASSISTANT_TASKS",
+        "class_name": "AssistantTasks"
+      },
+      {
+        "name": "SERVICE_HOSTS",
+        "class_name": "HostedService"
+      },
+      {
+        "name": "SERVICE_NODE_EXECUTION",
+        "class_name": "ServiceNodeExecution"
+      },
+      {
+        "name": "ASSISTANT_WORKSPACES",
+        "class_name": "AssistantWorkspace"
+      },
+      {
+        "name": "WORKSPACE_BUDGET",
+        "class_name": "WorkspaceBudget"
+      },
+      {
+        "name": "IMESSAGE_TEST_QUEUE",
+        "class_name": "IMessageTestQueue"
+      }
+    ]
+  },
+  "containers": [
+    {
+      "name": "restyle-beta-workspaces",
+      "class_name": "AssistantWorkspace",
+      "scheduling_policy": "durable_object"
+    }
+  ],
+  "compatibility_date": "2026-09-27",
+  "observability": {
+    "enabled": true,
+    "traces": {
+      "enabled": true
+    }
+  },
+  "assets": {
+    "directory": "./.wrangler/beta/assets",
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/",
+      "/api",
+      "/api/*",
+      "/media",
+      "/media/*",
+      "/poster",
+      "/poster/*",
+      "/player/published",
+      "/player/published.html",
+      "/docs",
+      "/docs/*",
+      "/demo",
+      "/demo/*"
+    ],
+    "not_found_handling": "none"
+  },
+  "vars": {
+    "ASSISTANT_PROVIDER": "runpod",
+    "ASSISTANT_TASK_SPENDING": "[]",
+    "RUNPOD_TRANSCRIPTION_ENDPOINT": "5uqruzvtb96kph",
+    "PUBLISHING_ENABLED": "true",
+    "PUBLIC_ORIGIN": "https://restyle-beta.jaffakakes28.workers.dev",
+    "CLERK_ISSUER": "https://known-dog-5044.clerk.accounts.dev",
+    "CLERK_PUBLISHABLE_KEY": "pk_test_a25vd24tZG9nLTUwNDQuY2xlcmsuYWNjb3VudHMuZGV2JA",
+    "SERVICE_NODE_FLY_APP": "restyle-beta-node",
+    "SERVICE_NODE_FLY_IMAGE": "registry.fly.io/restyle-beta-node@sha256:9942e6c3dccc44a923c70ef9d8b3b7609b1a8338ea05b33ca80047952d0f449b"
+  },
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "restyle-beta-media"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "restyle-beta-accounts",
+      "database_id": "d5b55822-674a-4f9a-8019-ee10dfa3764e",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "0 * * * *"
+    ]
+  },
+  "preview_urls": false,
+  "exports": {
+    "ReleaseChannel": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    },
+    "AssistantBudget": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    },
+    "AssistantTasks": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    },
+    "HostedService": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    },
+    "ServiceNodeExecution": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    },
+    "AssistantWorkspace": {
+      "type": "durable-object",
+      "storage": "sqlite",
+      "container": "restyle-beta-workspaces"
+    },
+    "WorkspaceBudget": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    },
+    "IMessageTestQueue": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    }
+  }
+}

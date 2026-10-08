@@ -2,7 +2,19 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
-## Current checkpoint — Roadmaps 1–4 complete through beta
+## Current checkpoint — beta backend online; Fly and owner sign-in pending
+
+The creator requested connecting the ongoing backend, with **production prohibited** and agent email paused. Read the [separate beta deployment checklist](restyle-beta-backend.md) and newest [progress](restyle-cloud-agent-progress.md). All **134 Roadmap 1–4 implementation boxes** remain complete. **BETA.01–02 complete; BETA.03–05 unchecked.**
+
+**Active source:** `codex/restyle-beta-backend`, `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`, explicit completed implementation/combined-beta prerequisites at `c27c861`. The configuration, guarded deployment command, trusted beta runtime builder admission and verified evidence are this work batch. Fetch this focused branch on Windows or Claude Code; do not use old Desktop application source as the continuation point.
+
+**Live beta:** https://restyle-beta.jaffakakes28.workers.dev/editor/ . Worker `restyle-beta`, version `185dd285-48a4-4f14-a855-b51f639386e5`, dedicated D1/R2, eight private SQLite namespaces and beta workshop application are deployed and intentionally retained. Independent secrets and journal stay private under `~/.codex/secure/restyle-beta-backend/`. Full **1,699/1,699** checks, guarded dry run, real beta AI request, anonymous/private API boundaries, served app bytes, desktop/phone sign-in and activated service worker pass. Release **`restyle-editor-shell-7bbb710096de4c50`**. Stale generated compiler output was rebuilt from unchanged combined source and the Worker redeployed; final full check passes. Production storage remains unchanged, and local beta4173/editing output is preserved.
+
+**Exact next: BETA.03.** Pending human Fly CLI approval (session `38016`; renew only if expired) enables dedicated `restyle-beta-node` creation, checked immutable image, app-scoped persistent execution key and temporary builder/key cleanup. No Fly app/Machine/key exists yet. **BETA.04** additionally needs actual beta email sign-in, or the user's Google-only clarification. No owner cloud-task grant exists; `ASSISTANT_TASK_SPENDING` stays empty until actual ownership is verified. Then prove saved Container/task recovery, independent checks and real execution on this HTTPS origin. Preserve tests, runtime digest and sandbox boundaries; reuse the existing runner. BETA.05 records final operation/recovery, retained resources, costs, cleanup and GitHub handoff. Missing private receipts on a new machine are not a reason to repeat completed cloud tests.
+
+Do not claim full connected Container availability before those paths pass. Keep production, integration merges, Actions, unreleased-branch deletion and agent email out of scope. Earlier draft PRs #106–109 and historical evidence remain intact. Desktop Markdown files are guarded reading copies; committed branch source is authoritative.
+
+## Previous checkpoint — Roadmaps 1–4 complete through beta
 
 **134/134 checked. No numbered task remains.** Account-linked agent email is paused. Source **`66681bc`** plus this final evidence commit is pushed on **`origin/codex/restyle-maintenance`**, [draft PR #109](https://github.com/jaffakakes/pvo-prototype/pull/109), open/unmerged. Active source checkout: `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`. Read the newest [progress checkpoint](restyle-cloud-agent-progress.md) and [maintenance portable acceptance](restyle-maintenance.md#verified-acceptance--8-october-2026). This branch includes the unreleased Roadmap 1–3 prerequisites; preserve their branches/PRs and real-provider evidence.
 

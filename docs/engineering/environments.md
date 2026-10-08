@@ -30,6 +30,12 @@ When `dev` contains unrelated unfinished work, an isolated production fix may us
 
 Protected branches require pull requests and the repository's `test` and `promotion` checks. They reject force pushes and deletion. No approving review is required while the repository has one maintainer; the pull request and passing checks remain mandatory.
 
+## Ongoing beta backend
+
+The separately authorized Restyle beta uses [its own deployment checklist](restyle-beta-backend.md), `wrangler.beta.jsonc` and `npm run deploy:beta:built`. That command validates the isolated Worker, origin, development sign-in, D1/R2 resources, private namespaces and dedicated Fly app before invoking Wrangler. `npm run deploy:beta:built -- --dry-run` compiles without uploading. Secrets are supplied from private local storage; they never belong in the configuration or Git.
+
+This ongoing beta is separate from `preprod` promotion and the production workflow. It does not update `getrestyle.app`, reuse production accounts/media, merge integration branches or approve production. The existing loopback beta remains available while the HTTPS backend is prepared. Read current progress before using a deployment command or assuming that a deployment task is complete.
+
 ## Production deployment
 
 [`deploy-production.yml`](../../.github/workflows/deploy-production.yml) repeats the locked build and verification commands before running `npm run deploy:built`, the deployment half of `npm run deploy`. It publishes the verified `dist/`, checks the served editor release, and announces the new release to connected editors without rebuilding a second time.

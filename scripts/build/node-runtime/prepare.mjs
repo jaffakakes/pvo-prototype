@@ -23,7 +23,10 @@ const rootfs = `${layer}/sandbox/rootfs`;
 const settings = JSON.parse(
   await readFile("/build-input/settings.json", "utf8"),
 );
-if (!/^restyle-node-proof-[a-f0-9]{24}$/.test(settings.app))
+if (
+  settings.app !== "restyle-beta-node" &&
+  !/^restyle-node-proof-[a-f0-9]{24}$/.test(settings.app)
+)
   throw new Error("Invalid owned build app");
 if (!/^node@sha256:[a-f0-9]{64}$/.test(settings.baseImage))
   throw new Error("Invalid immutable Node base");
