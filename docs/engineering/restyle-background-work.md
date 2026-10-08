@@ -88,4 +88,26 @@ Focused Node/workerd/SQLite tests cover saved-before-acknowledgement, lost repli
 
 The standalone player browser acceptance compiles and packages a PVO, loses the first acknowledgement, closes every viewer, restarts the worker, retrieves the saved result, opens its private link in a new profile, rejects a wrong key and checks desktop/phone layouts. It uses a controlled external email provider. Real Resend acceptance and final beta delivery are separate gates, recorded in the [progress log](restyle-cloud-agent-progress.md); do not infer them from controlled tests.
 
-Next agent: read the current handoff and progress first. Preserve prior Roadmap 1/2 cloud evidence, the exact active branch and all unfinished checkboxes. Do not repeat a paid test because a private local log is unavailable. Production remains prohibited pending the rest of the roadmap, user beta testing and explicit release approval.
+## Verified acceptance — 8 October 2026
+
+**All 24 Roadmap 3 tasks are complete through beta.** This extends the existing saved task, Container host, account connection and component/player boundaries. It adds no permanent workshop per user or new general agent runner.
+
+| Evidence | Verified result | Limit |
+| --- | --- | --- |
+| Full source checks | 1,686 passing tests; 1,025 JavaScript syntax, 1,014 dependency and 770 adopted-format files; strict editor types | Not a substitute for browser/provider proof |
+| Local Node/Worker/SQLite | Independent expected acceptance/duplicate/capacity cases; saved-before-acknowledgement, durable claims, restart, schedules, pause/cancel, ownership, retention and limits | Actual local Node execution, not a repeated cloud-isolation proof |
+| Controlled sender failures | Offline/expired/reconnected sender, lost acceptance, same-action reconciliation, rotated-key fence, exact twelve delivery checks, verified/deduplicated/reordered callbacks | Callback and adverse provider responses are controlled |
+| Creator browser | Real compiled iframe Try with zero sends; normal exported PVO retains its approved background operation and omits private fields; inspect/resume/cancel, deletion preserving hosted evidence, account change and desktop/phone | No permanent backend is configured on the ordinary static beta |
+| Player browser | Saved IndexedDB intent, lost HTTP acknowledgement, all viewers closed, Worker restart, truthful outcome, fresh-profile private link, wrong-key denial, desktop/phone | Controlled external sender |
+| Actual Resend, 14:11:24–14:12:28 UTC | One approved email identity, deliberate lost accepted response, server restart, same provider idempotency key/ID recovered, guest acceptance saved, delivered-to-mail-server evidence retained after another restart | One provider path; no proof the person read it or a restaurant accepted a booking |
+| Beta | Combined `fcdb0bc`; actual Desktop server4173 serves `restyle-editor-shell-11e6efbf44f761ab`, exact modules/new UI and fresh activated service worker | UI delivery; permanent backend hosting and production release are separate |
+
+The successful actual run used two provider POSTs with the same idempotency identity: the original send and reconciliation. It recorded one provider email ID and confirmed the owned result through read-only status checks. Wrong receipt keys/owners were rejected and completed work could not resume. Ordinary Try executed checked examples without a live send.
+
+Earlier diagnostic failures are retained in the progress record. One froze its schedule clock before dispatch. Later attempts produced no accepted ID; a complete provider email listing showed no matching message. The local native-HTTP bridge now forwards only provider application headers. Clock preservation, awaiting a real business result and native HTTP rehearsal were corrected before the successful run; no production boundary was weakened.
+
+**Cleanup:** the actual connection was disconnected, disposable local Worker/SQLite storage removed, and owned local plaintext input deleted. No paid cloud resource, model inference or account purchase occurred. Provider-issued API key revocation remains available in Resend settings and is not claimed. Safe local journals remain outside Git and contain no credential. The [progress record](restyle-cloud-agent-progress.md) holds cleanup/delivery receipt locations; its committed evidence is sufficient for another agent without repeating this run.
+
+**Design finish:** fresh reviewer disposition `ship` for the incumbent Operate extension; all eight required captures valid and no material fixes. The documenter preserved existing design-system files. Existing public Inter and inherited phone chrome were not redesigned.
+
+Next numbered task is **4A.01**, when the user requests Roadmap 4. Read the current handoff and progress first. Preserve prior Roadmap 1/2 cloud evidence and all completed checkboxes. Do not repeat a paid test because a private local log is unavailable. Production remains prohibited pending Roadmap 4, user beta testing and explicit release approval.

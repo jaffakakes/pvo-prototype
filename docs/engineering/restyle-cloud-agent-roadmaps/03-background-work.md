@@ -52,13 +52,17 @@ Start with one real provider path. Add scheduling only after the job and outcome
 
 ## 3D. Demonstrate a useful automation
 
-- [ ] **3D.01** Build an acceptance flow that records the reply and triggers a message through a real supported connection.
+- [x] **3D.01** Build an acceptance flow that records the reply and triggers a message through a real supported connection.
 - [x] **3D.02** Test the normal path, sender offline, expired credentials, provider timeout after acceptance, duplicate click, duplicate callback, and cancelled work.
 - [x] **3D.03** Confirm that ordinary Try cannot send live messages.
 - [x] **3D.04** Confirm that deleting a local component does not erase evidence of previously performed actions.
 - [x] **3D.05** Verify that a creator can inspect failures and safely resume only work that remains unfinished.
 
 For iMessage, the existing feature is a fixed-message Mac test bridge. General messaging requires its own sender availability, account ownership, queue behavior, and truthful status handling. Do not treat a cloud VM as an iMessage sender without implementing a real connected sending path.
+
+## Completion evidence — 8 October 2026
+
+**All 24 Roadmap 3 tasks are verified through beta.** The [portable acceptance evidence](../restyle-background-work.md#verified-acceptance--8-october-2026) separates actual Resend delivery, controlled failure/callback tests, local Node/SQLite execution and delivered beta UI. Production and permanent beta backend hosting remain separate. See the current [progress](../restyle-cloud-agent-progress.md) for source, cleanup and the next roadmap.
 
 ## Complete this roadmap
 
