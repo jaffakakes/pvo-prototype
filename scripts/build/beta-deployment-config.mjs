@@ -70,7 +70,11 @@ export function assertBetaDeployment(config) {
   )
     fail("SQLite namespaces must belong to this Worker.");
   for (const key of Object.keys(config.vars)) {
-    if (/SECRET|TOKEN|API_KEY|CONNECTION_KEY|ASSISTANT_TASK_SPENDING/.test(key))
+    if (
+      /SECRET|TOKEN|API_KEY|CONNECTION_KEY|ASSISTANT_TASK_SPENDING|ASSISTANT_DAILY_CAPACITY/.test(
+        key,
+      )
+    )
       fail("credentials and account grants belong in private Worker secrets.");
   }
   return config;

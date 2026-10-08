@@ -44,6 +44,9 @@ test("the beta deployment admits only the owned beta resource set", () => {
     (value) => {
       value.vars.ASSISTANT_TASK_SPENDING = "[]";
     },
+    (value) => {
+      value.vars.ASSISTANT_DAILY_CAPACITY = "{}";
+    },
   ]) {
     const changed = structuredClone(config);
     mutate(changed);

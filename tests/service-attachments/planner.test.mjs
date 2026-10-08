@@ -13,6 +13,10 @@ const context = {
 
 test("attachment inference uses only the bounded command schema and supplied public context", async () => {
   const proposed = attachment("release-one");
+  proposed.component.responsePolicy = {
+    dispatch: "interaction",
+    unanswered: "pause",
+  };
   let calls = 0;
   const result = await planTaskAttachment(
     create(),

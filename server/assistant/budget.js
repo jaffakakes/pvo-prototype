@@ -1,4 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
+import { assistantDailyCapacity } from "./dailyCapacity.js";
 
 const validKey = (key) => typeof key === "string" && /^[a-f0-9]{64}$/.test(key);
 
@@ -16,7 +17,10 @@ export class AssistantBudget extends DurableObject {
   }
 
   dailyLimits() {
-    return { global: 60, client: 20 };
+    return assistantDailyCapacity(
+      this.env.ASSISTANT_DAILY_CAPACITY,
+      this.now(),
+    );
   }
 
   async reserve(key, operationKey = null) {

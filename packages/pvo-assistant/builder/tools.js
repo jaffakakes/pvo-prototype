@@ -45,6 +45,10 @@ export function parseBuilderTool(value) {
   );
   const kind = Object.getOwnPropertyDescriptor(value, "kind")?.value;
   choice(kind, BUILDER_TOOL_KINDS, "Workspace tool");
+  requireTask(
+    !Object.hasOwn(value, "review"),
+    "The review field belongs only to the top-level tools decision. Remove it from the workspace tool inside calls; retain only that tool's exact schema fields.",
+  );
   const keys = ["kind", ...fields[kind]];
   object(
     value,

@@ -86,6 +86,16 @@ test("rejected tool inputs identify their exact allowed fields without exposing 
       return true;
     },
   );
+  const write = {
+    kind: "workspace_write",
+    expectedRevision: 0,
+    files: files(),
+  };
+  assert.throws(
+    () => parseBuilderTool({ ...write, review: null }),
+    /review field belongs only to the top-level tools decision/,
+  );
+  assert.deepEqual(parseBuilderTool(write), write);
   assert.throws(
     () => parseBuilderTool({ kind: "history", collection: "repairs" }),
     /Workspace tool is unsupported/,
