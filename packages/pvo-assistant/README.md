@@ -23,3 +23,13 @@ These modules perform no model inference, requests, editor mutations or renderin
 Native preparation results include a typed `execution` context on subsequent turns. Its ordered receipts record actual per-operation before/after public entity values and generated identities, while `requestStartValues` remains fixed for the whole request. Relative edits are checked against those original values once. Private URLs, source payloads and source text are omitted from receipts; a source fingerprint records source changes. Execution facts are fixed context, never truncated as conversation history; an oversized request fails before committing. Scheduled playback/export receipts include their exact deferred effect parameters and do not claim the effects have run. Duplicate detection checks whether each prior operation’s result still exists in the current candidate; intervening changes can make the same operation necessary again. Existing created identities remain protected from duplicate insertion when their content changes.
 
 `service-errors.js` defines public assistant failure codes, their HTTP statuses and fixed diagnostic copy. The browser accepts only matching known codes; provider messages and rejected model output never become user-facing diagnostics.
+
+The [inactive release contract](releases/README.md) defines owned provider identities, immutable publication data and strict observations used by saved-task recovery. Provider effects stay in server adapters.
+
+The [generated service contract](services/README.md) defines the behavior agreement, bounded source package and validated invocation/reply used by the cloud workshop. It does not execute code or grant deployment readiness.
+
+The [temporary workspace contract](workspaces/README.md) defines bounded draft files, operation inputs and recovery rules. Private server adapters own its actual storage, compute reservations and Container lifecycle. Workspace tools are not yet connected to the model builder.
+
+The [builder tool contract](builder/README.md) defines the bounded file/command views supplied by the saved-task workspace adapter. Availability and operation/usage receipts belong to trusted server code; model-driven construction and release approval are separate steps.
+
+The [background-work contract](../../docs/engineering/restyle-background-work.md) adds durable viewer jobs through the existing service host, typed receipt rules in `jobs/`, and a shared private receipt client/watcher. Resend is an installed fixed email path; credentials stay in the account owner and ordinary Try uses saved examples. No new PVO Logic syntax or model-turn limit is introduced.

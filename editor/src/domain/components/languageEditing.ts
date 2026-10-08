@@ -200,7 +200,7 @@ function structureSource(structure: PvoLanguageStructure): string {
   return `<${structure.type}>\n${children.join("\n")}\n</${structure.type}>`;
 }
 
-function logicSource(rules: readonly PvoLanguageRule[]): string {
+export function logicSource(rules: readonly PvoLanguageRule[]): string {
   return rules.map(rule => {
     const event = rule.target === null ? "on submit" : `on ${rule.event}(${rule.target})`;
     return `${event} {\n  ${outcomeAction(rule.action)};\n}`;

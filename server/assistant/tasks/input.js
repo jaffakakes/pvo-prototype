@@ -60,6 +60,34 @@ export function creationInput(value) {
 }
 
 export function creatorCommand(action, value) {
+  if (action === "manual") {
+    fields(value, [
+      "expectedRevision",
+      "questionId",
+      "stepId",
+      "operationId",
+      "status",
+      "note",
+    ]);
+    revision(value.expectedRevision);
+    for (const key of ["questionId", "stepId", "operationId"])
+      taskId(value[key]);
+    if (
+      !["completed", "cancelled"].includes(value.status) ||
+      typeof value.note !== "string" ||
+      !value.note.trim() ||
+      new TextEncoder().encode(value.note).length > 1000
+    )
+      throw new HttpError(
+        400,
+        "Describe the manual result in at most 1,000 bytes.",
+      );
+    const { expectedRevision, ...command } = value;
+    return {
+      expectedRevision,
+      command: { kind: "resolve_manual", ...command },
+    };
+  }
   const answer = action === "answers";
   fields(
     value,

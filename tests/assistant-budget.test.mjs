@@ -187,6 +187,9 @@ test("background reservations share foreground capacity, replay once, and refund
     stdin: {
       resolveDir: process.cwd(),
       contents: `
+    // This test compares one minute's capacity before/after restart. Keep the
+    // Worker clock fixed so a real minute boundary cannot reset that capacity.
+    Date.now = () => Date.UTC(2100, 0, 1);
     export { AssistantBudget } from "./server/assistant/budget.js";
     export default { async fetch(request, env) {
       const { key, operation = null, consumed, method = "reserve" } = await request.json();

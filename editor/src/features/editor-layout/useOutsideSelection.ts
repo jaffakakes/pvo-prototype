@@ -1,6 +1,6 @@
 import { useEffect, useRef, type RefObject } from "react";
 
-const controls = "button, input, textarea, select, label, a, [role='separator'], [role='dialog']:not(.sheet), [contenteditable], .orbAssistant, .compOverlay, .textOverlay, .tlClips, .textBar, .compBar, .layerName";
+const controls = "button, input, textarea, select, summary, label, a, [role='separator'], [role='dialog']:not(.sheet), [contenteditable], .orbAssistant, .compOverlay, .textOverlay, .tlClips, .textBar, .compBar, .layerName";
 const tapTolerance = 12;
 
 /** Dismiss only a blank-space tap, never a scrub, resize, or multi-touch gesture. */

@@ -5,6 +5,7 @@ export const TASK_LIMITS = Object.freeze({
   examples: 8,
   exampleBytes: 2000,
   components: 8,
+  scenes: 32,
   sourceBytes: 20_000,
   inputBytes: 128 * 1024,
   recordBytes: 256 * 1024,
@@ -16,18 +17,16 @@ export const TASK_LIMITS = Object.freeze({
   operations: 64,
   resources: 8,
   artifactBytes: 1024 * 1024,
-  lifetimeMs: 24 * 60 * 60_000,
   retentionMs: 7 * 24 * 60 * 60_000,
-  leaseMs: 60_000,
-  retries: 3,
-  modelTurns: 6,
-  toolCalls: 24,
+  leaseMs: 330_000,
+  defaultLeaseMs: 60_000,
 });
 
 export const TASK_STATES = Object.freeze([
   "queued",
   "running",
   "waiting_for_answer",
+  "waiting",
   "ready",
   "failed",
   "stopped",
@@ -39,7 +38,7 @@ export const TASK_FAILURES = Object.freeze({
   interrupted: Object.freeze({ retryable: true }),
   reconciliation_required: Object.freeze({ retryable: true }),
   execution_failed: Object.freeze({ retryable: true }),
+  tests_failed: Object.freeze({ retryable: false }),
   invalid_result: Object.freeze({ retryable: false }),
   budget_exceeded: Object.freeze({ retryable: false }),
-  deadline_exceeded: Object.freeze({ retryable: false }),
 });

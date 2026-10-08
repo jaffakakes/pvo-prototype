@@ -10,6 +10,10 @@
       { "name": "RELEASES", "class_name": "ReleaseChannel" },
       { "name": "ASSISTANT_BUDGET", "class_name": "AssistantBudget" },
       { "name": "ASSISTANT_TASKS", "class_name": "AssistantTasks" },
+      { "name": "SERVICE_HOSTS", "class_name": "HostedService" },
+      { "name": "SERVICE_NODE_EXECUTION", "class_name": "ServiceNodeExecution" },
+      { "name": "ASSISTANT_WORKSPACES", "class_name": "AssistantWorkspace" },
+      { "name": "WORKSPACE_BUDGET", "class_name": "WorkspaceBudget" },
       { "name": "IMESSAGE_TEST_QUEUE", "class_name": "IMessageTestQueue" }
     ]
   },
@@ -17,8 +21,12 @@
     { "tag": "release-channel-v1", "new_sqlite_classes": ["ReleaseChannel"] },
     { "tag": "assistant-budget-v1", "new_sqlite_classes": ["AssistantBudget"] },
     { "tag": "imessage-test-queue-v1", "new_sqlite_classes": ["IMessageTestQueue"] },
-    { "tag": "assistant-tasks-v1", "new_sqlite_classes": ["AssistantTasks"] }
+    { "tag": "assistant-tasks-v1", "new_sqlite_classes": ["AssistantTasks"] },
+    { "tag": "service-hosts-v1", "new_sqlite_classes": ["HostedService"] },
+    { "tag": "service-node-execution-v1", "new_sqlite_classes": ["ServiceNodeExecution"] },
+    { "tag": "assistant-workspaces-v1", "new_sqlite_classes": ["AssistantWorkspace", "WorkspaceBudget"] }
   ],
+  "containers": [{ "name": "restyle-agent-workspaces", "class_name": "AssistantWorkspace", "scheduling_policy": "durable_object" }],
   "compatibility_date": "2026-09-27",
   "observability": { "enabled": true, "traces": { "enabled": true } },
   "assets": {
@@ -29,6 +37,7 @@
   },
   "vars": {
     "ASSISTANT_PROVIDER": "runpod",
+    "ASSISTANT_TASK_SPENDING": "[]",
     "RUNPOD_TRANSCRIPTION_ENDPOINT": "5uqruzvtb96kph",
     "PUBLISHING_ENABLED": "true",
     "PUBLIC_ORIGIN": "https://getrestyle.app",

@@ -29,6 +29,11 @@ function StageRows({
         : "Muxing video and audio",
     ],
   ];
+  if (stage === 3)
+    rows.push([
+      "Connecting services",
+      "Making the checked version ready for viewers",
+    ]);
   return (
     <div className={styles.stages} aria-live="polite">
       {rows.map(([name, detail], index) => (
@@ -92,7 +97,9 @@ export function ExportProgress({
           ? "Preparing media"
           : stage === 1
             ? `Rendering scene ${sceneNumber} of ${sceneCount}`
-            : "Packaging file"}
+            : stage === 3
+              ? "Connecting services"
+              : "Packaging file"}
       </span>
       <StageRows
         stage={stage}
