@@ -16,6 +16,10 @@ The local beta server uses `scripts/dev/releases.mjs` to provide the same protoc
 
 `node --test tests/release-channel.test.mjs` checks authorization, deployed-asset validation, fan-out, deduplication, and persisted replay after a runtime restart. `npm run check:browser -- editor pwa` checks push delivery without polling, reconnect catch-up, explicit activation, recording protection, saved footage, offline startup, and storage-failure protection.
 
+## Generated Node.js services
+
+Restyle's Worker continues to own routing and durable service records. Generated Container code runs through the private Fly adapter, configured separately from video publishing. See [Container hosting settings and beta availability](restyle-containers-contract.md#hosting-configuration-and-beta-availability) for the exact binding, immutable image and secret requirements. Do not infer backend availability from a static beta build or enable paid hosting from a disposable diagnostic's credentials.
+
 ## Resources and launch configuration
 
 The configured Worker uses the private R2 Standard bucket `pvo-publications-media` and D1 database `pvo-publications-google`, bound as `MEDIA` and `DB`. The resources are provisioned in the Worker's account and recorded in Wrangler. Keep public bucket access through `r2.dev` disabled:

@@ -9,6 +9,11 @@ export const api = await import(
     export * from './editor/src/domain/project/mediaReferences.ts';
     export * from './editor/src/domain/assistant/native/context.ts';
     export * from './editor/src/domain/assistant/native/batch.ts';
+    export * from './editor/src/domain/services/connectionEditing.ts';
+    export * from './editor/src/domain/components/languageCompilation.ts';
+    export { createDefaultComponent } from './editor/src/domain/components/editing.ts';
+    export { commitNativeBatch } from './editor/src/state/assistant/nativeCommands.ts';
+    export * from './editor/src/domain/assistant/savedResultPreparation.ts';
     export * from './editor/src/features/assistant/saved-tasks/applicationWorkflow.ts';
     export * from './editor/src/state/assistant/taskProjectCommands.ts';
     export * from './editor/src/state/assistant/taskResultCommands.ts';
@@ -19,6 +24,7 @@ export const api = await import(
     export * from './editor/src/domain/assistant/cloudTaskInput.ts';
     export * from './editor/src/features/assistant/saved-tasks/creationWorkflow.ts';
     export * from './editor/src/features/assistant/saved-tasks/taskSession.ts';
+    export * from './editor/src/domain/assistant/savedTaskStatus.ts';
     export * from './editor/src/infrastructure/assistant/savedTaskTransport.ts';
     export * from './editor/src/infrastructure/projectPersistence/checkpoint.ts';
     export { initial } from './editor/src/state/project/initial.ts';

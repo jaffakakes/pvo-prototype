@@ -1,3 +1,4 @@
+import { validateManualPlans, hasPendingManualSteps } from "./manual.js";
 import { TASK_LIMITS as limits, TASK_STATES } from "./limits.js";
 import {
   boundedJson,
@@ -50,14 +51,18 @@ export function parseTaskRecord(value) {
       "generation",
       "claim",
       "questions",
+      "archivedQuestions",
+      "manualPlans",
       "operations",
+      "archivedOperations",
       "result",
       "failure",
+      "wait",
       "retries",
       "usage",
       "createdAt",
       "updatedAt",
-      "deadlineAt",
+      "finishedAt",
       "expiresAt",
       "nextRunAt",
     ],
@@ -71,17 +76,44 @@ export function parseTaskRecord(value) {
   id(value.stepId, "Current step ID");
   integer(value.revision, Number.MAX_SAFE_INTEGER, "Task revision");
   integer(value.generation, value.revision, "Execution generation");
-  integer(value.retries, limits.retries, "Retry count");
+  integer(value.retries, Number.MAX_SAFE_INTEGER, "Retry count");
+  integer(
+    value.archivedOperations,
+    Number.MAX_SAFE_INTEGER,
+    "Archived operation count",
+  );
+  integer(
+    value.archivedQuestions,
+    Number.MAX_SAFE_INTEGER,
+    "Archived question count",
+  );
   validateUsage(value.usage);
-  for (const key of ["createdAt", "updatedAt", "deadlineAt", "expiresAt"])
+  for (const key of ["createdAt", "updatedAt"])
     time(value[key], "Task timestamp");
   requireTask(
-    value.createdAt <= value.updatedAt &&
-      value.deadlineAt === value.createdAt + limits.lifetimeMs &&
-      value.expiresAt === value.createdAt + limits.retentionMs,
+    value.createdAt <= value.updatedAt,
     "Task timestamps or retention are inconsistent.",
   );
+  validateManualPlans(value.manualPlans, value.createdAt, value.updatedAt);
+  const finished =
+    ["ready", "stopped"].includes(value.state) && !hasPendingManualSteps(value);
+  if (finished) {
+    time(value.finishedAt, "Goal finish time");
+    time(value.expiresAt, "Finished goal retention");
+    requireTask(
+      value.finishedAt >= value.createdAt &&
+        value.finishedAt <= value.updatedAt &&
+        value.expiresAt === value.finishedAt + limits.retentionMs,
+      "Finished goal retention is inconsistent.",
+    );
+  } else {
+    requireTask(
+      value.finishedAt === null && value.expiresAt === null,
+      "Unfinished goals do not expire.",
+    );
+  }
   validateClaim(value);
+  validateWait(value);
   if (value.result !== null) {
     validateResult(value.result);
     requireTask(
@@ -105,7 +137,7 @@ export function parseTaskRecord(value) {
     (value.state === "failed") === (value.failure !== null),
     "Failed state and failure must agree.",
   );
-  if (["ready", "waiting_for_answer"].includes(value.state)) {
+  if (["ready", "waiting_for_answer", "waiting"].includes(value.state)) {
     requireTask(
       !hasUnsettledOperations(value.operations),
       "Uncertain operations must be reconciled first.",
@@ -138,22 +170,50 @@ function validateClaim(value) {
         value.claim.claimedAt >= value.createdAt &&
         value.claim.claimedAt <= value.updatedAt &&
         value.claim.expiresAt > value.updatedAt &&
-        value.claim.expiresAt <= value.deadlineAt &&
         value.claim.expiresAt - value.claim.claimedAt <= limits.leaseMs,
       "Execution claim has inconsistent bounds.",
     );
   }
-  if (value.state === "queued") {
+  if (
+    value.state === "queued" ||
+    (value.state === "waiting" && value.nextRunAt !== null)
+  ) {
     time(value.nextRunAt, "Next wakeup");
     requireTask(
-      value.nextRunAt >= value.createdAt && value.nextRunAt < value.deadlineAt,
-      "Queued wakeup must precede the deadline.",
+      value.nextRunAt >= value.createdAt,
+      "Queued wakeup precedes goal creation.",
     );
   } else
     requireTask(
       value.nextRunAt === null,
-      "Only queued tasks have a next wakeup.",
+      "Only queued or waiting tasks have a next wakeup.",
     );
+}
+
+function validateWait(value) {
+  requireTask(
+    (value.state === "waiting") === (value.wait !== null),
+    "Waiting state and reason must agree.",
+  );
+  if (value.wait === null) return;
+  object(value.wait, ["reason"], "Wait reason");
+  requireTask(
+    [
+      "model_capacity",
+      "model_allowance",
+      "workspace_capacity",
+      "workspace_allowance",
+      "service_capacity",
+      "service_allowance",
+      "spending_permission",
+    ].includes(value.wait.reason),
+    "Wait reason is unsupported.",
+  );
+  requireTask(
+    (value.wait.reason === "spending_permission") ===
+      (value.nextRunAt === null),
+    "Only spending permission waits need explicit resumption.",
+  );
 }
 
 function validateHistory(value) {
@@ -166,7 +226,11 @@ function validateHistory(value) {
   const pending = value.questions.filter((item) => item.answer === null).length;
   let validPending = pending === 0;
   if (value.state === "waiting_for_answer") validPending = pending === 1;
-  if (value.state === "stopped" || value.failure?.code === "deadline_exceeded")
+  if (
+    value.state === "stopped" ||
+    (value.stepId === "build" &&
+      ["queued", "running", "waiting", "failed"].includes(value.state))
+  )
     validPending = pending <= 1;
   requireTask(
     validPending,
@@ -192,6 +256,11 @@ function validateHistory(value) {
     [
       value.input.operationId,
       ...value.operations.map((item) => item.id),
+      ...value.manualPlans.flatMap((plan) =>
+        plan.steps.flatMap((step) =>
+          step.resolution ? [step.resolution.operationId] : [],
+        ),
+      ),
       ...value.questions
         .filter((item) => item.answer)
         .map((item) => item.answer.operationId),
@@ -219,9 +288,13 @@ export function createTask(input, metadata) {
     generation: 0,
     claim: null,
     questions: [],
+    archivedQuestions: 0,
+    manualPlans: [],
     operations: [],
+    archivedOperations: 0,
     result: null,
     failure: null,
+    wait: null,
     retries: 0,
     usage: {
       modelTurns: 0,
@@ -231,8 +304,8 @@ export function createTask(input, metadata) {
     },
     createdAt: metadata.now,
     updatedAt: metadata.now,
-    deadlineAt: metadata.now + limits.lifetimeMs,
-    expiresAt: metadata.now + limits.retentionMs,
+    finishedAt: null,
+    expiresAt: null,
     nextRunAt: metadata.now,
   });
 }
@@ -244,14 +317,20 @@ function inputSnapshot(value) {
     value.request,
     value.examples.map((item) => [item.id, item.input, item.expected]),
     value.context.fingerprint,
-    value.context.components.map((item) => [
-      item.id,
-      item.sceneId,
-      item.type,
-      item.source.structure,
-      item.source.style,
-      item.source.logic,
-    ]),
+    value.context.container
+      ? [
+          value.context.container.serviceId,
+          value.context.container.revision,
+          value.context.container.mode,
+        ]
+      : value.context.components.map((item) => [
+          item.id,
+          item.sceneId,
+          item.type,
+          item.source.structure,
+          item.source.style,
+          item.source.logic,
+        ]),
   ]);
 }
 

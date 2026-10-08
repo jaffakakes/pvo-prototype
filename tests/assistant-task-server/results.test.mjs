@@ -75,7 +75,10 @@ test("owned immutable result survives restart and expires with private task cont
       (await fixture.request(path(task) + "/result")).body,
       result.body,
     );
-    await fixture.control({ action: "time", now: task.expiresAt });
+    await fixture.control({
+      action: "time",
+      now: (await fixture.request(path(task))).body.task.expiresAt,
+    });
     await fixture.control({ action: "sweep" });
     expectStatus(await fixture.request(path(task) + "/result"), 404);
     assert.equal((await fixture.control({ action: "results" })).body.count, 0);

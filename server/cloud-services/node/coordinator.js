@@ -1,0 +1,431 @@
+import { parseNodeBundle } from "../../../packages/pvo-assistant/services/index.js";
+import { DurableObject } from "cloudflare:workers";
+import { FlyNodeContainer } from "./fly/container.js";
+import { nodeExecutionError, nodeExecutionBody } from "./protocol.js";
+import { NodeMetering } from "./metering.js";
+import { NODE_LIMITS as limits } from "./runtime.js";
+import { withAssistantDeadline } from "../../assistant/deadline.js";
+
+const DAY = 86400000;
+const id = (value) =>
+  typeof value === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(value);
+
+/** A bounded execution slot owns compute only. Drafts, releases, records and action receipts live elsewhere. */
+export class ServiceNodeExecution extends DurableObject {
+  constructor(ctx, env) {
+    super(ctx, env);
+    this.active = null;
+    this.cleaning = null;
+    this.starting = null;
+    this.metering = new NodeMetering(ctx.storage.sql);
+    ctx.storage.sql
+      .exec(`CREATE TABLE IF NOT EXISTS node_lease(id INTEGER PRIMARY KEY CHECK(id=1),body TEXT NOT NULL);
+      CREATE TABLE IF NOT EXISTS node_receipts(id TEXT PRIMARY KEY,expires_at INTEGER NOT NULL);
+      CREATE TABLE IF NOT EXISTS node_start_fence(id INTEGER PRIMARY KEY CHECK(id=1),expires_at INTEGER NOT NULL);`);
+  }
+  now() {
+    return Date.now();
+  }
+  containerAdapter(execution) {
+    const current = () => {
+      const lease = this.lease();
+      if (!lease || lease.id !== execution)
+        throw nodeExecutionError("execution_cancelled");
+      return lease;
+    };
+    return new FlyNodeContainer({
+      app: this.env.SERVICE_NODE_FLY_APP,
+      token: this.env.SERVICE_NODE_FLY_TOKEN,
+      image: this.env.SERVICE_NODE_FLY_IMAGE,
+      read: () => current().provider ?? null,
+      write: (provider) =>
+        this.ctx.storage.transactionSync(() => {
+          const lease = current();
+          if (provider && provider.execution !== execution)
+            throw nodeExecutionError("runtime_mismatch");
+          this.save({ ...lease, provider });
+        }),
+    });
+  }
+  lease() {
+    const row = this.ctx.storage.sql
+      .exec("SELECT body FROM node_lease WHERE id=1")
+      .toArray()[0];
+    return row ? JSON.parse(row.body) : null;
+  }
+  save(lease) {
+    this.ctx.storage.sql.exec(
+      "INSERT INTO node_lease(id,body) VALUES(1,?) ON CONFLICT(id) DO UPDATE SET body=excluded.body",
+      JSON.stringify(lease),
+    );
+  }
+  remember(id) {
+    const sql = this.ctx.storage.sql,
+      now = this.now();
+    sql.exec("DELETE FROM node_receipts WHERE expires_at<=?", now);
+    const prior = sql
+      .exec("SELECT id FROM node_receipts WHERE id=?", id)
+      .toArray().length;
+    if (
+      prior ||
+      sql.exec("SELECT COUNT(*) AS count FROM node_receipts").one().count < 1024
+    )
+      sql.exec(
+        "INSERT OR REPLACE INTO node_receipts(id,expires_at) VALUES(?,?)",
+        id,
+        now + limits.leaseMs,
+      );
+    else
+      // Bound cancellation tombstones without admitting a delayed cancelled request after eviction.
+      sql.exec(
+        "INSERT INTO node_start_fence(id,expires_at) VALUES(1,?) ON CONFLICT(id) DO UPDATE SET expires_at=MAX(expires_at,excluded.expires_at)",
+        now + limits.leaseMs,
+      );
+  }
+  assertCurrent(lease) {
+    const actual = this.lease();
+    if (
+      !actual ||
+      actual.id !== lease.id ||
+      actual.phase !== "running" ||
+      this.now() >= actual.deadlineAt
+    )
+      throw nodeExecutionError("execution_cancelled");
+  }
+  limits() {
+    // Capacity per slot and UTC day, not a goal-wide model/tool-turn ceiling.
+    return { platform: 500, owner: 50 };
+  }
+  usage(ownerId, serviceId) {
+    if (!id(ownerId) || !id(serviceId))
+      throw nodeExecutionError("invalid_input");
+    return this.ctx.storage.transactionSync(() =>
+      this.metering.snapshot(
+        ownerId,
+        serviceId,
+        this.limits(),
+        this.lease(),
+        this.now(),
+      ),
+    );
+  }
+  async markReady(id) {
+    await this.ctx.storage.transaction(async () => {
+      const lease = this.lease();
+      if (!lease || lease.id !== id || lease.phase !== "running")
+        throw nodeExecutionError("execution_cancelled");
+      lease.readyAt = this.now();
+      this.save(lease);
+    });
+  }
+  prune(now) {
+    const sql = this.ctx.storage.sql;
+    sql.exec("DELETE FROM node_receipts WHERE expires_at<=?", now);
+    sql.exec("DELETE FROM node_start_fence WHERE expires_at<=?", now);
+    // An unresolved lease still owns its accounting row, however old it is.
+    if (!this.lease())
+      sql.exec(
+        "DELETE FROM node_usage WHERE day<?",
+        Math.floor(now / DAY) - 30,
+      );
+  }
+  async scheduleMaintenance() {
+    const lease = this.lease();
+    if (lease) {
+      await this.ctx.storage.setAlarm(lease.nextAt);
+      return;
+    }
+    const sql = this.ctx.storage.sql;
+    const candidates = [
+      sql.exec("SELECT MIN(expires_at) AS at FROM node_receipts").one().at,
+      sql.exec("SELECT MIN(expires_at) AS at FROM node_start_fence").one().at,
+      sql.exec("SELECT (MIN(day)+31)*? AS at FROM node_usage", DAY).one().at,
+    ].filter((at) => at !== null);
+    if (candidates.length)
+      await this.ctx.storage.setAlarm(
+        Math.max(this.now() + 1, Math.min(...candidates)),
+      );
+    else await this.ctx.storage.deleteAlarm();
+  }
+  async execute(request) {
+    try {
+      return { ok: true, value: await this.run(request) };
+    } catch (error) {
+      const codes = [
+        "invalid_input",
+        "input_limit",
+        "execution_capacity",
+        "execution_allowance",
+        "execution_closed",
+        "execution_cancelled",
+        "runtime_unavailable",
+        "startup_timeout",
+        "timeout",
+        "runtime_mismatch",
+        "output_limit",
+        "invalid_reply",
+        "cleanup_unconfirmed",
+      ];
+      return {
+        ok: false,
+        ...(error?.code === "execution_allowance"
+          ? { retryAt: (Math.floor(this.now() / DAY) + 1) * DAY }
+          : error?.code === "execution_capacity"
+            ? { retryAt: this.lease()?.nextAt ?? this.now() + 1000 }
+            : {}),
+        code:
+          error?.status === 504
+            ? "timeout"
+            : codes.includes(error?.code)
+              ? error.code
+              : "execution_failed",
+      };
+    }
+  }
+  async run(request) {
+    if (
+      !request ||
+      !id(request.id) ||
+      request.id.length > 64 ||
+      !id(request.ownerId) ||
+      !id(request.serviceId) ||
+      !Number.isSafeInteger(request.expiresAt) ||
+      request.expiresAt <= this.now() ||
+      request.expiresAt > this.now() + limits.leaseMs ||
+      !["live", "test", "validation", "probe"].includes(request.mode)
+    )
+      throw nodeExecutionError("invalid_input");
+    const invocationBody = JSON.stringify(request.invocation);
+    if (
+      typeof invocationBody !== "string" ||
+      new TextEncoder().encode(invocationBody).length > limits.invocationBytes
+    )
+      throw nodeExecutionError("input_limit");
+    let bundle;
+    try {
+      bundle = parseNodeBundle(request.bundle);
+    } catch {
+      throw nodeExecutionError("invalid_input");
+    }
+    const admittedBytes = new TextEncoder().encode(
+      nodeExecutionBody(bundle, request.invocation),
+    ).length;
+    const now = this.now(),
+      day = Math.floor(now / DAY);
+    // Private callers select the owned snapshot. Guest JSON never supplies admission or lifecycle authority.
+    if (
+      new TextEncoder().encode(JSON.stringify(request)).length >
+      limits.requestBytes
+    )
+      throw nodeExecutionError("input_limit");
+    // Validate configured effects before reserving paid capacity. The adapter reads only this lease.
+    const native = this.containerAdapter(request.id);
+    const lease = await this.ctx.storage.transaction(async () => {
+      const sql = this.ctx.storage.sql;
+      this.prune(now);
+      if (
+        this.lease() ||
+        (sql
+          .exec("SELECT expires_at FROM node_start_fence WHERE id=1")
+          .toArray()[0]?.expires_at ?? 0) > now ||
+        sql.exec("SELECT COUNT(*) AS count FROM node_receipts").one().count >=
+          1024
+      )
+        throw nodeExecutionError("execution_capacity");
+      if (
+        sql
+          .exec("SELECT id FROM node_receipts WHERE id=?", request.id)
+          .toArray().length
+      )
+        throw nodeExecutionError("execution_closed");
+      const counts = this.limits();
+      const used = this.metering.counts(day, request.ownerId);
+      if (used.platform >= counts.platform || used.owner >= counts.owner)
+        throw nodeExecutionError("execution_allowance");
+      const value = {
+        id: request.id,
+        ownerId: request.ownerId,
+        serviceId: request.serviceId,
+        mode: request.mode,
+        day,
+        startedAt: now,
+        readyAt: null,
+        finishedAt: null,
+        resultBytes: 0,
+        deadlineAt: request.expiresAt,
+        phase: "running",
+        cleanupAttempts: 0,
+        nextAt: request.expiresAt,
+      };
+      this.save(value);
+      this.remember(value.id);
+      this.metering.reserve(value, admittedBytes);
+      await this.ctx.storage.setAlarm(value.deadlineAt);
+      return value;
+    });
+    const controller = new AbortController();
+    this.active = { id: lease.id, controller };
+    let reply,
+      failure = null;
+    try {
+      await withAssistantDeadline(
+        async (signal) => {
+          this.assertCurrent(lease);
+          signal.throwIfAborted();
+          const starting = Promise.resolve().then(() => {
+            this.assertCurrent(lease);
+            signal.throwIfAborted();
+            return native.start(
+              lease.id,
+              nodeExecutionBody(bundle, request.invocation),
+              () => this.assertCurrent(lease),
+              signal,
+            );
+          });
+          this.starting = { id: lease.id, promise: starting };
+          try {
+            await starting;
+          } finally {
+            if (this.starting?.id === lease.id) this.starting = null;
+          }
+          this.assertCurrent(lease);
+          signal.throwIfAborted();
+          await native.ready(() => this.assertCurrent(lease), signal);
+          await this.markReady(lease.id);
+          this.assertCurrent(lease);
+          signal.throwIfAborted();
+          reply = await native.execute(
+            bundle,
+            request.invocation,
+            () => this.assertCurrent(lease),
+            signal,
+          );
+          this.assertCurrent(lease);
+          signal.throwIfAborted();
+        },
+        Math.max(1, lease.deadlineAt - this.now()),
+        controller.signal,
+      );
+    } catch (error) {
+      failure = error;
+    } finally {
+      try {
+        await this.beginCleanup(lease.id, reply);
+        // Do not release capacity or a result until whole-guest destruction is confirmed.
+        await this.cleanup(lease.id, true);
+      } finally {
+        if (this.active?.id === lease.id) this.active = null;
+      }
+    }
+    if (this.lease()?.id === lease.id)
+      throw nodeExecutionError("cleanup_unconfirmed");
+    if (controller.signal.aborted)
+      throw nodeExecutionError("execution_cancelled");
+    if (failure) throw failure;
+    return reply;
+  }
+  async beginCleanup(id, reply) {
+    return this.ctx.storage.transaction(async () => {
+      const lease = this.lease();
+      if (!lease || lease.id !== id) return;
+      if (lease.phase === "cleanup") return;
+      lease.finishedAt = this.now();
+      lease.resultBytes =
+        reply === undefined
+          ? 0
+          : new TextEncoder().encode(JSON.stringify(reply)).length;
+      lease.phase = "cleanup";
+      lease.nextAt = this.now();
+      this.save(lease);
+      await this.ctx.storage.setAlarm(lease.nextAt + 10);
+    });
+  }
+  async cleanup(id, waitForOwnedResult = false) {
+    const lease = this.lease();
+    if (!lease || lease.id !== id || lease.phase !== "cleanup") return;
+    if (this.cleaning) {
+      const operation = this.cleaning;
+      // The result path waits for an alarm's same cleanup; cancellation itself remains nonblocking.
+      if (waitForOwnedResult) {
+        try {
+          await withAssistantDeadline(() => operation, limits.cleanupMs);
+        } catch {
+          /* The retained lease still fences capacity and owns cleanup retries. */
+        }
+      }
+      if (this.lease()?.id === id)
+        await this.ctx.storage.setAlarm(this.now() + 1000);
+      return;
+    }
+    // Hold the single cleanup operation through its durable commit, not just the provider promise.
+    const operation = this.destroyAndRelease(id);
+    this.cleaning = operation;
+    void operation
+      .finally(() => {
+        if (this.cleaning === operation) this.cleaning = null;
+      })
+      .catch(() => {});
+    try {
+      await withAssistantDeadline(() => operation, limits.cleanupMs);
+    } catch {
+      await this.ctx.storage.transaction(async () => {
+        const actual = this.lease();
+        if (!actual || actual.id !== id) return;
+        actual.cleanupAttempts++;
+        actual.nextAt =
+          this.now() +
+          Math.min(60000, 1000 * 2 ** Math.min(actual.cleanupAttempts, 6));
+        this.save(actual);
+        await this.ctx.storage.setAlarm(actual.nextAt);
+      });
+    }
+  }
+  async destroyAndRelease(id) {
+    // A pending create can finish after cancellation. It must settle before absence is accepted.
+    // Provider adapters also retain creation intent for recovery after this object restarts.
+    if (this.starting?.id === id) await this.starting.promise.catch(() => {});
+    const provider = this.lease()?.provider;
+    if (provider) await this.containerAdapter(id).destroy(id);
+    await this.ctx.storage.transaction(async () => {
+      const actual = this.lease();
+      if (!actual || actual.id !== id || actual.phase !== "cleanup") return;
+      this.metering.settle(actual, this.now());
+      this.remember(id);
+      this.ctx.storage.sql.exec("DELETE FROM node_lease WHERE id=1");
+      this.prune(this.now());
+      await this.scheduleMaintenance();
+    });
+  }
+  async cancel(id) {
+    if (!id || typeof id !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(id))
+      throw nodeExecutionError("invalid_input");
+    this.remember(id);
+    const lease = this.lease();
+    if (!lease || lease.id !== id) {
+      if (!lease) await this.scheduleMaintenance();
+      return { closed: true };
+    }
+    this.active?.controller.abort();
+    await this.beginCleanup(id);
+    await this.cleanup(id);
+    return { closed: this.lease()?.id !== id };
+  }
+  async alarm() {
+    const lease = this.lease();
+    if (!lease) {
+      await this.ctx.storage.transaction(async () => {
+        this.prune(this.now());
+        await this.scheduleMaintenance();
+      });
+      return;
+    }
+    if (lease.phase === "running" && this.now() < lease.deadlineAt) {
+      await this.ctx.storage.setAlarm(lease.deadlineAt);
+      return;
+    }
+    // A cleanup alarm must not cancel a successful execution already waiting for destruction.
+    if (lease.phase === "running") this.active?.controller.abort();
+    await this.beginCleanup(lease.id);
+    await this.cleanup(lease.id);
+  }
+}

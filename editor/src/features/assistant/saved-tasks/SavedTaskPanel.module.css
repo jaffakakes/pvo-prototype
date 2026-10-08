@@ -87,3 +87,37 @@
   margin: 4px 0 12px;
   white-space: pre-wrap;
 }
+
+.manual {
+  margin-block: 16px;
+}
+.manual h3,
+.manual h4 {
+  margin: 16px 0 8px;
+  font-size: inherit;
+}
+.manual dl,
+.manual ul {
+  margin-block: 8px;
+}
+.manual dt {
+  font-weight: 700;
+}
+.manual dd {
+  margin: 4px 0 12px;
+}
+.manual ul {
+  padding-inline-start: 20px;
+}
+.followUps > li + li {
+  margin-top: 20px;
+}
+.panel button:not(:disabled):hover {
+  background: var(--surface);
+}
+.panel button:focus-visible,
+.panel textarea:focus-visible,
+.panel summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

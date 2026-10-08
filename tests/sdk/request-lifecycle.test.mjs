@@ -3,6 +3,67 @@ import assert from "node:assert/strict";
 import { createPvoRuntime } from "../../packages/pvo-sdk/index.js";
 import { manifest } from "./manifest.fixture.mjs";
 
+test("only trusted host request policy extends a pending service call and cancellation still fences its result", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const owned = {},
+    signals = [];
+  const runtime = createPvoRuntime(manifest(), {
+    requestTimeoutMs: (_request, context) =>
+      context.owned === owned ? 315000 : undefined,
+    request({ signal }) {
+      signals.push(signal);
+      return new Promise(() => {});
+    },
+  });
+  const action = {
+    type: "request",
+    url: "https://creator.example/submit",
+    into: "result",
+    on_error: { type: "set", key: "failed", value: true },
+    timeoutMs: 315000,
+  };
+  const ordinary = runtime.execute(action, { requestTimeoutMs: 315000 });
+  t.mock.timers.tick(15000);
+  await ordinary;
+  assert.equal(
+    signals[0].aborted,
+    true,
+    "source/context fields cannot extend the ordinary deadline",
+  );
+  const controller = new AbortController();
+  const pending = runtime.execute(action, { owned, signal: controller.signal });
+  t.mock.timers.tick(70000);
+  assert.equal(
+    signals[1].aborted,
+    false,
+    "the registered service call can survive startup/upload",
+  );
+  controller.abort();
+  await assert.rejects(pending, { name: "AbortError" });
+  assert.equal(signals[1].aborted, true);
+  assert.equal(runtime.state.result, undefined);
+});
+
+test("invalid host deadline policy is rejected before sending a request", async () => {
+  let calls = 0;
+  for (const milliseconds of [0, 360001, Infinity]) {
+    const runtime = createPvoRuntime(manifest(), {
+      requestTimeoutMs: () => milliseconds,
+      request() {
+        calls++;
+      },
+    });
+    await assert.rejects(
+      runtime.execute(
+        { type: "request", url: "https://creator.example/submit" },
+        { throwOnRequestError: true },
+      ),
+      RangeError,
+    );
+  }
+  assert.equal(calls, 0);
+});
+
 test("request deadline includes response parsing and cancels its host signal", async (t) => {
   t.mock.timers.enable({ apis: ["setTimeout"] });
   let markParsing;
