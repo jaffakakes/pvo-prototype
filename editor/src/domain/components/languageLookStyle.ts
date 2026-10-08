@@ -1,6 +1,8 @@
 import type { PvoLanguageStructure } from "../../../../packages/pvo-language/index.js";
 
-export type StyleProperty = "background" | "color" | "border-color" | "border-radius" | "font-size" | "font-weight" | "text-align";
+export type StyleProperty = "background" | "color" | "border-color" | "border-radius" | "border-width"
+  | "box-shadow" | "font-size" | "font-weight" | "gap" | "letter-spacing" | "line-height"
+  | "padding" | "text-align" | "text-transform";
 export type StyleValues = Partial<Record<StyleProperty, string>>;
 type Declaration = { property: StyleProperty; value: string; start: number; end: number };
 export type StyleRule = { selector: string; declarations: Declaration[]; start: number; end: number };
@@ -39,10 +41,23 @@ export function validStyleValue(property: StyleProperty, value: string): boolean
   if (["background", "color", "border-color"].includes(property)) return validColor(value);
   if (property === "font-weight") return /^(400|500|600|700|800|900)$/.test(value);
   if (property === "text-align") return /^(left|center|right)$/.test(value);
-  if (property === "border-radius" && value === "0") return true;
-  const pixels = /^([\d.]{1,8})px$/.exec(value);
-  return Boolean(pixels && Number.isFinite(Number(pixels[1])) && Number(pixels[1]) >= (property === "font-size" ? 8 : 0)
-    && Number(pixels[1]) <= (property === "font-size" ? 72 : 64));
+  if (property === "text-transform") return /^(none|uppercase|lowercase)$/.test(value);
+  if (property === "line-height")
+    return /^[\d.]{1,8}$/.test(value) && Number.isFinite(Number(value)) && Number(value) >= 1 && Number(value) <= 2.5;
+  const validPixels = (candidate: string, max: number, min = 0) => {
+    const pixels = /^([\d.]{1,8})px$/.exec(candidate);
+    return Boolean(pixels && Number.isFinite(Number(pixels[1])) && Number(pixels[1]) >= min && Number(pixels[1]) <= max);
+  };
+  if (property === "box-shadow") {
+    if (value === "none") return true;
+    const parts = value.split(new RegExp(`${SPACE}+`, "u"));
+    return parts.length >= 4 && validPixels(parts[0], 16) && validPixels(parts[1], 16)
+      && validPixels(parts[2], 24) && validColor(parts.slice(3).join(" "));
+  }
+  if (value === "0" && property !== "font-size") return true;
+  const maximum = property === "font-size" ? 72 : property === "padding" ? 40
+    : property === "gap" ? 32 : property === "border-width" || property === "letter-spacing" ? 8 : 64;
+  return validPixels(value, maximum, property === "font-size" ? 8 : 0);
 }
 
 /** Read the flat visual subset, retaining source ranges for property-only edits.
@@ -71,7 +86,9 @@ export function readLookStyle(source: string, structure: PvoLanguageStructure): 
       const declaration = declarationRule.exec(source.slice(cursor));
       if (!declaration || ++count > 256) return null;
       const property = declaration[1] === "background-color" ? "background" : declaration[1];
-      if (!["background", "color", "border-color", "border-radius", "font-size", "font-weight", "text-align"].includes(property)) return null;
+      if (!["background", "color", "border-color", "border-radius", "border-width", "box-shadow",
+        "font-size", "font-weight", "gap", "letter-spacing", "line-height", "padding",
+        "text-align", "text-transform"].includes(property)) return null;
       const typed = property as StyleProperty;
       const value = declaration[2].replace(trimmedWhitespace, "");
       if (!validStyleValue(typed, value)) return null;

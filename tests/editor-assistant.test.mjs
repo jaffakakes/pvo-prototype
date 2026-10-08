@@ -23,9 +23,9 @@ const source = {
 };
 
 test("unsupported properties are dropped before compilation and malformed values still reach the compiler", () => {
-  const result = supportedAssistantStyle({ ...source, style: "choice { background: #fff; box-shadow: 0 0 4px red; }" });
-  assert.equal(result.source.style, "choice { background: #fff; }");
-  assert.deepEqual(result.skipped, ["“box-shadow” isn't a supported style."]);
+  const result = supportedAssistantStyle({ ...source, style: "choice { background: #fff; box-shadow: none; position: fixed; }" });
+  assert.equal(result.source.style, "choice { background: #fff; box-shadow: none; }");
+  assert.deepEqual(result.skipped, ["“position” isn't a supported style."]);
   const unsafe = { ...source, style: "choice { background: url(https://example.com); }" };
   assert.deepEqual(supportedAssistantStyle(unsafe).source, unsafe, "The Rust compiler owns supported-property value validation");
 });
