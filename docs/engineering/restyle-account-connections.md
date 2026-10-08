@@ -42,7 +42,7 @@ When the configured server supplies private setup, the builder can return `conne
 
 The public text-answer route cannot forge a successful connection answer. A creator can explicitly choose **Continue without this connection**; that saves a choice to reconsider the plan, not account access or success. Missing server setup is displayed as unavailable. A provider without an installed setup adapter remains unavailable even if documentation suggests an API exists.
 
-## Limits and remaining verification
+## Limits and deployment boundaries
 
 There are at most 32 retained connections per account, four per list page, a 4 KiB private request limit, a ten-second deadline per provider GET and a 256 KiB provider response limit. Issue pages contain at most twenty provider records and accept pages 1–1000. These are individual operation/storage bounds, not an overall agent-turn ceiling. GitHub rate-limit responses preserve the connection and ask the creator to retry later. Known token expiry or rejected access marks it as needing reconnection and removes the saved token.
 
@@ -52,4 +52,13 @@ No paid resources or permanent hosting are required for the local acceptance. Th
 
 Full **1,642 tests**, strict editor types, source syntax/dependency/formatting checks and actual desktop/phone/reload/settings lifecycle checks pass. New coverage includes account switching, in-flight disconnect/reconnect fencing, durable account access after task cleanup, response/deadline/credential reflection limits and full-size task replies. Source **`9068ce0` is committed and pushed**. Combined beta **`14e33f0`** passes build, strict types and **49 focused checks**; actual served files and activated service worker verify **`restyle-editor-shell-9ba9e267c3671ed5`**. Older assets are retained and no editing session was forcibly reloaded. See [progress](restyle-cloud-agent-progress.md) for commands, backups and portable continuation details.
 
-**2B.01–04 and 2B.06 are complete; 2B.05 retains the real-account lifecycle gate.** The isolated private form is waiting for the creator to supply a short-lived fine-grained GitHub token. Controlled replies verify the implementation but do not establish real provider authentication. Run the committed local driver from the current source, enter the token only in the private field, and verify its safe report and storage cleanup before completing the remaining checkbox. No live model-quality, private-repository access or generated-Container account invocation is claimed. **2B is not fully complete yet.**
+**All six 2B tasks are complete.** The creator entered a short-lived fine-grained token through the private form. The real GitHub acceptance passed at **2026-10-08T05:37:18.506Z**:
+
+- Authenticated GitHub account `jaffakakes`; read public `jaffakakes/pvo-prototype` through the two installed operations. The issue endpoint returned zero current issue summaries; controlled tests cover nonempty response projection.
+- The connection answer and same task survived a Worker restart. Actual editor/browser reload and subsequent task resumption are covered by the separate controlled acceptance.
+- Advanced only the isolated server clock past GitHub's actual token deadline; expiry removed the saved key and required reconnection. Reconnected with the privately retained test credential, then disconnected and verified later calls were denied.
+- Another authenticated creator could not invoke the connection. The local stored key and exact test storage were removed, and the owned form/Vite/Worker processes were stopped. The creator can also delete the short-lived provider token in GitHub settings; local disconnect does not claim provider-side token deletion.
+
+The real provider driver started before later expected-account-header, deadline and transport hardening. This is composite evidence: actual provider/authentication/lifecycle proof plus the final source's full controlled regression and browser checks. It is not labelled as a live run of the exact final commit. The safe receipt and cleanup are summarized in committed progress, so another agent does not need private logs or a repeated token test to continue.
+
+No live model-quality, private-repository access, provider write or generated-Container account invocation is claimed. **Next: 2C.01**, give a generated service an approved connection reference and operation while keeping enforcement and credentials in trusted platform code.

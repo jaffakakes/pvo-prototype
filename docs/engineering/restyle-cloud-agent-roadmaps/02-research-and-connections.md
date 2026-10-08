@@ -42,7 +42,7 @@ The creator's actual goal determines the plan. Restaurant bookings and the other
 - [x] **2B.02** Build the required secure connection flow: provider sign-in or a private key-entry screen. Save a connection reference in the task.
 - [x] **2B.03** Keep credentials in the server's protected connection store. Exclude them from model context, workspace files, PVO files, diagnostics, and public URLs.
 - [x] **2B.04** Add a controlled server adapter that attaches credentials only for approved destinations and operations. An arbitrary URL in generated code cannot receive them.
-- [ ] **2B.05** Provide connection status, reconnect, and disconnect operations. Check creator ownership and scope on every call.
+- [x] **2B.05** Provide connection status, reconnect, and disconnect operations. Check creator ownership and scope on every call.
 - [x] **2B.06** Continue the saved task after account setup without repeating answered questions or completed deployments.
 
 **Finished when:** connect, reload, resume, expire, reconnect, and revoke an account. Each state has a usable next step, and another creator cannot invoke the connection.
@@ -51,7 +51,7 @@ The creator's actual goal determines the plan. Restaurant bookings and the other
 
 **2B implementation evidence, 8 October 2026:** GitHub read-only repository/issue operations are installed through the private setup and encrypted account store. Fixed provider destinations, ownership/revision checks, secret exclusion, typed saved answers and same-task resume pass controlled provider/Worker and actual editor checks. Full **1,642 tests**, strict types, desktop/phone/reload and account-switch acceptance pass. Source `9068ce0` is pushed; combined beta `14e33f0` passes build/types/49 focused checks and is delivered as `restyle-editor-shell-9ba9e267c3671ed5`, with served files and activated service worker verified. See the [connection contract](../restyle-account-connections.md#verification-checkpoint--8-october-2026) and [progress](../restyle-cloud-agent-progress.md).
 
-**Remaining gate: 2B.05 real-account lifecycle acceptance.** Its controls are implemented and pass controlled tests, but the real private GitHub setup is waiting for the creator's short-lived token. Keep this checkbox and the overall 2B milestone unfinished until authenticated connect/read, restart/resume, expiry, reconnect, other-owner rejection, disconnect and cleanup pass. The public repository does not prove private-repository permission. Static beta delivery does not configure permanent account/task APIs, and generated Container access remains 2C.
+**2B.05 completion evidence, 8 October 2026:** the creator supplied the token through the private form. The actual GitHub proof passed at **05:37:18 UTC**: authenticated account `jaffakakes`, fixed public repository read, issue-list read (zero current summaries), same saved answer/task after Worker restart, expiry from the actual provider deadline using an advanced isolated clock, reconnection, another-owner rejection and local revocation. The encrypted key and exact local test storage are removed; owned form, Vite and Worker processes are stopped. Final source passes the separately recorded controlled hardening/browser checks. **All six 2B tasks are complete.** The public repository does not prove private-repository permission; no GitHub write or generated Container call was tested. Static beta delivery does not configure permanent account/task APIs. Next is **2C.01**.
 
 ## 2C. Let generated services use the connection
 
