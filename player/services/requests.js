@@ -6,6 +6,9 @@ import {
   ServiceSubmissionHttpError,
   retryServiceSubmission,
   recoverServiceSubmissionFields,
+  submissionFinished,
+  backgroundSubmission,
+  serviceReceiptLink,
 } from "../../packages/pvo-assistant/attachments/index.js";
 import { preparePlayerServiceSubmission } from "./connections.js";
 
@@ -25,7 +28,12 @@ export function createPlayerServiceRequests({
         const saved = retryServiceSubmission(value, entry.target);
         return {
           actionId: saved.action.actionId,
-          complete: saved.response !== null,
+          background: backgroundSubmission(saved.target),
+          receipt: backgroundSubmission(saved.target) ? saved.response : null,
+          link: backgroundSubmission(saved.target)
+            ? serviceReceiptLink(saved)
+            : null,
+          complete: submissionFinished(saved),
           fields: recoverServiceSubmissionFields(
             saved,
             entry.target,
@@ -35,6 +43,26 @@ export function createPlayerServiceRequests({
       } finally {
         store.close();
       }
+    },
+    async checkReceipt(entry, signal, expectedActionId, isCurrent) {
+      const store = await openStore();
+      try {
+        const client = createServiceSubmissionClient({
+          store,
+          createId,
+          send: (wire, requestSignal) =>
+            sendServiceSubmission(wire, entry.target, request, requestSignal),
+        });
+        await client.check(
+          entry.slot,
+          entry.target,
+          { signal, isCurrent },
+          expectedActionId,
+        );
+      } finally {
+        store.close();
+      }
+      return this.readRecovery(entry);
     },
     prepare(
       interaction,

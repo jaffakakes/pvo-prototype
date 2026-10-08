@@ -1,47 +1,47 @@
-@import url('./ui/layout.css');
-@import url('./ui/chrome.css');
+@import url("./ui/layout.css");
+@import url("./ui/chrome.css");
 
 @font-face {
-  font-family: 'Peace Sans';
+  font-family: "Peace Sans";
   font-weight: 400;
   font-display: swap;
-  src: url('./fonts/peace-sans.woff2') format('woff2');
+  src: url("./fonts/peace-sans.woff2") format("woff2");
 }
 @font-face {
-  font-family: 'Open Sauce Sans';
+  font-family: "Open Sauce Sans";
   font-weight: 600;
   font-display: swap;
-  src: url('./fonts/open-sauce-600.woff2') format('woff2');
+  src: url("./fonts/open-sauce-600.woff2") format("woff2");
 }
 @font-face {
-  font-family: 'Open Sauce Sans';
+  font-family: "Open Sauce Sans";
   font-weight: 700;
   font-display: swap;
-  src: url('./fonts/open-sauce-700.woff2') format('woff2');
+  src: url("./fonts/open-sauce-700.woff2") format("woff2");
 }
 @font-face {
-  font-family: 'Open Sauce Sans';
+  font-family: "Open Sauce Sans";
   font-weight: 800;
   font-display: swap;
-  src: url('./fonts/open-sauce-800.woff2') format('woff2');
+  src: url("./fonts/open-sauce-800.woff2") format("woff2");
 }
 
 :root {
   color-scheme: light dark;
-  font-family: 'Open Sauce Sans', system-ui, sans-serif;
+  font-family: "Open Sauce Sans", system-ui, sans-serif;
   font-weight: 600;
   color: var(--chrome-text);
   background: #000;
   --chrome-bg: #f2f0e9;
   --chrome-text: #141118;
-  --chrome-sub: rgba(20, 17, 24, .62);
+  --chrome-sub: rgba(20, 17, 24, 0.62);
   --chrome-edge: #141118;
-  --chrome-rule: rgba(20, 17, 24, .2);
+  --chrome-rule: rgba(20, 17, 24, 0.2);
   --badge-bg: #141118;
   --badge-text: #f2f0e9;
   --mark-bg: #f2f0e9;
-  --spinner-bg: rgba(20, 17, 24, .08);
-  --spinner-track: rgba(20, 17, 24, .2);
+  --spinner-bg: rgba(20, 17, 24, 0.08);
+  --spinner-track: rgba(20, 17, 24, 0.2);
   --error-text: #ff7b7b;
   --arrow-text: #ffd23e;
   --retry-bg: #141118;
@@ -54,14 +54,14 @@
   :root {
     --chrome-bg: #1c1b22;
     --chrome-text: #e6e3dc;
-    --chrome-sub: rgba(230, 227, 220, .62);
+    --chrome-sub: rgba(230, 227, 220, 0.62);
     --chrome-edge: #4a4852;
-    --chrome-rule: rgba(230, 227, 220, .18);
+    --chrome-rule: rgba(230, 227, 220, 0.18);
     --badge-bg: #4a4852;
     --badge-text: #e6e3dc;
     --mark-bg: #fff;
-    --spinner-bg: rgba(230, 227, 220, .1);
-    --spinner-track: rgba(230, 227, 220, .25);
+    --spinner-bg: rgba(230, 227, 220, 0.1);
+    --spinner-track: rgba(230, 227, 220, 0.25);
     --error-text: #ff8a8a;
     --arrow-text: #e6e3dc;
     --retry-bg: #e6e3dc;
@@ -69,46 +69,196 @@
   }
 }
 
-* { box-sizing: border-box; }
-[hidden] { display: none !important; }
-html, body { width: 100%; min-width: 320px; height: 100%; margin: 0; overflow: hidden; background: #000; }
-button, input { font: inherit; }
-button, a { -webkit-tap-highlight-color: transparent; }
-button { color: inherit; cursor: pointer; }
-a { color: inherit; text-decoration: none; }
-button:focus-visible, a:focus-visible, label:focus-within { outline: 3px solid var(--chrome-text); outline-offset: 3px; }
-button:disabled { cursor: default; }
-
-.empty-state { width: 100%; height: 100dvh; display: grid; place-items: center; padding: 24px; background: #0b0b0f; }
-.drop-zone { width: min(440px, 100%); min-height: 270px; display: grid; place-items: center; align-content: center; gap: 18px; padding: 28px; border: 2px dashed var(--chrome-edge); border-radius: 22px; color: var(--chrome-text); background: var(--chrome-bg); text-align: center; }
-.drop-zone.is-dragging { outline: 4px solid #00e5a0; outline-offset: 6px; }
-.drop-zone h1 { margin: 0; font: 400 25px/1.2 'Peace Sans', sans-serif; }
-.drop-zone > span { color: var(--chrome-sub); font-size: 14px; }
-.open-button { position: relative; min-height: 48px; display: inline-flex; align-items: center; padding: 9px 17px; border: 2px solid var(--chrome-edge); border-radius: 12px; color: var(--chrome-text); background: var(--chrome-bg); box-shadow: 3px 3px 0 var(--chrome-edge); font-weight: 800; cursor: pointer; }
-.open-button input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-.open-status { margin: 0; font-size: 14px; line-height: 1.5; }
-.open-error-details { width: 100%; text-align: left; font-size: 13px; line-height: 1.5; }
-.open-error-details summary { cursor: pointer; }
-.open-error-details p { max-height: 20dvh; overflow: auto; overflow-wrap: anywhere; margin: 12px 0 0; color: var(--chrome-sub); }
-.create-link { font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
-
-.service-recovery {
-  position: absolute;
-  top: 100%;
-  left: 0;
+* {
+  box-sizing: border-box;
+}
+[hidden] {
+  display: none !important;
+}
+html,
+body {
   width: 100%;
+  min-width: 320px;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #000;
+}
+button,
+input {
+  font: inherit;
+}
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+button {
+  color: inherit;
+  cursor: pointer;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button:focus-visible,
+a:focus-visible,
+label:focus-within {
+  outline: 3px solid var(--chrome-text);
+  outline-offset: 3px;
+}
+button:disabled {
+  cursor: default;
+}
+
+.empty-state {
+  width: 100%;
+  height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #0b0b0f;
+}
+.drop-zone {
+  width: min(440px, 100%);
+  min-height: 270px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 18px;
+  padding: 28px;
+  border: 2px dashed var(--chrome-edge);
+  border-radius: 22px;
+  color: var(--chrome-text);
+  background: var(--chrome-bg);
+  text-align: center;
+}
+.drop-zone.is-dragging {
+  outline: 4px solid #00e5a0;
+  outline-offset: 6px;
+}
+.drop-zone h1 {
+  margin: 0;
+  font:
+    400 25px/1.2 "Peace Sans",
+    sans-serif;
+}
+.drop-zone > span {
+  color: var(--chrome-sub);
+  font-size: 14px;
+}
+.open-button {
+  position: relative;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 17px;
+  border: 2px solid var(--chrome-edge);
+  border-radius: 12px;
+  color: var(--chrome-text);
+  background: var(--chrome-bg);
+  box-shadow: 3px 3px 0 var(--chrome-edge);
+  font-weight: 800;
+  cursor: pointer;
+}
+.open-button input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.open-status {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.open-error-details {
+  width: 100%;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.open-error-details summary {
+  cursor: pointer;
+}
+.open-error-details p {
+  max-height: 20dvh;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  margin: 12px 0 0;
+  color: var(--chrome-sub);
+}
+.create-link {
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.service-recovery-area {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(440px, calc(100% - 24px));
+  max-height: 32%;
+  overflow: auto;
+  z-index: calc(var(--player-chrome-layer, 6) + 1);
+  pointer-events: auto;
+}
+.service-recovery-area:has(> [hidden]):not(:has(> :not([hidden]))) {
+  display: none;
+}
+.service-recovery {
   display: flex;
   justify-content: center;
-  padding-top: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  background: var(--chrome-bg);
+  border-radius: 8px;
+  color: var(--chrome-text);
   pointer-events: auto;
 }
 .service-recovery button {
+  min-height: 44px;
   border: 1px solid #777;
   border-radius: 8px;
   padding: 8px 12px;
-  background: #181818;
-  color: #fff;
-  font: 500 13px/1.3 system-ui, sans-serif;
+  background: var(--chrome-bg);
+  color: var(--chrome-text);
+  font:
+    500 13px/1.3 system-ui,
+    sans-serif;
   cursor: pointer;
 }
-.service-recovery button:disabled { opacity: .6; cursor: wait; }
+.service-recovery button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.service-recovery p {
+  width: 100%;
+  margin: 0;
+  font:
+    13px/1.4 system-ui,
+    sans-serif;
+}
+.service-recovery a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: inherit;
+  font:
+    13px/1.4 system-ui,
+    sans-serif;
+}
+.service-recovery + .service-recovery {
+  margin-top: 8px;
+}
+.service-recovery :is(button, a):focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+.service-recovery [hidden] {
+  display: none;
+}

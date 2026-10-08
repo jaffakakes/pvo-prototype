@@ -1,3 +1,4 @@
+import { componentAction } from "../actions/selection.js";
 import { mountServiceRecovery } from "../services/recovery-view.js";
 import { drawText } from "../../packages/pvo-text-runtime/index.js";
 import { mountCustomComponent } from "../../packages/pvo-code-runtime/index.js";
@@ -13,6 +14,7 @@ export function createOverlayRenderer({ session, refs, adapters, services }) {
   let sceneKey = null;
   function destroyCustomOverlays() {
     entries.forEach((entry) => {
+      entry.recovery?.dispose();
       entry.motion?.dispose();
       entry.position.remove();
     });
@@ -48,6 +50,7 @@ export function createOverlayRenderer({ session, refs, adapters, services }) {
     const activeIds = new Set(visible.map((component) => component.id));
     for (const [id, entry] of entries) {
       if (activeIds.has(id)) continue;
+      entry.recovery?.dispose();
       entry.motion?.dispose();
       session.mountedCustom.get(id)?.destroy();
       session.mountedCustom.delete(id);
@@ -217,6 +220,7 @@ export function createOverlayRenderer({ session, refs, adapters, services }) {
       if (services)
         entry.recovery = mountServiceRecovery({
           position,
+          surface: refs.frame,
           entry: session.serviceConnections.get(component.id),
           services,
           isCurrent: () =>
@@ -224,6 +228,15 @@ export function createOverlayRenderer({ session, refs, adapters, services }) {
             entries.get(component.id)?.position === position,
           recover: () => adapters.recoverServiceSubmission(component.id),
           setStatus: adapters.setStatus,
+          onLayout: () => adapters.updateLayout?.(),
+          onReceipt: (receipt) => {
+            const connection = session.serviceConnections.get(component.id);
+            const action = componentAction(component, connection.index);
+            if (action?.into && session.actionRuntime)
+              session.actionRuntime.setState(action.into, receipt, {
+                componentId: component.id,
+              });
+          },
         });
     });
   }

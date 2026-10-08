@@ -51,18 +51,24 @@ const dataDescription = {
     }),
   ],
 };
+const operationFields = {
+  name: string(64),
+  description: string(1024),
+  audience: { enum: ["public", "creator"] },
+  access: { enum: ["read", "write"] },
+  input: data,
+  result: data,
+};
 const ordinaryAgreement = object({
   description: string(2048),
   state: object({ schema: data, initial: {} }),
   operations: array(
-    object({
-      name: string(64),
-      description: string(1024),
-      audience: { enum: ["public", "creator"] },
-      access: { enum: ["read", "write"] },
-      input: data,
-      result: data,
-    }),
+    {
+      anyOf: [
+        object(operationFields),
+        object({ ...operationFields, delivery: { const: "background" } }),
+      ],
+    },
     service.operations,
     1,
   ),

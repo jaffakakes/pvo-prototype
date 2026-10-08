@@ -66,7 +66,7 @@ async function request(
           : response.status === 409
             ? "Access or saved progress changed. Refresh, then reconnect or continue."
             : response.status === 400
-              ? "Check the repository name and fine-grained token."
+              ? "Check the account details and private key."
               : response.status === 429
                 ? "The connection limit was reached. Try again later."
                 : "Account setup could not finish. Refresh to check whether it was saved, then retry.",

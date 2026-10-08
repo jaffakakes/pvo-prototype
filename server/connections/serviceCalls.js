@@ -11,7 +11,7 @@ import {
 import { canonicalJson } from "../../packages/pvo-assistant/services/json.js";
 import { contentDigest } from "../contentDigest.js";
 import { HttpError } from "../http.js";
-import { GitHubAccessError } from "./providers/github.js";
+import { ConnectionAccessError } from "./accessError.js";
 import { AccountRequestStore } from "./requestStore.js";
 
 const pending = () =>
@@ -27,7 +27,8 @@ function permitted(manager, input) {
   manager.expire();
   const current = manager.get(input.connectionId),
     adapter = parseConnectionAdapter(input.adapter);
-  if (current.connection.status !== "connected") throw new GitHubAccessError();
+  if (current.connection.status !== "connected")
+    throw new ConnectionAccessError();
   if (
     current.connection.provider !== adapter.provider ||
     !current.connection.permissions.includes(adapter.permission)
@@ -91,7 +92,7 @@ export async function accountServiceCommand(coordinator, ownerId, kind, input) {
       return { result };
     } catch (error) {
       if (
-        error instanceof GitHubAccessError &&
+        error instanceof ConnectionAccessError &&
         manager.catalog.get(current.id)?.revision === current.revision
       )
         manager.invalidate(current, "expired");
@@ -124,6 +125,12 @@ export async function accountServiceCommand(coordinator, ownerId, kind, input) {
     );
   if (receipt?.status === "completed") return { result: receipt.result };
   const inspecting = Boolean(receipt);
+  if (
+    inspecting &&
+    adapter.provider === "resend" &&
+    receipt.providerIdentity !== current.details.accountId
+  )
+    throw pending();
   if (!receipt) {
     receipt = {
       id: key,
@@ -132,6 +139,7 @@ export async function accountServiceCommand(coordinator, ownerId, kind, input) {
       index: input.index,
       connectionId: input.connectionId,
       fingerprint,
+      providerIdentity: current.details.accountId,
       adapter,
       input: input.input,
       status: "dispatching",
@@ -151,6 +159,7 @@ export async function accountServiceCommand(coordinator, ownerId, kind, input) {
           input.input,
           key,
           current.details.login,
+          { createdAt: receipt.createdAt, now: coordinator.now() },
         )
       : await provider.invoke(
           current.details.scope,
@@ -192,7 +201,7 @@ export async function accountServiceCommand(coordinator, ownerId, kind, input) {
         checkedAt: coordinator.now(),
       });
     if (
-      error instanceof GitHubAccessError &&
+      error instanceof ConnectionAccessError &&
       manager.catalog.get(current.id)?.revision === current.revision
     )
       manager.invalidate(current, "expired");

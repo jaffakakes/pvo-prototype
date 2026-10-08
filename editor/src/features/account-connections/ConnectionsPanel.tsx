@@ -1,3 +1,5 @@
+import { connectionScopeKey } from "../../../../packages/pvo-assistant/connections/index.js";
+import { ResendConnectionForm } from "./ResendConnectionForm";
 import { useState } from "react";
 import {
   type TaskRecord,
@@ -25,6 +27,7 @@ export function ConnectionsPanel({ taskSetup }: { taskSetup?: TaskSetup }) {
   const [form, setForm] = useState<{
     id: string;
     existing: AccountConnection | null;
+    provider: "github" | "resend";
   } | null>(null);
   const pending = taskSetup?.question.connection;
   async function attach(id: string, signal: AbortSignal) {
@@ -66,13 +69,20 @@ export function ConnectionsPanel({ taskSetup }: { taskSetup?: TaskSetup }) {
       <ul className={styles.list}>
         {session.items.map((item) => (
           <li key={item.connection.id}>
-            <strong>{item.scope.repository}</strong>
+            <strong>{item.connection.name}</strong>
+            {item.scope.provider === "resend" && (
+              <p>
+                From {item.scope.from} · To {item.scope.recipient}
+              </p>
+            )}
             <p>
               {item.account} ·{" "}
               {item.connection.status === "connected"
-                ? item.connection.permissions.includes("issues:write")
-                  ? "Connected · issue creation allowed"
-                  : "Connected · read only"
+                ? item.scope.provider === "resend"
+                  ? "Connected · email sending allowed"
+                  : item.connection.permissions.includes("issues:write")
+                    ? "Connected · issue creation allowed"
+                    : "Connected · read only"
                 : item.connection.status === "expired"
                   ? "Access needs attention · reconnect"
                   : "Disconnected"}
@@ -83,9 +93,12 @@ export function ConnectionsPanel({ taskSetup }: { taskSetup?: TaskSetup }) {
               </p>
             )}
             <div className={styles.actions}>
-              {pending?.repository.toLowerCase() === item.scope.repository &&
+              {pending &&
+                connectionScopeKey(pending) ===
+                  connectionScopeKey(item.scope) &&
                 item.connection.status === "connected" &&
-                (pending.access !== "issues_write" ||
+                (pending.provider !== "github" ||
+                  pending.access !== "issues_write" ||
                   item.connection.permissions.includes("issues:write")) && (
                   <button
                     disabled={session.busy}
@@ -122,7 +135,11 @@ export function ConnectionsPanel({ taskSetup }: { taskSetup?: TaskSetup }) {
                 type="button"
                 disabled={session.busy || !session.available}
                 onClick={() =>
-                  setForm({ id: item.connection.id, existing: item })
+                  setForm({
+                    id: item.connection.id,
+                    existing: item,
+                    provider: item.scope.provider,
+                  })
                 }
               >
                 Reconnect
@@ -150,45 +167,87 @@ export function ConnectionsPanel({ taskSetup }: { taskSetup?: TaskSetup }) {
           </li>
         ))}
       </ul>
-      {form && (
-        <ConnectionForm
-          key={form.id}
-          setup={form.existing?.scope ?? pending ?? null}
-          busy={session.busy}
-          continuing={Boolean(
-            pending &&
-            (!form.existing ||
-              form.existing.scope.repository ===
-                pending.repository.toLowerCase()),
-          )}
-          cancel={() => setForm(null)}
-          submit={(setup, token) => {
-            void session.run(async (signal) => {
-              const saved = await connectAccount(
-                session.ownerId!,
-                form.id,
-                form.existing?.connection.revision ?? 0,
-                setup,
-                token,
-                signal,
-              );
-              if (!session.current()) return;
-              setForm(null);
-              await session.reload();
-              if (pending?.repository.toLowerCase() === saved.scope.repository)
-                await attach(saved.connection.id, signal);
-            });
-          }}
-        />
-      )}
+      {form &&
+        (() => {
+          const setup = form.existing?.scope ?? pending ?? null;
+          const props = {
+            key: form.id,
+            busy: session.busy,
+            continuing: Boolean(
+              pending &&
+              (!form.existing ||
+                connectionScopeKey(form.existing.scope) ===
+                  connectionScopeKey(pending)),
+            ),
+            cancel: () => setForm(null),
+            submit: (
+              scope: import("../../../../packages/pvo-assistant/connections/index.js").ConnectionSetup,
+              token: string,
+            ) => {
+              void session.run(async (signal) => {
+                const saved = await connectAccount(
+                  session.ownerId!,
+                  form.id,
+                  form.existing?.connection.revision ?? 0,
+                  scope,
+                  token,
+                  signal,
+                );
+                if (!session.current()) return;
+                setForm(null);
+                await session.reload();
+                if (
+                  pending &&
+                  connectionScopeKey(pending) ===
+                    connectionScopeKey(saved.scope)
+                )
+                  await attach(saved.connection.id, signal);
+              });
+            },
+          };
+          return form.provider === "resend" ? (
+            <ResendConnectionForm
+              {...props}
+              setup={setup?.provider === "resend" ? setup : null}
+            />
+          ) : (
+            <ConnectionForm
+              {...props}
+              setup={setup?.provider === "github" ? setup : null}
+            />
+          );
+        })()}
       <div className={styles.actions}>
         {!form && (
           <button
             type="button"
             disabled={session.busy || !session.available}
-            onClick={() => setForm({ id: crypto.randomUUID(), existing: null })}
+            onClick={() =>
+              setForm({
+                id: crypto.randomUUID(),
+                existing: null,
+                provider: pending?.provider ?? "github",
+              })
+            }
           >
-            Connect GitHub
+            {pending?.provider === "resend"
+              ? "Connect email sender"
+              : "Connect GitHub"}
+          </button>
+        )}
+        {!form && !pending && (
+          <button
+            type="button"
+            disabled={session.busy || !session.available}
+            onClick={() =>
+              setForm({
+                id: crypto.randomUUID(),
+                existing: null,
+                provider: "resend",
+              })
+            }
+          >
+            Connect email sender
           </button>
         )}
         <button
@@ -223,7 +282,7 @@ export function ConnectionsPanel({ taskSetup }: { taskSetup?: TaskSetup }) {
       </div>
       <p>
         Disconnect removes Restyle’s saved key and blocks future calls. You can
-        also delete the token in GitHub’s settings.
+        also revoke the key in the provider’s settings.
       </p>
     </section>
   );

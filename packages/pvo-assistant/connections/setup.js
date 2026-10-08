@@ -7,6 +7,23 @@ export const GITHUB_OPERATIONS = Object.freeze([
 
 /** Scope is chosen by the creator and stored by the platform, never an invocation URL. */
 export function parseConnectionSetup(value) {
+  if (value?.provider === "resend") {
+    object(value, ["provider", "from", "recipient"], "Email connection");
+    for (const field of ["from", "recipient"]) {
+      text(value[field], 254, field);
+      requireTask(
+        /^[A-Za-z0-9.!#$%&'*+\/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(
+          value[field],
+        ),
+        "Use an email address without a display name.",
+      );
+    }
+    return {
+      provider: "resend",
+      from: value.from.toLowerCase(),
+      recipient: value.recipient.toLowerCase(),
+    };
+  }
   object(
     value,
     [
@@ -53,4 +70,26 @@ export function parseConnectionInvocation(value) {
     integer(value.input.page, 1000, "Issue page", 1);
   }
   return structuredClone(value);
+}
+
+/** Fixed creator-chosen sender and recipient; generated code supplies only bounded subject and text. */
+export function connectionScopeKey(value) {
+  const scope = parseConnectionSetup(value);
+  return scope.provider === "github"
+    ? `github:${scope.repository}`
+    : `resend:${scope.from}:${scope.recipient}`;
+}
+export function parseResendCredential(value) {
+  const credential = JSON.parse(value);
+  object(credential, ["key", "webhookSecret"], "Private email credential");
+  requireTask(
+    /^re_[A-Za-z0-9_-]{20,1000}$/.test(credential.key),
+    "Invalid Resend key.",
+  );
+  requireTask(
+    credential.webhookSecret === "" ||
+      /^whsec_[A-Za-z0-9+/=]{16,200}$/.test(credential.webhookSecret),
+    "Invalid webhook secret.",
+  );
+  return credential;
 }

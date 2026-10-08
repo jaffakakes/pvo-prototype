@@ -30,6 +30,9 @@ export {
   retryServiceSubmission,
   completeServiceSubmission,
   serviceSubmissionRequest,
+  backgroundSubmission,
+  submissionFinished,
+  serviceJobReceiptRequest,
 } from "./submissions.js";
 
 export { createServiceSubmissionClient } from "./submissionClient.js";
@@ -47,6 +50,7 @@ export {
 export {
   ServiceSubmissionHttpError,
   sendServiceSubmission,
+  readServiceReceipt,
 } from "./transport.js";
 
 export { recoverServiceSubmissionFields } from "./recovery.js";
@@ -54,3 +58,6 @@ export {
   SERVICE_ATTACHMENT_BYTES,
   parsePublishedServiceOperations,
 } from "./published.js";
+
+export { watchServiceReceipt } from "./receiptWatch.js";
+export { parseReceiptLink, serviceReceiptLink } from "./receiptLink.js";

@@ -24,7 +24,7 @@ export async function authoringInput(coordinator, task) {
       manualPlans: task.manualPlans,
       connectionSetup: connectionSetupAvailable(coordinator.env)
         ? {
-            provider: "github",
+            providers: ["github", "resend"],
             operations: ["github_repository_read", "github_issues_list"],
             credentialEntry: "private_form",
             generatedServiceAccess: true,
@@ -32,6 +32,7 @@ export async function authoringInput(coordinator, task) {
               "repository:read",
               "issues:read",
               "issues:write",
+              "email:send",
             ],
           }
         : null,

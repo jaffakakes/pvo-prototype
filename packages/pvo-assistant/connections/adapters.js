@@ -18,11 +18,25 @@ export const ADAPTER_LIMITS = Object.freeze({
   inputBytes: 8192,
   resultBytes: 16384,
 });
-const permissions = ["repository:read", "issues:read", "issues:write"];
+const permissions = [
+  "repository:read",
+  "issues:read",
+  "issues:write",
+  "email:send",
+];
 
 /** Installed authentication policy, separate from a generated adapter's data transformations. */
 export function adapterPolicy(adapter) {
   const path = adapter.path;
+  if (adapter.provider === "resend") {
+    if (adapter.method === "POST" && path.length === 1 && path[0] === "emails")
+      return {
+        permission: "email:send",
+        effect: "write",
+        recovery: "resend_idempotency",
+      };
+    throw new Error("This email operation is not installed.");
+  }
   if (adapter.method === "GET" && path.length === 0)
     return { permission: "repository:read", effect: "read", recovery: "none" };
   const root = path[0];
@@ -67,15 +81,20 @@ export function parseConnectionAdapter(value) {
   );
   serviceName(value.name, "Adapter name");
   text(value.description, 1024, "Adapter description");
-  choice(value.provider, ["github"], "Installed authentication provider");
+  choice(
+    value.provider,
+    ["github", "resend"],
+    "Installed authentication provider",
+  );
   choice(value.method, ["GET", "POST"], "Provider method");
   choice(value.completion, ["synchronous"], "Completion lifecycle");
   choice(value.permission, permissions, "Adapter permission");
   text(value.documentation, 2048, "Adapter documentation");
   requireTask(
-    /^https:\/\/docs\.github\.com\/[A-Za-z0-9_/#?=.&%+-]+$/.test(
-      value.documentation,
-    ),
+    (value.provider === "github"
+      ? /^https:\/\/docs\.github\.com\/[A-Za-z0-9_/#?=.&%+-]+$/
+      : /^https:\/\/resend\.com\/docs\/[A-Za-z0-9_/#?=.&%+-]+$/
+    ).test(value.documentation),
     "Cite the installed provider's official documentation.",
   );
   const budget = { nodes: 0 };
@@ -139,15 +158,30 @@ export function parseConnectionAdapter(value) {
     requireTask(
       value.query.length === 0 &&
         value.input.fields.length === 2 &&
-        ["title", "body"].every((name) => fields.get(name)?.type === "string"),
-      "Issue creation requires only bounded title and body fields.",
+        (value.provider === "resend"
+          ? ["subject", "text"]
+          : ["title", "body"]
+        ).every((name) => fields.get(name)?.type === "string"),
+      "The write requires exactly the installed provider's bounded text fields.",
     );
     requireTask(
-      fields.get("title").maxBytes <= 256 &&
-        fields.get("body").maxBytes <= 4096,
-      "Issue fields exceed the installed write policy.",
+      fields.get(value.provider === "resend" ? "subject" : "title").maxBytes <=
+        256 &&
+        fields.get(value.provider === "resend" ? "text" : "body").maxBytes <=
+          4096,
+      "The text fields exceed the installed write policy.",
     );
   }
+  if (value.provider === "resend")
+    requireTask(
+      value.responsePath.length === 0 &&
+        value.result.type === "object" &&
+        value.result.fields.length === 1 &&
+        value.result.fields[0].name === "id" &&
+        value.result.fields[0].schema.type === "string" &&
+        value.result.fields[0].schema.maxBytes === 36,
+      "Email sends must retain the provider's exact receipt ID.",
+    );
   return structuredClone(value);
 }
 

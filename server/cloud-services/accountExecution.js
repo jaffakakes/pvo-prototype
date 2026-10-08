@@ -1,3 +1,4 @@
+import { recordJobProvider } from "./jobs/providerUpdates.js";
 import { canonicalJson } from "../../packages/pvo-assistant/services/json.js";
 import { serviceCallError } from "../../packages/pvo-assistant/hosting/index.js";
 import { executeConnectedOperation } from "./connectedExecution.js";
@@ -65,7 +66,17 @@ export async function executeHostedConnections(
                   "action_conflict",
                   "Generated code changed an already saved outside request.",
                 );
-              if (previous.status === "completed") return previous.result;
+              if (previous.status === "completed") {
+                recordJobProvider(
+                  host,
+                  action.actionId,
+                  binding.connectionId,
+                  index,
+                  binding.adapter.provider,
+                  previous.result,
+                );
+                return previous.result;
+              }
             }
             if (!previous) {
               if (binding.adapter.method === "POST")
@@ -91,6 +102,14 @@ export async function executeHostedConnections(
                 "state_changed",
                 "The Container removed this pending action.",
               );
+            recordJobProvider(
+              host,
+              action.actionId,
+              binding.connectionId,
+              index,
+              binding.adapter.provider,
+              response.result,
+            );
             attempt.trace[index] = {
               request,
               result: response.result,

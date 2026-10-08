@@ -6,7 +6,7 @@ import {
 import { HttpError } from "../../http.js";
 
 import { githubTransport } from "./githubTransport.js";
-export { GitHubAccessError } from "./githubErrors.js";
+export { ConnectionAccessError } from "../accessError.js";
 
 /** Account verification and the initial installed read operations. */
 export function githubAdapter(fetcher = fetch, timeoutMs = 10000) {

@@ -281,12 +281,14 @@ export type ServiceAccountAccess = {
     name: string;
     operations: string[];
     description: string;
-    permission: "repository:read" | "issues:read" | "issues:write";
+    permission:
+      "repository:read" | "issues:read" | "issues:write" | "email:send";
     method: "GET" | "POST";
     documentation: string;
     repository: string | null;
     account: string | null;
     error: string | null;
+    callbackPath: string | null;
   }>;
 };
 export function parseServiceAccountAccess(value: unknown): ServiceAccountAccess;

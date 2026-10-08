@@ -1,5 +1,9 @@
+import { accountServiceEvent } from "./serviceEvents.js";
 import { accountServiceCommand } from "./serviceCalls.js";
-import { GITHUB_OPERATIONS } from "../../packages/pvo-assistant/connections/index.js";
+import {
+  GITHUB_OPERATIONS,
+  connectionScopeKey,
+} from "../../packages/pvo-assistant/connections/index.js";
 import { HttpError } from "../http.js";
 import { taskId } from "../assistant/tasks/input.js";
 import { connectionCommand } from "./input.js";
@@ -8,7 +12,8 @@ import {
   openCredential,
   connectionSetupAvailable,
 } from "./credentials.js";
-import { githubAdapter, GitHubAccessError } from "./providers/github.js";
+import { ConnectionAccessError } from "./accessError.js";
+import { installedConnectionProvider } from "./providers/installed.js";
 import { ConnectionStore } from "./store.js";
 
 /** Coordinates account scope, credential lifetime, and CAS fences around provider reads. */
@@ -80,7 +85,7 @@ export class AccountConnections {
   }
   async secret(ownerId, current) {
     if (current.connection.status !== "connected" || !current.credential)
-      throw new GitHubAccessError();
+      throw new ConnectionAccessError();
     return openCredential(
       this.coordinator.env,
       ownerId,
@@ -153,7 +158,7 @@ export class AccountConnections {
       }
       const verified = await adapter.verify(current.details.scope, token);
       if (verified.accountId !== current.details.accountId)
-        throw new GitHubAccessError();
+        throw new ConnectionAccessError();
       this.expire();
       this.same(input.id, current.connection.revision);
       this.store.save(
@@ -165,7 +170,7 @@ export class AccountConnections {
       return this.public(this.get(current.id));
     } catch (error) {
       if (
-        error instanceof GitHubAccessError &&
+        error instanceof ConnectionAccessError &&
         this.catalog.get(current.id)?.revision === current.connection.revision
       )
         this.invalidate(current, "expired");
@@ -180,21 +185,29 @@ export class AccountConnections {
         "This connection changed. Refresh its status before reconnecting.",
       );
     const prior = previous ? this.get(input.id) : null;
-    if (prior && prior.details.scope.repository !== input.setup.repository)
+    if (
+      prior &&
+      connectionScopeKey(prior.details.scope) !==
+        connectionScopeKey(input.setup)
+    )
       throw new HttpError(
         409,
-        "Reconnect the same repository, or create a separate connection.",
+        "Reconnect the same connection scope, or create a separate connection.",
       );
     const verified = await this.coordinator
       .connectionProvider()
       .verify(input.setup, input.token);
-    if (prior && prior.details.accountId !== verified.accountId)
+    if (
+      prior &&
+      input.setup.provider === "github" &&
+      prior.details.accountId !== verified.accountId
+    )
       throw new HttpError(409, "Reconnect with the same GitHub account.");
     if (
       verified.expiresAt !== null &&
       verified.expiresAt <= this.coordinator.now()
     )
-      throw new GitHubAccessError();
+      throw new ConnectionAccessError();
     const revision = input.expectedRevision + 1;
     const credential = await protectCredential(
       this.coordinator.env,
@@ -214,16 +227,27 @@ export class AccountConnections {
       this.catalog.save(
         {
           id: input.id,
-          name: `GitHub · ${input.setup.repository}`,
-          provider: "github",
+          name:
+            input.setup.provider === "github"
+              ? `GitHub · ${input.setup.repository}`
+              : `Email · ${input.setup.from}`,
+          provider: input.setup.provider,
           status: "connected",
           revision,
-          permissions: [
-            "repository:read",
-            "issues:read",
-            ...(input.setup.access === "issues_write" ? ["issues:write"] : []),
-          ],
-          operations: structuredClone(GITHUB_OPERATIONS),
+          permissions:
+            input.setup.provider === "resend"
+              ? ["email:send"]
+              : [
+                  "repository:read",
+                  "issues:read",
+                  ...(input.setup.access === "issues_write"
+                    ? ["issues:write"]
+                    : []),
+                ],
+          operations:
+            input.setup.provider === "github"
+              ? structuredClone(GITHUB_OPERATIONS)
+              : [],
         },
         input.expectedRevision,
       );
@@ -238,7 +262,7 @@ export class AccountConnections {
   }
   async attach(ownerId, current, input) {
     if (current.connection.status !== "connected")
-      throw new GitHubAccessError();
+      throw new ConnectionAccessError();
     return this.coordinator.transaction(() => {
       this.expire();
       this.same(current.id, current.connection.revision);
@@ -251,9 +275,10 @@ export class AccountConnections {
         this.coordinator.repository.questions.get(task.id, input.questionId);
       if (
         !question?.connection ||
-        question.connection.repository !== current.details.scope.repository ||
-        question.connection.provider !== "github" ||
-        (question.connection.access === "issues_write" &&
+        connectionScopeKey(question.connection) !==
+          connectionScopeKey(current.details.scope) ||
+        (question.connection.provider === "github" &&
+          question.connection.access === "issues_write" &&
           !current.connection.permissions.includes("issues:write"))
       )
         throw new HttpError(
@@ -268,7 +293,7 @@ export class AccountConnections {
           questionId: question.id,
           questionRevision: 0,
           operationId: input.operationId,
-          value: `Connected GitHub repository ${current.details.scope.repository}.`,
+          value: `Connected ${current.connection.name}.`,
           connectionId: current.id,
         },
         {
@@ -291,20 +316,27 @@ export async function manageAccountConnections(
   try {
     return {
       ok: true,
-      value: ["service_check", "service_invoke", "service_forget"].includes(
-        operation.kind,
-      )
-        ? await accountServiceCommand(
+      value: ["service_status", "service_event"].includes(operation.kind)
+        ? await accountServiceEvent(
             coordinator,
             ownerId,
             operation.kind,
             operation.input,
           )
-        : await coordinator.accountConnections.execute(
-            ownerId,
-            operation.kind,
-            operation.input,
-          ),
+        : ["service_check", "service_invoke", "service_forget"].includes(
+              operation.kind,
+            )
+          ? await accountServiceCommand(
+              coordinator,
+              ownerId,
+              operation.kind,
+              operation.input,
+            )
+          : await coordinator.accountConnections.execute(
+              ownerId,
+              operation.kind,
+              operation.input,
+            ),
     };
   } catch (error) {
     return {
@@ -317,4 +349,4 @@ export async function manageAccountConnections(
     };
   }
 }
-export const installedConnectionProvider = () => githubAdapter();
+export { installedConnectionProvider };

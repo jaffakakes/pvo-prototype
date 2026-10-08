@@ -43,6 +43,21 @@ export async function controlHostedService(host, serviceId, ownerId, value) {
         summary: inspectHostedService(host, serviceId, ownerId),
       };
     const next = planServiceControl(service, control, host.now());
+    const unfinishedJobs = host.jobs
+      .all()
+      .filter((job) =>
+        ["received", "pending", "needs_checking"].includes(job.status),
+      );
+    if (
+      (control.kind === "delete" ||
+        (control.kind === "activate" &&
+          control.releaseId !== service.liveReleaseId)) &&
+      unfinishedJobs.length
+    )
+      throw serviceCallError(
+        "needs_checking",
+        "Finish or cancel saved background work before deleting or changing this Container version. Pause holds queued work.",
+      );
     if (
       control.kind === "delete" &&
       host.accounts.pending("live")?.writeStarted

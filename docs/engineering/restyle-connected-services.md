@@ -8,7 +8,7 @@
 
 A Container asks for an action by name. Restyle checks its owner, published version, approved account and operation before making the call. Restyle returns only checked data. Normal Try and independent tests use saved example replies and cannot perform real provider actions.
 
-Before a real write, Restyle saves what it intends to do. If the provider's reply is lost, the saved action becomes “needs checking.” Checking an existing action cannot silently send it again. Operations requiring callbacks, background polling or prolonged waiting remain unavailable until Roadmap 3.
+Before a real write, Restyle saves what it intends to do. If the provider's reply is lost, the saved action becomes “needs checking.” Checking an existing action cannot silently send it again. The [Roadmap 3 background contract](restyle-background-work.md) extends this path with saved viewer jobs, Resend email delivery evidence, bounded checks and schedules. The original 2C proof and its limits below remain historical evidence.
 
 ## Implementation plan — 8 October 2026
 

@@ -6,6 +6,9 @@ import {
   retryServiceSubmission,
   completeServiceSubmission,
   serviceSubmissionRequest,
+  backgroundSubmission,
+  submissionFinished,
+  serviceJobReceiptRequest,
 } from "./submissions.js";
 
 function failure(code, message) {
@@ -21,15 +24,45 @@ function assertCurrent(context) {
 }
 
 /** Store updates must be atomic across clients, and resolve only after their transaction commits. */
-export function createServiceSubmissionClient({ store, createId, send }) {
-  async function dispatch(slot, saved, context) {
+export function createServiceSubmissionClient({
+  store,
+  createId,
+  createReceiptKey = () =>
+    Array.from(crypto.getRandomValues(new Uint8Array(32)), (byte) =>
+      byte.toString(16).padStart(2, "0"),
+    ).join(""),
+  send,
+}) {
+  async function dispatch(slot, saved, context, checking = false) {
     assertCurrent(context);
-    if (saved.response !== null) return saved;
+    if (
+      submissionFinished(saved) ||
+      (saved.response !== null && !backgroundSubmission(saved.target))
+    )
+      return saved;
     // An exception, timeout or invalid response leaves the already persisted intent available for retry.
-    const response = await send(
-      serviceSubmissionRequest(saved),
+    let response = await send(
+      checking
+        ? serviceJobReceiptRequest(saved)
+        : serviceSubmissionRequest(saved),
       context.signal,
     );
+    if (
+      saved.target.mode === "try" &&
+      saved.target.operation.delivery === "background"
+    ) {
+      response = {
+        actionId: response.actionId,
+        job: {
+          status: "confirmed",
+          label: "Test completed; no live message sent",
+          updatedAt: Date.now(),
+          result: response.result,
+          expiresAt: null,
+          nextCheckAt: null,
+        },
+      };
+    }
     const completed = await store.update(slot, (value) => {
       if (value === null)
         throw failure(
@@ -44,6 +77,12 @@ export function createServiceSubmissionClient({ store, createId, send }) {
         );
       }
       // Bookkeeping may settle its own record after cancellation, but cannot overwrite another action.
+      if (
+        current.target.operation.delivery === "background" &&
+        current.response !== null &&
+        current.response.job.updatedAt > response.job.updatedAt
+      )
+        return current;
       return completeServiceSubmission(current, response);
     });
     assertCurrent(context);
@@ -51,6 +90,19 @@ export function createServiceSubmissionClient({ store, createId, send }) {
   }
 
   return {
+    async check(slot, target, context, expectedActionId) {
+      assertCurrent(context);
+      const value = await store.read(slot);
+      if (value === null)
+        throw failure("submission_missing", "There is no saved receipt.");
+      const saved = retryServiceSubmission(value, target);
+      if (
+        expectedActionId !== undefined &&
+        expectedActionId !== saved.action.actionId
+      )
+        throw failure("submission_changed", "A newer submission is saved.");
+      return dispatch(slot, saved, context, true);
+    },
     async submit(slot, target, input, context) {
       assertCurrent(context);
       const captured = snapshotSubmissionInput(target, input);
@@ -60,11 +112,12 @@ export function createServiceSubmissionClient({ store, createId, send }) {
         assertCurrent(context);
         if (value !== null) {
           const previous = retryServiceSubmission(value, target);
-          if (previous.response === null) {
+          if (!submissionFinished(previous)) {
             const candidate = prepareServiceSubmission(
               target,
               input,
               previous.action.actionId,
+              previous.receiptKey,
             );
             if (
               canonicalJson(candidate.action) !== canonicalJson(previous.action)
@@ -76,7 +129,12 @@ export function createServiceSubmissionClient({ store, createId, send }) {
             }
             return previous;
           }
-          const next = prepareServiceSubmission(target, input, createId());
+          const next = prepareServiceSubmission(
+            target,
+            input,
+            createId(),
+            backgroundSubmission(target) ? createReceiptKey() : undefined,
+          );
           if (next.action.actionId === previous.action.actionId) {
             throw failure(
               "invalid_action_id",
@@ -85,7 +143,12 @@ export function createServiceSubmissionClient({ store, createId, send }) {
           }
           return next;
         }
-        return prepareServiceSubmission(target, input, createId());
+        return prepareServiceSubmission(
+          target,
+          input,
+          createId(),
+          backgroundSubmission(target) ? createReceiptKey() : undefined,
+        );
       });
       return dispatch(slot, saved, context);
     },

@@ -62,3 +62,7 @@ Full **1,642 tests**, strict editor types, source syntax/dependency/formatting c
 The real provider driver started before later expected-account-header, deadline and transport hardening. This is composite evidence: actual provider/authentication/lifecycle proof plus the final source's full controlled regression and browser checks. It is not labelled as a live run of the exact final commit. The safe receipt and cleanup are summarized in committed progress, so another agent does not need private logs or a repeated token test to continue.
 
 That completed 2B proof claims no live model-quality, private-repository access, provider write or generated-Container account invocation. **The next task at that checkpoint was 2C.01**, give a generated service an approved connection reference and operation while keeping enforcement and credentials in trusted platform code.
+
+## Roadmap 3 email extension
+
+[Background work](restyle-background-work.md) adds a separate installed Resend setup shape: creator-selected `from` and `recipient`, with private API key and optional callback signing secret encrypted through the same account vault. Only approved checked Container recipes can send bounded plain-text email. Ordinary Try stays offline. Generic connection invocation remains the installed GitHub reads; Resend is not an arbitrary API proxy. A full-access Resend key is needed for sending and reading delivery evidence. Account-linked agent addresses remain later Roadmap4D work.

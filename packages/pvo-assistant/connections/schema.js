@@ -16,6 +16,11 @@ export function connectionSetupSchema() {
   const fields = { provider: { const: "github" }, repository: string(140) };
   return {
     anyOf: [
+      object({
+        provider: { const: "resend" },
+        from: string(254),
+        recipient: string(254),
+      }),
       object(fields),
       object({ ...fields, access: { const: "issues_write" } }),
     ],
@@ -26,7 +31,7 @@ export function connectionBindingsSchema(data) {
   const adapter = object({
     name: string(64),
     description: string(1024),
-    provider: { const: "github" },
+    provider: { enum: ["github", "resend"] },
     method: { enum: ["GET", "POST"] },
     path: array({ anyOf: [string(64), reference] }, 3),
     query: array(
@@ -39,7 +44,9 @@ export function connectionBindingsSchema(data) {
     input: data,
     result: data,
     responsePath: array(string(64), 4),
-    permission: { enum: ["repository:read", "issues:read", "issues:write"] },
+    permission: {
+      enum: ["repository:read", "issues:read", "issues:write", "email:send"],
+    },
     completion: { const: "synchronous" },
     documentation: string(2048),
   });

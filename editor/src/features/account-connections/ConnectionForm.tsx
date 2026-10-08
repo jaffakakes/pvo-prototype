@@ -9,7 +9,7 @@ export function ConnectionForm({
   submit,
   cancel,
 }: {
-  setup: ConnectionSetup | null;
+  setup: Extract<ConnectionSetup, { provider: "github" }> | null;
   busy: boolean;
   continuing: boolean;
   submit(setup: ConnectionSetup, token: string): void;

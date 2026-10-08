@@ -1,4 +1,13 @@
+import { creatorJobSummary } from "../../packages/pvo-assistant/jobs/index.js";
 import { ServiceAccountStore } from "./accountStore.js";
+import { receiveJobProviderEvent } from "./jobs/providerUpdates.js";
+import { ServiceJobStore } from "./jobs/store.js";
+import {
+  acceptServiceJob,
+  readServiceJob,
+  manageServiceJob,
+} from "./jobs/commands.js";
+import { runServiceJobs } from "./jobs/runner.js";
 import { accountCommand, serviceAccountAccess } from "./accountAccess.js";
 import { ownedHost } from "./ownership.js";
 import { serviceCallError } from "../../packages/pvo-assistant/hosting/index.js";
@@ -49,6 +58,7 @@ export class HostedService extends DurableObject {
     this.draftWriters = new DraftWriters(ctx.storage.sql);
     this.actions = new ServiceActionStore(ctx.storage.sql);
     this.accounts = new ServiceAccountStore(ctx.storage.sql);
+    this.jobs = new ServiceJobStore(ctx.storage.sql);
     this.calls = new ServiceCallQueue();
     this.controls = new ServiceControlStore(ctx.storage.sql);
     this.connections = new ServiceConnectionStore(ctx.storage.sql);
@@ -171,6 +181,31 @@ export class HostedService extends DurableObject {
       invokeHostedAction(this, serviceId, authority, input),
     );
   }
+  providerEvent(serviceId, connectionId, body, headers) {
+    return hostedReply(() =>
+      receiveJobProviderEvent(this, serviceId, connectionId, body, headers),
+    );
+  }
+  acceptJob(serviceId, input) {
+    return hostedReply(() => acceptServiceJob(this, serviceId, input));
+  }
+  jobReceipt(serviceId, input) {
+    return hostedReply(() => readServiceJob(this, serviceId, input));
+  }
+  manageJob(serviceId, ownerId, input) {
+    return hostedReply(() => manageServiceJob(this, serviceId, ownerId, input));
+  }
+  listJobs(serviceId, ownerId) {
+    return hostedReply(() => {
+      ownedHost(this, serviceId, ownerId);
+      return {
+        ownerId,
+        serviceId,
+        observedAt: this.now(),
+        jobs: this.jobs.all().map(creatorJobSummary),
+      };
+    });
+  }
   inspect(serviceId, ownerId) {
     return hostedReply(() =>
       this.ctx.storage.transactionSync(() =>
@@ -268,6 +303,7 @@ export class HostedService extends DurableObject {
     const times = [
       this.store.nextExpiry(),
       this.draftWriters.nextExpiry(),
+      this.jobs.nextAt(this.now(), this.store.service()?.state === "active"),
     ].filter((at) => at !== null);
     const next = times.length ? Math.min(...times) : null;
     if (next !== null) await this.ctx.storage.setAlarm(next);
@@ -276,7 +312,9 @@ export class HostedService extends DurableObject {
   async alarm() {
     await this.ctx.storage.transaction(async () => {
       this.store.expire(this.now());
+      this.jobs.expire(this.now());
       await this.scheduleExpiry();
     });
+    await runServiceJobs(this);
   }
 }

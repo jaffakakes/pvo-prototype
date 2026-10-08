@@ -79,7 +79,7 @@ This should remain extensible to researched services. The first integration prov
 
 **Finished when:** creators with different goals can choose useful manual alternatives, preserve their original context, and see which work remains pending. Neither the editor nor the viewer reports the original external action as completed from a preparatory step alone. For example, an RSVP does not confirm a booking, and preparing a work request does not prove it was submitted.
 
-**Verified 8 October 2026:** all five 2D tasks pass source, saved-runner and actual desktop/phone editor acceptance. See [manual alternatives](../restyle-manual-alternatives.md) for the current contract, evidence and limits; [progress](../restyle-cloud-agent-progress.md) records beta delivery separately. Earlier real 2B/2C account and cloud proof is preserved.
+**Verified 8 October 2026:** all five 2D tasks pass source, saved-runner and actual desktop/phone editor acceptance. Beta `restyle-editor-shell-86730c6386fdb5ed` is delivered and verified. See [manual alternatives](../restyle-manual-alternatives.md) for the current contract, evidence and limits; [progress](../restyle-cloud-agent-progress.md) records beta delivery separately. Earlier real 2B/2C account and cloud proof is preserved.
 
 ## Complete this roadmap
 

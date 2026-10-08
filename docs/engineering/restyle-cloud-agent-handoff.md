@@ -2,15 +2,23 @@
 
 This is the restart guide for **Claude Code, Codex, or another coding agent**. It is designed to work without the previous conversation. The [progress file](restyle-cloud-agent-progress.md) says exactly where work stopped; the [roadmaps](restyle-cloud-agent-roadmap.md) hold the completion checkboxes.
 
-## Current continuation — all 2D verified; deliver beta before stopping
+## Current continuation — finish all Roadmap 3
 
-**99/134 checked; Roadmaps 1 and 2 are complete in source.** The 8 October user request authorized all 2D. Continue on `feature/restyle-research-connections` in `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`, draft PR #107. Read the newest [progress](restyle-cloud-agent-progress.md) and [manual-alternative contract](restyle-manual-alternatives.md). Full 1,661 tests, strict types, sixteen focused tests and actual desktop/phone editor application/Try/restart/uncertain-reply/account-switch acceptance pass. Source changes and completion checkboxes are in this batch.
+**122/134 checked. All 3A/3B/3C and 3D.02–05 are verified; only 3D.01 remains in Roadmap 3.** Continue `codex/restyle-background-work` in `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`. Read the top [progress checkpoint](restyle-cloud-agent-progress.md) and [current contract](restyle-background-work.md). Source remains pending; previous Roadmap 2 beta remains active.
 
-**Next concrete action:** commit, combine with current beta `da6797e` in an isolated build checkout, build/check and deliver to actual Desktop `dist/` at4173 using its recorded hash guard and backup. Verify the served revision and activated service worker. Then push the focused branch, refresh Desktop reading copies and record final evidence here and in progress. Source Vite5324 may be stopped after verifying ownership. No paid proof, key setup or external account action is needed.
+**Exact next:** finish the controlled real-email driver rehearsal, actual Resend acceptance and cleanup, finish UI review and beta delivery, then commit/push completion evidence. Creator/player/normal export acceptance pass. The first live driver sent zero emails because its test clock was frozen; its local input/storage were removed. Existing cloud proof needs no paid repeat. Account-linked agent email is later 4D. Production, integration merges, Actions and unreleased-branch deletion remain prohibited.
 
-Manual follow-up extends the existing task; it is not a viewer background queue. The next numbered task is **3A.01**, [durable viewer jobs](restyle-cloud-agent-roadmaps/03-background-work.md#3a-save-and-run-background-jobs), after this beta delivery. Keep all earlier 1E/1F/1G and real 2B/2C evidence. Production stays prohibited until the whole roadmap and user beta testing are finished and release is explicitly approved. No integration merge, Actions work or unreleased branch deletion.
+## Previous checkpoint — all Roadmap 2 complete through beta
 
-## Active task: 2C complete — next 2D.01 when requested
+**99/134 checked; all Roadmap 1 and Roadmap 2 tasks are complete.** Source **`336b871`** is pushed on `feature/restyle-research-connections` in `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`, [draft PR #107](https://github.com/jaffakakes/pvo-prototype/pull/107), open/unmerged. This documentation checkpoint records final delivery. Full **1,661 tests**, strict types, sixteen final focused checks and actual desktop/phone editor acceptance pass. Read the newest [progress](restyle-cloud-agent-progress.md) and [manual-alternative contract](restyle-manual-alternatives.md).
+
+**Beta is delivered:** combined **`c3693cb`** in `/private/tmp/restyle-manual-beta-336b871` passes build/types/40 focused checks. Actual Desktop `dist/` at4173 serves **`restyle-editor-shell-86730c6386fdb5ed`**; exact modules, editor/player and fresh activated service worker are verified. Backup `~/.codex/backups/restyle-2d-beta-fzg7_2cw`, 140 old hashed assets retained, no forced reload. Static beta still has no permanent task/account/service APIs configured. Source Vite5324 is stopped and the one failed-fixture storage directory is removed after identity/in-use checks. No paid resources or credentials were created.
+
+**Exact next numbered task: 3A.01**, [durable viewer-job records](restyle-cloud-agent-roadmaps/03-background-work.md#3a-save-and-run-background-jobs), when the user requests Roadmap 3. Inspect existing service state/action identities and begin with one job record. Manual follow-up extends the authoring task; it is not a viewer queue. Keep all earlier 1E/1F/1G and real 2B/2C evidence. Do not repeat completed cloud tests because private logs are missing on another computer.
+
+Fetch this focused GitHub branch on Windows or another machine. Desktop Markdown files are guarded reading copies, now including the 2D contract; branch source remains authoritative. Production is prohibited until the whole roadmap and user beta testing are finished and release is explicitly approved. No integration merge, Actions work or unreleased branch deletion. Keep PR #107 draft.
+
+## Previous checkpoint: 2C complete
 
 **94/134 complete; all seven 2C tasks are verified through beta and isolated cloud acceptance.** Source `5695c39` is pushed on `feature/restyle-research-connections`, checkout `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`. Operational checkpoint `74d4bb8` is pushed; this documentation batch adds final acceptance. [Draft PR #107](https://github.com/jaffakakes/pvo-prototype/pull/107) remains open and unmerged. Full 1,653 tests, strict editor types, focused recovery checks and actual desktop/phone/editor/player acceptance remain passing.
 
@@ -24,7 +32,7 @@ Manual follow-up extends the existing task; it is not a viewer background queue.
 
 The following 2B status is preserved historical evidence; the active 2C checkpoint above supplies current source, beta and next task.
 
-## Current status: all 2B complete, 8 October 2026
+## Previous checkpoint: all 2B complete, 8 October 2026
 
 The requested **2B milestone is finished through beta. 87/134 tasks are complete; twelve Roadmap 2 tasks remain in 2C/2D.** Private GitHub setup, encrypted credentials, approved read-only operations, lifecycle controls and same-task resume are verified. Full **1,642 tests**, strict types and actual editor desktop/phone/reload/settings acceptance pass. The real GitHub lifecycle proof passed at **05:37:18 UTC** and its local credentials/storage/processes are cleaned up. Read the newest [progress checkpoint](restyle-cloud-agent-progress.md) and [connection contract](restyle-account-connections.md) for portable evidence and its limits.
 
