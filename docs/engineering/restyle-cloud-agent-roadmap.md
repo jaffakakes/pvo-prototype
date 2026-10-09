@@ -10,6 +10,10 @@ Start with [Roadmap 1](restyle-cloud-agent-roadmaps/01-first-working-component.m
 
 The [architecture document](restyle-cloud-agent-architecture.md) explains the idea. These roadmaps turn it into smaller pieces of work you can implement and verify.
 
+## Model comparison follow-up
+
+The creator authorized an isolated Kimi K2.7 Code / GPT-6.1 Sol cost and coding pilot on 9 October. Follow [MC.01–04](restyle-model-comparison.md#checklist). These additional experiment tasks do not reopen completed Roadmaps 1–4 or change the beta model or production status.
+
 ## Production release gate — explicitly deferred
 
 On **7 October 2026**, the user confirmed: **“We won’t release to production till everything is done and I tested it in beta.”** Therefore milestone completion means verified implementation and beta delivery, not automatic production release. Complete the remaining roadmap, keep delivering verified changes through **New beta release**, let the user test the finished beta, and obtain their explicit production approval. Then follow the protected `dev → preprod → prod` process, verify the actual live release and perform proven completed-branch cleanup. No production deployment or protection change is authorized now. This gate does not block continued implementation in beta.

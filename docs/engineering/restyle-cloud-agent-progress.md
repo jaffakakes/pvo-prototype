@@ -1,6 +1,18 @@
 # Restyle cloud agent: current progress and handoff log
 
-## Current checkpoint — full beta guestbook journey verified
+## Current checkpoint — isolated model comparison being prepared
+
+The user authorized comparing Kimi K2.7 Code and GPT-6.1 Sol for cheap disposable software on 9 October 2026. Read the [comparison plan and checklist](restyle-model-comparison.md). **MC.01–02 complete; MC.03–04 unchecked.** Existing 134 roadmap tasks, BETA.01–05 and E2E.01–04 remain complete. Continue in this same unmerged beta source checkout; production and the deployed beta model remain unchanged. Source scripts and fixtures are pending in `scripts/checks/model-comparison/` and `tests/model-comparison.test.mjs`; no new app provider or runtime is introduced.
+
+The private Sol connection is verified through a human-entered native key box. The earlier in-app form rejected the submission and saved no key. Temporary OpenAI key and model journals stay outside Git under `~/.codex/secure/restyle-model-comparison/`. The key must be removed and the temporary loopback key-entry server stopped after comparison. Existing Runpod beta credentials remain private and retained. No cloud VM, GPU, Fly Machine, email or service publication is planned. Local fresh Docker containers are journaled before generated execution and removed afterward.
+
+**Scope:** identical frozen agreements for guestbook, capacity booking and deadline poll; existing actual coding planner, strict schema/source/test validators, generated tests plus independent checks. Measures coding after requirements are agreed; excludes visual component generation, intent questions/research and cloud startup/deployment. One run per candidate/request is a pilot. No arbitrary model-turn ceiling is added. Record all usage, failed/unknown requests, repairs and timings; do not claim missing usage is free or replace model-written code.
+
+**Verified:** five focused checks pass, including real network-disabled Docker execution, failed-code rejection despite a passing generated test, missing-usage handling, metering, equal prompts and cleanup. Syntax 1054 modules, boundaries 1030, formatting 807 and 149 local links pass. Runpod read-only inventory includes exact `kimi-k2.7-code`; Sol model access is verified.
+
+**Exact next:** execute all six candidate/request builds, inspect real source and failures, verify cleanup, record measured results and recommendation, remove temporary key, commit/push this experiment and handoff. Keep all prior acceptance evidence below.
+
+## Previous checkpoint — full beta guestbook journey verified
 
 **E2E.01–04 complete.** Earlier 134 roadmap tasks and BETA.01–05 remain complete. Source `3176d87`, checked connection checkpoint `940b670`, branch `codex/restyle-beta-backend`, [draft PR #110](https://github.com/jaffakakes/pvo-prototype/pull/110) open/unmerged. The completion evidence is committed in this same documentation batch. Continue from `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`; the dirty Desktop checkout is a guarded reading copy, not the continuation checkout. No production, integration merge, Actions, unreleased-branch deletion or agent email. The human editor tab/project is preserved.
 
