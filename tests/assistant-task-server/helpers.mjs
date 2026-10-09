@@ -33,6 +33,7 @@ export async function taskFixture({
   draftControl = null,
   spending = true,
   productionLeases = false,
+  clerk = null,
 } = {}) {
   modules ??= bundleWorkerModules({
     stdin: {
@@ -371,12 +372,19 @@ export async function taskFixture({
         REAL_CLOCK: realClock,
         SESSION_SECRET: SECRET,
         ACCOUNT_CONNECTION_KEY: connectionKey,
+        ...(clerk
+          ? {
+              CLERK_ISSUER: clerk.issuer,
+              CLERK_PUBLISHABLE_KEY: "pk_test_fixture",
+            }
+          : {}),
         BROKEN: broken,
         CONTROLLED_PLAN: Boolean(planner),
         PRODUCTION_LEASES: productionLeases,
         CONTROLLED_CLOCK: clock,
         CONTROLLED_SPENDING: spending,
       },
+      ...(clerk ? { outboundService: clerk.fetch } : {}),
       ...(services ||
       planner ||
       providerControl ||

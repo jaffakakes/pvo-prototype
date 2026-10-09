@@ -4,6 +4,7 @@ import {
   type IdentityProvider,
 } from "../../../../packages/pvo-assistant/identity/index.js";
 import { readAssistantJson } from "../assistant/serviceResponse";
+import { accountSessionToken } from "../auth/accountSessionToken";
 
 export type IdentityList = { available: boolean; channels: IdentityChannel[] };
 export type IdentityResource = { resourceId: string; address: string };
@@ -17,6 +18,9 @@ async function request(
   signal: AbortSignal,
 ) {
   const combined = AbortSignal.any([signal, AbortSignal.timeout(35000)]);
+  const token =
+    action === "/start" ? await accountSessionToken(ownerId, combined) : null;
+  combined.throwIfAborted();
   const response = await fetch(`/api/agent-identity${action}`, {
     method: body === undefined ? "GET" : "POST",
     credentials: "same-origin",
@@ -26,6 +30,7 @@ async function request(
     headers: {
       Accept: "application/json",
       "X-Restyle-Owner": ownerId,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(body === undefined ? {} : { "Content-Type": "application/json" }),
     },
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -39,11 +44,13 @@ async function request(
           ? "Your account changed. Reopen private setup."
           : response.status === 409
             ? "Setup changed. Refresh its saved status before continuing."
-            : response.status === 400
-              ? "Check the setup fields, code and permission."
-              : response.status === 429
-                ? "The provider is busy. Wait, then check the saved setup."
-                : "Setup could not respond. Refresh its saved status before creating another account.",
+            : response.status === 412
+              ? "Your sign-in email could not be confirmed. Sign in again before setup."
+              : response.status === 400
+                ? "Check the setup fields, code and permission."
+                : response.status === 429
+                  ? "The provider is busy. Wait, then check the saved setup."
+                  : "Setup could not respond. Refresh its saved status before creating another account.",
     );
   }
   const value = await readAssistantJson(response, combined, 32768);

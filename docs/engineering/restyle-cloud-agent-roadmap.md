@@ -2,7 +2,7 @@
 
 **Continuing with Claude Code or Codex:** read [current progress](restyle-cloud-agent-progress.md), then the [handoff/restart guide](restyle-cloud-agent-handoff.md). Every checklist item now has a stable task ID. After each verified task, check it off and save its evidence and exact next action. Root [AGENTS.md](../../AGENTS.md) and [CLAUDE.md](../../CLAUDE.md) require this workflow.
 
-Status: **Roadmaps 1–4 complete through beta — 134/134 complete; no numbered task remains in those milestones.** Roadmap 4 diagnosis, safe repair, persistent health and original-code regression countercheck pass, including affected creator/Try/export/player paths and final beta delivery. See the [maintenance acceptance](restyle-maintenance.md#verified-acceptance--8-october-2026) and [progress](restyle-cloud-agent-progress.md). Earlier real Fly/GitHub/Resend evidence is preserved. Account-linked agent email resumes under the newly authorized [Roadmap 5](restyle-cloud-agent-roadmaps/05-agent-identity-and-onboarding.md); 5A.01–03 are complete and five new tasks remain unchecked. The ongoing beta backend is connected separately. Production stays prohibited until the finished roadmap is tested by the user and release is approved.
+Status: **Roadmaps 1–4 complete through beta — 134/134 complete; no numbered task remains in those milestones.** Roadmap 4 diagnosis, safe repair, persistent health and original-code regression countercheck pass, including affected creator/Try/export/player paths and final beta delivery. See the [maintenance acceptance](restyle-maintenance.md#verified-acceptance--8-october-2026) and [progress](restyle-cloud-agent-progress.md). Earlier real Fly/GitHub/Resend evidence is preserved. Account-linked agent email resumes under the newly authorized [Roadmap 5](restyle-cloud-agent-roadmaps/05-agent-identity-and-onboarding.md); 5A.01–04 are complete and five tasks remain unchecked. The ongoing beta backend is connected separately. Production stays prohibited until the finished roadmap is tested by the user and release is approved.
 
 **Historical planning update, 6 October:** [1G Containers](restyle-cloud-agent-roadmaps/1g-containers.md) is the next product feature after 1F, before Roadmap 2. It extends the existing service system with editable saved drafts and hosted Node.js execution. Eight new unchecked tasks are added; twelve existing unchecked 4B/4C tasks are moved into that plan, with their IDs and wording retained. No completed work is reset. The user confirmed preserving the currently recorded partial 1E / unfinished 1F status. The planning update itself changed documentation only; implementation has now resumed.
 
@@ -12,7 +12,7 @@ The [architecture document](restyle-cloud-agent-architecture.md) explains the id
 
 ## Roadmap 5 — agent identity and account setup
 
-The creator authorized AgentMail and AgentPhone on 9 October. Follow the [eight new tasks](restyle-cloud-agent-roadmaps/05-agent-identity-and-onboarding.md). Preserve all 134 historical completions. This extends the existing owner/task/vault/service system and keeps production pending.
+The creator authorized AgentMail and AgentPhone on 9 October. Follow the [nine tasks](restyle-cloud-agent-roadmaps/05-agent-identity-and-onboarding.md), including the account-email setup correction 5A.04. Preserve all 134 historical completions. This extends the existing owner/task/vault/service system and keeps production pending.
 
 ## Shared beta viewer recovery
 

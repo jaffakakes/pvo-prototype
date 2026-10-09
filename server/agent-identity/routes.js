@@ -1,4 +1,10 @@
 import { getAccountSession } from "../auth/sessions.js";
+import { clerkEmailFromRequest } from "../auth/clerk.js";
+import { userForClerk } from "../auth/clerkAccounts.js";
+import {
+  identityEmail,
+  parseIdentityCommand,
+} from "../../packages/pvo-assistant/identity/index.js";
 import { checkOrigin, HttpError, json, readJson } from "../http.js";
 
 export const isAgentIdentityRoute = (path) =>
@@ -32,7 +38,45 @@ export async function agentIdentityRoute(request, env, config) {
     throw new HttpError(401, "Sign in to manage your agent identity.");
   if (request.headers.get("X-Restyle-Owner") !== owner.id)
     throw new HttpError(403, "Your account changed. Reopen private setup.");
-  const input = list ? null : await readJson(request, 4096);
+  let input = list ? null : await readJson(request, 4096);
+  if (match?.[1] === "start") {
+    const allowed = [
+      "provider",
+      "expectedRevision",
+      "consent",
+      "monthlyNumberCents",
+    ];
+    if (
+      !input ||
+      typeof input !== "object" ||
+      Array.isArray(input) ||
+      Object.keys(input).length !== allowed.length ||
+      Object.keys(input).some((key) => !allowed.includes(key))
+    )
+      throw new HttpError(400, "Review the selected provider and permission.");
+    if (!config.clerkAvailable)
+      throw new HttpError(
+        412,
+        "Connect email sign-in before setting up your agent.",
+      );
+    const account = await clerkEmailFromRequest(
+      request,
+      config.clerkIssuer,
+      config.origin,
+    );
+    const linked = await userForClerk(account.identity, env.DB);
+    if (linked?.id !== owner.id)
+      throw new HttpError(403, "Your account changed. Reopen private setup.");
+    try {
+      input = parseIdentityCommand("start", {
+        ...input,
+        humanEmail: identityEmail(account.email),
+        name: `restyle-${crypto.randomUUID().replaceAll("-", "")}`,
+      });
+    } catch {
+      throw new HttpError(400, "Review the selected provider and permission.");
+    }
+  }
   let result;
   try {
     result = await env.ASSISTANT_TASKS.getByName(

@@ -8,6 +8,8 @@ Ask Restyle for a finished feature. The agent researches the services it needs, 
 
 On 9 October 2026 the creator selected **AgentMail and AgentPhone** and authorized implementation in beta. This resumes the previously paused account-linked agent email work. Roadmaps 1–4 and their historical evidence stay complete. Production is prohibited.
 
+**Owner email and working inbox:** use the signed-in creator's verified Restyle email for ownership of AgentMail/AgentPhone setup. Restyle generates the resource name and performs signup after the creator enables it and approves the provider's terms/cost. Do not ask them to type an email/name or create a separate account themselves. The agent's own inbox receives later service verification messages; this grants no access to the creator's personal mailbox. Provider ownership codes and paid-phone approval can still require the creator once. Third-party service signup remains the separate unchecked work below.
+
 ## Reuse the current architecture
 
 - The temporary VM remains the agent's workshop. It can stop without losing accounts or credentials.
@@ -22,6 +24,7 @@ On 9 October 2026 the creator selected **AgentMail and AgentPhone** and authoriz
 - [x] **5A.01** Define owner-bound persistent identity, public metadata, setup intent and recovery contracts; document costs and resource ownership.
 - [x] **5A.02** Implement AgentMail and AgentPhone bootstrap/import through fixed trusted APIs, encrypted saved credentials, restart recovery and duplicate/concurrent setup protection. Preserve one-time credentials before reporting success.
 - [x] **5A.03** Add private setup and status inside existing Connected accounts, including one-time human verification, existing-account recovery and explicit phone cost consent; fence account changes and late results.
+- [x] **5A.04** Use the signed-in creator's verified account email and an automatic resource name. Remove redundant email/name entry; verify exact account matching, cancellation and retries, then deliver the simplified beta form. This new correction preserves the evidence and completed status of 5A.01–03.
 - [ ] **5B.01** Connect email/SMS verification to saved account setup attempts. Match sender, recipient, operation and expiry; keep secrets outside model context and resume the same saved task.
 - [ ] **5C.01** Add saved third-party account setup with persistent intent, verified provider identity and approved access. Support existing-account reuse, browser/API execution, API-key capture directly to the vault, expired sessions, required human actions and uncertain outcomes.
 - [ ] **5D.01** Let research and building choose this setup path and attach its resulting approved connections to checked Containers. Exercise different requests and preserve current test/publication gates.
@@ -67,3 +70,9 @@ Then **5C.01** needs a verified execution path for the current requested service
 No production route accepts a verification policy or provides general inbox access. Only fixture signup consumers exist. The actual 5C named-service runner, verification waiting presentation, magic-link/session handling, uncertain-result lookup and normal builder/Container use are still required. Therefore this tested infrastructure is not automatic third-party signup or live provider acceptance. Full source/types/build checks and delivery for this batch are recorded in current progress.
 
 **Verified checkpoint:** source `8d9e492` pushed in draft PR#111; final whole-source check 1,731 pass/zero failures/one optional Docker skip, strict types/build pass, 218 related links pass. Beta Worker `1617b7f4-f2e2-4de7-99f8-5e501fa155bd`, editor `restyle-editor-shell-134aac9c57856c98`; checked HTTPS/local4173 shell bytes match and production inventory remains unchanged. This does not change the unchecked 5B–5E status.
+
+## Account-email correction acceptance — 5A.04
+
+The signed-in verified creator email and generated name now replace manual email/name entry. Four new behavior cases cover signed owner derivation, contact retention after restart/resend, address/name substitution, unverified or mismatched Clerk identity, fresh private token headers and cancellation before dispatch. Existing private identity/verification/auth cases pass in the final whole-source check: 1,735 pass, zero failures, one optional Docker skip. Strict types/build and guarded beta release pass. Development Clerk claim preview confirms verified boolean true; exact request/claim configuration is documented in [account connections](../restyle-account-connections.md#signed-account-email-for-identity-bootstrap).
+
+Actual desktop/390px phone forms have no email/name fields, required unticked approval and 46px actions with no identity overflow. Optional phone still requires US$3 monthly-number approval. Normal review-tab update and existing account continuation pass. Beta Worker 279a5dde-0cc0-4f50-a095-4393346c7f30 / editor restyle-editor-shell-fd08afe9b10f23e1 match HTTPS and actual local4173 shell bytes. Original generated output is preserved/restored; older hashed assets retained. Production inventory is unchanged. No provider signup, inbox, number or message has been created by this correction. Live ownership/provider acceptance remains 5E.01, and 5B–5E stay unchecked. Earlier 5A.01–03 evidence is preserved.
