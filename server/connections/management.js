@@ -1,9 +1,7 @@
 import { accountServiceEvent } from "./serviceEvents.js";
 import { accountServiceCommand } from "./serviceCalls.js";
-import {
-  GITHUB_OPERATIONS,
-  connectionScopeKey,
-} from "../../packages/pvo-assistant/connections/index.js";
+import { connectionScopeKey } from "../../packages/pvo-assistant/connections/index.js";
+import { connectionGrant } from "./grants.js";
 import { HttpError } from "../http.js";
 import { taskId } from "../assistant/tasks/input.js";
 import { connectionCommand } from "./input.js";
@@ -227,27 +225,10 @@ export class AccountConnections {
       this.catalog.save(
         {
           id: input.id,
-          name:
-            input.setup.provider === "github"
-              ? `GitHub · ${input.setup.repository}`
-              : `Email · ${input.setup.from}`,
+          ...connectionGrant(input.setup, verified.login),
           provider: input.setup.provider,
           status: "connected",
           revision,
-          permissions:
-            input.setup.provider === "resend"
-              ? ["email:send"]
-              : [
-                  "repository:read",
-                  "issues:read",
-                  ...(input.setup.access === "issues_write"
-                    ? ["issues:write"]
-                    : []),
-                ],
-          operations:
-            input.setup.provider === "github"
-              ? structuredClone(GITHUB_OPERATIONS)
-              : [],
         },
         input.expectedRevision,
       );

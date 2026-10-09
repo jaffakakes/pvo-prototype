@@ -1,11 +1,14 @@
 import { githubAdapter } from "./github.js";
 import { resendAdapter } from "./resend.js";
+import { agentIdentityAdapter } from "./agentIdentity.js";
 
 /** Authentication stays in reviewed adapters; selecting a provider never grants a generated URL. */
 export function installedConnectionProvider(fetcher = fetch) {
   const providers = {
     github: githubAdapter(fetcher),
     resend: resendAdapter(fetcher),
+    agentmail: agentIdentityAdapter("agentmail", fetcher),
+    agentphone: agentIdentityAdapter("agentphone", fetcher),
   };
   function provider(scope) {
     const result = providers[scope.provider];

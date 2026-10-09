@@ -42,6 +42,7 @@ export async function taskFixture({
     export { TestBudget, TestWorkspace } from './tests/assistant-workspaces/controlled-worker.js';
     import { installCheckedDiagnostic } from "./scripts/checks/cloud-agent-recovery/checked-fixture.js";
     import { installedConnectionProvider } from "./server/connections/providers/installed.js";
+    import { identityProvider } from "./server/agent-identity/providers.js";
     import { capabilityContext } from "./server/assistant/builder/capabilityResearch.js";
     import { taskResearchTools } from "./server/assistant/builder/researchTools.js";
     import { publicResearch } from "./server/assistant/builder/researchProvider.js";
@@ -95,6 +96,8 @@ export async function taskFixture({
       constructor(ctx, env) { super(ctx,env);ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS test_spending (id INTEGER PRIMARY KEY, body TEXT NOT NULL)"); }
       now() { return this.clock ?? this.env.CONTROLLED_CLOCK ?? ((this.env.REAL_CLOCK || this.env.CONTROLLED_PLAN) ? Date.now() : Date.UTC(2100, 0, 1)); }
       connectionProvider() { return this.env.CONNECTION_API ? installedConnectionProvider((url, options) => this.env.CONNECTION_API.fetch(url, options)) : super.connectionProvider(); }
+      identityProvider(provider) { return this.env.CONNECTION_API ? identityProvider(provider, (url, options) => this.env.CONNECTION_API.fetch(url, options)) : super.identityProvider(provider); }
+      identityStorage() { return this.ctx.storage.sql.exec("SELECT * FROM agent_identity_channels").toArray(); }
       connectionStorage() { return this.ctx.storage.sql.exec("SELECT * FROM account_connection_secrets").toArray(); }
       plannerAvailable() { return this.planningPaused ? false : this.env.CONTROLLED_PLAN ? true : super.plannerAvailable(); }
       spendingAllowed(task, capability) {
@@ -287,6 +290,7 @@ export async function taskFixture({
         try {
           if (action === "validation-state") return json(await stub.validationState(args.id));
           if (action === "connection-storage") return json(await stub.connectionStorage());
+          if (action === "identity-storage") return json(await stub.identityStorage());
           if (action === "save-connection") return json(await stub.saveConnection(owner.id,args.connection,args.expectedRevision));
           if (action === "capability-context") return json(await stub.capabilityContext(owner.id,args.id));
           if (action === "research-tool") return json(await stub.researchTool(owner.id,args.id,args.tool,args.operationId,args.guard));

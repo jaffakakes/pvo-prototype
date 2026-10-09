@@ -7,6 +7,11 @@ import {
   installedConnectionProvider,
 } from "../../connections/management.js";
 import { ConnectionCatalog } from "../../connections/catalog.js";
+import {
+  AgentIdentity,
+  manageAgentIdentity,
+} from "../../agent-identity/management.js";
+import { identityProvider } from "../../agent-identity/providers.js";
 import { draftTestResults } from "../drafts/testResults.js";
 import { SERVICE_EXECUTION_LIMITS } from "../../../packages/pvo-assistant/services/index.js";
 import { runDraftTestPreparation } from "../drafts/testing.js";
@@ -84,6 +89,7 @@ export class AssistantTasks extends DurableObject {
     this.services = new ServiceCatalog(ctx.storage.sql);
     this.connections = new ConnectionCatalog(ctx.storage.sql);
     this.accountConnections = new AccountConnections(this);
+    this.agentIdentity = new AgentIdentity(this);
     this.providers = new ProviderOperations(
       ctx.storage.sql,
       this.repository,
@@ -338,6 +344,13 @@ export class AssistantTasks extends DurableObject {
   }
   connectionProvider() {
     return installedConnectionProvider();
+  }
+
+  manageIdentity(ownerId, operation) {
+    return manageAgentIdentity(this, ownerId, operation);
+  }
+  identityProvider(provider) {
+    return identityProvider(provider);
   }
 
   manageServices(ownerId, operation) {
