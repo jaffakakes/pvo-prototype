@@ -16,6 +16,18 @@ In plain terms: give the beta app its own online memory and engine. Keep saved t
 - [x] **BETA.04** Serve the existing checked beta app with the backend on one HTTPS origin; verify real sign-in, owner-scoped tasks/Containers, save/reload and authorized execution without production access.
 - [x] **BETA.05** Verify browser and service operation/recovery, record retained resources, cost controls and cleanup; save the GitHub and portable handoff with the exact beta URL.
 
+## Shared viewer recovery — 9 October 2026
+
+- [x] **VIEW.01** Inspect the failed shared-video submission and retained records; distinguish paused service from a code/model failure without discarding the visitor's fields.
+- [x] **VIEW.02** Resume only the checked guestbook and retry the existing pending viewer action; verify its visible confirmation and exactly one saved write.
+- [x] **VIEW.03** Confirm execution cleanup, leave the logical guestbook active for creator testing and record the current resource intent in the portable handoff.
+
+At **00:44 UTC / 01:44 London**, the creator's existing submission succeeds after resuming the guestbook. The service had been deliberately paused during E2E cleanup, which preserved source/data but prevented new entries. The viewer's existing **Retry** returns a thank-you and latest entries. Live records advance **revision 2 → 3**, saved replies **2 → 3**, with one new viewer execution; both execution slots are free. Read-only Fly inventory at **00:44:13 UTC** confirms zero Machines. Completed hosted compute estimate **US$0.000681** excludes AI/workshops/builds/other fees and is not an invoice.
+
+**Current state:** guestbook Container `service-d0465541ab5219ef6493b84cb1094832953bb4d2a5f43625d178f2a31000584d` stays **active for creator beta testing**, checked version **2**, saved draft **34**, same [shared video](https://restyle-beta.jaffakakes28.workers.dev/player/3hMB5Vz8vcnfV6dKS3Nvdw). The diagnostic Container stays paused. Stop temporary execution Machines through their normal lifecycle; do not pause this logical service as routine cleanup while the video is under review. This current intent supersedes the guestbook pause recorded in the historical acceptance below, preserving all earlier completion evidence.
+
+No app code, generated guestbook code, model, asset, Worker configuration, integration branch or production deployment changed. The existing verified beta sign-in was renewed normally. No additional AI/workshop/test run was needed. Private receipt `~/.codex/secure/restyle-beta-backend/guestbook-resume-inventory.json` and local screenshot `~/.codex/artifacts/restyle-beta-guestbook-restored.jpg` supplement the portable facts above; submission contents and credentials stay outside Git. Next: creator beta review.
+
 ## Full AI journey acceptance — 8 October 2026
 
 The creator explicitly requested a fresh end-to-end test of the complete natural-language AI builder, beyond the earlier manually prepared diagnostic Container. Production remains prohibited. Use a separate local project, **AI guestbook end-to-end test**, and synthetic names/messages. Preserve the creator’s original edit and all earlier completion evidence.

@@ -10,6 +10,10 @@ Start with [Roadmap 1](restyle-cloud-agent-roadmaps/01-first-working-component.m
 
 The [architecture document](restyle-cloud-agent-architecture.md) explains the idea. These roadmaps turn it into smaller pieces of work you can implement and verify.
 
+## Shared beta viewer recovery
+
+[VIEW.01–03](restyle-beta-backend.md#shared-viewer-recovery--9-october-2026) are complete. The reported send failure came from the guestbook being paused during test cleanup. It is now active for creator review; retry saves exactly one entry, and temporary Fly compute is gone. Preserve the historical E2E pause evidence while following this newer active-service intent. No source/model change or production deployment occurred.
+
 ## Model comparison follow-up
 
 The creator authorized an isolated Kimi K2.7 Code / GPT-6.1 Sol cost and coding pilot on 9 October. Follow [MC.01–04](restyle-model-comparison.md#checklist). These additional experiment tasks do not reopen completed Roadmaps 1–4 or change the beta model or production status.
