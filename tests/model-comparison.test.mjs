@@ -45,6 +45,22 @@ test("comparison meters actual output once, including reasoning, and does not tr
   assert.equal(usageEstimate(candidates.sol, null), null);
   assert.equal(
     usageEstimate(candidates.sol, {
+      input_tokens: 50000,
+      output_tokens: 10000,
+      input_tokens_details: { cached_tokens: 10000, cache_write_tokens: 20000 },
+    }).estimatedUsd,
+    0.191,
+  );
+  assert.equal(
+    usageEstimate(candidates.sol, {
+      input_tokens: 1,
+      output_tokens: 1,
+      input_tokens_details: { cached_tokens: 1, cache_write_tokens: 1 },
+    }),
+    null,
+  );
+  assert.equal(
+    usageEstimate(candidates.sol, {
       input_tokens: 1,
       output_tokens: 1,
       input_tokens_details: { cached_tokens: 2 },

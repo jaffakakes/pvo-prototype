@@ -375,6 +375,7 @@
   "scripts/checks/model-comparison/run.mjs",
   "scripts/checks/model-comparison/sandbox.mjs",
   "scripts/checks/model-comparison/scenarios.mjs",
+  "scripts/checks/model-comparison/summarize.mjs",
   "scripts/checks/model-comparison/workspace.mjs",
   "scripts/checks/node-product/artifact.js",
   "scripts/checks/node-product/browser.mjs",

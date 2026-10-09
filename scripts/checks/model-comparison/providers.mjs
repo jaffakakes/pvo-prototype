@@ -14,6 +14,7 @@ export const candidates = Object.freeze({
     model: "gpt-6.1-sol",
     inputRate: 2,
     cachedRate: 0.1,
+    cacheWriteRate: 2.5,
     outputRate: 10,
     reasoning: "high",
   },
@@ -28,24 +29,30 @@ export function usageEstimate(candidate, usage) {
     usage.input_tokens_details?.cached_tokens ??
     usage.prompt_tokens_details?.cached_tokens ??
     0;
+  const cacheWrites =
+    usage.input_tokens_details?.cache_write_tokens ??
+    usage.prompt_tokens_details?.cache_write_tokens ??
+    0;
   if (
-    ![input, output, cached].every(
+    ![input, output, cached, cacheWrites].every(
       (value) => Number.isSafeInteger(value) && value >= 0,
     ) ||
-    cached > input
+    cached + cacheWrites > input
   )
     return null;
   return {
     input,
     output,
     cached,
+    cacheWrites,
     reasoning:
       usage.output_tokens_details?.reasoning_tokens ??
       usage.completion_tokens_details?.reasoning_tokens ??
       null,
     estimatedUsd:
-      ((input - cached) * candidate.inputRate +
+      ((input - cached - cacheWrites) * candidate.inputRate +
         cached * candidate.cachedRate +
+        cacheWrites * (candidate.cacheWriteRate ?? candidate.inputRate) +
         output * candidate.outputRate) /
       1000000,
   };
