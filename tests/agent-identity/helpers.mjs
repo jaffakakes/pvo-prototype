@@ -12,6 +12,8 @@ export async function identityFixture() {
     lostVerify: false,
     revoked: false,
     unavailable: false,
+    messages: [],
+    moreMessages: false,
   };
   const fetcher = async (request) => {
     const url = new URL(request.url),
@@ -24,7 +26,26 @@ export async function identityFixture() {
       token: request.headers.get("Authorization"),
     });
     if (api.hold) await api.hold;
+    if (url.hostname === "consumer.test")
+      return Response.json({ accepted: true });
     const mail = url.hostname === "api.agentmail.to";
+    if (path.includes("/messages")) {
+      if (path.endsWith("/messages"))
+        return Response.json(
+          mail
+            ? {
+                messages: api.messages,
+                next_page_token: api.moreMessages ? "more" : null,
+              }
+            : { data: api.messages, hasMore: api.moreMessages },
+        );
+      return Response.json(
+        api.messages.find(
+          (entry) =>
+            entry.message_id === decodeURIComponent(path.split("/").at(-1)),
+        ),
+      );
+    }
     if (path === "/v0/agent/human")
       return Response.json({
         human_email: body.human_email,

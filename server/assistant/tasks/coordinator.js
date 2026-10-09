@@ -12,6 +12,7 @@ import {
   manageAgentIdentity,
 } from "../../agent-identity/management.js";
 import { identityProvider } from "../../agent-identity/providers.js";
+import { AccountVerification } from "../../account-onboarding/verification.js";
 import { draftTestResults } from "../drafts/testResults.js";
 import { SERVICE_EXECUTION_LIMITS } from "../../../packages/pvo-assistant/services/index.js";
 import { runDraftTestPreparation } from "../drafts/testing.js";
@@ -90,6 +91,7 @@ export class AssistantTasks extends DurableObject {
     this.connections = new ConnectionCatalog(ctx.storage.sql);
     this.accountConnections = new AccountConnections(this);
     this.agentIdentity = new AgentIdentity(this);
+    this.accountVerification = new AccountVerification(this);
     this.providers = new ProviderOperations(
       ctx.storage.sql,
       this.repository,
@@ -279,6 +281,7 @@ export class AssistantTasks extends DurableObject {
   }
 
   noteTerminal(now) {
+    this.accountVerification.maintain(now);
     this.providers.noteTerminal(now);
     this.workspaces.noteTerminal(now);
   }
@@ -339,15 +342,23 @@ export class AssistantTasks extends DurableObject {
     });
   }
 
-  manageConnections(ownerId, operation) {
-    return manageAccountConnections(this, ownerId, operation);
+  async manageConnections(ownerId, operation) {
+    try {
+      return await manageAccountConnections(this, ownerId, operation);
+    } finally {
+      this.accountVerification.maintain(this.now());
+    }
   }
   connectionProvider() {
     return installedConnectionProvider();
   }
 
-  manageIdentity(ownerId, operation) {
-    return manageAgentIdentity(this, ownerId, operation);
+  async manageIdentity(ownerId, operation) {
+    try {
+      return await manageAgentIdentity(this, ownerId, operation);
+    } finally {
+      this.accountVerification.maintain(this.now());
+    }
   }
   identityProvider(provider) {
     return identityProvider(provider);
@@ -468,6 +479,7 @@ export class AssistantTasks extends DurableObject {
   async scheduleMaintenance(now) {
     const times = [
       this.repository.nextMaintenance(now),
+      this.accountVerification.nextWakeup(now),
       ...this.drafts.pendingStops().map((entry) => entry.stopPending.nextAt),
       this.attempts.nextBudgetWakeup(),
       this.research.nextWakeup(now),

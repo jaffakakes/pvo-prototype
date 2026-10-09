@@ -43,6 +43,7 @@ export async function taskFixture({
     import { installCheckedDiagnostic } from "./scripts/checks/cloud-agent-recovery/checked-fixture.js";
     import { installedConnectionProvider } from "./server/connections/providers/installed.js";
     import { identityProvider } from "./server/agent-identity/providers.js";
+    import { fixtureVerificationMessages, fixtureVerification } from "./tests/account-onboarding/controlled-worker.js";
     import { capabilityContext } from "./server/assistant/builder/capabilityResearch.js";
     import { taskResearchTools } from "./server/assistant/builder/researchTools.js";
     import { publicResearch } from "./server/assistant/builder/researchProvider.js";
@@ -98,6 +99,8 @@ export async function taskFixture({
       connectionProvider() { return this.env.CONNECTION_API ? installedConnectionProvider((url, options) => this.env.CONNECTION_API.fetch(url, options)) : super.connectionProvider(); }
       identityProvider(provider) { return this.env.CONNECTION_API ? identityProvider(provider, (url, options) => this.env.CONNECTION_API.fetch(url, options)) : super.identityProvider(provider); }
       identityStorage() { return this.ctx.storage.sql.exec("SELECT * FROM agent_identity_channels").toArray(); }
+      verificationMessageProvider(provider) { return fixtureVerificationMessages(this, provider); }
+      verifyAccount(ownerId, input) { return fixtureVerification(this, ownerId, input); }
       connectionStorage() { return this.ctx.storage.sql.exec("SELECT * FROM account_connection_secrets").toArray(); }
       plannerAvailable() { return this.planningPaused ? false : this.env.CONTROLLED_PLAN ? true : super.plannerAvailable(); }
       spendingAllowed(task, capability) {
@@ -291,6 +294,7 @@ export async function taskFixture({
           if (action === "validation-state") return json(await stub.validationState(args.id));
           if (action === "connection-storage") return json(await stub.connectionStorage());
           if (action === "identity-storage") return json(await stub.identityStorage());
+          if (action === "verify-account") { const result = await stub.verifyAccount(owner.id,args.input); return json(result, result.error ? result.status : 200); }
           if (action === "save-connection") return json(await stub.saveConnection(owner.id,args.connection,args.expectedRevision));
           if (action === "capability-context") return json(await stub.capabilityContext(owner.id,args.id));
           if (action === "research-tool") return json(await stub.researchTool(owner.id,args.id,args.tool,args.operationId,args.guard));
