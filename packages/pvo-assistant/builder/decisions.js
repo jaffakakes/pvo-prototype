@@ -75,6 +75,10 @@ export function parseBuilderDecision(
   if (kind === "connect_account") {
     requireTask(connectionSetup, "Private account setup is unavailable.");
     value = { ...value, setup: parseConnectionSetup(value.setup) };
+    requireTask(
+      ["github", "resend"].includes(value.setup.provider),
+      "Use the human agent identity setup; account signup automation is not installed yet.",
+    );
     text(value.purpose, 1024, "Connection purpose");
   }
   if (kind === "manual_alternative") parseManualAlternative(value.proposal);

@@ -21,7 +21,8 @@ export type ConnectionSetup =
       repository: string;
       access?: "issues_write";
     }
-  | { provider: "resend"; from: string; recipient: string };
+  | { provider: "resend"; from: string; recipient: string }
+  | { provider: "agentmail" | "agentphone"; resourceId: string };
 export type ConnectionInvocation =
   | { operation: "github_repository_read"; input: Record<string, never> }
   | { operation: "github_issues_list"; input: { page: number } };

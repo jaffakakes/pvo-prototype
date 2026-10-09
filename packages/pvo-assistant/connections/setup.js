@@ -1,4 +1,5 @@
 import { object, text, requireTask, id, integer } from "../tasks/validation.js";
+import { identityResource } from "../identity/index.js";
 
 export const GITHUB_OPERATIONS = Object.freeze([
   { id: "github_repository_read", permissions: ["repository:read"] },
@@ -7,6 +8,11 @@ export const GITHUB_OPERATIONS = Object.freeze([
 
 /** Scope is chosen by the creator and stored by the platform, never an invocation URL. */
 export function parseConnectionSetup(value) {
+  if (["agentmail", "agentphone"].includes(value?.provider)) {
+    object(value, ["provider", "resourceId"], "Agent identity connection");
+    identityResource(value.resourceId);
+    return structuredClone(value);
+  }
   if (value?.provider === "resend") {
     object(value, ["provider", "from", "recipient"], "Email connection");
     for (const field of ["from", "recipient"]) {
@@ -75,6 +81,8 @@ export function parseConnectionInvocation(value) {
 /** Fixed creator-chosen sender and recipient; generated code supplies only bounded subject and text. */
 export function connectionScopeKey(value) {
   const scope = parseConnectionSetup(value);
+  if (["agentmail", "agentphone"].includes(scope.provider))
+    return `${scope.provider}:${scope.resourceId}`;
   return scope.provider === "github"
     ? `github:${scope.repository}`
     : `resend:${scope.from}:${scope.recipient}`;

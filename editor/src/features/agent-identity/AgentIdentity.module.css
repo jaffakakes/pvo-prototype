@@ -1,0 +1,96 @@
+.panel {
+  border-top: 1px solid var(--q14);
+  margin-block-start: 24px;
+  padding-block-start: 20px;
+  font-size: 16px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.panel h3 {
+  font-size: 20px;
+  margin: 0 0 8px;
+}
+.panel h4 {
+  font-size: 17px;
+  margin: 0 0 6px;
+}
+.panel p {
+  margin: 8px 0;
+}
+.panel .secondary {
+  font-size: 14px;
+}
+.channel {
+  border-block-end: 1px solid var(--q14);
+  padding-block: 20px;
+}
+.form {
+  display: grid;
+  gap: 10px;
+  margin-block: 16px;
+}
+.form label {
+  font-weight: 600;
+}
+.form input:not([type="checkbox"]),
+.form select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  background: var(--input);
+  color: var(--text);
+  caret-color: var(--accent);
+  border: 1px solid var(--q14);
+  border-radius: 8px;
+  padding: 10px;
+  font: inherit;
+  font-size: 16px;
+}
+.permission {
+  display: flex;
+  align-items: start;
+  gap: 10px;
+  min-height: 44px;
+}
+.permission input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-block-start: 3px;
+  accent-color: var(--accent);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block: 12px;
+}
+.panel button {
+  min-height: 44px;
+  padding: 10px 12px;
+  font: inherit;
+  background: var(--input);
+  color: var(--text);
+  border: 1px solid var(--q14);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.panel button:hover:enabled {
+  background: var(--q14);
+}
+.panel button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.panel a {
+  color: var(--text);
+  text-underline-offset: 3px;
+}
+.panel :is(input, select, button, a):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.panel ::selection {
+  color: var(--text);
+  background: var(--q14);
+}

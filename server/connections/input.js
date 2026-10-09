@@ -29,6 +29,8 @@ export function connectionCommand(kind, value) {
         "Connection revision",
       );
       value = { ...value, setup: parseConnectionSetup(value.setup) };
+      if (["agentmail", "agentphone"].includes(value.setup.provider))
+        throw new Error("Use private agent identity setup.");
       if (value.setup.provider === "resend") parseResendCredential(value.token);
       else if (
         typeof value.token !== "string" ||

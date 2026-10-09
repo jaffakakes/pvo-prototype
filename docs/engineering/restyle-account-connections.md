@@ -65,4 +65,27 @@ That completed 2B proof claims no live model-quality, private-repository access,
 
 ## Roadmap 3 email extension
 
-[Background work](restyle-background-work.md) adds a separate installed Resend setup shape: creator-selected `from` and `recipient`, with private API key and optional callback signing secret encrypted through the same account vault. Only approved checked Container recipes can send bounded plain-text email. Ordinary Try stays offline. Generic connection invocation remains the installed GitHub reads; Resend is not an arbitrary API proxy. A full-access Resend key is needed for sending and reading delivery evidence. Account-linked agent addresses remain later Roadmap4D work.
+[Background work](restyle-background-work.md) adds a separate installed Resend setup shape: creator-selected `from` and `recipient`, with private API key and optional callback signing secret encrypted through the same account vault. Only approved checked Container recipes can send bounded plain-text email. Ordinary Try stays offline. Generic connection invocation remains the installed GitHub reads; Resend is not an arbitrary API proxy. A full-access Resend key is needed for sending and reading delivery evidence.
+
+## Roadmap 5 identity extension
+
+[Agent identity and account setup](restyle-cloud-agent-roadmaps/05-agent-identity-and-onboarding.md) extends this same owner and vault with one AgentMail inbox and optional AgentPhone number. The closed scope is `{ provider, resourceId }`. Their saved account grants expose an address, status and identity permission with no generic provider operations; ordinary model account questions still advertise only the currently installed GitHub/Resend setup. The dedicated human-only [identity route](../../server/agent-identity/routes.js) handles bootstrap, code verification/resend and private existing-account selection. The [identity manager](../../server/agent-identity/management.js) persists intent, revisions and consent before dispatch, encrypts one-time bootstrap keys and then installs a verified credential in the existing vault. Bootstrap ciphertext is erased once that transfer completes.
+
+The temporary workshop never owns these accounts. New setup uses the signed-in creator's verified Restyle email and a server-generated unique resource name. The form only asks for provider terms/cost approval, followed by any ownership code. No manual email/name entry or separate dashboard signup is required for this bootstrap. The agent's working inbox receives later service verification; Restyle gains no access to the creator's personal mailbox. Human email/code stays outside model inputs. Phone setup explicitly confirms the documented US$3 monthly number cost. Existing-key imports choose an active resource from a bounded private provider page and cannot replace a saved identity with a different resource. Check retries use retained keys after temporary outages. Disconnect removes Restyle access even if the wrapping key is unavailable; it does not close the provider account or stop number billing. Unknown signup/verification outcomes are not silently repeated. One-time keys are captured before subsequent provider probes, but an actually lost provider reply still requires honest recovery.
+
+### Signed account email for identity bootstrap
+
+In the existing Clerk **Development** instance, Sessions → Customize session token uses these two signed claims:
+
+```json
+{
+  "restyle_email": "{{user.primary_email_address}}",
+  "restyle_email_verified": "{{user.email_verified}}"
+}
+```
+
+The [private account-proof adapter](../../editor/src/infrastructure/auth/accountSessionToken.ts) checks the current Restyle cookie owner, obtains a fresh ordinary Clerk session token and passes it only in the identity-start Authorization header. The server uses its existing issuer/signature/origin/session/freshness validation, requires a nonempty email and literal verified boolean, then checks the Clerk issuer/subject mapping against that exact cookie owner. Matching email text never merges accounts. The public start body is exactly `{ provider, expectedRevision, consent, monthlyNumberCents }`; client-selected email/name fields are rejected. The private lifecycle receives only the trusted derived contact/name and saves its original attempt before dispatch. Resend/recovery keeps that original contact even if the primary account email changes later. Owner/session changes and cancelled or late sign-in loads cannot dispatch setup.
+
+The development dashboard's rendered claim preview confirms a string email and boolean `true`. This is not an extra Clerk secret, JWT template, personal-mail permission, schema migration or new login path. Missing/unverified claims require email sign-in recovery before new setup; there is no manual-email fallback. Existing saved identities/import/check/disconnect remain under their current owner/revision lifecycle. To reproduce beta on another account instance, configure these exact session claims before new identity bootstrap; production configuration is untouched.
+
+These identity connections do not yet perform downstream signup or give a Container arbitrary email/phone access. Private saved code-verification infrastructure is now controlled-tested in [the task-bound workflow](../../server/account-onboarding/verification.js); its proof journal is encrypted and has no public inbox/model tool. A real named signup consumer, magic-link/session handling, account signup/key acquisition and checked Container attachment remain the unchecked 5B–5E gates. Controlled tests do not establish live account or message delivery.
