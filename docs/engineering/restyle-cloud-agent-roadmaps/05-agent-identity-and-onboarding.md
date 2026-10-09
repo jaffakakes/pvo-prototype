@@ -52,6 +52,8 @@ Unchecked until observed. Controlled provider tests are not live provider accept
 
 **Beta delivery:** isolated Worker `882cd697-f75a-43ba-82ab-9e535ded1814`, editor revision `restyle-editor-shell-c1021d5642ba0912`. Exact HTTPS and local4173 HTML/service-worker/release bytes match. Older hashed assets and all original outputs are preserved; source generated output is restored. Production version inventory is unchanged. Real identities are awaiting creator setup/ownership verification and 5E.01; no downstream signup or Container identity operation is claimed.
 
+**GitHub checkpoint:** source/docs `c603686` pushed on `codex/restyle-agent-identity`, [draft PR #111](https://github.com/jaffakakes/pvo-prototype/pull/111) stacked against prerequisite PR #110. Both stay unmerged. The continuation branch contains all prerequisite beta source, so another machine can fetch/checkout it; secrets remain outside Git.
+
 ## Exact continuation after private setup
 
 Start **5B.01** beside the existing task/connection owner, not inside the identity lifecycle manager. Save one owner/task/service setup attempt before dispatch, with its selected identity connection/revision, operation ID, expected sender, exact recipient and expiry. Codes, verification links, browser session cookies and acquired keys stay encrypted outside task/model logs. Read only the saved resource through the fixed provider API; unrelated, stale or ambiguous messages cannot satisfy an attempt. Task cancellation, connection replacement and owner changes fence consumption and late results. A code is handed only to the trusted named signup operation, not returned as a general-purpose inbox/model tool.
