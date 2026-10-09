@@ -1,4 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
+import { assistantDailyCapacity } from "./dailyCapacity.js";
 
 const validKey = (key) => typeof key === "string" && /^[a-f0-9]{64}$/.test(key);
 
@@ -11,12 +12,38 @@ export class AssistantBudget extends DurableObject {
       CREATE TABLE IF NOT EXISTS reservations (id TEXT PRIMARY KEY, client TEXT NOT NULL, minute INTEGER NOT NULL, state TEXT NOT NULL)`);
   }
 
+  now() {
+    return Date.now();
+  }
+
+  dailyLimits() {
+    return assistantDailyCapacity(
+      this.env.ASSISTANT_DAILY_CAPACITY,
+      this.now(),
+    );
+  }
+
   async reserve(key, operationKey = null) {
     if (!validKey(key) || (operationKey !== null && !validKey(operationKey)))
       return false;
-    const now = Date.now();
+    return (await this.reserveDecision(key, operationKey)).accepted;
+  }
+
+  // Saved goals need a trusted reason and wakeup time; foreground keeps its boolean contract.
+  reserveTask(key, operationKey) {
+    return this.reserveDecision(key, operationKey);
+  }
+
+  async reserveDecision(key, operationKey) {
+    if (!validKey(key) || (operationKey !== null && !validKey(operationKey)))
+      throw new Error("Invalid inference reservation identity.");
+    const now = this.now();
     const minute = Math.floor(now / 60000);
-    const accepted = this.ctx.storage.transactionSync(() => {
+    const nextDay = Math.floor(now / 86400000) * 86400000 + 86400000;
+    const daily = this.dailyLimits();
+    const denied = (reason, retryAt) => ({ accepted: false, reason, retryAt });
+    const accepted = { accepted: true };
+    const decision = this.ctx.storage.transactionSync(() => {
       const sql = this.ctx.storage.sql;
       if (operationKey) {
         const prior = sql
@@ -25,12 +52,16 @@ export class AssistantBudget extends DurableObject {
             operationKey,
           )
           .toArray()[0];
-        if (prior) return prior.client === key && prior.state !== "released";
+        if (prior) {
+          if (prior.client !== key || prior.state === "released")
+            return denied("reservation_closed", null);
+          return accepted;
+        }
         if (
           sql.exec("SELECT COUNT(*) AS count FROM reservations").one().count >=
           4096
         )
-          return false;
+          return denied("model_allowance", nextDay);
       }
       const global = sql
         .exec("SELECT total FROM counts WHERE key = 'global'")
@@ -40,11 +71,11 @@ export class AssistantBudget extends DurableObject {
         .toArray()[0];
       const burst = client?.minute === minute ? client.burst : 0;
       if (
-        (global?.total ?? 0) >= 60 ||
-        (client?.total ?? 0) >= 20 ||
-        burst >= 12
+        (global?.total ?? 0) >= daily.global ||
+        (client?.total ?? 0) >= daily.client
       )
-        return false;
+        return denied("model_allowance", nextDay);
+      if (burst >= 12) return denied("model_capacity", (minute + 1) * 60000);
       sql.exec(
         "INSERT OR REPLACE INTO counts (key, total, minute, burst) VALUES ('global', ?, ?, 0)",
         (global?.total ?? 0) + 1,
@@ -64,10 +95,10 @@ export class AssistantBudget extends DurableObject {
           key,
           minute,
         );
-      return true;
+      return accepted;
     });
-    if (accepted) await this.scheduleExpiry(now);
-    return accepted;
+    if (decision.accepted) await this.scheduleExpiry(now);
+    return decision;
   }
 
   async settle(key, operationKey, consumed) {
@@ -119,7 +150,7 @@ export class AssistantBudget extends DurableObject {
       }
       return true;
     });
-    await this.scheduleExpiry(Date.now());
+    await this.scheduleExpiry(this.now());
     return result;
   }
 

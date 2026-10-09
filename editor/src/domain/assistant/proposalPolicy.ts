@@ -3,7 +3,8 @@ import { outcomeAction } from "../components/languageSource";
 
 const STYLE_PROPERTIES = new Set([
   "color", "background", "background-color", "border-color", "border-radius",
-  "font-size", "font-weight", "text-align",
+  "border-width", "box-shadow", "font-size", "font-weight", "gap", "letter-spacing",
+  "line-height", "padding", "text-align", "text-transform",
 ]);
 
 /** Drop unknown visual keys; the compiler still validates every selector and value. */

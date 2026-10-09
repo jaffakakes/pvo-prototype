@@ -1,0 +1,2878 @@
+{
+  "policy": "restyle-coding-comparison-v1",
+  "startedAt": "2026-10-09T00:30:56.908Z",
+  "completedAt": "2026-10-09T00:35:39.463Z",
+  "scope": "Coding after an identical frozen behavior agreement; excludes UI generation, intent/research, cloud startup and hosted deployment.",
+  "runtime": {
+    "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+    "nodeVersion": "v24.20.0"
+  },
+  "modelTurnLimit": null,
+  "outputTokensPerInference": 32768,
+  "inferenceTimeoutMs": 180000,
+  "priceDate": "2026-10-09",
+  "currency": "USD",
+  "pricesAreEstimates": true,
+  "meteringNote": "Repriced from original provider usage, including Sol cache writes at $2.50/M. The early live console omitted the cache-write premium; these evidence values supersede it. Reasoning tokens are counted once within output tokens.",
+  "scenarios": [
+    {
+      "id": "guestbook",
+      "request": "Build the backend for a shared guestbook component. Save full names and messages, show the latest three and give clear confirmations. Handle blank input, Unicode and a full guestbook. Do not send messages or contact outside services.",
+      "agreement": {
+        "description": "Shared guestbook. Trim names/messages; reject blank values without changing state. Append full entries oldest first using supplied now. Keep at most twelve entries; reject additions when full. submit returns status saved, invalid or full and message 'Saved, NAME.', 'Enter a name and message.' or 'Guestbook full.'. latest returns at most three newest entries, newest first, without changing state. No email or network.",
+        "state": {
+          "schema": {
+            "type": "object",
+            "fields": [
+              {
+                "name": "entries",
+                "description": "Value of entries.",
+                "schema": {
+                  "type": "array",
+                  "maxItems": 12,
+                  "items": {
+                    "type": "object",
+                    "fields": [
+                      {
+                        "name": "name",
+                        "description": "Value of name.",
+                        "schema": {
+                          "type": "string",
+                          "maxBytes": 80
+                        }
+                      },
+                      {
+                        "name": "message",
+                        "description": "Value of message.",
+                        "schema": {
+                          "type": "string",
+                          "maxBytes": 1024
+                        }
+                      },
+                      {
+                        "name": "createdAt",
+                        "description": "Value of createdAt.",
+                        "schema": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9999999999999
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "initial": {
+            "entries": []
+          }
+        },
+        "operations": [
+          {
+            "name": "submit",
+            "description": "Save a guestbook entry under the exact description rules.",
+            "audience": "public",
+            "access": "write",
+            "input": {
+              "type": "object",
+              "fields": [
+                {
+                  "name": "name",
+                  "description": "Value of name.",
+                  "schema": {
+                    "type": "string",
+                    "maxBytes": 80
+                  }
+                },
+                {
+                  "name": "message",
+                  "description": "Value of message.",
+                  "schema": {
+                    "type": "string",
+                    "maxBytes": 1024
+                  }
+                }
+              ]
+            },
+            "result": {
+              "type": "object",
+              "fields": [
+                {
+                  "name": "status",
+                  "description": "Value of status.",
+                  "schema": {
+                    "type": "enum",
+                    "values": [
+                      "saved",
+                      "invalid",
+                      "full"
+                    ]
+                  }
+                },
+                {
+                  "name": "message",
+                  "description": "Value of message.",
+                  "schema": {
+                    "type": "string",
+                    "maxBytes": 512
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "latest",
+            "description": "Read the latest three entries newest first.",
+            "audience": "public",
+            "access": "read",
+            "input": {
+              "type": "null"
+            },
+            "result": {
+              "type": "array",
+              "maxItems": 3,
+              "items": {
+                "type": "object",
+                "fields": [
+                  {
+                    "name": "name",
+                    "description": "Value of name.",
+                    "schema": {
+                      "type": "string",
+                      "maxBytes": 80
+                    }
+                  },
+                  {
+                    "name": "message",
+                    "description": "Value of message.",
+                    "schema": {
+                      "type": "string",
+                      "maxBytes": 1024
+                    }
+                  },
+                  {
+                    "name": "createdAt",
+                    "description": "Value of createdAt.",
+                    "schema": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9999999999999
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "cases": [
+          {
+            "id": "save-and-read",
+            "description": "Verify save-and-read.",
+            "initialState": {
+              "entries": []
+            },
+            "steps": [
+              {
+                "operation": "submit",
+                "input": {
+                  "name": " Ari ",
+                  "message": " Hello "
+                },
+                "now": 100,
+                "expected": {
+                  "state": {
+                    "entries": [
+                      {
+                        "name": "Ari",
+                        "message": "Hello",
+                        "createdAt": 100
+                      }
+                    ]
+                  },
+                  "result": {
+                    "status": "saved",
+                    "message": "Saved, Ari."
+                  }
+                }
+              },
+              {
+                "operation": "latest",
+                "input": null,
+                "now": 100,
+                "expected": {
+                  "state": {
+                    "entries": [
+                      {
+                        "name": "Ari",
+                        "message": "Hello",
+                        "createdAt": 100
+                      }
+                    ]
+                  },
+                  "result": [
+                    {
+                      "name": "Ari",
+                      "message": "Hello",
+                      "createdAt": 100
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "holdouts": [
+        {
+          "id": "blank-rejected",
+          "description": "Verify blank-rejected.",
+          "initialState": {
+            "entries": []
+          },
+          "steps": [
+            {
+              "operation": "submit",
+              "input": {
+                "name": " \t ",
+                "message": "Hello"
+              },
+              "now": 100,
+              "expected": {
+                "state": {
+                  "entries": []
+                },
+                "result": {
+                  "status": "invalid",
+                  "message": "Enter a name and message."
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "unicode-and-newest-three",
+          "description": "Verify unicode-and-newest-three.",
+          "initialState": {
+            "entries": []
+          },
+          "steps": [
+            {
+              "operation": "submit",
+              "input": {
+                "name": "Visitor 0",
+                "message": "Note 0"
+              },
+              "now": 101,
+              "expected": {
+                "state": {
+                  "entries": [
+                    {
+                      "name": "Visitor 0",
+                      "message": "Note 0",
+                      "createdAt": 101
+                    }
+                  ]
+                },
+                "result": {
+                  "status": "saved",
+                  "message": "Saved, Visitor 0."
+                }
+              }
+            },
+            {
+              "operation": "submit",
+              "input": {
+                "name": "Visitor 1",
+                "message": "Note 1"
+              },
+              "now": 102,
+              "expected": {
+                "state": {
+                  "entries": [
+                    {
+                      "name": "Visitor 0",
+                      "message": "Note 0",
+                      "createdAt": 101
+                    },
+                    {
+                      "name": "Visitor 1",
+                      "message": "Note 1",
+                      "createdAt": 102
+                    }
+                  ]
+                },
+                "result": {
+                  "status": "saved",
+                  "message": "Saved, Visitor 1."
+                }
+              }
+            },
+            {
+              "operation": "submit",
+              "input": {
+                "name": "Visitor 2",
+                "message": "Note 2"
+              },
+              "now": 103,
+              "expected": {
+                "state": {
+                  "entries": [
+                    {
+                      "name": "Visitor 0",
+                      "message": "Note 0",
+                      "createdAt": 101
+                    },
+                    {
+                      "name": "Visitor 1",
+                      "message": "Note 1",
+                      "createdAt": 102
+                    },
+                    {
+                      "name": "Visitor 2",
+                      "message": "Note 2",
+                      "createdAt": 103
+                    }
+                  ]
+                },
+                "result": {
+                  "status": "saved",
+                  "message": "Saved, Visitor 2."
+                }
+              }
+            },
+            {
+              "operation": "submit",
+              "input": {
+                "name": "Visitor 3",
+                "message": "🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂"
+              },
+              "now": 104,
+              "expected": {
+                "state": {
+                  "entries": [
+                    {
+                      "name": "Visitor 0",
+                      "message": "Note 0",
+                      "createdAt": 101
+                    },
+                    {
+                      "name": "Visitor 1",
+                      "message": "Note 1",
+                      "createdAt": 102
+                    },
+                    {
+                      "name": "Visitor 2",
+                      "message": "Note 2",
+                      "createdAt": 103
+                    },
+                    {
+                      "name": "Visitor 3",
+                      "message": "🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂",
+                      "createdAt": 104
+                    }
+                  ]
+                },
+                "result": {
+                  "status": "saved",
+                  "message": "Saved, Visitor 3."
+                }
+              }
+            },
+            {
+              "operation": "latest",
+              "input": null,
+              "now": 100,
+              "expected": {
+                "state": {
+                  "entries": [
+                    {
+                      "name": "Visitor 0",
+                      "message": "Note 0",
+                      "createdAt": 101
+                    },
+                    {
+                      "name": "Visitor 1",
+                      "message": "Note 1",
+                      "createdAt": 102
+                    },
+                    {
+                      "name": "Visitor 2",
+                      "message": "Note 2",
+                      "createdAt": 103
+                    },
+                    {
+                      "name": "Visitor 3",
+                      "message": "🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂",
+                      "createdAt": 104
+                    }
+                  ]
+                },
+                "result": [
+                  {
+                    "name": "Visitor 3",
+                    "message": "🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂",
+                    "createdAt": 104
+                  },
+                  {
+                    "name": "Visitor 2",
+                    "message": "Note 2",
+                    "createdAt": 103
+                  },
+                  {
+                    "name": "Visitor 1",
+                    "message": "Note 1",
+                    "createdAt": 102
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "full-preserves-data",
+          "description": "Verify full-preserves-data.",
+          "initialState": {
+            "entries": [
+              {
+                "name": "Person 0",
+                "message": "Retained",
+                "createdAt": 0
+              },
+              {
+                "name": "Person 1",
+                "message": "Retained",
+                "createdAt": 1
+              },
+              {
+                "name": "Person 2",
+                "message": "Retained",
+                "createdAt": 2
+              },
+              {
+                "name": "Person 3",
+                "message": "Retained",
+                "createdAt": 3
+              },
+              {
+                "name": "Person 4",
+                "message": "Retained",
+                "createdAt": 4
+              },
+              {
+                "name": "Person 5",
+                "message": "Retained",
+                "createdAt": 5
+              },
+              {
+                "name": "Person 6",
+                "message": "Retained",
+                "createdAt": 6
+              },
+              {
+                "name": "Person 7",
+                "message": "Retained",
+                "createdAt": 7
+              },
+              {
+                "name": "Person 8",
+                "message": "Retained",
+                "createdAt": 8
+              },
+              {
+                "name": "Person 9",
+                "message": "Retained",
+                "createdAt": 9
+              },
+              {
+                "name": "Person 10",
+                "message": "Retained",
+                "createdAt": 10
+              },
+              {
+                "name": "Person 11",
+                "message": "Retained",
+                "createdAt": 11
+              }
+            ]
+          },
+          "steps": [
+            {
+              "operation": "submit",
+              "input": {
+                "name": "Extra",
+                "message": "Should not save"
+              },
+              "now": 100,
+              "expected": {
+                "state": {
+                  "entries": [
+                    {
+                      "name": "Person 0",
+                      "message": "Retained",
+                      "createdAt": 0
+                    },
+                    {
+                      "name": "Person 1",
+                      "message": "Retained",
+                      "createdAt": 1
+                    },
+                    {
+                      "name": "Person 2",
+                      "message": "Retained",
+                      "createdAt": 2
+                    },
+                    {
+                      "name": "Person 3",
+                      "message": "Retained",
+                      "createdAt": 3
+                    },
+                    {
+                      "name": "Person 4",
+                      "message": "Retained",
+                      "createdAt": 4
+                    },
+                    {
+                      "name": "Person 5",
+                      "message": "Retained",
+                      "createdAt": 5
+                    },
+                    {
+                      "name": "Person 6",
+                      "message": "Retained",
+                      "createdAt": 6
+                    },
+                    {
+                      "name": "Person 7",
+                      "message": "Retained",
+                      "createdAt": 7
+                    },
+                    {
+                      "name": "Person 8",
+                      "message": "Retained",
+                      "createdAt": 8
+                    },
+                    {
+                      "name": "Person 9",
+                      "message": "Retained",
+                      "createdAt": 9
+                    },
+                    {
+                      "name": "Person 10",
+                      "message": "Retained",
+                      "createdAt": 10
+                    },
+                    {
+                      "name": "Person 11",
+                      "message": "Retained",
+                      "createdAt": 11
+                    }
+                  ]
+                },
+                "result": {
+                  "status": "full",
+                  "message": "Guestbook full."
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "booking",
+      "request": "Build the backend for friends to take limited spaces and cancel their booking. Repeated acceptance must not use another place; cancelling frees a place. Keep the guest list after a restart. No restaurant connection or outside messages.",
+      "agreement": {
+        "description": "Limited-space booking list. Trim names; blank names return invalid. Names are case-sensitive identities. join returns already_joined before checking capacity, full when no room, otherwise appends and returns accepted. cancel removes a matching trimmed name and returns removed, otherwise not_joined. guests returns names in retained order without changing state. No external bookings or messages.",
+        "state": {
+          "schema": {
+            "type": "object",
+            "fields": [
+              {
+                "name": "capacity",
+                "description": "Value of capacity.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 12
+                }
+              },
+              {
+                "name": "guests",
+                "description": "Value of guests.",
+                "schema": {
+                  "type": "array",
+                  "maxItems": 12,
+                  "items": {
+                    "type": "string",
+                    "maxBytes": 80
+                  }
+                }
+              }
+            ]
+          },
+          "initial": {
+            "capacity": 1,
+            "guests": []
+          }
+        },
+        "operations": [
+          {
+            "name": "join",
+            "description": "Join under capacity and identity rules.",
+            "audience": "public",
+            "access": "write",
+            "input": {
+              "type": "object",
+              "fields": [
+                {
+                  "name": "name",
+                  "description": "Value of name.",
+                  "schema": {
+                    "type": "string",
+                    "maxBytes": 80
+                  }
+                }
+              ]
+            },
+            "result": {
+              "type": "enum",
+              "values": [
+                "accepted",
+                "already_joined",
+                "full",
+                "invalid"
+              ]
+            }
+          },
+          {
+            "name": "cancel",
+            "description": "Remove an existing booking.",
+            "audience": "public",
+            "access": "write",
+            "input": {
+              "type": "object",
+              "fields": [
+                {
+                  "name": "name",
+                  "description": "Value of name.",
+                  "schema": {
+                    "type": "string",
+                    "maxBytes": 80
+                  }
+                }
+              ]
+            },
+            "result": {
+              "type": "enum",
+              "values": [
+                "removed",
+                "not_joined",
+                "invalid"
+              ]
+            }
+          },
+          {
+            "name": "guests",
+            "description": "Read the retained guest names.",
+            "audience": "public",
+            "access": "read",
+            "input": {
+              "type": "null"
+            },
+            "result": {
+              "type": "array",
+              "maxItems": 12,
+              "items": {
+                "type": "string",
+                "maxBytes": 80
+              }
+            }
+          }
+        ],
+        "cases": [
+          {
+            "id": "last-place-and-cancel",
+            "description": "Verify last-place-and-cancel.",
+            "initialState": {
+              "capacity": 1,
+              "guests": []
+            },
+            "steps": [
+              {
+                "operation": "join",
+                "input": {
+                  "name": "Ari"
+                },
+                "now": 100,
+                "expected": {
+                  "state": {
+                    "capacity": 1,
+                    "guests": [
+                      "Ari"
+                    ]
+                  },
+                  "result": "accepted"
+                }
+              },
+              {
+                "operation": "join",
+                "input": {
+                  "name": "Bo"
+                },
+                "now": 100,
+                "expected": {
+                  "state": {
+                    "capacity": 1,
+                    "guests": [
+                      "Ari"
+                    ]
+                  },
+                  "result": "full"
+                }
+              },
+              {
+                "operation": "cancel",
+                "input": {
+                  "name": "Ari"
+                },
+                "now": 100,
+                "expected": {
+                  "state": {
+                    "capacity": 1,
+                    "guests": []
+                  },
+                  "result": "removed"
+                }
+              },
+              {
+                "operation": "guests",
+                "input": null,
+                "now": 100,
+                "expected": {
+                  "state": {
+                    "capacity": 1,
+                    "guests": []
+                  },
+                  "result": []
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "holdouts": [
+        {
+          "id": "duplicate-before-full",
+          "description": "Verify duplicate-before-full.",
+          "initialState": {
+            "capacity": 2,
+            "guests": [
+              "Zoë",
+              "Lee"
+            ]
+          },
+          "steps": [
+            {
+              "operation": "join",
+              "input": {
+                "name": " Zoë "
+              },
+              "now": 100,
+              "expected": {
+                "state": {
+                  "capacity": 2,
+                  "guests": [
+                    "Zoë",
+                    "Lee"
+                  ]
+                },
+                "result": "already_joined"
+              }
+            },
+            {
+              "operation": "cancel",
+              "input": {
+                "name": "Zoë"
+              },
+              "now": 100,
+              "expected": {
+                "state": {
+                  "capacity": 2,
+                  "guests": [
+                    "Lee"
+                  ]
+                },
+                "result": "removed"
+              }
+            },
+            {
+              "operation": "join",
+              "input": {
+                "name": "Bo"
+              },
+              "now": 100,
+              "expected": {
+                "state": {
+                  "capacity": 2,
+                  "guests": [
+                    "Lee",
+                    "Bo"
+                  ]
+                },
+                "result": "accepted"
+              }
+            }
+          ]
+        },
+        {
+          "id": "invalid-and-absent",
+          "description": "Verify invalid-and-absent.",
+          "initialState": {
+            "capacity": 2,
+            "guests": [
+              "Zoë",
+              "Lee"
+            ]
+          },
+          "steps": [
+            {
+              "operation": "join",
+              "input": {
+                "name": " \n "
+              },
+              "now": 100,
+              "expected": {
+                "state": {
+                  "capacity": 2,
+                  "guests": [
+                    "Zoë",
+                    "Lee"
+                  ]
+                },
+                "result": "invalid"
+              }
+            },
+            {
+              "operation": "cancel",
+              "input": {
+                "name": "Absent"
+              },
+              "now": 100,
+              "expected": {
+                "state": {
+                  "capacity": 2,
+                  "guests": [
+                    "Zoë",
+                    "Lee"
+                  ]
+                },
+                "result": "not_joined"
+              }
+            },
+            {
+              "operation": "guests",
+              "input": null,
+              "now": 100,
+              "expected": {
+                "state": {
+                  "capacity": 2,
+                  "guests": [
+                    "Zoë",
+                    "Lee"
+                  ]
+                },
+                "result": [
+                  "Zoë",
+                  "Lee"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "zero-capacity",
+          "description": "Verify zero-capacity.",
+          "initialState": {
+            "capacity": 0,
+            "guests": []
+          },
+          "steps": [
+            {
+              "operation": "join",
+              "input": {
+                "name": "First"
+              },
+              "now": 100,
+              "expected": {
+                "state": {
+                  "capacity": 0,
+                  "guests": []
+                },
+                "result": "full"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "poll",
+      "request": "Build the backend for a tea-or-coffee poll that closes at a set time. Each person gets one vote and can change it before closing. Show truthful totals after reopening and reject late votes. Use the time supplied by Restyle.",
+      "agreement": {
+        "description": "Two-choice poll. The host supplies now. At now >= closesAt, vote returns closed and does not change state. Before closing, trim voter; blank returns invalid. A new case-sensitive voter appends a vote and returns recorded. An existing voter changing choice replaces it in place and returns changed; same choice returns unchanged. tally returns counts for tea and coffee and closed=(now>=closesAt), without changing state. No network or actual timers.",
+        "state": {
+          "schema": {
+            "type": "object",
+            "fields": [
+              {
+                "name": "closesAt",
+                "description": "Value of closesAt.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9999999999999
+                }
+              },
+              {
+                "name": "votes",
+                "description": "Value of votes.",
+                "schema": {
+                  "type": "array",
+                  "maxItems": 32,
+                  "items": {
+                    "type": "object",
+                    "fields": [
+                      {
+                        "name": "voter",
+                        "description": "Value of voter.",
+                        "schema": {
+                          "type": "string",
+                          "maxBytes": 80
+                        }
+                      },
+                      {
+                        "name": "choice",
+                        "description": "Value of choice.",
+                        "schema": {
+                          "type": "enum",
+                          "values": [
+                            "tea",
+                            "coffee"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "initial": {
+            "closesAt": 200,
+            "votes": []
+          }
+        },
+        "operations": [
+          {
+            "name": "vote",
+            "description": "Save or update one vote while the poll is open.",
+            "audience": "public",
+            "access": "write",
+            "input": {
+              "type": "object",
+              "fields": [
+                {
+                  "name": "voter",
+                  "description": "Value of voter.",
+                  "schema": {
+                    "type": "string",
+                    "maxBytes": 80
+                  }
+                },
+                {
+                  "name": "choice",
+                  "description": "Value of choice.",
+                  "schema": {
+                    "type": "enum",
+                    "values": [
+                      "tea",
+                      "coffee"
+                    ]
+                  }
+                }
+              ]
+            },
+            "result": {
+              "type": "enum",
+              "values": [
+                "recorded",
+                "changed",
+                "unchanged",
+                "closed",
+                "invalid"
+              ]
+            }
+          },
+          {
+            "name": "tally",
+            "description": "Count current votes and report the deadline state.",
+            "audience": "public",
+            "access": "read",
+            "input": {
+              "type": "null"
+            },
+            "result": {
+              "type": "object",
+              "fields": [
+                {
+                  "name": "tea",
+                  "description": "Value of tea.",
+                  "schema": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 32
+                  }
+                },
+                {
+                  "name": "coffee",
+                  "description": "Value of coffee.",
+                  "schema": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 32
+                  }
+                },
+                {
+                  "name": "closed",
+                  "description": "Value of closed.",
+                  "schema": {
+                    "type": "boolean"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "cases": [
+          {
+            "id": "record-update-tally",
+            "description": "Verify record-update-tally.",
+            "initialState": {
+              "closesAt": 200,
+              "votes": []
+            },
+            "steps": [
+              {
+                "operation": "vote",
+                "input": {
+                  "voter": "Ari",
+                  "choice": "tea"
+                },
+                "now": 100,
+                "expected": {
+                  "state": {
+                    "closesAt": 200,
+                    "votes": [
+                      {
+                        "voter": "Ari",
+                        "choice": "tea"
+                      }
+                    ]
+                  },
+                  "result": "recorded"
+                }
+              },
+              {
+                "operation": "vote",
+                "input": {
+                  "voter": "Ari",
+                  "choice": "coffee"
+                },
+                "now": 100,
+                "expected": {
+                  "state": {
+                    "closesAt": 200,
+                    "votes": [
+                      {
+                        "voter": "Ari",
+                        "choice": "coffee"
+                      }
+                    ]
+                  },
+                  "result": "changed"
+                }
+              },
+              {
+                "operation": "tally",
+                "input": null,
+                "now": 100,
+                "expected": {
+                  "state": {
+                    "closesAt": 200,
+                    "votes": [
+                      {
+                        "voter": "Ari",
+                        "choice": "coffee"
+                      }
+                    ]
+                  },
+                  "result": {
+                    "tea": 0,
+                    "coffee": 1,
+                    "closed": false
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "holdouts": [
+        {
+          "id": "deadline-boundary",
+          "description": "Verify deadline-boundary.",
+          "initialState": {
+            "closesAt": 500,
+            "votes": [
+              {
+                "voter": "Zoë",
+                "choice": "tea"
+              },
+              {
+                "voter": "Bo",
+                "choice": "coffee"
+              }
+            ]
+          },
+          "steps": [
+            {
+              "operation": "vote",
+              "input": {
+                "voter": "Late",
+                "choice": "tea"
+              },
+              "now": 500,
+              "expected": {
+                "state": {
+                  "closesAt": 500,
+                  "votes": [
+                    {
+                      "voter": "Zoë",
+                      "choice": "tea"
+                    },
+                    {
+                      "voter": "Bo",
+                      "choice": "coffee"
+                    }
+                  ]
+                },
+                "result": "closed"
+              }
+            },
+            {
+              "operation": "tally",
+              "input": null,
+              "now": 501,
+              "expected": {
+                "state": {
+                  "closesAt": 500,
+                  "votes": [
+                    {
+                      "voter": "Zoë",
+                      "choice": "tea"
+                    },
+                    {
+                      "voter": "Bo",
+                      "choice": "coffee"
+                    }
+                  ]
+                },
+                "result": {
+                  "tea": 1,
+                  "coffee": 1,
+                  "closed": true
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "trim-duplicate-and-order",
+          "description": "Verify trim-duplicate-and-order.",
+          "initialState": {
+            "closesAt": 500,
+            "votes": [
+              {
+                "voter": "Zoë",
+                "choice": "tea"
+              },
+              {
+                "voter": "Bo",
+                "choice": "coffee"
+              }
+            ]
+          },
+          "steps": [
+            {
+              "operation": "vote",
+              "input": {
+                "voter": " Zoë ",
+                "choice": "tea"
+              },
+              "now": 499,
+              "expected": {
+                "state": {
+                  "closesAt": 500,
+                  "votes": [
+                    {
+                      "voter": "Zoë",
+                      "choice": "tea"
+                    },
+                    {
+                      "voter": "Bo",
+                      "choice": "coffee"
+                    }
+                  ]
+                },
+                "result": "unchanged"
+              }
+            },
+            {
+              "operation": "vote",
+              "input": {
+                "voter": "Bo",
+                "choice": "tea"
+              },
+              "now": 499,
+              "expected": {
+                "state": {
+                  "closesAt": 500,
+                  "votes": [
+                    {
+                      "voter": "Zoë",
+                      "choice": "tea"
+                    },
+                    {
+                      "voter": "Bo",
+                      "choice": "tea"
+                    }
+                  ]
+                },
+                "result": "changed"
+              }
+            }
+          ]
+        },
+        {
+          "id": "blank-voter",
+          "description": "Verify blank-voter.",
+          "initialState": {
+            "closesAt": 200,
+            "votes": []
+          },
+          "steps": [
+            {
+              "operation": "vote",
+              "input": {
+                "voter": "  ",
+                "choice": "tea"
+              },
+              "now": 199,
+              "expected": {
+                "state": {
+                  "closesAt": 200,
+                  "votes": []
+                },
+                "result": "invalid"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "builds": [
+    {
+      "scenario": "guestbook",
+      "candidate": "kimi",
+      "configuration": {
+        "model": "kimi-k2.7-code",
+        "inputRate": 0.95,
+        "cachedRate": 0.95,
+        "outputRate": 4,
+        "reasoning": "enabled"
+      },
+      "status": "passed",
+      "elapsedMs": 38373.747583000004,
+      "inferenceMs": 29863.631209000003,
+      "knownEstimatedUsd": 0.03574285000000001,
+      "unknownUsageAttempts": 0,
+      "calls": 3,
+      "validationRepairs": 0,
+      "toolFailures": 0,
+      "sourceRevisions": 1,
+      "attempts": [
+        {
+          "sequence": 1,
+          "requestedModel": "kimi-k2.7-code",
+          "returnedModel": "kimi-k2.7-code",
+          "status": 200,
+          "outcome": "returned",
+          "promptDigest": "ff48b7b074eea3ec6b2e022698baa12f3e095804b5721a0d38937808cf6d4eab",
+          "elapsedMs": 17180.884958000002,
+          "providerUsage": {
+            "completion_tokens": 1697,
+            "completion_tokens_details": {
+              "reasoning_tokens": 216
+            },
+            "prompt_tokens": 7725,
+            "total_tokens": 9422
+          },
+          "usage": {
+            "input": 7725,
+            "output": 1697,
+            "cached": 0,
+            "cacheWrites": 0,
+            "reasoning": 216,
+            "estimatedUsd": 0.01412675
+          },
+          "reasoningObserved": true
+        },
+        {
+          "sequence": 2,
+          "requestedModel": "kimi-k2.7-code",
+          "returnedModel": "kimi-k2.7-code",
+          "status": 200,
+          "outcome": "returned",
+          "promptDigest": "635594b6fd046ab3fde6e84ea66afaf1ee5d21a4a5ece2b5c2f934c2aed8d61f",
+          "elapsedMs": 6347.601709000002,
+          "providerUsage": {
+            "cached_tokens": 5376,
+            "completion_tokens": 385,
+            "completion_tokens_details": {
+              "reasoning_tokens": 211
+            },
+            "prompt_tokens": 11121,
+            "prompt_tokens_details": {
+              "cached_tokens": 5376
+            },
+            "total_tokens": 11506
+          },
+          "usage": {
+            "input": 11121,
+            "output": 385,
+            "cached": 5376,
+            "cacheWrites": 0,
+            "reasoning": 211,
+            "estimatedUsd": 0.012104950000000001
+          },
+          "reasoningObserved": true
+        },
+        {
+          "sequence": 3,
+          "requestedModel": "kimi-k2.7-code",
+          "returnedModel": "kimi-k2.7-code",
+          "status": 200,
+          "outcome": "returned",
+          "promptDigest": "3cdde6017374328492c9fdd12e2f946b1cafd158d68a10140f07ee2405de6332",
+          "elapsedMs": 6335.144541999998,
+          "providerUsage": {
+            "completion_tokens": 146,
+            "completion_tokens_details": {
+              "reasoning_tokens": 74
+            },
+            "prompt_tokens": 9397,
+            "total_tokens": 9543
+          },
+          "usage": {
+            "input": 9397,
+            "output": 146,
+            "cached": 0,
+            "cacheWrites": 0,
+            "reasoning": 74,
+            "estimatedUsd": 0.00951115
+          },
+          "reasoningObserved": true
+        }
+      ],
+      "reviews": [
+        {
+          "generated": {
+            "exitCode": 0,
+            "stdout": "▶ submit\n  ✔ trims and saves an entry (6.065084ms)\n  ✔ rejects blank name (12.450167ms)\n  ✔ rejects blank message (0.120292ms)\n  ✔ rejects when full (0.401875ms)\n  ✔ supports Unicode (0.478042ms)\n✔ submit (22.720458ms)\n▶ latest\n  ✔ returns up to three newest entries, newest first (0.512667ms)\n  ✔ returns fewer than three when not enough entries (0.23325ms)\n  ✔ returns empty when no entries (0.737042ms)\n✔ latest (2.092959ms)\nℹ tests 8\nℹ suites 2\nℹ pass 8\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 476.663542\n",
+            "stderr": ""
+          },
+          "holdouts": [
+            {
+              "id": "blank-rejected",
+              "status": "passed",
+              "completedSteps": 1,
+              "failure": null
+            },
+            {
+              "id": "unicode-and-newest-three",
+              "status": "passed",
+              "completedSteps": 5,
+              "failure": null
+            },
+            {
+              "id": "full-preserves-data",
+              "status": "passed",
+              "completedSteps": 1,
+              "failure": null
+            }
+          ],
+          "feedback": {
+            "review": {
+              "kind": "review",
+              "revision": 1,
+              "digest": "abe432e26d89a3a706343562a46fbeb05e6ae06772e9f5b3311ca88edef1b095",
+              "entrypoint": "src/guestbook.mjs",
+              "tests": [
+                "tests/guestbook.test.mjs"
+              ],
+              "libraries": []
+            },
+            "report": {
+              "policy": "restyle-service-checks-v1",
+              "identity": {
+                "agreementDigest": "77fbd61c7106d484a920632340dc3c5aa09c9e85f36b2cd0033249340575d866",
+                "packageDigest": "41a7e43b2c4deb160607fbed0e48a711c52da36874b968981d866927bbfff032",
+                "sourceDigest": "abe432e26d89a3a706343562a46fbeb05e6ae06772e9f5b3311ca88edef1b095"
+              },
+              "status": "passed",
+              "cases": [
+                {
+                  "id": "save-and-read",
+                  "status": "passed",
+                  "completedSteps": 2,
+                  "failure": null
+                }
+              ]
+            },
+            "error": null
+          }
+        }
+      ],
+      "finalSource": {
+        "revision": 1,
+        "digest": "abe432e26d89a3a706343562a46fbeb05e6ae06772e9f5b3311ca88edef1b095",
+        "files": [
+          {
+            "path": "src/guestbook.mjs",
+            "content": "export function execute({ operation, input, state, now }) {\n  const entries = state?.entries ?? [];\n\n  if (operation === \"submit\") {\n    const name = String(input?.name ?? \"\").trim();\n    const message = String(input?.message ?? \"\").trim();\n\n    if (name.length === 0 || message.length === 0) {\n      return { result: { status: \"invalid\", message: \"Enter a name and message.\" }, state: { entries } };\n    }\n\n    if (entries.length >= 12) {\n      return { result: { status: \"full\", message: \"Guestbook full.\" }, state: { entries } };\n    }\n\n    const newEntry = { name, message, createdAt: now };\n    const nextEntries = [...entries, newEntry];\n    return { result: { status: \"saved\", message: `Saved, ${name}.` }, state: { entries: nextEntries } };\n  }\n\n  if (operation === \"latest\") {\n    const latest = entries.slice(-3).reverse();\n    return { result: latest, state: { entries } };\n  }\n\n  throw new Error(`Unknown operation: ${operation}`);\n}\n"
+          },
+          {
+            "path": "tests/guestbook.test.mjs",
+            "content": "import { describe, it } from \"node:test\";\nimport assert from \"node:assert\";\nimport { execute } from \"../src/guestbook.mjs\";\n\ndescribe(\"submit\", () => {\n  it(\"trims and saves an entry\", () => {\n    const { result, state } = execute({\n      operation: \"submit\",\n      input: { name: \" Ari \", message: \" Hello \" },\n      state: { entries: [] },\n      now: 100,\n    });\n    assert.deepStrictEqual(result, { status: \"saved\", message: \"Saved, Ari.\" });\n    assert.deepStrictEqual(state, { entries: [{ name: \"Ari\", message: \"Hello\", createdAt: 100 }] });\n  });\n\n  it(\"rejects blank name\", () => {\n    const state = { entries: [] };\n    const { result, state: nextState } = execute({\n      operation: \"submit\",\n      input: { name: \"\", message: \"Hi\" },\n      state,\n      now: 100,\n    });\n    assert.deepStrictEqual(result, { status: \"invalid\", message: \"Enter a name and message.\" });\n    assert.deepStrictEqual(nextState, state);\n  });\n\n  it(\"rejects blank message\", () => {\n    const state = { entries: [] };\n    const { result, state: nextState } = execute({\n      operation: \"submit\",\n      input: { name: \"Ari\", message: \"   \" },\n      state,\n      now: 100,\n    });\n    assert.deepStrictEqual(result, { status: \"invalid\", message: \"Enter a name and message.\" });\n    assert.deepStrictEqual(nextState, state);\n  });\n\n  it(\"rejects when full\", () => {\n    const entries = Array.from({ length: 12 }, (_, i) => ({\n      name: `Person ${i}`,\n      message: `Message ${i}`,\n      createdAt: i,\n    }));\n    const state = { entries };\n    const { result, state: nextState } = execute({\n      operation: \"submit\",\n      input: { name: \"Ari\", message: \"Hi\" },\n      state,\n      now: 100,\n    });\n    assert.deepStrictEqual(result, { status: \"full\", message: \"Guestbook full.\" });\n    assert.deepStrictEqual(nextState, state);\n  });\n\n  it(\"supports Unicode\", () => {\n    const { result, state } = execute({\n      operation: \"submit\",\n      input: { name: \" 猫 \", message: \" 你好 🎉 \" },\n      state: { entries: [] },\n      now: 200,\n    });\n    assert.deepStrictEqual(result, { status: \"saved\", message: \"Saved, 猫.\" });\n    assert.deepStrictEqual(state, { entries: [{ name: \"猫\", message: \"你好 🎉\", createdAt: 200 }] });\n  });\n});\n\ndescribe(\"latest\", () => {\n  it(\"returns up to three newest entries, newest first\", () => {\n    const state = {\n      entries: [\n        { name: \"A\", message: \"1\", createdAt: 1 },\n        { name: \"B\", message: \"2\", createdAt: 2 },\n        { name: \"C\", message: \"3\", createdAt: 3 },\n        { name: \"D\", message: \"4\", createdAt: 4 },\n      ],\n    };\n    const { result, state: nextState } = execute({\n      operation: \"latest\",\n      input: null,\n      state,\n      now: 10,\n    });\n    assert.deepStrictEqual(result, [\n      { name: \"D\", message: \"4\", createdAt: 4 },\n      { name: \"C\", message: \"3\", createdAt: 3 },\n      { name: \"B\", message: \"2\", createdAt: 2 },\n    ]);\n    assert.deepStrictEqual(nextState, state);\n  });\n\n  it(\"returns fewer than three when not enough entries\", () => {\n    const state = {\n      entries: [{ name: \"A\", message: \"1\", createdAt: 1 }],\n    };\n    const { result } = execute({ operation: \"latest\", input: null, state, now: 10 });\n    assert.deepStrictEqual(result, [{ name: \"A\", message: \"1\", createdAt: 1 }]);\n  });\n\n  it(\"returns empty when no entries\", () => {\n    const { result } = execute({ operation: \"latest\", input: null, state: { entries: [] }, now: 10 });\n    assert.deepStrictEqual(result, []);\n  });\n});\n"
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "guestbook",
+      "candidate": "sol",
+      "configuration": {
+        "model": "gpt-6.1-sol",
+        "inputRate": 2,
+        "cachedRate": 0.1,
+        "cacheWriteRate": 2.5,
+        "outputRate": 10,
+        "reasoning": "high"
+      },
+      "status": "passed",
+      "elapsedMs": 45411.938583,
+      "inferenceMs": 36711.881667,
+      "knownEstimatedUsd": 0.06346109999999999,
+      "unknownUsageAttempts": 0,
+      "calls": 2,
+      "validationRepairs": 0,
+      "toolFailures": 0,
+      "sourceRevisions": 1,
+      "attempts": [
+        {
+          "sequence": 1,
+          "requestedModel": "gpt-6.1-sol",
+          "returnedModel": "gpt-6.1-sol",
+          "status": 200,
+          "outcome": "returned",
+          "promptDigest": "ff48b7b074eea3ec6b2e022698baa12f3e095804b5721a0d38937808cf6d4eab",
+          "elapsedMs": 31361.417624999995,
+          "providerUsage": {
+            "input_tokens": 7747,
+            "input_tokens_details": {
+              "cache_write_tokens": 7744,
+              "cached_tokens": 0
+            },
+            "output_tokens": 2093,
+            "output_tokens_details": {
+              "reasoning_tokens": 100
+            },
+            "total_tokens": 9840
+          },
+          "usage": {
+            "input": 7747,
+            "output": 2093,
+            "cached": 0,
+            "cacheWrites": 7744,
+            "reasoning": 100,
+            "estimatedUsd": 0.040296
+          },
+          "reasoningObserved": true
+        },
+        {
+          "sequence": 2,
+          "requestedModel": "gpt-6.1-sol",
+          "returnedModel": "gpt-6.1-sol",
+          "status": 200,
+          "outcome": "returned",
+          "promptDigest": "fa46c4765bf973c24c994c05a37b733718aa7b36ffaa90e8ea9382a2dac95b6b",
+          "elapsedMs": 5350.464042000007,
+          "providerUsage": {
+            "input_tokens": 12670,
+            "input_tokens_details": {
+              "cache_write_tokens": 7876,
+              "cached_tokens": 4791
+            },
+            "output_tokens": 299,
+            "output_tokens_details": {
+              "reasoning_tokens": 43
+            },
+            "total_tokens": 12969
+          },
+          "usage": {
+            "input": 12670,
+            "output": 299,
+            "cached": 4791,
+            "cacheWrites": 7876,
+            "reasoning": 43,
+            "estimatedUsd": 0.023165099999999997
+          },
+          "reasoningObserved": true
+        }
+      ],
+      "reviews": [
+        {
+          "generated": {
+            "exitCode": 0,
+            "stdout": "✔ immutable agreement: save-and-read (8.723708ms)\n✔ either blank field is invalid and leaves existing entries unchanged (1.298333ms)\n✔ Unicode full names and messages are preserved, apart from outer whitespace (1.613666ms)\n✔ full schema-size strings are saved without truncation (0.543709ms)\n✔ latest returns zero to three entries newest-first without mutating state (1.18275ms)\n✔ newest follows append order even when supplied timestamps tie or decrease (0.829709ms)\n✔ twelfth submission saves; subsequent competing committed submission is full (0.32875ms)\n✔ blank input is invalid even when the guestbook is full (0.065875ms)\n✔ invocations use supplied state, not process memory (0.660167ms)\nℹ tests 9\nℹ suites 0\nℹ pass 9\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 479.707334\n",
+            "stderr": ""
+          },
+          "holdouts": [
+            {
+              "id": "blank-rejected",
+              "status": "passed",
+              "completedSteps": 1,
+              "failure": null
+            },
+            {
+              "id": "unicode-and-newest-three",
+              "status": "passed",
+              "completedSteps": 5,
+              "failure": null
+            },
+            {
+              "id": "full-preserves-data",
+              "status": "passed",
+              "completedSteps": 1,
+              "failure": null
+            }
+          ],
+          "feedback": {
+            "review": {
+              "kind": "review",
+              "revision": 1,
+              "digest": "9745265533775335d7aca6091cf2ad3606d3f6942a0a6bc3e59de96a74fa830b",
+              "entrypoint": "src/guestbook.mjs",
+              "tests": [
+                "tests/guestbook.test.mjs"
+              ],
+              "libraries": []
+            },
+            "report": {
+              "policy": "restyle-service-checks-v1",
+              "identity": {
+                "agreementDigest": "77fbd61c7106d484a920632340dc3c5aa09c9e85f36b2cd0033249340575d866",
+                "packageDigest": "1188c61f3270802ad3f35080b0aedf62fc9200493cebdf8a8dd488be7c0961af",
+                "sourceDigest": "9745265533775335d7aca6091cf2ad3606d3f6942a0a6bc3e59de96a74fa830b"
+              },
+              "status": "passed",
+              "cases": [
+                {
+                  "id": "save-and-read",
+                  "status": "passed",
+                  "completedSteps": 2,
+                  "failure": null
+                }
+              ]
+            },
+            "error": null
+          }
+        }
+      ],
+      "finalSource": {
+        "revision": 1,
+        "digest": "9745265533775335d7aca6091cf2ad3606d3f6942a0a6bc3e59de96a74fa830b",
+        "files": [
+          {
+            "path": "src/guestbook.mjs",
+            "content": "// Pure guestbook logic. The host validates inputs and durably commits state.\nexport function execute({ operation, input, state, now, connectionResults = [] }) {\n  if (operation === 'latest') {\n    return {\n      result: state.entries.slice(-3).reverse().map(entry => ({ ...entry })),\n      state,\n    };\n  }\n\n  if (operation === 'submit') {\n    const name = input.name.trim();\n    const message = input.message.trim();\n\n    if (name.length === 0 || message.length === 0) {\n      return {\n        result: { status: 'invalid', message: 'Enter a name and message.' },\n        state,\n      };\n    }\n\n    if (state.entries.length >= 12) {\n      return {\n        result: { status: 'full', message: 'Guestbook full.' },\n        state,\n      };\n    }\n\n    return {\n      result: { status: 'saved', message: `Saved, ${name}.` },\n      state: {\n        entries: [...state.entries, { name, message, createdAt: now }],\n      },\n    };\n  }\n\n  throw new Error('Unknown guestbook operation.');\n}\n"
+          },
+          {
+            "path": "tests/guestbook.test.mjs",
+            "content": "import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport { execute } from '../src/guestbook.mjs';\n\nfunction submit(state, name, message, now = 100) {\n  return execute({ operation: 'submit', input: { name, message }, state, now });\n}\nfunction latest(state) {\n  return execute({ operation: 'latest', input: null, state, now: 100 });\n}\nfunction entries(count) {\n  return Array.from({ length: count }, (_, i) => ({ name: `Guest ${i + 1}`, message: `Message ${i + 1}`, createdAt: i + 1 }));\n}\nfunction freezeState(state) {\n  for (const entry of state.entries) Object.freeze(entry);\n  Object.freeze(state.entries);\n  return Object.freeze(state);\n}\n\ntest('immutable agreement: save-and-read', () => {\n  const initial = freezeState({ entries: [] });\n  const saved = submit(initial, ' Ari ', ' Hello ', 100);\n  const expectedState = { entries: [{ name: 'Ari', message: 'Hello', createdAt: 100 }] };\n  assert.deepEqual(saved, { result: { status: 'saved', message: 'Saved, Ari.' }, state: expectedState });\n  assert.deepEqual(initial, { entries: [] });\n  assert.deepEqual(latest(saved.state), { result: expectedState.entries, state: expectedState });\n});\n\ntest('either blank field is invalid and leaves existing entries unchanged', () => {\n  const state = freezeState({ entries: entries(2) });\n  for (const [name, message] of [['', 'Hi'], ['Name', ''], [' \\t\\n', 'Hi'], ['Name', '\\u2003\\u3000\\r\\n'], ['', '']]) {\n    const output = submit(state, name, message);\n    assert.deepEqual(output.result, { status: 'invalid', message: 'Enter a name and message.' });\n    assert.strictEqual(output.state, state);\n  }\n});\n\ntest('Unicode full names and messages are preserved, apart from outer whitespace', () => {\n  const name = '李 小龍 — Zoë 👩🏽‍💻';\n  const message = 'こんにちは 🌍\\nمرحبا! e\\u0301 <b>hello</b>';\n  const output = submit(freezeState({ entries: [] }), `\\u3000${name}\\u2003`, `\\n${message}\\t`, 9999999999999);\n  assert.deepEqual(output, {\n    result: { status: 'saved', message: `Saved, ${name}.` },\n    state: { entries: [{ name, message, createdAt: 9999999999999 }] },\n  });\n});\n\ntest('full schema-size strings are saved without truncation', () => {\n  const name = '😀'.repeat(20);\n  const message = '界'.repeat(341) + 'a';\n  assert.equal(Buffer.byteLength(name, 'utf8'), 80);\n  assert.equal(Buffer.byteLength(message, 'utf8'), 1024);\n  const output = submit({ entries: [] }, name, message, 0);\n  assert.equal(output.state.entries[0].name, name);\n  assert.equal(output.state.entries[0].message, message);\n  assert.equal(output.state.entries[0].createdAt, 0);\n  assert.equal(output.result.message, `Saved, ${name}.`);\n  assert.ok(Buffer.byteLength(output.result.message, 'utf8') <= 512);\n});\n\ntest('latest returns zero to three entries newest-first without mutating state', () => {\n  for (let count = 0; count <= 12; count++) {\n    const state = freezeState({ entries: entries(count) });\n    const output = latest(state);\n    assert.strictEqual(output.state, state);\n    assert.deepEqual(output.result, entries(count).slice(-3).reverse());\n    assert.ok(output.result.length <= 3);\n    if (count > 0) {\n      output.result[0].name = 'Changed only in result';\n      assert.equal(state.entries[count - 1].name, `Guest ${count}`);\n    }\n  }\n});\n\ntest('newest follows append order even when supplied timestamps tie or decrease', () => {\n  let state = { entries: [] };\n  const times = [50, 50, 10, 0];\n  for (let i = 0; i < times.length; i++) state = submit(state, `Person ${i}`, `Text ${i}`, times[i]).state;\n  assert.deepEqual(latest(state).result, [\n    { name: 'Person 3', message: 'Text 3', createdAt: 0 },\n    { name: 'Person 2', message: 'Text 2', createdAt: 10 },\n    { name: 'Person 1', message: 'Text 1', createdAt: 50 },\n  ]);\n});\n\ntest('twelfth submission saves; subsequent competing committed submission is full', () => {\n  const initial = freezeState({ entries: entries(11) });\n  const first = submit(initial, 'Last Guest', 'Last space', 200);\n  assert.deepEqual(first.result, { status: 'saved', message: 'Saved, Last Guest.' });\n  assert.equal(first.state.entries.length, 12);\n  assert.deepEqual(first.state.entries.slice(0, 11), initial.entries);\n  assert.equal(initial.entries.length, 11);\n  const fullState = freezeState(first.state);\n  const second = submit(fullState, 'Another Guest', 'No space', 201);\n  assert.deepEqual(second.result, { status: 'full', message: 'Guestbook full.' });\n  assert.strictEqual(second.state, fullState);\n  assert.deepEqual(latest(fullState).result, [\n    { name: 'Last Guest', message: 'Last space', createdAt: 200 },\n    { name: 'Guest 11', message: 'Message 11', createdAt: 11 },\n    { name: 'Guest 10', message: 'Message 10', createdAt: 10 },\n  ]);\n});\n\ntest('blank input is invalid even when the guestbook is full', () => {\n  const state = freezeState({ entries: entries(12) });\n  const output = submit(state, ' \\n ', 'Hello');\n  assert.deepEqual(output.result, { status: 'invalid', message: 'Enter a name and message.' });\n  assert.strictEqual(output.state, state);\n});\n\ntest('invocations use supplied state, not process memory', () => {\n  submit({ entries: [] }, 'One', 'First');\n  assert.deepEqual(latest({ entries: [] }), { result: [], state: { entries: [] } });\n  assert.deepEqual(submit({ entries: [] }, 'Two', 'Second', 123).state, {\n    entries: [{ name: 'Two', message: 'Second', createdAt: 123 }],\n  });\n});\n"
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "booking",
+      "candidate": "sol",
+      "configuration": {
+        "model": "gpt-6.1-sol",
+        "inputRate": 2,
+        "cachedRate": 0.1,
+        "cacheWriteRate": 2.5,
+        "outputRate": 10,
+        "reasoning": "high"
+      },
+      "status": "passed",
+      "elapsedMs": 46439.685709,
+      "inferenceMs": 36669.560417,
+      "knownEstimatedUsd": 0.0542577,
+      "unknownUsageAttempts": 0,
+      "calls": 2,
+      "validationRepairs": 0,
+      "toolFailures": 0,
+      "sourceRevisions": 1,
+      "attempts": [
+        {
+          "sequence": 1,
+          "requestedModel": "gpt-6.1-sol",
+          "returnedModel": "gpt-6.1-sol",
+          "status": 200,
+          "outcome": "returned",
+          "promptDigest": "bcc5c331d15eac3ecda9c9b750b79b07d8ff20dac0ed9671dadf59de93196145",
+          "elapsedMs": 30661.789917000002,
+          "providerUsage": {
+            "input_tokens": 7468,
+            "input_tokens_details": {
+              "cache_write_tokens": 2674,
+              "cached_tokens": 4791
+            },
+            "output_tokens": 2270,
+            "output_tokens_details": {
+              "reasoning_tokens": 116
+            },
+            "total_tokens": 9738
+          },
+          "usage": {
+            "input": 7468,
+            "output": 2270,
+            "cached": 4791,
+            "cacheWrites": 2674,
+            "reasoning": 116,
+            "estimatedUsd": 0.0298701
+          },
+          "reasoningObserved": true
+        },
+        {
+          "sequence": 2,
+          "requestedModel": "gpt-6.1-sol",
+          "returnedModel": "gpt-6.1-sol",
+          "status": 200,
+          "outcome": "returned",
+          "promptDigest": "09878416740c527688a000c3af482c58ee9b06804bed6290e75a8468848f2b15",
+          "elapsedMs": 6007.770499999999,
+          "providerUsage": {
+            "input_tokens": 13079,
+            "input_tokens_details": {
+              "cache_write_tokens": 8285,
+              "cached_tokens": 4791
+            },
+            "output_tokens": 319,
+            "output_tokens_details": {
+              "reasoning_tokens": 43
+            },
+            "total_tokens": 13398
+          },
+          "usage": {
+            "input": 13079,
+            "output": 319,
+            "cached": 4791,
+            "cacheWrites": 8285,
+            "reasoning": 43,
+            "estimatedUsd": 0.0243876
+          },
+          "reasoningObserved": true
+        }
+      ],
+      "reviews": [
+        {
+          "generated": {
+            "exitCode": 0,
+            "stdout": "✔ immutable agreement: last place and cancellation (12.910208ms)\n✔ repeated acceptance never consumes another place, including at capacity (12.018208ms)\n✔ competing sequential writes cannot both take the final place; cancellation frees it (0.905833ms)\n✔ blank names are invalid and missing cancellation is idempotent (1.45225ms)\n✔ names are case-sensitive; retained order survives removal and rejoining (0.448875ms)\n✔ zero capacity and maximum capacity boundaries (0.561292ms)\n✔ maximum-byte names and Unicode names remain exact identities (0.567042ms)\n✔ restored serialized host state works with a fresh module instance (5.707834ms)\n✔ read result is independent of retained state and frozen inputs are supported (1.418667ms)\nℹ tests 9\nℹ suites 0\nℹ pass 9\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 465.57475\n",
+            "stderr": ""
+          },
+          "holdouts": [
+            {
+              "id": "duplicate-before-full",
+              "status": "passed",
+              "completedSteps": 3,
+              "failure": null
+            },
+            {
+              "id": "invalid-and-absent",
+              "status": "passed",
+              "completedSteps": 3,
+              "failure": null
+            },
+            {
+              "id": "zero-capacity",
+              "status": "passed",
+              "completedSteps": 1,
+              "failure": null
+            }
+          ],
+          "feedback": {
+            "review": {
+              "kind": "review",
+              "revision": 1,
+              "digest": "d2d64e226e5e845e1a6b7921a919ecc28dc46c94c22695ea0ab88d6d11d9d6c0",
+              "entrypoint": "src/booking.mjs",
+              "tests": [
+                "tests/booking.test.mjs"
+              ],
+              "libraries": []
+            },
+            "report": {
+              "policy": "restyle-service-checks-v1",
+              "identity": {
+                "agreementDigest": "a84c76d6458333994f62e16eebe5d47d64f057b820b2375f75fcc726ce8add9f",
+                "packageDigest": "146614ef4932c031ccf71a9b1c6d555c3aa4177b4ed60dfa62b36bfa91074cfb",
+                "sourceDigest": "d2d64e226e5e845e1a6b7921a919ecc28dc46c94c22695ea0ab88d6d11d9d6c0"
+              },
+              "status": "passed",
+              "cases": [
+                {
+                  "id": "last-place-and-cancel",
+                  "status": "passed",
+                  "completedSteps": 4,
+                  "failure": null
+                }
+              ]
+            },
+            "error": null
+          }
+        }
+      ],
+      "finalSource": {
+        "revision": 1,
+        "digest": "d2d64e226e5e845e1a6b7921a919ecc28dc46c94c22695ea0ab88d6d11d9d6c0",
+        "files": [
+          {
+            "path": "src/booking.mjs",
+            "content": "// The host supplies and commits durable state. No bookings live in process memory.\n// Schema validation and serialized write access are enforced by the host.\nexport function execute({ operation, input, state, now, connectionResults = [] }) {\n  if (operation === 'guests') {\n    return { result: [...state.guests], state };\n  }\n\n  if (operation !== 'join' && operation !== 'cancel') {\n    throw new Error('Unknown operation');\n  }\n\n  const name = input.name.trim();\n  if (name.length === 0) {\n    return { result: 'invalid', state };\n  }\n\n  const index = state.guests.indexOf(name);\n  if (operation === 'join') {\n    // Idempotency takes priority even when the list is full.\n    if (index !== -1) return { result: 'already_joined', state };\n    if (state.guests.length >= state.capacity) return { result: 'full', state };\n    return {\n      result: 'accepted',\n      state: { capacity: state.capacity, guests: [...state.guests, name] }\n    };\n  }\n\n  if (index === -1) return { result: 'not_joined', state };\n  return {\n    result: 'removed',\n    state: { capacity: state.capacity, guests: state.guests.filter(guest => guest !== name) }\n  };\n}\n"
+          },
+          {
+            "path": "tests/booking.test.mjs",
+            "content": "import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport { execute } from '../src/booking.mjs';\n\nfunction run(operation, input, state) {\n  const before = structuredClone(state);\n  const output = execute({ operation, input, state, now: 100, connectionResults: [] });\n  assert.deepEqual(state, before, 'the input state must not be mutated');\n  assert.deepEqual(Object.keys(output).sort(), ['result', 'state']);\n  return output;\n}\n\nfunction step(state, operation, input, result, guests) {\n  const output = run(operation, input, state);\n  assert.deepEqual(output, { result, state: { capacity: state.capacity, guests } });\n  return output.state;\n}\n\ntest('immutable agreement: last place and cancellation', () => {\n  let state = { capacity: 1, guests: [] };\n  state = step(state, 'join', { name: 'Ari' }, 'accepted', ['Ari']);\n  state = step(state, 'join', { name: 'Bo' }, 'full', ['Ari']);\n  state = step(state, 'cancel', { name: 'Ari' }, 'removed', []);\n  step(state, 'guests', null, [], []);\n});\n\ntest('repeated acceptance never consumes another place, including at capacity', () => {\n  let state = { capacity: 2, guests: [] };\n  state = step(state, 'join', { name: ' Ari ' }, 'accepted', ['Ari']);\n  state = step(state, 'join', { name: 'Ari' }, 'already_joined', ['Ari']);\n  state = step(state, 'join', { name: 'Bo' }, 'accepted', ['Ari', 'Bo']);\n  state = step(state, 'join', { name: '\\tAri\\n' }, 'already_joined', ['Ari', 'Bo']);\n  step(state, 'join', { name: 'Cy' }, 'full', ['Ari', 'Bo']);\n});\n\ntest('competing sequential writes cannot both take the final place; cancellation frees it', () => {\n  let state = { capacity: 1, guests: [] };\n  state = step(state, 'join', { name: 'Ari' }, 'accepted', ['Ari']);\n  state = step(state, 'join', { name: 'Bo' }, 'full', ['Ari']);\n  state = step(state, 'cancel', { name: ' Ari ' }, 'removed', []);\n  state = step(state, 'join', { name: 'Bo' }, 'accepted', ['Bo']);\n  step(state, 'cancel', { name: 'Ari' }, 'not_joined', ['Bo']);\n});\n\ntest('blank names are invalid and missing cancellation is idempotent', () => {\n  const state = { capacity: 1, guests: ['Ari'] };\n  for (const name of ['', ' ', '\\t\\n', '\\u2003']) {\n    step(state, 'join', { name }, 'invalid', ['Ari']);\n    step(state, 'cancel', { name }, 'invalid', ['Ari']);\n  }\n  step(state, 'cancel', { name: 'Missing' }, 'not_joined', ['Ari']);\n  let empty = step(state, 'cancel', { name: 'Ari' }, 'removed', []);\n  step(empty, 'cancel', { name: 'Ari' }, 'not_joined', []);\n});\n\ntest('names are case-sensitive; retained order survives removal and rejoining', () => {\n  let state = { capacity: 4, guests: [] };\n  state = step(state, 'join', { name: 'Ari' }, 'accepted', ['Ari']);\n  state = step(state, 'join', { name: 'ari' }, 'accepted', ['Ari', 'ari']);\n  state = step(state, 'join', { name: 'Bo' }, 'accepted', ['Ari', 'ari', 'Bo']);\n  state = step(state, 'cancel', { name: 'ARI' }, 'not_joined', ['Ari', 'ari', 'Bo']);\n  state = step(state, 'cancel', { name: 'ari' }, 'removed', ['Ari', 'Bo']);\n  state = step(state, 'join', { name: 'ari' }, 'accepted', ['Ari', 'Bo', 'ari']);\n  step(state, 'guests', null, ['Ari', 'Bo', 'ari'], ['Ari', 'Bo', 'ari']);\n});\n\ntest('zero capacity and maximum capacity boundaries', () => {\n  step({ capacity: 0, guests: [] }, 'join', { name: 'Ari' }, 'full', []);\n  let state = { capacity: 12, guests: [] };\n  for (let i = 0; i < 12; i++) {\n    state = step(state, 'join', { name: `Guest${i}` }, 'accepted', [...state.guests, `Guest${i}`]);\n  }\n  step(state, 'join', { name: 'Overflow' }, 'full', state.guests);\n  step(state, 'join', { name: 'Guest11' }, 'already_joined', state.guests);\n});\n\ntest('maximum-byte names and Unicode names remain exact identities', () => {\n  let state = { capacity: 3, guests: [] };\n  for (const name of ['x'.repeat(80), 'é'.repeat(40), '李']) {\n    assert.ok(Buffer.byteLength(name, 'utf8') <= 80);\n    state = step(state, 'join', { name }, 'accepted', [...state.guests, name]);\n  }\n  step(state, 'cancel', { name: ' 李 ' }, 'removed', state.guests.slice(0, 2));\n});\n\ntest('restored serialized host state works with a fresh module instance', async () => {\n  const first = run('join', { name: 'Ari' }, { capacity: 2, guests: [] });\n  const restored = JSON.parse(JSON.stringify(first.state));\n  const fresh = await import('../src/booking.mjs?restart-test');\n  assert.deepEqual(fresh.execute({ operation: 'guests', input: null, state: restored, now: 200 }), {\n    result: ['Ari'], state: { capacity: 2, guests: ['Ari'] }\n  });\n  assert.deepEqual(fresh.execute({ operation: 'join', input: { name: 'Ari' }, state: restored, now: 200 }), {\n    result: 'already_joined', state: { capacity: 2, guests: ['Ari'] }\n  });\n  assert.deepEqual(fresh.execute({ operation: 'cancel', input: { name: 'Ari' }, state: restored, now: 200 }), {\n    result: 'removed', state: { capacity: 2, guests: [] }\n  });\n});\n\ntest('read result is independent of retained state and frozen inputs are supported', () => {\n  const state = Object.freeze({ capacity: 2, guests: Object.freeze(['Ari']) });\n  const output = run('guests', null, state);\n  output.result.push('Not retained');\n  assert.deepEqual(state.guests, ['Ari']);\n  step(state, 'join', Object.freeze({ name: 'Bo' }), 'accepted', ['Ari', 'Bo']);\n  step(state, 'cancel', Object.freeze({ name: 'Ari' }), 'removed', []);\n});\n"
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "booking",
+      "candidate": "kimi",
+      "configuration": {
+        "model": "kimi-k2.7-code",
+        "inputRate": 0.95,
+        "cachedRate": 0.95,
+        "outputRate": 4,
+        "reasoning": "enabled"
+      },
+      "status": "passed",
+      "elapsedMs": 45725.797791000005,
+      "inferenceMs": 35980.81320799998,
+      "knownEstimatedUsd": 0.0384991,
+      "unknownUsageAttempts": 0,
+      "calls": 3,
+      "validationRepairs": 0,
+      "toolFailures": 0,
+      "sourceRevisions": 1,
+      "attempts": [
+        {
+          "sequence": 1,
+          "requestedModel": "kimi-k2.7-code",
+          "returnedModel": "kimi-k2.7-code",
+          "status": 200,
+          "outcome": "returned",
+          "promptDigest": "bcc5c331d15eac3ecda9c9b750b79b07d8ff20dac0ed9671dadf59de93196145",
+          "elapsedMs": 24903.667625000002,
+          "providerUsage": {
+            "cached_tokens": 4608,
+            "completion_tokens": 2636,
+            "completion_tokens_details": {
+              "reasoning_tokens": 1033
+            },
+            "prompt_tokens": 7427,
+            "prompt_tokens_details": {
+              "cached_tokens": 4608
+            },
+            "total_tokens": 10063
+          },
+          "usage": {
+            "input": 7427,
+            "output": 2636,
+            "cached": 4608,
+            "cacheWrites": 0,
+            "reasoning": 1033,
+            "estimatedUsd": 0.01759965
+          },
+          "reasoningObserved": true
+        },
+        {
+          "sequence": 2,
+          "requestedModel": "kimi-k2.7-code",
+          "returnedModel": "kimi-k2.7-code",
+          "status": 200,
+          "outcome": "returned",
+          "promptDigest": "64c6353b0cc8aa025a64c5bd6e89e8cd47758224c303b23f49e9ca4ce6e2801f",
+          "elapsedMs": 4993.728207999986,
+          "providerUsage": {
+            "cached_tokens": 5376,
+            "completion_tokens": 222,
+            "completion_tokens_details": {
+              "reasoning_tokens": 45
+            },
+            "prompt_tokens": 11342,
+            "prompt_tokens_details": {
+              "cached_tokens": 5376
+            },
+            "total_tokens": 11564
+          },
+          "usage": {
+            "input": 11342,
+            "output": 222,
+            "cached": 5376,
+            "cacheWrites": 0,
+            "reasoning": 45,
+            "estimatedUsd": 0.0116629
+          },
+          "reasoningObserved": true
+        },
+        {
+          "sequence": 3,
+          "requestedModel": "kimi-k2.7-code",
+          "returnedModel": "kimi-k2.7-code",
+          "status": 200,
+          "outcome": "returned",
+          "promptDigest": "651ba3bbc52cac491e0196d3c10ff7523e5d08f45c78ba90c4c6971b6456c76b",
+          "elapsedMs": 6083.41737499999,
+          "providerUsage": {
+            "completion_tokens": 103,
+            "completion_tokens_details": {
+              "reasoning_tokens": 32
+            },
+            "prompt_tokens": 9289,
+            "total_tokens": 9392
+          },
+          "usage": {
+            "input": 9289,
+            "output": 103,
+            "cached": 0,
+            "cacheWrites": 0,
+            "reasoning": 32,
+            "estimatedUsd": 0.00923655
+          },
+          "reasoningObserved": true
+        }
+      ],
+      "reviews": [
+        {
+          "generated": {
+            "exitCode": 0,
+            "stdout": "✔ last-place-and-cancel (8.3965ms)\n✔ join trims names and rejects blanks (0.453916ms)\n✔ names are case-sensitive identities (0.862125ms)\n✔ cancel trims and reports not_joined (7.673ms)\n✔ guests returns retained order without changing state (0.189875ms)\n✔ capacity zero is immediately full (0.343584ms)\nℹ tests 6\nℹ suites 0\nℹ pass 6\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 443.895292\n",
+            "stderr": ""
+          },
+          "holdouts": [
+            {
+              "id": "duplicate-before-full",
+              "status": "passed",
+              "completedSteps": 3,
+              "failure": null
+            },
+            {
+              "id": "invalid-and-absent",
+              "status": "passed",
+              "completedSteps": 3,
+              "failure": null
+            },
+            {
+              "id": "zero-capacity",
+              "status": "passed",
+              "completedSteps": 1,
+              "failure": null
+            }
+          ],
+          "feedback": {
+            "review": {
+              "kind": "review",
+              "revision": 1,
+              "digest": "6b3c784f45a532e1eef9641f44f66e410764ee50fa0f701fc787fd2eb58a77c6",
+              "entrypoint": "src/index.mjs",
+              "tests": [
+                "tests/booking.test.mjs"
+              ],
+              "libraries": []
+            },
+            "report": {
+              "policy": "restyle-service-checks-v1",
+              "identity": {
+                "agreementDigest": "a84c76d6458333994f62e16eebe5d47d64f057b820b2375f75fcc726ce8add9f",
+                "packageDigest": "6d5577cea32f5ebc2169c04131bb7bad42898be398e6fc18f01ee934e1facb49",
+                "sourceDigest": "6b3c784f45a532e1eef9641f44f66e410764ee50fa0f701fc787fd2eb58a77c6"
+              },
+              "status": "passed",
+              "cases": [
+                {
+                  "id": "last-place-and-cancel",
+                  "status": "passed",
+                  "completedSteps": 4,
+                  "failure": null
+                }
+              ]
+            },
+            "error": null
+          }
+        }
+      ],
+      "finalSource": {
+        "revision": 1,
+        "digest": "6b3c784f45a532e1eef9641f44f66e410764ee50fa0f701fc787fd2eb58a77c6",
+        "files": [
+          {
+            "path": "src/index.mjs",
+            "content": "function trimName(name) {\n  return typeof name === 'string' ? name.trim() : '';\n}\n\nexport function execute({ operation, input, state, now, connectionResults = [] }) {\n  const capacity = state.capacity;\n  const guests = state.guests.slice();\n\n  if (operation === 'join') {\n    const n = trimName(input.name);\n    if (n === '') {\n      return { result: 'invalid', state: { capacity, guests } };\n    }\n    if (guests.includes(n)) {\n      return { result: 'already_joined', state: { capacity, guests } };\n    }\n    if (guests.length >= capacity) {\n      return { result: 'full', state: { capacity, guests } };\n    }\n    return { result: 'accepted', state: { capacity, guests: [...guests, n] } };\n  }\n\n  if (operation === 'cancel') {\n    const n = trimName(input.name);\n    if (n === '') {\n      return { result: 'invalid', state: { capacity, guests } };\n    }\n    const idx = guests.indexOf(n);\n    if (idx === -1) {\n      return { result: 'not_joined', state: { capacity, guests } };\n    }\n    const next = guests.slice(0, idx).concat(guests.slice(idx + 1));\n    return { result: 'removed', state: { capacity, guests: next } };\n  }\n\n  if (operation === 'guests') {\n    return { result: guests, state: { capacity, guests } };\n  }\n\n  throw new Error('Unknown operation: ' + operation);\n}\n"
+          },
+          {
+            "path": "tests/booking.test.mjs",
+            "content": "import { test } from 'node:test';\nimport assert from 'node:assert';\nimport { execute } from '../src/index.mjs';\n\nfunction runSteps(initialState, steps) {\n  let state = initialState;\n  for (const step of steps) {\n    const output = execute({\n      operation: step.operation,\n      input: step.input ?? null,\n      state,\n      now: step.now,\n    });\n    assert.deepStrictEqual(output.result, step.expected.result);\n    state = output.state;\n    assert.deepStrictEqual(state, step.expected.state);\n  }\n  return state;\n}\n\ntest('last-place-and-cancel', () => {\n  runSteps({ capacity: 1, guests: [] }, [\n    {\n      operation: 'join',\n      input: { name: 'Ari' },\n      now: 100,\n      expected: { state: { capacity: 1, guests: ['Ari'] }, result: 'accepted' },\n    },\n    {\n      operation: 'join',\n      input: { name: 'Bo' },\n      now: 100,\n      expected: { state: { capacity: 1, guests: ['Ari'] }, result: 'full' },\n    },\n    {\n      operation: 'cancel',\n      input: { name: 'Ari' },\n      now: 100,\n      expected: { state: { capacity: 1, guests: [] }, result: 'removed' },\n    },\n    {\n      operation: 'guests',\n      input: null,\n      now: 100,\n      expected: { state: { capacity: 1, guests: [] }, result: [] },\n    },\n  ]);\n});\n\ntest('join trims names and rejects blanks', () => {\n  let state = { capacity: 2, guests: [] };\n  let out = execute({ operation: 'join', input: { name: '   ' }, state, now: 1 });\n  assert.equal(out.result, 'invalid');\n  assert.deepStrictEqual(out.state.guests, []);\n\n  out = execute({ operation: 'join', input: { name: '  Ari  ' }, state, now: 1 });\n  assert.equal(out.result, 'accepted');\n  assert.deepStrictEqual(out.state.guests, ['Ari']);\n  state = out.state;\n\n  out = execute({ operation: 'join', input: { name: 'Ari ' }, state, now: 1 });\n  assert.equal(out.result, 'already_joined');\n});\n\ntest('names are case-sensitive identities', () => {\n  let state = { capacity: 2, guests: ['Ari'] };\n  let out = execute({ operation: 'join', input: { name: 'ari' }, state, now: 1 });\n  assert.equal(out.result, 'accepted');\n  state = out.state;\n  assert.deepStrictEqual(state.guests, ['Ari', 'ari']);\n\n  out = execute({ operation: 'cancel', input: { name: 'Ari' }, state, now: 1 });\n  assert.equal(out.result, 'removed');\n  assert.deepStrictEqual(out.state.guests, ['ari']);\n});\n\ntest('cancel trims and reports not_joined', () => {\n  let state = { capacity: 2, guests: ['Ari'] };\n  let out = execute({ operation: 'cancel', input: { name: '  Bo  ' }, state, now: 1 });\n  assert.equal(out.result, 'not_joined');\n  assert.deepStrictEqual(out.state.guests, ['Ari']);\n\n  out = execute({ operation: 'cancel', input: { name: '  Ari  ' }, state, now: 1 });\n  assert.equal(out.result, 'removed');\n  assert.deepStrictEqual(out.state.guests, []);\n\n  out = execute({ operation: 'cancel', input: { name: '   ' }, state: out.state, now: 1 });\n  assert.equal(out.result, 'invalid');\n});\n\ntest('guests returns retained order without changing state', () => {\n  const state = { capacity: 3, guests: ['Bo', 'Ari'] };\n  const out = execute({ operation: 'guests', input: null, state, now: 1 });\n  assert.deepStrictEqual(out.result, ['Bo', 'Ari']);\n  assert.deepStrictEqual(out.state, state);\n});\n\ntest('capacity zero is immediately full', () => {\n  const state = { capacity: 0, guests: [] };\n  const out = execute({ operation: 'join', input: { name: 'Ari' }, state, now: 1 });\n  assert.equal(out.result, 'full');\n  assert.deepStrictEqual(out.state.guests, []);\n});\n"
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "poll",
+      "candidate": "kimi",
+      "configuration": {
+        "model": "kimi-k2.7-code",
+        "inputRate": 0.95,
+        "cachedRate": 0.95,
+        "outputRate": 4,
+        "reasoning": "enabled"
+      },
+      "status": "passed",
+      "elapsedMs": 48523.02804200002,
+      "inferenceMs": 41054.174666999985,
+      "knownEstimatedUsd": 0.04375554999999999,
+      "unknownUsageAttempts": 0,
+      "calls": 4,
+      "validationRepairs": 0,
+      "toolFailures": 0,
+      "sourceRevisions": 1,
+      "attempts": [
+        {
+          "sequence": 1,
+          "requestedModel": "kimi-k2.7-code",
+          "returnedModel": "kimi-k2.7-code",
+          "status": 200,
+          "outcome": "returned",
+          "promptDigest": "643e97ed6418cb6383580d87a4b5457bfa24a2ce09e0f5b7c345a9267bcf630e",
+          "elapsedMs": 8138.664041999989,
+          "providerUsage": {
+            "cached_tokens": 4608,
+            "completion_tokens": 283,
+            "completion_tokens_details": {
+              "reasoning_tokens": 264
+            },
+            "prompt_tokens": 7768,
+            "prompt_tokens_details": {
+              "cached_tokens": 4608
+            },
+            "total_tokens": 8051
+          },
+          "usage": {
+            "input": 7768,
+            "output": 283,
+            "cached": 4608,
+            "cacheWrites": 0,
+            "reasoning": 264,
+            "estimatedUsd": 0.0085116
+          },
+          "reasoningObserved": true
+        },
+        {
+          "sequence": 2,
+          "requestedModel": "kimi-k2.7-code",
+          "returnedModel": "kimi-k2.7-code",
+          "status": 200,
+          "outcome": "returned",
+          "promptDigest": "638a2fcac49c98b1d6319303d6d48b940067cbd7b86d40e67aceedfb02eaf388",
+          "elapsedMs": 18620.559500000003,
+          "providerUsage": {
+            "cached_tokens": 4608,
+            "completion_tokens": 1897,
+            "completion_tokens_details": {
+              "reasoning_tokens": 408
+            },
+            "prompt_tokens": 6538,
+            "prompt_tokens_details": {
+              "cached_tokens": 4608
+            },
+            "total_tokens": 8435
+          },
+          "usage": {
+            "input": 6538,
+            "output": 1897,
+            "cached": 4608,
+            "cacheWrites": 0,
+            "reasoning": 408,
+            "estimatedUsd": 0.013799099999999998
+          },
+          "reasoningObserved": true
+        },
+        {
+          "sequence": 3,
+          "requestedModel": "kimi-k2.7-code",
+          "returnedModel": "kimi-k2.7-code",
+          "status": 200,
+          "outcome": "returned",
+          "promptDigest": "357cb7bd719c53c717a2f52d6e798ec686913778a8b29b4f25d0947b8e535d26",
+          "elapsedMs": 4657.136375000002,
+          "providerUsage": {
+            "cached_tokens": 5376,
+            "completion_tokens": 189,
+            "completion_tokens_details": {
+              "reasoning_tokens": 71
+            },
+            "prompt_tokens": 11137,
+            "prompt_tokens_details": {
+              "cached_tokens": 5376
+            },
+            "total_tokens": 11326
+          },
+          "usage": {
+            "input": 11137,
+            "output": 189,
+            "cached": 5376,
+            "cacheWrites": 0,
+            "reasoning": 71,
+            "estimatedUsd": 0.01133615
+          },
+          "reasoningObserved": true
+        },
+        {
+          "sequence": 4,
+          "requestedModel": "kimi-k2.7-code",
+          "returnedModel": "kimi-k2.7-code",
+          "status": 200,
+          "outcome": "returned",
+          "promptDigest": "e0f9902b83d4edc27cb655c918493a7b5702f0f7bf76f44d89a3b6f5dc1373c8",
+          "elapsedMs": 9637.81474999999,
+          "providerUsage": {
+            "cached_tokens": 5376,
+            "completion_tokens": 355,
+            "completion_tokens_details": {
+              "reasoning_tokens": 286
+            },
+            "prompt_tokens": 9146,
+            "prompt_tokens_details": {
+              "cached_tokens": 5376
+            },
+            "total_tokens": 9501
+          },
+          "usage": {
+            "input": 9146,
+            "output": 355,
+            "cached": 5376,
+            "cacheWrites": 0,
+            "reasoning": 286,
+            "estimatedUsd": 0.0101087
+          },
+          "reasoningObserved": true
+        }
+      ],
+      "reviews": [
+        {
+          "generated": {
+            "exitCode": 0,
+            "stdout": "▶ tea-or-coffee poll\n  ✔ records a new vote while open (5.332458ms)\n  ✔ changes an existing vote while open (54.895833ms)\n  ✔ returns unchanged when voting the same choice (0.174583ms)\n  ✔ rejects late votes without changing state (0.151791ms)\n  ✔ counts votes and reports deadline state (0.430875ms)\n  ✔ reports closed after deadline (0.327417ms)\n  ✔ trims voter and rejects blank input (0.102208ms)\n  ✔ matches voters case-sensitively (0.535208ms)\n✔ tea-or-coffee poll (65.540334ms)\nℹ tests 8\nℹ suites 1\nℹ pass 8\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 485.883042\n",
+            "stderr": ""
+          },
+          "holdouts": [
+            {
+              "id": "deadline-boundary",
+              "status": "passed",
+              "completedSteps": 2,
+              "failure": null
+            },
+            {
+              "id": "trim-duplicate-and-order",
+              "status": "passed",
+              "completedSteps": 2,
+              "failure": null
+            },
+            {
+              "id": "blank-voter",
+              "status": "passed",
+              "completedSteps": 1,
+              "failure": null
+            }
+          ],
+          "feedback": {
+            "review": {
+              "kind": "review",
+              "revision": 1,
+              "digest": "1b1e67a481da65ecde65f2497ec5e41cb29577621954eb230fe33f79c9414b71",
+              "entrypoint": "src/index.mjs",
+              "tests": [
+                "tests/poll.test.mjs"
+              ],
+              "libraries": []
+            },
+            "report": {
+              "policy": "restyle-service-checks-v1",
+              "identity": {
+                "agreementDigest": "731bae9d4beea9b4e452e1e5582eb9934726887a0c76d3c9e8817fb8b0211f89",
+                "packageDigest": "4e4ae1009a3ecbe98be572925749a60862e03964716e6cb9d6c47ccabcb31475",
+                "sourceDigest": "1b1e67a481da65ecde65f2497ec5e41cb29577621954eb230fe33f79c9414b71"
+              },
+              "status": "passed",
+              "cases": [
+                {
+                  "id": "record-update-tally",
+                  "status": "passed",
+                  "completedSteps": 3,
+                  "failure": null
+                }
+              ]
+            },
+            "error": null
+          }
+        }
+      ],
+      "finalSource": {
+        "revision": 1,
+        "digest": "1b1e67a481da65ecde65f2497ec5e41cb29577621954eb230fe33f79c9414b71",
+        "files": [
+          {
+            "path": "src/index.mjs",
+            "content": "export function execute({ operation, input, state, now }) {\n  if (operation === 'vote') {\n    return vote(input, state, now);\n  }\n  if (operation === 'tally') {\n    return tally(state, now);\n  }\n  throw new Error(`Unknown operation: ${operation}`);\n}\n\nfunction vote(input, state, now) {\n  if (now >= state.closesAt) {\n    return { result: 'closed', state };\n  }\n\n  const voter = typeof input.voter === 'string' ? input.voter.trim() : '';\n  const choice = input.choice;\n\n  if (voter === '') {\n    return { result: 'invalid', state };\n  }\n\n  const existingIndex = state.votes.findIndex((v) => v.voter === voter);\n\n  if (existingIndex === -1) {\n    const nextVotes = state.votes.concat([{ voter, choice }]);\n    return { result: 'recorded', state: { ...state, votes: nextVotes } };\n  }\n\n  if (state.votes[existingIndex].choice === choice) {\n    return { result: 'unchanged', state };\n  }\n\n  const nextVotes = state.votes.slice();\n  nextVotes[existingIndex] = { voter, choice };\n  return { result: 'changed', state: { ...state, votes: nextVotes } };\n}\n\nfunction tally(state, now) {\n  let tea = 0;\n  let coffee = 0;\n  for (const v of state.votes) {\n    if (v.choice === 'tea') tea += 1;\n    if (v.choice === 'coffee') coffee += 1;\n  }\n  return {\n    result: { tea, coffee, closed: now >= state.closesAt },\n    state,\n  };\n}\n"
+          },
+          {
+            "path": "tests/poll.test.mjs",
+            "content": "import { describe, it } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { execute } from '../src/index.mjs';\n\ndescribe('tea-or-coffee poll', () => {\n  it('records a new vote while open', () => {\n    const state = { closesAt: 200, votes: [] };\n    const { result, state: next } = execute({ operation: 'vote', input: { voter: 'Ari', choice: 'tea' }, state, now: 100 });\n    assert.equal(result, 'recorded');\n    assert.deepEqual(next, { closesAt: 200, votes: [{ voter: 'Ari', choice: 'tea' }] });\n  });\n\n  it('changes an existing vote while open', () => {\n    const state = { closesAt: 200, votes: [{ voter: 'Ari', choice: 'tea' }] };\n    const { result, state: next } = execute({ operation: 'vote', input: { voter: 'Ari', choice: 'coffee' }, state, now: 100 });\n    assert.equal(result, 'changed');\n    assert.deepEqual(next, { closesAt: 200, votes: [{ voter: 'Ari', choice: 'coffee' }] });\n  });\n\n  it('returns unchanged when voting the same choice', () => {\n    const state = { closesAt: 200, votes: [{ voter: 'Ari', choice: 'coffee' }] };\n    const { result, state: next } = execute({ operation: 'vote', input: { voter: 'Ari', choice: 'coffee' }, state, now: 100 });\n    assert.equal(result, 'unchanged');\n    assert.deepEqual(next, state);\n  });\n\n  it('rejects late votes without changing state', () => {\n    const state = { closesAt: 200, votes: [{ voter: 'Ari', choice: 'tea' }] };\n    const { result, state: next } = execute({ operation: 'vote', input: { voter: 'Bo', choice: 'coffee' }, state, now: 200 });\n    assert.equal(result, 'closed');\n    assert.deepEqual(next, state);\n  });\n\n  it('counts votes and reports deadline state', () => {\n    const state = { closesAt: 200, votes: [{ voter: 'Ari', choice: 'coffee' }, { voter: 'Bo', choice: 'tea' }, { voter: 'Chi', choice: 'coffee' }] };\n    const { result, state: next } = execute({ operation: 'tally', input: null, state, now: 150 });\n    assert.deepEqual(result, { tea: 1, coffee: 2, closed: false });\n    assert.deepEqual(next, state);\n  });\n\n  it('reports closed after deadline', () => {\n    const state = { closesAt: 200, votes: [{ voter: 'Ari', choice: 'tea' }] };\n    const { result } = execute({ operation: 'tally', input: null, state, now: 201 });\n    assert.deepEqual(result, { tea: 1, coffee: 0, closed: true });\n  });\n\n  it('trims voter and rejects blank input', () => {\n    const state = { closesAt: 200, votes: [] };\n    const { result, state: next } = execute({ operation: 'vote', input: { voter: '   ', choice: 'tea' }, state, now: 100 });\n    assert.equal(result, 'invalid');\n    assert.deepEqual(next, state);\n  });\n\n  it('matches voters case-sensitively', () => {\n    const state = { closesAt: 200, votes: [{ voter: 'Ari', choice: 'tea' }] };\n    const { result, state: next } = execute({ operation: 'vote', input: { voter: 'ari', choice: 'coffee' }, state, now: 100 });\n    assert.equal(result, 'recorded');\n    assert.deepEqual(next, { closesAt: 200, votes: [{ voter: 'Ari', choice: 'tea' }, { voter: 'ari', choice: 'coffee' }] });\n  });\n});\n"
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "poll",
+      "candidate": "sol",
+      "configuration": {
+        "model": "gpt-6.1-sol",
+        "inputRate": 2,
+        "cachedRate": 0.1,
+        "cacheWriteRate": 2.5,
+        "outputRate": 10,
+        "reasoning": "high"
+      },
+      "status": "passed",
+      "elapsedMs": 57885.87883400003,
+      "inferenceMs": 49905.60045900001,
+      "knownEstimatedUsd": 0.0714052,
+      "unknownUsageAttempts": 0,
+      "calls": 2,
+      "validationRepairs": 0,
+      "toolFailures": 0,
+      "sourceRevisions": 1,
+      "attempts": [
+        {
+          "sequence": 1,
+          "requestedModel": "gpt-6.1-sol",
+          "returnedModel": "gpt-6.1-sol",
+          "status": 200,
+          "outcome": "returned",
+          "promptDigest": "643e97ed6418cb6383580d87a4b5457bfa24a2ce09e0f5b7c345a9267bcf630e",
+          "elapsedMs": 43699.26245900002,
+          "providerUsage": {
+            "input_tokens": 7816,
+            "input_tokens_details": {
+              "cache_write_tokens": 3022,
+              "cached_tokens": 4791
+            },
+            "output_tokens": 3224,
+            "output_tokens_details": {
+              "reasoning_tokens": 195
+            },
+            "total_tokens": 11040
+          },
+          "usage": {
+            "input": 7816,
+            "output": 3224,
+            "cached": 4791,
+            "cacheWrites": 3022,
+            "reasoning": 195,
+            "estimatedUsd": 0.0402801
+          },
+          "reasoningObserved": true
+        },
+        {
+          "sequence": 2,
+          "requestedModel": "gpt-6.1-sol",
+          "returnedModel": "gpt-6.1-sol",
+          "status": 200,
+          "outcome": "returned",
+          "promptDigest": "5597d0c0790bb4cac58676434920f30949b5cfb82fbcc0a34acb171e0544748c",
+          "elapsedMs": 6206.337999999989,
+          "providerUsage": {
+            "input_tokens": 15810,
+            "input_tokens_details": {
+              "cache_write_tokens": 11016,
+              "cached_tokens": 4791
+            },
+            "output_tokens": 310,
+            "output_tokens_details": {
+              "reasoning_tokens": 58
+            },
+            "total_tokens": 16120
+          },
+          "usage": {
+            "input": 15810,
+            "output": 310,
+            "cached": 4791,
+            "cacheWrites": 11016,
+            "reasoning": 58,
+            "estimatedUsd": 0.0311251
+          },
+          "reasoningObserved": true
+        }
+      ],
+      "reviews": [
+        {
+          "generated": {
+            "exitCode": 0,
+            "stdout": "✔ replays the immutable agreement example with exact results and states (20.570166ms)\n✔ duplicate choices are unchanged and never add a second vote (0.485209ms)\n✔ trims voters and treats a trimmed identifier as the same voter (0.132875ms)\n✔ rejects empty or whitespace-only identifiers without mutation (0.2445ms)\n✔ identifiers are case-sensitive and arbitrary text is not an object key (0.686208ms)\n✔ allows votes immediately before the deadline and rejects equality and later (0.691083ms)\n✔ late updates, repeat votes and blank votes all return closed first (0.357166ms)\n✔ updates keep order and leave other voters unchanged (0.53075ms)\n✔ truthful totals survive serialization and reopening before and after closing (6.524917ms)\n✔ uses supplied now and closesAt, never the machine wall clock (1.741208ms)\n✔ does not mutate frozen state or input when recording (0.637417ms)\n✔ serialized competing requests preserve one vote per supplied voter (0.33625ms)\n✔ capacity remains schema-valid while existing voters can still change (0.202625ms)\n✔ independent invocations rely only on their supplied durable state (0.054583ms)\n✔ unknown operations fail rather than changing state (2.988125ms)\nℹ tests 15\nℹ suites 0\nℹ pass 15\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 478.919625\n",
+            "stderr": ""
+          },
+          "holdouts": [
+            {
+              "id": "deadline-boundary",
+              "status": "passed",
+              "completedSteps": 2,
+              "failure": null
+            },
+            {
+              "id": "trim-duplicate-and-order",
+              "status": "passed",
+              "completedSteps": 2,
+              "failure": null
+            },
+            {
+              "id": "blank-voter",
+              "status": "passed",
+              "completedSteps": 1,
+              "failure": null
+            }
+          ],
+          "feedback": {
+            "review": {
+              "kind": "review",
+              "revision": 1,
+              "digest": "728a691b11894097f129954e0f8b89ab45e75b818398456d8f4e43295c2fe60e",
+              "entrypoint": "src/poll.mjs",
+              "tests": [
+                "tests/poll.test.mjs"
+              ],
+              "libraries": []
+            },
+            "report": {
+              "policy": "restyle-service-checks-v1",
+              "identity": {
+                "agreementDigest": "731bae9d4beea9b4e452e1e5582eb9934726887a0c76d3c9e8817fb8b0211f89",
+                "packageDigest": "d1270ebf15b16231a49660b37f080356773b8d4826fffcef1d985e66ba26f584",
+                "sourceDigest": "728a691b11894097f129954e0f8b89ab45e75b818398456d8f4e43295c2fe60e"
+              },
+              "status": "passed",
+              "cases": [
+                {
+                  "id": "record-update-tally",
+                  "status": "passed",
+                  "completedSteps": 3,
+                  "failure": null
+                }
+              ]
+            },
+            "error": null
+          }
+        }
+      ],
+      "finalSource": {
+        "revision": 1,
+        "digest": "728a691b11894097f129954e0f8b89ab45e75b818398456d8f4e43295c2fe60e",
+        "files": [
+          {
+            "path": "src/poll.mjs",
+            "content": "// State, input validation and durable commits are managed by Restyle.\n// No process-local data, wall-clock reads, timers or external services.\nexport function execute({ operation, input, state, now, connectionResults = [] }) {\n  const closed = now >= state.closesAt;\n\n  if (operation === 'tally') {\n    let tea = 0;\n    let coffee = 0;\n    for (const vote of state.votes) {\n      if (vote.choice === 'tea') tea += 1;\n      if (vote.choice === 'coffee') coffee += 1;\n    }\n    return { result: { tea, coffee, closed }, state };\n  }\n\n  if (operation !== 'vote') {\n    throw new Error('Unsupported operation');\n  }\n  // Deadline rejection takes precedence over voter validation.\n  if (closed) return { result: 'closed', state };\n\n  const voter = input.voter.trim();\n  if (!voter) return { result: 'invalid', state };\n\n  const index = state.votes.findIndex((vote) => vote.voter === voter);\n  if (index !== -1) {\n    if (state.votes[index].choice === input.choice) {\n      return { result: 'unchanged', state };\n    }\n    const votes = state.votes.map((vote, position) =>\n      position === index ? { voter, choice: input.choice } : { ...vote }\n    );\n    return { result: 'changed', state: { closesAt: state.closesAt, votes } };\n  }\n\n  // The agreed durable state holds at most 32 distinct voters.\n  // Reject a new voter at capacity without changing any existing vote.\n  if (state.votes.length >= 32) return { result: 'invalid', state };\n  return {\n    result: 'recorded',\n    state: {\n      closesAt: state.closesAt,\n      votes: [...state.votes.map((vote) => ({ ...vote })), { voter, choice: input.choice }]\n    }\n  };\n}\n"
+          },
+          {
+            "path": "tests/poll.test.mjs",
+            "content": "import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport { execute } from '../src/poll.mjs';\n\nconst initial = () => ({ closesAt: 200, votes: [] });\nconst vote = (state, voter, choice, now = 100) =>\n  execute({ operation: 'vote', input: { voter, choice }, state, now });\nconst tally = (state, now = 100) =>\n  execute({ operation: 'tally', input: null, state, now });\n\nfunction freezeState(state) {\n  for (const item of state.votes) Object.freeze(item);\n  Object.freeze(state.votes);\n  return Object.freeze(state);\n}\n\ntest('replays the immutable agreement example with exact results and states', () => {\n  let state = initial();\n  const recorded = vote(state, 'Ari', 'tea');\n  assert.deepEqual(recorded, {\n    result: 'recorded',\n    state: { closesAt: 200, votes: [{ voter: 'Ari', choice: 'tea' }] }\n  });\n  state = recorded.state;\n  const changed = vote(state, 'Ari', 'coffee');\n  assert.deepEqual(changed, {\n    result: 'changed',\n    state: { closesAt: 200, votes: [{ voter: 'Ari', choice: 'coffee' }] }\n  });\n  assert.deepEqual(tally(changed.state), {\n    result: { tea: 0, coffee: 1, closed: false }, state: changed.state\n  });\n});\n\ntest('duplicate choices are unchanged and never add a second vote', () => {\n  const state = freezeState(vote(initial(), 'Ari', 'tea').state);\n  assert.deepEqual(vote(state, 'Ari', 'tea'), { result: 'unchanged', state });\n  assert.equal(state.votes.length, 1);\n});\n\ntest('trims voters and treats a trimmed identifier as the same voter', () => {\n  const first = vote(initial(), ' \\tAri\\n ', 'tea');\n  assert.equal(first.result, 'recorded');\n  assert.deepEqual(first.state.votes, [{ voter: 'Ari', choice: 'tea' }]);\n  const second = vote(first.state, ' Ari ', 'coffee');\n  assert.equal(second.result, 'changed');\n  assert.deepEqual(second.state.votes, [{ voter: 'Ari', choice: 'coffee' }]);\n});\n\ntest('rejects empty or whitespace-only identifiers without mutation', () => {\n  const state = freezeState(initial());\n  for (const voter of ['', ' ', '\\t\\n', '\\u2003\\u00a0']) {\n    assert.deepEqual(vote(state, voter, 'tea'), { result: 'invalid', state });\n  }\n});\n\ntest('identifiers are case-sensitive and arbitrary text is not an object key', () => {\n  let state = initial();\n  for (const voter of ['Ari', 'ari', '__proto__', 'constructor', '茶']) {\n    const response = vote(state, voter, 'tea');\n    assert.equal(response.result, 'recorded');\n    state = response.state;\n  }\n  assert.equal(state.votes.length, 5);\n  assert.deepEqual(tally(state).result, { tea: 5, coffee: 0, closed: false });\n});\n\ntest('allows votes immediately before the deadline and rejects equality and later', () => {\n  const state = freezeState(initial());\n  assert.equal(vote(state, 'Ari', 'tea', 199).result, 'recorded');\n  for (const now of [200, 201, 9999999999999]) {\n    assert.deepEqual(vote(state, 'Ari', 'tea', now), { result: 'closed', state });\n    assert.deepEqual(tally(state, now), {\n      result: { tea: 0, coffee: 0, closed: true }, state\n    });\n  }\n});\n\ntest('late updates, repeat votes and blank votes all return closed first', () => {\n  const state = freezeState(vote(initial(), 'Ari', 'tea', 199).state);\n  for (const [voter, choice] of [['Ari', 'coffee'], ['Ari', 'tea'], ['', 'coffee'], ['New', 'tea']]) {\n    assert.deepEqual(vote(state, voter, choice, 200), { result: 'closed', state });\n  }\n  assert.deepEqual(tally(state, 201).result, { tea: 1, coffee: 0, closed: true });\n});\n\ntest('updates keep order and leave other voters unchanged', () => {\n  const state = freezeState({ closesAt: 200, votes: [\n    { voter: 'First', choice: 'tea' },\n    { voter: 'Middle', choice: 'tea' },\n    { voter: 'Last', choice: 'coffee' }\n  ] });\n  const updated = vote(state, 'Middle', 'coffee');\n  assert.deepEqual(updated, { result: 'changed', state: { closesAt: 200, votes: [\n    { voter: 'First', choice: 'tea' },\n    { voter: 'Middle', choice: 'coffee' },\n    { voter: 'Last', choice: 'coffee' }\n  ] } });\n  assert.equal(state.votes[1].choice, 'tea');\n  assert.deepEqual(tally(updated.state).result, { tea: 1, coffee: 2, closed: false });\n});\n\ntest('truthful totals survive serialization and reopening before and after closing', () => {\n  let state = initial();\n  state = vote(state, 'Ari', 'tea', 100).state;\n  state = vote(state, 'Bea', 'coffee', 110).state;\n  state = vote(state, 'Ari', 'coffee', 120).state;\n  const reopened = freezeState(JSON.parse(JSON.stringify(state)));\n  assert.deepEqual(tally(reopened, 150), {\n    result: { tea: 0, coffee: 2, closed: false }, state: reopened\n  });\n  assert.deepEqual(tally(reopened, 200), {\n    result: { tea: 0, coffee: 2, closed: true }, state: reopened\n  });\n  assert.deepEqual(vote(reopened, 'Bea', 'tea', 201), { result: 'closed', state: reopened });\n});\n\ntest('uses supplied now and closesAt, never the machine wall clock', () => {\n  const original = Date.now;\n  Date.now = () => { throw new Error('Wall clock must not be consulted'); };\n  try {\n    const state = { closesAt: 9876543210000, votes: [] };\n    assert.equal(vote(state, 'Ari', 'tea', 9876543209999).result, 'recorded');\n    assert.equal(vote(state, 'Ari', 'tea', 9876543210000).result, 'closed');\n    assert.equal(tally(state, 9876543209999).result.closed, false);\n    assert.equal(tally(state, 9876543210000).result.closed, true);\n    assert.equal(vote({ closesAt: 0, votes: [] }, 'Ari', 'tea', 0).result, 'closed');\n  } finally {\n    Date.now = original;\n  }\n});\n\ntest('does not mutate frozen state or input when recording', () => {\n  const state = freezeState(initial());\n  const input = Object.freeze({ voter: ' Ari ', choice: 'coffee' });\n  const response = execute({ operation: 'vote', input, state, now: 1, connectionResults: [] });\n  assert.deepEqual(response, {\n    result: 'recorded', state: { closesAt: 200, votes: [{ voter: 'Ari', choice: 'coffee' }] }\n  });\n  assert.deepEqual(state, initial());\n  assert.equal(input.voter, ' Ari ');\n});\n\ntest('serialized competing requests preserve one vote per supplied voter', () => {\n  let state = initial();\n  for (const choice of ['tea', 'coffee', 'coffee', 'tea']) {\n    state = vote(state, 'Ari', choice, 199).state;\n    assert.equal(state.votes.length, 1);\n  }\n  state = vote(state, 'Bea', 'coffee', 199).state;\n  assert.deepEqual(tally(state, 200).result, { tea: 1, coffee: 1, closed: true });\n  assert.deepEqual(vote(state, 'Ari', 'coffee', 200), { result: 'closed', state });\n});\n\ntest('capacity remains schema-valid while existing voters can still change', () => {\n  let state = initial();\n  for (let i = 0; i < 32; i++) {\n    const response = vote(state, `V${i}`, i % 2 ? 'coffee' : 'tea');\n    assert.equal(response.result, 'recorded');\n    state = response.state;\n  }\n  state = freezeState(state);\n  assert.deepEqual(tally(state).result, { tea: 16, coffee: 16, closed: false });\n  assert.deepEqual(vote(state, 'Overflow', 'tea'), { result: 'invalid', state });\n  assert.deepEqual(vote(state, 'V0', 'tea'), { result: 'unchanged', state });\n  const changed = vote(state, 'V0', 'coffee');\n  assert.equal(changed.result, 'changed');\n  assert.equal(changed.state.votes.length, 32);\n  assert.deepEqual(tally(changed.state).result, { tea: 15, coffee: 17, closed: false });\n});\n\ntest('independent invocations rely only on their supplied durable state', () => {\n  vote(initial(), 'Hidden', 'tea');\n  assert.deepEqual(tally(initial()).result, { tea: 0, coffee: 0, closed: false });\n  const state = freezeState({ closesAt: 200, votes: [{ voter: 'Saved', choice: 'coffee' }] });\n  assert.deepEqual(tally(state).result, { tea: 0, coffee: 1, closed: false });\n});\n\ntest('unknown operations fail rather than changing state', () => {\n  const state = freezeState(initial());\n  assert.throws(() => execute({ operation: 'reset', input: null, state, now: 100 }), /Unsupported operation/);\n  assert.deepEqual(state, initial());\n});\n"
+          }
+        ]
+      }
+    }
+  ],
+  "aggregates": [
+    {
+      "candidate": "kimi",
+      "model": "kimi-k2.7-code",
+      "builds": 3,
+      "successes": 3,
+      "calls": 10,
+      "totalKnownEstimatedUsd": 0.11799749999999999,
+      "knownEstimatedUsdPerSuccess": 0.0393325,
+      "unknownUsageAttempts": 0,
+      "meanElapsedSeconds": 44.20752447200001,
+      "meanInferenceSeconds": 35.632873027999985
+    },
+    {
+      "candidate": "sol",
+      "model": "gpt-6.1-sol",
+      "builds": 3,
+      "successes": 3,
+      "calls": 6,
+      "totalKnownEstimatedUsd": 0.189124,
+      "knownEstimatedUsdPerSuccess": 0.06304133333333332,
+      "unknownUsageAttempts": 0,
+      "meanElapsedSeconds": 49.91250104200001,
+      "meanInferenceSeconds": 41.09568084766667
+    }
+  ],
+  "resources": [
+    {
+      "name": "restyle-model-b9543b3a-df64-4aee-a408-306abf80ae16",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:31:20.651Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-b759ab97-e943-4e34-895f-098fa8f2f783",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:31:21.244Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-b5bba4c3-1fe4-489c-9589-a657e0db0657",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:31:28.711Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-a0a3d8d7-a86e-4447-baba-8f14d7879a0e",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:31:29.889Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-cc319b84-5914-4a56-a84b-8aed9f81649d",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:31:30.512Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-ed7ea1d8-b3e5-41c9-821d-bd616f588333",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:31:31.122Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-e5eca81a-eed7-45b7-987b-d4d1e8ae0651",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:31:31.744Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-845001da-c171-443c-8feb-046965fb8811",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:31:32.362Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-d84c17ef-bbdd-4356-bf81-1036a54b06f3",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:31:32.982Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-3ca4be2a-b1ca-48b0-9226-19a1f08cf7d3",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:31:33.602Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-5150ed88-61f1-48a8-b7dd-560378d4db78",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:31:34.229Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-37260b28-dd6a-4927-b043-fcb6ae88e675",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:31:34.843Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-ee7d8abb-956f-4e58-b2a2-8a1cef1a331b",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:32:12.212Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-025c5da7-b3e7-4ce9-95e0-c78438e74fe5",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:32:12.848Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-c74b5c12-631d-4efd-80b8-4fd0ddaeb551",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:32:13.954Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-ee87d775-b284-48ff-a557-75c5cbe900d4",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:32:15.079Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-05140b0d-f5cf-4fd1-9022-dd9ad97f0b0d",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:32:15.719Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-3d352593-b8fe-4c2e-b6f9-fc25f83ade2d",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:32:16.423Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-79c875d5-45b0-4795-a31f-1726a6338de7",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:32:17.087Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-025e046c-6e66-4a83-976d-04150feea7b6",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:32:17.734Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-6670c152-8e37-4cf0-b51c-da8b8259dc00",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:32:18.381Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-86c3e926-1467-4d30-8e55-38b596aabb8c",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:32:19.014Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-e941a098-6007-4df4-9d18-9c903e55fd5a",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:32:19.633Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-c19caacc-b138-44f2-a977-c0a675aa63f1",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:32:20.241Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-40b692f3-fc7e-4c2e-b13e-0ade99a004fa",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:32:57.583Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-ae8d2804-30c7-49ef-a681-33c186195544",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:32:58.227Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-d0a8d510-3f37-4530-8fa9-852c4cce25fd",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:32:59.360Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-e95e4d74-43c9-482f-a689-2772603f4b2d",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:00.463Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-4011a909-9f00-4dd2-b31d-8c46561cb4dc",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:01.082Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-7ec8ac97-cdd8-4d2e-94da-e4ea5071d333",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:01.713Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-f853137d-33e9-4a07-b702-fc703925e76e",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:02.325Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-a7ffe7f8-6ce8-4067-9a8d-5c059da7bd80",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:02.964Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-70abb7a8-480c-4468-a914-832b78ed0666",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:03.584Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-4dfc8ca0-d74c-45da-b6c5-a4ef080b417d",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:04.215Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-0cee2fdb-aba0-43c5-a171-48bf07c63762",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:04.828Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-f0104e48-729b-4405-a8ed-fdebf013b853",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:05.452Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-e56e631e-967d-4895-a94e-0e28d08c7019",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:06.080Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-3c18ad4b-31f4-47d6-ab5f-616707421847",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:06.691Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-a9f0364c-db0a-4b24-87c5-e659b4723aae",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:37.261Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-0d3fea2d-7a08-4fad-8088-1dca0be5457e",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:37.859Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-27fb9fb0-0919-49e6-9f2d-34f91472a2f3",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:45.031Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-ae721a87-7cac-4745-85aa-1fd2c2abcdb0",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:46.138Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-f282ce76-680c-4184-9452-e023c248bb85",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:46.758Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-c2c7490b-22cc-4591-b569-2a032cb50ab6",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:47.405Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-d5fccd18-9ef6-4d5c-8eda-991248af7202",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:48.057Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-bcd85a29-e6ff-4235-8691-6759d29c9286",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:48.684Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-0dcb9f7d-1cb0-4dd3-8e92-f3e851962396",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:49.301Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-bf3f139a-32b7-48af-822c-0a7bd54c3acf",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:49.907Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-f40fee79-2aea-48b6-9dda-626810cf6cf0",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:50.528Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-3bd6bb0e-ff8c-442f-94ef-ebc5517c8caa",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:51.166Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-41e503e8-5cfb-47aa-b874-a71f009f3a7b",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:51.782Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-076c9563-8cb3-43c5-a719-2312b235179e",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:33:52.421Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-31c3e084-e846-4abd-8988-5dd53b948f36",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:34:24.548Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-f99cd661-8bd4-4a18-899d-b8db0eb2fc65",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:34:35.352Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-61764d69-f129-4553-af66-e2c55e4fbac3",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:34:36.511Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-d08e6705-1bb0-4a74-b6d5-7e371f94e9d5",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:34:37.153Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-276ee143-6a3e-4167-9281-24f229a8cb5a",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:34:37.801Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-1a042958-77da-474b-977c-760f063034c6",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:34:38.430Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-0b96223d-11b2-40a6-bdc4-8c84a787099b",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:34:39.072Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-43801210-6516-4359-8a0f-da40abcba5fb",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:34:39.700Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-9575c1fc-a49f-4fbd-9524-fb804cedaa23",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:34:40.330Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-9ef2e96c-6b71-4d01-87d8-622115eb5f15",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:34:40.949Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-6e332f5e-19b4-4457-aa4d-22898ce7b158",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:35:31.549Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-51142ff5-14d6-449e-9108-f11477b9f9da",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:35:32.189Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-00a5b7af-63d4-4324-9b92-5ff265c27cdb",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:35:33.383Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-993eea55-ada6-4f03-b8f4-e8c48ffd099e",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:35:34.485Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-c523e4c8-add2-4fdc-ab85-a3e013aeed4e",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:35:35.103Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-f15f3cb7-fc42-4b26-aaaf-e1831c893d92",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:35:35.728Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-6e0fdd58-007b-4868-854b-23ef67bc0e1a",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:35:36.355Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-0798ba50-6f9c-4b95-ae68-75ba44c748a4",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:35:36.966Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-199f8664-f0cd-435e-9a41-b2b25915f78c",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:35:37.588Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-ab64e6e9-e957-4bc9-9ed3-353094ff4576",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:35:38.218Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    },
+    {
+      "name": "restyle-model-fd8229ee-d73b-40ca-a295-a361d884cb43",
+      "image": "sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425",
+      "createdAt": "2026-10-09T00:35:38.832Z",
+      "cleaned": true,
+      "cleanupExitCode": 0
+    }
+  ],
+  "cleanupVerified": true
+}

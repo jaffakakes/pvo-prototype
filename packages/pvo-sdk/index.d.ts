@@ -197,6 +197,8 @@ export interface RuntimeHandlers {
   gotoScene?(scene: string, context: RuntimeContext): unknown | Promise<unknown>;
   seek?(time: number, context: RuntimeContext): unknown | Promise<unknown>;
   request?(request: { url: string; method: string; headers: Record<string, string>; body?: string; redirect: "error"; signal?: AbortSignal }, context: RuntimeContext): unknown | Promise<unknown>;
+  /** Trusted host policy only, from 1 to 360000 ms. Undefined keeps the 15000 ms default; PVO content cannot set this. */
+  requestTimeoutMs?(request: { url: string; method: string; headers: Record<string, string>; body?: string; redirect: "error" }, context: RuntimeContext): number | undefined;
   openUrl?(url: string, context: RuntimeContext): unknown | Promise<unknown>;
   custom?(name: string, payload: unknown, context: RuntimeContext): unknown | Promise<unknown>;
   onEvent?(event: RuntimeEvent): void;

@@ -4,6 +4,8 @@
 Task IDs are stable. Checked items are verified work; update their evidence and the [handoff progress log](../restyle-cloud-agent-progress.md) whenever a task finishes.
 
 
+**Current status, 7 October 2026:** Roadmap 1, including [1G Containers](1g-containers.md), is complete through beta. [Final Node acceptance](../restyle-node-product-acceptance.md#verified-result--7-october-2026) records the runtime replacement and cleanup; prior evidence below is preserved. Next is **2A.01**. Production is explicitly deferred.
+
 **Outcome:** a creator asks for a component, answers any necessary question, and receives a working feature with newly generated backend code. It works in Try, a downloaded PVO, and a published player after its build workspace has stopped.
 
 **Starting point:** the existing editor assistant, account system, PVO request support, and Cloudflare application. No cloud builder is implemented by this roadmap document.
@@ -29,7 +31,7 @@ Build this before committing to a provider-specific implementation.
 
 ## 1B. Save the task and its questions
 
-**Progress:** 1B.01–1B.07 are verified: shared task rules, local association, durable storage/planning, native handoff, task UI and immutable prepared results with guarded apply-once receipts. Next is 1B.08/1B.09 provider receipts/reconciliation; full milestone acceptance remains incomplete. Arbitrary workspace generation remains 1C.
+**Progress: 1B.01–1B.15 are verified.** Saved goals continue through bounded work periods, private durable history, permission/capacity waits and evidence-driven repair. The combined controlled acceptance crosses former limits and survives interruptions and uncertain hosting outcomes. Current continuation source is in draft PR #102; earlier actual-provider proof is recorded in [the recovery evidence](../restyle-cloud-provider-recovery-proof.md). Merge, beta availability and production remain separate. Next is **1E.04**.
 
 The task record is the agent's notebook. It must be saved on the server. Follow the [detailed 1B implementation plan](1b-saved-tasks.md) for contracts, build order, and failure tests.
 
@@ -40,9 +42,19 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 - [x] **1B.05** Add a background authoring runner with saved checkpoints, wakeups, bounded retries, and one active worker owning each task step. Its lifetime must not depend on an open HTTP request or browser tab. Viewer jobs in Roadmap 3 are a separate responsibility.
 - [x] **1B.06** Add a small progress view in the existing assistant conversation. Start with “Working,” “Needs your answer,” “Ready,” “Stopped,” and “Failed,” with a specific reason.
 - [x] **1B.07** Save prepared component changes while the editor is closed. Apply them on return only after checking the current local project.
-- [ ] **1B.08** Record completed steps so restarting a task cannot repeat a deployment or other completed action.
-- [ ] **1B.09** Reconcile interrupted steps with provider resource records before retrying. A deployed service whose reply was lost must be recovered and recorded.
-- [ ] **1B.10** Pass the saved-task acceptance matrix, record test and browser evidence, and verify the new beta revision for the completed app changes.
+- [x] **1B.08** Record completed steps so restarting a task cannot repeat a deployment or other completed action.
+- [x] **1B.09** Reconcile interrupted steps with provider resource records before retrying. A deployed service whose reply was lost must be recovered and recorded.
+- [x] **1B.10** Pass the saved-task acceptance matrix, record test and browser evidence, and verify the new beta revision for the completed app changes.
+
+### Goal continuation correction — 6 October 2026
+
+The user wants the agent to keep working toward the goal, with no fixed model-turn ceiling. The goal-wide model/tool/session/recovery/research/source/review cutoffs and age deadline are removed. Durable history, byte-aware checkpoints, retrievable context, saved capacity/spending waits, evidence-driven repair and combined continuation acceptance pass 1,409 local tests. 1B.11–1B.15 are complete. Follow [the goal-continuation implementation plan](1b-goal-continuation.md) before proceeding to 1E.04.
+
+- [x] **1B.11** Separate the saved goal from short execution periods. Preserve its objective, current plan, questions, source and receipts across work periods without a fixed goal-wide model/tool/session count or automatic 24-hour abandonment.
+- [x] **1B.12** Keep the notebook bounded by checkpointing settled history into owned durable records. Preserve every unknown external outcome and replay identity; full history or retention must not silently end or erase active goals.
+- [x] **1B.13** Pause and resume for actual spending permission or temporarily unavailable capacity. Show the reason and next action; a rate limit or expired work lease must not become a permanently failed goal. Keep Stop authoritative.
+- [x] **1B.14** Continue from actual progress and validation feedback. Repair unsuccessful work, detect repeated attempts that add no useful evidence, and ask a concrete question when necessary. Finish only after the requested result is verified.
+- [x] **1B.15** Verify continuation beyond the former model/tool/workspace bounds, interrupted checkpoints, waiting/approved budget, Stop/resume and missing external outcomes with local controlled effects. Update the beta and portable handoff; new paid acceptance needs its own approval.
 
 **Finished when:** close the editor during an active build and while a question is pending. The build continues, or waits for the saved answer, and the same task resumes on return. Restarting its worker reconciles completed effects before retrying and creates no duplicate deployment. A different account cannot read or answer it. Stopping the task prevents new work from starting.
 
@@ -50,15 +62,17 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 
 ## 1C. Let the agent write and test backend code
 
-- [ ] **1C.01** Agree on a small service package: source files, locked dependencies, runtime target, supported operations, input/result descriptions, and tests. An operation means one thing the component can ask the service to do.
-- [ ] **1C.02** Start one isolated workspace per task. Restore files from saved source when resuming.
-- [ ] **1C.03** Give resource creation a stable task identifier. If a create response is lost, look up the existing workspace or deployment before creating another.
-- [ ] **1C.04** Expose bounded tools for reading/writing workspace files, running commands, and reading test results. Advertise each tool to the model only when its adapter is available.
-- [ ] **1C.05** Connect those tools to the planner's loop. The agent must use actual command and test results to correct its code; a successful-looking message is not a completion receipt.
-- [ ] **1C.06** Allow the minimum research and package access needed. Exclude platform administration credentials and other creators' data.
-- [ ] **1C.07** Run tests and produce a saved source bundle with an exact content identifier and test report.
-- [ ] **1C.08** Check the requested behavior using cases saved before generation, alongside platform-owned validation of isolation and input/output rules. Deployment readiness comes from the trusted test runner, not a success file or claim written by generated code.
-- [ ] **1C.09** On Stop, timeout, or failure, terminate running commands, release the workspace, and preserve completed source and results.
+**Progress: all of 1C verified.** Saved task-owned workspaces, bounded tools, durable general construction/repair and cited public research are connected. Independent validation now captures exact package bytes, checks the immutable behavior agreement in an isolated runtime and saves platform-owned reports. Stop, restart, ownership, retention, malformed outputs and unchanged usage caps are covered by **1,309 passing local tests**. The [native Container proof](../restyle-workspace-provider-proof.md) passed and its resources were removed. Controlled local model/workspace tests remain distinct from later natural-language live acceptance. Hosting is next in **1D.01/1D.02**. See the [1C implementation evidence](1c-generated-services.md).
+
+- [x] **1C.01** Agree on a small service package: source files, locked dependencies, runtime target, supported operations, input/result descriptions, and tests. An operation means one thing the component can ask the service to do.
+- [x] **1C.02** Start one isolated workspace per task. Restore files from saved source when resuming.
+- [x] **1C.03** Give resource creation a stable task identifier. If a create response is lost, look up the existing workspace or deployment before creating another.
+- [x] **1C.04** Expose bounded tools for reading/writing workspace files, running commands, and reading test results. Advertise each tool to the model only when its adapter is available.
+- [x] **1C.05** Connect those tools to the planner's loop. The agent must use actual command and test results to correct its code; a successful-looking message is not a completion receipt.
+- [x] **1C.06** Allow the minimum research and package access needed. Exclude platform administration credentials and other creators' data.
+- [x] **1C.07** Run tests and produce a saved source bundle with an exact content identifier and test report.
+- [x] **1C.08** Check the requested behavior using cases saved before generation, alongside platform-owned validation of isolation and input/output rules. Deployment readiness comes from the trusted test runner, not a success file or claim written by generated code.
+- [x] **1C.09** On Stop, timeout, or failure, terminate running commands, release the workspace, and preserve completed source and results.
 
 **Finished when:** the agent generates and tests both demonstration services from their requests. A restart restores its saved work. Invalid code fails the test gate, and model claims cannot bypass that gate.
 
@@ -66,14 +80,18 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 
 ## 1D. Run the finished service and manage its data
 
-- [ ] **1D.01** Add owned service and release records. Link each release to its exact source bundle, test result, runtime, operations, and storage permissions.
-- [ ] **1D.02** Deploy releases inactive. Separate test data and permissions from live data and permissions.
-- [ ] **1D.03** Create a stable Restyle address that routes to the recorded release. Validate input and ownership before generated code runs.
-- [ ] **1D.04** Provide durable service storage with boundaries between creators and between services. Include atomic updates: checking and taking the last place must happen as one protected operation. The same protection applies to overlapping equipment bookings.
-- [ ] **1D.05** Add a saved action identifier and result record. Retrying the same action returns its prior result; reusing that identifier with different input is rejected.
-- [ ] **1D.06** Implement creator controls to inspect, activate, pause, and delete services, with limits enforced outside the generated program.
-- [ ] **1D.07** Clean up abandoned inactive releases and failed deployments. Retain active services until an explicit lifecycle action stops them.
-- [ ] **1D.08** Keep the prior active release available during an update. Returning to it must be safe for the current stored records.
+**Progress: all of 1D is verified.** Checked services have stable addresses, atomic test/live records, exact action replay, creator controls and an independent active lifetime. Version selection validates current live state and the existing client interface before switching. Safe rollback retains current records/receipts; incompatible or expired versions cannot displace the working program. Full local checks pass **1,343 tests**, editor TypeScript and the actual service-manager browser journey. **Next: 1E.01/1E.02, a verified component attachment command and both validation boundaries.** Local implementation, beta delivery and production remain separate. See [hosting details](1d-hosted-services.md).
+
+**Current implementation:** see [the 1D ownership and hosting notes](1d-hosted-services.md); unchecked items below remain incomplete.
+
+- [x] **1D.01** Add owned service and release records. Link each release to its exact source bundle, test result, runtime, operations, and storage permissions.
+- [x] **1D.02** Deploy releases inactive. Separate test data and permissions from live data and permissions.
+- [x] **1D.03** Create a stable Restyle address that routes to the recorded release. Validate input and ownership before generated code runs.
+- [x] **1D.04** Provide durable service storage with boundaries between creators and between services. Include atomic updates: checking and taking the last place must happen as one protected operation. The same protection applies to overlapping equipment bookings.
+- [x] **1D.05** Add a saved action identifier and result record. Retrying the same action returns its prior result; reusing that identifier with different input is rejected.
+- [x] **1D.06** Implement creator controls to inspect, activate, pause, and delete services, with limits enforced outside the generated program.
+- [x] **1D.07** Clean up abandoned inactive releases and failed deployments. Retain active services until an explicit lifecycle action stops them.
+- [x] **1D.08** Keep the prior active release available during an update. Returning to it must be safe for the current stored records.
 
 **Finished when:** test and live records stay separate; one creator cannot access another's private operations; repeated submissions do not create duplicate replies; two different guests cannot both claim the last place; pause blocks new work; deletion follows the documented retention rule.
 
@@ -81,15 +99,17 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 
 ## 1E. Attach the service to PVO and activate it
 
-- [ ] **1E.01** Add a validated attachment command that consumes a real service receipt: owner, project, release, operation, input/result agreement, and readiness. The agent cannot attach an invented address.
-- [ ] **1E.02** Update both server and editor assistant validation to admit this verified attachment. Keep existing protections for unrelated request changes.
-- [ ] **1E.03** Prepare the component and request together. Use the existing history commands, compilation, approved hosts, success/error routes, and response state.
-- [ ] **1E.04** Define how Try and the player create a stable action identifier and reuse it on retry. Use one shared contract, with server validation.
-- [ ] **1E.05** Make Try use a server-authorized test connection. Changing a payload or test label cannot authorize a live operation.
-- [ ] **1E.06** Introduce one activation command used by both interactive download and link publication. Export is already available separately from publishing.
-- [ ] **1E.07** Prepare a matching component/service release, activate it before handing out the usable file or link, and retain a retryable result if delivery fails. If activation fails, do not claim the export is ready for online use.
-- [ ] **1E.08** Track the active connection even if the client disconnects during delivery. A failed browser response is not proof that the exported file was never received.
-- [ ] **1E.09** Verify a downloaded PVO can call the service from a supported player on another origin. Public viewer actions must not depend on the creator's browser cookie.
+**1E.01–1E.09 are verified locally.** The normal exporter now packages the checked public connection and uses one activation command before readiness, download and publication. The real browser journey covers activation failure/retry, a lost successful reply and Worker restart, download with link hosting disabled, and both downloaded and uploaded PVOs calling the live service without creator cookies. Full checks: 1,457 tests and strict editor types. **Next: 1F.01 live natural-language acceptance.** Controlled local provider/publication fixtures establish the delivery lifecycle, not live-model quality or cloud product deployment. Follow the [detailed attachment plan](1e-component-attachments.md).
+
+- [x] **1E.01** Add a validated attachment command that consumes a real service receipt: owner, project, release, operation, input/result agreement, and readiness. The agent cannot attach an invented address.
+- [x] **1E.02** Update both server and editor assistant validation to admit this verified attachment. Keep existing protections for unrelated request changes.
+- [x] **1E.03** Prepare the component and request together. Use the existing history commands, compilation, approved hosts, success/error routes, and response state.
+- [x] **1E.04** Define how Try and the player create a stable action identifier and reuse it on retry. Use one shared contract, with server validation.
+- [x] **1E.05** Make Try use a server-authorized test connection. Changing a payload or test label cannot authorize a live operation.
+- [x] **1E.06** Introduce one activation command used by both interactive download and link publication. Export is already available separately from publishing.
+- [x] **1E.07** Prepare a matching component/service release, activate it before handing out the usable file or link, and retain a retryable result if delivery fails. If activation fails, do not claim the export is ready for online use.
+- [x] **1E.08** Track the active connection even if the client disconnects during delivery. A failed browser response is not proof that the exported file was never received.
+- [x] **1E.09** Verify a downloaded PVO can call the service from a supported player on another origin. Public viewer actions must not depend on the creator's browser cookie.
 
 **Finished when:** Try writes only test records; a real downloaded PVO and a published PVO write live records to the right service; online export works with publication hosting disabled. A stale editor project cannot receive an unintended change.
 
@@ -97,15 +117,23 @@ The task record is the agent's notebook. It must be saved on the server. Follow 
 
 ## 1F. Verify the complete first release
 
-- [ ] **1F.01** Run both demonstration requests from ordinary natural-language prompts.
-- [ ] **1F.02** Include a follow-up question, stop/resume, and one invalid generated program that the agent repairs from real test feedback.
-- [ ] **1F.03** Close the editor during an active build and restart the authoring worker. Verify saved work continues and completed effects are recovered.
-- [ ] **1F.04** Shut down the workspace and close Restyle. Use the finished component from a separate viewer session.
-- [ ] **1F.05** Exercise duplicate submissions and distinct simultaneous submissions competing for the last place or overlapping equipment dates. Also check wrong-account access, test/live separation, a failed deployment, and an interrupted export.
-- [ ] **1F.06** Remove a local component and check that a published copy's service is still manageable. Explain that editor Undo does not reverse saved viewer actions.
-- [ ] **1F.07** Record the actual resource use and confirm the configured limits and cleanup work.
-- [ ] **1F.08** Complete the relevant source checks and real browser/provider checks, then release through the active beta and normal promotion process.
+**1F.01–1F.08 complete at the beta gate.** [Live acceptance evidence](../restyle-first-release-acceptance.md) records both ordinary requests, real model-written programs, independent validation, hosting, actual editor/Try/download/publication viewers, races, recovery and cleanup. Dinner passed in the fifth run; camera passed in the tenth. All ten diagnostic deployments are removed. Full source checks (1,489 tests) and strict types pass; Final beta `restyle-editor-shell-e069ede11e8ff6b7` is verified. The user explicitly deferred production until the entire roadmap is finished, they test the beta, and they approve release. Preserve the earlier failed evidence. The user's removed US$15 ceiling remains removed; no further paid acceptance run is needed merely to repeat these passed checks.
 
-**Release gate:** all six steps pass. A mock provider, a temporary VM URL, or generated source alone does not prove this roadmap is finished.
+- [x] **1F.01** Run both demonstration requests from ordinary natural-language prompts.
+- [x] **1F.02** Include a follow-up question, stop/resume, and one invalid generated program that the agent repairs from real test feedback.
+- [x] **1F.03** Close the editor during an active build and restart the authoring worker. Verify saved work continues and completed effects are recovered.
+- [x] **1F.04** Shut down the workspace and close Restyle. Use the finished component from a separate viewer session.
+- [x] **1F.05** Exercise duplicate submissions and distinct simultaneous submissions competing for the last place or overlapping equipment dates. Also check wrong-account access, test/live separation, a failed deployment, and an interrupted export.
+- [x] **1F.06** Remove a local component and check that a published copy's service is still manageable. Explain that editor Undo does not reverse saved viewer actions.
+- [x] **1F.07** Record the actual resource use and confirm the configured limits and cleanup work.
+- [x] **1F.08** Complete the relevant source checks and real browser/provider checks, then deliver the verified build through the active beta for user testing. Production is the separate final release gate below.
 
-Next: [Roadmap 2 — research and connections](02-research-and-connections.md).
+**Release decision, 7 October:** the user said production must wait until everything is done and they have tested the beta. This moves production promotion out of the 1F completion gate; it does not claim a merge or deployment happened. Continue the remaining roadmap in beta. Production requires the full roadmap, user beta testing and explicit release approval, followed by protected promotion/live verification/branch cleanup.
+
+**Release gate:** all six phases, 1A–1F, pass. A mock provider, a temporary VM URL, or generated source alone does not prove this roadmap is finished.
+
+## 1G. Containers — next product feature
+
+After 1F, follow [the consolidated Containers plan](1g-containers.md). It adds saved manual/AI code editing and replaces generated-service execution with hosted Node.js, while reusing the service identity, storage, checked releases, activation and attachment system. Existing basic update/management tasks from Roadmap 4 move forward with their original IDs; they are not duplicated.
+
+The detailed plan owns all new 1G checkboxes. Earlier 1E/1F statuses and evidence stay unchanged; the user confirmed that the current incomplete items must remain unchecked. Containers has its own acceptance gate and is followed by [Roadmap 2 — research and connections](02-research-and-connections.md).

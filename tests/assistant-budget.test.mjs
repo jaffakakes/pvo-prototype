@@ -187,6 +187,9 @@ test("background reservations share foreground capacity, replay once, and refund
     stdin: {
       resolveDir: process.cwd(),
       contents: `
+    // This test compares one minute's capacity before/after restart. Keep the
+    // Worker clock fixed so a real minute boundary cannot reset that capacity.
+    Date.now = () => Date.UTC(2100, 0, 1);
     export { AssistantBudget } from "./server/assistant/budget.js";
     export default { async fetch(request, env) {
       const { key, operation = null, consumed, method = "reserve" } = await request.json();
@@ -297,6 +300,69 @@ test("background reservations share foreground capacity, replay once, and refund
       false,
     );
     assert.equal(await call({ key: other, operation: used }), true);
+  } finally {
+    await mf.dispose();
+    await rm(persist, { recursive: true, force: true });
+  }
+});
+
+test("temporary operator capacity resumes saved work without resetting counts or minute protection", async () => {
+  const firstMinute = Date.UTC(2100, 0, 1);
+  const bundle = await build({
+    stdin: {
+      contents: `import { AssistantBudget } from "./server/assistant/budget.js";
+      export class CapacityBudget extends AssistantBudget {
+        async reserveAt(now) { this.fixedNow = now; return this.reserveTask("a".repeat(64), null); }
+        now() { return this.fixedNow; }
+      }
+      export default { async fetch(request, env) {
+        const now = Number(new URL(request.url).searchParams.get("now"));
+        return Response.json(await env.BUDGET.getByName("same-day").reserveAt(now));
+      } };`,
+      resolveDir: process.cwd(),
+    },
+    bundle: true,
+    write: false,
+    format: "esm",
+    platform: "browser",
+    external: ["cloudflare:workers"],
+  });
+  const persist = await mkdtemp(join(tmpdir(), "pvo-capacity-policy-"));
+  const options = () =>
+    convertV4MiniflareOptions({
+      name: "capacity-policy-test",
+      modules: true,
+      script: bundle.outputFiles[0].text,
+      compatibilityDate: "2026-09-27",
+      bindings: {
+        ASSISTANT_DAILY_CAPACITY: JSON.stringify({
+          global: 50,
+          client: 30,
+          expiresAt: firstMinute + 120000,
+        }),
+      },
+      durableObjects: {
+        BUDGET: { className: "CapacityBudget", useSQLite: true },
+      },
+      isolatedResourcePersistencePath: persist,
+      resourcePersistencePath: persist,
+    });
+  let mf = new Miniflare(options());
+  const reserve = async (now) =>
+    (await mf.dispatchFetch(`https://budget.test/?now=${now}`)).json();
+  try {
+    for (let i = 0; i < 12; i++)
+      assert.equal((await reserve(firstMinute)).accepted, true);
+    assert.equal((await reserve(firstMinute)).reason, "model_capacity");
+    for (let i = 0; i < 12; i++)
+      assert.equal((await reserve(firstMinute + 60000)).accepted, true);
+    await mf.dispose();
+    mf = new Miniflare(options());
+    assert.equal((await reserve(firstMinute + 60000)).reason, "model_capacity");
+    assert.equal(
+      (await reserve(firstMinute + 120000)).reason,
+      "model_allowance",
+    );
   } finally {
     await mf.dispose();
     await rm(persist, { recursive: true, force: true });

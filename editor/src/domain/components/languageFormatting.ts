@@ -131,7 +131,9 @@ function formatStyle(source: string): string | null {
       const declaration = property.exec(remaining);
       if (!declaration || ++declarations > 256) return null;
       const name = declaration[1] === "background-color" ? "background" : declaration[1];
-      if (!["background", "color", "border-color", "border-radius", "font-size", "font-weight", "text-align"].includes(name)) return null;
+      if (!["background", "color", "border-color", "border-radius", "border-width", "box-shadow",
+        "font-size", "font-weight", "gap", "letter-spacing", "line-height", "padding",
+        "text-align", "text-transform"].includes(name)) return null;
       const value = trimSpace(declaration[2]);
       if (!validStyleValue(name as StyleProperty, value)) return null;
       lines.push(`  ${declaration[1]}: ${value};`);

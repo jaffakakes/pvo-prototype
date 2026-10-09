@@ -10,7 +10,9 @@ function cancellationError(signal) {
 }
 
 /** Bound both the host request and its response body, even when a host ignores abort. */
-export async function withRequestDeadline(run, callerSignal) {
+export async function withRequestDeadline(run, callerSignal, milliseconds = REQUEST_TIMEOUT_MS) {
+  if (!Number.isSafeInteger(milliseconds) || milliseconds < 1 || milliseconds > 360_000)
+    throw new RangeError("The host request deadline is outside its supported range.");
   if (callerSignal?.aborted) throw cancellationError(callerSignal);
 
   const controller = new AbortController();
@@ -26,7 +28,7 @@ export async function withRequestDeadline(run, callerSignal) {
   const onCallerAbort = () => interrupt(cancellationError(callerSignal));
   callerSignal?.addEventListener("abort", onCallerAbort, { once: true });
   if (callerSignal?.aborted) onCallerAbort();
-  const timeout = setTimeout(() => interrupt(new RequestTimeoutError()), REQUEST_TIMEOUT_MS);
+  const timeout = setTimeout(() => interrupt(new RequestTimeoutError()), milliseconds);
 
   try {
     let operation;

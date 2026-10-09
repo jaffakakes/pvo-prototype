@@ -1,3 +1,4 @@
+import { parseDraftTestResults } from "../../../../packages/pvo-assistant/results/index.js";
 import {
   parseTaskInput,
   parseTaskRecord,
@@ -8,6 +9,7 @@ import {
   type TaskReference,
 } from "../../../../packages/pvo-assistant/tasks/index.js";
 import { AssistantServiceError } from "../../domain/assistant/failure";
+import { parseBuildDiagnostic } from "../../domain/assistant/buildDiagnostics";
 import { readAssistantJson } from "./serviceResponse";
 
 export class SavedTaskHttpError extends Error {
@@ -62,6 +64,21 @@ async function requestTask(
   return value as Record<string, unknown>;
 }
 
+export async function readBuildDiagnostic(
+  reference: TaskReference,
+  signal: AbortSignal,
+) {
+  const ref = parseTaskReference(reference);
+  return parseBuildDiagnostic(
+    await requestTask(
+      `/api/assistant/tasks/${ref.taskId}/diagnostics`,
+      undefined,
+      signal,
+    ),
+    ref,
+  );
+}
+
 export async function resolveTaskProject(
   localId: string,
   signal: AbortSignal,
@@ -112,6 +129,14 @@ function ownedResponse(value: unknown, ref: TaskReference) {
 
 export type SavedTaskAction =
   | { kind: "stop" | "resume" }
+  | {
+      kind: "manual";
+      questionId: string;
+      stepId: string;
+      operationId: string;
+      status: "completed" | "cancelled";
+      note: string;
+    }
   | { kind: "answer"; questionId: string; operationId: string; value: string };
 
 export async function changeSavedTask(
@@ -134,7 +159,16 @@ export async function changeSavedTask(
           operationId: action.operationId,
           value: action.value,
         }
-      : { expectedRevision: current.revision };
+      : action.kind === "manual"
+        ? {
+            expectedRevision: current.revision,
+            questionId: action.questionId,
+            stepId: action.stepId,
+            operationId: action.operationId,
+            status: action.status,
+            note: action.note,
+          }
+        : { expectedRevision: current.revision };
   const path = action.kind === "answer" ? "answers" : action.kind;
   return ownedResponse(
     (
@@ -146,4 +180,24 @@ export async function changeSavedTask(
     ).task,
     ref,
   );
+}
+
+export async function readDraftTests(task: TaskRecord, signal: AbortSignal) {
+  const report = parseDraftTestResults(
+    (
+      await requestTask(
+        `/api/assistant/tasks/${task.id}/tests`,
+        undefined,
+        signal,
+      )
+    ).tests,
+  );
+  if (
+    !("container" in task.input.context) ||
+    report.ownerId !== task.ownerId ||
+    report.taskId !== task.id ||
+    report.serviceId !== task.input.context.container.serviceId
+  )
+    throw new Error("The test report belongs to another task or Container.");
+  return report;
 }

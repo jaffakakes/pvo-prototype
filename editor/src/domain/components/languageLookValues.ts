@@ -85,8 +85,10 @@ export function projectLookValues(component: PvoComponent): { look: ComponentLoo
   look.preset = "custom";
   const custom: LookCustomValues = {};
   const root: StyleValues = {
-    background: component.type === "tooltip" ? "#FFD23E" : "#15151C", color: component.type === "tooltip" ? "#111" : "#F2F0E9",
-    "border-color": "#000", "border-radius": "14px", "text-align": "left",
+    background: component.type === "tooltip" ? "#FFD23E" : component.type === "choice" ? "transparent" : "#15151C",
+    color: component.type === "tooltip" ? "#111" : "#F2F0E9",
+    "border-color": component.type === "choice" ? "transparent" : "#000",
+    "border-radius": "14px", "text-align": "left",
     "font-size": component.type === "tooltip" ? "13px" : "16px", "font-weight": component.type === "tooltip" ? "800" : "400",
     ...effectiveStyle(rules, component.type),
   };

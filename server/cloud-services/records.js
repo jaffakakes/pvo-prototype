@@ -1,0 +1,70 @@
+import { parseServicePublication } from "../../packages/pvo-assistant/releases/index.js";
+import {
+  parseServiceRecords,
+  serviceCallError,
+} from "../../packages/pvo-assistant/hosting/index.js";
+import { ownedHost } from "./ownership.js";
+import { readNodeUsage } from "./node/usage.js";
+
+/** Authorize before private compute reads; recheck lifecycle after awaiting them. */
+export async function inspectServiceRecords(host, serviceId, ownerId) {
+  const service = ownedHost(host, serviceId, ownerId);
+  if (service.state === "deleted")
+    throw serviceCallError("unavailable", "This Container has been deleted.");
+  const compute = await readNodeUsage(
+    host.env.SERVICE_NODE_EXECUTION,
+    ownerId,
+    serviceId,
+  );
+  return host.ctx.storage.transactionSync(() =>
+    recordsSnapshot(host, serviceId, ownerId, compute),
+  );
+}
+/** One transaction reads the authoritative host; this never invokes generated code. */
+function recordsSnapshot(host, serviceId, ownerId, compute) {
+  const service = ownedHost(host, serviceId, ownerId);
+  if (service.state === "deleted")
+    throw serviceCallError("unavailable", "This Container has been deleted.");
+  const observedAt = host.now();
+  host.store.expire(observedAt);
+  host.cleanupDeletedReleases();
+  const areas = [];
+  for (const row of host.store.rows()) {
+    if (!row.body) continue;
+    const publication = parseServicePublication(JSON.parse(row.body));
+    const releaseId = publication.identity.resourceId;
+    const initial = publication.artifact.agreement.state.initial;
+    if (releaseId === service.liveReleaseId)
+      areas.unshift({
+        mode: "live",
+        releaseId,
+        ...host.actions.records("live", initial, observedAt),
+        pending: pendingRecord(host.accounts.pending("live")),
+      });
+    areas.push({
+      mode: "test",
+      releaseId,
+      ...host.actions.records(`test:${releaseId}`, initial, observedAt),
+      pending: null,
+    });
+  }
+  return parseServiceRecords({
+    service: host.store.service(),
+    observedAt,
+    areas,
+    compute,
+    storageBytes: host.ctx.storage.sql.databaseSize,
+  });
+}
+
+function pendingRecord(value) {
+  return value
+    ? {
+        actionId: value.action.actionId,
+        operation: value.action.operation,
+        releaseId: value.releaseId,
+        status: value.status,
+        startedAt: value.invocation.now,
+      }
+    : null;
+}

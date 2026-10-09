@@ -4,6 +4,8 @@ import {
 } from "../../../../packages/pvo-assistant/results/index.js";
 import {
   parseTaskReference,
+  parseOwnedProjectLink,
+  type OwnedProjectLink,
   parseTaskInput,
   replayTaskCreation,
   type TaskInput,
@@ -13,7 +15,7 @@ import {
 
 export type TaskProjectLinks = {
   localId: string;
-  accounts: TaskReference[];
+  accounts: OwnedProjectLink[];
   pending?: PendingTaskCreation[];
   applied?: TaskApplication[];
 };
@@ -43,7 +45,7 @@ export function parseTaskProjectLinks(
     links.accounts.length > MAX_TASK_LINK_ACCOUNTS
   )
     throw new Error("Saved task links do not match this local project.");
-  const accounts = Array.from(links.accounts, parseTaskReference);
+  const accounts = Array.from(links.accounts, parseOwnedProjectLink);
   if (new Set(accounts.map((link) => link.ownerId)).size !== accounts.length)
     throw new Error("A local project can have only one task link per account.");
   let pending: PendingTaskCreation[] | undefined;
@@ -135,7 +137,35 @@ export function ownedTaskReference(
   const link = taskLinksForProject(links, localId)?.accounts.find(
     (item) => item.ownerId === ownerId,
   );
-  return link ? { ...link } : null;
+  return link?.taskId ? { ...link, taskId: link.taskId } : null;
+}
+
+/** Project ownership can be saved before any AI task exists. */
+export function ownedProjectReference(
+  links: TaskProjectLinks | null,
+  localId: string | null,
+  ownerId: string | null,
+): Pick<TaskReference, "ownerId" | "projectId"> | null {
+  const link = ownerId
+    ? taskLinksForProject(links, localId)?.accounts.find(
+        (item) => item.ownerId === ownerId,
+      )
+    : null;
+  return link ? { ownerId: link.ownerId, projectId: link.projectId } : null;
+}
+
+export function linkProjectServer(
+  links: TaskProjectLinks | null,
+  localId: string,
+  reference: Pick<TaskReference, "ownerId" | "projectId">,
+): TaskProjectLinks {
+  const previous = taskLinksForProject(links, localId)?.accounts.find(
+    (item) => item.ownerId === reference.ownerId,
+  );
+  return linkProjectAccount(links, localId, {
+    ...reference,
+    taskId: previous?.taskId ?? null,
+  });
 }
 
 export function linkProjectTask(
@@ -143,7 +173,14 @@ export function linkProjectTask(
   localId: string,
   reference: TaskReference,
 ): TaskProjectLinks {
-  const incoming = parseTaskReference(reference);
+  return linkProjectAccount(links, localId, parseTaskReference(reference));
+}
+function linkProjectAccount(
+  links: TaskProjectLinks | null,
+  localId: string,
+  reference: OwnedProjectLink,
+): TaskProjectLinks {
+  const incoming = parseOwnedProjectLink(reference);
   const current = taskLinksForProject(links, localId);
   const accounts = current?.accounts ?? [];
   const previous = accounts.find((item) => item.ownerId === incoming.ownerId);

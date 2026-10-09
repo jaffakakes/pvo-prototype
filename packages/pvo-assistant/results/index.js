@@ -1,3 +1,8 @@
+import {
+  matchServiceAttachment,
+  parseServiceAttachmentReceipt,
+} from "../attachments/index.js";
+import { canonicalJson } from "../services/json.js";
 import { parseNativeOperation } from "../native/index.js";
 import {
   parseTaskRecord,
@@ -27,7 +32,15 @@ export const PREPARED_COMPONENT_OPERATIONS = Object.freeze([
 export function parsePreparedTaskResult(value) {
   object(
     value,
-    ["kind", "ownerId", "projectId", "taskId", "baseFingerprint", "operations"],
+    [
+      "kind",
+      "ownerId",
+      "projectId",
+      "taskId",
+      "baseFingerprint",
+      "operations",
+      "attachment",
+    ],
     "Prepared task result",
   );
   requireTask(
@@ -53,12 +66,37 @@ export function parsePreparedTaskResult(value) {
       "Prepared results may only propose component changes.",
     );
   }
+  if (value.attachment !== null) {
+    object(
+      value.attachment,
+      ["command", "receipt"],
+      "Prepared service attachment",
+    );
+    const receipt = parseServiceAttachmentReceipt(value.attachment.receipt);
+    const { command } = matchServiceAttachment(
+      value.attachment.command,
+      receipt,
+      {
+        ownerId: value.ownerId,
+        projectId: value.projectId,
+        taskId: value.taskId,
+      },
+      receipt.readiness.observedAt,
+    );
+    requireTask(
+      value.operations.filter(
+        (operation) =>
+          canonicalJson(operation) === canonicalJson(command.component),
+      ).length === 1,
+      "A saved attachment must match exactly one prepared component operation.",
+    );
+  }
   boundedJson(value, TASK_LIMITS.artifactBytes, "Prepared result artifact");
   return structuredClone(value);
 }
 
 /** The runner supplies an actual owned task; model output supplies only proposed operations. */
-export function prepareTaskResult(task, operations) {
+export function prepareTaskResult(task, operations, attachment = null) {
   const current = parseTaskRecord(task);
   return parsePreparedTaskResult({
     kind: "component_changes",
@@ -67,6 +105,7 @@ export function prepareTaskResult(task, operations) {
     taskId: current.id,
     baseFingerprint: current.input.context.fingerprint,
     operations,
+    attachment,
   });
 }
 
@@ -110,3 +149,10 @@ export function serializePreparedTaskResult(value) {
         : item;
   return JSON.stringify(canonical(parsePreparedTaskResult(value)));
 }
+export {
+  parseDraftTaskResult,
+  prepareDraftTaskResult,
+  matchDraftTaskResult,
+} from "./draft.js";
+
+export { parseDraftTestResults } from "./draftTests.js";

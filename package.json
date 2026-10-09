@@ -30,7 +30,8 @@
     "check:browser:runtime": "node scripts/checks/run.mjs runtime",
     "check:architecture": "node scripts/checks/dependencies.mjs",
     "format": "node scripts/checks/formatting.mjs --write",
-    "check:format": "node scripts/checks/formatting.mjs"
+    "check:format": "node scripts/checks/formatting.mjs",
+    "deploy:beta:built": "node scripts/build/deploy-beta.mjs"
   },
   "dependencies": {
     "@clerk/clerk-js": "^6.37.0",

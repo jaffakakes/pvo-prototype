@@ -116,6 +116,12 @@ export function useSavedTask() {
     resume: () => {
       void session.current?.resume();
     },
+    resolveManual: (
+      questionId: string,
+      stepId: string,
+      status: "completed" | "cancelled",
+      note: string,
+    ) => session.current?.resolveManual(questionId, stepId, status, note),
     answer: (questionId: string, value: string) =>
       session.current?.answer(questionId, value),
   };
