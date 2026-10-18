@@ -234,12 +234,6 @@
 .tool-collapse {
   flex: 0 0 44px;
 }
-.tool-text svg {
-  color: var(--yellow);
-}
-.tool-sound svg {
-  color: var(--teal);
-}
 .tool-delete {
   color: var(--red);
 }
