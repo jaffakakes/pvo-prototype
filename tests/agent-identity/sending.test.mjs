@@ -107,6 +107,14 @@ test("agent email requires a ready identity and recipient approval; lost-respons
   }
 });
 test("agent email adapter rejects scope expansion and stops uncertain retries before the provider retention window", async () => {
+  for (const documentation of [
+    "https://docs.agentmail.to/api-reference/inboxes/messages/send",
+    "https://www.agentmail.to/docs/api-reference/inboxes/messages/send",
+  ])
+    assert.equal(
+      parseConnectionAdapter({ ...adapter, documentation }).documentation,
+      documentation,
+    );
   for (const extra of [
     { url: "https://other.example" },
     { resourceId: "other" },
@@ -118,6 +126,10 @@ test("agent email adapter rejects scope expansion and stops uncertain retries be
     { method: "GET" },
     { permission: "identity:receive" },
     { documentation: "https://evil.example/docs" },
+    { documentation: "https://www.agentmail.to/blog/send" },
+    { documentation: "https://www.agentmail.to.evil.example/docs/send" },
+    { documentation: "https://www.agentmail.to@evil.example/docs/send" },
+    { documentation: "https://www.agentmail.to/docs-evil/send" },
   ])
     assert.throws(() => parseConnectionAdapter({ ...adapter, ...change }));
   let calls = 0;

@@ -108,7 +108,7 @@ export function parseConnectionAdapter(value) {
     (value.provider === "github"
       ? /^https:\/\/docs\.github\.com\/[A-Za-z0-9_/#?=.&%+-]+$/
       : value.provider === "agentmail"
-        ? /^https:\/\/docs\.agentmail\.to\/[A-Za-z0-9_/#?=.&%+-]+$/
+        ? /^https:\/\/(?:docs\.agentmail\.to\/|www\.agentmail\.to\/docs\/)[A-Za-z0-9_/#?=.&%+-]+$/
         : /^https:\/\/resend\.com\/docs\/[A-Za-z0-9_/#?=.&%+-]+$/
     ).test(value.documentation),
     "Cite the installed provider's official documentation.",

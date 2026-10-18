@@ -44,6 +44,13 @@ test("structured research records the requested operation and actual source with
 });
 
 test("research rejects invented quotations, authority fields, missing verification work and excessive content", () => {
+  for (const excerpts of [Array(4).fill("A source excerpt"), "not an array"])
+    assert.throws(
+      () => parseBuilderResearch(evidenceNote({ excerpts })),
+      new RegExp(
+        `excerpts must be an array within its item limit of 3; received ${Array.isArray(excerpts) ? "4 items" : "a non-array"}`,
+      ),
+    );
   assert.throws(
     () =>
       createResearchEvidence(
@@ -127,6 +134,10 @@ test("the planner can request evidence before an agreement while network adapter
   assert.deepEqual(result, decision);
   assert.match(JSON.stringify(sent), /source_text_only/);
   assert.match(JSON.stringify(sent), /sourceOperationId/);
+  assert.match(
+    JSON.stringify(sent),
+    /Only history decisions have a notes field/,
+  );
   let calls = 0;
   const provider = publicResearch({
     fetch: async () => {

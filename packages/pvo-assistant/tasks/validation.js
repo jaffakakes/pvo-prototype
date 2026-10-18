@@ -32,7 +32,7 @@ export function list(value, maximum, path) {
     Array.isArray(value) &&
       Object.getPrototypeOf(value) === Array.prototype &&
       value.length <= maximum,
-    `${path} exceeds its item limit or is not an array.`,
+    `${path} must be an array within its item limit of ${maximum}; received ${Array.isArray(value) ? value.length + " items" : "a non-array"}.`,
   );
   requireTask(
     Reflect.ownKeys(value).length === value.length + 1,
