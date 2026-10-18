@@ -178,7 +178,3 @@
 .textSwatches button[aria-pressed="true"] span { box-shadow: 0 0 0 2px var(--text); }
 .textColourClose { display: grid; place-items: center; flex: none; width: 44px; height: 44px; padding: 0; border: 0; background: var(--q08); color: var(--text); cursor: pointer; }
 .textColourStrip button:focus-visible { outline: 2px solid var(--highlight); outline-offset: -2px; }
-.textEntry .textHideKeyboard { display: none; }
-[data-keyboard-open="true"] .textEntry .textHideKeyboard { display: grid; }
-[data-keyboard-open="true"] .textEntry .textDone,
-[data-keyboard-open="true"] .textControls { display: none; }

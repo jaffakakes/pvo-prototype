@@ -24,6 +24,7 @@ import styles from "./EditorWorkspace.module.css";
 type Props = {
   open: boolean;
   componentSheet?: boolean;
+  textSheet?: boolean;
   animationSheet?: boolean;
   codeEditingId?: string;
   trying?: boolean;
@@ -51,6 +52,7 @@ type Props = {
 export function EditorWorkspace({
   open,
   componentSheet = false,
+  textSheet = false,
   animationSheet = false,
   codeEditingId,
   trying = false,
@@ -128,7 +130,7 @@ export function EditorWorkspace({
     measurements.workspaceRef,
     !dockThreadOpen &&
       open &&
-      componentSheet &&
+      (componentSheet || textSheet) &&
       !trying &&
       !debugOpen &&
       !codeExpanded,
@@ -160,15 +162,28 @@ export function EditorWorkspace({
   else if (debugOpen) panelHeight = debugResize.height;
   else if (trying) panelHeight = 0;
   else if (codeExpanded) panelHeight = measurements.height * 0.8;
+  const textEditing =
+    open && textSheet && !trying && !debugOpen && !dockThreadOpen;
+  useLayoutEffect(() => {
+    if (textEditing) {
+      const field =
+        measurements.workspaceRef.current?.querySelector<HTMLTextAreaElement>(
+          ".textEntry textarea",
+        );
+      // Resolve the newly visible panel before asking the browser to open its keyboard.
+      field?.getBoundingClientRect();
+      field?.focus({ preventScroll: true });
+    }
+  }, [textEditing, measurements.workspaceRef]);
   const layoutMeasurements = dockThreadOpen
     ? threadDock.measurements
-    : codeExpanded
+    : codeExpanded || textEditing
       ? { ...measurements, playback: 0 }
       : measurements;
   const layout = workspaceGeometry(
     layoutMeasurements,
     panelHeight,
-    dockThreadOpen || debugOpen || codeExpanded,
+    dockThreadOpen || debugOpen || codeExpanded || textEditing,
   );
   const headerVisible =
     !codeExpanded && !(dockThreadOpen && threadDock.compact);
@@ -186,6 +201,7 @@ export function EditorWorkspace({
       className={`editorWorkspace ${styles.workspace}`}
       data-sheet-open={open}
       data-animation-open={animationSheet}
+      data-text-open={textEditing}
       data-resizing={
         dockThreadOpen
           ? threadDock.resize.dragging

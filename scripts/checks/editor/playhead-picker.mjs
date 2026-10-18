@@ -1,3 +1,4 @@
+import { finishTextEntry } from "../helpers/editor-text.mjs";
 import assert from "node:assert/strict";
 import { chromium } from "playwright-core";
 
@@ -153,7 +154,7 @@ try {
   await page.getByRole("button", { name: "Text", exact: true }).click();
   const addText = page.getByRole("dialog", { name: "Add text" });
   await addText.getByRole("textbox", { name: "Text content" }).fill("Playhead check");
-  await addText.getByRole("button", { name: "Done", exact: true }).click();
+  await finishTextEntry(addText);
   await page.getByRole("button", { name: "Timing", exact: true }).click();
   let textDialog = await textTimingPanel();
   const textStart = await textDialog.getByRole("spinbutton", { name: "Text start" }).inputValue();

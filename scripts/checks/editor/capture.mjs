@@ -1,3 +1,4 @@
+import { finishTextEntry } from "../helpers/editor-text.mjs";
 import { chromium } from "playwright-core";
 import { resolve } from "node:path";
 import { tmpdir } from "node:os";
@@ -55,7 +56,7 @@ try {
   await page.getByRole("button", { name: "Collapse clip tools" }).click();
   await page.getByRole("button", { name: "Text", exact: true }).click();
   await page.getByRole("textbox", { name: "Text content" }).fill("Day in the life");
-  await page.getByRole("button", { name: "Done", exact: true }).click();
+  await finishTextEntry(page.getByRole("dialog", { name: "Add text", exact: true }));
   if (await page.locator(".textOverlay").count() !== 1) throw new Error("Text overlay missing");
   await page.getByRole("button", { name: "Collapse text tools" }).click();
   await page.getByRole("button", { name: "More", exact: true }).click();

@@ -40,6 +40,10 @@ export function createSheetDockChecks(page) {
       const playback = element(".transport");
       const workspace = element(".editorWorkspace");
       return {
+        textEditing: workspace.dataset.textOpen === "true",
+        inputFocused:
+          document.querySelector(".textEditor")?.dataset.inputFocused ===
+          "true",
         app: rect(element(".app")),
         previewArea: rect(element(".previewArea")),
         preview: rect(preview),
@@ -99,13 +103,14 @@ export function createSheetDockChecks(page) {
       0,
       "Editing panels have no resize controls",
     );
-    assert(
-      Math.abs(
-        (layout.dock.height * 5) / 3 -
-          (layout.previewArea.height + layout.transport.height),
-      ) < 2,
-      "Player and tools must use a fixed 62.5/37.5 split",
-    );
+    if (!layout.inputFocused)
+      assert(
+        Math.abs(
+          (layout.dock.height * 5) / 3 -
+            (layout.previewArea.height + layout.playbackRegion.height),
+        ) < 2,
+        "Player and tools must use a fixed 62.5/37.5 split",
+      );
     assert.equal(
       layout.previewVisible,
       layout.visibility.preview,
@@ -127,15 +132,19 @@ export function createSheetDockChecks(page) {
     );
     assert.deepEqual(
       layout.visibility,
-      { header: true, preview: true, playback: true },
+      { header: true, preview: true, playback: !layout.textEditing },
       "Partial panels must show the editor chrome",
     );
+    if (!layout.textEditing)
+      assert(
+        layout.previewArea.bottom <= layout.transport.top + 1,
+        "Preview and transport overlap",
+      );
     assert(
-      layout.previewArea.bottom <= layout.transport.top + 1,
-      "Preview and transport overlap",
-    );
-    assert(
-      layout.transport.bottom <= box.y + 1,
+      (layout.textEditing
+        ? layout.previewArea.bottom
+        : layout.transport.bottom) <=
+        box.y + 1,
       "Editing controls overlap the transport",
     );
     assert(

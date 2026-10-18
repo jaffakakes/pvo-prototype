@@ -1,3 +1,4 @@
+import { finishTextEntry } from "../helpers/editor-text.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
@@ -62,18 +63,15 @@ try {
     await text.getByRole("textbox", { name: "Text content" }).inputValue(),
     draft,
   );
-  await page.getByRole("button", { name: "Play", exact: true }).click();
-  await page.waitForFunction(
-    () => document.querySelector(".pvVideo")?.currentTime > 0.05,
-  );
   assert(
-    await video.evaluate(
-      (el) => el === document.querySelector(".pvVideo") && !el.paused,
-    ),
-    "The same video keeps playing while docked controls are open",
+    await video.evaluate((el) => el === document.querySelector(".pvVideo")),
+    "Text entry preserves the same video",
   );
-  await page.getByRole("button", { name: "Pause", exact: true }).click();
-  await text.getByRole("button", { name: "Done", exact: true }).click();
+  assert.equal(
+    await page.getByRole("toolbar", { name: "Playback controls" }).isVisible(),
+    false,
+  );
+  await finishTextEntry(text);
   await page.locator(".toolBar").waitFor({ state: "visible" });
   assert(Math.abs((await geometry()).dock.height - original.dock.height) < 2);
   const collapse = page.getByRole("button", { name: /^Collapse .* tools$/ });
@@ -85,6 +83,18 @@ try {
   const more = page.getByRole("dialog", { name: "More", exact: true });
   await assertDocked(more, ratio);
   await assertCompactChrome(more);
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.waitForFunction(
+    () => document.querySelector(".pvVideo")?.currentTime > 0.05,
+  );
+  assert(
+    await video.evaluate(
+      (el) => el === document.querySelector(".pvVideo") && !el.paused,
+    ),
+    "The same video keeps playing while docked controls are open",
+  );
+  await page.getByRole("button", { name: "Pause", exact: true }).click();
+
   await more.getByRole("button", { name: "1:1", exact: true }).click();
   await assertDocked(more, 1);
   await page.getByRole("button", { name: "Undo", exact: true }).click();

@@ -1,3 +1,4 @@
+import { finishTextEntry } from "../helpers/editor-text.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
@@ -52,9 +53,19 @@ try {
       const entry = await text.getByRole("textbox", { name: "Text content", exact: true }).boundingBox();
       assert(entry && entry.height <= 46, "Text entry stays compact");
       assert.equal(await text.locator(".textTools button").count(), 5);
+      assert.equal(await controls.isVisible(), false, "Text entry hides playback");
+      const focusState = await text.getByRole("textbox", { name: "Text content", exact: true }).evaluate(el => ({
+        focused: document.activeElement === el,
+        active: document.activeElement?.outerHTML.slice(0, 300),
+        visibility: getComputedStyle(el).visibility,
+        inert: !!el.closest("[inert]"),
+      }));
+      assert(focusState.focused, `Text entry opens with the field focused: ${JSON.stringify(focusState)}`);
+      assert.equal(await text.getByRole("button", { name: "Done", exact: true }).count(), 0, "The keyboard-down control replaces the checkmark while typing");
+      await text.getByRole("button", { name: "Hide keyboard", exact: true }).click();
       const columns = await text.locator(".textPresets").evaluate(el => getComputedStyle(el).gridTemplateColumns.split(" ").length);
       assert.equal(columns, 3, "Designs use three compact columns");
-      await text.getByRole("button", { name: "Done", exact: true }).click();
+      await finishTextEntry(text);
       assert.equal(await page.locator(".textBar").count(), 0, "An empty checkmark closes without adding a text layer");
       await page.getByRole("button", { name: "Text", exact: true }).click();
       await text.getByRole("textbox", { name: "Text content", exact: true }).fill("History stays beside Play");
@@ -69,15 +80,32 @@ try {
       assert.equal(await swatches.getByRole("button", { name: "Red", exact: true }).getAttribute("aria-pressed"), "true");
       assert(await text.getByRole("textbox", { name: "Text content", exact: true }).evaluate(el => document.activeElement === el), "Swatches keep the text field focused for the native keyboard");
       assert.equal(await page.locator("html").getAttribute("data-accent"), accentBefore, "Choosing text colour does not change the app accent");
+      if (width === 390) {
+        await page.evaluate(() => {
+          Object.defineProperty(window.visualViewport, "height", { configurable: true, value: innerHeight - 300 });
+          window.visualViewport.dispatchEvent(new Event("resize"));
+        });
+        await page.locator('.editorWorkspace[data-keyboard-open="true"]').waitFor();
+        await settle();
+        const toolBox = await text.getByRole("toolbar", { name: "Text tools", exact: true }).boundingBox();
+        assert(toolBox && Math.abs(toolBox.y + toolBox.height - (height - 300 - 12)) < 3, "The text toolbar sits immediately above the native keyboard");
+        assert.equal(await text.locator(".textPresets").isVisible(), false, "The keyboard replaces the design panel while typing");
+        await page.evaluate(() => {
+          delete window.visualViewport.height;
+          window.visualViewport.dispatchEvent(new Event("resize"));
+        });
+        await page.locator('.editorWorkspace[data-keyboard-open="false"]').waitFor();
+        await settle();
+      }
       await text.getByRole("button", { name: "Close colours", exact: true }).click();
       assert.equal(await swatches.count(), 0);
-      await text.getByRole("button", { name: "Done", exact: true }).click();
+      await finishTextEntry(text);
       await page.locator(".textBar").waitFor();
       await page.getByRole("button", { name: "Edit text", exact: true }).click();
       const editText = page.getByRole("dialog", { name: "Edit text", exact: true });
       await editText.getByRole("button", { name: "Text colours", exact: true }).click();
       assert.equal(await editText.getByRole("button", { name: "Red", exact: true }).getAttribute("aria-pressed"), "true", "The selected colour is saved with the text");
-      await editText.getByRole("button", { name: "Done", exact: true }).click();
+      await finishTextEntry(editText);
       await undo.click();
       assert.equal(await page.locator(".textBar").count(), 0);
       await redo.click();

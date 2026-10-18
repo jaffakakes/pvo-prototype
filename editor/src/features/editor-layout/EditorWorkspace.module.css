@@ -193,6 +193,24 @@
 }
 .sheetPane:has(:global(.textEditor)) {
   border-radius: 0;
+  transition: none;
+}
+
+.workspace[data-text-open="true"]:has(
+    :global(.textEditor[data-input-focused="true"])
+  ) {
+  grid-template-rows: var(--header-height, 0px) minmax(0, 1fr) 0 auto;
+}
+
+.workspace[data-text-open="true"]:has(
+    :global(.textEditor[data-input-focused="true"])
+  )
+  .sheetPane {
+  position: relative;
+}
+
+.workspace[data-text-open="true"] :global([data-sheet-body]) {
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
 }
 
 .workspace[data-code-expanded="true"] .sheetPane {

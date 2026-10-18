@@ -22,6 +22,7 @@ export function TextEditor() {
     ...DEFAULT_TEXT_STYLE,
   });
   const [tool, setTool] = useState("designs");
+  const [inputFocused, setInputFocused] = useState(true);
   const editKey = useRef<string | null>(null);
   const input = useRef<HTMLTextAreaElement>(null);
   const style = text ? textStyle(text) : draftStyle;
@@ -70,6 +71,7 @@ export function TextEditor() {
   return (
     <div
       className={cx("textEditor")}
+      data-input-focused={inputFocused}
       onBlur={() => {
         editKey.current = null;
       }}
@@ -84,6 +86,9 @@ export function TextEditor() {
       <div className={cx("textEntry")}>
         <textarea
           ref={input}
+          autoFocus
+          onFocus={() => setInputFocused(true)}
+          onBlur={() => setInputFocused(false)}
           aria-label="Text content"
           value={text?.text ?? s.draft}
           maxLength={500}
@@ -95,29 +100,35 @@ export function TextEditor() {
               : s.patch({ draft: e.target.value })
           }
         />
-        <button
-          type="button"
-          className={`${cx("textConfirm")} ${cx("textDone")}`}
-          aria-label="Done"
-          onClick={() => {
-            if (!text && s.draft.trim()) {
-              s.addText(s.draft.trim(), draftStyle);
-              s.patch({ draft: "" });
-            }
-            s.patch({ sheet: null });
-          }}
-        >
-          <Icon name="check" size={26} />
-        </button>
-        <button
-          type="button"
-          className={`${cx("textConfirm")} ${cx("textHideKeyboard")}`}
-          aria-label="Hide keyboard"
-          onPointerDown={(event) => event.preventDefault()}
-          onClick={() => input.current?.blur()}
-        >
-          <TextToolIcon name="keyboard" />
-        </button>
+        {inputFocused ? (
+          <button
+            type="button"
+            className={cx("textConfirm")}
+            aria-label="Hide keyboard"
+            onPointerDown={(event) => event.preventDefault()}
+            onClick={() => {
+              input.current?.blur();
+              setInputFocused(false);
+            }}
+          >
+            <TextToolIcon name="keyboard" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={cx("textConfirm")}
+            aria-label="Done"
+            onClick={() => {
+              if (!text && s.draft.trim()) {
+                s.addText(s.draft.trim(), draftStyle);
+                s.patch({ draft: "" });
+              }
+              s.patch({ sheet: null });
+            }}
+          >
+            <Icon name="check" size={26} />
+          </button>
+        )}
       </div>
       <div
         className={cx("textTools")}
@@ -129,7 +140,10 @@ export function TextEditor() {
           type="button"
           aria-label="Font"
           aria-pressed={tool === "font"}
-          onClick={() => setTool("font")}
+          onClick={() => {
+            input.current?.blur();
+            setTool("font");
+          }}
         >
           <TextToolIcon name="font" />
         </button>
@@ -185,12 +199,15 @@ export function TextEditor() {
           type="button"
           aria-label="Text designs"
           aria-pressed={tool === "designs"}
-          onClick={() => setTool("designs")}
+          onClick={() => {
+            input.current?.blur();
+            setTool("designs");
+          }}
         >
           <TextToolIcon name="designs" />
         </button>
       </div>
-      <div className={cx("textControls")}>
+      <div className={cx("textControls")} hidden={inputFocused}>
         {tool !== "font" && (
           <>
             <div className={cx("textPresets")}>
