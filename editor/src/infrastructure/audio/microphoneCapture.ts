@@ -10,7 +10,7 @@ export function microphoneSupported(): boolean {
 }
 
 /** Owns one microphone stream, including permission that resolves after cancellation. */
-export function captureMicrophone(signal: AbortSignal, onStarted: () => void): MicrophoneCapture {
+export function captureMicrophone(signal: AbortSignal, onStarted: () => void, noiseSuppression = true): MicrophoneCapture {
   let stream: MediaStream | null = null;
   let recorder: MediaRecorder | null = null;
   let settled = false;
@@ -66,7 +66,7 @@ export function captureMicrophone(signal: AbortSignal, onStarted: () => void): M
     // Only microphone permission is needed; no speech service or Siri permission is involved.
     let access: Promise<MediaStream>;
     try {
-      access = navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true }, video: false });
+      access = navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression }, video: false });
     } catch (error) {
       fail(error);
       return { result, stop };

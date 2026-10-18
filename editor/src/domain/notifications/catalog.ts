@@ -35,6 +35,8 @@ export const notificationCatalog = {
   voiceNoSpeech: { message: "Didn't catch that. Try again.", kind: "warning" },
   voiceNetwork: { message: "Voice connection failed.", kind: "error" },
   voiceFailed: { message: "Voice input failed. Try again.", kind: "error" },
+  voiceoverSaveFailed: { message: "Couldn't save voiceover. Retry in Voiceover.", kind: "error", persistent: true,
+    recovery: "Open Sound → Voiceover to retry or discard the retained recording." },
   importFailed: { message: "Some clips couldn't be imported.", kind: "error", persistent: true,
     recovery: "Review the import result in Camera and retry the failed files." },
   recordingFailed: { message: "Recording couldn't be saved.", kind: "error", persistent: true,

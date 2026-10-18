@@ -22,6 +22,7 @@ export function useEditorKeyboard(enabled = true) {
       if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target.isContentEditable)
         return;
       const s = useCapture.getState();
+      if (s.sheet === "voiceover") return;
       const desktop = document.querySelector("[data-desktop-editor]");
       if (desktop && !desktop.matches(":hover")) return;
       if (s.playheadPick) {

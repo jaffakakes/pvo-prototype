@@ -67,7 +67,8 @@ try {
     .click();
 
   await page.getByRole("button", { name: "Sound", exact: true }).click();
-  const sound = page.getByRole("dialog", { name: "Sound", exact: true });
+  await page.getByRole("menuitem", { name: "Add sound", exact: true }).click();
+  const sound = page.getByRole("dialog", { name: "Add sound", exact: true });
   await sound.getByRole("button", { name: /Night Drive/ }).click();
   assert.equal((await state()).sound, 2);
   await sound.getByRole("button", { name: "Close", exact: true }).click();

@@ -11,7 +11,7 @@
   background: var(--surface);
   color: var(--text);
   border: 3px solid var(--line-strong);
-  border-radius: 22px;
+  border-radius: 0;
   box-shadow: 8px 8px 0 var(--frame-shadow);
   font-family: var(--f-ui);
   overscroll-behavior: contain;

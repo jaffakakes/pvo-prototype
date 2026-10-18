@@ -17,9 +17,9 @@ function globals(t, values) {
     t.after(() => prior ? Object.defineProperty(globalThis, name, prior) : delete globalThis[name]);
   }
 }
-function fixture(t) {
+function fixture(t, noise = true) {
   t.mock.timers.enable({ apis: ["setTimeout"] });
-  let accept, deny, recorder;
+  let accept, deny, recorder, constraints;
   const track = new EventTarget();
   track.stops = 0; track.readyState = "live"; track.stop = () => { track.stops++; track.readyState = "ended"; };
   const stream = { getTracks: () => [track], getAudioTracks: () => [track] };
@@ -30,13 +30,13 @@ function fixture(t) {
     stop() { this.state = "inactive"; this.stops++; }
     finish() { this.ondataavailable?.({ data: new Blob(["sound"]) }); this.onstop?.(); }
   }
-  globals(t, { navigator: { mediaDevices: { getUserMedia: () => new Promise((a, b) => { accept = a; deny = b; }) } },
+  globals(t, { navigator: { mediaDevices: { getUserMedia: options => { constraints = options; return new Promise((a, b) => { accept = a; deny = b; }); } } },
     MediaRecorder: Recorder, OfflineAudioContext: class {} });
   const controller = new AbortController();
   let started = 0;
-  const capture = captureMicrophone(controller.signal, () => started++);
+  const capture = captureMicrophone(controller.signal, () => started++, noise);
   return { capture, controller, track, stream, recorder: () => recorder, accept: () => accept(stream), deny: error => deny(error),
-    started: () => started, tick: ms => t.mock.timers.tick(ms) };
+    constraints: () => constraints, started: () => started, tick: ms => t.mock.timers.tick(ms) };
 }
 
 test("cancelled permission discards a late stream and stops all tracks", async t => {
@@ -144,4 +144,14 @@ test("transcription has a ninety-five second deadline with a typed timeout", asy
   const result = transcribeMicrophone(new Blob(["encoded"]), new AbortController().signal, async () => { started(); return new Promise(() => {}); });
   const rejected = assert.rejects(result, error => error.status === 504);
   await fetched; t.mock.timers.tick(95000); await rejected;
+});
+
+
+test("voiceover can disable noise suppression without changing microphone-only capture", async t => {
+  const f = fixture(t, false);
+  assert.equal(f.constraints().audio.noiseSuppression, false);
+  assert.equal(f.constraints().audio.echoCancellation, true);
+  assert.equal(f.constraints().video, false);
+  const rejected = assert.rejects(f.capture.result, { name: "AbortError" });
+  f.controller.abort(); await rejected;
 });

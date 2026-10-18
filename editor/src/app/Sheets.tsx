@@ -5,6 +5,7 @@ import { ComponentsSheets } from "../features/component-authoring/ComponentsShee
 import { DiscardSheet } from "../features/create-project/DiscardSheet";
 import { ExportSheet } from "../features/export/ExportSheet";
 import { MoreSettings } from "../features/settings/MoreSettings";
+import { SoundEffectsSheet } from "../features/sound/SoundEffectsSheet";
 import { SoundSheet } from "../features/sound/SoundSheet";
 import { TextSheet } from "../features/text/TextSheet";
 import { TextTimingSheet } from "../features/text/TextTimingSheet";
@@ -35,6 +36,10 @@ export function Sheets() {
       return <SpeedSheet />;
     case "crop":
       return <CropSheet />;
+    case "voiceover":
+      return null;
+    case "soundEffects":
+      return <SoundEffectsSheet />;
     case "sound":
       return <SoundSheet />;
     case "animation":

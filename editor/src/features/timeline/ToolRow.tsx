@@ -15,6 +15,8 @@ import { fmt } from "../../ui/formatTime";
 import { deleteSelectedClip, splitAtPlayhead } from "./clipCommands";
 import { acceptPlayheadPick, cancelPlayheadPick } from "./playheadPick";
 import styles from "./ToolRow.module.css";
+import { SoundMenu } from "../sound/SoundMenu";
+import { VoiceoverControls } from "../sound/VoiceoverControls";
 
 export function ToolRow() {
   const playheadPick = useCapture((state) => state.playheadPick);
@@ -30,6 +32,8 @@ export function ToolRow() {
   const trying = useCapture((state) => state.tryMode !== null);
   const assistantActive = useAssistant((state) => state.phase !== "idle");
   const playhead = useCapture((state) => state.t);
+  const voiceover = useCapture((state) => state.sheet === "voiceover");
+  if (voiceover) return <VoiceoverControls />;
   if (playheadPick) {
     return (
       <div className={cx("toolBar")} data-time-pick="true">
@@ -197,25 +201,29 @@ export function ToolRow() {
     >
       {!assistantActive && (
         <div key={toolSet} className={cx("tools")}>
-          {activeTools.map(([icon, label, name]) => (
-            <button
-              key={name}
-              className={cx(`tool tool-${name}`)}
-              onClick={() => action(name)}
-              disabled={trying}
-              aria-label={
-                name === "compCollapse"
-                  ? "Collapse component tools"
-                  : label ||
-                    (selectedText
-                      ? "Collapse text tools"
-                      : "Collapse clip tools")
-              }
-            >
-              <Icon name={icon} size={20} />
-              {label && <span>{label}</span>}
-            </button>
-          ))}
+          {activeTools.map(([icon, label, name]) =>
+            name === "sound" ? (
+              <SoundMenu key={name} disabled={trying} />
+            ) : (
+              <button
+                key={name}
+                className={cx(`tool tool-${name}`)}
+                onClick={() => action(name)}
+                disabled={trying}
+                aria-label={
+                  name === "compCollapse"
+                    ? "Collapse component tools"
+                    : label ||
+                      (selectedText
+                        ? "Collapse text tools"
+                        : "Collapse clip tools")
+                }
+              >
+                <Icon name={icon} size={20} />
+                {label && <span>{label}</span>}
+              </button>
+            ),
+          )}
         </div>
       )}
     </div>

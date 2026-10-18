@@ -25,7 +25,8 @@ export function Editor() {
   const debugOpen = useDebugUi(state => state.open);
   const wide = useWideLayout();
   const scenes = useCapture(state => state.scenes);
-  const sheetOpen = useCapture(state => state.sheet !== null && state.sheet !== "export" && !state.playheadPick);
+  const sheetOpen = useCapture(state => state.sheet !== null && state.sheet !== "export" && state.sheet !== "voiceover" && !state.playheadPick);
+  const voiceover = useCapture(state => state.sheet === "voiceover");
   const textSheet = useCapture(state => state.sheet === "text");
   const animationSheet = useCapture(state => state.sheet === "animation");
   const componentSheet = useCapture(state => state.sheet === "component" || state.sheet === "components");
@@ -47,7 +48,7 @@ export function Editor() {
       timeline={<><SceneTimeline><Timeline /></SceneTimeline><ToolRow /></>} sheets={<Sheets />}
       threadOpen={thread.open && !codeEditingId} threadCollapsed={thread.collapsed}
       onCloseThread={() => setAssistantThreadOpen(false)}
-      assistant={(expanded, target, keyboardOpen) => <OrbAssistant placement={expanded ? "floating" : "workspace"}
+      assistant={(expanded, target, keyboardOpen) => !voiceover && <OrbAssistant placement={expanded ? "floating" : "workspace"}
         portalTarget={target} threadKeyboardOpen={keyboardOpen} />}
       assistantActive={assistantActive || thread.open}
       onDismiss={() => useCapture.getState().patch({ sheet: null })} />

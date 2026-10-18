@@ -182,7 +182,7 @@
   overflow: hidden;
   background: var(--ground);
   border-top: 2.5px solid var(--outline);
-  border-radius: 20px 20px 0 0;
+  border-radius: 0;
 }
 
 .sheetContent {
@@ -321,7 +321,7 @@
 }
 
 .workspace[data-animation-open="true"] .sheetPane {
-  border-radius: 26px 26px 0 0;
+  border-radius: 0;
   border-top: 3px solid var(--outline);
   box-shadow: 0 -6px 0 color-mix(in srgb, var(--accent) 35%, transparent);
   background: var(--bar);

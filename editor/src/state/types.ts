@@ -45,6 +45,8 @@ export type SheetName =
   | "text"
   | "textTiming"
   | "sound"
+  | "soundEffects"
+  | "voiceover"
   | "more"
   | "export"
   | "discard"
