@@ -61,8 +61,10 @@ export function Transport({
               className={`${styles.action} ${styles.tryButton}`}
               onClick={startTry}
               disabled={duration <= 0}
+              aria-label="Try"
+              title="Try interactive preview"
             >
-              Try
+              <Icon name="eye" size={23} />
             </button>
           </>
         )}
