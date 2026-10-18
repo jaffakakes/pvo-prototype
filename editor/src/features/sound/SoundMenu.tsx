@@ -55,7 +55,7 @@ export function SoundMenu({ disabled }: { disabled: boolean }) {
             position
               ? null
               : {
-                  bottom: innerHeight - rect.top + 8,
+                  bottom: innerHeight - rect.top + 14,
                   right: Math.max(12, innerWidth - rect.right),
                 },
           );
@@ -112,7 +112,7 @@ export function SoundMenu({ disabled }: { disabled: boolean }) {
                   });
                 }}
               >
-                <Icon name={icon} size={21} />
+                <Icon name={icon} size={18} />
                 <span>{label}</span>
               </button>
             ))}
