@@ -144,7 +144,7 @@ async function checkPopup(phone) {
   let trigger;
   const open = async () => {
     trigger = phone
-      ? page.getByRole("region", { name: "Account", exact: true }).getByRole("button", { name: "Sign in", exact: true })
+      ? page.locator(".editorHead").getByRole("button", { name: "Sign in", exact: true })
       : page.getByRole("banner").getByRole("button", { name: "Sign in", exact: true });
     await trigger.click();
     await gate.waitFor();

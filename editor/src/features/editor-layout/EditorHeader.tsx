@@ -1,10 +1,12 @@
 import { useCapture } from "../../state/captureStore";
+import { openSignIn, useAuthGate } from "../../state/auth/authGateStore";
 import { Icon } from "../../ui/Icon";
 import { stopTry } from "../preview/tryMode";
 import styles from "./EditorHeader.module.css";
 
 export function EditorHeader() {
   const trying = useCapture((state) => !!state.tryMode);
+  const user = useAuthGate((state) => state.user);
   const sceneName = useCapture(
     (state) =>
       state.scenes.find((scene) => scene.id === state.currentSceneId)?.name ??
@@ -30,6 +32,15 @@ export function EditorHeader() {
       >
         <Icon name="back" size={24} />
       </button>
+      {!user && !trying && (
+        <button
+          type="button"
+          className={styles.signIn}
+          onClick={() => openSignIn()}
+        >
+          Sign in
+        </button>
+      )}
     </header>
   );
 }

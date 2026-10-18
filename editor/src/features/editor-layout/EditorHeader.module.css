@@ -70,3 +70,19 @@
   background: var(--deep);
   pointer-events: auto;
 }
+.overlay .signIn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  min-width: 64px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--deep);
+  color: var(--text);
+  font: 700 12px var(--f-ui);
+  cursor: pointer;
+  pointer-events: auto;
+}
+.signIn:focus-visible { outline: 3px solid var(--highlight); outline-offset: -3px; }

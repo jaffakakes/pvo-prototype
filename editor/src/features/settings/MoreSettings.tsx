@@ -44,12 +44,12 @@ export function MoreSettings() {
   const repliesId = useId();
 
   return <div className={styles.content}>
-    <section className={styles.section} aria-label="Account">
+    {user && <section className={styles.section} aria-label="Account">
       <h3>Account</h3>
       <div className={styles.actions}>
-        <button type="button" onClick={() => openSignIn()}>{user ? "Your account" : "Sign in"}</button>
+        <button type="button" onClick={() => openSignIn()}>Your account</button>
       </div>
-    </section>
+    </section>}
     <section className={styles.section} aria-labelledby="more-appearance-heading">
       <h3 id="more-appearance-heading">Appearance</h3>
       <p className={styles.themeHelp}>Choose how the editor looks on this device.</p>
@@ -58,16 +58,18 @@ export function MoreSettings() {
           aria-pressed={themeMode === mode} data-selected={themeMode === mode}
           onClick={() => setThemeMode(mode)}>{modeLabels[mode]}</button>)}
       </div>
-      <h4 className={styles.themeSubheading}>Accent color</h4>
-      {user ? <div className={styles.themeAccents} role="group" aria-label="Accent color">
-        {THEME_ACCENTS.map(accent => <button key={accent} type="button"
-          aria-label={accentLabels[accent]} aria-pressed={themeAccent === accent}
-          data-selected={themeAccent === accent} data-accent={accent}
-          onClick={() => setThemeAccent(accent)}>
-          <span className={styles.themeSwatch} aria-hidden="true" />
-          <span>{accentLabels[accent]}</span>
-        </button>)}
-      </div> : <p className={styles.themeHelp}>Magenta is the guest color. Sign in to choose another.</p>}
+      {user && <>
+        <h4 className={styles.themeSubheading}>Accent color</h4>
+        <div className={styles.themeAccents} role="group" aria-label="Accent color">
+          {THEME_ACCENTS.map(accent => <button key={accent} type="button"
+            aria-label={accentLabels[accent]} aria-pressed={themeAccent === accent}
+            data-selected={themeAccent === accent} data-accent={accent}
+            onClick={() => setThemeAccent(accent)}>
+            <span className={styles.themeSwatch} aria-hidden="true" />
+            <span>{accentLabels[accent]}</span>
+          </button>)}
+        </div>
+      </>}
       {themeSaveFailed && <p className={styles.preferenceNote} role="status">
         Couldn’t save this appearance setting. It still applies to this session.
       </p>}
@@ -145,14 +147,14 @@ export function MoreSettings() {
         </button>
       </div>
     </section>
-    <section className={styles.section} aria-label="Replies">
+    {user && <section className={styles.section} aria-label="Replies">
       <h3>Replies</h3>
       <div className={styles.actions}>
         <button type="button" aria-expanded={showReplies} aria-controls={repliesId}
           onClick={() => setShowReplies(!showReplies)}>{showReplies ? "Close replies" : "Open replies"}</button>
       </div>
       {showReplies && <div id={repliesId}><ReplyInbox /></div>}
-    </section>
+    </section>}
     {screen === "editor" && <section className={styles.section} aria-labelledby="more-export-heading">
       <h3 id="more-export-heading">Export</h3>
       <div className={styles.actions}>

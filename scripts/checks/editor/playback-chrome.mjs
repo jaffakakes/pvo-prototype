@@ -21,7 +21,7 @@ try {
       await page.locator('input[type="file"]').setInputFiles(videoFile);
       await page.getByRole("button", { name: "Open editor", exact: true }).click();
       await settle();
-      assert.equal(await page.locator(".editorHead button").count(), 1);
+      assert.equal(await page.locator(".editorHead button").count(), 2);
       assert.equal(await page.locator(".editorHead h1, .editorHead p").count(), 0);
       assert.equal(await page.locator(".editorHead").getByRole("button", { name: "More", exact: true }).count(), 0);
       const controls = page.getByRole("toolbar", { name: "Playback controls", exact: true });
