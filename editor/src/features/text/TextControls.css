@@ -1,3 +1,4 @@
+.sheet:has(.textEditor) { border-radius: 0; }
 .textEditor {
   display: flex;
   flex-direction: column;
@@ -14,7 +15,7 @@
   background: var(--input);
   color: var(--text);
   border: 1px solid var(--q14);
-  border-radius: 8px;
+  border-radius: 0;
   font: 700 13px/1.4 var(--f-ui);
   user-select: text;
 }
@@ -27,14 +28,14 @@
   height: 44px;
   padding: 0;
   border: 0;
-  border-radius: 8px;
+  border-radius: 0;
   background: transparent;
   color: var(--text);
   box-shadow: none;
   cursor: pointer;
 }
 .textTools { display: flex; flex: none; justify-content: space-between; gap: 6px; padding-bottom: 4px; border-bottom: 1px solid var(--q08); }
-.textTools button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--text); cursor: pointer; }
+.textTools button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--text); cursor: pointer; }
 .textTools button[aria-pressed="true"] { background: var(--q08); }
 .textTools button:focus-visible, .textConfirm:focus-visible { outline: 2px solid var(--highlight); outline-offset: -2px; }
 .textControls {
@@ -60,7 +61,7 @@
   padding: 6px 4px;
   background: var(--surface);
   border: 1px solid var(--q14);
-  border-radius: 10px;
+  border-radius: 0;
   cursor: pointer;
 }
 .textPresets button[aria-pressed="true"],
@@ -70,7 +71,7 @@
 .textPresets span {
   max-width: 100%;
   padding: 2px 4px;
-  border-radius: 4px;
+  border-radius: 0;
   font-size: 14px;
   line-height: 1.2;
   text-align: center;
@@ -101,7 +102,7 @@
   background: var(--input);
   color: var(--text);
   border: 1px solid var(--q14);
-  border-radius: 7px;
+  border-radius: 0;
   font: 600 12px var(--f-ui);
 }
 .textToggles {
@@ -113,7 +114,7 @@
   padding: 8px 4px;
   background: var(--surface);
   border: 1px solid var(--q14);
-  border-radius: 7px;
+  border-radius: 0;
   font: 700 11px var(--f-ui);
   cursor: pointer;
 }
@@ -156,7 +157,7 @@
   height: 32px;
   padding: 2px;
   border: 1px solid var(--q14);
-  border-radius: 7px;
+  border-radius: 0;
   background: var(--input);
   cursor: pointer;
 }
@@ -180,7 +181,7 @@
 .textAction {
   padding: 9px 5px;
   border: 1px solid var(--q14);
-  border-radius: 8px;
+  border-radius: 0;
   background: var(--surface);
   font: 700 11px var(--f-ui);
   cursor: pointer;
