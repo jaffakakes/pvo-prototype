@@ -200,10 +200,11 @@
   min-width: 44px;
   min-height: 44px;
   padding: 0;
-  border: 1.5px solid var(--q14);
+  border: 2px solid var(--outline);
   border-radius: 10px;
   background: var(--button-secondary-bg);
   color: var(--button-secondary-text);
+  box-shadow: 3px 3px 0 var(--button-shadow);
   font: 800 13px var(--f-ui);
   cursor: pointer;
 }
