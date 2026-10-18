@@ -75,7 +75,17 @@ try {
         const tools = await page.locator(".toolBar").boundingBox();
         assert(
           Math.abs(tracks.y + tracks.height - tools.y) < 2,
-          "Natural-height tracks stay next to the bottom toolbar",
+          "Timeline fills the area above the bottom toolbar",
+        );
+        const scenes = await page.locator(".scenesRow").boundingBox();
+        const cursor = await page.locator(".playhead").boundingBox();
+        assert(
+          Math.abs(scenes.y - original.dock.top) < 2,
+          "Scene controls and tracks start at the top of the editing area",
+        );
+        assert(
+          Math.abs(tools.y - cursor.y - cursor.height - 2) < 0.1,
+          "The cursor shadow stops 1px above the toolbar",
         );
       }
       const ratio = original.preview.width / original.preview.height;
