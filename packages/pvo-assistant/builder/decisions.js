@@ -76,7 +76,8 @@ export function parseBuilderDecision(
     requireTask(connectionSetup, "Private account setup is unavailable.");
     value = { ...value, setup: parseConnectionSetup(value.setup) };
     requireTask(
-      ["github", "resend"].includes(value.setup.provider),
+      ["github", "resend"].includes(value.setup.provider) ||
+        (value.setup.provider === "agentmail" && "recipient" in value.setup),
       "Use the human agent identity setup; account signup automation is not installed yet.",
     );
     text(value.purpose, 1024, "Connection purpose");

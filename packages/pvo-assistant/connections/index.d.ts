@@ -21,6 +21,7 @@ export type ConnectionSetup =
       repository: string;
       access?: "issues_write";
     }
+  | { provider: "agentmail"; recipient: string }
   | { provider: "resend"; from: string; recipient: string }
   | { provider: "agentmail" | "agentphone"; resourceId: string };
 export type ConnectionInvocation =
@@ -36,7 +37,7 @@ export function parseConnectionInvocation(value: unknown): ConnectionInvocation;
 export type ConnectionAdapter = {
   name: string;
   description: string;
-  provider: "github" | "resend";
+  provider: "github" | "resend" | "agentmail";
   method: "GET" | "POST";
   path: Array<string | { input: string }>;
   query: Array<{
@@ -60,7 +61,11 @@ export function parseConnectionAdapter(value: unknown): ConnectionAdapter;
 export function adapterPolicy(adapter: ConnectionAdapter): {
   permission: string;
   effect: "read" | "write";
-  recovery: "none" | "github_issue_marker" | "resend_idempotency";
+  recovery:
+    | "none"
+    | "github_issue_marker"
+    | "resend_idempotency"
+    | "agentmail_idempotency";
 };
 export function parseAdapterInput(
   adapter: ConnectionAdapter,

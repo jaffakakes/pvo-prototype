@@ -26,7 +26,20 @@ export async function authoringInput(coordinator, task) {
       manualPlans: task.manualPlans,
       connectionSetup: connectionSetupAvailable(coordinator.env)
         ? {
-            providers: ["github", "resend"],
+            providers: ["github", "resend", "agentmail"],
+            agentEmail: {
+              setup: {
+                provider: "agentmail",
+                recipient: "creator-approved email address",
+              },
+              usesSavedIdentity: true,
+              adapterOperation: "agentmail_email_send",
+              method: "POST",
+              path: ["messages", "send"],
+              input: ["subject", "text"],
+              receipt: { id: "string, maxBytes 512" },
+              completion: "accepted for sending; delivery is not confirmed",
+            },
             operations: ["github_repository_read", "github_issues_list"],
             credentialEntry: "private_form",
             generatedServiceAccess: true,

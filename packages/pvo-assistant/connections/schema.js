@@ -16,6 +16,7 @@ export function connectionSetupSchema() {
   const fields = { provider: { const: "github" }, repository: string(140) };
   return {
     anyOf: [
+      object({ provider: { const: "agentmail" }, recipient: string(254) }),
       object({
         provider: { const: "resend" },
         from: string(254),
@@ -31,7 +32,7 @@ export function connectionBindingsSchema(data) {
   const adapter = object({
     name: string(64),
     description: string(1024),
-    provider: { enum: ["github", "resend"] },
+    provider: { enum: ["github", "resend", "agentmail"] },
     method: { enum: ["GET", "POST"] },
     path: array({ anyOf: [string(64), reference] }, 3),
     query: array(

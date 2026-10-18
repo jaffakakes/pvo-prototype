@@ -1,3 +1,8 @@
+import {
+  connectAgentEmail,
+  agentEmailSecret,
+  agentEmailSourceValid,
+} from "./agentEmailConnection.js";
 import { accountServiceEvent } from "./serviceEvents.js";
 import { accountServiceCommand } from "./serviceCalls.js";
 import { connectionScopeKey } from "../../packages/pvo-assistant/connections/index.js";
@@ -28,8 +33,9 @@ export class AccountConnections {
       const current = this.get(id);
       if (
         current.connection.status === "connected" &&
-        current.details.expiresAt !== null &&
-        current.details.expiresAt <= this.coordinator.now()
+        ((current.details.expiresAt !== null &&
+          current.details.expiresAt <= this.coordinator.now()) ||
+          !agentEmailSourceValid(this, current))
       )
         this.invalidate(current, "expired");
     }
@@ -82,6 +88,8 @@ export class AccountConnections {
     return this.get(current.id);
   }
   async secret(ownerId, current) {
+    if (current.details.identitySource)
+      return agentEmailSecret(this, ownerId, current);
     if (current.connection.status !== "connected" || !current.credential)
       throw new ConnectionAccessError();
     return openCredential(
@@ -176,6 +184,8 @@ export class AccountConnections {
     }
   }
   async connect(ownerId, input) {
+    if (input.setup.provider === "agentmail" && "recipient" in input.setup)
+      return connectAgentEmail(this, ownerId, input);
     const previous = this.catalog.get(input.id);
     if ((previous?.revision ?? 0) !== input.expectedRevision)
       throw new HttpError(

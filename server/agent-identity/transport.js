@@ -37,9 +37,14 @@ export function identityTransport(
     agentphone: "https://api.agentphone.ai",
   }[provider];
   if (!origin) throw new Error("Identity provider is unavailable.");
-  return async (path, { token = null, body, secretReply = false } = {}) => {
+  return async (
+    path,
+    { token = null, body, secretReply = false, idempotencyKey = null } = {},
+  ) => {
     if (!/^\/v[01]\/[A-Za-z0-9_/%@.+-]+(?:\?[A-Za-z0-9_=&.%+-]+)?$/.test(path))
       throw new Error("Invalid identity API path.");
+    if (idempotencyKey !== null && !/^[a-f0-9]{64}$/.test(idempotencyKey))
+      throw new Error("Invalid email action identity.");
     const signal = AbortSignal.timeout(timeoutMs);
     let response;
     try {
@@ -50,6 +55,7 @@ export function identityTransport(
           signal,
           headers: {
             Accept: "application/json",
+            ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
             ...(body === undefined
               ? {}

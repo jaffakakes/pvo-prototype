@@ -35,6 +35,8 @@ export async function identityFixture() {
     unavailable: false,
     messages: [],
     moreMessages: false,
+    sent: new Map(),
+    loseSend: false,
   };
   const fetcher = async (request) => {
     const url = new URL(request.url),
@@ -45,11 +47,27 @@ export async function identityFixture() {
       body,
       provider: url.hostname,
       token: request.headers.get("Authorization"),
+      idempotencyKey: request.headers.get("Idempotency-Key"),
     });
     if (api.hold) await api.hold;
     if (url.hostname === "consumer.test")
       return Response.json({ accepted: true });
     const mail = url.hostname === "api.agentmail.to";
+    if (mail && path.endsWith("/messages/send")) {
+      const key = request.headers.get("Idempotency-Key");
+      const previous = api.sent.get(key);
+      if (previous && JSON.stringify(previous) !== JSON.stringify(body))
+        return Response.json({}, { status: 409 });
+      api.sent.set(key, body);
+      if (api.loseSend) {
+        api.loseSend = false;
+        return Response.json({}, { status: 503 });
+      }
+      return Response.json({
+        message_id: "<message-one@agentmail.to>",
+        thread_id: "thread-one",
+      });
+    }
     if (path.includes("/messages")) {
       if (path.endsWith("/messages"))
         return Response.json(

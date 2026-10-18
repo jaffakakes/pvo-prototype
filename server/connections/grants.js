@@ -12,6 +12,12 @@ export function connectionGrant(scope, login) {
       ],
       operations: structuredClone(GITHUB_OPERATIONS),
     };
+  if (scope.provider === "agentmail" && "recipient" in scope)
+    return {
+      name: `Agent email · ${scope.recipient}`,
+      permissions: ["email:send"],
+      operations: [{ id: "agentmail_email_send", permissions: ["email:send"] }],
+    };
   if (scope.provider === "resend")
     return {
       name: `Email · ${scope.from}`,

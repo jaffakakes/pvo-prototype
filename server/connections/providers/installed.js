@@ -1,3 +1,4 @@
+import { agentMailAdapter } from "./agentMail.js";
 import { githubAdapter } from "./github.js";
 import { resendAdapter } from "./resend.js";
 import { agentIdentityAdapter } from "./agentIdentity.js";
@@ -7,7 +8,7 @@ export function installedConnectionProvider(fetcher = fetch) {
   const providers = {
     github: githubAdapter(fetcher),
     resend: resendAdapter(fetcher),
-    agentmail: agentIdentityAdapter("agentmail", fetcher),
+    agentmail: agentMailAdapter(fetcher),
     agentphone: agentIdentityAdapter("agentphone", fetcher),
   };
   function provider(scope) {

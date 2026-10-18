@@ -293,6 +293,7 @@ export async function taskFixture({
         const stub = env.ASSISTANT_TASKS.getByName("owner:" + owner.id);
         try {
           if (action === "validation-state") return json(await stub.validationState(args.id));
+          if (action === "connection-command") { const result = await stub.manageConnections(owner.id, args.operation); return json(result, result.ok ? 200 : result.status); }
           if (action === "connection-storage") return json(await stub.connectionStorage());
           if (action === "identity-storage") return json(await stub.identityStorage());
           if (action === "verify-account") { const result = await stub.verifyAccount(owner.id,args.input); return json(result, result.error ? result.status : 200); }
