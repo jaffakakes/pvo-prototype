@@ -235,7 +235,7 @@ export function Camera() {
           </div>
           <div className={cx("camControls")}>
             <button
-              className={cx("sq42")}
+              className={cx("sq42 cameraBrand")}
               onClick={startOver}
               aria-label="Start over"
               title="Start over"
@@ -244,9 +244,8 @@ export function Camera() {
                 s.recording ||
                 (!count && s.replacing == null && !s.recordingInto)
               }
-              style={{ opacity: !count && s.replacing == null ? 0.5 : 1 }}
             >
-              <Icon name="close" />
+              <img src="restyle-mark.png" alt="Restyle" />
             </button>
             {wide && (
               <button
@@ -404,20 +403,6 @@ export function Camera() {
           )}
         </div>
       </div>
-      <footer className={cx("camFoot")}>
-        <span className={cx("brand")}>
-          <span className={cx("brandMark")}>
-            <img src="restyle-mark.png" alt="" />
-          </span>
-          <span>restyle</span>
-        </span>
-        <span>
-          {recordingScene ? `${recordingScene.name} · ` : ""}
-          {count
-            ? `${count} clip${count === 1 ? "" : "s"} · ${fmt(total(s.clips))}`
-            : "No clips yet"}
-        </span>
-      </footer>
       <div className={recoveryStyles.camera}>
         <CaptureRecovery />
         <CameraStorageRecovery />

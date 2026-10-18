@@ -198,7 +198,13 @@ button,input{font:inherit}button{color:inherit}button:focus-visible,input:focus-
   height: 0;
 }
 @media(min-width:600px) and (max-width:767px) and (min-height:600px){html,body,#root{background:#d4cfc2}#root{display:flex;align-items:center;justify-content:center}.app{width:430px;height:min(932px,calc(100dvh - 56px));border:3px solid var(--outline);border-radius:36px;box-shadow:12px 12px 0 var(--frame-shadow)}}
-@media(min-width:768px){.app[data-screen="camera"]{max-width:600px;margin-inline:auto}}
+.app[data-screen="camera"] {
+  width: 100%;
+  height: 100dvh;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
 .projectTransition { margin: auto; padding: 24px; max-width: 480px; text-align: center; font-size: 14px; line-height: 1.6; }
 .createEntry { height: 100%; min-height: 0; }
 .projectTransition button { min-height: 44px; padding: 0 18px; border: 2px solid var(--button-border); border-radius: 12px; background: var(--button-secondary-bg); color: var(--button-secondary-text); cursor: pointer; }
