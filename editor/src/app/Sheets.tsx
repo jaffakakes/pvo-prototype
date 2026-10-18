@@ -7,6 +7,7 @@ import { ExportSheet } from "../features/export/ExportSheet";
 import { MoreSettings } from "../features/settings/MoreSettings";
 import { SoundSheet } from "../features/sound/SoundSheet";
 import { TextSheet } from "../features/text/TextSheet";
+import { TextTimingSheet } from "../features/text/TextTimingSheet";
 import { useCapture } from "../state/captureStore";
 import { Shell } from "../ui/SheetShell";
 
@@ -20,6 +21,8 @@ export function Sheets() {
       return <ComponentsSheets />;
     case "text":
       return <TextSheet />;
+    case "textTiming":
+      return <TextTimingSheet />;
     case "more":
       return (
         <Shell title="More" sub="Editor and PVO settings">

@@ -86,7 +86,10 @@ export function ToolRow() {
     else if (["textCollapse", "compCollapse", "collapse"].includes(name))
       clearSelection();
     else if (name === "textEdit") s.patch({ sheet: "text", playing: false });
-    else if (name === "animation") s.patch({ sheet: "animation", playing: false, orb: false });
+    else if (name === "textTiming")
+      s.patch({ sheet: "textTiming", playing: false });
+    else if (name === "animation")
+      s.patch({ sheet: "animation", playing: false, orb: false });
     else if (name === "textDuplicate" && selectedText)
       s.duplicateText(selectedText.id);
     else if (name === "textDelete" && selectedText)
@@ -171,6 +174,7 @@ export function ToolRow() {
       ? [
           ["down", "", "textCollapse"],
           ["edit", "Edit text", "textEdit"],
+          ["timer", "Timing", "textTiming"],
           ["keyframe", "Animate", "animation"],
           ["plus", "Duplicate", "textDuplicate"],
           ["delete", "Delete", "textDelete"],

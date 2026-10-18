@@ -72,6 +72,9 @@
 .body > * {
   flex-shrink: 0;
 }
+.compactBody { padding: 8px 14px calc(12px + env(safe-area-inset-bottom)); overflow: hidden; }
+.compactBody > :global(.textEditor) { flex: 1 1 auto; min-height: 0; }
+.compactBody :global(.textControls) { max-height: none; }
 
 /* The language route grows into available space, or scrolls as a whole in a shallow dock. */
 .fillingBody > :last-child {

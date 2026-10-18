@@ -43,6 +43,7 @@ export type SheetName =
   | "speed"
   | "crop"
   | "text"
+  | "textTiming"
   | "sound"
   | "more"
   | "export"

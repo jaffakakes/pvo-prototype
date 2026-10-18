@@ -1,46 +1,45 @@
 .textEditor {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   min-height: 0;
 }
 .textEntry textarea {
   flex: 1;
   min-width: 0;
   resize: none;
-  padding: 10px 12px;
+  height: 44px;
+  min-height: 44px;
+  padding: 11px 12px;
   background: var(--input);
   color: var(--text);
-  border: 2px solid var(--pale);
-  border-radius: 12px;
+  border: 1px solid var(--q14);
+  border-radius: 8px;
   font: 700 13px/1.4 var(--f-ui);
   user-select: text;
 }
-.textEntry button {
-  height: auto;
-  padding: 0 14px;
-  font-size: 13px;
-}
-.textTabs {
-  display: flex;
-  gap: 4px;
-  border-bottom: 1px solid var(--q12);
-}
-.textTabs button {
-  flex: 1;
-  padding: 9px 6px;
-  background: none;
-  color: var(--muted);
+.textEntry { flex: none; align-items: flex-start; gap: 6px; }
+.textEntry .textConfirm {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
   border: 0;
-  border-bottom: 2px solid transparent;
-  font: 700 12px var(--f-ui);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  box-shadow: none;
   cursor: pointer;
 }
-.textTabs button[aria-selected="true"] {
-  color: var(--text);
-  border-bottom-color: var(--accent);
-}
+.textTools { display: flex; flex: none; justify-content: space-between; gap: 6px; padding-bottom: 4px; border-bottom: 1px solid var(--q08); }
+.textTools button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--text); cursor: pointer; }
+.textTools button[aria-pressed="true"] { background: var(--q08); }
+.textTools button:focus-visible, .textConfirm:focus-visible { outline: 2px solid var(--highlight); outline-offset: -2px; }
 .textControls {
+  flex: 1 1 auto;
+  min-height: 0;
   max-height: 27dvh;
   overflow: auto;
   overscroll-behavior: contain;
@@ -48,37 +47,37 @@
 }
 .textPresets {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
 }
 .textPresets button {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  min-height: 86px;
-  padding: 10px 4px;
+  gap: 4px;
+  min-height: 60px;
+  padding: 6px 4px;
   background: var(--surface);
   border: 1px solid var(--q14);
   border-radius: 10px;
   cursor: pointer;
 }
-.textPresets button:hover,
+.textPresets button[aria-pressed="true"],
 .textPresets button:focus-visible {
   border-color: var(--pale);
 }
 .textPresets span {
   max-width: 100%;
-  padding: 4px 6px;
+  padding: 2px 4px;
   border-radius: 4px;
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1.2;
   text-align: center;
 }
 .textPresets small {
   color: var(--muted);
-  font: 600 10px var(--f-ui);
+  font: 600 9px var(--f-ui);
 }
 .textStyleControls {
   display: flex;
@@ -178,22 +177,11 @@
   gap: 7px;
   font: 600 11px var(--f-ui);
 }
-.textFooter {
-  display: flex;
-  gap: 6px;
-  border-top: 1px solid var(--q12);
-  padding-top: 10px;
-}
-.textFooter button,
 .textAction {
-  flex: 1;
   padding: 9px 5px;
   border: 1px solid var(--q14);
   border-radius: 8px;
   background: var(--surface);
   font: 700 11px var(--f-ui);
   cursor: pointer;
-}
-.textFooter button:last-child {
-  color: var(--red);
 }

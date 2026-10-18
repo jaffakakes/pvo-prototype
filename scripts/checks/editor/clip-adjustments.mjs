@@ -34,16 +34,14 @@ try {
   await page.evaluate(async () => {
     const { useCapture, mkClip } = await import("/src/store.ts");
     const clip = mkClip(10, null, 0);
-    useCapture
-      .getState()
-      .patch({
-        clips: [clip],
-        screen: "editor",
-        sel: 0,
-        t: 8,
-        past: [],
-        future: [],
-      });
+    useCapture.getState().patch({
+      clips: [clip],
+      screen: "editor",
+      sel: 0,
+      t: 8,
+      past: [],
+      future: [],
+    });
   });
   await page.getByRole("button", { name: "Speed", exact: true }).click();
   const speed = page.getByRole("dialog", { name: "Speed", exact: true });
@@ -84,10 +82,12 @@ try {
   await text
     .getByRole("textbox", { name: "Text content" })
     .fill("Keep this caption");
-  await text.getByRole("button", { name: "Add", exact: true }).click();
-  await page.getByRole("button", { name: "Edit text", exact: true }).click();
-  const editText = page.getByRole("dialog", { name: "Edit text", exact: true });
-  await editText.getByRole("tab", { name: "Timing", exact: true }).click();
+  await text.getByRole("button", { name: "Done", exact: true }).click();
+  await page.getByRole("button", { name: "Timing", exact: true }).click();
+  const editText = page.getByRole("dialog", {
+    name: "Text timing",
+    exact: true,
+  });
   await editText
     .getByRole("spinbutton", { name: "Text start", exact: true })
     .fill("1");

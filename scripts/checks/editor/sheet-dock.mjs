@@ -52,8 +52,8 @@ try {
   await assertDocked(text, ratio);
   const draft = "Keep these words in the fixed panel";
   await text.getByRole("textbox", { name: "Text content" }).fill(draft);
-  await text.getByRole("tab", { name: "Style", exact: true }).click();
-  await text.locator("[data-sheet-body]").evaluate((el) => {
+  await text.getByRole("button", { name: "Font", exact: true }).click();
+  await text.locator(".textControls").evaluate((el) => {
     el.scrollTop = el.scrollHeight;
   });
   const scrolled = await assertDocked(text, ratio);
@@ -73,7 +73,7 @@ try {
     "The same video keeps playing while docked controls are open",
   );
   await page.getByRole("button", { name: "Pause", exact: true }).click();
-  await text.getByRole("button", { name: "Add", exact: true }).click();
+  await text.getByRole("button", { name: "Done", exact: true }).click();
   await page.locator(".toolBar").waitFor({ state: "visible" });
   assert(Math.abs((await geometry()).dock.height - original.dock.height) < 2);
   const collapse = page.getByRole("button", { name: /^Collapse .* tools$/ });

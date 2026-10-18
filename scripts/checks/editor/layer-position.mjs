@@ -196,7 +196,7 @@ try {
 
   await select("text");
   const textSheet = page.getByRole("dialog", { name: "Edit text", exact: true });
-  await textSheet.getByRole("tab", { name: "Style", exact: true }).click();
+  await textSheet.getByRole("button", { name: "Font", exact: true }).click();
   await assertPixelContract(textSheet);
   fields = await assertPosition(textSheet, textOverlay, { x: 360, y: 1200 }, "Mobile text retained position");
   history = await historyLength();

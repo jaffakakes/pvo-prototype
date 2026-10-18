@@ -191,7 +191,7 @@ try {
   await page.getByRole("button", { name: "Text", exact: true }).click();
   const addText = page.getByRole("dialog", { name: "Add text", exact: true });
   await addText.getByRole("textbox", { name: "Text content" }).fill("Pinch");
-  await addText.getByRole("button", { name: "Add", exact: true }).click();
+  await addText.getByRole("button", { name: "Done", exact: true }).click();
   await settle();
   const originalVideoTransform = await page.locator(".pvVideo").evaluate(element => element.style.transform);
   await verifyOverlayGestures(text, "Text");
