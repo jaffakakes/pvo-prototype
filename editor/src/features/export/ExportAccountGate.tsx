@@ -82,7 +82,7 @@ export function ExportAccountGate({
           onEmail={() => setEmailOpen(true)}
         />
       )}
-      <AccountDisclosure className={styles.disclosure} />
+      {!emailOpen && <AccountDisclosure className={styles.disclosure} />}
       {!emailOpen && (
         <p className={styles.signIn}>
           Already have an account?{" "}

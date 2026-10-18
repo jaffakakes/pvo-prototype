@@ -130,7 +130,7 @@ function OpenAuthDialog() {
   const description =
     step === "signup"
       ? "Your edit stays saved in this browser while you create your account."
-      : "Sign in to keep editing your reels.";
+      : null;
 
   return (
     <dialog
@@ -138,7 +138,9 @@ function OpenAuthDialog() {
       className={styles.dialog}
       role="dialog"
       aria-labelledby="auth-title"
-      aria-describedby={user || emailOpen ? "auth-description" : undefined}
+      aria-describedby={
+        user || (emailOpen && description) ? "auth-description" : undefined
+      }
       data-auth-step={user ? "account" : step}
       onCancel={(event) => {
         event.preventDefault();
@@ -178,7 +180,8 @@ function OpenAuthDialog() {
             saved in this browser.
           </p>
         ) : (
-          emailOpen && (
+          emailOpen &&
+          description && (
             <p id="auth-description" className={styles.description}>
               {description}
             </p>
@@ -250,7 +253,9 @@ function OpenAuthDialog() {
             Email sign-in isn't configured here yet.
           </p>
         )}
-        {!user && <AccountDisclosure className={styles.disclosure} />}
+        {!user && !emailOpen && (
+          <AccountDisclosure className={styles.disclosure} />
+        )}
         {error && !emailOpen && (
           <p className={styles.error} role="alert">
             {error}
