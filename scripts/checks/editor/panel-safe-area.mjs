@@ -46,9 +46,12 @@ try {
       const layout = await geometry();
       assert(
         Math.abs(
-          layout.dock.height * 3 -
-            layout.previewArea.height -
-            layout.transport.height,
+          Math.max(
+            0,
+            layout.dock.height * 3 -
+              layout.previewArea.height -
+              layout.transport.height,
+          ),
         ) < 2,
       );
       for (const bounds of [

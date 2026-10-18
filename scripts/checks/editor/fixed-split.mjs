@@ -38,11 +38,16 @@ try {
       const layout = await geometry();
       assert(
         Math.abs(
-          layout.dock.height * 3 -
-            layout.previewArea.height -
-            layout.transport.height,
+          layout.dock.height -
+            Math.min(
+              (layout.previewArea.height +
+                layout.transport.height +
+                layout.dock.height) /
+                4,
+              layout.naturalTimelineHeight,
+            ),
         ) < 2,
-        "Player and timeline use a fixed 75/25 split",
+        "Timeline fits its tracks and uses at most one quarter",
       );
       assert.equal(
         await page
@@ -80,24 +85,23 @@ try {
         Math.abs((await assertSplit()).dock.height - original.dock.height) < 2,
         "Selecting a clip does not move the player or timeline",
       );
-      const collapse = page.getByRole("button", { name: /^Collapse .* tools$/ });
+      const collapse = page.getByRole("button", {
+        name: /^Collapse .* tools$/,
+      });
       if (await collapse.count()) await collapse.click();
       await page
         .locator(".toolBar")
         .getByRole("button", { name: "More", exact: true })
         .click();
       const more = page.getByRole("dialog", { name: "More", exact: true });
-      assert(
-        Math.abs(
-          (await assertDocked(more, ratio)).dock.height - original.dock.height,
-        ) < 2,
-      );
+      const opened = await assertDocked(more, ratio);
+      assert(opened.dock.height >= original.dock.height - 2);
       await more.locator("[data-sheet-body]").evaluate((el) => {
         el.scrollTop = el.scrollHeight;
       });
       assert(
         Math.abs(
-          (await assertDocked(more, ratio)).dock.height - original.dock.height,
+          (await assertDocked(more, ratio)).dock.height - opened.dock.height,
         ) < 2,
         "Scrolling editing controls cannot resize the player",
       );
@@ -107,7 +111,12 @@ try {
       await assertSplit();
       await page.setViewportSize({ width, height: height + 80 });
       const taller = await assertSplit();
-      assert(Math.abs(taller.dock.height - original.dock.height - (taller.app.height - original.app.height) / 4) < 2);
+      assert(
+        taller.dock.height <=
+          original.dock.height +
+            (taller.app.height - original.app.height) / 4 +
+            2,
+      );
       assert.equal(
         await page
           .locator(".tlClip")

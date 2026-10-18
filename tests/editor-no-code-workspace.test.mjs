@@ -50,6 +50,17 @@ test("timeline and editing panels leave three quarters for playback with overlay
   }
 });
 
+test("short timelines return unused space to the player while tall timelines stay capped", () => {
+  const measurements = { height: 977, header: 0, playback: 52 };
+  assert.equal(editorPanelHeight(measurements, 214), 214);
+  assert.equal(editorPanelHeight(measurements, 500), 977 / 4);
+  assert.equal(editorPanelHeight(measurements, 0), 977 / 4);
+  assert.equal(
+    editorPanelHeight({ ...measurements, height: 390 }, 214),
+    390 / 4,
+  );
+});
+
 test("keyboard and orientation height changes recalculate the same fixed split", () => {
   const measurements = { height: 844, header: 0, playback: 52 };
   const original = editorPanelHeight(measurements);

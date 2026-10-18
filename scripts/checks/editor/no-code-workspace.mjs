@@ -58,8 +58,8 @@ try {
     await page.getByRole("button", { name: "Components", exact: true }).click();
     await settle(page);
     const opened = await geometry(page);
-    assert(Math.abs(opened.dock.height - original.dock.height) < 2, `${width}: opening swaps the same lower-region height`);
-    assert(Math.abs(opened.preview.height - original.preview.height) < 2, `${width}: opening keeps the player still`);
+    assert(Math.abs(opened.dock.height - height / 4) < 2, `${width}: editing panels keep the full lower quarter`);
+    assert(opened.preview.height <= original.preview.height + 2, `${width}: compact timelines return unused panel space to the player`);
     await page.evaluate(async () => {
       const { useCapture } = await import("/src/store.ts");
       useCapture.getState().addComponent("choice");

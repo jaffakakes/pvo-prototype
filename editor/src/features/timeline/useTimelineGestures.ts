@@ -37,7 +37,7 @@ export function useTimelineGestures() {
   const layers = layout.map((row) => row.id);
   const rows = new Map(layout.map((row) => [row.id, row.top]));
   const rowEnd = layout.reduce((end, row) => end + row.height, 30);
-  const timelineHeight = rowEnd + s.audioClips.length * 34 + (s.sound ? 40 : 8);
+  const timelineHeight = rowEnd + s.audioClips.length * 34 + (s.sound ? 40 : 0);
   const selectedLayer: LayerId | null =
     s.selText != null
       ? `text:${s.selText}`

@@ -41,7 +41,7 @@ try {
       assert.equal(layout.header.height, 0);
       assert.equal(layout.preview.top, layout.previewArea.top, "The video reaches the top of the player region");
       assert.equal(layout.previewArea.top, 0, "Overlay navigation leaves no top toolbar gap");
-      assert(Math.abs(layout.dock.height - height / 4) < 2);
+      assert(layout.dock.height <= height / 4 + 2);
       await play.click();
       await controls.getByRole("button", { name: "Pause", exact: true }).waitFor();
       await controls.getByRole("button", { name: "Pause", exact: true }).click();
@@ -60,7 +60,7 @@ try {
       await stop.click();
       await trying.waitFor();
       await settle();
-      assert(Math.abs((await geometry()).dock.height - height / 4) < 2);
+      assert((await geometry()).dock.height <= height / 4 + 2);
       await page.getByRole("button", { name: "Back to camera", exact: true }).click();
       await page.locator(".viewfinder").waitFor();
       assert.deepEqual(errors, []);
