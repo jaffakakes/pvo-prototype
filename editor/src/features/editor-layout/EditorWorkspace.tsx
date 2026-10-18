@@ -25,6 +25,7 @@ type Props = {
   open: boolean;
   componentSheet?: boolean;
   textSheet?: boolean;
+  soundSheet?: boolean;
   animationSheet?: boolean;
   codeEditingId?: string;
   trying?: boolean;
@@ -53,6 +54,7 @@ export function EditorWorkspace({
   open,
   componentSheet = false,
   textSheet = false,
+  soundSheet = false,
   animationSheet = false,
   codeEditingId,
   trying = false,
@@ -162,6 +164,11 @@ export function EditorWorkspace({
   else if (debugOpen) panelHeight = debugResize.height;
   else if (trying) panelHeight = 0;
   else if (codeExpanded) panelHeight = measurements.height * 0.8;
+  else if (open && soundSheet)
+    panelHeight = Math.max(
+      panelHeight,
+      Math.min(200, Math.max(0, measurements.height - measurements.header)),
+    );
   const textEditing =
     open && textSheet && !trying && !debugOpen && !dockThreadOpen;
   useLayoutEffect(() => {
@@ -183,7 +190,7 @@ export function EditorWorkspace({
   const layout = workspaceGeometry(
     layoutMeasurements,
     panelHeight,
-    dockThreadOpen || debugOpen || codeExpanded || textEditing,
+    dockThreadOpen || debugOpen || codeExpanded || textEditing || soundSheet,
   );
   const headerVisible =
     !codeExpanded && !(dockThreadOpen && threadDock.compact);

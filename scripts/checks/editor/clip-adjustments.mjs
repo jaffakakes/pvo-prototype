@@ -70,8 +70,8 @@ try {
   await page.getByRole("menuitem", { name: "Add sound", exact: true }).click();
   const sound = page.getByRole("dialog", { name: "Add sound", exact: true });
   await sound.getByRole("button", { name: /Night Drive/ }).click();
+  await sound.getByRole("button", { name: "Use sound", exact: true }).click();
   assert.equal((await state()).sound, 2);
-  await sound.getByRole("button", { name: "Close", exact: true }).click();
   await page.waitForFunction(() =>
     document.querySelector(".audioTrack")?.textContent?.includes("Night Drive"),
   );

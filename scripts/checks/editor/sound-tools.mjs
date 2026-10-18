@@ -78,8 +78,9 @@ try {
   await page.getByRole("menuitem", { name: "Add sound", exact: true }).click();
   const music = page.getByRole("dialog", { name: "Add sound", exact: true });
   await music.getByRole("button", { name: /Night Drive/ }).click();
+  assert.equal((await current()).sound, 0, "Auditioning does not apply music");
+  await music.getByRole("button", { name: "Use sound", exact: true }).click();
   assert.equal((await current()).sound, 2);
-  await music.getByRole("button", { name: "Close", exact: true }).click();
   await soundMenu();
   assert.equal(
     await page.getByRole("menuitem", { name: "Replace", exact: true }).count(),

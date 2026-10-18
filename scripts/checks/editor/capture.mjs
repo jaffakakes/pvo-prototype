@@ -142,7 +142,7 @@ try {
     await real.getByRole("button", { name: "Sound" }).click();
     await real.getByRole("menuitem", { name: "Add sound", exact: true }).click();
     await real.getByRole("button", { name: /Summer Groove/ }).click();
-    await real.getByRole("button", { name: "Close" }).click();
+    await real.getByRole("button", { name: "Use sound", exact: true }).click();
     await real.keyboard.press("Space");
     await real.waitForTimeout(450);
     await real.keyboard.press("Space");
