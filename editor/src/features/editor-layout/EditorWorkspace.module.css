@@ -328,13 +328,8 @@
 }
 
 .header {
-  position: absolute;
-  top: env(safe-area-inset-top, 0px);
-  left: env(safe-area-inset-left, 0px);
-  right: env(safe-area-inset-right, 0px);
+  grid-row: 1;
   z-index: 10;
-  overflow: visible;
-  pointer-events: none;
 }
 .preview {
   grid-row: 2;

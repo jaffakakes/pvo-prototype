@@ -30,22 +30,11 @@ try {
       assert(navigationBounds.every(box => box && box.width >= 44 && box.height >= 44
         && box.x >= 0 && box.x + box.width <= width), "Navigation keeps reachable touch targets inside the viewport");
       assert(navigationBounds[0].x + navigationBounds[0].width < navigationBounds[1].x, "Navigation buttons do not collide");
-      for (const button of [back, signIn]) {
-        assert.equal(await button.locator("span").isVisible(), width >= 600, "Labels appear only when the viewport has room");
-        assert.equal(await button.locator("svg path").count(), 1, "Compact navigation has a visible icon");
-        const style = await button.evaluate(element => {
-          const computed = getComputedStyle(element);
-          const token = document.createElement("span");
-          token.style.color = "var(--button-primary-bg)";
-          element.append(token);
-          const accent = getComputedStyle(token).color;
-          token.remove();
-          return { background: computed.backgroundColor, accent, border: computed.borderWidth, shadow: computed.boxShadow };
-        });
-        assert.equal(style.background, style.accent, "Navigation follows the Restyle accent");
-        assert.equal(style.border, "2px");
-        assert.notEqual(style.shadow, "none", "Navigation uses the elevated auth-button treatment");
-      }
+      assert.equal(await signIn.innerText(), "Sign in", "Sign in stays labelled at every width");
+      const title = navigation.getByRole("textbox", { name: "Project title", exact: true });
+      const titleBox = await title.boundingBox();
+      assert(titleBox && titleBox.height >= 44 && titleBox.x >= navigationBounds[0].x + navigationBounds[0].width
+        && titleBox.x + titleBox.width <= navigationBounds[1].x, "The editable title fits between navigation controls");
       await signIn.click();
       const auth = page.getByRole("dialog");
       await auth.waitFor();
@@ -54,7 +43,7 @@ try {
       if (process.env.PVO_EDITOR_ARTIFACTS) {
         await page.screenshot({ path: `${process.env.PVO_EDITOR_ARTIFACTS}/navigation-${width}x${height}.png` });
       }
-      assert.equal(await page.locator(".editorHead h1, .editorHead p").count(), 0);
+      assert.equal(await page.locator(".editorHead p").count(), 1, "Save status sits beneath the title");
       assert.equal(await page.locator(".editorHead").getByRole("button", { name: "More", exact: true }).count(), 0);
       const controls = page.getByRole("toolbar", { name: "Playback controls", exact: true });
       const play = controls.getByRole("button", { name: "Play", exact: true });
@@ -70,9 +59,9 @@ try {
       });
       assert.deepEqual(look, { border: "0px", radius: "0px", background: "rgba(0, 0, 0, 0)", shadow: "none" });
       const layout = await geometry();
-      assert.equal(layout.header.height, 0);
+      assert.equal(layout.header.height, 64, "The project header stays compact");
       assert.equal(layout.preview.top, layout.previewArea.top, "The video reaches the top of the player region");
-      assert.equal(layout.previewArea.top, 0, "Overlay navigation leaves no top toolbar gap");
+      assert.equal(layout.previewArea.top, layout.header.bottom, "The player starts directly below the header");
       assert(layout.dock.height <= height * 3 / 8 + 2);
       await play.click();
       await controls.getByRole("button", { name: "Pause", exact: true }).waitFor();

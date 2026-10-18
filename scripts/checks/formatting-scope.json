@@ -258,5 +258,7 @@
   "editor/src/ui/SheetShell.tsx",
   "editor/src/ui/sheets/DockedSheet.module.css",
   "editor/src/ui/sheets/SheetChrome.css",
-  "editor/src/features/component-authoring/SheetFrame.tsx"
+  "editor/src/features/component-authoring/SheetFrame.tsx",
+  "editor/src/features/editor-layout/EditorHeader.module.css",
+  "scripts/checks/editor/project-header.mjs"
 ]

@@ -29,9 +29,9 @@ const {
   `data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString("base64")}`
 );
 
-test("timeline and editing panels leave five eighths for playback with overlay navigation", () => {
-  for (const height of [0, 180, 328, 568, 693, 844, 932, 1100]) {
-    const measurements = { height, header: 0, playback: 52 };
+test("timeline and editing panels split the space below the project header", () => {
+  for (const height of [64, 180, 328, 568, 693, 844, 932, 1100]) {
+    const measurements = { height, header: 64, playback: 52 };
     const panel = editorPanelHeight(measurements);
     const layout = workspaceGeometry(measurements, panel, false);
     assert.equal(
@@ -41,7 +41,7 @@ test("timeline and editing panels leave five eighths for playback with overlay n
     assert.equal(layout.preview + layout.playback, (panel * 5) / 3);
     assert.ok(panel >= 0);
     if (height >= 328) {
-      assert.equal(layout.header, 0);
+      assert.equal(layout.header, 64);
       assert.equal(layout.playback, 52);
       assert.equal(layout.previewVisible, true);
       assert.equal(layout.headerOpacity, 1);
@@ -51,12 +51,12 @@ test("timeline and editing panels leave five eighths for playback with overlay n
 });
 
 test("keyboard and orientation height changes recalculate the same fixed split", () => {
-  const measurements = { height: 844, header: 0, playback: 52 };
+  const measurements = { height: 844, header: 64, playback: 52 };
   const original = editorPanelHeight(measurements);
   const keyboard = editorPanelHeight({ ...measurements, height: 608 });
   const landscape = editorPanelHeight({ ...measurements, height: 390 });
   assert.equal(original - keyboard, (236 * 3) / 8);
-  assert.equal(landscape, (390 * 3) / 8);
+  assert.equal(landscape, ((390 - 64) * 3) / 8);
   assert.equal(editorPanelHeight(measurements), original);
 });
 
