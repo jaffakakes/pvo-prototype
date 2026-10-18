@@ -261,7 +261,7 @@
   "editor/src/features/component-authoring/SheetFrame.tsx",
   "editor/src/features/editor-layout/EditorHeader.module.css",
   "scripts/checks/editor/project-header.mjs",
-  "editor/src/features/sound/SoundSheet.module.css",
+  "editor/src/features/sound/SoundBrowser.module.css",
   "editor/src/features/sound/useMusicPreview.ts",
   "editor/src/state/preferences/soundLibrary.ts",
   "editor/src/infrastructure/preferences/soundLibrary.ts",
@@ -271,5 +271,6 @@
   "editor/src/features/auth/AuthDialog.tsx",
   "editor/src/features/auth/AuthDialog.module.css",
   "editor/src/features/auth/AuthProviders.tsx",
-  "editor/src/features/auth/AuthProviders.module.css"
+  "editor/src/features/auth/AuthProviders.module.css",
+  "editor/src/features/sound/SoundBrowser.tsx"
 ]
