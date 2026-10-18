@@ -95,6 +95,7 @@ The creator selected **finish the email MVP first**, keeping broader service sig
 - [x] **5M.10 — Actionable planning correction:** report exact array bounds, scope working notes to history, accept both verified AgentMail documentation locations, and verify rejection boundaries plus beta continuation.
 
 - [x] **5M.11 — Preserve latest creator clarification:** place the newest saved answer after conflicting old proposals and history, retain answer chronology through bounded projection, verify and deliver beta, then restart the invalid frozen plan.
+- [x] **5M.12 — Research repair feedback:** return fixed actionable corrections for invalid excerpts and capability references; verify repair/restart/privacy and deliver beta.
 
 Resource intent: use one creator-approved AgentMail inbox and the existing beta workshop/hosting adapters. No phone, paid upgrade or extra downstream account is in this MVP scope. The creator supplied the test recipient privately; a short Restyle MVP test message is fixed in the handoff. No live message has been sent. The approved inbox is connected after ownership verification; the separate recipient-sending permission is approved and saved.
 

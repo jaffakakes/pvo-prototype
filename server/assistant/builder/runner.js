@@ -12,6 +12,7 @@ function haltBatch(result) {
     result?.status === "interrupted" ||
     result?.status === "unknown" ||
     result?.status === "unavailable" ||
+    result?.status === "rejected" ||
     result?.status === "pending" ||
     (result?.kind === "command" && result.result?.exitCode !== 0)
   );

@@ -189,6 +189,7 @@
   "packages/pvo-assistant/builder/reads.js",
   "packages/pvo-assistant/builder/research.js",
   "packages/pvo-assistant/builder/researchEvidence.js",
+  "packages/pvo-assistant/builder/researchFailures.js",
   "packages/pvo-assistant/builder/review.js",
   "packages/pvo-assistant/builder/schema.js",
   "packages/pvo-assistant/builder/state.js",

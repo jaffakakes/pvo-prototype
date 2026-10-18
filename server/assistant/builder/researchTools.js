@@ -5,6 +5,7 @@ import {
   serializeBuilderResearch,
   builderResearchDefinitions,
   createResearchEvidence,
+  researchFailure,
 } from "../../../packages/pvo-assistant/builder/index.js";
 import { parseWorkspaceOperationId } from "../../../packages/pvo-assistant/workspaces/index.js";
 import { contentDigest } from "../../contentDigest.js";
@@ -77,12 +78,8 @@ export function taskResearchTools(coordinator, claimed) {
                     status: "completed",
                     result: await recordCapability(coordinator, claimed, tool),
                   });
-                } catch {
-                  return {
-                    kind: tool.kind,
-                    status: "unavailable",
-                    result: null,
-                  };
+                } catch (error) {
+                  return researchFailure(tool.kind, error);
                 }
               }
               if (tool.kind === "web_evidence") {
@@ -95,11 +92,12 @@ export function taskResearchTools(coordinator, claimed) {
                   source.tool.kind !== "web_read" ||
                   source.result?.status !== "completed"
                 )
-                  return {
-                    kind: tool.kind,
-                    status: "unavailable",
-                    result: null,
-                  };
+                  return researchFailure(
+                    tool.kind,
+                    new Error(
+                      "Use a completed web_read operation from this task.",
+                    ),
+                  );
                 const page = parseBuilderResearchResult(
                   source.tool,
                   source.result,
@@ -110,12 +108,8 @@ export function taskResearchTools(coordinator, claimed) {
                     status: "completed",
                     result: createResearchEvidence(tool, page),
                   });
-                } catch {
-                  return {
-                    kind: tool.kind,
-                    status: "unavailable",
-                    result: null,
-                  };
+                } catch (error) {
+                  return researchFailure(tool.kind, error);
                 }
               }
               return parseBuilderResearchResult(

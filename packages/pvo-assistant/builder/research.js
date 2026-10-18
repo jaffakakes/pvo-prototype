@@ -17,6 +17,7 @@ import {
   parseResearchEvidenceResult,
   researchEvidenceDefinition,
 } from "./researchEvidence.js";
+import { parseResearchRejection } from "./researchFailures.js";
 
 export const BUILDER_RESEARCH_KINDS = Object.freeze([
   "web_search",
@@ -90,10 +91,12 @@ export function parseBuilderResearchResult(tool, value) {
   );
   choice(
     value.status,
-    ["completed", "unavailable", "unknown"],
+    ["completed", "unavailable", "unknown", "rejected"],
     "Research status",
   );
-  if (value.status !== "completed")
+  if (value.status === "rejected")
+    parseResearchRejection(tool.kind, value.result);
+  else if (value.status !== "completed")
     requireTask(
       value.result === null,
       "Unavailable research cannot invent evidence.",

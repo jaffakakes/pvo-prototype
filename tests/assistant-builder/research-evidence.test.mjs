@@ -5,6 +5,7 @@ import {
   parseBuilderResearchResult,
   serializeBuilderResearch,
   createResearchEvidence,
+  researchFailure,
   builderResearchDefinitions,
 } from "../../packages/pvo-assistant/builder/index.js";
 import { planSavedBuild } from "../../server/assistant/builder/planner.js";
@@ -185,5 +186,44 @@ test("rewriting a research interpretation or changing receipt times cannot fake 
       ...evidencePage,
       url: "https://calendar.example.com/docs/another",
     }),
+  );
+});
+
+test("research corrections contain only approved diagnostics and cannot manufacture source evidence", () => {
+  const tool = evidenceNote();
+  const rejection = researchFailure(
+    tool.kind,
+    new Error("Research excerpts must appear in the saved page text."),
+  );
+  assert.equal(rejection.status, "rejected");
+  assert.deepEqual(parseBuilderResearchResult(tool, rejection), rejection);
+  for (const error of [
+    new Error("private provider token and response"),
+    new Error("toString"),
+    null,
+  ]) {
+    assert.deepEqual(researchFailure(tool.kind, error), {
+      kind: tool.kind,
+      status: "unavailable",
+      result: null,
+    });
+  }
+  for (const result of [
+    { message: "private provider response" },
+    { ...rejection.result, source: evidencePage },
+    null,
+  ]) {
+    assert.throws(() =>
+      parseBuilderResearchResult(tool, { ...rejection, result }),
+    );
+  }
+  assert.throws(() =>
+    parseBuilderResearchResult(
+      { kind: "web_read", url: evidencePage.url },
+      { ...rejection, kind: "web_read" },
+    ),
+  );
+  assert.throws(() =>
+    parseBuilderResearchResult(tool, { ...rejection, status: "completed" }),
   );
 });
