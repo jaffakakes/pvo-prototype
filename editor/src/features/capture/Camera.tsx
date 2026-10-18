@@ -319,9 +319,7 @@ export function Camera() {
                 aria-expanded={s.ratioMenu}
                 title="Ratio"
               >
-                <Icon name="ratio" size={17} />
                 <strong className={cx("railRatioValue")}>{s.ratio}</strong>
-                <Icon name="down" size={13} />
               </button>
               <RatioMenu place="rail" />
             </div>
