@@ -10,7 +10,7 @@ import { scenarios } from "./scenarios.js";
 import { diagnosticApi } from "./api.js";
 export { AcceptanceTasks } from "./tasks.js";
 export { AcceptanceControl } from "./control.js";
-export { AcceptanceBudget as AssistantBudget } from "./budget.js";
+export { AssistantBudget } from "../../../server/assistant/budget.js";
 export { AcceptanceWorkspaceBudget as WorkspaceBudget } from "./budget.js";
 export { HostedService } from "../../../server/cloud-services/host.js";
 
@@ -60,14 +60,11 @@ export default {
       if (publicAction)
         return hostedServiceRoute(request, env, { origin: url.origin });
       if (request.method === "GET" && url.pathname === "/health") {
-        phase = "budget";
         return mark(
           Response.json({
             ready: true,
             budgetPolicy: env.PROOF_SPENDING_POLICY ?? "default",
-            dailyLimits: await env.ASSISTANT_BUDGET.getByName(
-              `assistant:${new Date().toISOString().slice(0, 10)}`,
-            ).dailyLimits(),
+            requestLimit: null,
           }),
           env,
         );

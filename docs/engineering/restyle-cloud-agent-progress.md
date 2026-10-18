@@ -1,6 +1,18 @@
 # Restyle cloud agent: current progress and handoff log
 
-## Current checkpoint — email MVP recipient approved; live build waiting for daily model allowance, 18 October 2026
+## Current checkpoint — unlimited AI request counts delivered to beta, 18 October 2026
+
+The creator explicitly requested **no AI request limits**, superseding the temporary allowance proposal below. **5M.05 is complete.** The canonical `codex/restyle-agent-identity` checkout removes daily/global/client, minute and 4,096-reservation admission caps, plus the obsolete temporary-capacity configuration and its diagnostic override. Usage recording, exact replay, cancellation fencing, day expiry, account grants, provider backoff and individual execution deadlines remain. This does not remove an external provider's own limits or authorize production.
+
+**Verified:** source syntax 1,077 modules, dependency boundaries 1,051, adopted formatting 841; full `npm test -- --test-concurrency=2`: **1,737 total / 1,736 pass / zero failures / one optional Docker skip**. Accounting tests admit 80 same-client foreground requests plus 4,100 saved reservations in one minute and verify exact replay, wrong-owner rejection, one-time refund, cancellation above the old table cap, restart and expiry. A saved goal passes 65 calls across restart; the long continuation reaches 78 calls, 65 source revisions and one checked attachment with no application model-capacity wait. Provider 429 retry/Stop and missing/expired/wrong-owner permission tests pass. Product build, guarded deployment dry-run and 169 local documentation links pass. No new editor types or UI changed.
+
+**Beta delivered:** Worker **6a0e1e04-4404-405b-a42d-389d4e2ef6ff**, editor **restyle-editor-shell-c9fb983b1684aa53**. Guarded beta deployment and release announcement succeeded; exact HTTPS and actual local4173 HTML/service-worker/release bytes match checked staging. Python's local certificate store could not validate HTTPS, so verification used Node's normal verified TLS; no certificate checks were disabled. Source dist restored exactly. Backups and checked build: `~/.codex/secure/restyle-unlimited-20261018T150243Z/`; actual serving output was rechecked against its fresh backup before assets-first atomic copying, retaining old hashes. Production and integration branches remain unchanged.
+
+**5M.04 remains in progress:** the signed-in review session is renewed and Resume was submitted for the same email task in project `ee0dc91d-00bb-496a-999f-f5aa9bd91a7f`. The inbox and exact recipient permission remain approved; do not ask again. No live test email or email Container has yet been verified. Preserve the active guestbook, paused diagnostic and user changes. Broader signup/phone stay deferred; PR110/111 remain draft/unmerged.
+
+**Exact next:** verify the task leaves its old daily wait; apply normal New beta release → Update when offered; finish Restyle's own build/test/connect flow and the single approved email/receipt recovery. Record resulting resources and cleanup; keep 5M.04 unchecked until observed. Source/tests/docs are pending in this work batch, with commit and PR checkpoint next.
+
+## Previous checkpoint — email MVP recipient approved; live build waiting for daily model allowance, 18 October 2026
 
 The creator chose **email MVP first**, keeping broader service signup and phone work on Roadmap 5. Final feature: **send an email to a friend**. **5M.01–03 are complete; 5M.04 remains unchecked.** The five original incomplete 5B–5E tasks stay unchecked. Production remains prohibited; PR110/111 stay draft/unmerged.
 

@@ -1,6 +1,6 @@
 import { HttpError } from "../http.js";
 
-/** Reserve one bounded provider-backed assistant request without retaining its address. */
+/** Record one provider-backed assistant request without retaining its address. */
 export async function reserveAssistantUsage(request, env) {
   if (!env.ASSISTANT_BUDGET) throw new HttpError(503, "The assistant is unavailable. Please try again later.");
   const address = request.headers.get("CF-Connecting-IP");
@@ -14,5 +14,5 @@ export async function reserveAssistantUsage(request, env) {
   } catch {
     throw new HttpError(503, "The assistant is unavailable. Please try again later.");
   }
-  if (!accepted) throw new HttpError(429, "The assistant has reached its usage limit. Please try again later.");
+  if (!accepted) throw new HttpError(503, "The assistant is unavailable. Please try again later.");
 }

@@ -121,7 +121,9 @@ export async function taskFixture({
       leaseMs(task) { return this.env.CONTROLLED_PLAN && !this.env.PRODUCTION_LEASES ? 1500 : super.leaseMs(task); }
       async plan(task, signal, input) {
         if (!this.env.CONTROLLED_PLAN) return super.plan(task, signal, input);
-        return (await this.env.PLANNER.fetch("https://planner.test/", { method: "POST", body: JSON.stringify({ ...task, draftContext: input?.draft ?? null, builderContext: input?.build ?? null, attachmentContext: input?.attachment ?? null, evidenceContext: input?.evidence ?? null }), signal })).json();
+        const response = await this.env.PLANNER.fetch("https://planner.test/", { method: "POST", body: JSON.stringify({ ...task, draftContext: input?.draft ?? null, builderContext: input?.build ?? null, attachmentContext: input?.attachment ?? null, evidenceContext: input?.evidence ?? null }), signal });
+        if (!response.ok) throw Object.assign(new Error("Controlled model failure"), {status:response.status});
+        return response.json();
       }
       providerTimeoutMs() { return 500; }
       serviceProvider() {
