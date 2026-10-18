@@ -20,7 +20,7 @@ export function EditorHeader() {
     >
       <button
         type="button"
-        className={styles.iconButton}
+        className={`${styles.navigationButton} ${styles.back}`}
         onClick={() => {
           if (trying) stopTry();
           else {
@@ -29,16 +29,23 @@ export function EditorHeader() {
           }
         }}
         aria-label={trying ? "Stop trying" : "Back to camera"}
+        title={trying ? "Stop trying" : "Back to camera"}
       >
-        <Icon name="back" size={24} />
+        <Icon name="back" size={22} />
+        <span className={styles.navigationLabel}>
+          {trying ? "Stop trying" : "Back"}
+        </span>
       </button>
       {!user && !trying && (
         <button
           type="button"
-          className={styles.signIn}
+          className={`${styles.navigationButton} ${styles.signIn}`}
           onClick={() => openSignIn()}
+          aria-label="Sign in"
+          title="Sign in"
         >
-          Sign in
+          <Icon name="user" size={22} />
+          <span className={styles.navigationLabel}>Sign in</span>
         </button>
       )}
     </header>

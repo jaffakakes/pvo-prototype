@@ -62,27 +62,32 @@
   background: transparent;
   pointer-events: none;
 }
-.overlay .iconButton {
+.overlay .navigationButton {
   position: absolute;
   top: 10px;
-  left: 10px;
-  color: var(--text);
-  background: var(--deep);
-  pointer-events: auto;
-}
-.overlay .signIn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  min-width: 64px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 44px;
   min-height: 44px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 10px;
-  background: var(--deep);
-  color: var(--text);
-  font: 700 12px var(--f-ui);
+  padding: 0;
+  border: 2px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  box-shadow: 3px 3px 0 var(--button-shadow);
+  font: 800 13px var(--f-ui);
   cursor: pointer;
   pointer-events: auto;
 }
-.signIn:focus-visible { outline: 3px solid var(--highlight); outline-offset: -3px; }
+.back { left: 10px; }
+.signIn { right: 10px; }
+.navigationLabel { display: none; }
+.navigationButton:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--button-shadow); }
+.navigationButton:focus-visible { outline: 3px solid var(--highlight); outline-offset: 3px; }
+
+@media (min-width: 600px) {
+  .overlay .navigationButton { padding: 0 12px; }
+  .navigationLabel { display: inline; }
+}

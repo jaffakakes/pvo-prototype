@@ -23,6 +23,37 @@ try {
       await page.getByRole("button", { name: "Open editor", exact: true }).click();
       await settle();
       assert.equal(await page.locator(".editorHead button").count(), 2);
+      const navigation = page.getByRole("banner", { name: "Editor navigation", exact: true });
+      const back = navigation.getByRole("button", { name: "Back to camera", exact: true });
+      const signIn = navigation.getByRole("button", { name: "Sign in", exact: true });
+      const navigationBounds = await Promise.all([back, signIn].map(button => button.boundingBox()));
+      assert(navigationBounds.every(box => box && box.width >= 44 && box.height >= 44
+        && box.x >= 0 && box.x + box.width <= width), "Navigation keeps reachable touch targets inside the viewport");
+      assert(navigationBounds[0].x + navigationBounds[0].width < navigationBounds[1].x, "Navigation buttons do not collide");
+      for (const button of [back, signIn]) {
+        assert.equal(await button.locator("span").isVisible(), width >= 600, "Labels appear only when the viewport has room");
+        assert.equal(await button.locator("svg path").count(), 1, "Compact navigation has a visible icon");
+        const style = await button.evaluate(element => {
+          const computed = getComputedStyle(element);
+          const token = document.createElement("span");
+          token.style.color = "var(--button-primary-bg)";
+          element.append(token);
+          const accent = getComputedStyle(token).color;
+          token.remove();
+          return { background: computed.backgroundColor, accent, border: computed.borderWidth, shadow: computed.boxShadow };
+        });
+        assert.equal(style.background, style.accent, "Navigation follows the Restyle accent");
+        assert.equal(style.border, "2px");
+        assert.notEqual(style.shadow, "none", "Navigation uses the elevated auth-button treatment");
+      }
+      await signIn.click();
+      const auth = page.getByRole("dialog");
+      await auth.waitFor();
+      await auth.getByRole("button", { name: "Close sign in", exact: true }).click();
+      await auth.waitFor({ state: "hidden" });
+      if (process.env.PVO_EDITOR_ARTIFACTS) {
+        await page.screenshot({ path: `${process.env.PVO_EDITOR_ARTIFACTS}/navigation-${width}x${height}.png` });
+      }
       assert.equal(await page.locator(".editorHead h1, .editorHead p").count(), 0);
       assert.equal(await page.locator(".editorHead").getByRole("button", { name: "More", exact: true }).count(), 0);
       const controls = page.getByRole("toolbar", { name: "Playback controls", exact: true });
