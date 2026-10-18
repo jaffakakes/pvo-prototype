@@ -50,7 +50,7 @@ try {
   await page.waitForTimeout(3400);
   await page.getByRole("button", { name: "Stop recording" }).click();
   await page.getByRole("button", { name: "Open editor" }).click();
-  await page.getByRole("heading", { name: "Edit" }).waitFor();
+  await page.getByRole("button", { name: "Back to camera", exact: true }).waitFor();
 
   // Card fields, plus a timeline move and trim, are real project edits.
   await page.getByRole("button", { name: "Components", exact: true }).click();
@@ -126,7 +126,7 @@ try {
     await page.getByRole("button", { name: "Stop trying", exact: true }).click();
 
   // Interactive components are packaged in the single PVO export.
-  await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
+  await page.getByRole("button", { name: "More", exact: true }).click();
   await page.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Export and create link" }).click();
   const exportDialog = page.locator("dialog[data-state]");
   assert.equal(await exportDialog.getByRole("combobox", { name: "Export format" }).count(), 0);

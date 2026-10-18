@@ -5,7 +5,7 @@ export function useWorkspaceMeasurements() {
   const workspaceRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const playbackRef = useRef<HTMLDivElement>(null);
-  const [measurements, setMeasurements] = useState({ height: 0, width: 390, header: 56, playback: 52 });
+  const [measurements, setMeasurements] = useState({ height: 0, width: 390, header: 0, playback: 52 });
 
   useLayoutEffect(() => {
     const workspace = workspaceRef.current;

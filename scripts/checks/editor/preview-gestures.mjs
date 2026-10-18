@@ -206,12 +206,12 @@ try {
   assert.equal(await page.locator(".pvVideo").evaluate(element => element.style.transform), originalVideoTransform,
     "Overlay gestures must not change video scaling");
   const expected = await snapshotOverlays();
-  await pinch({ center: await centerOf(page.locator(".editorHead h1")), factor: 1.7 });
+  await pinch({ center: await centerOf(page.locator(".transportTime")), factor: 1.7 });
   await assertOverlaysUnchanged(expected, "Pinching app chrome must not edit overlays");
   await scrollStyleSheet();
   await assertOverlaysUnchanged(expected, "Pinching and scrolling a sheet must not edit overlays");
 
-  await page.locator(".editorHead").getByRole("button", { name: "Try", exact: true }).click();
+  await page.locator(".transport").getByRole("button", { name: "Try", exact: true }).click();
   const pause = page.getByRole("button", { name: "Pause", exact: true });
   if (await pause.isVisible()) await pause.click();
   await component.waitFor({ state: "visible" });

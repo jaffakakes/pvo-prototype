@@ -23,7 +23,7 @@ const waitForLayout = () => page.waitForTimeout(280);
 async function assertCurrent(name) {
   await page.waitForFunction(expected => document.querySelector('.scenesRow [aria-current="true"]')?.textContent.startsWith(expected), name);
   await waitForLayout();
-  assert((await page.locator(".editorHead p").innerText()).startsWith(`${name} · `));
+  assert((await page.locator('.scenesRow [aria-current="true"]').innerText()).startsWith(name));
 }
 
 async function createScene(name) {

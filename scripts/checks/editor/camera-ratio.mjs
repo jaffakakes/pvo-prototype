@@ -36,7 +36,7 @@ try {
       await page.getByRole("button", { name: /^(Open editor|Start editing)$/ }).click();
       const preview = await page.locator(".pvVideo").evaluate(video => ({ fit: getComputedStyle(video).objectFit, width: video.parentElement.clientWidth, height: video.parentElement.clientHeight }));
       if (preview.fit !== "cover" || Math.abs(preview.width / preview.height - expected.width / expected.height) > .03) throw new Error(`${expected.ratio} preview mismatch: ${JSON.stringify(preview)}`);
-      await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
+      await page.getByRole("button", { name: "More", exact: true }).click();
       await page.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Export and create link" }).click();
       await page.locator('dialog[data-state="setup"]').getByRole("radiogroup", { name: "Export quality" })
         .getByRole("radio", { name: /^720p/ }).click();

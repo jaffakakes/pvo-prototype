@@ -192,10 +192,7 @@ async function exercise(phone) {
   try {
     await openProject(page);
     if (phone) {
-      await page
-        .getByRole("banner")
-        .getByRole("button", { name: "More", exact: true })
-        .click();
+      await page.getByRole("button", { name: "More", exact: true }).click();
       await page
         .getByRole("button", { name: "Export and create link", exact: true })
         .click();

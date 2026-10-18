@@ -49,7 +49,7 @@ export function createSheetDockChecks(page) {
         headerRegion: rect(header.closest("[data-visible]")),
         playbackRegion: rect(playback.closest("[data-visible]")),
         visibility: {
-          header: visible(header),
+          header: visible(header.querySelector("button")),
           preview: visible(preview),
           playback: visible(playback),
         },

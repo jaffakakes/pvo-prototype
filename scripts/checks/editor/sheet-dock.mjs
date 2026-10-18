@@ -76,8 +76,10 @@ try {
   await text.getByRole("button", { name: "Add", exact: true }).click();
   await page.locator(".toolBar").waitFor({ state: "visible" });
   assert(Math.abs((await geometry()).dock.height - original.dock.height) < 2);
+  const collapse = page.getByRole("button", { name: /^Collapse .* tools$/ });
+  if (await collapse.count()) await collapse.click();
   await page
-    .locator(".editorHead")
+    .locator(".toolBar")
     .getByRole("button", { name: "More", exact: true })
     .click();
   const more = page.getByRole("dialog", { name: "More", exact: true });

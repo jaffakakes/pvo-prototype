@@ -170,6 +170,8 @@ export function EditorWorkspace({
     panelHeight,
     dockThreadOpen || debugOpen || codeExpanded,
   );
+  const headerVisible =
+    !codeExpanded && !(dockThreadOpen && threadDock.compact);
   const style = {
     "--dock-height": `${panelHeight}px`,
     "--header-height": `${layout.header}px`,
@@ -231,10 +233,10 @@ export function EditorWorkspace({
     >
       <div
         className={styles.header}
-        data-visible={layout.headerVisible}
-        aria-hidden={!layout.headerVisible}
-        style={{ opacity: layout.headerOpacity }}
-        {...(!layout.headerVisible || assistantActive ? { inert: "" } : {})}
+        data-visible={headerVisible}
+        aria-hidden={!headerVisible}
+        style={{ opacity: headerVisible ? 1 : 0 }}
+        {...(!headerVisible || assistantActive ? { inert: "" } : {})}
       >
         <div ref={measurements.headerRef}>{header}</div>
       </div>

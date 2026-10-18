@@ -35,7 +35,7 @@ try {
     await tools.getByRole("button", { name: /^Collapse/ }).waitFor();
     await blankPreview();
     await main();
-    for (const selector of [".editorHead h1", ".transportTime", ".previewArea", ".toolBar"]) {
+    for (const selector of [".transport", ".transportTime", ".previewArea", ".toolBar"]) {
       await layer(kind).tap();
       const bounds = await page.locator(selector).boundingBox();
       await page.touchscreen.tap(bounds.x + 4, bounds.y + 4);

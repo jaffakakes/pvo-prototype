@@ -91,7 +91,7 @@ try {
         );
       }
       await page
-        .locator(".editorHead")
+        .locator(".toolBar")
         .getByRole("button", { name: "More", exact: true })
         .click();
       const more = page.getByRole("dialog", { name: "More", exact: true });

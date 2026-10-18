@@ -80,8 +80,10 @@ try {
         Math.abs((await assertSplit()).dock.height - original.dock.height) < 2,
         "Selecting a clip does not move the player or timeline",
       );
+      const collapse = page.getByRole("button", { name: /^Collapse .* tools$/ });
+      if (await collapse.count()) await collapse.click();
       await page
-        .locator(".editorHead")
+        .locator(".toolBar")
         .getByRole("button", { name: "More", exact: true })
         .click();
       const more = page.getByRole("dialog", { name: "More", exact: true });

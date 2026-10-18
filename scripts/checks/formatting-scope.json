@@ -221,5 +221,8 @@
   "tests/server/local-reply-repository.test.mjs",
   "editor/src/features/editor-layout/EditorWorkspace.tsx",
   "editor/src/features/editor-layout/workspaceGeometry.ts",
-  "editor/src/features/editor-layout/EditorWorkspace.module.css"
+  "editor/src/features/editor-layout/EditorWorkspace.module.css",
+  "editor/src/features/editor-layout/EditorHeader.tsx",
+  "editor/src/features/preview/Transport.tsx",
+  "editor/src/features/preview/Transport.module.css"
 ]

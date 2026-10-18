@@ -68,7 +68,7 @@ try {
     await interactive.getByRole("button", { name: /Add a note/ }).click();
     await interactive.getByRole("dialog", { name: "Note" }).getByRole("textbox", { name: "Text" }).fill("Server scene note");
     await interactive.getByRole("button", { name: "Done", exact: true }).click();
-    await interactive.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
+    await interactive.getByRole("button", { name: "More", exact: true }).click();
     await interactive.getByRole("dialog", { name: "More" })
       .getByRole("button", { name: "Export and create link", exact: true }).click();
     const interactiveDialog = interactive.locator("dialog[data-state]");

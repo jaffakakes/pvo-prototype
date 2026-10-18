@@ -53,3 +53,20 @@
   .guest span { padding: 5px 8px; border: 1px solid var(--q14); border-radius: 7px; background: var(--input); color: var(--text); font-size: 11px; }
   .ratio { display: block; padding: 9px 12px; border: 2px solid var(--q14); border-radius: 10px; font-size: 12px; }
 }
+
+.header.overlay {
+  position: relative;
+  height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  pointer-events: none;
+}
+.overlay .iconButton {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  color: var(--text);
+  background: var(--deep);
+  pointer-events: auto;
+}

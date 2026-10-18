@@ -68,7 +68,7 @@ try {
     assert.equal(await page.getByRole("separator", { name: /^Resize (timeline|editing panel)$/ }).count(), 0);
     const expanded = await geometry(page);
     assert(Math.abs(expanded.dock.height - expanded.preview.height - expanded.playback.height) < 2);
-    assert.equal(expanded.header.height, 56);
+    assert.equal(expanded.header.height, 0);
     assert.equal(expanded.playback.height, 52);
     assert(expanded.preview.bottom <= expanded.dock.y);
     await page.locator("[data-sheet-body]").evaluate(element => { element.scrollTop = element.scrollHeight; });
@@ -85,15 +85,15 @@ try {
       const { runComponentResponse } = await import("/src/features/preview/tryMode.ts");
       await runComponentResponse(state.components[0], { index: 0, outcome: { kind: "scene", sceneId: "branch" } });
     });
-    await page.getByRole("heading", { name: "Trying", exact: true }).waitFor();
-    await page.getByText("Tap like a viewer · Branch", { exact: true }).waitFor();
+    await page.getByRole("button", { name: "Stop trying", exact: true }).waitFor();
+    assert.equal(await page.evaluate(async () => (await import("/src/store.ts")).useCapture.getState().currentSceneId), "branch");
     await page.getByRole("button", { name: "Stop trying", exact: true }).click();
     await settle(page);
     assert(Math.abs((await geometry(page)).dock.height - expanded.dock.height) < 2, "Stop restores the sheet height after routing to another scene");
     assert.equal(await page.evaluate(async () => (await import("/src/store.ts")).useCapture.getState().sheet), "component");
     assert.equal(await page.getByRole("tab", { name: "Action", exact: true }).getAttribute("aria-selected"), "true", "Routed Try restores the same component tab");
     await page.getByRole("tab", { name: "Content", exact: true }).click();
-    await page.locator(".editorHead").getByRole("button", { name: "Try", exact: true }).focus();
+    await page.locator(".transport").getByRole("button", { name: "Try", exact: true }).focus();
     await page.keyboard.press("t");
     await page.getByRole("button", { name: "Stop trying", exact: true }).waitFor();
     await settle(page);

@@ -48,7 +48,7 @@ try {
   const shortArc = Number((await page.locator('.shutter svg circle').getAttribute('stroke-dasharray'))?.split(' ')[0]);
   if (shortArc >= 2 * Math.PI * 41 * .25) throw new Error('Short take incorrectly fills the ring');
   await page.getByRole("button", { name: "Open editor" }).click();
-  await page.getByRole("heading", { name: "Edit" }).waitFor();
+  await page.getByRole("button", { name: "Back to camera", exact: true }).waitFor();
   await page.screenshot({ path: resolve(tmpdir(), "capture-editor.png") });
   await page.locator(".tlClip").click();
   await page.getByRole("button", { name: "Collapse clip tools" }).waitFor();
@@ -58,7 +58,7 @@ try {
   await page.getByRole("button", { name: "Add", exact: true }).click();
   if (await page.locator(".textOverlay").count() !== 1) throw new Error("Text overlay missing");
   await page.getByRole("button", { name: "Collapse text tools" }).click();
-  await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
+  await page.getByRole("button", { name: "More", exact: true }).click();
   const more = page.getByRole("dialog", { name: "More" });
   const squareRatio = more.getByRole("group", { name: "Video ratio" }).getByRole("button", { name: "1:1", exact: true });
   await squareRatio.click();
@@ -73,7 +73,7 @@ try {
   await page.keyboard.press("Control+Shift+z");
   await page.waitForTimeout(350);
   if (await page.locator(".pvBox").evaluate(element => Math.abs(element.clientWidth - element.clientHeight)) > 2) throw new Error("Ratio redo failed");
-  await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
+  await page.getByRole("button", { name: "More", exact: true }).click();
   await page.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Export and create link" }).click();
   const exportDialog = page.locator("dialog[data-state]");
   await exportDialog.getByRole("button", { name: /Export and share/ }).click();
@@ -108,7 +108,7 @@ try {
     await real.locator(".tlClip").click();
     await real.getByRole("button", { name: "Replace" }).click();
     await real.locator('input[type="file"]').setInputFiles(process.argv[2]);
-    await real.getByRole("heading", { name: "Edit" }).waitFor();
+    await real.getByRole("button", { name: "Back to camera", exact: true }).waitFor();
     if (await real.locator(".tlClip").count() !== 1) throw new Error("Replace should keep one clip");
     const beforeTrim = await real.locator(".tlClip").evaluate(element => element.getBoundingClientRect().width);
     const clipBox = await real.locator(".tlClip").boundingBox();
@@ -146,7 +146,7 @@ try {
     await real.keyboard.press("Space");
     await real.keyboard.press("s");
     if (await real.locator(".tlClip").count() !== 2) throw new Error("Split did not create two clips");
-    await real.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
+    await real.getByRole("button", { name: "More", exact: true }).click();
     await real.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Export and create link" }).click();
     const realDialog = real.locator("dialog[data-state]");
     await realDialog.getByRole("button", { name: /Export and share/ }).click();
@@ -212,7 +212,7 @@ try {
   await camera.locator(".tlClip").click();
   await camera.getByRole("button", { name: "Delete" }).click();
   await camera.getByRole("button", { name: "Record" }).waitFor();
-  if (await camera.getByRole("heading", { name: "Edit" }).count()) throw new Error("Deleting the last clip did not return to camera");
+  if (await camera.getByRole("button", { name: "Back to camera", exact: true }).count()) throw new Error("Deleting the last clip did not return to camera");
   console.log("Permitted live camera and real MediaRecorder capture passed");
   await cameraContext.close();
   if (errors.length) throw new Error(errors.join("\n"));

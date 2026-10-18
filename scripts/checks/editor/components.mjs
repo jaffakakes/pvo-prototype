@@ -29,8 +29,8 @@ try {
   await page.goto(editorUrl, { waitUntil: "networkidle" });
   await recordDemo(1200);
   await page.getByRole("button", { name: "Open editor" }).click();
-  await page.getByRole("heading", { name: "Edit" }).waitFor();
-  const editorSummary = page.locator("header.editorHead p");
+  await page.getByRole("button", { name: "Back to camera", exact: true }).waitFor();
+  const editorSummary = page.locator('.scenesRow [aria-current="true"]');
   assert.ok(!(await editorSummary.textContent())?.includes("$"), "Editor subtitle should not contain template punctuation");
 
   // Fields-route authoring: create a Choice, change its copy, and link Option A to a new scene.
@@ -65,15 +65,14 @@ try {
   await page.getByRole("button", { name: "Try", exact: true }).click();
   await page.getByRole("button", { name: "Stop trying", exact: true }).waitFor({ timeout: 5000 });
   await page.getByRole("button", { name: "Go B", exact: true }).click();
-  await page.locator("header.editorHead[data-trying='true'] p")
-    .filter({ hasText: "Tap like a viewer · Scene A" }).waitFor({ timeout: 5000 });
+  await page.locator('header.editorHead[aria-label="Trying Scene A"]').waitFor({ timeout: 5000 });
   assert.equal(await page.getByRole("button", { name: "Show the whole scene tree" }).count(), 0);
   await page.getByRole("button", { name: "Stop trying", exact: true }).click();
-  await editorSummary.filter({ hasText: /^Main ·/ }).waitFor({ timeout: 5000 });
+  await editorSummary.filter({ hasText: /^Main/ }).waitFor({ timeout: 5000 });
   await page.getByRole("button", { name: "Try", exact: true }).waitFor({ timeout: 5000 });
 
   // Interactive export contains the Main scene and its branch.
-  await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
+  await page.locator(".toolBar").getByRole("button", { name: "More", exact: true }).click();
   await page.getByRole("dialog", { name: "More" })
     .getByRole("button", { name: "Export and create link", exact: true }).click();
   const exportDialog = page.locator("dialog[data-state]");

@@ -60,7 +60,7 @@ try {
   await page.locator('input[type="file"]').setInputFiles(videoFile);
   await page.getByRole("button", { name: /^(Open editor|Start editing)$/ }).click();
   await page.locator(".editorWorkspace").waitFor();
-  await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
+  await page.getByRole("button", { name: "More", exact: true }).click();
   await page.getByRole("button", { name: "Export and create link", exact: true }).click();
   const exportDialog = page.locator("dialog[data-state]");
   await exportDialog.waitFor();

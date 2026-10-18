@@ -99,7 +99,7 @@ try {
   assert.equal((await replies(box.id)).length, 0, "Try must leave the inbox empty");
   await creator.getByRole("button", { name: "Stop trying", exact: true }).click();
 
-  await creator.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
+  await creator.getByRole("button", { name: "More", exact: true }).click();
   await creator.getByRole("dialog", { name: "More" })
     .getByRole("button", { name: "Export and create link", exact: true }).click();
   const exportDialog = creator.locator("dialog[data-state]");
@@ -136,7 +136,7 @@ try {
     return response.ok && (await response.json()).replies.length === 1;
   }, box.id);
 
-  await creator.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
+  await creator.getByRole("button", { name: "More", exact: true }).click();
   const more = creator.getByRole("dialog", { name: "More" });
   await more.getByRole("button", { name: "Open replies" }).click();
   await more.getByRole("button").filter({ hasText: "Questions for video" }).click();
