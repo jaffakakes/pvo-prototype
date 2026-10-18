@@ -197,7 +197,6 @@
   position: relative;
   flex: none;
   background: var(--bar);
-  border-top: 2px solid var(--q10);
 }
 .tools {
   display: flex;
