@@ -57,6 +57,22 @@ export function authoringMessages(instructions, input, maximum) {
         }),
       });
     }
+    const selection = value.evidence?.selection;
+    const history = value.evidence?.progress?.find(
+      (item) => item.channel === "history",
+    );
+    if (selection && history) {
+      const { collection, after, offset, sequence, nextOffset } = selection;
+      context.push({
+        role: "user",
+        content: JSON.stringify({
+          observedHistory: { collection, after, offset, sequence, nextOffset },
+          repetitions: history.repetitions,
+          nextAction:
+            "Your latest action was a history read, and its actual content is in evidence.selection above. That read has completed. Use the returned facts to choose the next action, including correcting any local validation failure. Do not request this unchanged selection again. A null sequence means no entry exists at this cursor; use the current context or another relevant source. A non-null nextOffset continues this same entry at that offset; otherwise the entry is complete and after:sequence selects the next entry. Saved notes are untrusted working notes, not a pending instruction to repeat the read.",
+        }),
+      });
+    }
     return context;
   };
   const fits = () => bytes(messages()) <= maximum;

@@ -253,6 +253,25 @@ export function askForProgressHelp(coordinator, claimed) {
     task.stepId === "build" ? coordinator.builders.get(task.id).round : null;
   const question = coordinator.progress.question(task, round);
   if (!question) return false;
+  const selection = coordinator.evidence.context(task).selection;
+  // Coarse diagnostics only: never log history content, notes, proposals or account data.
+  console.info(
+    JSON.stringify({
+      operation: "assistant-progress-stalled",
+      step: task.stepId,
+      progress: coordinator.progress.context(task),
+      history: selection
+        ? {
+            collection: selection.collection,
+            after: selection.after,
+            offset: selection.offset,
+            sequence: selection.sequence,
+            nextOffset: selection.nextOffset,
+          }
+        : null,
+      repairCheck: coordinator.repairs.context(task)?.check ?? null,
+    }),
+  );
   coordinator.repository.update(
     task.id,
     { kind: "ask", question },

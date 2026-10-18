@@ -397,3 +397,60 @@ test("repair projection includes the complete attempt when it fits and marks a s
   assert.equal(input.evidence.repair.proposal.text, proposal);
   assert.equal(input.evidence.repair.proposal.truncated, false);
 });
+
+test("the latest history result follows older repair feedback and distinguishes exhausted, partial and complete entries", () => {
+  for (const [sequence, nextOffset] of [
+    [null, null],
+    [7, 4096],
+    [7, null],
+  ]) {
+    const value = {
+      input: { context: { components: [] }, examples: [] },
+      evidence: {
+        selection: {
+          kind: "history",
+          collection: "repairs",
+          after: 6,
+          offset: 0,
+          sequence,
+          nextOffset,
+          content: sequence === null ? "" : "Untrusted history fragment",
+          notes: "Old working notes asking to read again",
+        },
+        progress: [{ channel: "history", round: 9, repetitions: 2 }],
+        repair: {
+          check: "builder_response",
+          message: "Missing required field",
+          proposal: { text: '{"kind":"agreement"}', truncated: false },
+        },
+      },
+    };
+    const original = structuredClone(value);
+    const messages = authoringMessages("Trusted instructions", value, 8192);
+    assert.equal(messages[0].content, "Trusted instructions");
+    const result = JSON.parse(messages.at(-1).content);
+    assert.deepEqual(result.observedHistory, {
+      collection: "repairs",
+      after: 6,
+      offset: 0,
+      sequence,
+      nextOffset,
+    });
+    assert.equal(result.repetitions, 2);
+    assert.equal(messages.at(-1).role, "user");
+    assert.equal(
+      JSON.parse(messages.at(-2).content).localValidation.check,
+      "builder_response",
+    );
+    assert.ok(bytes(messages) <= 8192);
+    assert.deepEqual(value, original);
+    value.evidence.progress = [];
+    assert.equal(
+      authoringMessages("Trusted instructions", value, 8192)
+        .at(-1)
+        .content.includes('"observedHistory"'),
+      false,
+      "An older selection is not presented as the latest action after real work advances",
+    );
+  }
+});
