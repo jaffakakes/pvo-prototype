@@ -81,9 +81,8 @@ button.chip, .treeButton { cursor: pointer; }
 .branchCount { color: var(--violet); font-size: 9px; }
 .add { color: var(--text); font-weight: 800; }
 .add::before { background: transparent; border: 2px dashed var(--line-strong); }
-.treeButton { width: 44px; padding: 0; color: var(--violet); }
-.treeButton::before { inset: 8px 4px; }
-.treeButton[aria-expanded="true"]::before { border-color: var(--violet); }
+.treeButton { width: 44px; padding: 0; color: var(--text); }
+.treeButton::before { inset: 8px 4px; background: transparent; border: 2px dashed var(--line-strong); box-shadow: none; }
 
 .row button:focus-visible { outline: none; }
 .row button:focus-visible::before, .tree button:focus-visible {
