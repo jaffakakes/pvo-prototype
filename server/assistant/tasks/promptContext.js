@@ -84,6 +84,26 @@ export function authoringMessages(instructions, input, maximum) {
         }),
       });
     }
+    const clarification = (value.questions ?? []).reduce(
+      (latest, question) =>
+        question.answer &&
+        (!latest || question.answer.answeredAt >= latest.answer.answeredAt)
+          ? question
+          : latest,
+      null,
+    );
+    if (clarification)
+      context.push({
+        role: "user",
+        content: JSON.stringify({
+          creatorClarification: {
+            question: clarification.prompt,
+            answer: clarification.answer.value,
+          },
+          nextAction:
+            "This is the creator's latest saved clarification of the original goal. Apply it when correcting a rejected proposal or choosing the next action; an older attempted proposal is not authority to ignore this clarification. Preserve completed work and actual execution results; do not repeat successful effects. If the accepted immutable agreement conflicts with this goal, explain the concrete conflict instead of changing the agreement or claiming completion.",
+        }),
+      });
     return context;
   };
   const fits = () => bytes(messages()) <= maximum;
@@ -121,9 +141,16 @@ export function authoringMessages(instructions, input, maximum) {
     value.questions?.some((question) => question.answer !== null) &&
     !fits()
   ) {
-    const index = value.questions.findIndex(
-      (question) => question.answer !== null,
-    );
+    let index = -1;
+    for (let candidate = 0; candidate < value.questions.length; candidate++) {
+      const answer = value.questions[candidate].answer;
+      if (
+        answer !== null &&
+        (index < 0 ||
+          answer.answeredAt < value.questions[index].answer.answeredAt)
+      )
+        index = candidate;
+    }
     value.questions.splice(index, 1);
     value.omittedQuestions = (value.omittedQuestions ?? 0) + 1;
   }
