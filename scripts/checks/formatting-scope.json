@@ -254,5 +254,9 @@
   "editor/src/infrastructure/audio/recordingDuration.ts",
   "editor/src/infrastructure/audio/soundEffect.ts",
   "tests/editor-sound-effects.test.mjs",
-  "scripts/checks/editor/sound-tools.mjs"
+  "scripts/checks/editor/sound-tools.mjs",
+  "editor/src/ui/SheetShell.tsx",
+  "editor/src/ui/sheets/DockedSheet.module.css",
+  "editor/src/ui/sheets/SheetChrome.css",
+  "editor/src/features/component-authoring/SheetFrame.tsx"
 ]

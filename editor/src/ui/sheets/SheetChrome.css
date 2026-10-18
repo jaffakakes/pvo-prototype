@@ -30,17 +30,8 @@
 .sheetHead {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 12px;
-}
-.sheetHead h2 {
-  margin: 0;
-  font: 22px/1 var(--f-display);
-}
-.sheetHead p {
-  margin: 5px 0 0;
-  color: var(--muted);
-  font: 600 12px var(--f-ui);
 }
 .sheetClose {
   flex: none;

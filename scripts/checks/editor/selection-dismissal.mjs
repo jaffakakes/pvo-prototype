@@ -62,7 +62,7 @@ try {
   assert.equal(await page.getByRole("dialog").count(), 0, "Outside taps close the editing panel");
   await layer("video").tap();
   await tools.getByRole("button", { name: "Speed", exact: true }).tap();
-  await page.getByRole("heading", { name: "Speed", exact: true }).tap();
+  await page.locator(".sheetHead").tap({ position: { x: 4, y: 4 } });
   await main();
   for (const kind of ["text:", "component:"]) {
     await layer(kind).tap();

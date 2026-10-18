@@ -26,7 +26,7 @@ export function Sheets() {
       return <TextTimingSheet />;
     case "more":
       return (
-        <Shell title="More" sub="Editor and PVO settings">
+        <Shell title="More">
           <MoreSettings />
         </Shell>
       );

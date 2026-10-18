@@ -16,7 +16,6 @@ export function SoundSheet() {
   return (
     <Shell
       title={title}
-      sub="Pick a track for this video"
       actions={soundIndex > 0 ? <AnimateEntry music /> : undefined}
     >
       <SoundPicker

@@ -7,8 +7,8 @@ export function DiscardSheet() {
   return (
     <Shell
       title="Start over?"
-      sub={`This removes all ${state.clips.length} clips.`}
     >
+      <p>Discard all {state.clips.length} clips?</p>
       <div className={cx("discardGrid")}>
         <button onClick={() => state.patch({ sheet: null })}>Keep</button>
         <button onClick={() => state.reset()}>Discard</button>

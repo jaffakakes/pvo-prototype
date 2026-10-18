@@ -107,5 +107,5 @@ export function SharePanel({ artifact, url, renderMethod, downloadIssue, embedde
       </details>}
       <button type="button" className={styles.done} onClick={onDone} disabled={busy} data-share-done>Done</button>
     </div>;
-  return embedded ? panel : <Shell title="Share" sub="Your PVO is being shared as a link.">{panel}</Shell>;
+  return embedded ? panel : <Shell title="Share">{panel}</Shell>;
 }

@@ -13,10 +13,7 @@ export function TextTimingSheet() {
   if (!text) return null;
   const videoLength = total(s.clips);
   return (
-    <Shell
-      title="Text timing"
-      sub="Drag the text bar or its edges on the timeline"
-    >
+    <Shell title="Text timing">
       <div
         className={cx("textStyleControls")}
         onBlur={() => {

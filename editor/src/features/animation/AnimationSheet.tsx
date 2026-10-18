@@ -6,7 +6,6 @@ import { TrackingPointPicker } from "./TrackingPointPicker";
 import { useCapture } from "../../state/captureStore";
 import { Icon } from "../../ui/Icon";
 import { useSheetDock } from "../../ui/sheets/SheetDockContext";
-import { SOUNDS } from "../sound/catalog";
 import { AnimationRibbon } from "./AnimationRibbon";
 import { AnimationSlider, PositionPad } from "./AnimationValueControls";
 import { EasingChips } from "./EasingChips";
@@ -25,7 +24,7 @@ export function AnimationSheet() {
   useEffect(() => registerDismiss?.(close), [registerDismiss, close]);
   return <section className={styles.sheet} role="dialog" aria-label="Animate" data-animation-sheet>
     {target ? <AnimateLayer key={`${target.kind}:${"id" in target ? target.id : "music"}`} target={target} close={close} />
-      : <><header className={styles.header}><h2>Animate</h2><button type="button" onClick={close} aria-label="Close"><Icon name="close" size={17} /></button></header><p>Select a layer to animate.</p></>}
+      : <><header className={styles.header}><button className={styles.close} type="button" onClick={close} aria-label="Close"><Icon name="close" size={17} /></button></header><p>Select a layer to animate.</p></>}
   </section>;
 }
 
@@ -37,16 +36,12 @@ function AnimateLayer({ target, close }: { target: AnimationTarget; close(): voi
   const atPlayhead = shownRows.filter(row => row.keys.some(key => Math.abs(key.time - state.t) < .001));
   const position = shownRows.find(row => row.group === "position");
   const volume = shownRows.find(row => row.group === "volume");
-  const label = target.kind === "music" ? SOUNDS[state.sound]?.name ?? layer.label : layer.label;
-  const kind = target.kind === "text" ? "title" : target.kind === "clip" ? "video" : target.kind;
   const localTime = Math.max(0, state.t - layer.start);
   const selectedTime = selected?.time;
   const easeKey = selected ? selected : atPlayhead[0]?.keys.find(key => Math.abs(key.time - state.t) < .001);
   const easeGroup = selected?.group ?? atPlayhead[0]?.group;
   return <>
     <header className={styles.header}>
-      <span className={styles.icon}><Icon name="keyframe" size={20} /></span>
-      <div className={styles.title}><h2>Animate</h2><p>{label} · {kind} · {following.tracking ? `following ${following.tracking.label}` : `${formatKeyTime(layer.start).replace(/\.0$/, "")}–${formatKeyTime(layer.end).replace(/\.0$/, "")}`}</p></div>
       {!layer.audio && following.available && !following.tracking && <button className={styles.follow} type="button" disabled={blocked || following.phase !== "idle"} onClick={() => void following.pick()}>✦ Follow…</button>}
       <button className={styles.close} type="button" onClick={close} aria-label="Close Animate"><Icon name="close" size={17} /></button>
     </header>
