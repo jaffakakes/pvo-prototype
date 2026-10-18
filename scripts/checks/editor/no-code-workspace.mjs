@@ -58,7 +58,7 @@ try {
     await page.getByRole("button", { name: "Components", exact: true }).click();
     await settle(page);
     const opened = await geometry(page);
-    assert(Math.abs(opened.dock.height - height * 3 / 8) < 2, `${width}: editing panels keep the lower three eighths`);
+    assert(Math.abs(opened.dock.height - (height - opened.header.height) * 3 / 8) < 2, `${width}: editing panels keep the lower three eighths`);
     assert(opened.preview.height <= original.preview.height + 2, `${width}: compact timelines return unused panel space to the player`);
     await page.evaluate(async () => {
       const { useCapture } = await import("/src/store.ts");
@@ -68,7 +68,7 @@ try {
     assert.equal(await page.getByRole("separator", { name: /^Resize (timeline|editing panel)$/ }).count(), 0);
     const expanded = await geometry(page);
     assert(Math.abs(expanded.dock.height * 5 / 3 - expanded.preview.height - expanded.playback.height) < 2);
-    assert.equal(expanded.header.height, 0);
+    assert.equal(expanded.header.height, 64);
     assert.equal(expanded.playback.height, 52);
     assert(expanded.preview.bottom <= expanded.dock.y);
     await page.locator("[data-sheet-body]").evaluate(element => { element.scrollTop = element.scrollHeight; });

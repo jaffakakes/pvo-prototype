@@ -6,7 +6,9 @@ const editorUrl = process.env.EDITOR_URL || "http://127.0.0.1:5173/";
 const browser = await chromium.launch({
   executablePath:
     process.env.CHROME_PATH ||
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    (process.platform === "darwin"
+      ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+      : "C:/Program Files/Google/Chrome/Application/chrome.exe"),
   headless: true,
 });
 const context = await browser.newContext({

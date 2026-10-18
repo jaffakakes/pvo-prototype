@@ -30,7 +30,7 @@ const {
 );
 
 test("timeline and editing panels split the space below the project header", () => {
-  for (const height of [64, 180, 328, 568, 693, 844, 932, 1100]) {
+  for (const height of [0, 64, 180, 328, 568, 693, 844, 932, 1100]) {
     const measurements = { height, header: 64, playback: 52 };
     const panel = editorPanelHeight(measurements);
     const layout = workspaceGeometry(measurements, panel, false);
