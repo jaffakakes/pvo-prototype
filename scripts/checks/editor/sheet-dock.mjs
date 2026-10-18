@@ -53,7 +53,7 @@ try {
   await assertDocked(text, ratio);
   const draft = "Keep these words in the fixed panel";
   await text.getByRole("textbox", { name: "Text content" }).fill(draft);
-  await text.getByRole("button", { name: "Font", exact: true }).click();
+  await text.getByRole("button", { name: "Text fonts", exact: true }).click();
   await text.locator(".textControls").evaluate((el) => {
     el.scrollTop = el.scrollHeight;
   });

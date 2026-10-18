@@ -1,4 +1,4 @@
-.sheet:has(.textEditor) { border-radius: 0; }
+.sheet:has(.textEditor) { border-top: 0; border-radius: 0; }
 .textEditor {
   display: flex;
   flex-direction: column;
@@ -51,7 +51,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
 }
-.textPresets button {
+.textPresets > button {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -64,11 +64,11 @@
   border-radius: 0;
   cursor: pointer;
 }
-.textPresets button[aria-pressed="true"],
-.textPresets button:focus-visible {
+.textPresets > button[aria-pressed="true"],
+.textPresets > button:focus-visible {
   border-color: var(--pale);
 }
-.textPresets span {
+.textPresets > button > span {
   max-width: 100%;
   padding: 2px 4px;
   border-radius: 0;
@@ -76,7 +76,7 @@
   line-height: 1.2;
   text-align: center;
 }
-.textPresets small {
+.textPresets > button > small {
   color: var(--muted);
   font: 600 9px var(--f-ui);
 }
@@ -85,17 +85,6 @@
   flex-direction: column;
   gap: 15px;
 }
-.textPosition {
-  padding-bottom: 15px;
-  border-bottom: 1px solid var(--q12);
-}
-.textField {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font: 700 11px var(--f-ui);
-}
-.textField select,
 .textTiming input {
   min-width: 0;
   padding: 8px;
@@ -104,42 +93,6 @@
   border: 1px solid var(--q14);
   border-radius: 0;
   font: 600 12px var(--f-ui);
-}
-.textToggles {
-  display: flex;
-  gap: 5px;
-}
-.textToggles button {
-  flex: 1;
-  padding: 8px 4px;
-  background: var(--surface);
-  border: 1px solid var(--q14);
-  border-radius: 0;
-  font: 700 11px var(--f-ui);
-  cursor: pointer;
-}
-.textToggles button[aria-pressed="true"] {
-  background: var(--pale);
-  color: var(--pale-foreground);
-  border-color: var(--pale);
-}
-.textRange {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  font: 600 11px var(--f-ui);
-}
-.textRange span {
-  display: flex;
-  justify-content: space-between;
-}
-.textRange strong {
-  color: var(--pale);
-}
-.textRange input {
-  width: 100%;
-  margin: 0;
-  accent-color: var(--accent);
 }
 .textTiming {
   display: flex;
@@ -178,3 +131,22 @@
 .textSwatches button[aria-pressed="true"] span { box-shadow: 0 0 0 2px var(--text); }
 .textColourClose { display: grid; place-items: center; flex: none; width: 44px; height: 44px; padding: 0; border: 0; background: var(--q08); color: var(--text); cursor: pointer; }
 .textColourStrip button:focus-visible { outline: 2px solid var(--highlight); outline-offset: -2px; }
+
+.textCategories { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 0 2px 8px; color: var(--text); font: 700 12px var(--f-ui); }
+.textPresets [data-text-effect] { overflow: hidden; }
+.textPresets [data-text-effect="fadeIn"] span { animation: textEffectFadeIn 1.8s ease-out infinite; }
+.textPresets [data-text-effect="fadeOut"] span { animation: textEffectFadeOut 1.8s ease-in infinite; }
+.textPresets [data-text-effect="slideRight"] span { animation: textEffectSlide 1.8s ease-out infinite; }
+.textPresets [data-text-effect="pop"] span { animation: textEffectPop 1.8s ease-out infinite; }
+.textPresets [data-text-effect="jitter"] span { animation: textEffectJitter 1.8s linear infinite; }
+.textPresets [data-text-effect="flicker"] span { animation: textEffectFlicker 1.8s steps(1) infinite; }
+@keyframes textEffectFadeIn { 0% { opacity: 0; } 35%, 100% { opacity: 1; } }
+@keyframes textEffectFadeOut { 0%, 50% { opacity: 1; } 85%, 100% { opacity: 0; } }
+@keyframes textEffectSlide { 0% { opacity: 0; transform: translateX(-12px); } 35%, 100% { opacity: 1; transform: translateX(0); } }
+@keyframes textEffectPop { 0% { transform: scale(.5); } 20% { transform: scale(1.12); } 35%, 100% { transform: scale(1); } }
+@keyframes textEffectJitter { 0%, 35%, 100% { transform: translate(0); } 7% { transform: translate(2px, -1px); } 14% { transform: translate(-2px, 1px); } 21% { transform: translate(1px, -1px); } 28% { transform: translate(-1px, 1px); } }
+@keyframes textEffectFlicker { 0%, 14%, 28%, 100% { opacity: 1; } 7%, 21% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .textPresets [data-text-effect] span { animation: none; } }
+.textNoEffect { display: grid; place-items: center; width: 32px; height: 32px; padding: 0 8px 0 0; border: 0; border-right: 1px solid var(--q14); background: transparent; color: var(--muted); cursor: pointer; }
+.textNoEffect[aria-pressed="true"] { color: var(--text); }
+.textNoEffect:focus-visible { outline: 2px solid var(--highlight); }

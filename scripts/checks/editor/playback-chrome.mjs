@@ -52,7 +52,8 @@ try {
       assert.equal(await text.getByRole("tablist").count(), 0, "Text controls use an icon row");
       const entry = await text.getByRole("textbox", { name: "Text content", exact: true }).boundingBox();
       assert(entry && entry.height <= 46, "Text entry stays compact");
-      assert.equal(await text.locator(".textTools button").count(), 5);
+      assert.deepEqual(await text.locator(".textTools button").evaluateAll(buttons => buttons.map(button => button.getAttribute("aria-label"))), ["Text fonts", "Text colours", "Font styles", "Text alignment", "Text effects"]);
+      assert.equal(await text.evaluate(el => getComputedStyle(el.closest("[data-active]")).borderTopWidth), "0px", "The text panel has no top border");
       assert.equal(await controls.isVisible(), false, "Text entry hides playback");
       const focusState = await text.getByRole("textbox", { name: "Text content", exact: true }).evaluate(el => ({
         focused: document.activeElement === el,
@@ -99,12 +100,26 @@ try {
       }
       await text.getByRole("button", { name: "Close colours", exact: true }).click();
       assert.equal(await swatches.count(), 0);
+      await text.getByRole("button", { name: "Text fonts", exact: true }).click();
+      await text.getByRole("button", { name: "Use Georgia font", exact: true }).click();
+      await text.getByRole("button", { name: "More fonts", exact: true }).click();
+      assert.equal(await text.getByRole("textbox", { name: "Search web fonts", exact: true }).isVisible(), true, "The font tile opens the existing font library");
+      await text.getByRole("button", { name: "Close fonts", exact: true }).click();
+      await text.getByRole("button", { name: "Font styles", exact: true }).click();
+      assert.equal(await text.getByRole("group", { name: "Text styles", exact: true }).isVisible(), true);
+      assert.equal(await text.getByRole("group", { name: "Text fonts", exact: true }).count(), 0);
+      await text.getByRole("button", { name: "Text fonts", exact: true }).click();
+      assert.equal(await text.getByRole("button", { name: "Use Georgia font", exact: true }).getAttribute("aria-pressed"), "true", "Opening styles does not change the font");
+      await text.getByRole("button", { name: "Text effects", exact: true }).click();
+      await text.getByRole("button", { name: "Apply Pop effect", exact: true }).click();
       await finishTextEntry(text);
       await page.locator(".textBar").waitFor();
       await page.getByRole("button", { name: "Edit text", exact: true }).click();
       const editText = page.getByRole("dialog", { name: "Edit text", exact: true });
       await editText.getByRole("button", { name: "Text colours", exact: true }).click();
       assert.equal(await editText.getByRole("button", { name: "Red", exact: true }).getAttribute("aria-pressed"), "true", "The selected colour is saved with the text");
+      await editText.getByRole("button", { name: "Text effects", exact: true }).click();
+      assert.equal(await editText.getByRole("button", { name: "Apply Pop effect", exact: true }).getAttribute("aria-pressed"), "true", "The chosen effect is saved with the text");
       await finishTextEntry(editText);
       await undo.click();
       assert.equal(await page.locator(".textBar").count(), 0);

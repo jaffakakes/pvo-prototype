@@ -192,6 +192,7 @@
   min-height: 0;
 }
 .sheetPane:has(:global(.textEditor)) {
+  border-top: 0;
   border-radius: 0;
   transition: none;
 }

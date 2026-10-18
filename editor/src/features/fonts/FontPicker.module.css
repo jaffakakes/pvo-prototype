@@ -30,3 +30,10 @@
 .actions { margin-top: 10px; }
 .actions a { font-size: 11px; color: #ffa0c5; }
 .library .error { color: #ffb8bc; margin-top: 10px; }
+
+.tile { margin: 0; }
+.tile[data-open="true"] { grid-column: 1 / -1; }
+.tile .heading { display: block; }
+.tile .heading > button { display: grid; place-items: center; width: 100%; min-height: 60px; padding: 6px 4px; border: 1px solid var(--q14); border-radius: 0; background: var(--surface); color: var(--text); font: 700 14px/1.2 var(--f-ui); text-align: center; }
+.tile .heading > button:focus-visible { outline-color: var(--highlight); }
+.tile .heading > button:hover:not(:disabled) { border-color: var(--q14); }

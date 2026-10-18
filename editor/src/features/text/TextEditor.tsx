@@ -1,19 +1,23 @@
 import { useRef, useState } from "react";
 import {
   DEFAULT_TEXT_STYLE,
-  TEXT_FONTS,
-  TEXT_PRESETS,
   textStyle,
   type TextStyle,
 } from "../../../../packages/pvo-text-runtime/index.js";
 import type { TextOverlay } from "../../domain/project/model";
 import { useCapture } from "../../state/captureStore";
 import { cx } from "../../styles";
-import { LayerPositionControls } from "../overlay-position/LayerPositionControls";
 import { Icon } from "../../ui/Icon";
-import { FontPicker } from "../fonts/FontPicker";
 import { TextColourStrip } from "./TextColourStrip";
 import { TextToolIcon } from "./TextToolIcon";
+import { TextFontGrid } from "./TextFontGrid";
+import { TextStyleGrid } from "./TextStyleGrid";
+import { TextEffectGrid } from "./TextEffectGrid";
+import {
+  matchingTextEffect,
+  textEffectAnimation,
+  type TextEffect,
+} from "../../domain/text/effects";
 
 export function TextEditor() {
   const s = useCapture();
@@ -21,7 +25,8 @@ export function TextEditor() {
   const [draftStyle, setDraftStyle] = useState<TextStyle>({
     ...DEFAULT_TEXT_STYLE,
   });
-  const [tool, setTool] = useState("designs");
+  const [tool, setTool] = useState("font");
+  const [draftEffect, setDraftEffect] = useState<TextEffect>("none");
   const [inputFocused, setInputFocused] = useState(true);
   const editKey = useRef<string | null>(null);
   const input = useRef<HTMLTextAreaElement>(null);
@@ -36,38 +41,6 @@ export function TextEditor() {
     if (text) update({ style: next }, key);
     else setDraftStyle(next);
   };
-  const range = (
-    label: string,
-    key:
-      | "size"
-      | "strokeWidth"
-      | "spacing"
-      | "lineHeight"
-      | "rotation"
-      | "opacity",
-    min: number,
-    max: number,
-    step = 1,
-  ) => (
-    <label className={cx("textRange")}>
-      <span>
-        {label}
-        <strong>{style[key]}</strong>
-      </span>
-      <input
-        aria-label={label}
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={style[key]}
-        onChange={(e) => changeStyle({ [key]: Number(e.target.value) }, key)}
-        onPointerUp={() => {
-          editKey.current = null;
-        }}
-      />
-    </label>
-  );
   return (
     <div
       className={cx("textEditor")}
@@ -80,7 +53,7 @@ export function TextEditor() {
         <TextColourStrip
           value={style.fill}
           onChange={(fill) => changeStyle({ fill })}
-          onClose={() => setTool("designs")}
+          onClose={() => setTool("font")}
         />
       )}
       <div className={cx("textEntry")}>
@@ -120,7 +93,21 @@ export function TextEditor() {
             aria-label="Done"
             onClick={() => {
               if (!text && s.draft.trim()) {
-                s.addText(s.draft.trim(), draftStyle);
+                const id = s.addText(s.draft.trim(), draftStyle);
+                if (draftEffect !== "none") {
+                  const current = useCapture.getState();
+                  const added = current.texts.find((item) => item.id === id)!;
+                  current.updateText(
+                    id,
+                    {
+                      animation: textEffectAnimation(
+                        draftEffect,
+                        added.end - added.start,
+                      ),
+                    },
+                    false,
+                  );
+                }
                 s.patch({ draft: "" });
               }
               s.patch({ sheet: null });
@@ -138,7 +125,7 @@ export function TextEditor() {
       >
         <button
           type="button"
-          aria-label="Font"
+          aria-label="Text fonts"
           aria-pressed={tool === "font"}
           onClick={() => {
             input.current?.blur();
@@ -151,21 +138,18 @@ export function TextEditor() {
           type="button"
           aria-label="Text colours"
           aria-pressed={tool === "colour"}
-          onClick={() => setTool(tool === "colour" ? "designs" : "colour")}
+          onClick={() => setTool(tool === "colour" ? "font" : "colour")}
         >
           <span className={cx("textColourWheel")} aria-hidden="true" />
         </button>
         <button
           type="button"
-          aria-label="Text background"
-          aria-pressed={style.background !== "transparent"}
-          onClick={() =>
-            changeStyle({
-              background:
-                style.background === "transparent" ? "#111117" : "transparent",
-              box: false,
-            })
-          }
+          aria-label="Font styles"
+          aria-pressed={tool === "style"}
+          onClick={() => {
+            input.current?.blur();
+            setTool("style");
+          }}
         >
           <TextToolIcon name="background" />
         </button>
@@ -197,140 +181,39 @@ export function TextEditor() {
         </button>
         <button
           type="button"
-          aria-label="Text designs"
-          aria-pressed={tool === "designs"}
+          aria-label="Text effects"
+          aria-pressed={tool === "effects"}
           onClick={() => {
             input.current?.blur();
-            setTool("designs");
+            setTool("effects");
           }}
         >
           <TextToolIcon name="designs" />
         </button>
       </div>
       <div className={cx("textControls")} hidden={inputFocused}>
-        {tool !== "font" && (
-          <>
-            <div className={cx("textPresets")}>
-              {TEXT_PRESETS.map((preset) => (
-                <button
-                  key={preset.id}
-                  aria-label={`Apply ${preset.name} design`}
-                  aria-pressed={
-                    !style.fontAsset &&
-                    (Object.keys(preset.style) as (keyof TextStyle)[]).every(
-                      (key) => style[key] === preset.style[key],
-                    )
-                  }
-                  onClick={() =>
-                    changeStyle({ ...preset.style, fontAsset: undefined })
-                  }
-                >
-                  <span
-                    style={{
-                      fontFamily: TEXT_FONTS[preset.style.font],
-                      fontStyle: preset.style.italic ? "italic" : "normal",
-                      fontWeight: preset.style.bold ? 700 : 400,
-                      color:
-                        preset.style.fill === "#ffffff" &&
-                        preset.style.background === "transparent" &&
-                        !preset.style.shadow &&
-                        !preset.style.strokeWidth
-                          ? "var(--text)"
-                          : preset.style.fill,
-                      background: preset.style.background,
-                      WebkitTextStroke: preset.style.strokeWidth
-                        ? ".6px #000"
-                        : undefined,
-                      textShadow: preset.style.shadow
-                        ? "1px 2px 2px #000"
-                        : "none",
-                    }}
-                  >
-                    {preset.sample}
-                  </span>
-                  <small>{preset.name}</small>
-                </button>
-              ))}
-            </div>
-          </>
+        {(tool === "font" || tool === "colour") && (
+          <TextFontGrid style={style} onChange={changeStyle} />
         )}
-        {tool === "font" && (
-          <div className={cx("textStyleControls")}>
-            <FontPicker
-              key={text?.id ?? "draft"}
-              value={style.fontAsset}
-              onChange={(fontAsset) => changeStyle({ fontAsset })}
-            />
-            {text && (
-              <div className={cx("textPosition")}>
-                <LayerPositionControls
-                  key={text.id}
-                  target={{ kind: "text", id: text.id }}
-                  x={text.x}
-                  y={text.y}
-                />
-              </div>
-            )}
-            <label className={cx("textField")}>
-              Font
-              <select
-                aria-label="Text font"
-                value={style.font}
-                onChange={(e) =>
-                  changeStyle({
-                    font: e.target.value as TextStyle["font"],
-                    fontAsset: undefined,
-                  })
-                }
-              >
-                {Object.entries({
-                  sans: "Open Sauce",
-                  display: "Peace Sans",
-                  serif: "Georgia",
-                  mono: "Typewriter",
-                  condensed: "Impact",
-                }).map(([id, label]) => (
-                  <option key={id} value={id}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className={cx("textToggles")}>
-              {(["bold", "italic", "underline"] as const).map((key) => (
-                <button
-                  key={key}
-                  aria-label={key}
-                  aria-pressed={style[key]}
-                  onClick={() => changeStyle({ [key]: !style[key] })}
-                >
-                  {key === "bold" ? (
-                    <b>B</b>
-                  ) : key === "italic" ? (
-                    <i>I</i>
-                  ) : (
-                    <u>U</u>
-                  )}
-                </button>
-              ))}
-              {(["left", "center", "right"] as const).map((align) => (
-                <button
-                  key={align}
-                  aria-label={`Align ${align}`}
-                  aria-pressed={style.align === align}
-                  onClick={() => changeStyle({ align })}
-                >
-                  {align}
-                </button>
-              ))}
-            </div>
-            {range("Font size", "size", 8, 64)}
-            {range("Outline width", "strokeWidth", 0, 5, 0.1)}
-            {range("Letter spacing", "spacing", -1, 6, 0.1)}
-            {range("Line spacing", "lineHeight", 0.8, 2, 0.1)}
-            {range("Rotation", "rotation", -180, 180)}
-            {range("Opacity", "opacity", 0, 1, 0.05)}
-          </div>
+        {tool === "style" && (
+          <TextStyleGrid style={style} onChange={changeStyle} />
+        )}
+        {tool === "effects" && (
+          <TextEffectGrid
+            value={
+              text
+                ? matchingTextEffect(text.animation, text.end - text.start)
+                : draftEffect
+            }
+            onChange={(effect) => {
+              if (text)
+                update({
+                  animation: textEffectAnimation(effect, text.end - text.start),
+                  animationTracking: undefined,
+                });
+              else setDraftEffect(effect);
+            }}
+          />
         )}
       </div>
     </div>
