@@ -269,13 +269,13 @@ async function run(width) {
     assert.equal(await clips(page).count(), 1);
     await saved(page, firstId);
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
-    await page.getByRole("dialog", { name: "I want to save this edit", exact: true }).waitFor();
+    await page.getByRole("dialog", { name: "Ready to export", exact: true }).waitFor();
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Export", exact: true }).click();
     const exportDialog = page.getByRole("dialog", { name: "Export", exact: true });
     await exportDialog.waitFor();
     await exportDialog.getByRole("button", { name: /Export and share/ }).click();
-    const auth = page.getByRole("dialog", { name: "I want to save this edit", exact: true });
+    const auth = page.getByRole("dialog", { name: "Ready to export", exact: true });
     await auth.waitFor();
     const popup = page.waitForEvent("popup");
     await auth.getByRole("button", { name: "Continue with Google" }).click();

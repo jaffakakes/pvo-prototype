@@ -140,7 +140,7 @@ async function checkPopup(phone) {
   page.setDefaultTimeout(15000);
   page.on("pageerror", error => errors.push(error.message));
   const dialog = page.locator("dialog[data-auth-step]");
-  const gate = page.getByRole("dialog", { name: "I want to save this edit", exact: true });
+  const gate = page.getByRole("dialog", { name: "Ready to export", exact: true });
   let trigger;
   const open = async () => {
     trigger = phone

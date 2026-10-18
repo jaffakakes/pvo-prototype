@@ -126,7 +126,7 @@ function OpenAuthDialog() {
       ? "Create account"
       : step === "signin"
         ? "Welcome back"
-        : "I want to save this edit";
+        : "Ready to export";
   const description =
     step === "signup"
       ? "Your edit stays saved in this browser while you create your account."

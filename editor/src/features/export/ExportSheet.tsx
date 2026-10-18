@@ -176,7 +176,7 @@ export function ExportSheet() {
               tabIndex={-1}
             >
               {mode === "gate" ? (
-                "I want to save this edit"
+                "Ready to export"
               ) : mode === "picker" ? (
                 "Choose cover"
               ) : mode === "exporting" ? (

@@ -138,7 +138,7 @@ try {
 
   await account.getByRole("button", { name: "Sign out" }).click();
   const signIn = page.locator("dialog[data-auth-step]");
-  await page.getByRole("dialog", { name: "I want to save this edit", exact: true }).waitFor();
+  await page.getByRole("dialog", { name: "Ready to export", exact: true }).waitFor();
   await signIn.waitFor();
   await page.evaluate(() => {
     const clerk = window.__clerk;
