@@ -38,7 +38,29 @@ test("independent Node validation checks the requested action as well as the ret
   assert.equal((await run()).caseResult.failure.code, "mismatch");
   source.files[0].content =
     'export function execute() { return { request: { connection: "invented", input: { number: 7 } } }; }';
-  assert.equal((await run()).caseResult.status, "failed");
+  assert.match((await run()).caseResult.failure.detail, /connection binding/);
+  source.files[0].content =
+    'export function execute() { return { request: { connection: "issue", input: { number: 7 } }, state: null }; }';
+  assert.match((await run()).caseResult.failure.detail, /return only/);
+  source.files[0].content =
+    'export function execute() { return { request: { connection: "issue", input: { number: 8 } } }; }';
+  assert.deepEqual((await run()).caseResult.failure, {
+    step: 0,
+    code: "mismatch",
+    detail:
+      "Generated request differs from the independent expected account action.",
+  });
+  source.files[0].content =
+    'export function execute() { throw Object.assign(new Error("private guest text"), {code: "account_reply_shape"}); }';
+  assert.equal(
+    (await run()).caseResult.failure.detail,
+    "Generated code did not return a valid bounded reply.",
+  );
+  source.files[0].content =
+    'export function execute() { return { request: { connection: "issue", input: { number: 7 } } }; }';
+  delete agreement.connections;
+  delete agreement.cases[0].steps[0].requests;
+  assert.match((await run()).caseResult.failure.detail, /saved agreement/);
 });
 
 test("AI adapter agreements require same-task documented research and current account permissions", () => {

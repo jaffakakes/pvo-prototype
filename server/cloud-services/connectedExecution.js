@@ -28,16 +28,31 @@ export function executeConnectedOperation({
         const reply = await execute(input, current);
         current.throwIfAborted();
         if (!reply || !Object.hasOwn(reply, "request")) return reply;
-        object(reply, ["request"], "Account request reply");
+        try {
+          object(reply, ["request"], "Account request reply");
+        } catch {
+          throw Object.assign(
+            new Error("An account request reply must contain only request."),
+            { code: "account_reply_shape" },
+          );
+        }
         if (index === ADAPTER_LIMITS.calls)
           throw new Error(
             "This operation exceeded its agreed account-call capacity.",
           );
-        const request = parseAccountRequest(
-          agreement,
-          invocation.operation,
-          reply.request,
-        );
+        let request;
+        try {
+          request = parseAccountRequest(
+            agreement,
+            invocation.operation,
+            reply.request,
+          );
+        } catch {
+          throw Object.assign(
+            new Error("The account request does not match its agreement."),
+            { code: "account_request_invalid" },
+          );
+        }
         const result = invoke
           ? await invoke(request, index, current)
           : exampleAccountResult(agreement, invocation.operation, request);

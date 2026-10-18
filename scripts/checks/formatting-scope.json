@@ -656,6 +656,7 @@
   "tests/assistant-task-server/research-requests.test.mjs",
   "tests/assistant-task-server/research.test.mjs",
   "tests/assistant-task-server/results.test.mjs",
+  "tests/assistant-task-server/review-context.test.mjs",
   "tests/assistant-task-server/runner-current.test.mjs",
   "tests/assistant-task-server/runner.test.mjs",
   "tests/assistant-task-server/spending.test.mjs",
