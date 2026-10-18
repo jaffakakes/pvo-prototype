@@ -325,7 +325,7 @@
 }
 .preview :global(.pvBox) {
   border: 0;
-  border-radius: 0;
+  border-radius: 16px;
   box-shadow: none;
 }
 .preview :global(.pvTag) {
