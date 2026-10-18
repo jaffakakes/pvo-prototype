@@ -40,18 +40,6 @@ export function createSheetDockChecks(page) {
       const playback = element(".transport");
       const workspace = element(".editorWorkspace");
       return {
-        naturalTimelineHeight: (() => {
-          const timeline = element(".tl");
-          const style = getComputedStyle(timeline);
-          return (
-            element(".tl > .timelineContent").getBoundingClientRect().height +
-            parseFloat(style.borderTopWidth) +
-            parseFloat(style.borderBottomWidth) +
-            (document.querySelector(".scenesRow")?.getBoundingClientRect()
-              .height ?? 0) +
-            element(".toolBar").getBoundingClientRect().height
-          );
-        })(),
         app: rect(element(".app")),
         previewArea: rect(element(".previewArea")),
         preview: rect(preview),
@@ -113,10 +101,10 @@ export function createSheetDockChecks(page) {
     );
     assert(
       Math.abs(
-        layout.dock.height * 3 -
+        (layout.dock.height * 5) / 3 -
           (layout.previewArea.height + layout.transport.height),
       ) < 2,
-      "Player and tools must use a fixed 75/25 split",
+      "Player and tools must use a fixed 62.5/37.5 split",
     );
     assert.equal(
       layout.previewVisible,

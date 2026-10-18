@@ -225,6 +225,5 @@
   "editor/src/features/editor-layout/EditorHeader.tsx",
   "editor/src/features/preview/Transport.tsx",
   "editor/src/features/preview/Transport.module.css",
-  "editor/src/ui/Icon.tsx",
-  "editor/src/features/editor-layout/useTimelineContentHeight.ts"
+  "editor/src/ui/Icon.tsx"
 ]

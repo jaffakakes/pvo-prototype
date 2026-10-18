@@ -1,15 +1,9 @@
 type Measurements = { height: number; header: number; playback: number };
 const clampUnit = (value: number) => Math.max(0, Math.min(1, value));
 
-/** Editing tools use one quarter; short timelines return unused space to playback. */
-export function editorPanelHeight(
-  measurements: Measurements,
-  contentHeight?: number,
-) {
-  const quarter = Math.max(0, measurements.height - measurements.header) / 4;
-  return contentHeight && contentHeight > 0
-    ? Math.min(quarter, contentHeight)
-    : quarter;
+/** Split the workspace five eighths for playback and three eighths for tools. */
+export function editorPanelHeight(measurements: Measurements) {
+  return (Math.max(0, measurements.height - measurements.header) * 3) / 8;
 }
 
 /** Space above the panel collapses in order: preview, playback, then navigation. */

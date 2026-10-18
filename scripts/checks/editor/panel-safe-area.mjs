@@ -48,7 +48,7 @@ try {
         Math.abs(
           Math.max(
             0,
-            layout.dock.height * 3 -
+            (layout.dock.height * 5) / 3 -
               layout.previewArea.height -
               layout.transport.height,
           ),

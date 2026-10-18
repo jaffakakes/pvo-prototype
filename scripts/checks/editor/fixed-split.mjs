@@ -38,16 +38,11 @@ try {
       const layout = await geometry();
       assert(
         Math.abs(
-          layout.dock.height -
-            Math.min(
-              (layout.previewArea.height +
-                layout.transport.height +
-                layout.dock.height) /
-                4,
-              layout.naturalTimelineHeight,
-            ),
+          (layout.dock.height * 5) / 3 -
+            layout.previewArea.height -
+            layout.transport.height,
         ) < 2,
-        "Timeline fits its tracks and uses at most one quarter",
+        "Player and lower region use a fixed 62.5/37.5 split",
       );
       assert.equal(
         await page
@@ -75,6 +70,14 @@ try {
         .getByRole("button", { name: "Open editor", exact: true })
         .click();
       const original = await assertSplit();
+      if (height >= 600) {
+        const tracks = await page.locator(".tl").boundingBox();
+        const tools = await page.locator(".toolBar").boundingBox();
+        assert(
+          Math.abs(tracks.y + tracks.height - tools.y) < 2,
+          "Natural-height tracks stay next to the bottom toolbar",
+        );
+      }
       const ratio = original.preview.width / original.preview.height;
       const rowHeight = await page
         .locator(".tlClip")
@@ -114,7 +117,7 @@ try {
       assert(
         taller.dock.height <=
           original.dock.height +
-            (taller.app.height - original.app.height) / 4 +
+            ((taller.app.height - original.app.height) * 3) / 8 +
             2,
       );
       assert.equal(

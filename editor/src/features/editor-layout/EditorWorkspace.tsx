@@ -12,7 +12,6 @@ import { clearSelection } from "../../state/editing/clearSelection";
 import { PanelResizeHandle } from "./PanelResizeHandle";
 import { usePanelResize } from "./usePanelResize";
 import { useWorkspaceMeasurements } from "./useWorkspaceMeasurements";
-import { useTimelineContentHeight } from "./useTimelineContentHeight";
 import { useSheetKeyboard } from "./useSheetKeyboard";
 import { useThreadDock } from "./useThreadDock";
 import { useOutsideSelection } from "./useOutsideSelection";
@@ -72,8 +71,6 @@ export function EditorWorkspace({
   onDismiss,
 }: Props) {
   const measurements = useWorkspaceMeasurements();
-  const timelineRef = useRef<HTMLDivElement>(null);
-  const timelineContentHeight = useTimelineContentHeight(timelineRef);
   const [expandedCodeId, setExpandedCodeId] = useState<string | null>(null);
   const [assistantTarget, setAssistantTarget] = useState<HTMLDivElement | null>(
     null,
@@ -156,12 +153,9 @@ export function EditorWorkspace({
     }),
     [codeExpanded, setCodeExpanded, registerDismiss, assistantActive],
   );
-  // Tracks use their natural height, capped at the editing panel's quarter.
+  // Playback keeps five eighths; the lower region uses the remaining three eighths.
   // Measurements already follow visualViewport, including the on-screen keyboard.
-  let panelHeight = editorPanelHeight(
-    measurements,
-    open ? undefined : timelineContentHeight,
-  );
+  let panelHeight = editorPanelHeight(measurements);
   if (dockThreadOpen) panelHeight = threadDock.resize.height;
   else if (debugOpen) panelHeight = debugResize.height;
   else if (trying) panelHeight = 0;
@@ -289,9 +283,7 @@ export function EditorWorkspace({
             ? { inert: "" }
             : {})}
         >
-          <div ref={timelineRef} className={styles.timelineContent}>
-            {timeline}
-          </div>
+          <div className={styles.timelineContent}>{timeline}</div>
         </div>
         <div
           className={styles.sheetPane}

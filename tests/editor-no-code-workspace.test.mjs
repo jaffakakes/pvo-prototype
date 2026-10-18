@@ -29,7 +29,7 @@ const {
   `data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString("base64")}`
 );
 
-test("timeline and editing panels leave three quarters for playback with overlay navigation", () => {
+test("timeline and editing panels leave five eighths for playback with overlay navigation", () => {
   for (const height of [0, 180, 328, 568, 693, 844, 932, 1100]) {
     const measurements = { height, header: 0, playback: 52 };
     const panel = editorPanelHeight(measurements);
@@ -38,7 +38,7 @@ test("timeline and editing panels leave three quarters for playback with overlay
       layout.header + layout.preview + layout.playback + panel,
       height,
     );
-    assert.equal(layout.preview + layout.playback, panel * 3);
+    assert.equal(layout.preview + layout.playback, (panel * 5) / 3);
     assert.ok(panel >= 0);
     if (height >= 328) {
       assert.equal(layout.header, 0);
@@ -50,24 +50,13 @@ test("timeline and editing panels leave three quarters for playback with overlay
   }
 });
 
-test("short timelines return unused space to the player while tall timelines stay capped", () => {
-  const measurements = { height: 977, header: 0, playback: 52 };
-  assert.equal(editorPanelHeight(measurements, 214), 214);
-  assert.equal(editorPanelHeight(measurements, 500), 977 / 4);
-  assert.equal(editorPanelHeight(measurements, 0), 977 / 4);
-  assert.equal(
-    editorPanelHeight({ ...measurements, height: 390 }, 214),
-    390 / 4,
-  );
-});
-
 test("keyboard and orientation height changes recalculate the same fixed split", () => {
   const measurements = { height: 844, header: 0, playback: 52 };
   const original = editorPanelHeight(measurements);
   const keyboard = editorPanelHeight({ ...measurements, height: 608 });
   const landscape = editorPanelHeight({ ...measurements, height: 390 });
-  assert.equal(original - keyboard, 236 / 4);
-  assert.equal(landscape, 390 / 4);
+  assert.equal(original - keyboard, (236 * 3) / 8);
+  assert.equal(landscape, (390 * 3) / 8);
   assert.equal(editorPanelHeight(measurements), original);
 });
 
