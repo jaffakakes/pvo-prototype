@@ -225,24 +225,21 @@ html[data-theme="light"] .cameraBrand img {
   cursor: pointer;
 }
 .dock {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 7px;
+  width: 44px;
+  margin-top: 6px;
   padding: 0;
   background: none;
   border: 0;
   cursor: pointer;
-  animation: rsPop 0.35s var(--spring) both;
 }
 .dockThumb {
   position: relative;
-  width: 66px;
-  height: 90px;
+  width: 44px;
+  height: 60px;
   overflow: visible;
   border: 2.5px solid #000;
   border-radius: 14px;
@@ -261,13 +258,13 @@ html[data-theme="light"] .cameraBrand img {
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 5px 0 6px;
+  padding: 3px 0 4px;
   background: var(--accent);
   color: var(--button-primary-text);
   border-top: 2px solid #000;
   border-radius: 0 0 11px 11px;
   text-align: center;
-  font: 800 11px/1 var(--f-ui);
+  font: 800 9px/1 var(--f-ui);
   letter-spacing: 0.3px;
 }
 .dockCount {
@@ -287,6 +284,8 @@ html[data-theme="light"] .cameraBrand img {
   font: 800 11px var(--f-ui);
 }
 .dockCaption {
+  width: 68px;
+  text-align: center;
   font: 700 10px var(--f-ui);
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
 }

@@ -323,6 +323,40 @@ export function Camera() {
               </button>
               <RatioMenu place="rail" />
             </div>
+            {!!last && !s.recording && s.replacing == null && (
+              <button
+                className={cx("dock")}
+                onClick={() =>
+                  s.patch({
+                    screen: "editor",
+                    recordingInto: null,
+                    sel: -1,
+                    t: 0,
+                  })
+                }
+                aria-label="Open editor"
+              >
+                <span
+                  className={cx("dockThumb")}
+                  style={{ background: last.color }}
+                >
+                  {last.url && (
+                    <video
+                      src={`${last.url}#t=${last.in.toFixed(1)}`}
+                      muted
+                      playsInline
+                      style={{
+                        objectFit: last.fit,
+                        transform: last.mirror ? "scaleX(-1)" : undefined,
+                      }}
+                    />
+                  )}
+                  <span className={cx("dockEdit")}>EDIT</span>
+                  <span className={cx("dockCount")}>{count}</span>
+                </span>
+                <span className={cx("dockCaption")}>Open editor</span>
+              </button>
+            )}
           </div>
           {recordingScene && (
             <div className={cx("sceneBanner")}>
@@ -349,40 +383,6 @@ export function Camera() {
                 <Icon name="close" size={12} />
               </button>
             </div>
-          )}
-          {!!last && !s.recording && s.replacing == null && (
-            <button
-              className={cx("dock")}
-              onClick={() =>
-                s.patch({
-                  screen: "editor",
-                  recordingInto: null,
-                  sel: -1,
-                  t: 0,
-                })
-              }
-              aria-label="Open editor"
-            >
-              <span
-                className={cx("dockThumb")}
-                style={{ background: last.color }}
-              >
-                {last.url && (
-                  <video
-                    src={`${last.url}#t=${last.in.toFixed(1)}`}
-                    muted
-                    playsInline
-                    style={{
-                      objectFit: last.fit,
-                      transform: last.mirror ? "scaleX(-1)" : undefined,
-                    }}
-                  />
-                )}
-                <span className={cx("dockEdit")}>EDIT</span>
-                <span className={cx("dockCount")}>{count}</span>
-              </span>
-              <span className={cx("dockCaption")}>Open editor</span>
-            </button>
           )}
           <ShutterControls
             cameraPending={cameraPending}
