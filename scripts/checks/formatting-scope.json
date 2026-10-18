@@ -24,6 +24,7 @@
   "editor/src/features/assistant/thread/AssistantThread.tsx",
   "editor/src/features/assistant/useAssistantSession.ts",
   "editor/src/features/capture/Camera.tsx",
+  "editor/src/features/capture/CameraIcon.tsx",
   "editor/src/features/capture/CameraFlash.module.css",
   "editor/src/features/capture/cameraFlash.ts",
   "editor/src/features/capture/useCamera.ts",

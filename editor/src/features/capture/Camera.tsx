@@ -5,7 +5,7 @@ import { sceneRouteLabel } from "../../domain/scenes/references";
 import { useWideLayout } from "../../infrastructure/viewport";
 import { useCapture } from "../../state/captureStore";
 import { cx } from "../../styles";
-import { Icon } from "../../ui/Icon";
+import { CameraIcon as Icon } from "./CameraIcon";
 import { RatioMenu } from "../../ui/RatioMenu";
 import { fmt } from "../../ui/formatTime";
 import { SOUNDS } from "../sound/catalog";

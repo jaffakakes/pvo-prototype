@@ -1,7 +1,7 @@
 import { dur, total } from "../../domain/clips/timing";
 import { useCapture } from "../../state/captureStore";
 import { cx } from "../../styles";
-import { Icon } from "../../ui/Icon";
+import { CameraIcon as Icon } from "./CameraIcon";
 import {
   RING_CIRCUMFERENCE,
   ringArcs,
