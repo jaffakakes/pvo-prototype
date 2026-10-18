@@ -75,9 +75,14 @@
 .close::before {
   position: absolute;
   inset: 4px;
-  border: 1.5px solid var(--text);
+  border: 2px solid var(--outline);
   border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 3px 3px 0 var(--button-shadow);
   content: "";
+}
+.close svg {
+  position: relative;
 }
 .search {
   display: flex;
@@ -219,7 +224,7 @@
   border-radius: 10px;
   background: var(--button-primary-bg);
   color: var(--button-primary-text);
-  box-shadow: 2px 2px 0 var(--button-shadow);
+  box-shadow: 3px 3px 0 var(--button-shadow);
   font: 800 13px var(--f-ui);
   cursor: pointer;
 }
@@ -280,10 +285,11 @@
   min-height: 44px;
   min-width: 52px;
   padding: 0 12px;
-  border: 0;
+  border: 2px solid var(--ink);
   border-radius: 10px;
   background: #fffdfb;
   color: var(--ink);
+  box-shadow: 3px 3px 0 rgb(255 253 251 / 35%);
   font: 800 14px var(--f-ui);
   cursor: pointer;
 }
