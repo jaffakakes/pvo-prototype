@@ -224,5 +224,6 @@
   "editor/src/features/editor-layout/EditorWorkspace.module.css",
   "editor/src/features/editor-layout/EditorHeader.tsx",
   "editor/src/features/preview/Transport.tsx",
-  "editor/src/features/preview/Transport.module.css"
+  "editor/src/features/preview/Transport.module.css",
+  "editor/src/ui/Icon.tsx"
 ]

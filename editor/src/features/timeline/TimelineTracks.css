@@ -220,7 +220,7 @@
   justify-content: center;
   gap: 4px;
   background: var(--button-secondary-bg);
-  border: 1px solid var(--button-border);
+  border: 0;
   border-radius: 6px;
   font: 700 10px var(--f-ui);
   cursor: pointer;

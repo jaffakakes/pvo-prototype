@@ -355,19 +355,8 @@ export function Timeline() {
                     ? "text"
                     : "components"
               }
-              size={12}
+              size={20}
             />
-            <span>
-              {id === "video" ? (
-                <>
-                  Video<small>Main track</small>
-                </>
-              ) : id.startsWith("text:") ? (
-                "Text"
-              ) : (
-                "Components"
-              )}
-            </span>
           </button>
         ))}
         {s.audioClips.map((clip, index) => (
@@ -389,8 +378,7 @@ export function Timeline() {
               })
             }
           >
-            <Icon name="music" size={12} />
-            <span>Audio {index + 1}</span>
+            <Icon name="music" size={20} />
           </button>
         ))}
         {s.sound > 0 && (
@@ -402,8 +390,7 @@ export function Timeline() {
             onPointerDown={(event) => event.stopPropagation()}
             onClick={() => s.patch({ sheet: "sound" })}
           >
-            <Icon name="music" size={12} />
-            <span>Music</span>
+            <Icon name="music" size={20} />
           </button>
         )}
         {layerDrag.active && (
