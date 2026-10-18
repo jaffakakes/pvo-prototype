@@ -16,6 +16,14 @@ import {
 } from "../../../packages/pvo-assistant/tasks/index.js";
 import { hasCurrentClaim } from "../tasks/executionClaim.js";
 
+function connectionPrompt({ setup, purpose }) {
+  if (setup.provider === "github")
+    return `Connect GitHub repository ${setup.repository}. ${purpose}`;
+  if (setup.provider === "agentmail")
+    return `Approve agent email sending to ${setup.recipient}. ${purpose}`;
+  return `Connect Resend sender ${setup.from} for ${setup.recipient}. ${purpose}`;
+}
+
 /** Saved decisions and tool cursor. The task coordinator supplies the enclosing SQL transaction. */
 export class TaskBuilders {
   constructor(sql, tasks) {
@@ -67,7 +75,7 @@ export class TaskBuilders {
     ) {
       const prompt =
         decision.kind === "connect_account"
-          ? `Connect ${decision.setup.provider === "github" ? `GitHub repository ${decision.setup.repository}` : `Resend sender ${decision.setup.from} for ${decision.setup.recipient}`}. ${decision.purpose}`
+          ? connectionPrompt(decision)
           : decision.kind === "manual_alternative"
             ? `Use this alternative? ${decision.proposal.preparedOutcome}`
             : decision.prompt;
