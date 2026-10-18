@@ -77,6 +77,8 @@ The local beta server on port 4173 also offers private FFmpeg render jobs for el
 
 `npm run check:browser -- editor export-dialog export-rendering cover-layout` requires Vite, generated WASM and Chrome. The dialog check covers desktop/phone settings, cover picking, cancellation and completed playback. The rendering check covers WebP layers/fonts, source/result animation clocks and media/URL cleanup. `cover-layout` compares the actual native DOM and canvas geometry at two sizes, including text, number, yes/no, collected-reply, styled and applied-font forms; it also checks the reply disclosure is painted. These representative fixtures guard shared behavior without claiming pixel identity for every authored style.
 
+`npm run check:browser -- editor sound-browser sound-effects-browser sound-tools` checks the shared music/effects browser, audition/apply separation, saved/recent lists, search, pause/resume/end/replay, preview cleanup, effect insertion and Undo/Redo, and the voiceover lifecycle. These checks use the Vite editor and Chrome; `PVO_EDITOR_ARTIFACTS` saves responsive music/effects screenshots.
+
 `npm run check:browser -- editor audio-extraction` verifies explicit audio extraction, independent movement/trimming, undo/cancel, original-audio muting, saved media, mobile deletion, and the audible timing of exported video including audio beyond the last video frame. It requires Vite, Chrome and `ffmpeg` on PATH; the test generates its own tone video and inspects the encoded audio.
 
 The checks use `playwright-core` with an installed Chrome. Set `CHROME_PATH` when the browser is not at the Windows default path. This does not install a browser.

@@ -246,7 +246,6 @@
   "editor/src/features/sound/VoiceoverControls.tsx",
   "editor/src/features/sound/useAudioPlayback.ts",
   "editor/src/features/sound/SoundEffectsSheet.tsx",
-  "editor/src/features/sound/useSoundPreview.ts",
   "editor/src/features/sound/SoundEffectsList.tsx",
   "editor/src/features/sound/VoiceoverControls.module.css",
   "editor/src/domain/audio/soundEffects.ts",
@@ -272,5 +271,8 @@
   "editor/src/features/auth/AuthDialog.module.css",
   "editor/src/features/auth/AuthProviders.tsx",
   "editor/src/features/auth/AuthProviders.module.css",
-  "editor/src/features/sound/SoundBrowser.tsx"
+  "editor/src/features/sound/SoundBrowser.tsx",
+  "editor/src/features/sound/useSoundEffectPreview.ts",
+  "editor/src/features/sound/addSoundEffect.ts",
+  "scripts/checks/editor/sound-effects-browser.mjs"
 ]

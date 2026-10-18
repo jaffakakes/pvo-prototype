@@ -28,7 +28,7 @@ export function Editor() {
   const sheetOpen = useCapture(state => state.sheet !== null && state.sheet !== "export" && state.sheet !== "voiceover" && !state.playheadPick);
   const voiceover = useCapture(state => state.sheet === "voiceover");
   const textSheet = useCapture(state => state.sheet === "text");
-  const soundSheet = useCapture(state => state.sheet === "sound");
+  const soundSheet = useCapture(state => state.sheet === "sound" || state.sheet === "soundEffects");
   const animationSheet = useCapture(state => state.sheet === "animation");
   const componentSheet = useCapture(state => state.sheet === "component" || state.sheet === "components");
   const selectedComponent = useCapture(state => state.sheet === "component" ? state.selComp : null);

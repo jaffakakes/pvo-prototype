@@ -112,7 +112,7 @@ try {
     ),
     "0px",
   );
-  await effects.getByRole("button", { name: "Add Pop", exact: true }).click();
+  await effects.getByRole("button", { name: "Use sound", exact: true }).click();
   let state = await current();
   assert.equal(state.audio[0].start, 2.5);
   assert.equal(state.audio[0].name, "Pop");
