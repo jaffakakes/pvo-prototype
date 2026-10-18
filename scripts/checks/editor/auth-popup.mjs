@@ -70,15 +70,8 @@ async function checkPopup(phone) {
     if (path === "/api/auth/session" && request.method() === "GET") {
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
         available: true, supabaseAvailable: true, supabasePublishableKey: publishableKey, supabaseUrl,
-        canLinkEmail: false, emailLinked: false,
         user: signedIn ? { id: "popup-editor", name: "Popup tester" } : null,
       }) });
-    }
-    if (path === "/api/auth/google/start" && request.method() === "GET") {
-      googleCalls++;
-      signedIn = true;
-      return route.fulfill({ status: 200, contentType: "text/html",
-        body: `<script>window.opener.postMessage({type:"pvo:auth:complete",ok:true},${JSON.stringify(origin)});window.close()</script>` });
     }
     if (path === "/api/auth/supabase/exchange" && request.method() === "POST") {
       assert.equal(request.headers().authorization, `Bearer ${provider.session.access_token}`);
@@ -210,7 +203,8 @@ async function checkPopup(phone) {
     await gate.getByRole("button", { name: "Continue with Google", exact: true }).click();
     await popup;
     await dialog.waitFor({ state: "hidden" });
-    assert.equal(googleCalls, 1);
+    assert.equal(provider.googleCalls, 1);
+    assert.equal(emailCalls, 2, "Google uses the same verified Supabase exchange as email");
     assert.equal(renderCalls, 0, "Standalone Google sign-in must not start an export");
     assert.equal(await page.locator("dialog[data-state]").count(), 0,
       "Standalone Google sign-in must return directly to editing");

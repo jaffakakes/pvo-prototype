@@ -53,8 +53,6 @@ const session = user => ({
   available: true,
   supabaseAvailable: false,
   supabasePublishableKey: null, supabaseUrl: null,
-  canLinkEmail: false,
-  emailLinked: false,
   user,
 });
 

@@ -35,10 +35,10 @@ export async function workerFixture(overrides = {}, { createSessions = true, out
         headers: { Origin: ORIGIN, ...(session ? { Cookie: session } : {}), ...headers }, ...rest });
     }
     if (createSessions) {
-      cookie = (await createAccountSession({ sub: "fixture-google-subject-1", name: "First creator" },
-        { DB: db, SESSION_SECRET: SECRET })).split(";", 1)[0];
-      otherCookie = (await createAccountSession({ sub: "fixture-google-subject-2", name: "Second creator" },
-        { DB: db, SESSION_SECRET: SECRET })).split(";", 1)[0];
+      cookie = (await createAccountSession({ issuer: "https://restyle-test.supabase.co/auth/v1", sub: "fixture-google-subject-1", name: "First creator" },
+        { DB: db, SESSION_SECRET: SECRET })).cookie.split(";", 1)[0];
+      otherCookie = (await createAccountSession({ issuer: "https://restyle-test.supabase.co/auth/v1", sub: "fixture-google-subject-2", name: "Second creator" },
+        { DB: db, SESSION_SECRET: SECRET })).cookie.split(";", 1)[0];
     }
     return { mf, db, bucket, cookie, otherCookie, request, close: () => mf.dispose() };
   } catch (error) {

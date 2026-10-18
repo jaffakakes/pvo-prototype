@@ -13,7 +13,7 @@ function session(email) {
 /** Mock Auth HTTP responses while exercising the actual Supabase SDK and native forms. */
 export async function installSupabaseFixture(context, existingEmail = null) {
   const state = { session: existingEmail ? session(existingEmail) : null, confirmationRequired: false,
-    failPassword: false, recoveryCalls: 0, passwordUpdates: 0, signups: 0, blockPassword: null };
+    failPassword: false, googleCancelled: false, googleCalls: 0, recoveryCalls: 0, passwordUpdates: 0, signups: 0, blockPassword: null };
   if (state.session) await context.addInitScript(({ key, value }) => localStorage.setItem(key, JSON.stringify(value)),
     { key: storageKey, value: state.session });
   await context.route(`${supabaseUrl}/auth/v1/**`, async route => {
@@ -22,12 +22,22 @@ export async function installSupabaseFixture(context, existingEmail = null) {
     const body = request.postDataJSON();
     const reply = (value, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(value) });
     if (request.method() === "OPTIONS") return reply({});
+    if (url.pathname.endsWith("/authorize")) {
+      if (url.searchParams.get("provider") !== "google" || !url.searchParams.get("code_challenge"))
+        throw new Error("Google must use Supabase with PKCE");
+      state.googleCalls++;
+      if (state.googleCancelled) return route.fulfill({ status: 200, contentType: "text/html", body: "<script>window.close()</script>" });
+      const callback = new URL(url.searchParams.get("redirect_to"));
+      if (callback.searchParams.get("auth") !== "google") throw new Error("Wrong Google callback");
+      callback.searchParams.set("code", "fixture-google");
+      return route.fulfill({ status: 302, headers: { Location: callback.href } });
+    }
     if (url.pathname.endsWith("/token")) {
       if (url.searchParams.get("grant_type") === "pkce" && !body.code_verifier)
         return reply({ msg: "Missing PKCE verifier" }, 400);
       if (state.blockPassword) await state.blockPassword;
       if (state.failPassword) return reply({ msg: "Invalid login credentials" }, 400);
-      state.session = session(body?.email || "recovery@example.test");
+      state.session = session(body?.email || (body?.auth_code === "fixture-google" ? "google@example.test" : "recovery@example.test"));
       return reply(state.session);
     }
     if (url.pathname.endsWith("/signup")) {

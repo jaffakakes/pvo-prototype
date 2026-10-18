@@ -8,7 +8,7 @@ const errors = [];
 page.on("pageerror", error => errors.push(error.message));
 async function signedInForExport(target) {
   await target.route("**/api/auth/session", route => route.fulfill({ contentType: "application/json",
-    body: JSON.stringify({ available: true, supabaseAvailable: false, supabasePublishableKey: null, supabaseUrl: null, canLinkEmail: false, emailLinked: false, user: { id: "capture-check", name: "Capture check" } }) }));
+    body: JSON.stringify({ available: true, supabaseAvailable: false, supabasePublishableKey: null, supabaseUrl: null, user: { id: "capture-check", name: "Capture check" } }) }));
 }
 try {
   await signedInForExport(page);

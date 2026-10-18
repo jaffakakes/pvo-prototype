@@ -1,24 +1,4 @@
 import { randomId } from "../identity.js";
-import { HttpError } from "../http.js";
-
-const ACCOUNT_CONFLICT =
-  "This email sign-in is already connected to another Restyle account.";
-
-export async function accountIdentityStatus(userId, issuer, db) {
-  if (!userId) return { hasGoogle: false, emailLinked: false };
-  const identities = await db
-    .prepare(
-      `SELECT
-    EXISTS(SELECT 1 FROM provider_identities WHERE provider = 'google' AND user_id = ?) AS google_identity,
-    EXISTS(SELECT 1 FROM supabase_identities WHERE issuer = ? AND user_id = ?) AS email_identity`,
-    )
-    .bind(userId, issuer, userId)
-    .first();
-  return {
-    hasGoogle: Boolean(identities.google_identity),
-    emailLinked: Boolean(identities.email_identity),
-  };
-}
 
 async function linkedUser(identity, db) {
   return db
@@ -56,26 +36,4 @@ export async function accountForSupabase(identity, db) {
     if (!winner) throw error;
     return winner;
   }
-}
-
-export async function linkSupabaseAccount(identity, user, db) {
-  const existing = await linkedUser(identity, db);
-  if (existing) {
-    if (existing.id !== user.id) throw new HttpError(409, ACCOUNT_CONFLICT);
-    return user;
-  }
-  try {
-    await db
-      .prepare(
-        `INSERT INTO supabase_identities (issuer, subject, user_id)
-      VALUES (?, ?, ?)`,
-      )
-      .bind(identity.issuer, identity.sub, user.id)
-      .run();
-  } catch (error) {
-    // Both the identity and the owning user are unique within one Supabase instance.
-    const winner = await linkedUser(identity, db);
-    if (winner?.id !== user.id) throw new HttpError(409, ACCOUNT_CONFLICT);
-  }
-  return user;
 }

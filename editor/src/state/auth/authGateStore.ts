@@ -11,8 +11,6 @@ type AuthGateState = {
   supabaseAvailable: boolean;
   supabasePublishableKey: string | null;
   supabaseUrl: string | null;
-  canLinkEmail: boolean;
-  emailLinked: boolean;
   user: AccountUser | null;
   error: string | null;
   connecting: boolean;
@@ -24,8 +22,6 @@ export const useAuthGate = create<AuthGateState>(() => ({
   available: false,
   supabaseAvailable: false,
   supabasePublishableKey: null, supabaseUrl: null,
-  canLinkEmail: false,
-  emailLinked: false,
   user: null,
   error: null,
   connecting: false,
@@ -37,9 +33,8 @@ let signOutRequest: Promise<void> | null = null;
 let pendingAccount: { promise: Promise<boolean>; resolve(value: boolean): void } | null = null;
 
 function currentSession(): AccountSession {
-  const { available, user, supabaseAvailable, supabasePublishableKey, supabaseUrl, canLinkEmail, emailLinked } = useAuthGate.getState();
-  return { available, user: signOutRequest ? null : user, supabaseAvailable, supabasePublishableKey, supabaseUrl,
-    canLinkEmail: signOutRequest ? false : canLinkEmail, emailLinked: signOutRequest ? false : emailLinked };
+  const { available, user, supabaseAvailable, supabasePublishableKey, supabaseUrl } = useAuthGate.getState();
+  return { available, user: signOutRequest ? null : user, supabaseAvailable, supabasePublishableKey, supabaseUrl };
 }
 
 function resolvePendingAccount(signedIn: boolean) {
@@ -79,8 +74,6 @@ export function refreshAccountSession(): Promise<AccountSession> {
       available: session.available,
       supabaseAvailable: session.supabaseAvailable,
       supabasePublishableKey: session.supabasePublishableKey, supabaseUrl: session.supabaseUrl,
-      canLinkEmail: session.canLinkEmail,
-      emailLinked: session.emailLinked,
       user: session.user,
       error: null,
       connecting: session.user ? false : state.connecting,
@@ -97,8 +90,6 @@ export function refreshAccountSession(): Promise<AccountSession> {
     useAuthGate.setState({
       phase: "error",
       user: null,
-      canLinkEmail: false,
-      emailLinked: false,
       error: error instanceof Error ? error.message : "Couldn't check your account. Try again.",
       connecting: false,
     });
@@ -151,7 +142,7 @@ async function performSignOut(): Promise<void> {
   }
   clearAccountPublication();
   syncThemeAccount(null);
-  useAuthGate.setState({ user: null, canLinkEmail: false, emailLinked: false,
+  useAuthGate.setState({ user: null,
     error: null, connecting: false, phase: "ready" });
 }
 

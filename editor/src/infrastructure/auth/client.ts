@@ -5,8 +5,6 @@ export type AccountSession = {
   supabaseAvailable: boolean;
   supabasePublishableKey: string | null;
   supabaseUrl: string | null;
-  canLinkEmail: boolean;
-  emailLinked: boolean;
 };
 
 function accountSession(value: unknown): AccountSession {
@@ -15,13 +13,9 @@ function accountSession(value: unknown): AccountSession {
   const user = response.user;
   if (typeof response.available !== "boolean"
     || typeof response.supabaseAvailable !== "boolean"
-    || typeof response.canLinkEmail !== "boolean"
-    || typeof response.emailLinked !== "boolean"
     || (response.supabasePublishableKey !== null && typeof response.supabasePublishableKey !== "string")
     || (response.supabaseUrl !== null && (typeof response.supabaseUrl !== "string" || !/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(response.supabaseUrl)))
     || (response.supabaseAvailable && (!response.supabasePublishableKey || !response.supabaseUrl))
-    || (response.canLinkEmail && (!response.supabaseAvailable || response.emailLinked || !user))
-    || (response.emailLinked && !user)
     || (user !== null && (
     !user || typeof user !== "object" || typeof (user as Record<string, unknown>).id !== "string"
     || typeof (user as Record<string, unknown>).name !== "string"
@@ -31,8 +25,6 @@ function accountSession(value: unknown): AccountSession {
     user: user as AccountUser | null,
     supabaseAvailable: response.supabaseAvailable,
     supabasePublishableKey: response.supabasePublishableKey, supabaseUrl: response.supabaseUrl,
-    canLinkEmail: response.canLinkEmail,
-    emailLinked: response.emailLinked,
   } as AccountSession;
 }
 
@@ -59,7 +51,6 @@ export async function getAccountSession(): Promise<AccountSession> {
   const response = await request("/api/auth/session", { method: "GET" });
   if ([404, 501].includes(response.status)) return {
     available: false, user: null, supabaseAvailable: false, supabasePublishableKey: null, supabaseUrl: null,
-    canLinkEmail: false, emailLinked: false,
   };
   if (!response.ok) throw new Error("Couldn't check your account. Try again.");
   if (!response.headers.get("Content-Type")?.includes("application/json"))
@@ -72,29 +63,10 @@ export async function logOutAccount(): Promise<void> {
   if (!response.ok) throw new Error("Couldn't sign out. Try again.");
 }
 
-export function googleSignInUrl(): string {
-  return new URL("/api/auth/google/start", location.origin).href;
-}
-
 export async function exchangeSupabaseSession(token: string): Promise<void> {
   const response = await request("/api/auth/supabase/exchange", {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!response.ok) throw new Error("Couldn't finish email sign-in. Try again.");
-}
-
-export async function linkSupabaseSession(token: string, expectedUserId: string): Promise<void> {
-  const response = await request("/api/auth/supabase/link", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ expectedUserId }),
-  });
-  if (response.status === 409)
-    throw new Error("This email account is already connected to another Restyle account.");
-  if (response.status === 412)
-    throw new Error("Your Restyle account changed. Sign in with the original Google account and try again.");
-  if (response.status === 401 || response.status === 403)
-    throw new Error("Sign in with Google again before connecting email.");
-  if (!response.ok) throw new Error("Couldn't connect email sign-in. Try again.");
+  if (!response.ok) throw new Error("Couldn't finish sign-in. Try again.");
 }

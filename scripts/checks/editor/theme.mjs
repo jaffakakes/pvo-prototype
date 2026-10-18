@@ -67,8 +67,6 @@ await context.route(`${origin}/api/auth/**`, route => {
         available: true,
         supabaseAvailable: false,
         supabasePublishableKey: null, supabaseUrl: null,
-        canLinkEmail: false,
-        emailLinked: false,
         user: activeUser,
       }) });
   }

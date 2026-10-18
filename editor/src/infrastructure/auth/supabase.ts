@@ -55,5 +55,5 @@ export async function signOutSupabase(
 ): Promise<void> {
   const client = await getSupabase(url, publishableKey);
   const { error } = await client.auth.signOut({ scope: "local" });
-  if (error) throw new Error("Couldn't clear email sign-in. Try again.");
+  if (error) throw new Error("Couldn't clear the sign-in session. Try again.");
 }

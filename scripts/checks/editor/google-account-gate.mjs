@@ -36,15 +36,8 @@ async function checkAccountGate(phone) {
         available: true,
         supabaseAvailable: true,
         supabasePublishableKey: publishableKey, supabaseUrl,
-        canLinkEmail: false,
-        emailLinked: false,
         user: signedIn ? { id: "editor-1", name: "Editor tester" } : null,
       });
-    }
-    if (path === "/api/auth/google/start" && request.method() === "GET") {
-      signedIn = true;
-      return route.fulfill({ status: 200, contentType: "text/html",
-        body: `<script>window.opener.postMessage({type:"pvo:auth:complete",ok:true},${JSON.stringify(origin)});window.close()</script>` });
     }
     if (path === "/api/auth/supabase/exchange" && request.method() === "POST") {
       assert.equal(request.headers().authorization, `Bearer ${provider.session.access_token}`);
@@ -136,9 +129,10 @@ async function checkAccountGate(phone) {
     await verifyGate();
     assert(checks > checksBeforeStart, "Every export checks the live account, including after expiry");
     await gate.getByRole("button", { name: "Continue with email" }).click();
+    await gate.getByRole("button", { name: "Use another email" }).click();
     await fillEmailForm(gate, "export@example.test");
     await waitForRender(2);
-    assert.equal(emailExchanges, 1);
+    assert.equal(emailExchanges, 2, "Both Google and email exchange Supabase sessions");
     assert.deepEqual(errors, []);
     console.log(`${phone ? "Phone" : "Desktop"} export account gate passed: settings first, dismissal, Google/email resume, session expiry, and retained quality.`);
   } finally {

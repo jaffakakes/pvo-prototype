@@ -31,8 +31,8 @@ scripts/
 | `npm run deploy:built` | Preserve live immutable editor assets for open sessions, then deploy the already-built output, verify its release and announce it. |
 | `node scripts/build/editor-icons.mjs` | Regenerate the editor's Home Screen icons from its existing brand mark; needs installed Chrome. |
 | `npm run build:language` | Generate only `packages/pvo-language/pkg/` with wasm-pack. |
-| `npm run dev` | Full build, then serve `dist/` on loopback port 4173 (`PVO_PORT` overrides it), including local Google auth routes. |
-| `npm run dev:editor` | Build the language, then run Vite on port 5173; Vite alone does not provide Google auth routes. |
+| `npm run dev` | Full build, then serve `dist/` on loopback port 4173 (`PVO_PORT` overrides it), including local Supabase account routes. |
+| `npm run dev:editor` | Build the language, then run Vite on port 5173; Vite alone does not provide account exchange routes. |
 | `npm run check` | Check JavaScript syntax, dependency boundaries, adopted-file formatting and Node behavior tests. |
 | `npm test` | Recursively run `tests/**/*.test.mjs`, including `tests/sdk/` and `tests/server/`; default concurrency is four files. |
 | `npm run format` / `npm run check:format` | Write/check pinned Prettier 3.9.9 formatting for the explicit `scripts/checks/formatting-scope.json` list. |
@@ -48,21 +48,11 @@ Rust, the `wasm32-unknown-unknown` target, and wasm-pack are needed for language
 
 The application build includes public About, Privacy and Terms pages from [`public/`](../public/) for `https://getrestyle.app`, but excludes demo, PVO documentation pages and demo media. To prepare development/demo fixtures, use `node scripts/build/share-demo.mjs <source.pvo> <output.pvo> <preview.mp4>`; it requires ffmpeg. See the [Cloudflare publishing guide](../docs/engineering/cloudflare-publishing.md) for Google account, D1/R2, DNS verification and OAuth Branding setup.
 
-## Local Google sign-in
+## Local Supabase sign-in
 
-`npm run dev` serves the built app at `http://127.0.0.1:4173/` and implements the same `/api/auth/session`, `/api/auth/google/start`, `/api/auth/google/callback` and `/api/auth/logout` contract as the Worker. Create a separate Google OAuth **Web application** client for local development. In Google Cloud, register the exact authorized redirect URI `http://127.0.0.1:4173/api/auth/google/callback`. If `PVO_PORT` changes, register that port's exact callback instead. The local client requests only `openid profile`. See [Google's web-server OAuth setup](https://developers.google.com/identity/protocols/oauth2/web-server).
+The beta uses the existing Stickr Supabase project for both email/password and Google. Put its public project URL and `sb_publishable_…` key in the private `supabase.json` configuration described in the [account setup](../docs/engineering/cloudflare-publishing.md#local-account-adapter). No Google client secret is needed by the Restyle server. Register the exact confirmation, recovery and Google callback URLs for the beta origin in Supabase. Keep Stickr's existing callbacks and Google provider configuration.
 
-Run `mkdir -p .wrangler/local-beta`, then create `.wrangler/local-beta/google-client.json` with the following fields, using your own client details:
-
-```json
-{"clientId":"YOUR_LOCAL_WEB_CLIENT_ID","clientSecret":"YOUR_LOCAL_WEB_CLIENT_SECRET"}
-```
-
-Make its directory private with `chmod 700 .wrangler/local-beta` and the file private with `chmod 600 .wrangler/local-beta/google-client.json` before starting the server. The server refuses a client file that is readable by other users. The `.wrangler/` directory is ignored by Git; keep the client secret out of source, `dist/`, and browser variables. Setting both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in the server process environment overrides the file. `PVO_LOCAL_DATA_DIR` selects a different private data directory when needed.
-
-The loopback server creates its own private account/session store in that directory and uses HttpOnly, SameSite=Lax cookies lasting seven days. It runs over HTTP on `127.0.0.1`, so these local cookies omit the production cookie's `Secure` attribute. Without the local client, `GET /api/auth/session` reports `available: false`; editing still works, but export waits for account services. This local static server does not provide publication uploads or R2 storage. For those, use the Worker with its configured D1/R2 bindings and exact HTTPS origin. `npm run dev:editor` serves only Vite and cannot complete live Google sign-in by itself.
-
-For local Supabase email/password configuration, see the [local account setup](../docs/engineering/cloudflare-publishing.md#local-account-adapter).
+See [accounts and storage](../docs/engineering/accounts-and-storage.md) for local account files, production D1/R2 storage and the schema.
 
 ## Browser suites
 
@@ -106,7 +96,7 @@ Choose focused checks with `npm run check:browser -- editor pvo-language pvo-exp
 
 `npm run check:browser -- editor playhead-drag` checks direct mobile playhead dragging with touch input, preview seeking, release and cancellation, timeline swiping, bounds, keyboard access, viewport resizing, playback pausing and text timing selection. It uses public UI and also runs against built or deployed output through `EDITOR_URL`.
 
-`npm run check:browser -- editor product-home export-share google-account-gate email-account-link auth-popup` verifies the mobile camera home, retained drafts, signed-in export/download and exact-file optional sharing, the Google popup gate, and explicit email account review. `email-account-link` covers a canceled Google popup, a lingering Supabase browser session, an account conflict, switching emails, and confirmation before ordinary email sign-in. `auth-popup` verifies the standalone desktop/phone layout, Supabase signup and signin forms, dismissal and focus restoration, unchanged saved projects/media, and Google completion without starting an export. These checks run against Vite or built output through `EDITOR_URL`, with account/publishing responses and native share isolated by browser fixtures. They do not verify a live Google or Supabase account or remote R2. `npm run check:browser -- player published` verifies both published viewer formats with local fixtures. Backend integration coverage uses real local Worker/D1/R2 execution via `node --test tests/publishing-server*.test.mjs`; `node --test tests/local-google-auth.test.mjs` covers the loopback auth adapter.
+`npm run check:browser -- editor product-home export-share google-account-gate auth-popup email-recovery` verifies the mobile camera home, retained drafts, signed-in export/download and exact-file optional sharing, the Google popup gate, and Supabase-backed Google/email sign-in. `auth-popup` verifies the standalone desktop/phone layout, Supabase signup and signin forms, dismissal and focus restoration, unchanged saved projects/media, and Google completion without starting an export. These checks run against Vite or built output through `EDITOR_URL`, with account/publishing responses and native share isolated by browser fixtures. They do not verify a live Google or Supabase account or remote R2. `npm run check:browser -- player published` verifies both published viewer formats with local fixtures. Backend integration coverage uses real local Worker/D1/R2 execution via `node --test tests/publishing-server*.test.mjs`; `node --test tests/local-supabase-auth.test.mjs` covers the loopback auth adapter.
 
 `npm run check:browser -- editor collect-replies` requires a built local beta server and Chrome. Start it on an unused port with an isolated `PVO_LOCAL_DATA_DIR`, then set `EDITOR_URL` to that port's `/editor/` address. The check creates a Form reply box through the UI, verifies Try leaves the inbox untouched, downloads and plays the real `.pvo` in a separate browser context, reads the reply in More → Replies, and confirms deletion stops new submissions. It uses the real local reply API, mocks the account-session read, and disables unrelated remote rendering so the actual browser PVO exporter runs. It never sends replies to a deployed host.
 

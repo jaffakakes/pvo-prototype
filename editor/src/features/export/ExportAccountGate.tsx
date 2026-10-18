@@ -70,7 +70,6 @@ export function ExportAccountGate({
         <SupabaseEmailSignIn
           url={supabaseUrl}
           publishableKey={supabasePublishableKey}
-          mode="signin"
           onBack={() => setEmailOpen(false)}
         />
       ) : (

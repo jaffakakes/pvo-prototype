@@ -52,8 +52,6 @@ function fakeRenderService(page) {
         supabaseAvailable: false,
         supabasePublishableKey: null,
         supabaseUrl: null,
-        canLinkEmail: false,
-        emailLinked: false,
         user: { id: "export-tester", name: "Export tester" },
       });
     if (path === "/api/renders" && request.method() === "GET")

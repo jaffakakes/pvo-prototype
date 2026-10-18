@@ -141,8 +141,6 @@ test("session expiry clears task visibility through the actual account refresh b
       supabaseAvailable: false,
       supabasePublishableKey: null,
       supabaseUrl: null,
-      canLinkEmail: false,
-      emailLinked: false,
     });
   try {
     await api.refreshAccountSession();

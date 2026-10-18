@@ -232,7 +232,7 @@ async function run(width) {
   await context.route(`${origin}/api/auth/**`, route => {
     const path = new URL(route.request().url()).pathname;
     if (path === "/api/auth/session") return route.fulfill({ contentType: "application/json",
-      body: JSON.stringify({ available: true, supabaseAvailable: false, supabasePublishableKey: null, supabaseUrl: null, canLinkEmail: false, emailLinked: false, user: signedIn ? { id: "editor-test", name: "Editor tester" } : null }) });
+      body: JSON.stringify({ available: true, supabaseAvailable: false, supabasePublishableKey: null, supabaseUrl: null, user: signedIn ? { id: "editor-test", name: "Editor tester" } : null }) });
     if (path === "/api/auth/google/start") {
       signedIn = true;
       return route.fulfill({ contentType: "text/html",

@@ -1,10 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
-import {
-  exchangeSupabaseSession,
-  getAccountSession,
-  linkSupabaseSession,
-} from "../../infrastructure/auth/client";
+import { exchangeSupabaseSession } from "../../infrastructure/auth/client";
 import {
   emailCallbackUrl,
   getSupabase,
@@ -18,24 +14,13 @@ import {
 export type EmailSignInOptions = {
   url: string;
   publishableKey: string;
-  mode: "signin" | "link";
-  expectedUserId?: string;
   initialStep?: "signin" | "signup";
   recovery?: boolean;
-  onLinked?(): void;
 };
 type Step = "signin" | "signup" | "forgot" | "password" | "review";
 
 export function useEmailSignIn(options: EmailSignInOptions) {
-  const {
-    url,
-    publishableKey,
-    mode,
-    expectedUserId,
-    recovery,
-    onLinked,
-    initialStep = "signin",
-  } = options;
+  const { url, publishableKey, recovery, initialStep = "signin" } = options;
   const [step, setStep] = useState<Step>(recovery ? "password" : initialStep);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -170,7 +155,7 @@ export function useEmailSignIn(options: EmailSignInOptions) {
       }
       setCandidate(result.data.session);
       setStep("review");
-      if (mode === "signin") await finish(result.data.session);
+      await finish(result.data.session);
     });
 
   const confirm = () =>
@@ -195,25 +180,7 @@ export function useEmailSignIn(options: EmailSignInOptions) {
       )
         throw new Error("Confirm this email address before continuing.");
       if (!active.current) return;
-      if (mode === "signin") {
-        await finish(data.session);
-        return;
-      }
-      const account = await getAccountSession();
-      if (
-        !expectedUserId ||
-        account.user?.id !== expectedUserId ||
-        !account.canLinkEmail
-      )
-        throw new Error(
-          "Your Restyle account changed. Sign in with the original Google account and try again.",
-        );
-      if (!active.current) return;
-      await linkSupabaseSession(data.session.access_token, expectedUserId);
-      const linked = await refreshAccountSessionAfterSignIn();
-      if (linked.user?.id !== expectedUserId || !linked.emailLinked)
-        throw new Error("Couldn't confirm the email connection. Try again.");
-      if (active.current) onLinked?.();
+      await finish(data.session);
     });
 
   const useAnotherEmail = () =>

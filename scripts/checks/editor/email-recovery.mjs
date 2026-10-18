@@ -14,7 +14,7 @@ try {
     const path = new URL(route.request().url()).pathname;
     const json = value => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(value) });
     if (path === "/api/auth/session") return json({ available: true, supabaseAvailable: true, supabaseUrl,
-      supabasePublishableKey: publishableKey, canLinkEmail: false, emailLinked: false,
+      supabasePublishableKey: publishableKey,
       user: signedIn ? { id: "fixture", name: "Creator" } : null });
     if (path === "/api/auth/supabase/exchange") { exchanges++; signedIn = true; return json({ user: { id: "fixture", name: "Creator" } }); }
     if (path === "/api/auth/logout") { signedIn = false; return json({ user: null }); }

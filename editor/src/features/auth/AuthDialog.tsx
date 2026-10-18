@@ -31,27 +31,14 @@ export function AuthDialog() {
 function OpenAuthDialog() {
   const dialog = useRef<HTMLDialogElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
-  const { source, phase, available, supabaseAvailable, supabasePublishableKey, supabaseUrl, canLinkEmail, emailLinked,
+  const { source, phase, available, supabaseAvailable, supabasePublishableKey, supabaseUrl,
     user, error, connecting } = useAuthGate();
   const [signingOut, setSigningOut] = useState(false);
   const [step, setStep] = useState<"gate" | "signin" | "signup">(source === "recovery" ? "signin" : "gate");
-  const [linkTargetId, setLinkTargetId] = useState<string | null>(null);
-  const [linkedNotice, setLinkedNotice] = useState(false);
-  const googleLinkTarget = useRef<string | null>(null);
   const emailOpen = step !== "gate";
   const emailAvailable = supabaseAvailable && Boolean(supabasePublishableKey);
   const waiting = phase === "checking" || connecting;
-  const beginGoogle = useGoogleSignIn(session => {
-    const targetId = googleLinkTarget.current;
-    googleLinkTarget.current = null;
-    if (!targetId) { closeAuthGate(); return; }
-    if (session.user?.id !== targetId) {
-      setAuthError("You signed in with a different Google account. Return to the original account and try again.");
-      return;
-    }
-    setLinkTargetId(targetId);
-    setStep("signin");
-  });
+  const beginGoogle = useGoogleSignIn();
   useEffect(() => {
     const focus = document.activeElement;
     dialog.current?.showModal();
@@ -68,31 +55,15 @@ function OpenAuthDialog() {
     setStep(next);
   };
   const signOut = () => {
-    googleLinkTarget.current = null;
-    setLinkTargetId(null);
     setSigningOut(true);
     setStep("gate");
     void signOutAccount().then(async () => {
       if (!supabasePublishableKey || !supabaseUrl) return;
       try { await signOutSupabase(supabaseUrl, supabasePublishableKey); }
-      catch { setAuthError("Restyle signed out, but the email session could not be cleared. Try again later."); }
+      catch { setAuthError("Restyle signed out, but the sign-in session could not be cleared. Try again later."); }
     }).catch(() => setAuthError("Couldn't sign out. Try again.")).finally(() => setSigningOut(false));
   };
-  const startEmailLink = () => {
-    if (!user || !canLinkEmail) return;
-    googleLinkTarget.current = user.id;
-    setLinkedNotice(false);
-    beginGoogle("link");
-  };
-  const backFromEmail = () => {
-    changeStep("gate");
-    setLinkTargetId(null);
-  };
-  useEffect(() => {
-    if (!emailOpen || !linkTargetId || user?.id === linkTargetId) return;
-    backFromEmail();
-    setAuthError("Your Restyle account changed. Sign in with the original Google account and try again.");
-  }, [emailOpen, linkTargetId, user?.id]);
+  const backFromEmail = () => changeStep("gate");
   const gateDescription = source === "export" ? "Sign in to export this project. Your edit and export settings will stay here."
     : source === "download" ? "Sign in to download this export. Your finished file will stay here."
       : source === "share" ? "Sign in to share this export. Your finished file will stay here."
@@ -131,21 +102,8 @@ function OpenAuthDialog() {
           <span>Continue with email</span>
         </button>
       </div>}
-      {emailOpen && !linkTargetId && supabasePublishableKey && supabaseUrl && <SupabaseEmailSignIn key={step}
-        url={supabaseUrl} publishableKey={supabasePublishableKey} recovery={source === "recovery"} mode="signin" standalone initialStep={step} onBack={backFromEmail} />}
-      {user && emailLinked && !emailOpen && <p className={styles.availability}>
-        {linkedNotice ? "Email sign-in connected. You can now use Google or this email for this Restyle account."
-          : "Email sign-in is connected to this Restyle account."}</p>}
-      {user && canLinkEmail && !emailOpen && <p className={styles.availability}>
-        Connect a verified email and password to this Google account to keep the same published links.</p>}
-      {user && emailOpen && <p className={styles.availability}>
-        Review the exact email account before connecting it. Your Google sign-in was refreshed for this step.</p>}
-      {user && emailOpen && linkTargetId && supabasePublishableKey && supabaseUrl && <SupabaseEmailSignIn
-        url={supabaseUrl} publishableKey={supabasePublishableKey} mode="link" expectedUserId={linkTargetId}
-        onBack={backFromEmail} onLinked={() => {
-          backFromEmail();
-          setLinkedNotice(true);
-        }} />}
+      {emailOpen && supabasePublishableKey && supabaseUrl && <SupabaseEmailSignIn key={step}
+        url={supabaseUrl} publishableKey={supabasePublishableKey} recovery={source === "recovery"} standalone initialStep={step} onBack={backFromEmail} />}
       {!user && phase === "checking" && <p className={styles.status} role="status">Checking your account…</p>}
       {!user && phase === "ready" && !available && !supabaseAvailable && <p className={styles.availability}>Sign-in isn't configured here yet. Your edit is saved in this browser.</p>}
       {!user && phase === "ready" && available && !supabaseAvailable && <p className={styles.status}>Email sign-in isn't configured here yet.</p>}
@@ -156,10 +114,6 @@ function OpenAuthDialog() {
     </div>
     <footer className={styles.footer}>
       {user ? <>
-        {canLinkEmail && !emailOpen && <button type="button" className={`${styles.secondary} ${styles.email}`}
-          disabled={connecting || signingOut} onClick={startEmailLink}>
-          {connecting ? "Waiting for Google…" : "Connect email sign-in"}
-        </button>}
         {!emailOpen && <button type="button" className={styles.secondary} disabled={signingOut} onClick={signOut}>{signingOut ? "Signing out…" : "Sign out"}</button>}
         <button type="button" className={styles.secondary} onClick={closeAuthGate}>Done</button>
       </> : <>

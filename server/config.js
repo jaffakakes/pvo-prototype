@@ -20,8 +20,7 @@ export function configuration(env, requestOrigin) {
   return {
     origin,
     available,
-    authAvailable: Boolean(env.DB && origin === requestOrigin && env.SESSION_SECRET?.length >= 32
-      && env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
+    authAvailable: managedAuthReady,
     renderAvailable: available && env.RENDERING_ENABLED === "true"
       && typeof env.RENDER_QUEUE?.send === "function"
       && typeof env.RENDERER?.get === "function"

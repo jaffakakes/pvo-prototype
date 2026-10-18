@@ -55,9 +55,9 @@ test("loopback beta exchanges a verified Supabase session for a short-lived loca
   t.after(async () => { await app?.close(); });
 
   assert.deepEqual(await (await app.request("/api/auth/session")).json(), {
-    available: false, supabaseAvailable: true, supabasePublishableKey: PUBLISHABLE_KEY, supabaseUrl: PROJECT_URL, canLinkEmail: false, emailLinked: false, user: null,
+    available: true, supabaseAvailable: true, supabasePublishableKey: PUBLISHABLE_KEY, supabaseUrl: PROJECT_URL, user: null,
   });
-  assert.equal((await app.request("/api/auth/google/start")).status, 503);
+  assert.equal((await app.request("/api/auth/google/start")).status, 404);
   assert.equal((await app.request("/api/auth/supabase/exchange", { method: "POST" })).status, 401);
   const sign = (changes = {}) => signedToken(pair, changes);
   const token = await sign();
@@ -85,12 +85,7 @@ test("loopback beta exchanges a verified Supabase session for a short-lived loca
   assert.equal((await repeated.json()).user.id, signedIn.user.id);
   await app.close();
   app = null;
-  const googleCookie = (await (await createLocalAuthStore(directory)).startSession({
-    sub: "11111111-1111-4111-8111-111111111111", name: "Creator",
-  })).split(";", 1)[0];
   app = await beta(directory, options);
-  const googleUser = (await (await app.request("/api/auth/session", { cookie: googleCookie })).json()).user;
-  assert.notEqual(googleUser.id, signedIn.user.id);
   assert.deepEqual((await (await app.request("/api/auth/session", { cookie })).json()).user, signedIn.user);
   assert.equal((await app.request("/api/auth/logout", { method: "POST", cookie })).status, 200);
   assert.equal((await (await app.request("/api/auth/session", { cookie })).json()).user, null);

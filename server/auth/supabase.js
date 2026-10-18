@@ -1,7 +1,7 @@
 import { createRemoteJWKSet, customFetch, jwtVerify } from "jose";
 import { HttpError } from "../http.js";
 
-const INVALID_TOKEN = "Email sign-in could not be verified. Please try again.";
+const INVALID_TOKEN = "Sign-in could not be verified. Please try again.";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const cachedKeys = new Map();
 

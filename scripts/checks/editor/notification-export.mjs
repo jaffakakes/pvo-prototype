@@ -57,7 +57,7 @@ async function assertExportFailure() {
 
 try {
   await page.route("**/api/auth/session", route => route.fulfill({ contentType: "application/json",
-    body: JSON.stringify({ available: true, supabaseAvailable: false, supabasePublishableKey: null, supabaseUrl: null, canLinkEmail: false, emailLinked: false, user: { id: "notification-check", name: "Notification check" } }) }));
+    body: JSON.stringify({ available: true, supabaseAvailable: false, supabasePublishableKey: null, supabaseUrl: null, user: { id: "notification-check", name: "Notification check" } }) }));
   await page.goto(editorUrl, { waitUntil: "networkidle" });
   const visit = page.getByRole("button", { name: "Visit Site", exact: true });
   if (await visit.isVisible()) await visit.click();

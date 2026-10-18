@@ -91,7 +91,7 @@ test("malformed PCM headers and inconsistent audio data are rejected", () => {
 test("native local development does not enable publishing or authentication origins", async () => {
   const { configuration } = await import("../server/config.js");
   const config = configuration({ PUBLIC_ORIGIN: "http://127.0.0.1:4174", ASSISTANT_LOCAL_DEVELOPMENT: "true",
-    PUBLISHING_ENABLED: "true", DB: {}, MEDIA: {}, GOOGLE_CLIENT_ID: "test", GOOGLE_CLIENT_SECRET: "test", SESSION_SECRET: "x".repeat(32) },
+    PUBLISHING_ENABLED: "true", DB: {}, MEDIA: {}, SESSION_SECRET: "x".repeat(32) },
   "http://127.0.0.1:4174");
   assert.equal(config.origin, null);
   assert.equal(config.available, false);

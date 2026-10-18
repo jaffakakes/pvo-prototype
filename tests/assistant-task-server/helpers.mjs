@@ -135,16 +135,24 @@ export async function taskFixture({
     }
     cookie = (
       await createAccountSession(
-        { sub: "task-owner-one", name: "First" },
+        {
+          issuer: "https://restyle-test.supabase.co/auth/v1",
+          sub: "task-owner-one",
+          name: "First",
+        },
         { DB: db, SESSION_SECRET: SECRET },
       )
-    ).split(";", 1)[0];
+    ).cookie.split(";", 1)[0];
     otherCookie = (
       await createAccountSession(
-        { sub: "task-owner-two", name: "Second" },
+        {
+          issuer: "https://restyle-test.supabase.co/auth/v1",
+          sub: "task-owner-two",
+          name: "Second",
+        },
         { DB: db, SESSION_SECRET: SECRET },
       )
-    ).split(";", 1)[0];
+    ).cookie.split(";", 1)[0];
     const request = async (
       path,
       {

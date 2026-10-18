@@ -27,22 +27,15 @@ export function SupabaseEmailSignIn({
     >
       {!standalone && (
         <button type="button" className={styles.secondary} onClick={onBack}>
-          {options.mode === "link"
-            ? "Back to your account"
-            : "Back to sign-in options"}
+          Back to sign-in options
         </button>
       )}
       {review && form.candidate ? (
         <div className={styles.review} data-supabase-account-review>
           <p>
-            {options.mode === "link" ? "Connect" : "Continue as"}{" "}
-            <strong>{form.candidate.user.email}</strong>?
+            Continue as <strong>{form.candidate.user.email}</strong>?
           </p>
-          <p>
-            {options.mode === "link"
-              ? "Your existing projects and published links will stay with this Restyle account."
-              : "This opens or creates the Restyle account for this email."}
-          </p>
+          <p>This opens or creates the Restyle account for this email.</p>
           <button
             type="button"
             disabled={form.busy}
@@ -50,9 +43,7 @@ export function SupabaseEmailSignIn({
               void form.confirm();
             }}
           >
-            {options.mode === "link"
-              ? "Connect this email"
-              : `Continue as ${form.candidate.user.email}`}
+            {`Continue as ${form.candidate.user.email}`}
           </button>
           <button
             type="button"

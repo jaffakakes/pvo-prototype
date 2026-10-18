@@ -104,8 +104,6 @@ try {
         supabaseAvailable: false,
         supabasePublishableKey: null,
         supabaseUrl: null,
-        canLinkEmail: false,
-        emailLinked: false,
       },
     }),
   );

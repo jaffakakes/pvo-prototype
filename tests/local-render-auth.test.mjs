@@ -5,6 +5,11 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import {
+  PROJECT_URL,
+  PUBLISHABLE_KEY,
+  ISSUER,
+} from "./supabase-auth.helpers.mjs";
 import { createLocalAuthApi } from "../scripts/dev/local-auth.mjs";
 import { createLocalAuthStore } from "../scripts/dev/local-auth-store.mjs";
 import { createLocalSessions } from "../scripts/dev/local-sessions.mjs";
@@ -56,7 +61,7 @@ async function beta(directory, configured = true) {
     directory,
     origin,
     ...(configured
-      ? { clientId: "test-client", clientSecret: "test-secret" }
+      ? { supabaseUrl: PROJECT_URL, supabasePublishableKey: PUBLISHABLE_KEY }
       : {}),
   });
   const renders = await createLocalRenderApi({ userFor: auth.userFor });
@@ -83,18 +88,30 @@ async function beta(directory, configured = true) {
   };
 }
 
-test("local renders require the revocable Google account session for creation and job access", async (t) => {
+test("local renders require the revocable Supabase account session for creation and job access", async (t) => {
   const directory = await mkdtemp(join(tmpdir(), "pvo-local-render-auth-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const store = await createLocalAuthStore(directory);
   const ownerCookie = (
-    await store.startSession({ sub: "google-owner", name: "Owner" })
+    await store.startSupabaseSession({
+      issuer: ISSUER,
+      sub: "google-owner",
+      name: "Owner",
+    })
   ).split(";", 1)[0];
   const sameAccountCookie = (
-    await store.startSession({ sub: "google-owner", name: "Owner" })
+    await store.startSupabaseSession({
+      issuer: ISSUER,
+      sub: "google-owner",
+      name: "Owner",
+    })
   ).split(";", 1)[0];
   const otherAccountCookie = (
-    await store.startSession({ sub: "google-other", name: "Other" })
+    await store.startSupabaseSession({
+      issuer: ISSUER,
+      sub: "google-other",
+      name: "Other",
+    })
   ).split(";", 1)[0];
   const anonymous = await createLocalSessions({ directory });
   const anonymousCookie = anonymous
@@ -215,12 +232,16 @@ test("local renders require the revocable Google account session for creation an
   );
 });
 
-test("local renders stay signed out when Google sign-in is unavailable", async (t) => {
+test("local renders stay signed out when Supabase sign-in is unavailable", async (t) => {
   const directory = await mkdtemp(join(tmpdir(), "pvo-local-render-auth-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const store = await createLocalAuthStore(directory);
   const cookie = (
-    await store.startSession({ sub: "google-owner", name: "Owner" })
+    await store.startSupabaseSession({
+      issuer: ISSUER,
+      sub: "google-owner",
+      name: "Owner",
+    })
   ).split(";", 1)[0];
   const app = await beta(directory, false);
   t.after(() => app.close());
@@ -231,8 +252,6 @@ test("local renders stay signed out when Google sign-in is unavailable", async (
       supabaseAvailable: false,
       supabasePublishableKey: null,
       supabaseUrl: null,
-      canLinkEmail: false,
-      emailLinked: false,
       user: null,
     },
   );
