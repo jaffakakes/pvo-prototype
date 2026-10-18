@@ -48,11 +48,9 @@
   align-items: center;
 }
 .tryButton {
-  font: 700 12px/1 var(--f-ui);
-  color: var(--button-primary-text);
-  background: var(--button-primary-bg);
-  border: 0;
-  border-radius: 10px;
+  color: var(--text);
+  background: transparent;
+  border-radius: 0;
 }
 .action:disabled,
 .play:disabled {
