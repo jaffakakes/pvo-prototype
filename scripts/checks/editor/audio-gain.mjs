@@ -10,7 +10,7 @@ const bundle = buildSync({ stdin: { resolveDir: process.cwd(), contents: `
   export { initial } from './editor/src/state/project/initial.ts';
   export * from './editor/src/state/editing/audioGainCommands.ts';
   export * from './editor/src/infrastructure/projectPersistence/checkpoint.ts';
-  export { monoWav } from './editor/src/infrastructure/assistant/media/wav.ts';
+  export { monoWav } from './editor/src/infrastructure/audio/wav.ts';
 ` }, bundle: true, write: false, format: "esm", platform: "browser" }).outputFiles[0].text;
 const server = createServer((request, response) => {
   if (request.url === "/gain.js") { response.setHeader("Content-Type", "application/javascript"); response.end(bundle); return; }

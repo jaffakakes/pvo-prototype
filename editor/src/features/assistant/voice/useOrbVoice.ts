@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
-import { microphoneSupported } from "../../../infrastructure/assistant/microphoneCapture";
+import { microphoneSupported } from "../../../infrastructure/audio/microphoneCapture";
 import type { VoiceFailure } from "./voiceFailure";
 import { createVoiceSession, type VoiceSession, type VoicePhase } from "./voiceSession";
 

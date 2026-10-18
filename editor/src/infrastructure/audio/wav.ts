@@ -1,4 +1,4 @@
-/** Bounded mono PCM is accepted by the transcription endpoint without exposing asset URLs. */
+/** Encode mono PCM as a portable 16-bit WAV. */
 export function monoWav(samples: Float32Array, sampleRate: number): ArrayBuffer {
   const bytes = new ArrayBuffer(44 + samples.length * 2);
   const view = new DataView(bytes);

@@ -1,8 +1,8 @@
 import { AssistantServiceError } from "../../domain/assistant/failure";
 import { assistantServiceFailure, readAssistantJson } from "./serviceResponse";
 import { cancellable } from "./media/lifecycle";
-import { monoWav } from "./media/wav";
-import { MAX_MICROPHONE_SECONDS } from "./microphoneCapture";
+import { monoWav } from "../audio/wav";
+import { MAX_MICROPHONE_SECONDS } from "../audio/microphoneCapture";
 import { readNativeAvailability } from "./nativeTransport";
 
 const SAMPLE_RATE = 16000;

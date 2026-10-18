@@ -7,7 +7,7 @@ async function load(path) {
   const result = buildSync({ entryPoints: [path], bundle: true, write: false, format: "esm", platform: "browser" });
   return import(`data:text/javascript;base64,${Buffer.from(result.outputFiles[0].text).toString("base64")}`);
 }
-const { captureMicrophone } = await load("editor/src/infrastructure/assistant/microphoneCapture.ts");
+const { captureMicrophone } = await load("editor/src/infrastructure/audio/microphoneCapture.ts");
 const { microphoneWav, transcribeMicrophone } = await load("editor/src/infrastructure/assistant/microphoneTranscription.ts");
 const flush = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
 function globals(t, values) {
