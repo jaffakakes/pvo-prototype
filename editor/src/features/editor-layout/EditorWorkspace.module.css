@@ -191,7 +191,9 @@
   flex-direction: column;
   min-height: 0;
 }
-.sheetPane:has(:global(.textEditor)) { border-radius: 0; }
+.sheetPane:has(:global(.textEditor)) {
+  border-radius: 0;
+}
 
 .workspace[data-code-expanded="true"] .sheetPane {
   container: expanded-code / size;

@@ -12,6 +12,8 @@ import { cx } from "../../styles";
 import { LayerPositionControls } from "../overlay-position/LayerPositionControls";
 import { Icon } from "../../ui/Icon";
 import { FontPicker } from "../fonts/FontPicker";
+import { TextColourStrip } from "./TextColourStrip";
+import { TextToolIcon } from "./TextToolIcon";
 
 export function TextEditor() {
   const s = useCapture();
@@ -21,6 +23,7 @@ export function TextEditor() {
   });
   const [tool, setTool] = useState("designs");
   const editKey = useRef<string | null>(null);
+  const input = useRef<HTMLTextAreaElement>(null);
   const style = text ? textStyle(text) : draftStyle;
   const update = (changes: Partial<TextOverlay>, key?: string) => {
     if (!text) return;
@@ -71,8 +74,16 @@ export function TextEditor() {
         editKey.current = null;
       }}
     >
+      {tool === "colour" && (
+        <TextColourStrip
+          value={style.fill}
+          onChange={(fill) => changeStyle({ fill })}
+          onClose={() => setTool("designs")}
+        />
+      )}
       <div className={cx("textEntry")}>
         <textarea
+          ref={input}
           aria-label="Text content"
           value={text?.text ?? s.draft}
           maxLength={500}
@@ -86,7 +97,7 @@ export function TextEditor() {
         />
         <button
           type="button"
-          className={cx("textConfirm")}
+          className={`${cx("textConfirm")} ${cx("textDone")}`}
           aria-label="Done"
           onClick={() => {
             if (!text && s.draft.trim()) {
@@ -98,23 +109,37 @@ export function TextEditor() {
         >
           <Icon name="check" size={26} />
         </button>
+        <button
+          type="button"
+          className={`${cx("textConfirm")} ${cx("textHideKeyboard")}`}
+          aria-label="Hide keyboard"
+          onPointerDown={(event) => event.preventDefault()}
+          onClick={() => input.current?.blur()}
+        >
+          <TextToolIcon name="keyboard" />
+        </button>
       </div>
-      <div className={cx("textTools")} role="toolbar" aria-label="Text tools">
+      <div
+        className={cx("textTools")}
+        role="toolbar"
+        aria-label="Text tools"
+        onPointerDown={(event) => event.preventDefault()}
+      >
         <button
           type="button"
           aria-label="Font"
           aria-pressed={tool === "font"}
           onClick={() => setTool("font")}
         >
-          <Icon name="text" size={22} />
+          <TextToolIcon name="font" />
         </button>
         <button
           type="button"
           aria-label="Text colours"
           aria-pressed={tool === "colour"}
-          onClick={() => setTool("colour")}
+          onClick={() => setTool(tool === "colour" ? "designs" : "colour")}
         >
-          <Icon name="palette" size={22} />
+          <span className={cx("textColourWheel")} aria-hidden="true" />
         </button>
         <button
           type="button"
@@ -128,7 +153,7 @@ export function TextEditor() {
             })
           }
         >
-          <Icon name="card" size={22} />
+          <TextToolIcon name="background" />
         </button>
         <button
           type="button"
@@ -162,11 +187,11 @@ export function TextEditor() {
           aria-pressed={tool === "designs"}
           onClick={() => setTool("designs")}
         >
-          <Icon name="textDesigns" size={22} />
+          <TextToolIcon name="designs" />
         </button>
       </div>
       <div className={cx("textControls")}>
-        {tool === "designs" && (
+        {tool !== "font" && (
           <>
             <div className={cx("textPresets")}>
               {TEXT_PRESETS.map((preset) => (
@@ -212,171 +237,82 @@ export function TextEditor() {
             </div>
           </>
         )}
-        {(tool === "font" || tool === "colour") && (
+        {tool === "font" && (
           <div className={cx("textStyleControls")}>
-            {tool === "font" && (
-              <>
-                <FontPicker
-                  key={text?.id ?? "draft"}
-                  value={style.fontAsset}
-                  onChange={(fontAsset) => changeStyle({ fontAsset })}
+            <FontPicker
+              key={text?.id ?? "draft"}
+              value={style.fontAsset}
+              onChange={(fontAsset) => changeStyle({ fontAsset })}
+            />
+            {text && (
+              <div className={cx("textPosition")}>
+                <LayerPositionControls
+                  key={text.id}
+                  target={{ kind: "text", id: text.id }}
+                  x={text.x}
+                  y={text.y}
                 />
-                {text && (
-                  <div className={cx("textPosition")}>
-                    <LayerPositionControls
-                      key={text.id}
-                      target={{ kind: "text", id: text.id }}
-                      x={text.x}
-                      y={text.y}
-                    />
-                  </div>
-                )}
-                <label className={cx("textField")}>
-                  Font
-                  <select
-                    aria-label="Text font"
-                    value={style.font}
-                    onChange={(e) =>
-                      changeStyle({
-                        font: e.target.value as TextStyle["font"],
-                        fontAsset: undefined,
-                      })
-                    }
-                  >
-                    {Object.entries({
-                      sans: "Open Sauce",
-                      display: "Peace Sans",
-                      serif: "Georgia",
-                      mono: "Typewriter",
-                      condensed: "Impact",
-                    }).map(([id, label]) => (
-                      <option key={id} value={id}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <div className={cx("textToggles")}>
-                  {(["bold", "italic", "underline"] as const).map((key) => (
-                    <button
-                      key={key}
-                      aria-label={key}
-                      aria-pressed={style[key]}
-                      onClick={() => changeStyle({ [key]: !style[key] })}
-                    >
-                      {key === "bold" ? (
-                        <b>B</b>
-                      ) : key === "italic" ? (
-                        <i>I</i>
-                      ) : (
-                        <u>U</u>
-                      )}
-                    </button>
-                  ))}
-                  {(["left", "center", "right"] as const).map((align) => (
-                    <button
-                      key={align}
-                      aria-label={`Align ${align}`}
-                      aria-pressed={style.align === align}
-                      onClick={() => changeStyle({ align })}
-                    >
-                      {align}
-                    </button>
-                  ))}
-                </div>
-                {range("Font size", "size", 8, 64)}
-              </>
+              </div>
             )}
-            {tool === "colour" && (
-              <>
-                <div className={cx("textColors")}>
-                  <label>
-                    Text colour
-                    <input
-                      type="color"
-                      aria-label="Text colour"
-                      value={style.fill}
-                      onChange={(e) =>
-                        changeStyle({ fill: e.target.value }, "fill")
-                      }
-                    />
-                  </label>
-                  <label>
-                    Outline colour
-                    <input
-                      type="color"
-                      aria-label="Outline colour"
-                      value={style.stroke}
-                      onChange={(e) =>
-                        changeStyle({ stroke: e.target.value }, "stroke")
-                      }
-                    />
-                  </label>
-                  <label>
-                    Background
-                    <input
-                      type="color"
-                      aria-label="Background colour"
-                      value={
-                        style.background === "transparent"
-                          ? "#111117"
-                          : style.background
-                      }
-                      onChange={(e) =>
-                        changeStyle(
-                          { background: e.target.value },
-                          "background",
-                        )
-                      }
-                    />
-                  </label>
-                </div>
-                <div className={cx("textToggles")}>
-                  <button
-                    aria-pressed={style.background !== "transparent"}
-                    onClick={() =>
-                      changeStyle({
-                        background:
-                          style.background === "transparent"
-                            ? "#111117"
-                            : "transparent",
-                        box: false,
-                      })
-                    }
-                  >
-                    Background
-                  </button>
-                  <button
-                    aria-pressed={style.shadow}
-                    onClick={() => changeStyle({ shadow: !style.shadow })}
-                  >
-                    Shadow
-                  </button>
-                  <button
-                    aria-pressed={style.box}
-                    onClick={() =>
-                      changeStyle({
-                        box: !style.box,
-                        ...(!style.box && style.background === "transparent"
-                          ? { background: "#FFD23E", fill: "#111111" }
-                          : {}),
-                      })
-                    }
-                  >
-                    Label border
-                  </button>
-                </div>
-              </>
-            )}
-            {tool === "font" && (
-              <>
-                {range("Outline width", "strokeWidth", 0, 5, 0.1)}
-                {range("Letter spacing", "spacing", -1, 6, 0.1)}
-                {range("Line spacing", "lineHeight", 0.8, 2, 0.1)}
-                {range("Rotation", "rotation", -180, 180)}
-                {range("Opacity", "opacity", 0, 1, 0.05)}
-              </>
-            )}
+            <label className={cx("textField")}>
+              Font
+              <select
+                aria-label="Text font"
+                value={style.font}
+                onChange={(e) =>
+                  changeStyle({
+                    font: e.target.value as TextStyle["font"],
+                    fontAsset: undefined,
+                  })
+                }
+              >
+                {Object.entries({
+                  sans: "Open Sauce",
+                  display: "Peace Sans",
+                  serif: "Georgia",
+                  mono: "Typewriter",
+                  condensed: "Impact",
+                }).map(([id, label]) => (
+                  <option key={id} value={id}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className={cx("textToggles")}>
+              {(["bold", "italic", "underline"] as const).map((key) => (
+                <button
+                  key={key}
+                  aria-label={key}
+                  aria-pressed={style[key]}
+                  onClick={() => changeStyle({ [key]: !style[key] })}
+                >
+                  {key === "bold" ? (
+                    <b>B</b>
+                  ) : key === "italic" ? (
+                    <i>I</i>
+                  ) : (
+                    <u>U</u>
+                  )}
+                </button>
+              ))}
+              {(["left", "center", "right"] as const).map((align) => (
+                <button
+                  key={align}
+                  aria-label={`Align ${align}`}
+                  aria-pressed={style.align === align}
+                  onClick={() => changeStyle({ align })}
+                >
+                  {align}
+                </button>
+              ))}
+            </div>
+            {range("Font size", "size", 8, 64)}
+            {range("Outline width", "strokeWidth", 0, 5, 0.1)}
+            {range("Letter spacing", "spacing", -1, 6, 0.1)}
+            {range("Line spacing", "lineHeight", 0.8, 2, 0.1)}
+            {range("Rotation", "rotation", -180, 180)}
+            {range("Opacity", "opacity", 0, 1, 0.05)}
           </div>
         )}
       </div>

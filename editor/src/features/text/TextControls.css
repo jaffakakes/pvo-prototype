@@ -141,31 +141,6 @@
   margin: 0;
   accent-color: var(--accent);
 }
-.textColors {
-  display: flex;
-  gap: 10px;
-}
-.textColors label {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  font: 600 10px var(--f-ui);
-}
-.textColors input {
-  width: 100%;
-  height: 32px;
-  padding: 2px;
-  border: 1px solid var(--q14);
-  border-radius: 0;
-  background: var(--input);
-  cursor: pointer;
-}
-.textHelp {
-  margin: 8px 0 2px;
-  font: 600 11px/1.5 var(--f-ui);
-  color: var(--muted);
-}
 .textTiming {
   display: flex;
   gap: 10px;
@@ -186,3 +161,24 @@
   font: 700 11px var(--f-ui);
   cursor: pointer;
 }
+
+.textColourWheel {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: conic-gradient(#f13c46, #f6d342, #78c454, #08b4a2, #3695ee, #7146c7, #ef74ba, #f13c46);
+  box-shadow: 0 0 0 1px var(--q14);
+}
+.textColourStrip { display: flex; flex: none; align-items: center; gap: 6px; }
+.textSwatches { display: flex; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+.textSwatches::-webkit-scrollbar { display: none; }
+.textSwatches button { display: grid; place-items: center; flex: 0 0 32px; width: 32px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.textSwatches span { width: 24px; height: 24px; border: 2px solid var(--surface); border-radius: 50%; box-shadow: 0 0 0 1px var(--q14); }
+.textSwatches button[aria-pressed="true"] span { box-shadow: 0 0 0 2px var(--text); }
+.textColourClose { display: grid; place-items: center; flex: none; width: 44px; height: 44px; padding: 0; border: 0; background: var(--q08); color: var(--text); cursor: pointer; }
+.textColourStrip button:focus-visible { outline: 2px solid var(--highlight); outline-offset: -2px; }
+.textEntry .textHideKeyboard { display: none; }
+[data-keyboard-open="true"] .textEntry .textHideKeyboard { display: grid; }
+[data-keyboard-open="true"] .textEntry .textDone,
+[data-keyboard-open="true"] .textControls { display: none; }

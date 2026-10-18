@@ -226,6 +226,8 @@
   "editor/src/features/preview/Transport.tsx",
   "editor/src/features/preview/Transport.module.css",
   "editor/src/ui/Icon.tsx",
+  "editor/src/features/text/TextColourStrip.tsx",
   "editor/src/features/text/TextEditor.tsx",
+  "editor/src/features/text/TextToolIcon.tsx",
   "editor/src/features/text/TextTimingSheet.tsx"
 ]
