@@ -170,12 +170,7 @@ async function run(testCase) {
       await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets: { top: 59, bottom: 34, left: 0, right: 0 } });
       await settle(page);
     }
-    if (!desktop) {
-      const handle = page.getByRole("separator", { name: "Resize editing panel", exact: true });
-      await handle.focus();
-      await handle.press("ArrowUp");
-      await settle(page);
-    }
+    if (!desktop) assert.equal(await page.getByRole("separator", { name: "Resize editing panel", exact: true }).count(), 0);
     const original = await panel.boundingBox();
     assert(original);
     assert.equal(await page.locator('[data-placement="floating"]').count(), 0);

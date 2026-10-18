@@ -178,7 +178,7 @@ try {
   const destinations = outcome.locator(".sceneChoices");
   assert.equal(await destinations.getByRole("button").count(), 6, "Picker includes every other scene and New scene");
   await destinations.getByRole("button", { name: "Scene 1 0:00 branch of Scene i", exact: true }).click();
-  await page.getByRole("separator", { name: "Resize editing panel", exact: true }).press("Escape");
+  await page.keyboard.press("Escape");
   await waitForLayout();
   await openScene("Street look");
   await page.locator(".toolBar").getByRole("button", { name: "More", exact: true }).click();
@@ -219,11 +219,8 @@ try {
   const restoredOutcome = await firstOutcome();
   assert.match(await restoredOutcome.locator('.sceneChoices [aria-pressed="true"]').innerText(), /Scene 1/,
     "The same undo must restore the previous component route");
-  await page.getByRole("separator", { name: "Resize editing panel", exact: true }).press("Escape");
+  await page.keyboard.press("Escape");
   await waitForLayout();
-  await page.getByRole("separator", { name: "Resize timeline", exact: true }).press("ArrowUp");
-  await page.getByRole("separator", { name: "Resize timeline", exact: true }).press("ArrowUp");
-  await page.getByRole("separator", { name: "Resize timeline", exact: true }).press("ArrowUp");
   await openTree();
   assert.equal(await page.locator('[data-assistant-region][data-active="false"]').isVisible(), false,
     "The floating assistant must not obscure tree nodes");

@@ -218,5 +218,8 @@
   "tests/sdk/requests.test.mjs",
   "tests/sdk/runtime.test.mjs",
   "tests/server/local-render-jobs.test.mjs",
-  "tests/server/local-reply-repository.test.mjs"
+  "tests/server/local-reply-repository.test.mjs",
+  "editor/src/features/editor-layout/EditorWorkspace.tsx",
+  "editor/src/features/editor-layout/workspaceGeometry.ts",
+  "editor/src/features/editor-layout/EditorWorkspace.module.css"
 ]

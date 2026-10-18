@@ -29,7 +29,7 @@ async function settle(page) {
 }
 
 try {
-  for (const [width, height, minimumPlayer] of [[320, 693, 150], [390, 844, 190], [430, 932, 190]]) {
+  for (const [width, height] of [[320, 693], [390, 844], [430, 932]]) {
     const context = await browser.newContext({ viewport: { width, height } });
     const page = await context.newPage();
     page.on("pageerror", error => errors.push(error.message));
@@ -65,18 +65,12 @@ try {
       useCapture.getState().addComponent("choice");
     });
     await settle(page);
-    const handle = page.getByRole("separator", { name: "Resize editing panel", exact: true });
-    const handleBox = await handle.boundingBox();
-    await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(handleBox.x + handleBox.width / 2, 0, { steps: 10 });
-    await page.mouse.up();
-    await settle(page);
+    assert.equal(await page.getByRole("separator", { name: /^Resize (timeline|editing panel)$/ }).count(), 0);
     const expanded = await geometry(page);
-    assert(expanded.preview.height >= minimumPlayer - 2, `${width}: the video remains visible at maximum sheet height`);
+    assert(Math.abs(expanded.dock.height - expanded.preview.height - expanded.playback.height) < 2);
     assert.equal(expanded.header.height, 56);
     assert.equal(expanded.playback.height, 52);
-    assert(expanded.preview.bottom <= expanded.dock.y, `${width}: sheets stay below the video`);
+    assert(expanded.preview.bottom <= expanded.dock.y);
     await page.locator("[data-sheet-body]").evaluate(element => { element.scrollTop = element.scrollHeight; });
     assert(Math.abs((await geometry(page)).dock.height - expanded.dock.height) < 2, "Scrolling does not resize the sheet");
     await page.getByRole("tab", { name: "Action", exact: true }).click();
@@ -99,7 +93,7 @@ try {
     assert.equal(await page.evaluate(async () => (await import("/src/store.ts")).useCapture.getState().sheet), "component");
     assert.equal(await page.getByRole("tab", { name: "Action", exact: true }).getAttribute("aria-selected"), "true", "Routed Try restores the same component tab");
     await page.getByRole("tab", { name: "Content", exact: true }).click();
-    await handle.focus();
+    await page.locator(".editorHead").getByRole("button", { name: "Try", exact: true }).focus();
     await page.keyboard.press("t");
     await page.getByRole("button", { name: "Stop trying", exact: true }).waitFor();
     await settle(page);
@@ -128,13 +122,10 @@ try {
     await page.waitForFunction(expected => Math.abs(document.querySelector(".editorDock").getBoundingClientRect().height - expected) < 2, beforeKeyboard.dock.height);
     const afterKeyboard = await geometry(page);
     assert(Math.abs(afterKeyboard.dock.height - beforeKeyboard.dock.height) < 2, `Keyboard dismissal restores the original sheet height: ${JSON.stringify({ beforeKeyboard, afterKeyboard })}`);
-    const closeBox = await handle.boundingBox();
-    await page.mouse.move(closeBox.x + closeBox.width / 2, closeBox.y + closeBox.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(closeBox.x + closeBox.width / 2, height - 60, { steps: 10 });
-    await page.mouse.up();
+    await page.locator("[data-sheet-body] input").first().press("Escape");
     await page.locator(".toolBar").waitFor({ state: "visible" });
-    assert.equal(await page.evaluate(async () => (await import("/src/store.ts")).useCapture.getState().sheet), null, "Pulling down below 120 closes the sheet");
+    assert.equal(await page.evaluate(async () => (await import("/src/store.ts")).useCapture.getState().sheet), null,
+      "Escape returns to the timeline without resizing either region");
     await context.close();
     console.log(`No-code workspace passed at ${width} × ${height}`);
   }
