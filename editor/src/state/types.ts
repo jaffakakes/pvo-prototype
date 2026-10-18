@@ -47,6 +47,7 @@ export type SheetName =
   | "sound"
   | "soundEffects"
   | "voiceover"
+  | "ratio"
   | "more"
   | "export"
   | "discard"

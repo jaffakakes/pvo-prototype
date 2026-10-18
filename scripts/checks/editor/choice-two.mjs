@@ -1,3 +1,4 @@
+import { openExportDialog } from "../helpers/editor-export.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { chromium } from "playwright-core";
@@ -31,9 +32,7 @@ try {
   assert.equal(await page.locator(".compChoice button").count(), 2, "Preview must render exactly two Choice buttons");
   assert.deepEqual(await page.locator(".compChoice button").allTextContents(), ["Option one", "Option two"]);
 
-  await page.getByRole("button", { name: "More", exact: true }).click();
-  await page.getByRole("dialog", { name: "More" })
-    .getByRole("button", { name: "Export and create link", exact: true }).click();
+  await openExportDialog(page);
   const exportDialog = page.locator("dialog[data-state]");
   await exportDialog.getByRole("button", { name: /Export and share/ }).click();
   await page.locator('dialog[data-state="done"]').waitFor({ timeout: 60000 });

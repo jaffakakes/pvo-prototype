@@ -1,3 +1,4 @@
+import { openExportDialog } from "../helpers/editor-export.mjs";
 import { finishTextEntry } from "../helpers/editor-text.mjs";
 import { chromium } from "playwright-core";
 import { resolve } from "node:path";
@@ -59,12 +60,12 @@ try {
   await finishTextEntry(page.getByRole("dialog", { name: "Add text", exact: true }));
   if (await page.locator(".textOverlay").count() !== 1) throw new Error("Text overlay missing");
   await page.getByRole("button", { name: "Collapse text tools" }).click();
-  await page.getByRole("button", { name: "More", exact: true }).click();
-  const more = page.getByRole("dialog", { name: "More" });
+  await page.getByRole("button", { name: "Aspect ratio", exact: true }).click();
+  const more = page.getByRole("dialog", { name: "Aspect ratio" });
   const squareRatio = more.getByRole("group", { name: "Video ratio" }).getByRole("button", { name: "1:1", exact: true });
   await squareRatio.click();
-  if (await squareRatio.getAttribute("aria-pressed") !== "true") throw new Error("Square ratio was not selected in More");
-  await more.getByRole("button", { name: "Close", exact: true }).click();
+  if (await squareRatio.getAttribute("aria-pressed") !== "true") throw new Error("Square ratio was not selected");
+  await more.getByRole("button", { name: "Done", exact: true }).click();
   await more.waitFor({ state: "hidden" });
   await page.waitForTimeout(350);
   if (await page.locator(".pvBox").evaluate(element => Math.abs(element.clientWidth - element.clientHeight)) > 2) throw new Error("Square ratio not applied");
@@ -74,8 +75,7 @@ try {
   await page.keyboard.press("Control+Shift+z");
   await page.waitForTimeout(350);
   if (await page.locator(".pvBox").evaluate(element => Math.abs(element.clientWidth - element.clientHeight)) > 2) throw new Error("Ratio redo failed");
-  await page.getByRole("button", { name: "More", exact: true }).click();
-  await page.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Export and create link" }).click();
+  await openExportDialog(page);
   const exportDialog = page.locator("dialog[data-state]");
   await exportDialog.getByRole("button", { name: /Export and share/ }).click();
   await page.locator('dialog[data-state="done"]').waitFor({ timeout: 45000 });
@@ -148,8 +148,7 @@ try {
     await real.keyboard.press("Space");
     await real.keyboard.press("s");
     if (await real.locator(".tlClip").count() !== 2) throw new Error("Split did not create two clips");
-    await real.getByRole("button", { name: "More", exact: true }).click();
-    await real.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Export and create link" }).click();
+    await openExportDialog(real);
     const realDialog = real.locator("dialog[data-state]");
     await realDialog.getByRole("button", { name: /Export and share/ }).click();
     await real.locator('dialog[data-state="done"]').waitFor({ timeout: 45000 });

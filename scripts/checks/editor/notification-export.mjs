@@ -1,3 +1,4 @@
+import { openExportDialog } from "../helpers/editor-export.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
@@ -30,8 +31,7 @@ await context.addInitScript(message => {
 const sheet = page.locator("dialog[data-state]");
 const notice = page.locator('[data-notification-id="exportFailed"]');
 async function openExport() {
-  await page.getByRole("button", { name: "More", exact: true }).click();
-  await page.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Export and create link" }).click();
+  await openExportDialog(page);
 }
 
 async function assertExportFailure() {

@@ -1,6 +1,6 @@
 import { useCapture } from "../captureStore";
 
-/** Header and settings use the same export entry command on every screen size. */
+/** All export entry points use the same command. */
 export function requestExport() {
   const current = useCapture.getState();
   if (current.screen !== "editor") return;

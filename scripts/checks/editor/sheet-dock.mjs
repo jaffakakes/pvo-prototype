@@ -78,9 +78,12 @@ try {
   if (await collapse.count()) await collapse.click();
   await page
     .locator(".toolBar")
-    .getByRole("button", { name: "More", exact: true })
+    .getByRole("button", { name: "Components", exact: true })
     .click();
-  const more = page.getByRole("dialog", { name: "More", exact: true });
+  const more = page.getByRole("dialog", {
+    name: "Add a component",
+    exact: true,
+  });
   await assertDocked(more, ratio);
   await assertCompactChrome(more);
   await page.getByRole("button", { name: "Play", exact: true }).click();
@@ -95,10 +98,6 @@ try {
   );
   await page.getByRole("button", { name: "Pause", exact: true }).click();
 
-  await more.getByRole("button", { name: "1:1", exact: true }).click();
-  await assertDocked(more, 1);
-  await page.getByRole("button", { name: "Undo", exact: true }).click();
-  await assertDocked(more, ratio);
   await more
     .getByRole("button", { name: "Close", exact: true })
     .press("Escape");
@@ -117,7 +116,7 @@ try {
   assert(durations.every((duration) => duration <= 0.01));
   assert.deepEqual(errors, []);
   console.log(
-    "Sheet dock passed: fixed split, internal scrolling, text draft, playback, ratio undo, Escape and camera modality.",
+    "Sheet dock passed: fixed split, internal scrolling, text draft, playback, Escape and camera modality.",
   );
 } finally {
   await context.close();

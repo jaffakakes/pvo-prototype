@@ -1,3 +1,4 @@
+import { openEditorSettings } from "../helpers/editor-settings.mjs";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { chromium } from "playwright-core";
@@ -96,7 +97,7 @@ try {
   const formSheet = page.getByRole("dialog", { name: "Form" });
   await formSheet.getByRole("button", { name: "Done", exact: true }).click();
   await page.getByRole("button", { name: "Collapse component tools" }).click();
-  await page.locator(".toolBar").getByRole("button", { name: "More", exact: true }).click();
+  await openEditorSettings(page);
   const more = page.getByRole("dialog", { name: "More" });
   await more.getByRole("switch", { name: "Advanced editing", exact: true }).click();
   await more.getByRole("switch", { name: "Advanced editing", checked: true }).waitFor();

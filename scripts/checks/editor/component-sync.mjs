@@ -1,3 +1,4 @@
+import { openEditorSettings } from "../helpers/editor-settings.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
@@ -192,7 +193,7 @@ async function exercise(item) {
     await settled(page);
     assert.match((await component(page)).code.pvo.logic, new RegExp(`on ${item.event}\\(${item.target}\\)\\s*\\{\\s*jump_to\\(1\\)`));
   }
-  await page.getByRole("button", { name: "More", exact: true }).click();
+  await openEditorSettings(page);
   await page.getByRole("switch", { name: "Advanced editing", exact: true }).click();
   await page.evaluate(() => window.capture.getState().patch({ sheet: "component" }));
   await tab(page, "Advanced");

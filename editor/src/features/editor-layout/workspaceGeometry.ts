@@ -1,9 +1,19 @@
 type Measurements = { height: number; header: number; playback: number };
 const clampUnit = (value: number) => Math.max(0, Math.min(1, value));
 
+export function aspectRatioPanelHeight(height: number) {
+  return height < 500 ? 112 : Math.min(180, Math.max(156, height * 0.24));
+}
+
 /** Split the workspace five eighths for playback and three eighths for tools. */
-export function editorPanelHeight(measurements: Measurements) {
-  return (Math.max(0, measurements.height - measurements.header) * 3) / 8;
+export function editorPanelHeight(
+  measurements: Measurements,
+  ratioOpen = false,
+) {
+  const normal =
+    (Math.max(0, measurements.height - measurements.header) * 3) / 8;
+  const ratioPanel = aspectRatioPanelHeight(measurements.height);
+  return ratioOpen ? Math.max(normal, ratioPanel + 132) : normal;
 }
 
 /** Space above the panel collapses in order: preview, playback, then navigation. */

@@ -1,3 +1,4 @@
+import { openEditorSettings } from "../helpers/editor-settings.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
@@ -61,7 +62,7 @@ async function closeMore() {
 }
 
 async function renameScene(name) {
-  await page.locator(".toolBar").getByRole("button", { name: "More", exact: true }).click();
+  await openEditorSettings(page);
   await more.getByRole("button", { name: "Rename scene…", exact: true }).click();
   await more.getByRole("textbox", { name: "Scene name", exact: true }).fill(name);
   await more.getByRole("button", { name: "Save name", exact: true }).click();
@@ -156,7 +157,7 @@ try {
   for (const width of [320, 390, 430]) await assertGeometry(width);
 
   await openTree();
-  await page.locator(".toolBar").getByRole("button", { name: "More", exact: true }).click();
+  await openEditorSettings(page);
   await more.waitFor();
   assert.equal(await tree.count(), 0, "Opening a sheet must close the tree");
   await more.getByRole("switch", { name: "Reduce motion", exact: true }).click();
@@ -181,7 +182,7 @@ try {
   await page.keyboard.press("Escape");
   await waitForLayout();
   await openScene("Street look");
-  await page.locator(".toolBar").getByRole("button", { name: "More", exact: true }).click();
+  await openEditorSettings(page);
   await more.getByRole("button", { name: "Delete scene…", exact: true }).click();
   assert.equal(await more.getByRole("list", { name: "Scenes to delete", exact: true }).locator("li").count(), 4);
   assert.equal(await more.getByRole("list", { name: "Affected components", exact: true }).locator("li").count(), 1);
@@ -195,7 +196,7 @@ try {
   await openTree();
   assert.deepEqual(await treeNames(), ["Main", "Street look", "Scene i", "Scene 1", "Scene ii", "Evening look"]);
   await tree.getByRole("button", { name: /^Open Evening look, level 2,/ }).click();
-  await page.locator(".toolBar").getByRole("button", { name: "More", exact: true }).click();
+  await openEditorSettings(page);
   await more.getByRole("button", { name: "Duplicate scene", exact: true }).click();
   await assertCurrent("Evening look copy");
   await goUp("Main");
@@ -226,7 +227,7 @@ try {
     "The floating assistant must not obscure tree nodes");
   if (process.env.PVO_SCENE_TREE_SCREENSHOT) await page.screenshot({ path: process.env.PVO_SCENE_TREE_SCREENSHOT });
   await tree.getByRole("button", { name: "Close scene tree", exact: true }).click();
-  await page.getByRole("button", { name: "More", exact: true }).first().click();
+  await openEditorSettings(page);
   await more.getByRole("switch", { name: "Reduce motion", exact: true }).click();
   await closeMore();
   await page.emulateMedia({ reducedMotion: "reduce" });

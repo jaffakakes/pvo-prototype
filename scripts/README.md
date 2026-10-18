@@ -187,3 +187,5 @@ The [Roadmap 1A evidence](../docs/engineering/restyle-cloud-infrastructure-proof
 ### Saved-task server lifetime
 
 `node scripts/checks/cloud-agent-tasks/browser-lifetime.mjs` launches local workerd/D1/SQLite and a fresh Chromium context. It creates an authenticated saved task, closes the browser during a controlled planning step, and recovers the same question in a new context. Requires built language WASM, installed dependencies and Chrome (`CHROME_PATH` can override the executable). It disposes its local runtime/storage and never calls a real model or cloud provider. This checks server lifetime; the editor task UI is a separate later journey.
+
+`npm run check:browser -- editor aspect-ratio` checks the mobile toolbar’s bottom-attached ratio panel below the retained timeline, ratio preview, one-step Undo/Redo, autosave/reload, Done/Escape dismissal at narrow, phone, dark and landscape sizes, including display safe areas. Export checks use the desktop header and restore the viewport being checked; retained settings checks use Project settings → More settings. The mobile bottom toolbar has no More entry.

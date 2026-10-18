@@ -104,9 +104,12 @@ try {
       if (await collapse.count()) await collapse.click();
       await page
         .locator(".toolBar")
-        .getByRole("button", { name: "More", exact: true })
+        .getByRole("button", { name: "Components", exact: true })
         .click();
-      const more = page.getByRole("dialog", { name: "More", exact: true });
+      const more = page.getByRole("dialog", {
+        name: "Add a component",
+        exact: true,
+      });
       const opened = await assertDocked(more, ratio);
       assert(opened.dock.height >= original.dock.height - 2);
       await more.locator("[data-sheet-body]").evaluate((el) => {

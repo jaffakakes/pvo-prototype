@@ -168,7 +168,7 @@ async function checkPopup(phone) {
     const before = await waitForSavedProject(page, projectId);
     if (phone) {
       await page.setViewportSize({ width: 390, height: 844 });
-      await page.getByRole("button", { name: "More", exact: true }).click();
+      await page.getByRole("button", { name: "Aspect ratio", exact: true }).click();
     }
 
     await open();

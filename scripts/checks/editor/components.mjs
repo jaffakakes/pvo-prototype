@@ -1,3 +1,4 @@
+import { openExportDialog } from "../helpers/editor-export.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -72,9 +73,7 @@ try {
   await page.getByRole("button", { name: "Try", exact: true }).waitFor({ timeout: 5000 });
 
   // Interactive export contains the Main scene and its branch.
-  await page.locator(".toolBar").getByRole("button", { name: "More", exact: true }).click();
-  await page.getByRole("dialog", { name: "More" })
-    .getByRole("button", { name: "Export and create link", exact: true }).click();
+  await openExportDialog(page);
   const exportDialog = page.locator("dialog[data-state]");
   await exportDialog.getByRole("button", { name: /Export and share/ }).waitFor();
   assert.equal(await exportDialog.getByRole("combobox", { name: "Export format" }).count(),

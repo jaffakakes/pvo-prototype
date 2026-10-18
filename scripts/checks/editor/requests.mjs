@@ -1,3 +1,4 @@
+import { openEditorSettings } from "../helpers/editor-settings.mjs";
 import assert from "node:assert/strict";
 import http from "node:http";
 import { chromium } from "playwright-core";
@@ -74,7 +75,7 @@ try {
 
   // Request actions are authored in Advanced; project request hosts remain separate.
   const componentId = await page.evaluate(() => window.__requestTestId);
-  await page.locator(".toolBar").getByRole("button", { name: "More", exact: true }).click();
+  await openEditorSettings(page);
   const moreDialog = page.getByRole("dialog", { name: "More" });
   await moreDialog.waitFor({ state: "visible" });
   const advancedEditing = moreDialog.getByRole("switch", { name: "Advanced editing", exact: true });

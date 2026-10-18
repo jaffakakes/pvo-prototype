@@ -36,6 +36,7 @@ export function Sheets() {
       return <SpeedSheet />;
     case "crop":
       return <CropSheet />;
+    case "ratio":
     case "voiceover":
       return null;
     case "soundEffects":

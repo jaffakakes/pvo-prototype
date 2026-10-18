@@ -25,7 +25,8 @@ export function Editor() {
   const debugOpen = useDebugUi(state => state.open);
   const wide = useWideLayout();
   const scenes = useCapture(state => state.scenes);
-  const sheetOpen = useCapture(state => state.sheet !== null && state.sheet !== "export" && state.sheet !== "voiceover" && !state.playheadPick);
+  const sheetOpen = useCapture(state => state.sheet !== null && state.sheet !== "export" && state.sheet !== "voiceover" && state.sheet !== "ratio" && !state.playheadPick);
+  const ratioOpen = useCapture(state => state.sheet === "ratio");
   const voiceover = useCapture(state => state.sheet === "voiceover");
   const textSheet = useCapture(state => state.sheet === "text");
   const soundSheet = useCapture(state => state.sheet === "sound" || state.sheet === "soundEffects");
@@ -42,7 +43,7 @@ export function Editor() {
   if (!scenes.length) return null;
   if (wide) return <DesktopEditor />;
   return <>
-    <EditorWorkspace open={sheetOpen} textSheet={textSheet} soundSheet={soundSheet} animationSheet={animationSheet} componentSheet={componentSheet} codeEditingId={codeEditingId} trying={trying}
+    <EditorWorkspace open={sheetOpen} ratioOpen={ratioOpen} textSheet={textSheet} soundSheet={soundSheet} animationSheet={animationSheet} componentSheet={componentSheet} codeEditingId={codeEditingId} trying={trying}
       debugOpen={debugOpen} onCloseDebug={() => setDebugOpen(false)}
       debugPanel={<DebugSheet onClose={() => setDebugOpen(false)} onEditComponent={editDebugComponent} onLocate={locateDebugComponent} />}
       header={<EditorHeader />} preview={<Preview />} playback={<Transport threadOpen={thread.open && !codeEditingId} />}

@@ -15,6 +15,7 @@ import { fmt } from "../../ui/formatTime";
 import { deleteSelectedClip, splitAtPlayhead } from "./clipCommands";
 import { acceptPlayheadPick, cancelPlayheadPick } from "./playheadPick";
 import styles from "./ToolRow.module.css";
+import { AspectRatioPanel } from "../settings/AspectRatioPanel";
 import { SoundMenu } from "../sound/SoundMenu";
 import { VoiceoverControls } from "../sound/VoiceoverControls";
 
@@ -33,6 +34,8 @@ export function ToolRow() {
   const assistantActive = useAssistant((state) => state.phase !== "idle");
   const playhead = useCapture((state) => state.t);
   const voiceover = useCapture((state) => state.sheet === "voiceover");
+  const ratioOpen = useCapture((state) => state.sheet === "ratio");
+  if (ratioOpen) return <AspectRatioPanel />;
   if (voiceover) return <VoiceoverControls />;
   if (playheadPick) {
     return (
@@ -119,8 +122,8 @@ export function ToolRow() {
         playing: false,
       });
     else if (name === "delete") deleteSelectedClip(s);
-    else if (name === "more")
-      s.patch({ sheet: "more", ratioMenu: false, playing: false, orb: false });
+    else if (name === "ratio")
+      s.patch({ sheet: "ratio", ratioMenu: false, playing: false, orb: false });
     else
       s.patch({
         sheet: name as CaptureStateSheet,
@@ -159,7 +162,7 @@ export function ToolRow() {
           ["text", "Text", "text"],
           ["components", "Components", "components"],
           ["music", "Sound", "sound"],
-          ["more", "More", "more"],
+          ["ratio", "Aspect ratio", "ratio"],
         ];
   const activeTools = selectedAudio
     ? [

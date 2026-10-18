@@ -12,7 +12,6 @@ import { ProjectStorageStatus } from "./ProjectStorageStatus";
 import { CaptureRecovery } from "../capture/CaptureRecovery";
 import { ReplyInbox } from "../replies/ReplyInbox";
 import styles from "./MoreSettings.module.css";
-import { requestExport } from "../../state/export/exportCommands";
 import { openSignIn, useAuthGate } from "../../state/auth/authGateStore";
 import { THEME_ACCENTS, THEME_MODES, type ThemeAccent, type ThemeMode } from "../../domain/appearance/theme";
 import { setThemeAccent, setThemeMode, useThemePreferences } from "../../state/preferences/themePreferences";
@@ -154,13 +153,6 @@ export function MoreSettings() {
           onClick={() => setShowReplies(!showReplies)}>{showReplies ? "Close replies" : "Open replies"}</button>
       </div>
       {showReplies && <div id={repliesId}><ReplyInbox /></div>}
-    </section>}
-    {screen === "editor" && <section className={styles.section} aria-labelledby="more-export-heading">
-      <h3 id="more-export-heading">Export</h3>
-      <div className={styles.actions}>
-        <button type="button" onClick={() => requestExport()}>Export and create link</button>
-      </div>
-      <p className={styles.exportNote}>The shared PVO keeps every scene and interactive component.</p>
     </section>}
     {advancedEditingEnabled && <AdvancedSettings />}
     <ProjectStorageStatus onlyIssues />

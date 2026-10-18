@@ -1,3 +1,4 @@
+import { openEditorSettings } from "../helpers/editor-settings.mjs";
 import assert from "node:assert/strict";
 import { chromium } from "playwright-core";
 
@@ -82,7 +83,7 @@ try {
   assert.equal(await page.getByRole("tab", { name: "Look", exact: true }).getAttribute("aria-selected"), "true");
   assert(Math.abs((await page.locator(".editorDock").boundingBox()).height - heightBeforeTry) <= 1);
 
-  await page.getByRole("button", { name: "More", exact: true }).click();
+  await openEditorSettings(page);
   const advancedSwitch = page.getByRole("switch", { name: "Advanced editing", exact: true });
   if (await advancedSwitch.getAttribute("aria-checked") !== "true") await advancedSwitch.click();
   await page.evaluate(() => window.capture.getState().patch({ sheet: "component" }));

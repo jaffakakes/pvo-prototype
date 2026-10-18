@@ -24,9 +24,9 @@ try {
     await page.getByRole("button", { name: "Components", exact: true }).waitFor();
     const toolbar = page.locator(".tools");
     assert.deepEqual((await toolbar.getByRole("button").allTextContents()).map(label => label.trim()),
-      ["Edit clip", "Text", "Components", "Sound", "More"],
+      ["Edit clip", "Text", "Components", "Sound", "Aspect ratio"],
       `The main toolbar should retain five items at ${width}px`);
-    for (const name of ["Components", "More"]) {
+    for (const name of ["Components", "Aspect ratio"]) {
       const geometry = await toolbar.getByRole("button", { name, exact: true }).evaluate(button => {
         const label = button.querySelector("span");
         const tile = button.getBoundingClientRect();
@@ -37,22 +37,16 @@ try {
         `${name} label escapes its tile at ${width}px: ${JSON.stringify(geometry)}`);
     }
     if (process.env.CAPTURE_SHOTS && width === 370) await page.screenshot({ path: resolve(tmpdir(), "restyle-tool-row-fit.png") });
-    await toolbar.getByRole("button", { name: "More", exact: true }).click();
-    const moreDialog = page.getByRole("dialog", { name: "More" });
-    await moreDialog.getByText("Ratio", { exact: true }).first().waitFor();
-    const advanced = moreDialog.getByRole("switch", { name: "Advanced editing", exact: true });
-    assert.equal(await advanced.isVisible(), true, `Advanced editing is not available from More at ${width}px`);
-    await advanced.click();
-    assert.equal(await moreDialog.getByRole("textbox", { name: "Allowed request domains" }).isVisible(), true,
-      `Project-wide allowed request domains are not available from More at ${width}px`);
-    const moreShot = process.env[`MORE_SHEET_SHOT_${width}`] ||
-      (process.env.CAPTURE_SHOTS && [320, 430].includes(width) ? resolve(tmpdir(), `restyle-more-${width}.png`) : null);
-    if (moreShot) await moreDialog.screenshot({ path: moreShot });
-    await moreDialog.getByRole("button", { name: "Close", exact: true }).click();
+    await toolbar.getByRole("button", { name: "Aspect ratio", exact: true }).click();
+    const ratio = page.getByRole("dialog", { name: "Aspect ratio", exact: true });
+    for (const name of ["9:16", "1:1", "4:5", "16:9"]) {
+      await ratio.getByRole("button", { name, exact: true }).waitFor();
+    }
+    await ratio.getByRole("button", { name: "Done", exact: true }).click();
     await page.getByRole("button", { name: "Components", exact: true }).click();
     await page.getByRole("dialog", { name: "Add a component" }).waitFor();
     assert.deepEqual(errors, [], `Browser errors at ${width}px`);
-    console.log(`${width}px: five toolbar labels fit their tiles; More exposes Ratio and Advanced; Components opens its sheet`);
+    console.log(`${width}px: five toolbar labels fit their tiles; Aspect ratio opens its compact choices; Components opens its sheet`);
     await page.close();
   }
 } finally {

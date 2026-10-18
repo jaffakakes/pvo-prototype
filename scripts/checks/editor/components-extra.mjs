@@ -1,3 +1,4 @@
+import { openExportDialog } from "../helpers/editor-export.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { chromium } from "playwright-core";
@@ -126,8 +127,7 @@ try {
     await page.getByRole("button", { name: "Stop trying", exact: true }).click();
 
   // Interactive components are packaged in the single PVO export.
-  await page.getByRole("button", { name: "More", exact: true }).click();
-  await page.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Export and create link" }).click();
+  await openExportDialog(page);
   const exportDialog = page.locator("dialog[data-state]");
   assert.equal(await exportDialog.getByRole("combobox", { name: "Export format" }).count(), 0);
   await exportDialog.getByRole("button", { name: /Export and share/ }).click();

@@ -1,3 +1,4 @@
+import { openEditorSettings } from "../helpers/editor-settings.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
@@ -96,7 +97,7 @@ try {
   await page.waitForTimeout(1100);
   await page.getByRole("button", { name: "Stop recording" }).click();
   await page.getByRole("button", { name: "Open editor" }).click();
-  await page.getByRole("button", { name: "More", exact: true }).click();
+  await openEditorSettings(page);
   const more = page.getByRole("dialog", { name: "More" });
   await more.getByRole("switch", { name: "Advanced editing", exact: true }).click();
   await more.getByRole("button", { name: "Close", exact: true }).click();

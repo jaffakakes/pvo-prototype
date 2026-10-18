@@ -1,3 +1,5 @@
+import { openEditorSettings } from "../helpers/editor-settings.mjs";
+import { openExportDialog } from "../helpers/editor-export.mjs";
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
@@ -99,9 +101,7 @@ try {
   assert.equal((await replies(box.id)).length, 0, "Try must leave the inbox empty");
   await creator.getByRole("button", { name: "Stop trying", exact: true }).click();
 
-  await creator.getByRole("button", { name: "More", exact: true }).click();
-  await creator.getByRole("dialog", { name: "More" })
-    .getByRole("button", { name: "Export and create link", exact: true }).click();
+  await openExportDialog(creator);
   const exportDialog = creator.locator("dialog[data-state]");
   await exportDialog.getByRole("button", { name: /Export and share/ }).click();
   await creator.locator('dialog[data-state="done"]').waitFor({ timeout: 60000 });
@@ -136,7 +136,7 @@ try {
     return response.ok && (await response.json()).replies.length === 1;
   }, box.id);
 
-  await creator.getByRole("button", { name: "More", exact: true }).click();
+  await openEditorSettings(creator);
   const more = creator.getByRole("dialog", { name: "More" });
   await more.getByRole("button", { name: "Open replies" }).click();
   await more.getByRole("button").filter({ hasText: "Questions for video" }).click();

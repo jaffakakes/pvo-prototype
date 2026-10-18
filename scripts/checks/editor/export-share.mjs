@@ -1,3 +1,4 @@
+import { openExportDialog } from "../helpers/editor-export.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -60,8 +61,7 @@ try {
   await page.locator('input[type="file"]').setInputFiles(videoFile);
   await page.getByRole("button", { name: /^(Open editor|Start editing)$/ }).click();
   await page.locator(".editorWorkspace").waitFor();
-  await page.getByRole("button", { name: "More", exact: true }).click();
-  await page.getByRole("button", { name: "Export and create link", exact: true }).click();
+  await openExportDialog(page);
   const exportDialog = page.locator("dialog[data-state]");
   await exportDialog.waitFor();
   assert.equal(await exportDialog.getByRole("radiogroup", { name: "Export format" }).count(), 0,

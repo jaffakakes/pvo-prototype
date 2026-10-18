@@ -113,13 +113,12 @@ try {
     window.failHeaderSave = false;
   });
   await page
-    .locator(".toolBar")
-    .getByRole("button", { name: "More", exact: true })
+    .getByRole("button", { name: "Back to camera", exact: true })
     .click();
-  const more = page.getByRole("dialog", { name: "More", exact: true });
-  await more.getByRole("button", { name: "Retry save", exact: true }).click();
+  await page.getByText("Storage options", { exact: true }).click();
+  await page.getByRole("button", { name: "Retry save", exact: true }).click();
+  await page.getByRole("button", { name: "Open editor", exact: true }).click();
   await saved.waitFor();
-  await more.getByRole("button", { name: "Close", exact: true }).click();
   await page.reload({ waitUntil: "networkidle" });
   await saved.waitFor();
   assert.equal(

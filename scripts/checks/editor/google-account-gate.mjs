@@ -1,3 +1,4 @@
+import { openExportDialog } from "../helpers/editor-export.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
@@ -105,8 +106,7 @@ async function checkAccountGate(phone) {
   const gate = exportSheet.locator("[data-export-account-gate]");
   const beginExport = async () => {
     if (phone) {
-      await page.getByRole("button", { name: "More", exact: true }).click();
-      await page.getByRole("button", { name: "Export and create link", exact: true }).click();
+      await openExportDialog(page);
     } else await page.getByRole("banner").getByRole("button", { name: "Export", exact: true }).click();
     await exportSheet.waitFor();
   };

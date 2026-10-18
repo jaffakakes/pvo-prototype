@@ -1,3 +1,4 @@
+import { openEditorSettings } from "../helpers/editor-settings.mjs";
 import assert from "node:assert/strict";
 import { chromium } from "playwright-core";
 
@@ -49,7 +50,7 @@ async function openMore() {
   });
   const collapse = page.getByRole("button", { name: "Collapse component tools" });
   if (await collapse.count()) await collapse.click();
-  await page.getByRole("button", { name: "More", exact: true }).click();
+  await openEditorSettings(page);
   return page.getByRole("dialog", { name: "More", exact: true });
 }
 

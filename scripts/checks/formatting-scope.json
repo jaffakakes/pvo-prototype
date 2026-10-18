@@ -276,5 +276,11 @@
   "editor/src/features/sound/addSoundEffect.ts",
   "scripts/checks/editor/sound-effects-browser.mjs",
   "editor/src/features/component-authoring/ComponentFields.css",
-  "editor/src/features/editor-layout/ResponsiveEditor.css"
+  "editor/src/features/editor-layout/ResponsiveEditor.css",
+  "scripts/checks/helpers/editor-export.mjs",
+  "editor/src/features/settings/AspectRatioPanel.tsx",
+  "editor/src/features/settings/AspectRatioPanel.module.css",
+  "scripts/checks/helpers/editor-settings.mjs",
+  "scripts/checks/editor/aspect-ratio.mjs",
+  "editor/src/features/settings/socialIcons.ts"
 ]

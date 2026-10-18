@@ -15,7 +15,11 @@ import { useWorkspaceMeasurements } from "./useWorkspaceMeasurements";
 import { useSheetKeyboard } from "./useSheetKeyboard";
 import { useThreadDock } from "./useThreadDock";
 import { useOutsideSelection } from "./useOutsideSelection";
-import { editorPanelHeight, workspaceGeometry } from "./workspaceGeometry";
+import {
+  aspectRatioPanelHeight,
+  editorPanelHeight,
+  workspaceGeometry,
+} from "./workspaceGeometry";
 import { mobileDebugPanelGeometry } from "./debugging/debugPanelGeometry";
 import { DebugResizeHandle } from "./debugging/DebugResizeHandle";
 import debugStyles from "./debugging/DebugWorkspace.module.css";
@@ -23,6 +27,7 @@ import styles from "./EditorWorkspace.module.css";
 
 type Props = {
   open: boolean;
+  ratioOpen?: boolean;
   componentSheet?: boolean;
   textSheet?: boolean;
   soundSheet?: boolean;
@@ -52,6 +57,7 @@ type Props = {
 
 export function EditorWorkspace({
   open,
+  ratioOpen = false,
   componentSheet = false,
   textSheet = false,
   soundSheet = false,
@@ -159,7 +165,7 @@ export function EditorWorkspace({
   );
   // Playback keeps five eighths; the lower region uses the remaining three eighths.
   // Measurements already follow visualViewport, including the on-screen keyboard.
-  let panelHeight = editorPanelHeight(measurements);
+  let panelHeight = editorPanelHeight(measurements, ratioOpen);
   if (dockThreadOpen) panelHeight = threadDock.resize.height;
   else if (debugOpen) panelHeight = debugResize.height;
   else if (trying) panelHeight = 0;
@@ -196,6 +202,7 @@ export function EditorWorkspace({
     !codeExpanded && !(dockThreadOpen && threadDock.compact);
   const style = {
     "--dock-height": `${panelHeight}px`,
+    "--ratio-panel-height": `${aspectRatioPanelHeight(measurements.height)}px`,
     "--header-height": `${layout.header}px`,
     "--preview-height": `${layout.preview}px`,
     "--playback-height": `${layout.playback}px`,

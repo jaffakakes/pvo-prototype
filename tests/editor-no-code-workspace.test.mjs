@@ -17,6 +17,7 @@ const bundle = buildSync({
   platform: "browser",
 });
 const {
+  aspectRatioPanelHeight,
   editorPanelHeight,
   workspaceGeometry,
   startTry,
@@ -58,6 +59,18 @@ test("keyboard and orientation height changes recalculate the same fixed split",
   assert.equal(original - keyboard, (236 * 3) / 8);
   assert.equal(landscape, ((390 - 64) * 3) / 8);
   assert.equal(editorPanelHeight(measurements), original);
+});
+
+test("ratio controls reserve their own row below an exposed timeline", () => {
+  for (const height of [390, 568, 844, 932]) {
+    const measurements = { height, header: 64, playback: 52 };
+    const panel = editorPanelHeight(measurements, true);
+    assert(panel - aspectRatioPanelHeight(height) >= 132);
+    const layout = workspaceGeometry(measurements, panel, false);
+    assert(layout.preview > 0);
+    assert.equal(layout.header, 64);
+    assert.equal(layout.playback, 52);
+  }
 });
 
 function editingProject() {

@@ -93,7 +93,6 @@
 .actions button:disabled { opacity: .45; cursor: default; }
 .actions button:focus-visible { outline: 3px solid var(--highlight); outline-offset: 1px; }
 .actions .deleteAction { color: var(--red); }
-.exportNote { margin: 0; font: 600 11px/1.5 var(--f-ui); color: var(--muted); }
 
 .ratios {
   display: grid;

@@ -95,9 +95,12 @@ try {
       }
       await page
         .locator(".toolBar")
-        .getByRole("button", { name: "More", exact: true })
+        .getByRole("button", { name: "Components", exact: true })
         .click();
-      const more = page.getByRole("dialog", { name: "More", exact: true });
+      const more = page.getByRole("dialog", {
+        name: "Add a component",
+        exact: true,
+      });
       await assertDocked(
         more,
         original.preview.width / original.preview.height,
