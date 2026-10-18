@@ -17,8 +17,10 @@
   border: 1px solid var(--q14);
   border-radius: 0;
   font: 700 13px/1.4 var(--f-ui);
+  caret-color: var(--accent);
   user-select: text;
 }
+.textEntry textarea:focus-visible { outline: 2px solid var(--highlight); outline-offset: -2px; }
 .textEntry { flex: none; align-items: flex-start; gap: 6px; }
 .textEntry .textConfirm {
   display: grid;

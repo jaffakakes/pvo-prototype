@@ -12,7 +12,7 @@ const browser = await chromium.launch({
 });
 try {
   for (const [width, height] of [[320, 568], [390, 844], [662, 977], [844, 390]]) {
-    const context = await browser.newContext({ viewport: { width, height }, serviceWorkers: "block" });
+    const context = await browser.newContext({ viewport: { width, height }, serviceWorkers: "block", hasTouch: width === 390, isMobile: width === 390 });
     const page = await context.newPage();
     const errors = [];
     page.on("pageerror", error => errors.push(error.message));
@@ -63,7 +63,28 @@ try {
       }));
       assert(focusState.focused, `Text entry opens with the field focused: ${JSON.stringify(focusState)}`);
       assert.equal(await text.getByRole("button", { name: "Done", exact: true }).count(), 0, "The keyboard-down control replaces the checkmark while typing");
+      const previewKeyboard = text.getByRole("group", { name: "On-screen keyboard", exact: true });
+      const content = text.getByRole("textbox", { name: "Text content", exact: true });
+      if (width === 390) {
+        assert.equal(await previewKeyboard.count(), 0, "Touch devices use the native keyboard");
+      } else {
+        assert.equal(await previewKeyboard.isVisible(), true, "The desktop phone preview shows a usable keyboard");
+        await settle();
+        const keyboardBox = await previewKeyboard.boundingBox();
+        assert(keyboardBox && keyboardBox.y >= 0 && keyboardBox.y + keyboardBox.height <= height + 2, `Keyboard bounds at ${width} × ${height}: ${JSON.stringify(keyboardBox)}`);
+        await previewKeyboard.getByRole("button", { name: "Key Q", exact: true }).click();
+        await previewKeyboard.getByRole("button", { name: "Key W", exact: true }).click();
+        assert.equal(await content.inputValue(), "Qw");
+        await previewKeyboard.getByRole("button", { name: "Backspace", exact: true }).click();
+        await previewKeyboard.getByRole("button", { name: "Numbers", exact: true }).click();
+        await previewKeyboard.getByRole("button", { name: "Key 1", exact: true }).click();
+        await previewKeyboard.getByRole("button", { name: "Space", exact: true }).click();
+        await previewKeyboard.getByRole("button", { name: "Return", exact: true }).click();
+        assert.equal(await content.inputValue(), "Q1 \n");
+        await content.fill("");
+      }
       await text.getByRole("button", { name: "Hide keyboard", exact: true }).click();
+      assert.equal(await previewKeyboard.count(), 0, "Keyboard-down dismisses the preview keyboard");
       const columns = await text.locator(".textPresets").evaluate(el => getComputedStyle(el).gridTemplateColumns.split(" ").length);
       assert.equal(columns, 3, "Designs use three compact columns");
       await finishTextEntry(text);

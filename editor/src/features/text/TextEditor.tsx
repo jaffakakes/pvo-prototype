@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
   DEFAULT_TEXT_STYLE,
   textStyle,
@@ -13,6 +13,11 @@ import { TextToolIcon } from "./TextToolIcon";
 import { TextFontGrid } from "./TextFontGrid";
 import { TextStyleGrid } from "./TextStyleGrid";
 import { TextEffectGrid } from "./TextEffectGrid";
+import {
+  TextPreviewKeyboard,
+  useDesktopTextKeyboard,
+} from "./TextPreviewKeyboard";
+import { editTextInput, type TextInputAction } from "../../domain/text/input";
 import {
   matchingTextEffect,
   textEffectAnimation,
@@ -30,6 +35,18 @@ export function TextEditor() {
   const [inputFocused, setInputFocused] = useState(true);
   const editKey = useRef<string | null>(null);
   const input = useRef<HTMLTextAreaElement>(null);
+  const pendingCursor = useRef<number | null>(null);
+  const desktopKeyboard = useDesktopTextKeyboard();
+  const content = text?.text ?? s.draft;
+  useLayoutEffect(() => {
+    if (pendingCursor.current !== null) {
+      input.current?.setSelectionRange(
+        pendingCursor.current,
+        pendingCursor.current,
+      );
+      pendingCursor.current = null;
+    }
+  });
   const style = text ? textStyle(text) : draftStyle;
   const update = (changes: Partial<TextOverlay>, key?: string) => {
     if (!text) return;
@@ -40,6 +57,24 @@ export function TextEditor() {
     const next = { ...style, ...changes };
     if (text) update({ style: next }, key);
     else setDraftStyle(next);
+  };
+  const changeContent = (value: string) =>
+    text ? update({ text: value }, "content") : s.patch({ draft: value });
+  const editFromKeyboard = (action: TextInputAction) => {
+    const field = input.current;
+    if (!field) return;
+    const next = editTextInput(
+      content,
+      field.selectionStart,
+      field.selectionEnd,
+      action,
+    );
+    if (next.value === content)
+      field.setSelectionRange(next.cursor, next.cursor);
+    else {
+      pendingCursor.current = next.cursor;
+      changeContent(next.value);
+    }
   };
   return (
     <div
@@ -63,15 +98,11 @@ export function TextEditor() {
           onFocus={() => setInputFocused(true)}
           onBlur={() => setInputFocused(false)}
           aria-label="Text content"
-          value={text?.text ?? s.draft}
+          value={content}
           maxLength={500}
           rows={1}
           placeholder="Enter text"
-          onChange={(e) =>
-            text
-              ? update({ text: e.target.value }, "content")
-              : s.patch({ draft: e.target.value })
-          }
+          onChange={(e) => changeContent(e.target.value)}
         />
         {inputFocused ? (
           <button
@@ -216,6 +247,12 @@ export function TextEditor() {
           />
         )}
       </div>
+      {inputFocused && desktopKeyboard && (
+        <TextPreviewKeyboard
+          capitalize={!content.length}
+          onEdit={editFromKeyboard}
+        />
+      )}
     </div>
   );
 }

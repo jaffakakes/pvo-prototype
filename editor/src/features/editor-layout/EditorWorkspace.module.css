@@ -214,6 +214,10 @@
   padding-bottom: calc(12px + env(safe-area-inset-bottom));
 }
 
+.workspace[data-keyboard-open="true"] :global([data-preview-keyboard]) {
+  display: none;
+}
+
 .workspace[data-code-expanded="true"] .sheetPane {
   container: expanded-code / size;
 }
