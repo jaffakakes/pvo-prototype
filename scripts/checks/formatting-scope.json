@@ -274,5 +274,7 @@
   "editor/src/features/sound/SoundBrowser.tsx",
   "editor/src/features/sound/useSoundEffectPreview.ts",
   "editor/src/features/sound/addSoundEffect.ts",
-  "scripts/checks/editor/sound-effects-browser.mjs"
+  "scripts/checks/editor/sound-effects-browser.mjs",
+  "editor/src/features/component-authoring/ComponentFields.css",
+  "editor/src/features/editor-layout/ResponsiveEditor.css"
 ]
