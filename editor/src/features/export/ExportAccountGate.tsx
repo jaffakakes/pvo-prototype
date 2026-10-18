@@ -5,6 +5,7 @@ import {
 } from "../../state/auth/authGateStore";
 import { ClerkEmailSignIn } from "../auth/ClerkEmailSignIn";
 import { AccountDisclosure } from "../auth/AccountDisclosure";
+import { AuthProviders } from "../auth/AuthProviders";
 import { useGoogleSignIn } from "../auth/useGoogleSignIn";
 import { exportClock } from "./presentation";
 import styles from "./ExportAccountGate.module.css";
@@ -40,10 +41,6 @@ export function ExportAccountGate({
 
   return (
     <div className={styles.gate} data-export-account-gate>
-      <p id="export-gate-description" className={styles.description}>
-        Your edit stays right here in this browser — sign in and we pick up
-        exactly where you left off.
-      </p>
       <div
         className={styles.summary}
         role="group"
@@ -72,39 +69,37 @@ export function ExportAccountGate({
           onBack={() => setEmailOpen(false)}
         />
       ) : (
-        <div className={styles.providers}>
+        <AuthProviders
+          googleDisabled={phase === "checking" || !available || connecting}
+          emailDisabled={
+            phase === "checking" ||
+            !clerkAvailable ||
+            !clerkPublishableKey ||
+            connecting
+          }
+          connecting={connecting}
+          onGoogle={() => beginGoogle()}
+          onEmail={() => setEmailOpen(true)}
+        />
+      )}
+      <AccountDisclosure className={styles.disclosure} />
+      {!emailOpen && (
+        <p className={styles.signIn}>
+          Already have an account?{" "}
           <button
             type="button"
-            className={styles.google}
-            onClick={() => beginGoogle()}
-            disabled={phase === "checking" || !available || connecting}
-          >
-            <span className={styles.googleMark} aria-hidden="true">
-              G
-            </span>
-            <span>
-              {connecting ? "Waiting for Google…" : "Continue with Google"}
-            </span>
-          </button>
-          <button
-            type="button"
-            className={styles.emailButton}
-            onClick={() => setEmailOpen(true)}
             disabled={
               phase === "checking" ||
               !clerkAvailable ||
               !clerkPublishableKey ||
               connecting
             }
+            onClick={() => setEmailOpen(true)}
           >
-            <span className={styles.emailMark} aria-hidden="true">
-              @
-            </span>
-            <span>Continue with email</span>
+            Sign in
           </button>
-        </div>
+        </p>
       )}
-      <AccountDisclosure className={styles.disclosure} />
       {phase === "checking" && (
         <p role="status" className={styles.status}>
           Checking your account…

@@ -157,7 +157,6 @@ export function ExportSheet() {
         if (event.target === event.currentTarget) close();
       }}
       aria-labelledby="export-dialog-title"
-      aria-describedby={mode === "gate" ? "export-gate-description" : undefined}
     >
       <div className={styles.layout}>
         <ExportPreview
@@ -177,7 +176,7 @@ export function ExportSheet() {
               tabIndex={-1}
             >
               {mode === "gate" ? (
-                "Create a free account to export"
+                "I want to save this edit"
               ) : mode === "picker" ? (
                 "Choose cover"
               ) : mode === "exporting" ? (
@@ -320,7 +319,6 @@ export function ExportSheet() {
             format={format}
             quality={s.quality}
             unavailable={emptyScenes.length > 0 || mainDuration <= 0}
-            close={close}
             begin={begin}
             saveCover={saveCover}
             cancel={cancel}

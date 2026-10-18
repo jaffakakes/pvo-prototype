@@ -11,14 +11,14 @@
   background: var(--surface);
   color: var(--text);
   border: 3px solid var(--line-strong);
-  border-radius: 0;
+  border-radius: 22px;
   box-shadow: 8px 8px 0 var(--frame-shadow);
   font-family: var(--f-ui);
   overscroll-behavior: contain;
 }
 
 .dialog::backdrop {
-  background: rgba(0, 0, 0, .62);
+  background: rgba(0, 0, 0, 0.62);
 }
 
 .heading {
@@ -67,47 +67,10 @@
   font: 500 13px/1.5 var(--f-ui);
 }
 
-.providers {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 4px;
-}
-
-.provider {
-  display: grid;
-  grid-template-columns: 56px minmax(0, 1fr) 56px;
-  align-items: center;
-  width: 100%;
-  min-height: 56px;
-  padding: 0;
-  border: 2px solid var(--line-strong);
-  border-radius: 14px;
-  box-shadow: 3px 3px 0 var(--button-shadow);
-  background: var(--surface);
-  color: var(--text);
-  font: 700 15px/1.25 var(--f-ui);
-  cursor: pointer;
-}
-
-.providerIcon {
-  display: grid;
-  place-items: center;
-  align-self: stretch;
-  border-right: 2px solid var(--line-strong);
-  border-radius: 12px 0 0 12px;
-  background: var(--deep);
-  background-clip: padding-box;
-}
-
 .email {
   background: var(--auth-accent);
   color: var(--auth-accent-text);
   font-weight: 800;
-}
-
-.email .providerIcon {
-  background: color-mix(in oklab, var(--auth-accent) 78%, #000);
 }
 
 .availability {
@@ -119,7 +82,8 @@
   font: 500 13px/1.5 var(--f-ui);
 }
 
-.status, .error {
+.status,
+.error {
   margin: 0;
   font: 600 12px/1.5 var(--f-ui);
 }
@@ -186,7 +150,7 @@
 }
 
 .dialog button:disabled {
-  opacity: .55;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
@@ -225,15 +189,6 @@
     margin-top: -4px;
     font-size: 12px;
   }
-  .providers {
-    gap: 10px;
-    margin-top: 2px;
-  }
-  .provider {
-    min-height: 52px;
-    grid-template-columns: 52px minmax(0, 1fr) 52px;
-    font-size: 14.5px;
-  }
   .footer {
     margin-top: 16px;
     padding: 14px 18px 18px;
@@ -268,4 +223,15 @@
 
 .dialog[data-auth-step="account"] .footer {
   flex-wrap: wrap;
+}
+
+.dialog:not([data-auth-step="account"]) .footer {
+  justify-content: center;
+  padding-top: 0;
+  border-top: 0;
+  background: transparent;
+}
+
+.dialog:not([data-auth-step="account"]) .swap {
+  text-align: center;
 }

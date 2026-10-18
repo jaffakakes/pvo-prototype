@@ -266,5 +266,10 @@
   "editor/src/state/preferences/soundLibrary.ts",
   "editor/src/infrastructure/preferences/soundLibrary.ts",
   "scripts/checks/editor/sound-browser.mjs",
-  "tests/editor-sound-library.test.mjs"
+  "tests/editor-sound-library.test.mjs",
+  "editor/src/features/auth/AccountDisclosure.tsx",
+  "editor/src/features/auth/AuthDialog.tsx",
+  "editor/src/features/auth/AuthDialog.module.css",
+  "editor/src/features/auth/AuthProviders.tsx",
+  "editor/src/features/auth/AuthProviders.module.css"
 ]

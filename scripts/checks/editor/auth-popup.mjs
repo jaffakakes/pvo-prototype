@@ -140,7 +140,7 @@ async function checkPopup(phone) {
   page.setDefaultTimeout(15000);
   page.on("pageerror", error => errors.push(error.message));
   const dialog = page.locator("dialog[data-auth-step]");
-  const gate = page.getByRole("dialog", { name: "Create a free account", exact: true });
+  const gate = page.getByRole("dialog", { name: "I want to save this edit", exact: true });
   let trigger;
   const open = async () => {
     trigger = phone
@@ -187,6 +187,10 @@ async function checkPopup(phone) {
     assert(frame.x >= 0 && frame.right <= (phone ? 390 : 1280), "The popup must stay inside the viewport");
     assert.equal(await gate.getByRole("button", { name: "Continue with Google", exact: true }).isEnabled(), true);
     assert.equal(await gate.getByRole("button", { name: "Continue with email", exact: true }).isEnabled(), true);
+    assert.equal(await gate.getByRole("button", { name: "Keep editing", exact: true }).count(), 0);
+    assert.doesNotMatch(await gate.innerText(), /Your edit stays right here/);
+    assert.match(await gate.innerText(), /By continuing you agree to the Terms and Privacy Policy/);
+    assert.equal(await gate.getByRole("link", { name: "What we share ›", exact: true }).getAttribute("href"), "/privacy.html#sign-in");
     assert.equal(await gate.locator("[data-export-account-gate], [data-export-preview]").count(), 0);
     assert.doesNotMatch(await gate.innerText(), /\.mp4|1080p|720p|export settings/i,
       "Standalone sign-in must not present an export summary");
@@ -216,7 +220,7 @@ async function checkPopup(phone) {
     await dialog.locator('[data-test-clerk-form="signin"]').waitFor();
     await dialog.getByRole("button", { name: /^Back/ }).click();
     await gate.waitFor();
-    await gate.getByRole("button", { name: "Keep editing", exact: true }).click();
+    await gate.getByRole("button", { name: "Close sign in", exact: true }).click();
     await assertDismissed();
 
     await open();
