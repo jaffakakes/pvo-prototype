@@ -79,8 +79,8 @@ button.chip, .treeButton { cursor: pointer; }
 .chip small, .nodeChip small { font: 600 9.5px var(--f-ui); opacity: .55; }
 .separator { flex: none; font: 800 12px var(--f-ui); opacity: .4; color: var(--faint); }
 .branchCount { color: var(--violet); font-size: 9px; }
-.add { color: var(--violet); font-weight: 800; }
-.add::before { background: transparent; border: 2px dashed color-mix(in srgb, var(--violet) 60%, transparent); }
+.add { color: var(--text); font-weight: 800; }
+.add::before { background: transparent; border: 2px dashed var(--line-strong); }
 .treeButton { width: 44px; padding: 0; color: var(--violet); }
 .treeButton::before { inset: 8px 4px; }
 .treeButton[aria-expanded="true"]::before { border-color: var(--violet); }
