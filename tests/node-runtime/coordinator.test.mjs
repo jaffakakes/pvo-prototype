@@ -12,12 +12,18 @@ test("a durable Node slot meters owned calls, fences replay and preserves daily 
     return Response.json({ result: "ok", state: {} });
   });
   try {
-    const input = request("first");
+    const input = { ...request("first"), mode: "live" };
     assert.equal((await f.call(input)).ok, true);
     assert.equal((await f.call(input)).code, "execution_closed");
     await f.restart();
-    assert.equal((await f.call(request("second"))).ok, true);
-    assert.equal((await f.call(request("third"))).code, "execution_allowance");
+    assert.equal(
+      (await f.call({ ...request("second"), mode: "live" })).ok,
+      true,
+    );
+    assert.equal(
+      (await f.call({ ...request("third"), mode: "live" })).code,
+      "execution_allowance",
+    );
     const diagnostic = await f.call({ kind: "inspect" });
     assert.equal(diagnostic.lease, null);
     assert.equal(diagnostic.usage[0].starts, 2);
@@ -297,7 +303,7 @@ test("read-only metering separates owners, services and phases and never hides p
     await entered.promise;
     await f.call({ kind: "time", now: now + 1200 });
     const pending = await f.call(scope);
-    assert.equal(pending.capacity.ownerRemaining, 1);
+    assert.equal(pending.capacity.ownerRemaining, 2);
     assert.equal(pending.periods.validation.starts, 1);
     assert.equal(pending.periods.validation.milliseconds, 0);
     assert.equal(pending.pending.milliseconds, 1200);
@@ -400,6 +406,83 @@ test("metering records startup and uncertain shutdown outside the guest and sett
   } finally {
     ready.resolve();
     done.resolve();
+    await f.close();
+  }
+});
+
+test("AI tests and validation have no daily count cap and never consume viewer allowance", async () => {
+  const f = await fixture(async () =>
+    Response.json({ result: "ok", state: {} }),
+  );
+  try {
+    for (let i = 0; i < 63; i++) {
+      const mode = ["test", "validation", "probe"][i % 3];
+      assert.equal((await f.call({ ...request(`build-${i}`), mode })).ok, true);
+      if (i === 30) await f.restart();
+    }
+    const scope = {
+      kind: "usage",
+      ownerId: "creator",
+      serviceId: "service-one",
+    };
+    const usage = await f.call(scope);
+    assert.equal(usage.capacity.ownerRemaining, 2);
+    assert.equal(usage.capacity.platformRemaining, 4);
+    for (const mode of ["test", "validation", "probe"])
+      assert.equal(usage.periods[mode].starts, 21);
+    for (let i = 0; i < 2; i++)
+      assert.equal(
+        (await f.call({ ...request(`live-${i}`), mode: "live" })).ok,
+        true,
+      );
+    assert.equal(
+      (await f.call({ ...request("live-full"), mode: "live" })).code,
+      "execution_allowance",
+    );
+    assert.equal(
+      (await f.call({ ...request("still-validating"), mode: "validation" })).ok,
+      true,
+    );
+    assert.equal((await f.call(scope)).capacity.ownerRemaining, 0);
+  } finally {
+    await f.close();
+  }
+});
+
+test("receipt count never blocks validation while cancellation and expiry still fence delayed work", async () => {
+  const f = await fixture(async () =>
+    Response.json({ result: "ok", state: {} }),
+  );
+  try {
+    const now = Date.now();
+    await f.call({ kind: "time", now });
+    assert.equal(await f.call({ kind: "cancel-many", count: 1026 }), 1026);
+    await f.restart();
+    await f.call({ kind: "time", now });
+    assert.equal(
+      (
+        await f.call({
+          ...request("cancel-1025"),
+          mode: "validation",
+          expiresAt: now + 10000,
+        })
+      ).code,
+      "execution_closed",
+    );
+    assert.equal(
+      (
+        await f.call({
+          ...request("new-check"),
+          mode: "validation",
+          expiresAt: now + 10000,
+        })
+      ).ok,
+      true,
+    );
+    await f.call({ kind: "time", now: now + NODE_LIMITS.leaseMs + 1 });
+    const cleaned = await f.call({ kind: "cleanup" });
+    assert.deepEqual(cleaned.receipts, []);
+  } finally {
     await f.close();
   }
 });

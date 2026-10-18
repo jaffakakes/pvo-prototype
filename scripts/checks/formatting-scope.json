@@ -304,7 +304,6 @@
   "scripts/checks/account-connections/live.mjs",
   "scripts/checks/cloud-agent-first-release/api.js",
   "scripts/checks/cloud-agent-first-release/browser.mjs",
-  "scripts/checks/cloud-agent-first-release/budget.js",
   "scripts/checks/cloud-agent-first-release/cancellation.mjs",
   "scripts/checks/cloud-agent-first-release/cleanup.mjs",
   "scripts/checks/cloud-agent-first-release/configure-key.mjs",

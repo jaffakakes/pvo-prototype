@@ -49,10 +49,10 @@ export function ContainerCompute({
           </p>
           <p>
             {compute.capacity.ownerRemaining} of {compute.capacity.ownerLimit}{" "}
-            cloud runs remaining today across your Containers. Restyle has{" "}
+            viewer runs remaining today across your Containers. Restyle has{" "}
             {compute.capacity.platformRemaining} of{" "}
-            {compute.capacity.platformLimit} remaining across all accounts.
-            Resets {new Date(compute.resetsAt).toLocaleString()}.
+            {compute.capacity.platformLimit} viewer runs remaining across all
+            accounts. Resets {new Date(compute.resetsAt).toLocaleString()}.
           </p>
           <p>
             {compute.capacity.slots - compute.capacity.busySlots} of{" "}

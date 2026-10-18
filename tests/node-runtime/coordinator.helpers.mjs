@@ -35,12 +35,14 @@ export async function fixture(
       };}`
       }
       limits(){return {owner:2,platform:4};}
+      async cancelMany(count){for(let i=0;i<count;i++)await this.cancel('cancel-'+i);return count;}
       sweep(){return this.alarm();}
       async diagnostic(){return {lease:this.lease(),usage:this.ctx.storage.sql.exec('SELECT * FROM node_usage').toArray(),receipts:this.ctx.storage.sql.exec('SELECT * FROM node_receipts').toArray(),alarm:await this.ctx.storage.getAlarm()};}
     }
     export default {async fetch(request,env){const {kind,...input}=await request.json();const stub=env.RUNTIME.getByName('slot-0');
       if(kind==='execute')return Response.json(await stub.execute(input));
       if(kind==='cancel')return Response.json(await stub.cancel(input.id));
+      if(kind==='cancel-many')return Response.json(await stub.cancelMany(input.count));
       if(kind==='time'){await stub.setTime(input.now);return Response.json({});}
       if(kind==='usage')return Response.json(await stub.usage(input.ownerId,input.serviceId));
       if(kind==='cleanup'){await stub.sweep();return Response.json(await stub.diagnostic());}

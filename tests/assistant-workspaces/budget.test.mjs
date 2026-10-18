@@ -66,7 +66,7 @@ test("global workspace reservations survive restart, cap concurrent owners and n
   }
 });
 
-test("release-before-reserve tombstones and daily usage prevent delayed resurrection or free retries", async () => {
+test("unlimited daily workspace starts retain accounting, replay and cancellation fences across restart", async () => {
   const f = await workspaceFixture();
   const who = await identity();
   const call = (action, input, extra = {}) =>
@@ -75,17 +75,19 @@ test("release-before-reserve tombstones and daily usage prevent delayed resurrec
     const cancelled = await lease(0);
     result(await call("release", cancelled));
     assert.equal(result(await call("reserve", cancelled)), false);
-    for (let n = 1; n <= limits.dailySessions; n++) {
-      const current = await lease(n);
-      assert.equal(result(await call("reserve", current)), true);
-      assert.equal(result(await call("reserve", current)), true);
-      result(await call("release", current));
+    for (const start of [1, 2051]) {
+      const leases = await Promise.all(
+        Array.from({ length: 2050 }, (_, index) => lease(start + index)),
+      );
+      assert.equal(result(await call("batch", leases)), true);
+      await f.restart();
     }
-    assert.deepEqual((await call("reserve", await lease(100))).result, {
-      accepted: false,
-      reason: "workspace_allowance",
-      retryAt: NOW + 86_400_000,
-    });
+    assert.equal((await call("usage")).result, 4100);
+    const lateCancelled = await lease(4101);
+    result(await call("release", lateCancelled));
+    await f.restart();
+    assert.equal(result(await call("reserve", lateCancelled)), false);
+    assert.equal((await call("usage")).result, 4100);
     const tomorrow = NOW + 86_400_000;
     result(await call("time", null, { now: tomorrow }));
     result(await call("alarm"));

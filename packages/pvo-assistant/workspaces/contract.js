@@ -16,7 +16,6 @@ export const WORKSPACE_LIMITS = Object.freeze({
   startupMs: 20_000,
   outputBytes: 16 * 1024,
   concurrent: 2,
-  dailySessions: 12,
   cleanupAttempts: 5,
 });
 

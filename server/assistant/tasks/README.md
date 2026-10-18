@@ -109,7 +109,7 @@ Request-count limits and temporary daily-capacity overrides are removed. Usage r
 
 After the operator applies approved account configuration, the creator selects **Resume**. This rechecks permission/capacity on the same task and retains its original input, answers, frozen agreement and exact tool cursor. Resume itself never grants or resets an allowance, and a later grant cannot restart a stopped task. The panel tells the creator to ask their Restyle administrator when permission is missing.
 
-This is operator-managed permission over the existing bounded service allowance, **not a dollar balance, metered billing system, credit purchase UI or new paid-test authorization**. The existing shared model minute/daily limits and global workspace concurrency/daily limits continue to reserve and settle actual work. Foreground limits are unchanged. Do not enable real account grants without the applicable spending authorization and deployment approval. Runtime service usage and external account permissions remain separate boundaries.
+This is operator-managed permission, **not a dollar balance, credit purchase UI or new paid-test authorization**. Model and workspace requests have no application count ceiling. Global workspace concurrency, exact reservations, individual execution bounds and cleanup still apply. Independent checks, tests and readiness probes do not consume the separately bounded public viewer allowance. Do not enable real account grants without the applicable spending authorization and deployment approval. Runtime service usage and external account permissions remain separate boundaries.
 
 
 ## Saved authoring repairs
