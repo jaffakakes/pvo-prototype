@@ -502,6 +502,7 @@
   "server/assistant/tasks/questionHistory.js",
   "server/assistant/tasks/repairFeedback.js",
   "server/assistant/tasks/repairs.js",
+  "server/assistant/tasks/reviewDiagnostic.js",
   "server/assistant/tasks/repository.js",
   "server/assistant/tasks/results.js",
   "server/assistant/tasks/routes.js",

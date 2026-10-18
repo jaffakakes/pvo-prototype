@@ -57,6 +57,7 @@ import {
 } from "../../../packages/pvo-assistant/tasks/index.js";
 import { TaskAttempts } from "./attempts.js";
 import { planSavedTask, savedPlannerAvailable } from "./planner.js";
+import { reviewDiagnostic } from "./reviewDiagnostic.js";
 import { runAuthoringStep, settleAuthoringBudgets } from "./runner.js";
 import { DurableObject } from "cloudflare:workers";
 import { compilePvoComponent } from "../../../packages/pvo-language/worker.js";
@@ -192,6 +193,9 @@ export class AssistantTasks extends DurableObject {
                 },
                 stepId: task.stepId,
                 repair: this.repairs.context(task),
+                review: reviewDiagnostic(
+                  this.builders.get(task.id).reviewFeedback,
+                ),
               };
             }
             case "tests":

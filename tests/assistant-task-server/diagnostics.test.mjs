@@ -21,6 +21,7 @@ test("private authoring diagnostics explain a rejected plan without restarting o
       },
       stepId: "plan",
       repair: null,
+      review: null,
     });
     await fixture.control({ action: "sweep" });
     await fixture.control({ action: "sweep" });

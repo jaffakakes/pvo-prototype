@@ -5,6 +5,14 @@ import {
 
 export type BuildDiagnostic = {
   stepId: string;
+  review: null | {
+    revision: number;
+    digest: string;
+    status: "running" | "passed" | "failed" | "interrupted" | "artifact_error";
+    caseId: string | null;
+    step: number | null;
+    detail: string;
+  };
   repair: null | {
     check: string;
     message: string;
@@ -31,7 +39,9 @@ export function parseBuildDiagnostic(
     throw invalid();
   if (typeof body.stepId !== "string" || body.stepId.length > 128)
     throw invalid();
-  if (body.repair === null) return { stepId: body.stepId, repair: null };
+  const review = parseReview(body.review);
+  if (body.repair === null)
+    return { stepId: body.stepId, repair: null, review };
   if (
     !body.repair ||
     typeof body.repair !== "object" ||
@@ -64,6 +74,7 @@ export function parseBuildDiagnostic(
     throw invalid();
   return {
     stepId: body.stepId,
+    review,
     repair: {
       check: repair.check,
       message: repair.message,
@@ -71,4 +82,33 @@ export function parseBuildDiagnostic(
       proposal: { text: proposal.text, truncated: proposal.truncated },
     },
   };
+}
+
+function parseReview(value: unknown): BuildDiagnostic["review"] {
+  if (value === null) return null;
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    throw new Error("The saved independent check is invalid.");
+  const review = value as Record<string, unknown>;
+  const { revision, digest, status, caseId, step, detail } = review;
+  if (
+    typeof revision !== "number" ||
+    !Number.isSafeInteger(revision) ||
+    revision < 1 ||
+    typeof digest !== "string" ||
+    !/^[a-f0-9]{64}$/.test(digest) ||
+    (status !== "running" &&
+      status !== "passed" &&
+      status !== "failed" &&
+      status !== "interrupted" &&
+      status !== "artifact_error") ||
+    (caseId !== null &&
+      (typeof caseId !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(caseId))) ||
+    (step !== null &&
+      (typeof step !== "number" || !Number.isSafeInteger(step) || step < 0)) ||
+    (caseId === null) !== (step === null) ||
+    typeof detail !== "string" ||
+    new TextEncoder().encode(detail).length > 2048
+  )
+    throw new Error("The saved independent check is invalid.");
+  return { revision, digest, status, caseId, step, detail };
 }

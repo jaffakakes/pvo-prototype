@@ -237,6 +237,37 @@ test("rechecking the same failing backend asks for help, then changed source can
     );
     assert.equal(waiting.result, null);
     assert.equal(waiting.usage.reservedToolCalls, 0);
+    const diagnostic = await f.request(path(task) + "/diagnostics");
+    expectStatus(diagnostic, 200);
+    assert.equal(diagnostic.body.repair, null);
+    assert.equal(diagnostic.body.review.status, "failed");
+    assert.equal(diagnostic.body.review.revision, 1);
+    assert.equal(
+      diagnostic.body.review.digest,
+      failed.at(-1).artifact.identity.sourceDigest,
+    );
+    assert.equal(
+      diagnostic.body.review.caseId,
+      failed.at(-1).report.cases.at(-1).id,
+    );
+    assert.equal(
+      diagnostic.body.review.detail,
+      failed.at(-1).report.cases.at(-1).failure.detail,
+    );
+    assert.deepEqual(
+      await current(f, task),
+      waiting,
+      "Inspecting a failed check does not dispatch or change the task",
+    );
+    await f.restart();
+    assert.deepEqual(
+      (await f.request(path(task) + "/diagnostics")).body,
+      diagnostic.body,
+    );
+    expectStatus(
+      await f.request(path(task) + "/diagnostics", { session: f.otherCookie }),
+      404,
+    );
     repair = true;
     await answer(f, waiting, "answer-review-loop");
     await sweepUntil(

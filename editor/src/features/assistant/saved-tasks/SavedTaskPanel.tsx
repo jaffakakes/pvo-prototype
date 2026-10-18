@@ -75,9 +75,11 @@ export function SavedTaskPanel() {
           }}
         />
       )}
-      {session.task && status?.question?.id.startsWith("repair-help-") && (
-        <BuildDiagnostic task={session.task} />
-      )}
+      {session.task &&
+        status?.question &&
+        /^(repair|progress)-help-/.test(status.question.id) && (
+          <BuildDiagnostic task={session.task} />
+        )}
       {session.task?.questions.some((question) => question.answer) && (
         <details className={styles.history}>
           <summary>Saved answers</summary>

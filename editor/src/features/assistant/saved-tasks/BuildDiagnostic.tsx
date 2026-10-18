@@ -12,6 +12,22 @@ export function BuildDiagnostic({ task }: { task: TaskRecord }) {
       <summary>Build check details</summary>
       {view.busy && <p>Opening private build details…</p>}
       {view.error && <p role="alert">{view.error}</p>}
+      {view.data?.review && (
+        <>
+          <p>
+            <strong>Independent check</strong> · Source revision{" "}
+            {view.data.review.revision}
+          </p>
+          {view.data.review.caseId !== null &&
+            view.data.review.step !== null && (
+              <p>
+                Case: {view.data.review.caseId} · Step{" "}
+                {view.data.review.step + 1}
+              </p>
+            )}
+          <p>{view.data.review.detail}</p>
+        </>
+      )}
       {view.data &&
         (view.data.repair ? (
           <>
@@ -31,9 +47,12 @@ export function BuildDiagnostic({ task }: { task: TaskRecord }) {
             </details>
           </>
         ) : (
-          <p>
-            Stage: {view.data.stepId}. No rejected plan is saved for this stage.
-          </p>
+          !view.data.review && (
+            <p>
+              Stage: {view.data.stepId}. No rejected plan is saved for this
+              stage.
+            </p>
+          )
         ))}
     </details>
   );

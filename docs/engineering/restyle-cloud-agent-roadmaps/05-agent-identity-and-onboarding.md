@@ -87,6 +87,7 @@ The creator selected **finish the email MVP first**, keeping broader service sig
 - [ ] **5M.04** Run the requested feature through Restyle's own build/test/connect flow, send only the creator-approved message/recipient, recover the same receipt without duplicate sending, and retain the test for creator review.
 - [x] **5M.05** Remove application AI request-count limits as the creator requested; verify accounting, cancellation and restart behavior, then deliver beta and resume the saved email task.
 - [x] **5M.06** Correct the latest history-result handoff exposed by live email acceptance, verify bounded prompt/cancellation behavior, deliver beta and check that the same saved task can progress.
+- [x] **5M.07** Expose saved independent-check failures in the private build details for stalled tasks, verify ownership/unchanged-task behavior and inspect the actual beta failure before resuming.
 
 Resource intent: use one creator-approved AgentMail inbox and the existing beta workshop/hosting adapters. No phone, paid upgrade or extra downstream account is in this MVP scope. The creator supplied the test recipient privately; a short Restyle MVP test message is fixed in the handoff. No live message has been sent. The approved inbox is connected after ownership verification; the separate recipient-sending permission is approved and saved.
 
