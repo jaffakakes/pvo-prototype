@@ -51,7 +51,7 @@
   font: 700 12px/1 var(--f-ui);
   color: var(--button-primary-text);
   background: var(--button-primary-bg);
-  border: 2px solid var(--button-border);
+  border: 0;
   border-radius: 10px;
 }
 .action:disabled,
