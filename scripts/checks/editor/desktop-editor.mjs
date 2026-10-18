@@ -16,8 +16,9 @@ await context.route(`${new URL(url).origin}/api/auth/session`, (route) =>
     contentType: "application/json",
     body: JSON.stringify({
       available: true,
-      clerkAvailable: false,
-      clerkPublishableKey: null,
+      supabaseAvailable: false,
+      supabasePublishableKey: null,
+      supabaseUrl: null,
       canLinkEmail: false,
       emailLinked: false,
       user: { id: "editor-test", name: "Editor tester" },
@@ -231,8 +232,9 @@ try {
       contentType: "application/json",
       body: JSON.stringify({
         available: true,
-        clerkAvailable: false,
-        clerkPublishableKey: null,
+        supabaseAvailable: false,
+        supabasePublishableKey: null,
+        supabaseUrl: null,
         canLinkEmail: false,
         emailLinked: false,
         user: { id: "desktop-check", name: "Desktop check" },

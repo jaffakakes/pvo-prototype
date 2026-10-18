@@ -13,7 +13,7 @@ const page = await context.newPage();
 const pageErrors = [];
 page.on("pageerror", error => pageErrors.push(error.message));
 await page.route("**/api/auth/session", route => route.fulfill({ contentType: "application/json",
-  body: JSON.stringify({ available: true, clerkAvailable: false, clerkPublishableKey: null,
+  body: JSON.stringify({ available: true, supabaseAvailable: false, supabasePublishableKey: null, supabaseUrl: null,
     canLinkEmail: false, emailLinked: false, user: { id: "components-extra-check", name: "Components extra check" } }) }));
 await page.route("**/api/renders", route => route.fulfill({ contentType: "application/json",
   body: JSON.stringify({ available: false, maxSourceBytes: 0, maxSources: 0, formats: [] }) }));

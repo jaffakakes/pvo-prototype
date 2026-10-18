@@ -71,7 +71,7 @@ export async function createAccountSession(identity, env) {
 }
 
 export async function createManagedAccountSession(userId, env) {
-  return sessionCookieForUser(userId, env, MANAGED_SESSION_SECONDS, "clerk");
+  return sessionCookieForUser(userId, env, MANAGED_SESSION_SECONDS, "supabase");
 }
 
 export async function endAccountSession(request, env) {

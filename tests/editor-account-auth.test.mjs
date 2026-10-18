@@ -3,11 +3,11 @@ import test from "node:test";
 import { buildSync } from "esbuild";
 
 const bundled = buildSync({ stdin: { contents: `
-  export { exchangeClerkSession, getAccountSession, linkClerkSession } from "./editor/src/infrastructure/auth/client.ts";
+  export { exchangeSupabaseSession, getAccountSession, linkSupabaseSession } from "./editor/src/infrastructure/auth/client.ts";
   export { closeAuthGate, refreshAccountSession, refreshAccountSessionAfterSignIn, requireAccount, signOutAccount, useAuthGate } from "./editor/src/state/auth/authGateStore.ts";
   export { resetExportArtifact, useExportArtifact } from "./editor/src/state/export/exportArtifactStore.ts";
 `, resolveDir: process.cwd() }, bundle: true, write: false, format: "esm", platform: "browser" });
-const { closeAuthGate, exchangeClerkSession, getAccountSession, linkClerkSession, refreshAccountSession, refreshAccountSessionAfterSignIn,
+const { closeAuthGate, exchangeSupabaseSession, getAccountSession, linkSupabaseSession, refreshAccountSession, refreshAccountSessionAfterSignIn,
   requireAccount, resetExportArtifact,
   signOutAccount, useAuthGate, useExportArtifact } =
   await import(`data:text/javascript;base64,${Buffer.from(bundled.outputFiles[0].text).toString("base64")}`);
@@ -15,8 +15,8 @@ const { closeAuthGate, exchangeClerkSession, getAccountSession, linkClerkSession
 const originalFetch = globalThis.fetch;
 test.after(() => { globalThis.fetch = originalFetch; });
 
-const accountSession = user => ({ available: true, user, clerkAvailable: false,
-  clerkPublishableKey: null, canLinkEmail: false, emailLinked: false });
+const accountSession = user => ({ available: true, user, supabaseAvailable: false,
+  supabasePublishableKey: null, supabaseUrl: null, canLinkEmail: false, emailLinked: false });
 
 test("account gate waits for verified sign-in and resumes the intended action", async () => {
   let signedIn = false;
@@ -49,15 +49,15 @@ test("dismissal cancels the queued export and a new action checks the live sessi
 
 test("unconfigured sign-in cannot be mistaken for an authenticated session", async () => {
   globalThis.fetch = async () => new Response("Not found", { status: 404 });
-  assert.deepEqual(await getAccountSession(), { available: false, user: null, clerkAvailable: false,
-    clerkPublishableKey: null, canLinkEmail: false, emailLinked: false });
+  assert.deepEqual(await getAccountSession(), { available: false, user: null, supabaseAvailable: false,
+    supabasePublishableKey: null, supabaseUrl: null, canLinkEmail: false, emailLinked: false });
   globalThis.fetch = async () => Response.json(accountSession({ id: 123, name: "Bad" }));
   await assert.rejects(getAccountSession(), /invalid response/);
 });
 
-test("email sign-in exchanges only a Clerk session token through the same-origin account endpoint", async () => {
+test("email sign-in exchanges only a Supabase session token through the same-origin account endpoint", async () => {
   globalThis.fetch = async (path, init) => {
-    assert.equal(path, "/api/auth/clerk/exchange");
+    assert.equal(path, "/api/auth/supabase/exchange");
     assert.equal(init.method, "POST");
     assert.equal(init.credentials, "same-origin");
     assert.equal(init.redirect, "error");
@@ -65,13 +65,13 @@ test("email sign-in exchanges only a Clerk session token through the same-origin
     assert.equal(init.body, undefined);
     return Response.json({ user: { id: "account-a", name: "Alice" } });
   };
-  await exchangeClerkSession("short-lived-token");
+  await exchangeSupabaseSession("short-lived-token");
 });
 
 test("email linking sends the reviewed Restyle account and handles an identity conflict", async () => {
   let status = 200;
   globalThis.fetch = async (path, init) => {
-    assert.equal(path, "/api/auth/clerk/link");
+    assert.equal(path, "/api/auth/supabase/link");
     assert.equal(init.method, "POST");
     assert.equal(init.credentials, "same-origin");
     assert.equal(init.redirect, "error");
@@ -80,12 +80,12 @@ test("email linking sends the reviewed Restyle account and handles an identity c
     assert.deepEqual(JSON.parse(init.body), { expectedUserId: "reviewed-user" });
     return Response.json({ user: null }, { status });
   };
-  await linkClerkSession("reviewed-token", "reviewed-user");
+  await linkSupabaseSession("reviewed-token", "reviewed-user");
   status = 409;
-  await assert.rejects(linkClerkSession("reviewed-token", "reviewed-user"),
+  await assert.rejects(linkSupabaseSession("reviewed-token", "reviewed-user"),
     /already connected to another Restyle account/);
   status = 412;
-  await assert.rejects(linkClerkSession("reviewed-token", "reviewed-user"),
+  await assert.rejects(linkSupabaseSession("reviewed-token", "reviewed-user"),
     /Restyle account changed/);
 });
 

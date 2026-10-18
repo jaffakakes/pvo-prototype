@@ -3,13 +3,14 @@ import { getAccountSession, logOutAccount, type AccountSession, type AccountUser
 import { clearAccountPublication } from "../export/exportArtifactStore";
 import { syncThemeAccount } from "../preferences/themePreferences";
 
-export type AuthSource = "signin" | "export" | "download" | "share" | "replies";
+export type AuthSource = "signin" | "recovery" | "export" | "download" | "share" | "replies";
 type AuthGateState = {
   source: AuthSource | null;
   phase: "idle" | "checking" | "ready" | "error";
   available: boolean;
-  clerkAvailable: boolean;
-  clerkPublishableKey: string | null;
+  supabaseAvailable: boolean;
+  supabasePublishableKey: string | null;
+  supabaseUrl: string | null;
   canLinkEmail: boolean;
   emailLinked: boolean;
   user: AccountUser | null;
@@ -21,8 +22,8 @@ export const useAuthGate = create<AuthGateState>(() => ({
   source: null,
   phase: "idle",
   available: false,
-  clerkAvailable: false,
-  clerkPublishableKey: null,
+  supabaseAvailable: false,
+  supabasePublishableKey: null, supabaseUrl: null,
   canLinkEmail: false,
   emailLinked: false,
   user: null,
@@ -36,8 +37,8 @@ let signOutRequest: Promise<void> | null = null;
 let pendingAccount: { promise: Promise<boolean>; resolve(value: boolean): void } | null = null;
 
 function currentSession(): AccountSession {
-  const { available, user, clerkAvailable, clerkPublishableKey, canLinkEmail, emailLinked } = useAuthGate.getState();
-  return { available, user: signOutRequest ? null : user, clerkAvailable, clerkPublishableKey,
+  const { available, user, supabaseAvailable, supabasePublishableKey, supabaseUrl, canLinkEmail, emailLinked } = useAuthGate.getState();
+  return { available, user: signOutRequest ? null : user, supabaseAvailable, supabasePublishableKey, supabaseUrl,
     canLinkEmail: signOutRequest ? false : canLinkEmail, emailLinked: signOutRequest ? false : emailLinked };
 }
 
@@ -76,8 +77,8 @@ export function refreshAccountSession(): Promise<AccountSession> {
     useAuthGate.setState(state => ({
       phase: "ready",
       available: session.available,
-      clerkAvailable: session.clerkAvailable,
-      clerkPublishableKey: session.clerkPublishableKey,
+      supabaseAvailable: session.supabaseAvailable,
+      supabasePublishableKey: session.supabasePublishableKey, supabaseUrl: session.supabaseUrl,
       canLinkEmail: session.canLinkEmail,
       emailLinked: session.emailLinked,
       user: session.user,

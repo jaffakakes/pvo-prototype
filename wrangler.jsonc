@@ -31,9 +31,7 @@
     "ASSISTANT_PROVIDER": "runpod",
     "RUNPOD_TRANSCRIPTION_ENDPOINT": "5uqruzvtb96kph",
     "PUBLISHING_ENABLED": "true",
-    "PUBLIC_ORIGIN": "https://getrestyle.app",
-    "CLERK_ISSUER": "https://clerk.getrestyle.app",
-    "CLERK_PUBLISHABLE_KEY": "pk_live_Y2xlcmsuZ2V0cmVzdHlsZS5hcHAk"
+    "PUBLIC_ORIGIN": "https://getrestyle.app"
   },
   "r2_buckets": [{"binding":"MEDIA","bucket_name":"pvo-publications-media"}],
   "d1_databases": [{"binding":"DB","database_name":"pvo-publications-google","database_id":"46ed24c3-1bc3-487a-95cf-7b6b58c1db88","migrations_dir":"migrations"}],

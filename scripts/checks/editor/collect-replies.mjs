@@ -28,7 +28,7 @@ const creator = await creatorContext.newPage();
 const viewer = await viewerContext.newPage();
 await creator.route(`${origin}/api/auth/session`, route => route.fulfill({
   contentType: "application/json",
-  body: JSON.stringify({ available: true, clerkAvailable: false, clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: { id: "replies-e2e", name: "Test creator" } }),
+  body: JSON.stringify({ available: true, supabaseAvailable: false, supabasePublishableKey: null, supabaseUrl: null, canLinkEmail: false, emailLinked: false, user: { id: "replies-e2e", name: "Test creator" } }),
 }));
 await creator.route(`${origin}/api/renders`, route => route.fulfill({
   contentType: "application/json",

@@ -5,7 +5,7 @@ import { signCookie, verifyCookie } from "../../server/auth/tokens.js";
 
 const SESSION_COOKIE = "pvo-local-session";
 const SESSION_SECONDS = 7 * 24 * 60 * 60;
-const CLERK_SESSION_SECONDS = 15 * 60;
+const SUPABASE_SESSION_SECONDS = 15 * 60;
 const OAUTH_COOKIE = "pvo-local-oauth";
 const OAUTH_SECONDS = 10 * 60;
 
@@ -110,8 +110,8 @@ export async function createLocalAuthStore(directory) {
     return issueSession(`google:${identity.sub}`, identity.name, SESSION_SECONDS);
   }
 
-  function startClerkSession(identity) {
-    return issueSession(`clerk:${identity.issuer}:${identity.sub}`, identity.name, CLERK_SESSION_SECONDS);
+  function startSupabaseSession(identity) {
+    return issueSession(`supabase:${identity.issuer}:${identity.sub}`, identity.name, SUPABASE_SESSION_SECONDS);
   }
 
   async function endSession(request) {
@@ -123,7 +123,7 @@ export async function createLocalAuthStore(directory) {
   }
 
   return {
-    userFor, startSession, startClerkSession, endSession,
+    userFor, startSession, startSupabaseSession, endSession,
     oauthCookie: (value, seconds = OAUTH_SECONDS) => cookie(OAUTH_COOKIE, value, seconds),
     signOAuth: value => signCookie(value, secret, "local-oauth", OAUTH_SECONDS),
     verifyOAuth: request => verifyCookie(cookieValue(request, OAUTH_COOKIE), secret, "local-oauth"),

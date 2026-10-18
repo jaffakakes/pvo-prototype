@@ -31,7 +31,7 @@ await page.route(`${origin}/api/**`, route => {
   const path = new URL(request.url()).pathname;
   const respond = (body, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
   if (path === "/api/auth/session")
-    return respond({ available: true, clerkAvailable: false, clerkPublishableKey: null,
+    return respond({ available: true, supabaseAvailable: false, supabasePublishableKey: null, supabaseUrl: null,
       canLinkEmail: false, emailLinked: false, user: { id: "acceptance-account", name: "Acceptance creator" } });
   if (path === "/api/renders") return respond({ available: false, maxSourceBytes: 0, maxSources: 0, formats: [] });
   if (path === "/api/publishing") return respond({ available: true, hasSession: true, maxBytes: 671088640000 });

@@ -1,9 +1,9 @@
+import { installSupabaseFixture, fillEmailForm, supabaseUrl, publishableKey } from "./supabase-fixture.mjs";
 import assert from "node:assert/strict";
 import { chromium } from "playwright-core";
 
 const editorUrl = process.env.EDITOR_URL || process.env.RESTYLE_EDITOR_URL || "http://127.0.0.1:5173/";
 const origin = new URL(editorUrl).origin;
-const publishableKey = `pk_test_${Buffer.from("test.clerk.accounts.dev$").toString("base64")}`;
 const browser = await chromium.launch({
   executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
   headless: true,
@@ -11,43 +11,7 @@ const browser = await chromium.launch({
 });
 
 // A small provider stand-in exercises the app's review and exchange boundaries without a real password.
-const clerkModule = `
-  const account = email => ({ id: "user_" + email, primaryEmailAddress: {
-    emailAddress: email, verification: { status: "verified" } } });
-  const session = token => ({ id: "sess_" + token, getToken: async () => token });
-  export class Clerk {
-    constructor() {
-      window.__clerk = this;
-      this.listeners = [];
-      this.user = account("old@example.test");
-      this.session = session("old-token");
-    }
-    async load() {}
-    addListener(listener) {
-      this.listeners.push(listener);
-      return () => { this.listeners = this.listeners.filter(item => item !== listener); };
-    }
-    mountSignIn(host) {
-      const button = document.createElement("button");
-      button.textContent = "Sign in as fresh@example.test";
-      button.onclick = () => {
-        this.user = account("fresh@example.test");
-        this.session = session("fresh-token");
-        for (const listener of this.listeners) listener({ user: this.user, session: this.session });
-      };
-      host.replaceChildren(button);
-    }
-    mountSignUp(host) { this.mountSignIn(host); }
-    unmountSignIn(host) { host.replaceChildren(); }
-    unmountSignUp(host) { host.replaceChildren(); }
-    async signOut(callback) {
-      this.user = null;
-      this.session = null;
-      for (const listener of this.listeners) listener({ user: null, session: null });
-      callback?.();
-    }
-  }
-`;
+
 
 try {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, serviceWorkers: "block" });
@@ -58,34 +22,32 @@ try {
   let linkCalls = 0;
   let exchangeCalls = 0;
   const user = { id: "editor-account-1", name: "Editor tester" };
-  await context.route(/\/(?:assets\/clerk-[^/]+\.js|node_modules\/\.vite\/deps\/@clerk_clerk-js\.js)(?:\?.*)?$/, route => route.fulfill({ status: 200,
-    contentType: "text/javascript", body: clerkModule }));
-  await context.route("**/npm/@clerk/ui@1/dist/ui.browser.js", route => route.fulfill({ status: 200,
-    contentType: "text/javascript", body: "window.__internal_ClerkUICtor = class ClerkUI {};" }));
+  const provider = await installSupabaseFixture(context, "old@example.test");
+  const existingSession = provider.session;
   await context.route(`${origin}/api/auth/**`, async route => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
     if (path === "/api/auth/session" && request.method() === "GET")
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
-        available: true, user: signedIn ? user : null, clerkAvailable: true,
-        clerkPublishableKey: publishableKey, canLinkEmail: signedIn && !emailLinked,
+        available: true, user: signedIn ? user : null, supabaseAvailable: true,
+        supabasePublishableKey: publishableKey, supabaseUrl, canLinkEmail: signedIn && !emailLinked,
         emailLinked: signedIn && emailLinked,
       }) });
     if (path === "/api/auth/google/start" && request.method() === "GET")
       return route.fulfill({ status: 200, contentType: "text/html", body: googlePopup === "cancel"
         ? "<script>window.close()</script>"
         : `<script>window.opener.postMessage({type:"pvo:auth:complete",ok:true},${JSON.stringify(origin)});window.close()</script>` });
-    if (path === "/api/auth/clerk/link" && request.method() === "POST") {
+    if (path === "/api/auth/supabase/link" && request.method() === "POST") {
       linkCalls++;
-      assert.equal(request.headers().authorization, `Bearer ${linkCalls === 1 ? "old-token" : "fresh-token"}`);
+      assert.equal(request.headers().authorization, `Bearer ${provider.session.access_token}`);
       assert.deepEqual(JSON.parse(request.postData()), { expectedUserId: user.id });
       if (linkStatus === 200) emailLinked = true;
       return route.fulfill({ status: linkStatus, contentType: "application/json",
         body: JSON.stringify(linkStatus === 200 ? { user } : { error: "already linked" }) });
     }
-    if (path === "/api/auth/clerk/exchange" && request.method() === "POST") {
+    if (path === "/api/auth/supabase/exchange" && request.method() === "POST") {
       exchangeCalls++;
-      assert.equal(request.headers().authorization, "Bearer old-token");
+      assert.equal(request.headers().authorization, `Bearer ${provider.session.access_token}`);
       signedIn = true;
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ user }) });
     }
@@ -114,20 +76,20 @@ try {
 
   await startLink();
   await account.getByRole("alert").getByText(/closed before confirming/).waitFor();
-  assert.equal(await account.locator("[data-clerk-account-review]").count(), 0,
+  assert.equal(await account.locator("[data-supabase-account-review]").count(), 0,
     "Closing Google reauthentication cannot open the email link form");
   assert.equal(linkCalls, 0);
 
   googlePopup = "success";
   await startLink();
-  const review = account.locator("[data-clerk-account-review]");
+  const review = account.locator("[data-supabase-account-review]");
   await review.getByText("old@example.test").waitFor();
-  assert.equal(linkCalls, 0, "A lingering Clerk browser session must wait for explicit confirmation");
+  assert.equal(linkCalls, 0, "A lingering Supabase browser session must wait for explicit confirmation");
   await review.getByRole("button", { name: "Connect this email" }).click();
   await account.getByRole("alert").getByText(/already connected to another Restyle account/).waitFor();
   assert.equal(linkCalls, 1);
   await account.getByRole("button", { name: "Use another email" }).click();
-  await account.getByRole("button", { name: "Sign in as fresh@example.test" }).click();
+  await fillEmailForm(account, "fresh@example.test");
   await review.getByText("fresh@example.test").waitFor();
   assert.equal(linkCalls, 1, "A newly entered email still requires link confirmation");
   linkStatus = 200;
@@ -140,15 +102,12 @@ try {
   const signIn = page.locator("dialog[data-auth-step]");
   await page.getByRole("dialog", { name: "Create a free account", exact: true }).waitFor();
   await signIn.waitFor();
-  await page.evaluate(() => {
-    const clerk = window.__clerk;
-    clerk.user = { id: "user_old@example.test", primaryEmailAddress: {
-      emailAddress: "old@example.test", verification: { status: "verified" } } };
-    clerk.session = { id: "sess_old-token", getToken: async () => "old-token" };
-  });
+  provider.session = existingSession;
+  await page.reload({ waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Sign in", exact: true }).first().click();
   await signIn.getByRole("button", { name: "Continue with email" }).click();
   await signIn.getByRole("button", { name: "Continue as old@example.test" }).waitFor();
-  assert.equal(exchangeCalls, 0, "An old Clerk browser session must not silently open an account");
+  assert.equal(exchangeCalls, 0, "An old Supabase browser session must not silently open an account");
   await signIn.getByRole("button", { name: "Continue as old@example.test" }).click();
   await signIn.waitFor({ state: "hidden" });
   assert.equal(exchangeCalls, 1);

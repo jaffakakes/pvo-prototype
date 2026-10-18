@@ -124,7 +124,7 @@ test("playback and export effects follow the one validated edit without adding h
   globalThis.fetch = async (path, options) => {
     assert.equal(path, "/api/auth/session");
     assert.equal(options.method, "GET");
-    return Response.json({ available: true, clerkAvailable: false, clerkPublishableKey: null,
+    return Response.json({ available: true, supabaseAvailable: false, supabasePublishableKey: null, supabaseUrl: null,
       canLinkEmail: false, emailLinked: false,
       user: signedIn ? { id: "editor-test", name: "Editor tester" } : null });
   };

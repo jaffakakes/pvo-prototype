@@ -3,7 +3,7 @@ import {
   refreshAccountSession,
   useAuthGate,
 } from "../../state/auth/authGateStore";
-import { ClerkEmailSignIn } from "../auth/ClerkEmailSignIn";
+import { SupabaseEmailSignIn } from "../auth/SupabaseEmailSignIn";
 import { AccountDisclosure } from "../auth/AccountDisclosure";
 import { useGoogleSignIn } from "../auth/useGoogleSignIn";
 import { exportClock } from "./presentation";
@@ -30,8 +30,9 @@ export function ExportAccountGate({
   const {
     phase,
     available,
-    clerkAvailable,
-    clerkPublishableKey,
+    supabaseAvailable,
+    supabasePublishableKey,
+    supabaseUrl,
     error,
     connecting,
   } = useAuthGate();
@@ -65,9 +66,10 @@ export function ExportAccountGate({
         </span>
         <span className={styles.ready}>✓ READY</span>
       </div>
-      {emailOpen && clerkPublishableKey ? (
-        <ClerkEmailSignIn
-          publishableKey={clerkPublishableKey}
+      {emailOpen && supabasePublishableKey && supabaseUrl ? (
+        <SupabaseEmailSignIn
+          url={supabaseUrl}
+          publishableKey={supabasePublishableKey}
           mode="signin"
           onBack={() => setEmailOpen(false)}
         />
@@ -92,8 +94,8 @@ export function ExportAccountGate({
             onClick={() => setEmailOpen(true)}
             disabled={
               phase === "checking" ||
-              !clerkAvailable ||
-              !clerkPublishableKey ||
+              !supabaseAvailable ||
+              !supabasePublishableKey ||
               connecting
             }
           >
@@ -110,13 +112,13 @@ export function ExportAccountGate({
           Checking your account…
         </p>
       )}
-      {phase === "ready" && !available && !clerkAvailable && (
+      {phase === "ready" && !available && !supabaseAvailable && (
         <p className={styles.status}>
           Sign-in isn't configured here yet. Your edit is still saved in this
           browser.
         </p>
       )}
-      {phase === "ready" && available && !clerkAvailable && (
+      {phase === "ready" && available && !supabaseAvailable && (
         <p className={styles.status}>
           Email sign-in isn't configured here yet.
         </p>

@@ -228,8 +228,9 @@ test("local renders stay signed out when Google sign-in is unavailable", async (
     await (await app.request("/api/auth/session", { cookie })).json(),
     {
       available: false,
-      clerkAvailable: false,
-      clerkPublishableKey: null,
+      supabaseAvailable: false,
+      supabasePublishableKey: null,
+      supabaseUrl: null,
       canLinkEmail: false,
       emailLinked: false,
       user: null,

@@ -21,8 +21,8 @@ const authApi = await createLocalAuthApi({
   origin: `http://127.0.0.1:${port}`,
   clientId: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  clerkPublishableKey: process.env.CLERK_PUBLISHABLE_KEY,
-  clerkIssuer: process.env.CLERK_ISSUER,
+  supabasePublishableKey: process.env.SUPABASE_PUBLISHABLE_KEY,
+  supabaseUrl: process.env.SUPABASE_URL,
 });
 const renderApi = await createLocalRenderApi({ userFor: authApi.userFor });
 const replyApi = await createLocalReplyBoxApi({

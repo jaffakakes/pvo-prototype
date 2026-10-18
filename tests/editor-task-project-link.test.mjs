@@ -138,8 +138,9 @@ test("session expiry clears task visibility through the actual account refresh b
     Response.json({
       available: true,
       user: null,
-      clerkAvailable: false,
-      clerkPublishableKey: null,
+      supabaseAvailable: false,
+      supabasePublishableKey: null,
+      supabaseUrl: null,
       canLinkEmail: false,
       emailLinked: false,
     });

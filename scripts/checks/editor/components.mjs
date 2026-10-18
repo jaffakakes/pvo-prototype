@@ -23,7 +23,7 @@ async function recordDemo(milliseconds) {
 
 try {
   await page.route("**/api/auth/session", route => route.fulfill({ contentType: "application/json",
-    body: JSON.stringify({ available: true, clerkAvailable: false, clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: { id: "components-check", name: "Components check" } }) }));
+    body: JSON.stringify({ available: true, supabaseAvailable: false, supabasePublishableKey: null, supabaseUrl: null, canLinkEmail: false, emailLinked: false, user: { id: "components-check", name: "Components check" } }) }));
   await page.route("**/api/renders", route => route.fulfill({ contentType: "application/json",
     body: JSON.stringify({ available: false, maxSourceBytes: 0, maxSources: 0, formats: [] }) }));
   await page.goto(editorUrl, { waitUntil: "networkidle" });

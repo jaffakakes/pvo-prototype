@@ -49,8 +49,9 @@ function fakeRenderService(page) {
     if (path === "/api/auth/session" && request.method() === "GET")
       return json({
         available: true,
-        clerkAvailable: false,
-        clerkPublishableKey: null,
+        supabaseAvailable: false,
+        supabasePublishableKey: null,
+        supabaseUrl: null,
         canLinkEmail: false,
         emailLinked: false,
         user: { id: "export-tester", name: "Export tester" },

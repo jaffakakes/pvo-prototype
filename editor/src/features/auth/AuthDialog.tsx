@@ -6,15 +6,17 @@ import {
   signOutAccount,
   useAuthGate,
 } from "../../state/auth/authGateStore";
-import { signOutClerk } from "../../infrastructure/auth/clerk";
+import { signOutSupabase } from "../../infrastructure/auth/supabase";
 import { useCapture } from "../../state/captureStore";
 import { Icon } from "../../ui/Icon";
 import { AccountDisclosure } from "./AccountDisclosure";
-import { ClerkEmailSignIn } from "./ClerkEmailSignIn";
+import { SupabaseEmailSignIn } from "./SupabaseEmailSignIn";
 import { useGoogleSignIn } from "./useGoogleSignIn";
+import { useEmailCallback } from "./useEmailCallback";
 import styles from "./AuthDialog.module.css";
 
 export function AuthDialog() {
+  useEmailCallback();
   const source = useAuthGate(state => state.source);
   const exportSheetOpen = useCapture(state => state.sheet === "export");
   useEffect(() => {
@@ -29,15 +31,15 @@ export function AuthDialog() {
 function OpenAuthDialog() {
   const dialog = useRef<HTMLDialogElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
-  const { source, phase, available, clerkAvailable, clerkPublishableKey, canLinkEmail, emailLinked,
+  const { source, phase, available, supabaseAvailable, supabasePublishableKey, supabaseUrl, canLinkEmail, emailLinked,
     user, error, connecting } = useAuthGate();
   const [signingOut, setSigningOut] = useState(false);
-  const [step, setStep] = useState<"gate" | "signin" | "signup">("gate");
+  const [step, setStep] = useState<"gate" | "signin" | "signup">(source === "recovery" ? "signin" : "gate");
   const [linkTargetId, setLinkTargetId] = useState<string | null>(null);
   const [linkedNotice, setLinkedNotice] = useState(false);
   const googleLinkTarget = useRef<string | null>(null);
   const emailOpen = step !== "gate";
-  const emailAvailable = clerkAvailable && Boolean(clerkPublishableKey);
+  const emailAvailable = supabaseAvailable && Boolean(supabasePublishableKey);
   const waiting = phase === "checking" || connecting;
   const beginGoogle = useGoogleSignIn(session => {
     const targetId = googleLinkTarget.current;
@@ -71,8 +73,8 @@ function OpenAuthDialog() {
     setSigningOut(true);
     setStep("gate");
     void signOutAccount().then(async () => {
-      if (!clerkPublishableKey) return;
-      try { await signOutClerk(clerkPublishableKey); }
+      if (!supabasePublishableKey || !supabaseUrl) return;
+      try { await signOutSupabase(supabaseUrl, supabasePublishableKey); }
       catch { setAuthError("Restyle signed out, but the email session could not be cleared. Try again later."); }
     }).catch(() => setAuthError("Couldn't sign out. Try again.")).finally(() => setSigningOut(false));
   };
@@ -96,9 +98,9 @@ function OpenAuthDialog() {
       : source === "share" ? "Sign in to share this export. Your finished file will stay here."
         : source === "replies" ? "Sign in to collect and read replies from your videos. Your current edit will stay here."
         : "Your edit stays right here in this browser — sign up and we pick up exactly where you left off.";
-  const title = user ? "Your account" : step === "signup" ? "Create account"
+  const title = source === "recovery" ? "Reset password" : user ? "Your account" : step === "signup" ? "Create account"
     : step === "signin" ? "Welcome back" : "Create a free account";
-  const description = step === "signup" ? "Your edit stays saved in this browser while you create your account."
+  const description = source === "recovery" ? "Choose a new password for your email account." : step === "signup" ? "Your edit stays saved in this browser while you create your account."
     : step === "signin" ? "Sign in to keep editing your reels." : gateDescription;
 
   return <dialog ref={dialog} className={styles.dialog} role="dialog" aria-labelledby="auth-title" aria-describedby="auth-description"
@@ -129,8 +131,8 @@ function OpenAuthDialog() {
           <span>Continue with email</span>
         </button>
       </div>}
-      {emailOpen && !linkTargetId && clerkPublishableKey && <ClerkEmailSignIn key={step}
-        publishableKey={clerkPublishableKey} mode="signin" standalone initialStep={step} onBack={backFromEmail} />}
+      {emailOpen && !linkTargetId && supabasePublishableKey && supabaseUrl && <SupabaseEmailSignIn key={step}
+        url={supabaseUrl} publishableKey={supabasePublishableKey} recovery={source === "recovery"} mode="signin" standalone initialStep={step} onBack={backFromEmail} />}
       {user && emailLinked && !emailOpen && <p className={styles.availability}>
         {linkedNotice ? "Email sign-in connected. You can now use Google or this email for this Restyle account."
           : "Email sign-in is connected to this Restyle account."}</p>}
@@ -138,15 +140,15 @@ function OpenAuthDialog() {
         Connect a verified email and password to this Google account to keep the same published links.</p>}
       {user && emailOpen && <p className={styles.availability}>
         Review the exact email account before connecting it. Your Google sign-in was refreshed for this step.</p>}
-      {user && emailOpen && linkTargetId && clerkPublishableKey && <ClerkEmailSignIn
-        publishableKey={clerkPublishableKey} mode="link" expectedUserId={linkTargetId}
+      {user && emailOpen && linkTargetId && supabasePublishableKey && supabaseUrl && <SupabaseEmailSignIn
+        url={supabaseUrl} publishableKey={supabasePublishableKey} mode="link" expectedUserId={linkTargetId}
         onBack={backFromEmail} onLinked={() => {
           backFromEmail();
           setLinkedNotice(true);
         }} />}
       {!user && phase === "checking" && <p className={styles.status} role="status">Checking your account…</p>}
-      {!user && phase === "ready" && !available && !clerkAvailable && <p className={styles.availability}>Sign-in isn't configured here yet. Your edit is saved in this browser.</p>}
-      {!user && phase === "ready" && available && !clerkAvailable && <p className={styles.status}>Email sign-in isn't configured here yet.</p>}
+      {!user && phase === "ready" && !available && !supabaseAvailable && <p className={styles.availability}>Sign-in isn't configured here yet. Your edit is saved in this browser.</p>}
+      {!user && phase === "ready" && available && !supabaseAvailable && <p className={styles.status}>Email sign-in isn't configured here yet.</p>}
       {!user && <AccountDisclosure className={styles.disclosure} />}
       {error && !emailOpen && <p className={styles.error} role="alert">{error}</p>}
       {!user && phase === "error" && <button type="button" className={styles.secondary}

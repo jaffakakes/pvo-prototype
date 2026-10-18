@@ -103,7 +103,7 @@ test("Google callback creates a revocable account session and reuses the provide
     const first = await getAccountSession(request, env);
     assert.equal(first.name, "Alice");
     assert.deepEqual(await (await f.request("/api/auth/session", { session: cookie })).json(),
-      { available: true, clerkAvailable: false, clerkPublishableKey: null,
+      { available: true, supabaseAvailable: false, supabasePublishableKey: null, supabaseUrl: null,
         canLinkEmail: false, emailLinked: false, user: first });
     pending = await start();
     const second = await authRoute(new Request(`${ORIGIN}/api/auth/google/callback?code=code2&state=${pending.state.state}`,
@@ -186,7 +186,7 @@ test("session reads are read-only, unconfigured sign-in is unavailable, and logo
     const config = configuration(env, ORIGIN);
     assert.equal(config.authAvailable, false);
     assert.deepEqual(await (await authRoute(new Request(`${ORIGIN}/api/auth/session`), env, config)).json(),
-      { available: false, clerkAvailable: false, clerkPublishableKey: null,
+      { available: false, supabaseAvailable: false, supabasePublishableKey: null, supabaseUrl: null,
         canLinkEmail: false, emailLinked: false, user: null });
     assert.equal((await f.db.prepare("SELECT COUNT(*) AS count FROM users").first()).count, 0);
     await assert.rejects(authRoute(new Request(`${ORIGIN}/api/auth/google/start`), env, config),
@@ -240,8 +240,8 @@ test("apex sign-in is canonical while existing workers.dev publication links rem
     const publishing = await f.mf.dispatchFetch(`${origin}/api/publishing`, { headers: { Cookie: cookie } });
     assert.deepEqual(await publishing.json(), { available: true, hasSession: true, maxBytes: 671088640000 });
     const legacyAccount = await f.mf.dispatchFetch(`${legacyOrigin}/api/auth/session`, { headers: { Cookie: cookie } });
-    assert.deepEqual(await legacyAccount.json(), { available: false, clerkAvailable: false,
-      clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: null });
+    assert.deepEqual(await legacyAccount.json(), { available: false, supabaseAvailable: false,
+      supabasePublishableKey: null, supabaseUrl: null, canLinkEmail: false, emailLinked: false, user: null });
     const legacyPublishing = await f.mf.dispatchFetch(`${legacyOrigin}/api/publishing`, { headers: { Cookie: cookie } });
     assert.equal((await legacyPublishing.json()).available, false);
 

@@ -4,7 +4,9 @@ import { exchangeGoogleCode } from "../../server/auth/google.js";
 import { randomId, digest } from "../../server/identity.js";
 import { escapeHtml } from "../../server/http.js";
 import { createLocalAuthStore } from "./local-auth-store.mjs";
-import { loadLocalClerk, verifyLocalClerkSession } from "./local-clerk.mjs";
+import { loadLocalSupabase } from "./local-supabase.mjs";
+
+import { supabaseIdentityFromRequest } from "../../server/auth/supabase.js";
 
 const STATE_SECONDS = 10 * 60;
 
@@ -66,19 +68,19 @@ function complete(response, origin, store, ok, sessionCookie) {
 
 /** Account routes for the HTTP loopback beta; no D1 or Worker bindings. */
 export async function createLocalAuthApi({ directory, origin, clientId, clientSecret,
-  clerkPublishableKey, clerkIssuer, fetcher = fetch }) {
+  supabasePublishableKey, supabaseUrl, fetcher = fetch }) {
   const base = new URL(origin);
   if (base.origin !== origin || base.protocol !== "http:" || base.hostname !== "127.0.0.1")
     throw new Error("Local Google sign-in requires a canonical http://127.0.0.1 origin.");
   const client = await loadClient(directory, clientId, clientSecret);
-  const clerk = await loadLocalClerk(directory, clerkPublishableKey, clerkIssuer, fetcher);
+  const supabase = await loadLocalSupabase(directory, supabasePublishableKey, supabaseUrl, fetcher);
   const store = await createLocalAuthStore(directory);
   const googleAvailable = Boolean(client);
-  const clerkAvailable = Boolean(clerk);
+  const supabaseAvailable = Boolean(supabase);
   const available = googleAvailable;
 
   async function userFor(request) {
-    return (googleAvailable || clerkAvailable) ? store.userFor(request) : null;
+    return (googleAvailable || supabaseAvailable) ? store.userFor(request) : null;
   }
 
   async function handle(request, response, pathname) {
@@ -87,13 +89,13 @@ export async function createLocalAuthApi({ directory, origin, clientId, clientSe
       return error(response, 400, "This sign-in address is invalid.");
     if (pathname === "/api/auth/session") {
       if (request.method !== "GET") return error(response, 405, "This sign-in operation is not supported.");
-      return json(response, 200, { available, clerkAvailable,
-        clerkPublishableKey: clerk?.publishableKey ?? null, canLinkEmail: false, emailLinked: false,
+      return json(response, 200, { available, supabaseAvailable,
+        supabasePublishableKey: supabase?.publishableKey ?? null, supabaseUrl: supabase?.url ?? null, canLinkEmail: false, emailLinked: false,
         user: await userFor(request) });
     }
-    if (pathname === "/api/auth/clerk/exchange") {
+    if (pathname === "/api/auth/supabase/exchange") {
       if (request.method !== "POST") return error(response, 405, "This sign-in operation is not supported.");
-      if (!clerkAvailable) return error(response, 503, "Email sign-in is not configured here yet.");
+      if (!supabaseAvailable) return error(response, 503, "Email sign-in is not configured here yet.");
       if (request.headers.origin !== origin
         || (request.headers["sec-fetch-site"] && !["same-origin", "none"].includes(request.headers["sec-fetch-site"])))
         return error(response, 403, "This operation must start from the editor.");
@@ -101,12 +103,12 @@ export async function createLocalAuthApi({ directory, origin, clientId, clientSe
       const token = typeof authorization === "string" && /^Bearer ([A-Za-z0-9._-]+)$/.exec(authorization)?.[1];
       if (!token || token.length > 16384) return error(response, 401, "Email sign-in could not be verified.");
       try {
-        const identity = await verifyLocalClerkSession(token, clerk, origin);
-        const sessionCookie = await store.startClerkSession(identity);
+        const identity = await supabaseIdentityFromRequest(new Request(origin, { headers: { Authorization: `Bearer ${token}` } }), supabase.url, supabase.publishableKey, fetcher);
+        const sessionCookie = await store.startSupabaseSession(identity);
         return json(response, 200, { user: await store.userFor({ headers: { cookie: sessionCookie } }) },
           { "Set-Cookie": sessionCookie });
       } catch (cause) {
-        console.error("Local Clerk sign-in exchange failed:", cause?.name);
+        console.error("Local Supabase sign-in exchange failed:", cause?.name);
         return error(response, 401, "Email sign-in could not be verified.");
       }
     }
