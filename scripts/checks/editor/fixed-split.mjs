@@ -38,11 +38,11 @@ try {
       const layout = await geometry();
       assert(
         Math.abs(
-          layout.dock.height -
+          layout.dock.height * 3 -
             layout.previewArea.height -
             layout.transport.height,
         ) < 2,
-        "Player and timeline split the space below navigation equally",
+        "Player and timeline use a fixed 75/25 split",
       );
       assert.equal(
         await page
@@ -107,7 +107,7 @@ try {
       await assertSplit();
       await page.setViewportSize({ width, height: height + 80 });
       const taller = await assertSplit();
-      assert(Math.abs(taller.dock.height - original.dock.height - (taller.app.height - original.app.height) / 2) < 2);
+      assert(Math.abs(taller.dock.height - original.dock.height - (taller.app.height - original.app.height) / 4) < 2);
       assert.equal(
         await page
           .locator(".tlClip")

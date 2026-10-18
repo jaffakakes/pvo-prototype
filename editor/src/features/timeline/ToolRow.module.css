@@ -5,3 +5,10 @@
 .pickQuestion { flex: 1; align-self: center; min-width: 0; font: 700 12px var(--f-ui); }
 .pickTools > button { flex: none; min-width: 64px; min-height: 44px; padding: 0 8px; }
 .pickError { margin: 0 0 8px; color: var(--red); font: 700 11px/1.4 var(--f-ui); }
+
+@media (max-height: 600px) {
+  .assistantToolbar:global(.toolBar) {
+    height: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+  .assistantToolbar > :global(.tools) { padding-top: 8px; }
+}

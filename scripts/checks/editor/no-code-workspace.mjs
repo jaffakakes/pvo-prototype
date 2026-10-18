@@ -67,7 +67,7 @@ try {
     await settle(page);
     assert.equal(await page.getByRole("separator", { name: /^Resize (timeline|editing panel)$/ }).count(), 0);
     const expanded = await geometry(page);
-    assert(Math.abs(expanded.dock.height - expanded.preview.height - expanded.playback.height) < 2);
+    assert(Math.abs(expanded.dock.height * 3 - expanded.preview.height - expanded.playback.height) < 2);
     assert.equal(expanded.header.height, 0);
     assert.equal(expanded.playback.height, 52);
     assert(expanded.preview.bottom <= expanded.dock.y);

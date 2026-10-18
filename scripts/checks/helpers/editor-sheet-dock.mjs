@@ -101,10 +101,10 @@ export function createSheetDockChecks(page) {
     );
     assert(
       Math.abs(
-        layout.dock.height -
+        layout.dock.height * 3 -
           (layout.previewArea.height + layout.transport.height),
       ) < 2,
-      "Player and tools must split the space equally",
+      "Player and tools must use a fixed 75/25 split",
     );
     assert.equal(
       layout.previewVisible,

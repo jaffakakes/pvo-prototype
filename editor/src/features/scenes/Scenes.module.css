@@ -189,3 +189,8 @@ button.chip, .treeButton { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) {
   .tree, .lanes { animation: none; }
 }
+
+@media (max-height: 600px) {
+  .timeline { overflow-y: auto; }
+  .lanes { flex: 1 0 88px; }
+}

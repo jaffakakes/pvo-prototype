@@ -153,7 +153,7 @@ export function EditorWorkspace({
     }),
     [codeExpanded, setCodeExpanded, registerDismiss, assistantActive],
   );
-  // Timeline and editing tools share a fixed half of the space below the header.
+  // Timeline and editing tools share a fixed quarter of the available workspace.
   // Measurements already follow visualViewport, including the on-screen keyboard.
   let panelHeight = editorPanelHeight(measurements);
   if (dockThreadOpen) panelHeight = threadDock.resize.height;

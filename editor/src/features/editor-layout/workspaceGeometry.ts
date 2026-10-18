@@ -1,9 +1,9 @@
 type Measurements = { height: number; header: number; playback: number };
 const clampUnit = (value: number) => Math.max(0, Math.min(1, value));
 
-/** Player (including transport) and editing tools split the space below navigation. */
+/** Reserve one quarter for editing tools and three quarters for the player and transport. */
 export function editorPanelHeight(measurements: Measurements) {
-  return Math.max(0, measurements.height - measurements.header) / 2;
+  return Math.max(0, measurements.height - measurements.header) / 4;
 }
 
 /** Space above the panel collapses in order: preview, playback, then navigation. */

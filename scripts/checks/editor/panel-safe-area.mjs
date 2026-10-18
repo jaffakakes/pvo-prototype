@@ -46,7 +46,7 @@ try {
       const layout = await geometry();
       assert(
         Math.abs(
-          layout.dock.height -
+          layout.dock.height * 3 -
             layout.previewArea.height -
             layout.transport.height,
         ) < 2,
