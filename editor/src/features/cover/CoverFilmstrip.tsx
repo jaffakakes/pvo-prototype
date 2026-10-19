@@ -10,7 +10,9 @@ export function CoverFilmstrip({
   time,
   maximum,
   onTime,
+  label = "Pick a cover frame",
 }: {
+  label?: string;
   scene: Scene;
   time: number;
   maximum: number;
@@ -46,7 +48,7 @@ export function CoverFilmstrip({
         max={maximum}
         step={0.01}
         value={time}
-        aria-label="Pick a cover frame"
+        aria-label={label}
         aria-valuetext={pickTime(time)}
         onChange={(event) => onTime(Number(event.currentTarget.value))}
       />

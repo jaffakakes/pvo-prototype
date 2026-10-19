@@ -2,114 +2,247 @@ import { useState, type CSSProperties } from "react";
 import { lookStyles } from "../../../../packages/pvo-component-runtime/index.js";
 import { resolveTextTemplate } from "../../../../packages/pvo-sdk/index.js";
 import { formFieldControls } from "../../domain/components/forms";
-import { componentButtonCount, type LookPart } from "../../domain/components/look";
-import type { ComponentResponse, PvoComponent } from "../../domain/project/model";
+import {
+  componentButtonCount,
+  type LookPart,
+} from "../../domain/components/look";
+import type {
+  ComponentResponse,
+  PvoComponent,
+} from "../../domain/project/model";
 import { cx } from "../../styles";
 import { runFormSubmission } from "./tryMode";
 import { useTryFeedback } from "./tryFeedbackStore";
 import { useTryRuntimeState } from "./tryRuntimeStateStore";
 import styles from "./ComponentParts.module.css";
 
-export function ComponentFieldsView({ component, unit, trying, selectedPart, onResponse }: {
+export function ComponentFieldsView({
+  component,
+  unit,
+  trying,
+  selectedPart,
+  onResponse,
+  onSelectPart,
+}: {
   component: PvoComponent;
   unit: number;
   trying: boolean;
   selectedPart: LookPart | null;
+  onSelectPart?: (part: LookPart) => void;
   onResponse: (component: PvoComponent, response: ComponentResponse) => void;
 }) {
   const [formValues, setFormValues] = useState<Record<string, string>>({});
-  const pending = useTryFeedback(state => state.components[component.id]?.phase === "pending");
-  const runtimeState = useTryRuntimeState(state => trying && component.type === "tooltip" ? state.value : null);
+  const pending = useTryFeedback(
+    (state) => state.components[component.id]?.phase === "pending",
+  );
+  const runtimeState = useTryRuntimeState((state) =>
+    trying && component.type === "tooltip" ? state.value : null,
+  );
   const fields = component.fields;
-  const appearance = component.look ? lookStyles(component.look, unit, componentButtonCount(component)) : null;
+  const appearance = component.look
+    ? lookStyles(component.look, unit, componentButtonCount(component))
+    : null;
   const part = (name: LookPart, style?: Record<string, string | number>) => ({
     "data-look-part": name,
+    "data-look-label":
+      name === "whole"
+        ? component.type === "card"
+          ? "Message"
+          : component.type === "tooltip"
+            ? "Note"
+            : component.type === "choice"
+              ? "Choice"
+              : "Form"
+        : name.startsWith("button:")
+          ? "Button"
+          : name === "heading"
+            ? "Heading"
+            : component.type === "form"
+              ? "Fields"
+              : "Text",
     "data-part-selected": !trying && selectedPart === name,
     className: styles.part,
+    ...(onSelectPart
+      ? {
+          onClick: (event: React.MouseEvent) => {
+            event.stopPropagation();
+            onSelectPart(name);
+          },
+        }
+      : {}),
     ...(style ? { style: style as CSSProperties } : {}),
   });
-  const button = (index: number) => part(`button:${index}`,
-    appearance ? { ...appearance.buttons[index], height: "auto" } : undefined);
+  const button = (index: number) =>
+    part(
+      `button:${index}`,
+      appearance ? { ...appearance.buttons[index], height: "auto" } : undefined,
+    );
   const whole = part("whole", appearance?.whole);
   const noteText = fields.text || "Tap to learn more";
-  if (component.type === "tooltip") return <div {...whole} className={`${cx("compTooltip")} ${styles.part}`}>
-    {!appearance && <i />}
-    <span {...part("body", appearance?.body)}>{trying
-      ? resolveTextTemplate(noteText, { state: runtimeState ?? {} })
-      : noteText}</span>
-  </div>;
-  if (component.type === "card") return <div {...whole} className={`${cx("compCard")} ${styles.part}`}>
-    <h3 {...part("heading", appearance?.heading)}>{fields.title || "Title"}</h3>
-    <p {...part("body", appearance?.body)}>{fields.body || "Text"}</p>
-    {!!fields.buttons?.length && <div className={cx("compCardButtons")}>
-      {fields.buttons.slice(0, 2).map((item, index) => <button
-        {...button(index)}
-        key={index}
-        type="button"
-        disabled={!trying}
-        onClick={() => onResponse(component, { index, outcome: item.outcome ?? { kind: "continue" } })}
-      >{item.label || `Button ${index + 1}`}</button>)}
-    </div>}
-  </div>;
-  if (component.type === "choice") return <div {...whole} className={`${cx("compChoice")} ${styles.part}`}>
-    <h3 {...part("heading", appearance?.heading)}>{fields.prompt || "Which one?"}</h3>
-    {[0, 1].map(index => <button
-      {...button(index)}
-      key={index}
-      type="button"
-      disabled={!trying}
-      onClick={() => onResponse(component, { index, outcome: fields.options?.[index]?.outcome ?? { kind: "continue" } })}
-    >{fields.options?.[index]?.label || `Option ${String.fromCharCode(65 + index)}`}</button>)}
-  </div>;
+  if (component.type === "tooltip")
+    return (
+      <div {...whole} className={`${cx("compTooltip")} ${styles.part}`}>
+        {!appearance && <i />}
+        <span {...part("body", appearance?.body)}>
+          {trying
+            ? resolveTextTemplate(noteText, { state: runtimeState ?? {} })
+            : noteText}
+        </span>
+      </div>
+    );
+  if (component.type === "card")
+    return (
+      <div {...whole} className={`${cx("compCard")} ${styles.part}`}>
+        <h3 {...part("heading", appearance?.heading)}>
+          {fields.title || "Title"}
+        </h3>
+        <p {...part("body", appearance?.body)}>{fields.body || "Text"}</p>
+        {!!fields.buttons?.length && (
+          <div className={cx("compCardButtons")}>
+            {fields.buttons.slice(0, 2).map((item, index) => (
+              <button
+                {...button(index)}
+                key={index}
+                type="button"
+                disabled={!trying && !onSelectPart}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (onSelectPart) onSelectPart(`button:${index}`);
+                  else
+                    onResponse(component, {
+                      index,
+                      outcome: item.outcome ?? { kind: "continue" },
+                    });
+                }}
+              >
+                {item.label || `Button ${index + 1}`}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  if (component.type === "choice")
+    return (
+      <div {...whole} className={`${cx("compChoice")} ${styles.part}`}>
+        <h3 {...part("heading", appearance?.heading)}>
+          {fields.prompt || "Which one?"}
+        </h3>
+        {[0, 1].map((index) => (
+          <button
+            {...button(index)}
+            key={index}
+            type="button"
+            disabled={!trying && !onSelectPart}
+            onClick={(event) => {
+              event.stopPropagation();
+              if (onSelectPart) onSelectPart(`button:${index}`);
+              else
+                onResponse(component, {
+                  index,
+                  outcome: fields.options?.[index]?.outcome ?? {
+                    kind: "continue",
+                  },
+                });
+            }}
+          >
+            {fields.options?.[index]?.label ||
+              `Option ${String.fromCharCode(65 + index)}`}
+          </button>
+        ))}
+      </div>
+    );
   const controls = formFieldControls(fields);
-  const replyField = fields.formSubmitMode === "collect"
-    ? controls.findIndex(field => field.type === "text") : -1;
-  const setFieldValue = (name: string, value: string) => setFormValues(previous => ({ ...previous, [name]: value }));
-  return <form {...whole} className={`${cx("compForm")} ${styles.part}`} aria-busy={pending} onSubmit={event => {
-    event.preventDefault();
-    if (!trying || pending) return;
-    const values = Object.fromEntries(controls.map(field => [
-      field.name, formValues[field.name] ?? (field.type === "yesno" ? "no" : ""),
-    ]));
-    void runFormSubmission(component, values);
-  }}>
-    {fields.heading && <h3 {...part("heading", appearance?.heading)}>{fields.heading}</h3>}
-    <div {...part("body", appearance?.body)} className={`${styles.fields} ${styles.part}`}>
-      {controls.map((field, index) => <label key={field.name} className={styles.field}>
-        <span>{field.label}</span>
-        {field.type === "yesno" ? <select
-          style={appearance?.field as CSSProperties}
-          disabled={!trying || pending}
-          aria-label={field.label}
-          value={formValues[field.name] ?? "no"}
-          onChange={event => setFieldValue(field.name, event.target.value)}
-        >
-          <option value="no">No</option>
-          <option value="yes">Yes</option>
-        </select> : index === replyField ? <textarea
-          style={appearance?.field as CSSProperties}
-          disabled={!trying || pending}
-          aria-label={field.label}
-          placeholder={field.label}
-          rows={3}
-          maxLength={1024}
-          value={formValues[field.name] ?? ""}
-          onChange={event => setFieldValue(field.name, event.target.value)}
-        /> : <input
-          style={appearance?.field as CSSProperties}
-          disabled={!trying || pending}
-          aria-label={field.label}
-          placeholder={field.label}
-          type={field.inputType}
-          step={field.type === "number" ? "any" : undefined}
-          value={formValues[field.name] ?? ""}
-          onChange={event => setFieldValue(field.name, event.target.value)}
-        />}
-      </label>)}
-    </div>
-    {fields.formSubmitMode === "collect" && <p className={styles.replyNotice}>Your reply is sent to this video’s creator.</p>}
-    <button {...button(0)} type="submit" disabled={!trying || pending}>
-      {pending ? fields.waitingLabel || "Sending…" : fields.submitLabel || "Send"}
-    </button>
-  </form>;
+  const replyField =
+    fields.formSubmitMode === "collect"
+      ? controls.findIndex((field) => field.type === "text")
+      : -1;
+  const setFieldValue = (name: string, value: string) =>
+    setFormValues((previous) => ({ ...previous, [name]: value }));
+  return (
+    <form
+      {...whole}
+      className={`${cx("compForm")} ${styles.part}`}
+      aria-busy={pending}
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (!trying || pending) return;
+        const values = Object.fromEntries(
+          controls.map((field) => [
+            field.name,
+            formValues[field.name] ?? (field.type === "yesno" ? "no" : ""),
+          ]),
+        );
+        void runFormSubmission(component, values);
+      }}
+    >
+      {fields.heading && (
+        <h3 {...part("heading", appearance?.heading)}>{fields.heading}</h3>
+      )}
+      <div
+        {...part("body", appearance?.body)}
+        className={`${styles.fields} ${styles.part}`}
+      >
+        {controls.map((field, index) => (
+          <label key={field.name} className={styles.field}>
+            <span>{field.label}</span>
+            {field.type === "yesno" ? (
+              <select
+                style={appearance?.field as CSSProperties}
+                disabled={!trying || pending}
+                aria-label={field.label}
+                value={formValues[field.name] ?? "no"}
+                onChange={(event) =>
+                  setFieldValue(field.name, event.target.value)
+                }
+              >
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            ) : index === replyField ? (
+              <textarea
+                style={appearance?.field as CSSProperties}
+                disabled={!trying || pending}
+                aria-label={field.label}
+                placeholder={field.label}
+                rows={3}
+                maxLength={1024}
+                value={formValues[field.name] ?? ""}
+                onChange={(event) =>
+                  setFieldValue(field.name, event.target.value)
+                }
+              />
+            ) : (
+              <input
+                style={appearance?.field as CSSProperties}
+                disabled={!trying || pending}
+                aria-label={field.label}
+                placeholder={field.label}
+                type={field.inputType}
+                step={field.type === "number" ? "any" : undefined}
+                value={formValues[field.name] ?? ""}
+                onChange={(event) =>
+                  setFieldValue(field.name, event.target.value)
+                }
+              />
+            )}
+          </label>
+        ))}
+      </div>
+      {fields.formSubmitMode === "collect" && (
+        <p className={styles.replyNotice}>
+          Your reply is sent to this video’s creator.
+        </p>
+      )}
+      <button
+        {...button(0)}
+        type={onSelectPart ? "button" : "submit"}
+        disabled={(!trying && !onSelectPart) || pending}
+      >
+        {pending
+          ? fields.waitingLabel || "Sending…"
+          : fields.submitLabel || "Send"}
+      </button>
+    </form>
+  );
 }

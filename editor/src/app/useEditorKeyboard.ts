@@ -1,25 +1,54 @@
-import { addSelectedAuthoringKey, deleteSelectedAuthoringKey } from "../state/animation/commands";
+import {
+  addSelectedAuthoringKey,
+  deleteSelectedAuthoringKey,
+} from "../state/animation/commands";
 import { useAnimationSelection } from "../state/animation/selection";
-import { deleteSelectedAudio, splitSelectedAudio } from "../state/editing/audioCommands";
+import {
+  deleteSelectedAudio,
+  splitSelectedAudio,
+} from "../state/editing/audioCommands";
 import { sceneDuration } from "../domain/scenes/duration";
 import { useEffect } from "react";
 import { clamp } from "../domain/project/numbers";
 import { startTry, stopTry } from "../features/preview/tryMode";
 import { togglePlayback } from "../state/editing/playbackCommands";
-import { deleteSelectedClip, splitAtPlayhead } from "../features/timeline/clipCommands";
-import { acceptPlayheadPick, cancelPlayheadPick } from "../features/timeline/playheadPick";
+import {
+  deleteSelectedClip,
+  splitAtPlayhead,
+} from "../features/timeline/clipCommands";
+import {
+  acceptPlayheadPick,
+  cancelPlayheadPick,
+} from "../features/timeline/playheadPick";
 import { useCapture } from "../state/captureStore";
 import { useAssistant } from "../state/assistant/assistantStore";
-import { clearTimelineSelection, deleteTimelineSelection, duplicateTimelineSelection, splitSelectedClip, undoTimelineEdit } from "../state/editing/selectionCommands";
+import {
+  clearTimelineSelection,
+  deleteTimelineSelection,
+  duplicateTimelineSelection,
+  splitSelectedClip,
+  undoTimelineEdit,
+} from "../state/editing/selectionCommands";
 
 export function useEditorKeyboard(enabled = true) {
   useEffect(() => {
     if (!enabled) return;
     const keydown = (event: KeyboardEvent) => {
-      if (useAssistant.getState().phase !== "idle" || event.defaultPrevented
-        || document.querySelector('dialog[open], [data-desktop-inspector][aria-modal="true"]')) return;
+      if (
+        useAssistant.getState().phase !== "idle" ||
+        event.defaultPrevented ||
+        document.querySelector(
+          'dialog[open], [data-desktop-inspector][aria-modal="true"]',
+        )
+      )
+        return;
       const target = event.target as HTMLElement;
-      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target.isContentEditable)
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        target.isContentEditable
+      )
         return;
       const s = useCapture.getState();
       if (s.sheet === "voiceover") return;
@@ -32,67 +61,81 @@ export function useEditorKeyboard(enabled = true) {
           return;
         }
         if (event.key === "Enter") {
-          if (target instanceof HTMLButtonElement)
-            return;
+          if (target instanceof HTMLButtonElement) return;
           event.preventDefault();
           acceptPlayheadPick();
           return;
         }
         if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
           event.preventDefault();
-          const step = event.shiftKey ? 1 : .1;
-          s.patch({ t: clamp(s.t + (event.key === "ArrowRight" ? step : -step), 0, sceneDuration(s)) });
+          const step = event.shiftKey ? 1 : 0.1;
+          s.patch({
+            t: clamp(
+              s.t + (event.key === "ArrowRight" ? step : -step),
+              0,
+              sceneDuration(s),
+            ),
+          });
           return;
         }
-        if (event.key === " " || event.code === "Space" || event.ctrlKey || event.metaKey)
+        if (
+          event.key === " " ||
+          event.code === "Space" ||
+          event.ctrlKey ||
+          event.metaKey
+        )
           event.preventDefault();
         return;
       }
       if (event.key === "Escape") {
-        if (s.tryMode)
-          stopTry();
+        if (s.tryMode) stopTry();
         else if (useAnimationSelection.getState().selection)
           useAnimationSelection.getState().clear();
-        else if (desktop)
-          clearTimelineSelection();
-        else if (s.ratioMenu)
-          s.patch({ ratioMenu: false });
-        else if (s.sheet)
-          s.patch({ sheet: null });
-        else if (s.orb)
-          s.patch({ orb: false });
-        else if (s.selComp)
-          s.patch({ selComp: null });
-        else if (s.selText != null)
-          s.patch({ selText: null });
-        else if (s.selAudio != null)
-          s.patch({ selAudio: null });
-        else if (s.sel >= 0)
-          s.patch({ sel: -1 });
+        else if (desktop) clearTimelineSelection();
+        else if (s.ratioMenu) s.patch({ ratioMenu: false });
+        else if (s.sheet) s.patch({ sheet: null });
+        else if (s.orb) s.patch({ orb: false });
+        else if (s.selComp) s.patch({ selComp: null });
+        else if (s.selText != null) s.patch({ selText: null });
+        else if (s.selAudio != null) s.patch({ selAudio: null });
+        else if (s.sel >= 0) s.patch({ sel: -1 });
         return;
       }
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
         event.preventDefault();
         if (!s.tryMode) {
-          if (desktop)
-            undoTimelineEdit(event.shiftKey);
-          else if (event.shiftKey)
-            s.redo();
-          else
-            s.undo();
+          if (desktop) undoTimelineEdit(event.shiftKey);
+          else if (event.shiftKey) s.redo();
+          else s.undo();
         }
         return;
       }
-      if (desktop && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "d") {
+      if (document.querySelector("[data-component-page]")) return;
+      if (
+        desktop &&
+        (event.ctrlKey || event.metaKey) &&
+        event.key.toLowerCase() === "d"
+      ) {
         event.preventDefault();
         duplicateTimelineSelection();
         return;
       }
       if (event.ctrlKey || event.metaKey || event.altKey) return;
-      if (desktop && !s.tryMode && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+      if (
+        desktop &&
+        !s.tryMode &&
+        (event.key === "ArrowLeft" || event.key === "ArrowRight")
+      ) {
         event.preventDefault();
-        const step = event.shiftKey ? 1 : .1;
-        s.patch({ t: clamp(s.t + (event.key === "ArrowRight" ? step : -step), 0, sceneDuration(s)), playing: false });
+        const step = event.shiftKey ? 1 : 0.1;
+        s.patch({
+          t: clamp(
+            s.t + (event.key === "ArrowRight" ? step : -step),
+            0,
+            sceneDuration(s),
+          ),
+          playing: false,
+        });
         return;
       }
       if (
@@ -105,7 +148,11 @@ export function useEditorKeyboard(enabled = true) {
         addSelectedAuthoringKey();
         return;
       }
-      if (!s.tryMode && ["Delete", "Backspace"].includes(event.key) && deleteSelectedAuthoringKey()) {
+      if (
+        !s.tryMode &&
+        ["Delete", "Backspace"].includes(event.key) &&
+        deleteSelectedAuthoringKey()
+      ) {
         event.preventDefault();
         return;
       }
@@ -115,44 +162,66 @@ export function useEditorKeyboard(enabled = true) {
       }
       if (event.key.toLowerCase() === "t") {
         event.preventDefault();
-        if (s.tryMode)
-          stopTry();
-        else
-          startTry();
+        if (s.tryMode) stopTry();
+        else startTry();
         return;
       }
       if (event.code === "Space") {
         // Keyframe edits leave focus on their control. Space should resume the
         // preview there; Enter still activates the focused keyframe control.
-        if (target instanceof HTMLButtonElement && !target.closest("[data-keyframe-control]")) return;
+        if (
+          target instanceof HTMLButtonElement &&
+          !target.closest("[data-keyframe-control]")
+        )
+          return;
         event.preventDefault();
         togglePlayback();
       }
-      if (s.selAudio != null && ["s", "Backspace", "Delete"].includes(event.key)) {
+      if (
+        s.selAudio != null &&
+        ["s", "Backspace", "Delete"].includes(event.key)
+      ) {
         event.preventDefault();
-        if (event.key === "s") splitSelectedAudio(); else deleteSelectedAudio();
+        if (event.key === "s") splitSelectedAudio();
+        else deleteSelectedAudio();
         return;
       }
       if (event.key.toLowerCase() === "s" && !s.tryMode && !s.sheet) {
         if (desktop) splitSelectedClip();
         else splitAtPlayhead(s);
       }
-      if (desktop && (event.key === "Delete" || event.key === "Backspace") && !s.tryMode) {
+      if (
+        desktop &&
+        (event.key === "Delete" || event.key === "Backspace") &&
+        !s.tryMode
+      ) {
         event.preventDefault();
         deleteTimelineSelection();
         return;
       }
-      if ((event.key === "Delete" || event.key === "Backspace") && s.selComp && !s.tryMode) {
+      if (
+        (event.key === "Delete" || event.key === "Backspace") &&
+        s.selComp &&
+        !s.tryMode
+      ) {
         event.preventDefault();
         s.deleteComponent(s.selComp);
         return;
       }
-      if ((event.key === "Delete" || event.key === "Backspace") && s.selText != null && !s.tryMode) {
+      if (
+        (event.key === "Delete" || event.key === "Backspace") &&
+        s.selText != null &&
+        !s.tryMode
+      ) {
         event.preventDefault();
         s.deleteText(s.selText);
         return;
       }
-      if ((event.key === "Delete" || event.key === "Backspace") && s.sel >= 0 && !s.tryMode)
+      if (
+        (event.key === "Delete" || event.key === "Backspace") &&
+        s.sel >= 0 &&
+        !s.tryMode
+      )
         deleteSelectedClip(s);
     };
     window.addEventListener("keydown", keydown);
