@@ -109,7 +109,7 @@ try {
       );
       await checkInsets();
       const close = await page
-        .getByRole("button", { name: "Close components", exact: true })
+        .getByRole("button", { name: "Close sheet", exact: true })
         .boundingBox();
       assert(
         close &&
@@ -118,7 +118,7 @@ try {
           close.x + close.width <= width - insets.right,
       );
       await page
-        .getByRole("button", { name: "Close components", exact: true })
+        .getByRole("button", { name: "Close sheet", exact: true })
         .click();
       await checkInsets();
       console.log(`Fixed panel safe areas passed at ${width} × ${height}.`);

@@ -127,7 +127,7 @@ try {
   await page.getByRole("button", { name: "Open editor", exact: true }).click();
   await page.getByRole("button", { name: "Components", exact: true }).click();
   await page.locator(".componentTypeTile").filter({ hasText: "Add a note" }).click();
-  await page.getByRole("dialog", { name: "Note", exact: true }).getByRole("button", { name: "Done", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await phase("idle");
   let original = await snapshot();
   await page.evaluate(async () => {

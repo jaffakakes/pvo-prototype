@@ -56,7 +56,7 @@ try {
   await page.getByRole("button", { name: "Components", exact: true }).click();
   await page.getByRole("button", { name: /Add a note/ }).click();
   await page.getByRole("dialog", { name: "Note" }).getByRole("textbox", { name: "Text" }).fill("Scene A note");
-  await page.getByRole("button", { name: "Done", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   if (process.env.CAPTURE_SHOTS) await page.screenshot({ path: resolve(tmpdir(), "restyle-components-editor.png") });
   assert.equal(await page.locator(".compBar, .compMarker").count(), 1, "Scene A should show only its Tooltip lane item");
   await page.locator(".sceneChip").filter({ hasText: "Main" }).click();

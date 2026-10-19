@@ -1,4 +1,10 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   DEFAULT_TEXT_STYLE,
   textStyle,
@@ -8,6 +14,7 @@ import type { TextOverlay } from "../../domain/project/model";
 import { useCapture } from "../../state/captureStore";
 import { cx } from "../../styles";
 import { Icon } from "../../ui/Icon";
+import { useSheetDock } from "../../ui/sheets/SheetDockContext";
 import { TextColourStrip } from "./TextColourStrip";
 import { TextToolIcon } from "./TextToolIcon";
 import { TextFontGrid } from "./TextFontGrid";
@@ -26,6 +33,7 @@ import {
 
 export function TextEditor() {
   const s = useCapture();
+  const dock = useSheetDock();
   const text = s.texts.find((item) => item.id === s.selText);
   const [draftStyle, setDraftStyle] = useState<TextStyle>({
     ...DEFAULT_TEXT_STYLE,
@@ -76,6 +84,37 @@ export function TextEditor() {
       changeContent(next.value);
     }
   };
+  const finish = useCallback(() => {
+    const state = useCapture.getState();
+    const existing = state.texts.find((item) => item.id === state.selText);
+    if (!existing && state.draft.trim()) {
+      const id = state.addText(state.draft.trim(), draftStyle);
+      if (draftEffect !== "none") {
+        const current = useCapture.getState();
+        const added = current.texts.find((item) => item.id === id)!;
+        current.updateText(
+          id,
+          {
+            animation: textEffectAnimation(
+              draftEffect,
+              added.end - added.start,
+            ),
+          },
+          false,
+        );
+      }
+      state.patch({ draft: "" });
+    }
+    state.patch({ sheet: null });
+  }, [draftStyle, draftEffect]);
+  const registerDismiss = dock?.registerDismiss;
+  const setWorkspaceTextFocus = dock?.setTextInputFocused;
+  useEffect(() => registerDismiss?.(finish), [registerDismiss, finish]);
+  useLayoutEffect(
+    () => setWorkspaceTextFocus?.(inputFocused),
+    [setWorkspaceTextFocus, inputFocused],
+  );
+  useEffect(() => () => setWorkspaceTextFocus?.(true), [setWorkspaceTextFocus]);
   return (
     <div
       className={cx("textEditor")}
@@ -117,36 +156,16 @@ export function TextEditor() {
           >
             <TextToolIcon name="keyboard" />
           </button>
-        ) : (
+        ) : !dock?.dismissFromTransport ? (
           <button
             type="button"
             className={cx("textConfirm")}
             aria-label="Done"
-            onClick={() => {
-              if (!text && s.draft.trim()) {
-                const id = s.addText(s.draft.trim(), draftStyle);
-                if (draftEffect !== "none") {
-                  const current = useCapture.getState();
-                  const added = current.texts.find((item) => item.id === id)!;
-                  current.updateText(
-                    id,
-                    {
-                      animation: textEffectAnimation(
-                        draftEffect,
-                        added.end - added.start,
-                      ),
-                    },
-                    false,
-                  );
-                }
-                s.patch({ draft: "" });
-              }
-              s.patch({ sheet: null });
-            }}
+            onClick={finish}
           >
             <Icon name="check" size={26} />
           </button>
-        )}
+        ) : null}
       </div>
       <div
         className={cx("textTools")}

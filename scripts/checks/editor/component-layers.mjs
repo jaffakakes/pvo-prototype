@@ -15,7 +15,7 @@ async function addComponent(type) {
   await page.getByRole("button", { name: "Components", exact: true }).click();
   await page.locator(".componentTypeTile").filter({ hasText: type }).click();
   await page.getByRole("dialog", { name: type }).waitFor();
-  await page.getByRole("button", { name: "Close" }).click();
+  await page.getByRole("button", { name: "Close sheet" }).click();
 }
 
 try {
@@ -72,7 +72,7 @@ try {
   await tooltip.waitFor({ state: "visible" });
   assert.equal((await tooltip.locator(".componentTiming strong").textContent())?.trim(), "0:01",
     "Use playhead must update the component start time");
-  await tooltip.getByRole("button", { name: "Close" }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
 
   // The same retained playhead must be available while configuring a Choice outcome.
   await layers.nth(2).click({ position: { x: 10, y: 13 } });

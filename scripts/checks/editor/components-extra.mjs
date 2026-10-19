@@ -60,7 +60,7 @@ try {
   await dialog.getByRole("textbox", { name: "Title" }).fill("Learn about this look");
   await dialog.getByRole("textbox", { name: "Text" }).fill("A short interactive card");
   await dialog.getByRole("textbox", { name: "Button 1" }).fill("Skip ahead");
-  await dialog.getByRole("button", { name: "Done" }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   const bar = page.locator(".compBar").first();
   await bar.waitFor();
   const leftBefore = await bar.evaluate(element => Number.parseFloat(element.style.left));
@@ -88,7 +88,7 @@ try {
     .getByRole("button", { name: /Jump to a point/ }).first().click();
   assert.match(await dialog.getByRole("button", { name: /When viewers tap “Skip ahead”/ }).innerText(),
     /Jump to a point/, "Message button should route to a point in this scene");
-  await dialog.getByRole("button", { name: "Done" }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
 
   await page.getByRole("button", { name: "Try", exact: true }).click();
   const messageButton = page.locator(".compCardButtons").getByRole("button", { name: "Skip ahead" });
@@ -109,7 +109,7 @@ try {
   const pause = dialog.getByRole("switch", { name: "Pause if nobody responds" });
   if (await pause.getAttribute("aria-checked") !== "true") await pause.click();
   assert.equal(await pause.getAttribute("aria-checked"), "true", "The Form must wait for a response");
-  await dialog.getByRole("button", { name: "Done" }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   assert.equal(await page.locator(".compBar").count(), 2, "Both interactive layers should have timeline bars");
 
   // In viewer preview, the Form holds until submitted.

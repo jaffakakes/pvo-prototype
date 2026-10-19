@@ -71,11 +71,7 @@ export function Picker() {
     s.addComponent(type);
   };
   return (
-    <SheetFrame
-      title="Add a component"
-      sub={`Lands at ${fmt(s.t)}`}
-      headerless={s.sheet === "components"}
-    >
+    <SheetFrame title="Add a component" sub={`Lands at ${fmt(s.t)}`}>
       <div className={cx("componentPicker")}>
         {!s.clips.length && (
           <p className={cx("componentFootnote")}>

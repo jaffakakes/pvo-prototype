@@ -69,7 +69,7 @@ try {
         "Choices start at the top without an empty header row",
       );
       const close = page.getByRole("button", {
-        name: "Close components",
+        name: "Close sheet",
         exact: true,
       });
       const closeBox = await close.boundingBox();
@@ -104,7 +104,7 @@ try {
           path: `${process.env.PVO_EDITOR_ARTIFACTS}/component-picker-fit-${width}-${theme}.png`,
         });
       await page
-        .getByRole("button", { name: "Close components", exact: true })
+        .getByRole("button", { name: "Close sheet", exact: true })
         .click();
       await settle();
       assert(

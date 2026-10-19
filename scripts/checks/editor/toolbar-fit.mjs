@@ -42,7 +42,7 @@ try {
     for (const name of ["9:16", "1:1", "4:5", "16:9"]) {
       await ratio.getByRole("button", { name, exact: true }).waitFor();
     }
-    await ratio.getByRole("button", { name: "Done", exact: true }).click();
+    await page.getByRole("button", { name: "Close sheet", exact: true }).click();
     await page.getByRole("button", { name: "Components", exact: true }).click();
     await page.getByRole("dialog", { name: "Add a component" }).waitFor();
     assert.deepEqual(errors, [], `Browser errors at ${width}px`);

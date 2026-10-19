@@ -1,12 +1,16 @@
 .controls {
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   min-height: calc(96px + env(safe-area-inset-bottom, 0px));
   padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
+}
+.controls[data-recovery="true"] {
+  grid-template-columns: 1fr 1fr;
 }
 .controls button {
   cursor: pointer;

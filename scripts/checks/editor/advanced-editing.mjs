@@ -42,7 +42,7 @@ async function projectSnapshot() {
 
 async function openMore() {
   const componentSheet = page.getByRole("dialog", { name: "Choice", exact: true });
-  if (await componentSheet.count()) await componentSheet.getByRole("button", { name: "Close", exact: true }).click();
+  if (await componentSheet.count()) await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await page.locator(".toolBar").waitFor({ state: "visible" });
   await page.locator(".editorWorkspace").evaluate(async element => {
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -63,7 +63,7 @@ async function setAdvancedEditing(enabled) {
   assert.equal(await toggle.getAttribute("aria-checked"), String(enabled));
   assert.deepEqual(await projectSnapshot(), before, "Changing a device preference must preserve the project and undo/redo");
   assert.equal(await page.evaluate(key => localStorage.getItem(key), preferenceKey), String(enabled));
-  await more.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
 }
 
 async function openChoice() {
@@ -130,7 +130,7 @@ try {
   const more = await openMore();
   assert.equal(await more.getByRole("switch", { name: "Advanced editing", exact: true }).getAttribute("aria-checked"), "true",
     "The device preference must survive a reload");
-  await more.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   if (await page.getByRole("button", { name: "Select component layer: choice", exact: true }).count()) await openChoice();
   else {
     await page.getByRole("button", { name: "Components", exact: true }).click();

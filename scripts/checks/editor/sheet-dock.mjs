@@ -69,7 +69,8 @@ try {
   );
   assert.equal(
     await page.getByRole("toolbar", { name: "Playback controls" }).isVisible(),
-    false,
+    true,
+    "Lowering the keyboard reveals the shared X",
   );
   await finishTextEntry(text);
   await page.locator(".toolBar").waitFor({ state: "visible" });
@@ -99,7 +100,7 @@ try {
   await page.getByRole("button", { name: "Pause", exact: true }).click();
 
   await page
-    .getByRole("button", { name: "Close components", exact: true })
+    .getByRole("button", { name: "Close sheet", exact: true })
     .press("Escape");
   await page.locator(".toolBar").waitFor({ state: "visible" });
   assert(Math.abs((await geometry()).dock.height - original.dock.height) < 2);

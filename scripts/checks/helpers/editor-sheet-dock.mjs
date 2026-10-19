@@ -143,16 +143,20 @@ export function createSheetDockChecks(page) {
     );
     assert.deepEqual(
       layout.visibility,
-      { header: true, preview: true, playback: !layout.textEditing },
+      {
+        header: true,
+        preview: true,
+        playback: !(layout.textEditing && layout.inputFocused),
+      },
       "Partial panels must show the editor chrome",
     );
-    if (!layout.textEditing)
+    if (!(layout.textEditing && layout.inputFocused))
       assert(
         layout.previewArea.bottom <= layout.transport.top + 1,
         "Preview and transport overlap",
       );
     assert(
-      (layout.textEditing
+      (layout.textEditing && layout.inputFocused
         ? layout.previewArea.bottom
         : layout.transport.bottom) <=
         box.y + 1,
@@ -179,7 +183,7 @@ export function createSheetDockChecks(page) {
     const layout = await geometry();
     const chrome = (await dialog.locator(".sheetHead").count())
       ? dialog.locator(".sheetHead")
-      : page.getByRole("button", { name: "Close components", exact: true });
+      : page.getByRole("button", { name: "Close sheet", exact: true });
     const header = await chrome.boundingBox();
     assert(
       header && header.y + header.height - layout.dock.top <= 85,

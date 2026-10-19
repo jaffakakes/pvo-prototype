@@ -159,7 +159,7 @@ try {
     true,
     "Escape closes search before the sheet",
   );
-  await sheet.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await closedAudio();
   assert.deepEqual(
     await current(),
@@ -272,7 +272,7 @@ try {
     );
     await artifact(`${width}x${height}-${theme}`);
   }
-  await sheet.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await closedAudio();
   assert.deepEqual(errors, []);
   console.log(

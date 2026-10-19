@@ -178,7 +178,7 @@ async function scrollStyleSheet() {
   await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
   await page.waitForFunction(() => document.querySelector("[data-sheet-body]").scrollTop > 10);
   await assertPageScale();
-  await dialog.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await settle();
 }
 
@@ -200,7 +200,7 @@ try {
   await collapseSelection();
   await page.getByRole("button", { name: "Components", exact: true }).click();
   await page.locator(".componentTypeTile").filter({ hasText: "Add a note" }).click();
-  await page.getByRole("dialog", { name: "Note", exact: true }).getByRole("button", { name: "Done", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await settle();
   const componentHistory = await verifyOverlayGestures(component, "Component");
   assertSameBox(await authorBox(text), textAfterGestures, "Component gestures must not resize or move the text");

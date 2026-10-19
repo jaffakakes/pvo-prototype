@@ -1,15 +1,23 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useCapture } from "../../state/captureStore";
 import { cx } from "../../styles";
 import { Icon } from "../../ui/Icon";
 import { useVoiceover } from "./useVoiceover";
 import styles from "./VoiceoverControls.module.css";
+import { useSheetDock } from "../../ui/sheets/SheetDockContext";
 
 export function VoiceoverControls() {
   const voice = useVoiceover();
   const busy = voice.phase !== "idle";
-  const close = () =>
-    useCapture.getState().patch({ sheet: null, playing: false });
+  const close = useCallback(
+    () => useCapture.getState().patch({ sheet: null, playing: false }),
+    [],
+  );
+  const registerDismiss = useSheetDock()?.registerDismiss;
+  useEffect(
+    () => registerDismiss?.(close, { disabled: busy }),
+    [registerDismiss, close, busy],
+  );
   useEffect(() => {
     const escape = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
@@ -28,6 +36,7 @@ export function VoiceoverControls() {
       role="group"
       aria-label="Voiceover"
       data-voiceover-busy={busy}
+      data-recovery={!!voice.draft && !busy}
     >
       {voice.draft && !busy ? (
         <>
@@ -36,9 +45,6 @@ export function VoiceoverControls() {
           </button>
           <button className={styles.done} onClick={voice.retry}>
             Retry saving
-          </button>
-          <button className={styles.quiet} onClick={close}>
-            Done
           </button>
         </>
       ) : (
@@ -68,9 +74,6 @@ export function VoiceoverControls() {
             }
           >
             <i />
-          </button>
-          <button className={styles.done} disabled={busy} onClick={close}>
-            Done
           </button>
         </>
       )}

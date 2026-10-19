@@ -283,5 +283,8 @@
   "scripts/checks/helpers/editor-settings.mjs",
   "scripts/checks/editor/aspect-ratio.mjs",
   "editor/src/features/settings/socialIcons.ts",
-  "scripts/checks/editor/component-picker-fit.mjs"
+  "scripts/checks/editor/component-picker-fit.mjs",
+  "scripts/checks/editor/sheet-close.mjs",
+  "editor/src/features/animation/AnimationSheet.tsx",
+  "editor/src/features/animation/AnimationSheet.module.css"
 ]

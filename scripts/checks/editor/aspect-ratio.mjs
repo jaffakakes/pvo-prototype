@@ -135,11 +135,13 @@ try {
         await page.screenshot({
           path: `${process.env.PVO_EDITOR_ARTIFACTS}/aspect-ratio-bottom-${width}-${theme}.png`,
         });
-      await panel.getByRole("button", { name: "Done", exact: true }).click();
+      await page
+        .getByRole("button", { name: "Close sheet", exact: true })
+        .click();
       await settle();
       assert(
         Math.abs((await geometry()).dock.height - original.dock.height) < 2,
-        "Done restores normal toolbar and player space",
+        "Close restores normal toolbar and player space",
       );
       await page
         .locator(".editorHead")
@@ -153,13 +155,13 @@ try {
           .getAttribute("aria-pressed"),
         "true",
       );
-      await panel
-        .getByRole("button", { name: "Done", exact: true })
+      await page
+        .getByRole("button", { name: "Close sheet", exact: true })
         .press("Escape");
       await panel.waitFor({ state: "hidden" });
       assert.deepEqual(errors, []);
       console.log(
-        `${width} × ${height} ${theme}: bottom ratio panel, exposed timeline, ratio preview, Undo/Redo, autosave and Done/Escape passed.`,
+        `${width} × ${height} ${theme}: bottom ratio panel, exposed timeline, ratio preview, Undo/Redo, autosave and X/Escape passed.`,
       );
     } finally {
       await context.close();

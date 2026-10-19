@@ -82,7 +82,7 @@ export function useVoiceover() {
       url = null;
       useVoiceoverDraft.setState({ draft: null });
       resolveNotification("voiceoverSaveFailed");
-      // Keep the recorder available for another segment; Done returns to editing.
+      // Keep the recorder available for another segment; Close returns to editing.
       useCapture.getState().patch({ sheet: "voiceover" });
     } catch (error) {
       if (!session.controller.signal.aborted) {

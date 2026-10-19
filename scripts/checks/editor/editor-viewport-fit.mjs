@@ -114,7 +114,7 @@ try {
   await page.getByRole("button", { name: "Open editor" }).click();
   await page.getByRole("button", { name: "Components", exact: true }).click();
   await page.locator(".componentTypeTile").filter({ hasText: "Tooltip" }).click();
-  await page.getByRole("dialog", { name: "Tooltip" }).getByRole("button", { name: "Close" }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await page.getByRole("button", { name: "Collapse component tools" }).click();
   await page.evaluate(() => document.fonts.ready);
   assert.equal(await page.locator('[data-notification-id]').count(), 0,

@@ -49,7 +49,7 @@ try {
   await speed.getByRole("button", { name: "2x", exact: true }).click();
   assert.equal((await state()).clip.speed, 2);
   assert.equal((await state()).t, 5);
-  await speed.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
 
   await page.getByRole("button", { name: "Crop", exact: true }).click();
   const crop = page.getByRole("dialog", { name: "Crop", exact: true });
@@ -61,7 +61,7 @@ try {
   assert.equal((await state()).past, beforeCrop + 1);
   await crop.getByRole("button", { name: "Mirror", exact: true }).click();
   assert.equal((await state()).clip.mirror, true);
-  await crop.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await page
     .getByRole("button", { name: "Collapse clip tools", exact: true })
     .click();
@@ -94,7 +94,7 @@ try {
     .getByRole("spinbutton", { name: "Text start", exact: true })
     .fill("1");
   assert.equal((await state()).text.start, 1);
-  await editText.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await page.locator(".textOverlay").waitFor({ state: "visible" });
   assert.deepEqual(errors, []);
   console.log(

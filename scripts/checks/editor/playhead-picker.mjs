@@ -114,7 +114,7 @@ try {
   await acceptPicker(tooltip);
   assert.equal((await tooltip.locator(".componentTiming strong").textContent())?.trim(), "0:01", "Accept did not update component timing");
   assert.notEqual(await tooltipBar.evaluate(element => element.style.left), originalLeft, "Accepted timing did not move the component layer");
-  await tooltip.getByRole("button", { name: "Close" }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
 
   // Jump to time: cancelling preserves Continue; accepting explicitly sets Jump.
   await page.getByRole("button", { name: "Collapse component tools" }).click();
@@ -147,7 +147,7 @@ try {
   await scrubBy(-45);
   await acceptPicker(success);
   assert.match(await success.locator(".outcomeRow[data-on='true']").innerText(), /Jump to time/, "Accept did not save the nested request jump");
-  await success.getByRole("button", { name: "Close" }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
 
   // Text timing uses the same unobstructed picker and preserves its duration.
   await page.getByRole("button", { name: "Collapse component tools" }).click();

@@ -65,7 +65,7 @@ try {
   const squareRatio = more.getByRole("group", { name: "Video ratio" }).getByRole("button", { name: "1:1", exact: true });
   await squareRatio.click();
   if (await squareRatio.getAttribute("aria-pressed") !== "true") throw new Error("Square ratio was not selected");
-  await more.getByRole("button", { name: "Done", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await more.waitFor({ state: "hidden" });
   await page.waitForTimeout(350);
   if (await page.locator(".pvBox").evaluate(element => Math.abs(element.clientWidth - element.clientHeight)) > 2) throw new Error("Square ratio not applied");
@@ -133,11 +133,11 @@ try {
     if (afterTrim >= beforeTrim) throw new Error("Trim did not shorten the clip");
     await real.getByRole("button", { name: "Speed", exact: true }).click();
     await real.getByRole("button", { name: "2x" }).click();
-    await real.getByRole("button", { name: "Close" }).click();
+    await real.getByRole("button", { name: "Close sheet" }).click();
     await real.getByRole("button", { name: "Crop" }).click();
     await real.locator(".zoomRange").fill("135");
     await real.getByRole("button", { name: "Mirror" }).click();
-    await real.getByRole("button", { name: "Close" }).click();
+    await real.getByRole("button", { name: "Close sheet" }).click();
     await real.getByRole("button", { name: "Collapse clip tools" }).click();
     await real.getByRole("button", { name: "Sound" }).click();
     await real.getByRole("menuitem", { name: "Add sound", exact: true }).click();
@@ -173,7 +173,7 @@ try {
     await long.locator('.tlClip').click({ position: { x: 20, y: 20 } });
     await long.getByRole('button', { name: 'Speed', exact: true }).click();
     await long.getByRole('button', { name: '2x' }).click();
-    await long.getByRole('button', { name: 'Close' }).click();
+    await long.getByRole('button', { name: 'Close sheet' }).click();
     await long.getByRole('button', { name: 'Back to camera' }).click();
     if (await long.locator('.shutter').getAttribute('data-scale') !== '10') throw new Error('Ring did not update after changing clip speed');
     console.log(`Unlimited upload passed: ${footer.replaceAll("\n", " ")}`);

@@ -47,7 +47,7 @@ try {
     await page.locator(".editorWorkspace").waitFor();
     await settle(page);
     assert((await geometry(page)).dock.height >= 150, `${width}: opening directly into a sheet waits for workspace measurements`);
-    await page.getByRole("button", { name: "Close components", exact: true }).click();
+    await page.getByRole("button", { name: "Close sheet", exact: true }).click();
     await settle(page);
     const original = await geometry(page);
     const headerButtons = await page.locator(".editorHead button").evaluateAll(buttons => buttons.map(button => {
@@ -74,7 +74,7 @@ try {
     await page.locator("[data-sheet-body]").evaluate(element => { element.scrollTop = element.scrollHeight; });
     assert(Math.abs((await geometry(page)).dock.height - expanded.dock.height) < 2, "Scrolling does not resize the sheet");
     await page.getByRole("tab", { name: "Action", exact: true }).click();
-    await page.getByRole("button", { name: "Try", exact: true }).click();
+    await page.keyboard.press("t");
     await settle(page);
     assert.equal((await geometry(page)).dock.height, 0, "Try hides the whole lower region");
     await page.evaluate(async () => {
@@ -93,12 +93,12 @@ try {
     assert.equal(await page.evaluate(async () => (await import("/src/store.ts")).useCapture.getState().sheet), "component");
     assert.equal(await page.getByRole("tab", { name: "Action", exact: true }).getAttribute("aria-selected"), "true", "Routed Try restores the same component tab");
     await page.getByRole("tab", { name: "Content", exact: true }).click();
-    await page.locator(".transport").getByRole("button", { name: "Try", exact: true }).focus();
+    await page.locator(".transport").getByRole("button", { name: "Close sheet", exact: true }).focus();
     await page.keyboard.press("t");
     await page.getByRole("button", { name: "Stop trying", exact: true }).waitFor();
     await settle(page);
     await page.keyboard.press("Escape");
-    await page.getByRole("button", { name: "Try", exact: true }).waitFor();
+    await page.getByRole("button", { name: "Close sheet", exact: true }).waitFor();
     await settle(page);
     const beforeKeyboard = await geometry(page);
     const field = page.locator('[data-sheet-body] input[type="text"], [data-sheet-body] input:not([type])').first();

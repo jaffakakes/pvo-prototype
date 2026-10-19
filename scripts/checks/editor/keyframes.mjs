@@ -387,8 +387,7 @@ try {
     "Phone Undo restores the complete moment",
   );
   await page.screenshot({ path: "/tmp/pvo-keyframes-check/mobile.png" });
-  await sheet
-    .getByRole("button", { name: "Close Animate", exact: true })
+  await page.getByRole("button", { name: "Close sheet", exact: true })
     .click();
   await select("audio", 1);
   await page.getByRole("button", { name: "Animate", exact: true }).click();

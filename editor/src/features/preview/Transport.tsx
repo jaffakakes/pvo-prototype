@@ -7,13 +7,15 @@ import { togglePlayback } from "../../state/editing/playbackCommands";
 import { startTry } from "./tryMode";
 import { DebugEntry } from "../editor-layout/debugging/DebugEntry";
 import styles from "./Transport.module.css";
+import { useSheetDock } from "../../ui/sheets/SheetDockContext";
 
 export function Transport({
   threadOpen = false,
 }: { threadOpen?: boolean } = {}) {
   const s = useCapture();
   const duration = sceneDuration(s);
-  const componentPickerOpen = s.sheet === "components";
+  const dock = useSheetDock();
+  const sheetOpen = s.sheet !== null && s.sheet !== "export" && !s.playheadPick;
   return (
     <div
       className={`${cx("transport")} ${styles.transport}`}
@@ -60,18 +62,12 @@ export function Transport({
             <button
               type="button"
               className={`${styles.action} ${styles.tryButton}`}
-              onClick={
-                componentPickerOpen ? () => s.patch({ sheet: null }) : startTry
-              }
-              disabled={!componentPickerOpen && duration <= 0}
-              aria-label={componentPickerOpen ? "Close components" : "Try"}
-              title={
-                componentPickerOpen
-                  ? "Close components"
-                  : "Try interactive preview"
-              }
+              onClick={sheetOpen ? dock?.dismissFromTransport : startTry}
+              disabled={sheetOpen ? dock?.dismissDisabled : duration <= 0}
+              aria-label={sheetOpen ? "Close sheet" : "Try"}
+              title={sheetOpen ? "Close sheet" : "Try interactive preview"}
             >
-              <Icon name={componentPickerOpen ? "close" : "eye"} size={23} />
+              <Icon name={sheetOpen ? "close" : "eye"} size={23} />
             </button>
           </>
         )}

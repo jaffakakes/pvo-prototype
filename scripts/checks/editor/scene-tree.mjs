@@ -57,7 +57,7 @@ async function openScene(name) {
 }
 
 async function closeMore() {
-  await more.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await waitForLayout();
 }
 

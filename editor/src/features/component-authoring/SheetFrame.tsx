@@ -15,7 +15,6 @@ export function SheetFrame({
   className,
   fullScreen,
   fillBody,
-  headerless,
   disabled,
   doneLabel,
   navigation,
@@ -31,7 +30,6 @@ export function SheetFrame({
   className?: string;
   fullScreen?: boolean;
   fillBody?: boolean;
-  headerless?: boolean;
   doneLabel?: string;
   children: React.ReactNode;
   navigation?: React.ReactNode;
@@ -43,6 +41,7 @@ export function SheetFrame({
   );
   const close = onClose ?? closeSheet;
   const dock = useSheetDock();
+  const transportClose = !!dock?.dismissFromTransport;
   const registerDismiss = dock?.registerDismiss;
   const dismiss = onClose ?? onBack ?? closeSheet;
   const picking = useCapture((s) => !!s.playheadPick);
@@ -64,12 +63,12 @@ export function SheetFrame({
         aria-label={title}
       >
         {!dock && <div className={cx("grabber")} />}
-        {(!dock || !headerless) && (
+        {(!transportClose || onReset || onDelete) && (
           <header
             className={`${cx("sheetHead")} ${dock ? dockedStyles.header : ""}`}
             {...(disabled ? { inert: "" } : {})}
           >
-            {onBack && (
+            {onBack && !transportClose && (
               <button
                 className={cx("sheetClose")}
                 onClick={onBack}
@@ -79,7 +78,7 @@ export function SheetFrame({
                 <Icon name="back" size={17} />
               </button>
             )}
-            {icon && (
+            {icon && !transportClose && (
               <span className={cx("componentTypeGlyph")}>
                 <Icon name={icon} size={20} />
               </span>
@@ -104,13 +103,15 @@ export function SheetFrame({
                 <Icon name="delete" size={17} />
               </button>
             )}
-            <button
-              className={`${cx("sheetClose")} ${doneLabel ? dockedStyles.done : ""}`}
-              onClick={close}
-              aria-label={doneLabel ?? "Close"}
-            >
-              {doneLabel ?? <Icon name="close" size={17} />}
-            </button>
+            {!transportClose && (
+              <button
+                className={`${cx("sheetClose")} ${doneLabel ? dockedStyles.done : ""}`}
+                onClick={close}
+                aria-label={doneLabel ?? "Close"}
+              >
+                {doneLabel ?? <Icon name="close" size={17} />}
+              </button>
+            )}
           </header>
         )}
         {navigation}

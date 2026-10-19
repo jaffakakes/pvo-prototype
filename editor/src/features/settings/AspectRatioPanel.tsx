@@ -1,16 +1,21 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type { Ratio } from "../../domain/project/model";
 import { RATIOS } from "../../domain/project/ratio";
 import { useCapture } from "../../state/captureStore";
 import { cx } from "../../styles";
-import { Icon } from "../../ui/Icon";
+import { useSheetDock } from "../../ui/sheets/SheetDockContext";
 import styles from "./AspectRatioPanel.module.css";
 import { socialIcons } from "./socialIcons";
 
 export function AspectRatioPanel() {
   const ratio = useCapture((state) => state.ratio);
   const panel = useRef<HTMLDivElement>(null);
-  const close = () => useCapture.getState().patch({ sheet: null });
+  const close = useCallback(
+    () => useCapture.getState().patch({ sheet: null }),
+    [],
+  );
+  const registerDismiss = useSheetDock()?.registerDismiss;
+  useEffect(() => registerDismiss?.(close), [registerDismiss, close]);
   useEffect(() => {
     panel.current
       ?.querySelector<HTMLButtonElement>('[aria-pressed="true"]')
@@ -96,9 +101,6 @@ export function AspectRatioPanel() {
       </div>
       <footer className={styles.footer}>
         <span>Ratio</span>
-        <button type="button" aria-label="Done" onClick={close}>
-          <Icon name="check" size={24} />
-        </button>
       </footer>
     </div>
   );

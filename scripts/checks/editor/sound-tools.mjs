@@ -155,6 +155,13 @@ try {
     .getByRole("button", { name: "Stop voiceover", exact: true })
     .waitFor();
   await page.waitForTimeout(600);
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Close sheet", exact: true })
+      .isDisabled(),
+    true,
+    "Closing stays disabled while the microphone is recording",
+  );
   await voice
     .getByRole("button", { name: "Stop voiceover", exact: true })
     .click();
@@ -174,7 +181,7 @@ try {
     ),
     true,
   );
-  await voice.getByRole("button", { name: "Done", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await page.getByRole("button", { name: "Undo", exact: true }).click();
   assert.equal((await current()).audio.length, 1);
   await soundMenu();
@@ -222,7 +229,7 @@ try {
     1,
     "A failed recording is not inserted as blank audio",
   );
-  await voice.getByRole("button", { name: "Done", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await page.evaluate(() => {
     window.OfflineAudioContext = window.originalDecoder;
   });
@@ -237,7 +244,7 @@ try {
     2,
     "Reopening and retrying saves the retained recording",
   );
-  await voice.getByRole("button", { name: "Done", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await page.getByRole("button", { name: "Undo", exact: true }).click();
   await page.evaluate(() => {
     navigator.mediaDevices.getUserMedia = async () => {
@@ -251,7 +258,7 @@ try {
     .click();
   await page.getByText("Microphone access denied.", { exact: true }).waitFor();
   assert.equal((await current()).audio.length, 1);
-  await voice.getByRole("button", { name: "Done", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   for (const [width, height] of [
     [320, 568],
     [844, 390],

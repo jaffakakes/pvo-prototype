@@ -7,6 +7,7 @@ import {
 } from "../../state/preferences/soundLibrary";
 import { Icon } from "../../ui/Icon";
 import styles from "./SoundBrowser.module.css";
+import { useSheetDock } from "../../ui/sheets/SheetDockContext";
 
 type Sound = {
   id: string;
@@ -40,6 +41,7 @@ export function SoundBrowser({
   inlineUse = true,
 }: Props) {
   const [tab, setTab] = useState<Tab>("For you");
+  const transportClose = !!useSheetDock()?.dismissFromTransport;
   const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState("");
   const library = useSoundLibrary();
@@ -142,18 +144,20 @@ export function SoundBrowser({
             </button>
           </>
         )}
-        <button
-          className={`${styles.iconButton} ${styles.close}`}
-          type="button"
-          aria-label={searching ? "Close search" : "Close"}
-          onClick={
-            searching
-              ? closeSearch
-              : () => useCapture.getState().patch({ sheet: null })
-          }
-        >
-          <Icon name="close" size={18} />
-        </button>
+        {(searching || !transportClose) && (
+          <button
+            className={`${styles.iconButton} ${styles.close}`}
+            type="button"
+            aria-label={searching ? "Close search" : "Close"}
+            onClick={
+              searching
+                ? closeSearch
+                : () => useCapture.getState().patch({ sheet: null })
+            }
+          >
+            <Icon name="close" size={18} />
+          </button>
+        )}
       </header>
       <div
         className={styles.list}

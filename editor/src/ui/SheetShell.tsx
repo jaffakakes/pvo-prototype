@@ -23,7 +23,11 @@ export function Shell({
   const dock = useSheetDock();
   const registerDismiss = dock?.registerDismiss;
   const picking = useCapture((s) => !!s.playheadPick);
-  useEffect(() => registerDismiss?.(close), [registerDismiss, close]);
+  useEffect(
+    () => (!headerless ? registerDismiss?.(close) : undefined),
+    [registerDismiss, close, headerless],
+  );
+  const transportClose = !!dock?.dismissFromTransport;
 
   return (
     <>
@@ -39,18 +43,20 @@ export function Shell({
         aria-label={title}
       >
         {!dock && !headerless && <div className={cx("grabber")} />}
-        {!headerless && (
+        {!headerless && (!transportClose || actions) && (
           <header
             className={`${cx("sheetHead")} ${dock ? dockedStyles.header : ""}`}
           >
             {actions}
-            <button
-              className={cx("sheetClose")}
-              onClick={close}
-              aria-label="Close"
-            >
-              <Icon name="close" size={17} />
-            </button>
+            {!transportClose && (
+              <button
+                className={cx("sheetClose")}
+                onClick={close}
+                aria-label="Close"
+              >
+                <Icon name="close" size={17} />
+              </button>
+            )}
           </header>
         )}
         {dock ? (

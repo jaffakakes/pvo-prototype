@@ -90,7 +90,7 @@ try {
   assert.equal(box.title, "Questions for video");
   assert.equal(box.count, 0);
   assert.equal(box.url, `${origin}/api/reply-boxes/${box.id}/replies`);
-  await formSheet.getByRole("button", { name: "Done", exact: true }).click();
+  await creator.getByRole("button", { name: "Close sheet", exact: true }).click();
 
   await creator.getByRole("button", { name: "Try", exact: true }).click();
   const tryForm = creator.locator(".compForm");

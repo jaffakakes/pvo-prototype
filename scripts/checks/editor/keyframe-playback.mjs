@@ -140,7 +140,7 @@ try {
   await assertPlayback("Phone with Animate open");
   await sheet.getByRole("button", { name: "Keyframe at 0:01.0", exact: true }).click();
   await assertPlayback("Phone Space after ribbon key selection", () => page.keyboard.press("Space"));
-  await sheet.getByRole("button", { name: "Close Animate", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await seek(.5);
   await assertPlayback("Phone after closing Animate");
   assert.deepEqual(errors, [], "Keyframe playback has no browser runtime errors");

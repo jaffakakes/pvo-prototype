@@ -161,7 +161,7 @@ try {
   await sheet.getByText("No sounds found.", { exact: true }).waitFor();
   await search.press("Escape");
   assert.equal(await sheet.isVisible(), true);
-  await sheet.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await closedAudio();
   assert.deepEqual(
     await current(),
@@ -221,7 +221,7 @@ try {
       });
     }
   }
-  await sheet.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await closedAudio();
   assert.deepEqual(errors, []);
   console.log(

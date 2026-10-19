@@ -122,7 +122,7 @@ try {
         "Scrolling editing controls cannot resize the player",
       );
       await page
-        .getByRole("button", { name: "Close components", exact: true })
+        .getByRole("button", { name: "Close sheet", exact: true })
         .press("Escape");
       await assertSplit();
       await page.setViewportSize({ width, height: height + 80 });

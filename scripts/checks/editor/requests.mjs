@@ -83,7 +83,7 @@ try {
     "Component code editing starts disabled");
   await advancedEditing.click();
   await moreDialog.getByRole("switch", { name: "Advanced editing", checked: true }).waitFor();
-  await moreDialog.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
 
   await page.evaluate(() => window.__requestTestStore.getState().patch({ selComp: window.__requestTestId, sheet: "component" }));
   const componentDialog = page.getByRole("dialog", { name: "Form" });
@@ -100,7 +100,7 @@ try {
   assert.match(await componentDialog.getByRole("textbox", { name: "Logic source", exact: true }).inputValue(),
     new RegExp(`127\\.0\\.0\\.1:${port}`));
   if (process.env.PVO_REQUEST_UI_SHOT) await componentDialog.screenshot({ path: process.env.PVO_REQUEST_UI_SHOT });
-  await componentDialog.getByRole("button", { name: "Done", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await page.waitForFunction(() => {
     const component = window.__requestTestStore.getState().components.find(item => item.id === window.__requestTestId);
     return component?.code?.pvoTouched === false && !!component.code.pvoCompiled;
