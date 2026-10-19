@@ -3,10 +3,9 @@ import {
   closeAuthGate,
   refreshAccountSession,
   setAuthError,
-  signOutAccount,
   useAuthGate,
 } from "../../state/auth/authGateStore";
-import { signOutClerk } from "../../infrastructure/auth/clerk";
+import { signOutCurrentAccount } from "../../state/auth/accountCommands";
 import { useCapture } from "../../state/captureStore";
 import { Icon } from "../../ui/Icon";
 import { AccountDisclosure } from "./AccountDisclosure";
@@ -89,18 +88,14 @@ function OpenAuthDialog() {
     setLinkTargetId(null);
     setSigningOut(true);
     setStep("gate");
-    void signOutAccount()
-      .then(async () => {
-        if (!clerkPublishableKey) return;
-        try {
-          await signOutClerk(clerkPublishableKey);
-        } catch {
-          setAuthError(
-            "Restyle signed out, but the email session could not be cleared. Try again later.",
-          );
-        }
-      })
-      .catch(() => setAuthError("Couldn't sign out. Try again."))
+    void signOutCurrentAccount()
+      .catch((error) =>
+        setAuthError(
+          error instanceof Error
+            ? error.message
+            : "Couldn't sign out. Try again.",
+        ),
+      )
       .finally(() => setSigningOut(false));
   };
   const startEmailLink = () => {

@@ -1,3 +1,4 @@
+import { AccountMenu } from "../account/AccountMenu";
 import { useSyncExternalStore } from "react";
 import {
   getProjectStorageStatus,
@@ -87,6 +88,7 @@ export function EditorHeader() {
         </div>
         <p className={styles.saveState}>{saveLabel}</p>
       </div>
+      {user && !trying && <AccountMenu />}
       {!user && !trying && (
         <button
           type="button"

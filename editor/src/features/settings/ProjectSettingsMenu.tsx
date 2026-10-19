@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { useHeaderPopover } from "../../ui/useHeaderPopover";
 import { createPortal } from "react-dom";
 import { useCapture } from "../../state/captureStore";
 import { Icon } from "../../ui/Icon";
@@ -9,13 +10,8 @@ import {
 import styles from "./ProjectSettingsMenu.module.css";
 
 export function ProjectSettingsMenu() {
-  const [position, setPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
+  const { trigger, panel, position, open, close } = useHeaderPopover(336);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const trigger = useRef<HTMLButtonElement>(null);
-  const panel = useRef<HTMLDivElement>(null);
   const keep = useRef<HTMLButtonElement>(null);
   const remove = useRef<HTMLButtonElement>(null);
   const restoreDeleteFocus = useRef(false);
@@ -23,28 +19,6 @@ export function ProjectSettingsMenu() {
   const busy = useCapture(
     (state) => state.importing || state.recording || state.ex === "running",
   );
-  const close = () => setPosition(null);
-
-  useEffect(() => {
-    if (!position) return;
-    panel.current?.querySelector<HTMLButtonElement>("button")?.focus();
-    const outside = (event: PointerEvent) => {
-      if (
-        event.target instanceof Node &&
-        !panel.current?.contains(event.target) &&
-        !trigger.current?.contains(event.target)
-      )
-        setPosition(null);
-    };
-    const resized = () => setPosition(null);
-    document.addEventListener("pointerdown", outside);
-    window.addEventListener("resize", resized);
-    return () => {
-      document.removeEventListener("pointerdown", outside);
-      window.removeEventListener("resize", resized);
-    };
-  }, [position]);
-
   useEffect(() => {
     if (confirmDelete) keep.current?.focus();
     else if (restoreDeleteFocus.current) {
@@ -74,18 +48,11 @@ export function ProjectSettingsMenu() {
             close();
             return;
           }
-          const header = trigger
-            .current!.closest("header")!
-            .getBoundingClientRect();
-          const title = trigger.current!.parentElement!.getBoundingClientRect();
           setConfirmDelete(false);
           useCapture
             .getState()
             .patch({ playing: false, sheet: null, orb: false });
-          setPosition({
-            top: header.bottom + 4,
-            left: Math.max(8, Math.min(title.left, innerWidth - 344)),
-          });
+          open();
         }}
       >
         <Icon name="down" size={16} />
