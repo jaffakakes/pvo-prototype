@@ -56,7 +56,7 @@ try {
     });
     await page.goto(base);
     await page
-      .locator("input[type=file]")
+      .locator("input[type=file][accept*=video]")
       .first()
       .setInputFiles(
         new URL("../../../share/assets/preview.mp4", import.meta.url).pathname,
