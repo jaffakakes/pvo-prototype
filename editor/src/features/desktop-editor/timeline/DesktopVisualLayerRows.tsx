@@ -12,6 +12,7 @@ import { setCodePreviewFocus } from "../../../state/components/componentAuthorin
 import type { CaptureState } from "../../../state/types";
 import { ClipPoster } from "../../../ui/media/ClipPoster";
 import { Icon } from "../../../ui/Icon";
+import { CoverButton } from "../../cover/CoverButton";
 import { componentLabel } from "../../../domain/components/presentation";
 import { useTimingPointer } from "../../timeline/useTimingPointer";
 import { DebugLayerIssue } from "../../editor-layout/debugging/DebugLayerIssue";
@@ -111,15 +112,11 @@ export function DesktopVisualLayerLabels({
           return (
             <div
               key={row.id}
-              className={`${styles.label} ${styles.videoLabel}`}
               data-desktop-layer-label={row.id}
               data-layer-id="video"
-              style={gridStyle}
+              style={{ ...gridStyle, justifySelf: "end" }}
             >
-              <Icon name="pvoExport" size={16} />
-              <div>
-                Video<small>Main track</small>
-              </div>
+              <CoverButton style={{ width: 52, height: 52 }} />
             </div>
           );
 

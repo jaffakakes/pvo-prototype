@@ -197,3 +197,5 @@ The [Roadmap 1A evidence](../docs/engineering/restyle-cloud-infrastructure-proof
 `npm run check:browser -- editor scenes-design` checks the Scenes Tree/Map panel: fixed timeline-region geometry, exact choice labels, keyboard navigation, map recentering/panning/Fit, persisted view choice and one-step branch creation/Undo. It requires source Vite for the authored-scene fixture and real preview media; see [Scenes panel](../docs/engineering/scenes-panel.md).
 
 `npm run check:browser -- editor project-settings` checks the dropdown beside the mobile project title at narrow, phone and landscape sizes. It covers icon-only appearance modes, Advanced edits persistence, outside/Escape dismissal, delete cancellation and confirmed local deletion across reload. Account, replies, scene and component actions are excluded from this dropdown.
+
+`npm run check:browser -- editor cover-picker` checks the Cover thumbnail and pencil tile beside the timeline, live frame scrubbing, Save versus cancellation, keyboard selection, focus restoration and saved covers after reload on phone, small phone and desktop. Cover changes reuse the export cover command and remain undoable.

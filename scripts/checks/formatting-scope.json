@@ -313,5 +313,13 @@
   "editor/src/features/settings/EditorPreferencesSettings.tsx",
   "editor/src/features/settings/ProjectSettingsMenu.tsx",
   "editor/src/features/settings/ProjectSettingsMenu.module.css",
-  "scripts/checks/editor/project-settings.mjs"
+  "scripts/checks/editor/project-settings.mjs",
+  "editor/src/features/cover/CoverFilmstrip.tsx",
+  "editor/src/features/cover/CoverPicker.module.css",
+  "editor/src/features/cover/CoverPicker.tsx",
+  "editor/src/features/cover/CoverButton.module.css",
+  "editor/src/features/cover/CoverButton.tsx",
+  "editor/src/state/editing/coverCommands.ts",
+  "scripts/checks/editor/cover-picker.mjs",
+  "tests/editor-cover-selection.test.mjs"
 ]

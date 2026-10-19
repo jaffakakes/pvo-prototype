@@ -1,4 +1,5 @@
 import { AudioClipBar } from "../sound/AudioClipBar";
+import { CoverButton } from "../cover/CoverButton";
 import { TimelineKeyframes } from "../animation/TimelineKeyframes";
 import { textStyle } from "../../../../packages/pvo-text-runtime/index.js";
 import { dur } from "../../domain/clips/timing";
@@ -307,6 +308,14 @@ export function Timeline() {
         <span className={styles.currentTime}>
           {fmt(s.t)}.{Math.floor(s.t * 10) % 10}
         </span>
+        <CoverButton
+          style={{
+            position: "absolute",
+            left: 64,
+            top: rowTop("video"),
+            zIndex: 4,
+          }}
+        />
         {layers.map((id) => (
           <button
             key={id}

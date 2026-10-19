@@ -23,7 +23,7 @@ import { ExportPreview } from "./ExportPreview";
 import { exportClock, exportView } from "./presentation";
 import { useExportProgress } from "./useExportProgress";
 import { useCoverPreview, usePosterPreview } from "./useExportPreviewUrls";
-import { exportCoverAt } from "../../domain/project/cover";
+import { saveProjectCover } from "../../state/editing/coverCommands";
 import { useExportSession } from "./useExportSession";
 import styles from "./ExportSheet.module.css";
 
@@ -121,9 +121,7 @@ export function ExportSheet() {
     s.patch({ sheet: null });
   };
   const saveCover = () => {
-    s.edit({
-      coverAt: exportCoverAt({ scenes: s.scenes, coverAt: pickerTime }),
-    });
+    saveProjectCover(pickerTime);
     setPicking(false);
   };
   const retry720 = () => {
