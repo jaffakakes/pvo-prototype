@@ -5,7 +5,7 @@ export function aspectRatioPanelHeight(height: number) {
   return height < 500 ? 112 : Math.min(180, Math.max(156, height * 0.24));
 }
 
-/** Split the workspace five eighths for playback and three eighths for tools. */
+/** Keep the normal split, with usable timeline space on short screens. */
 export function editorPanelHeight(
   measurements: Measurements,
   ratioOpen = false,
@@ -13,7 +13,22 @@ export function editorPanelHeight(
   const normal =
     (Math.max(0, measurements.height - measurements.header) * 3) / 8;
   const ratioPanel = aspectRatioPanelHeight(measurements.height);
-  return ratioOpen ? Math.max(normal, ratioPanel + 132) : normal;
+  const shortScreen =
+    measurements.height < 500
+      ? Math.min(
+          244,
+          Math.max(
+            0,
+            measurements.height -
+              measurements.header -
+              measurements.playback -
+              40,
+          ),
+        )
+      : 0;
+  return ratioOpen
+    ? Math.max(normal, ratioPanel + 132)
+    : Math.max(normal, shortScreen);
 }
 
 /** Space above the panel collapses in order: preview, playback, then navigation. */

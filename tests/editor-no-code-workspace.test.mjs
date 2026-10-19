@@ -39,7 +39,9 @@ test("timeline and editing panels split the space below the project header", () 
       layout.header + layout.preview + layout.playback + panel,
       height,
     );
-    assert.equal(layout.preview + layout.playback, (panel * 5) / 3);
+    if (height >= 500)
+      assert.equal(layout.preview + layout.playback, (panel * 5) / 3);
+    if (height >= 328 && height < 500) assert(layout.preview >= 40);
     assert.ok(panel >= 0);
     if (height >= 328) {
       assert.equal(layout.header, 64);
@@ -51,13 +53,20 @@ test("timeline and editing panels split the space below the project header", () 
   }
 });
 
-test("keyboard and orientation height changes recalculate the same fixed split", () => {
+test("keyboard and orientation changes preserve controls and a usable timeline", () => {
   const measurements = { height: 844, header: 64, playback: 52 };
   const original = editorPanelHeight(measurements);
   const keyboard = editorPanelHeight({ ...measurements, height: 608 });
   const landscape = editorPanelHeight({ ...measurements, height: 390 });
   assert.equal(original - keyboard, (236 * 3) / 8);
-  assert.equal(landscape, ((390 - 64) * 3) / 8);
+  assert(
+    landscape >= 200,
+    "Short screens reserve room for timeline navigation",
+  );
+  assert(
+    workspaceGeometry({ ...measurements, height: 390 }, landscape, false)
+      .preview >= 40,
+  );
   assert.equal(editorPanelHeight(measurements), original);
 });
 

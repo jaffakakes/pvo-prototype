@@ -193,3 +193,5 @@ The [Roadmap 1A evidence](../docs/engineering/restyle-cloud-infrastructure-proof
 `npm run check:browser -- editor component-picker-fit` checks that all four component previews fit without scrolling on regular phones, including safe areas and dark mode. It also checks small/short-screen scrolling, insertion from the final choice, and restoring the normal editor layout after closing.
 
 `npm run check:browser -- editor sheet-close` checks one 44px X in the playback row across mobile editing sheets, no duplicate sheet close rows, text draft commit/history, and retaining the keyboard layout while typing. Camera sheets, desktop dialogs and export keep their own navigation.
+
+`npm run check:browser -- editor scenes-design` checks the Scenes Tree/Map panel: fixed timeline-region geometry, exact choice labels, keyboard navigation, map recentering/panning/Fit, persisted view choice and one-step branch creation/Undo. It requires source Vite for the authored-scene fixture and real preview media; see [Scenes panel](../docs/engineering/scenes-panel.md).

@@ -287,5 +287,21 @@
   "scripts/checks/editor/sheet-close.mjs",
   "editor/src/features/animation/AnimationSheet.tsx",
   "editor/src/features/animation/AnimationSheet.module.css",
-  "editor/src/features/assistant/useAssistantPlacement.ts"
+  "editor/src/features/assistant/useAssistantPlacement.ts",
+  "editor/src/features/scenes/SceneTimeline.tsx",
+  "editor/src/features/scenes/SceneTree.tsx",
+  "editor/src/features/scenes/Scenes.module.css",
+  "editor/src/features/scenes/ScenesRow.tsx",
+  "editor/src/domain/scenes/graph.ts",
+  "editor/src/features/scenes/SceneMap.module.css",
+  "editor/src/features/scenes/SceneMap.tsx",
+  "editor/src/features/scenes/ScenePoster.tsx",
+  "editor/src/features/scenes/SceneTreeList.tsx",
+  "editor/src/features/scenes/ScenesPanel.module.css",
+  "editor/src/features/scenes/sceneMapLayout.ts",
+  "editor/src/features/scenes/useSceneMapViewport.ts",
+  "editor/src/infrastructure/preferences/scenesView.ts",
+  "editor/src/state/scenes/createSceneBranch.ts",
+  "scripts/checks/editor/scenes-design.mjs",
+  "tests/editor-scenes-panel.test.mjs"
 ]

@@ -36,14 +36,20 @@ try {
     const assertSplit = async () => {
       await settle();
       const layout = await geometry();
-      assert(
-        Math.abs(
-          (layout.dock.height * 5) / 3 -
-            layout.previewArea.height -
-            layout.transport.height,
-        ) < 2,
-        "Player and lower region use a fixed 62.5/37.5 split",
-      );
+      if (layout.viewportHeight >= 500)
+        assert(
+          Math.abs(
+            (layout.dock.height * 5) / 3 -
+              layout.previewArea.height -
+              layout.transport.height,
+          ) < 2,
+          "Player and lower region use a fixed 62.5/37.5 split",
+        );
+      else
+        assert(
+          layout.dock.height >= 200 && layout.previewArea.height >= 39,
+          "Short screens retain usable timeline and preview space",
+        );
       assert.equal(
         await page
           .getByRole("separator", { name: /^Resize (timeline|editing panel)$/ })

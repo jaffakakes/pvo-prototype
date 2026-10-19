@@ -147,7 +147,7 @@ try {
   await createScene("Scene A");
   await renameScene("Evening look");
   await goUp("Main");
-  assert.deepEqual(await row.locator("button.sceneChip").allTextContents(), ["Street look 0:00▸2", "Evening look 0:00"]);
+  assert.deepEqual(await row.locator("button.sceneChip").allTextContents(), ["Street look 0:03▸2", "Evening look 0:00"]);
   await openTree();
   assert.deepEqual(await treeNames(), ["Main", "Street look", "Scene i", "Scene 1", "Scene ii", "Evening look"]);
   await tree.getByRole("button", { name: /^Open Scene 1, level 4,/ }).click();
@@ -185,7 +185,7 @@ try {
   await openEditorSettings(page);
   await more.getByRole("button", { name: "Delete scene…", exact: true }).click();
   assert.equal(await more.getByRole("list", { name: "Scenes to delete", exact: true }).locator("li").count(), 4);
-  assert.equal(await more.getByRole("list", { name: "Affected components", exact: true }).locator("li").count(), 1);
+  assert.equal(await more.getByRole("list", { name: "Affected components", exact: true }).locator("li").count(), 2);
   await more.getByRole("button", { name: "Delete scene", exact: true }).click();
   await assertCurrent("Main");
   await openTree();
@@ -203,7 +203,7 @@ try {
   assert.equal(await row.getByRole("button", { name: "Open Evening look copy", exact: true }).count(), 1);
 
   await page.getByRole("button", { name: "Components", exact: true }).click();
-  await page.locator(".componentList button").first().click();
+  await page.locator(".componentList > div").last().locator("button").first().click();
   const newSceneOutcome = await firstOutcome();
   await newSceneOutcome.getByRole("button", { name: /New scene/ }).click();
   await page.locator(".sceneBanner").waitFor();
@@ -216,7 +216,7 @@ try {
     "One undo must remove the new destination scene");
   await tree.getByRole("button", { name: "Close scene tree", exact: true }).click();
   await page.getByRole("button", { name: "Components", exact: true }).click();
-  await page.locator(".componentList button").first().click();
+  await page.locator(".componentList > div").last().locator("button").first().click();
   const restoredOutcome = await firstOutcome();
   assert.match(await restoredOutcome.locator('.sceneChoices [aria-pressed="true"]').innerText(), /Scene 1/,
     "The same undo must restore the previous component route");
