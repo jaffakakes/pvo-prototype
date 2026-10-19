@@ -354,7 +354,6 @@ export function Camera() {
                   <span className={cx("dockEdit")}>EDIT</span>
                   <span className={cx("dockCount")}>{count}</span>
                 </span>
-                <span className={cx("dockCaption")}>Open editor</span>
               </button>
             )}
           </div>

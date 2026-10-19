@@ -283,9 +283,3 @@ html[data-theme="light"] .cameraBrand img {
   color: var(--ground);
   font: 800 11px var(--f-ui);
 }
-.dockCaption {
-  width: 68px;
-  text-align: center;
-  font: 700 10px var(--f-ui);
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
-}
