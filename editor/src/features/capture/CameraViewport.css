@@ -71,15 +71,6 @@
   box-shadow: 3px 3px 0 #000;
   font: 800 13px var(--f-ui);
 }
-.camTop {
-  position: absolute;
-  left: calc(18px + env(safe-area-inset-left));
-  right: calc(18px + env(safe-area-inset-right));
-  top: calc(14px + env(safe-area-inset-top));
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
 .segbar {
   display: flex;
   gap: 3px;
@@ -97,38 +88,6 @@
 }
 .segLive {
   background: var(--pale);
-}
-.recLine {
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.recPill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--accent);
-  border: 2px solid #000;
-  border-radius: 20px;
-  padding: 3px 10px;
-  font: 800 11px/1.2 var(--f-ui);
-  box-shadow: 2px 2px 0 #000;
-}
-.recPill i {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--text);
-  animation: rsPulse 0.8s infinite;
-}
-.timeNote {
-  margin-left: auto;
-  background: rgba(0, 0, 0, 0.7);
-  border: 1.5px solid var(--q12);
-  padding: 3px 9px;
-  border-radius: 8px;
-  font: 800 11px/1.2 var(--f-ui);
 }
 .camControls {
   position: absolute;

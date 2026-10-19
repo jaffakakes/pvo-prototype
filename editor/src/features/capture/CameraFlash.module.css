@@ -6,7 +6,6 @@
   pointer-events: none;
 }
 
-.illuminated :global(.camTop),
 .illuminated :global(.camControls),
 .illuminated :global(.rightRail),
 .illuminated :global(.camBottom) {

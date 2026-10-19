@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { total } from "../../domain/clips/timing";
 import { projectRatio } from "../../domain/project/ratio";
 import { sceneRouteLabel } from "../../domain/scenes/references";
 import { useWideLayout } from "../../infrastructure/viewport";
@@ -7,7 +6,6 @@ import { useCapture } from "../../state/captureStore";
 import { cx } from "../../styles";
 import { CameraIcon as Icon } from "./CameraIcon";
 import { RatioMenu } from "../../ui/RatioMenu";
-import { fmt } from "../../ui/formatTime";
 import { SOUNDS } from "../sound/catalog";
 import { CaptureRecovery } from "./CaptureRecovery";
 import { CameraStorageRecovery } from "./CameraStorageRecovery";
@@ -53,9 +51,6 @@ export function Camera() {
   const [viewfinderSize, setViewfinderSize] = useState({ width: 0, height: 0 });
   const { displayCameraStatus, cameraPending, removeLast, flip, startOver } =
     useCameraControls(cameraStatus, startCam);
-  const activeClips = s.clips.filter((c) => c.id !== s.replacing);
-  const used = total(activeClips);
-  const live = s.recording ? s.elapsed : 0;
   const last = s.clips.at(-1);
   const count = s.clips.length;
   const recordingScene = s.recordingInto
@@ -222,17 +217,6 @@ export function Camera() {
             </>
           )}
           <div className={cx("topScrim")} />
-          <div className={cx("camTop")}>
-            <div className={cx("recLine")}>
-              {s.recording && (
-                <span className={cx("recPill")}>
-                  <i />
-                  REC {fmt(live)}
-                </span>
-              )}
-              <span className={cx("timeNote")}>{fmt(used + live)}</span>
-            </div>
-          </div>
           <div className={cx("camControls")}>
             <button
               className={cx("sq42 cameraBrand")}
