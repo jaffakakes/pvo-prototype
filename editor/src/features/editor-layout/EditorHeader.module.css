@@ -190,7 +190,7 @@
   gap: 10px;
   padding: 6px 12px 6px 8px;
   border: 0;
-  background: var(--deep);
+  background: var(--preview-backdrop);
 }
 .projectHeader .navigationButton {
   display: inline-flex;

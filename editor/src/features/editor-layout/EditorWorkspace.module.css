@@ -5,7 +5,7 @@
   min-height: 0;
   min-width: 0;
   display: grid;
-  background: var(--deep);
+  background: var(--preview-backdrop);
   /* System gesture areas stay outside every panel size, including transitions. */
   padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0
     env(safe-area-inset-left, 0px);
@@ -330,7 +330,7 @@
 }
 .preview {
   grid-row: 2;
-  background: var(--deep);
+  background: var(--preview-backdrop);
 }
 .dock {
   grid-row: 3;

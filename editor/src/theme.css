@@ -5,20 +5,21 @@
 /* Editor chrome only. Authored components and the standalone player own their colors. */
 :root {
   color-scheme: dark;
-  --ground: #0b0b0f;
-  --bar: #111117;
-  --surface: #15151c;
-  --input: #1c1c24;
-  --deep: #060609;
+  --ground: #222226;
+  --bar: #29292e;
+  --surface: #34343a;
+  --input: #404047;
+  --deep: #121215;
+  --preview-backdrop: #2c2c31;
   --text: #f2f0e9;
   --text-secondary: #d8d5cb;
   --ink: #111;
   --muted: rgb(242 240 233 / 62%);
-  --muted-strong: #a7a3b8;
-  --faint: rgb(242 240 233 / 45%);
-  --disabled: #4a4757;
+  --muted-strong: #b6b2be;
+  --faint: #b0abb5;
+  --disabled: #605c68;
   --outline: #000;
-  --line-strong: #4a4852;
+  --line-strong: #817b87;
   --q14: rgb(255 255 255 / 14%);
   --q12: rgb(255 255 255 / 12%);
   --q10: rgb(255 255 255 / 10%);
@@ -103,6 +104,7 @@
   --surface: #fffdfb;
   --input: #eee8e3;
   --deep: #ded7d0;
+  --preview-backdrop: var(--deep);
   --text: #241d25;
   --text-secondary: #3f3941;
   --ink: #151219;
