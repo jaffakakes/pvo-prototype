@@ -1,4 +1,4 @@
-type Kind = "person" | "info" | "logout" | "discord" | "chevron";
+type Kind = "person" | "info" | "logout" | "discord";
 export function AccountIcon({ kind }: { kind: Kind }) {
   if (kind === "discord")
     return (
@@ -24,7 +24,6 @@ export function AccountIcon({ kind }: { kind: Kind }) {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      {kind === "chevron" && <path d="M9 6l6 6-6 6" />}
       {kind === "person" && (
         <>
           <circle cx="12" cy="8" r="4" />

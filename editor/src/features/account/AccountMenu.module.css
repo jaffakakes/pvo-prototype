@@ -92,18 +92,6 @@
   color: var(--muted);
   font: 500 12px var(--f-ui);
 }
-.addPhoto {
-  align-self: flex-start;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--accent);
-  font: 700 11px var(--f-ui);
-  text-decoration: underline;
-  text-decoration-thickness: 1.5px;
-  text-underline-offset: 2px;
-  cursor: pointer;
-}
 .items {
   display: flex;
   flex: none;
@@ -126,8 +114,7 @@
   font: 700 15px var(--f-ui);
   cursor: pointer;
 }
-.item svg,
-.swatch {
+.item svg {
   flex: none;
 }
 .item:hover {
@@ -139,18 +126,6 @@
 }
 .item[aria-disabled="true"] {
   cursor: default;
-}
-.swatch {
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--outline);
-  border-radius: 7px;
-  background: linear-gradient(135deg, #c51c5c, #ff8a00 45%, #00b37e);
-}
-.chevron {
-  display: flex;
-  margin-left: auto;
-  color: var(--muted);
 }
 .divider {
   height: 2px;

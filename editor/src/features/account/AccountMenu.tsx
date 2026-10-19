@@ -14,7 +14,6 @@ import {
 import { useCapture } from "../../state/captureStore";
 import { useHeaderPopover } from "../../ui/useHeaderPopover";
 import { Icon } from "../../ui/Icon";
-import { AppearanceSettings } from "../settings/EditorPreferencesSettings";
 import { AccountIcon } from "./AccountIcon";
 import styles from "./AccountMenu.module.css";
 
@@ -39,7 +38,7 @@ function SignedInMenu({ name: accountName }: { name: string }) {
     "end",
   );
   const { profile, loading, saving, error } = useAccountProfile();
-  const [view, setView] = useState<"menu" | "profile" | "theme">("menu");
+  const [view, setView] = useState<"menu" | "profile">("menu");
   const [name, setName] = useState("");
   const [signingOut, setSigningOut] = useState(false);
   const file = useRef<HTMLInputElement>(null);
@@ -150,13 +149,7 @@ function SignedInMenu({ name: accountName }: { name: string }) {
             ref={panel}
             id={id}
             role={view === "menu" ? "menu" : "dialog"}
-            aria-label={
-              view === "menu"
-                ? "Account"
-                : view === "profile"
-                  ? "Edit profile"
-                  : "Change theme"
-            }
+            aria-label={view === "menu" ? "Account" : "Edit profile"}
             className={styles.panel}
             style={{
               ...position,
@@ -197,16 +190,6 @@ function SignedInMenu({ name: accountName }: { name: string }) {
                         {profile.email}
                       </span>
                     )}
-                    {!photo && (
-                      <button
-                        type="button"
-                        className={styles.addPhoto}
-                        disabled={loading || saving || !profile}
-                        onClick={choosePhoto}
-                      >
-                        {saving ? "Uploading…" : "Add a photo"}
-                      </button>
-                    )}
                   </div>
                 </div>
                 <div className={styles.items} role="presentation">
@@ -221,18 +204,6 @@ function SignedInMenu({ name: accountName }: { name: string }) {
                   >
                     <AccountIcon kind="person" />
                     Edit profile
-                  </button>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className={styles.item}
-                    onClick={() => setView("theme")}
-                  >
-                    <span className={styles.swatch} />
-                    Change theme
-                    <span className={styles.chevron}>
-                      <AccountIcon kind="chevron" />
-                    </span>
                   </button>
                   <button
                     type="button"
@@ -283,9 +254,7 @@ function SignedInMenu({ name: accountName }: { name: string }) {
                   >
                     <Icon name="back" size={18} />
                   </button>
-                  <strong>
-                    {view === "profile" ? "Edit profile" : "Change theme"}
-                  </strong>
+                  <strong>Edit profile</strong>
                   <button
                     type="button"
                     aria-label="Close account menu"
@@ -294,48 +263,44 @@ function SignedInMenu({ name: accountName }: { name: string }) {
                     <Icon name="close" size={16} />
                   </button>
                 </div>
-                {view === "theme" ? (
-                  <AppearanceSettings iconOnly />
-                ) : (
-                  <form
-                    onSubmit={async (event) => {
-                      event.preventDefault();
-                      if (await updateProfile({ name })) dismiss();
-                    }}
+                <form
+                  onSubmit={async (event) => {
+                    event.preventDefault();
+                    if (await updateProfile({ name })) dismiss();
+                  }}
+                >
+                  <button
+                    type="button"
+                    className={styles.photoEdit}
+                    onClick={choosePhoto}
+                    disabled={loading || saving || !profile}
                   >
-                    <button
-                      type="button"
-                      className={styles.photoEdit}
-                      onClick={choosePhoto}
-                      disabled={loading || saving || !profile}
-                    >
-                      <span className={`${styles.avatar} ${styles.bigAvatar}`}>
-                        {avatar}
-                      </span>
-                      <span>{photo ? "Change photo" : "Add a photo"}</span>
-                    </button>
-                    <label className={styles.field}>
-                      Name
-                      <input
-                        value={name}
-                        onChange={(event) => setName(event.target.value)}
-                        maxLength={120}
-                        required
-                        autoComplete="name"
-                      />
-                    </label>
-                    {profile?.email && (
-                      <p className={styles.profileEmail}>{profile.email}</p>
-                    )}
-                    <button
-                      type="submit"
-                      className={styles.save}
-                      disabled={saving || loading || !profile || !name.trim()}
-                    >
-                      {saving ? "Saving…" : "Save"}
-                    </button>
-                  </form>
-                )}
+                    <span className={`${styles.avatar} ${styles.bigAvatar}`}>
+                      {avatar}
+                    </span>
+                    <span>{photo ? "Change photo" : "Add a photo"}</span>
+                  </button>
+                  <label className={styles.field}>
+                    Name
+                    <input
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                      maxLength={120}
+                      required
+                      autoComplete="name"
+                    />
+                  </label>
+                  {profile?.email && (
+                    <p className={styles.profileEmail}>{profile.email}</p>
+                  )}
+                  <button
+                    type="submit"
+                    className={styles.save}
+                    disabled={saving || loading || !profile || !name.trim()}
+                  >
+                    {saving ? "Saving…" : "Save"}
+                  </button>
+                </form>
               </div>
             )}
             {error && (

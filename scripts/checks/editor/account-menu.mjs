@@ -105,9 +105,6 @@ try {
         .getAttribute("aria-disabled"),
       "true",
     );
-    await page.getByRole("menuitem", { name: "Change theme" }).click();
-    await page.getByRole("button", { name: "Dark", exact: true }).click();
-    await page.getByRole("button", { name: "Back to account menu" }).click();
     await page.getByRole("menuitem", { name: "Edit profile" }).click();
     await page
       .getByRole("textbox", { name: "Name", exact: true })
@@ -162,7 +159,7 @@ try {
     );
     assert.deepEqual(errors, []);
     console.log(
-      `${width} ${theme}: avatar, keyboard, theme, name, photo failure/retry, reload and sign out passed`,
+      `${width} ${theme}: avatar, keyboard, name, photo failure/retry, reload and sign out passed`,
     );
     await context.close();
   }

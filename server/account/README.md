@@ -6,4 +6,4 @@
 
 Cloudflare keeps one private JSON object per account under `MEDIA/account-profiles/{id}.json`. No public image URL is created. The loopback beta uses atomic 0600 files under its private `account-profiles/` data directory, keyed by a hash of the authenticated account ID. Account-data deletion must include that profile object/file. Project checkpoints remain in the browser; signing in or editing a profile does not enable project cloud saving.
 
-The account menu shares header positioning and dismissal with Project settings. Discord intentionally has no destination until an invite is supplied. Help opens support@getrestyle.app. Sign out uses the same Restyle/provider cleanup command as the account dialog and leaves the project open.
+The account menu shares header positioning and dismissal with Project settings. The profile avatar opens photo selection; Edit profile also provides photo and name controls. Appearance stays in Project settings. Discord intentionally has no destination until an invite is supplied. Help opens support@getrestyle.app. Sign out uses the same Restyle/provider cleanup command as the account dialog and leaves the project open.
