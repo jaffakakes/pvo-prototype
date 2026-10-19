@@ -65,7 +65,7 @@ Only the explicitly approved assistant-applied Undo feedback above uses a succes
 4. **Four seconds for a brief notification; 2.4 seconds for assistant-applied Undo feedback.** Pause its timeout while hovered or keyboard-focused. Every message has × dismissal. Work-at-risk errors remain until resolved or acknowledged.
 5. **Protect concentration.** Do not show unrelated noncritical notifications while recording, dragging, trimming, typing, listening or reviewing an AI proposal. A short failure notification for the user's current attempt may appear; do not suppress it merely because the input remains focused. Do not replay a backlog later.
 6. **Short, bounded copy.** Aim for 3–6 words, at most 50 characters and two visible lines. Fit within the app width with at least 16px side margins. No horizontal strip stretching beyond the screen.
-7. **Top placement.** Animate down into a compact top-of-app notification area, below the safe inset. Keep the input and bottom toolbar clear. Avoid obstructing essential controls, and keep the message footprint small.
+7. **Placement.** Save/restore failures use the bottom recovery notice below. Other notifications animate down into a compact top-of-app notification area, below the safe inset. Keep the input and bottom toolbar clear. Avoid obstructing essential controls, and keep the message footprint small.
 8. **Quiet motion and accessible status.** Use a quick downward slide with a subtle fade, no bounce or sound. Respect reduced motion, do not steal focus, and announce each event once. Pair colour with an icon and text.
 9. **Follow the current operation.** Clear irrelevant messages when their component, scene or workflow is left. Discard responses from cancelled or superseded attempts. Project-save and recovery warnings remain project-scoped until resolved.
 10. **Tell the truth.** Use “Ready to download” when the file has been generated; the browser starting a download does not prove it was saved to the phone. Never show success when recording, saving or exporting failed.
@@ -123,14 +123,21 @@ Keep the existing update workflow. Adding new update access or recovery screens 
 
 ## Implementation ownership
 
-The notification host renders one compact top banner and retains acknowledged critical issues in their feature's recovery controls. A dismissed restore banner does not reappear as a floating issue control or repeat on reload for the same project; the underlying restore failure remains unresolved until recovery succeeds. Other unresolved critical issues may still use the issue control. Healthy editing adds no notification chrome.
+The notification host renders one compact banner and retains acknowledged critical issues in recovery controls. Save/restore notices appear at the bottom; a dismissed restore failure does not repeat its announcement on reload. Other unresolved critical issues may use the issue control. Healthy editing adds no notification chrome.
 
 Camera and More expose import results and recording recovery when a problem exists. Failed files can be retried together; failed recordings have a Record again action. A video-only camera fallback has a local microphone status. These states do not imply that missing footage was captured.
 
-Storage failures appear as short top toasts. On Camera, a collapsed Storage options control exposes recovery without pinning a detailed panel below the footer; More provides the same controls in Editor. The desktop new-project screen owns its recovery panel while creation is blocked; the duplicate restore toast stays hidden on that screen. Writes are gated behind successful restoration. Retry cannot hydrate over new session work or overwrite the unread saved checkpoint. New edits arriving during recovery block hydration; the user can export current work before reloading. Healthy autosaves remain silent.
+Storage failures use the bottom recovery presentation described below. Desktop new-project creation owns its inline recovery panel while blocked. Writes remain gated behind successful restoration of existing checkpoints. Retry cannot hydrate over new session work or overwrite unread saved data. Healthy autosaves remain silent.
 
 Export retains Retry and collapsed details; its banner is scoped to the active Export workflow. Try requests expose pending/failure status on their component and honour authored error routes without another global toast. Component rendering failures have local details; source diagnostics remain in the code editor.
 
 Verification must cover quiet ordinary edits, single AI error reporting with retained input, mobile safe areas, keyboard dismissal, pause/expiry, repeated-event suppression, durable failure recovery, and unchanged Undo/request/sandbox behaviour. Browser checks use mocked voice/storage failures where applicable and do not substitute for real-device microphone testing.
 
 The [catalogue](../../editor/src/domain/notifications/catalog.ts) owns approved event IDs and copy; the [policy](../../editor/src/domain/notifications/policy.ts) owns priority and repetition rules. The [notification store](../../editor/src/state/notifications/notificationStore.ts) coordinates ephemeral notices and retained issues. The [notification feature](../../editor/src/features/notifications/) owns presentation, timing and browser interaction. Feature owners retain diagnostics and recovery actions. Do not reintroduce free-form `notify(message)` or create a second toast system.
+
+
+### Bottom project recovery notices
+
+Save and restore failures use the same compact bottom presentation as **New beta release**, with a direct **Retry** action and dismissal. They keep the approved notification registry, live announcements and unresolved state; they do not also display a top toast or Camera storage section. A dismissed failure leaves **Saving paused**, opening recovery details on demand. Desktop creation continues to own its inline restore recovery panel. Updates yield while a save or restore issue is unresolved.
+
+An absent project at a requested link is different from an unreadable checkpoint: clear the stale route, report **Project isn’t in this browser.**, and enable saving new work. Do not silently load another project or write an empty placeholder over its current checkpoint. Corrupt or inaccessible saved data still blocks writes until recovery succeeds or the user explicitly discards it. If new work starts while checking an absent checkpoint, save that work without attempting hydration.

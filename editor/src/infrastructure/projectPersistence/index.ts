@@ -289,8 +289,6 @@ export function createProjectPersistence(
       if (isProjectDiscarded()) return null;
       const database = await getDatabase();
       const record = await readProjectCheckpoint(database, requestedId);
-      if (!record && requestedId)
-        throw new Error("This project isn't saved in this browser.");
       if (!record) return null;
       validateCheckpoint(record);
       const media = await readProjectMedia(database, record.assetIds);

@@ -13,6 +13,7 @@ type Dependencies = {
   persistence: ProjectPersistence;
   store: Pick<StoreApi<CaptureState>, "getState" | "subscribe">;
   hydrate(saved: RestoredProject): void;
+  empty(): void;
   failed(kind: "saveFailed" | "restoreFailed", error: unknown): void;
   recovered(kind: "saveFailed" | "restoreFailed"): void;
 };
@@ -27,7 +28,7 @@ function hasWork(state: CaptureState) {
 }
 
 /** Gates writes behind a successful restore; retry can never replace new work. */
-export function createProjectAutosaveController({ persistence, store, hydrate, failed, recovered }: Dependencies) {
+export function createProjectAutosaveController({ persistence, store, hydrate, empty, failed, recovered }: Dependencies) {
   let status: AutosaveStatus = { phase: "starting", storage: persistence.getStatus(), recoveryBlocked: false };
   let startup: Promise<void> | null = null;
   let restoring: Promise<void> | null = null;
@@ -73,7 +74,7 @@ export function createProjectAutosaveController({ persistence, store, hydrate, f
         const saved = await persistence.restore();
         // Imports/recording can start during asynchronous storage access. Leave both
         // the current project and saved checkpoint intact if that happens.
-        if (restoringChanges || hasWork(store.getState())) {
+        if (saved && (restoringChanges || hasWork(store.getState()))) {
           // Persistence caches this result and owns its object URLs. Leave them
           // valid for a later safe retry; this path never starts a new write.
           restoreError = new Error("Recovery paused because this session contains new work.");
@@ -82,10 +83,12 @@ export function createProjectAutosaveController({ persistence, store, hydrate, f
           return;
         }
         if (saved) hydrate(saved);
+        else empty();
+        awaitingReplacementProject = !saved && !hasPersistableProject(store.getState());
         restoreError = undefined;
         publish({ phase: "ready", recoveryBlocked: false });
         recovered("restoreFailed");
-        persistence.schedule(store.getState());
+        if (!awaitingReplacementProject) persistence.schedule(store.getState());
       } catch (error) {
         restoreError = error;
         publish({ phase: "restore-failed", recoveryBlocked: hasWork(store.getState()) });

@@ -115,7 +115,9 @@ try {
   await page
     .getByRole("button", { name: "Back to camera", exact: true })
     .click();
-  await page.getByText("Storage options", { exact: true }).click();
+  await page
+    .getByRole("button", { name: "Saving paused", exact: true })
+    .click();
   await page.getByRole("button", { name: "Retry save", exact: true }).click();
   await page.getByRole("button", { name: "Open editor", exact: true }).click();
   await saved.waitFor();

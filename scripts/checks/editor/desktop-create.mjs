@@ -546,7 +546,7 @@ async function mobileTargetedRecoveryImport() {
   await page.locator('[data-notification-id="restoreFailed"]').waitFor();
   await page.getByRole("button", { name: "Dismiss notification", exact: true }).click();
   assert.equal(await page.getByRole("button", { name: "Restore issue", exact: true }).count(), 0);
-  await page.getByText("Storage options", { exact: true }).click();
+  await page.getByRole("button", { name: "Saving paused", exact: true }).click();
   const storage = page.getByRole("region", { name: "Project storage", exact: true });
   await storage.getByRole("button", { name: "Discard saved edit", exact: true }).click();
   await storage.getByRole("button", { name: "Discard and continue", exact: true }).click();

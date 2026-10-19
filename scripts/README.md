@@ -199,3 +199,5 @@ The [Roadmap 1A evidence](../docs/engineering/restyle-cloud-infrastructure-proof
 `npm run check:browser -- editor project-settings` checks the dropdown beside the mobile project title at narrow, phone and landscape sizes. It covers icon-only appearance modes, Advanced edits persistence, outside/Escape dismissal, delete cancellation and confirmed local deletion across reload. Account, replies, scene and component actions are excluded from this dropdown.
 
 `npm run check:browser -- editor cover-picker` checks the Cover thumbnail and pencil tile beside the timeline, live frame scrubbing, Save versus cancellation, keyboard selection, focus restoration and saved covers after reload on phone, small phone and desktop. Cover changes reuse the export cover command and remain undoable.
+
+`node scripts/checks/editor/save-recovery.mjs` verifies missing project links, preservation of other saved projects, save failure notices, retry and reload at phone and desktop sizes. Set `EDITOR_URL` to the beta or source server; it uses isolated browser contexts.

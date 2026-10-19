@@ -54,37 +54,36 @@ try {
   await restoreToast.waitFor();
   await restoreToast.getByText("Couldn't restore your project.", { exact: true }).waitFor();
   const toastBounds = await restoreToast.boundingBox();
-  assert(toastBounds && toastBounds.y >= 0 && toastBounds.y < 100 && toastBounds.height < 90,
-    "Restore failure must use a compact top notification");
+  assert(toastBounds && toastBounds.y > 800 && toastBounds.y < 932 && toastBounds.height < 90,
+    "Restore failure must use a compact bottom notification");
   assert.equal(await page.getByRole("region", { name: "Project storage", exact: true }).count(), 0,
     "Storage recovery details must not be pinned below the camera footer");
-  assert.equal(await page.getByRole("button", { name: "Retry restore", exact: true }).count(), 0,
-    "Recovery controls should appear only when requested");
+  assert.equal(await page.getByRole("button", { name: "Retry restore", exact: true }).count(), 1,
+    "Retry should be directly available in the bottom notice");
   if (process.env.PVO_CAPTURE_NOTIFICATION_SCREENSHOT) {
     await restoreToast.evaluate(element => Promise.all(element.getAnimations()
       .map(animation => animation.finished.catch(() => {}))));
     await page.screenshot({ path: process.env.PVO_CAPTURE_NOTIFICATION_SCREENSHOT });
   }
-  const cameraFooter = await page.locator(".camFoot").boundingBox();
+  const cameraFooter = await page.getByRole("button", { name: "Record", exact: true }).boundingBox();
   await page.getByRole("button", { name: "Dismiss notification", exact: true }).click();
   assert.equal(await restoreToast.count(), 0);
   assert.equal(await page.getByRole("button", { name: "Restore issue", exact: true }).count(), 0,
     "Acknowledging the restore error must not replace it with a floating reminder");
   assert.equal(await page.getByRole("region", { name: "Project storage", exact: true }).count(), 0,
     "Dismissing the toast must not reveal a pinned storage panel");
-  assert.deepEqual(await page.locator(".camFoot").boundingBox(), cameraFooter);
+  assert.deepEqual(await page.getByRole("button", { name: "Record", exact: true }).boundingBox(), cameraFooter);
 
   await page.evaluate(() => sessionStorage.setItem("fail-restore-once", "1"));
   await page.reload({ waitUntil: "networkidle" });
-  await page.getByText("Storage options", { exact: true }).waitFor();
+  await page.getByRole("button", { name: "Saving paused", exact: true }).waitFor();
   assert.equal(await restoreToast.count(), 0, "An acknowledged restore error must stay quiet after reload");
   assert.equal(await page.getByRole("button", { name: "Restore issue", exact: true }).count(), 0);
 
-  await page.getByText("Storage options", { exact: true }).click();
+  await page.getByRole("button", { name: "Saving paused", exact: true }).click();
   const storageRecovery = page.getByRole("region", { name: "Project storage", exact: true });
   await storageRecovery.getByRole("button", { name: "Retry restore", exact: true }).waitFor();
-  assert(await storageRecovery.evaluate(element => !!element.closest("details")),
-    "On-demand recovery must stay behind the camera storage control");
+  assert.equal(await page.getByText("Storage options", { exact: true }).count(), 0);
   await storageRecovery.getByRole("button", { name: "Retry restore", exact: true }).click();
   await page.getByRole("button", { name: "Open editor", exact: true }).waitFor();
   assert.equal(await restoreToast.count(), 0);

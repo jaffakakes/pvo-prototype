@@ -15,7 +15,7 @@
   gap: 6px;
   max-width: 100%;
   pointer-events: auto;
-  animation: updateSlideUp .3s var(--spring) both;
+  animation: updateSlideUp 0.3s var(--spring) both;
 }
 
 .update,
@@ -47,7 +47,9 @@
   object-fit: contain;
   filter: invert(1);
 }
-:global(html[data-theme="light"]) .update img { filter: none; }
+:global(html[data-theme="light"]) .update img {
+  filter: none;
+}
 
 .update span {
   min-width: 0;
@@ -84,10 +86,22 @@
 }
 
 @keyframes updateSlideUp {
-  from { opacity: 0; transform: translateY(calc(100% + 24px)); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(calc(100% + 24px));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .notice { animation: none; }
+  .notice {
+    animation: none;
+  }
+}
+
+.position:has([data-notification-id]) {
+  z-index: 1000;
 }

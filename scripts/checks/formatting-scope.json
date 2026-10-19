@@ -321,5 +321,10 @@
   "editor/src/features/cover/CoverButton.tsx",
   "editor/src/state/editing/coverCommands.ts",
   "scripts/checks/editor/cover-picker.mjs",
-  "tests/editor-cover-selection.test.mjs"
+  "tests/editor-cover-selection.test.mjs",
+  "editor/src/ui/BottomNotice.tsx",
+  "editor/src/ui/BottomNotice.module.css",
+  "editor/src/features/notifications/ProjectStorageNotice.tsx",
+  "editor/src/features/notifications/ProjectStorageNotice.module.css",
+  "scripts/checks/editor/save-recovery.mjs"
 ]

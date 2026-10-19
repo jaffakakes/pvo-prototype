@@ -8,7 +8,6 @@ import { CameraIcon as Icon } from "./CameraIcon";
 import { RatioMenu } from "../../ui/RatioMenu";
 import { SOUNDS } from "../sound/catalog";
 import { CaptureRecovery } from "./CaptureRecovery";
-import { CameraStorageRecovery } from "./CameraStorageRecovery";
 import recoveryStyles from "./CaptureRecovery.module.css";
 import { ShutterControls } from "./ShutterControls";
 import { getCameraStream, useCamera } from "./useCamera";
@@ -386,7 +385,6 @@ export function Camera() {
       </div>
       <div className={recoveryStyles.camera}>
         <CaptureRecovery />
-        <CameraStorageRecovery />
       </div>
       <input
         ref={uploadRef}
