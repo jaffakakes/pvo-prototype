@@ -44,16 +44,18 @@ try {
     const checkInsets = async () => {
       await settle();
       const layout = await geometry();
-      assert(
-        Math.abs(
-          Math.max(
-            0,
-            (layout.dock.height * 5) / 3 -
-              layout.previewArea.height -
-              layout.transport.height,
-          ),
-        ) < 2,
-      );
+      const pickerOpen = await page.locator(".componentPicker:visible").count();
+      if (!pickerOpen)
+        assert(
+          Math.abs(
+            Math.max(
+              0,
+              (layout.dock.height * 5) / 3 -
+                layout.previewArea.height -
+                layout.transport.height,
+            ),
+          ) < 2,
+        );
       for (const bounds of [
         layout.header,
         layout.previewArea,
@@ -106,8 +108,8 @@ try {
         original.preview.width / original.preview.height,
       );
       await checkInsets();
-      const close = await more
-        .getByRole("button", { name: "Close", exact: true })
+      const close = await page
+        .getByRole("button", { name: "Close components", exact: true })
         .boundingBox();
       assert(
         close &&
@@ -115,7 +117,9 @@ try {
           close.x >= insets.left &&
           close.x + close.width <= width - insets.right,
       );
-      await more.getByRole("button", { name: "Close", exact: true }).click();
+      await page
+        .getByRole("button", { name: "Close components", exact: true })
+        .click();
       await checkInsets();
       console.log(`Fixed panel safe areas passed at ${width} × ${height}.`);
     } finally {

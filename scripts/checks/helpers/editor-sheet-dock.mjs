@@ -103,13 +103,24 @@ export function createSheetDockChecks(page) {
       0,
       "Editing panels have no resize controls",
     );
-    if (!layout.inputFocused)
+    const componentPicker = await dialog.locator(".componentPicker").count();
+    if (!layout.inputFocused && !componentPicker)
       assert(
         Math.abs(
           (layout.dock.height * 5) / 3 -
             (layout.previewArea.height + layout.playbackRegion.height),
         ) < 2,
         "Player and tools must use a fixed 62.5/37.5 split",
+      );
+    if (componentPicker)
+      assert(
+        layout.dock.height + 2 >=
+          ((layout.app.height -
+            layout.headerRegion.height -
+            (layout.headerRegion.top - layout.app.top)) *
+            3) /
+            8,
+        "Component choices may grow beyond the normal lower region",
       );
     assert.equal(
       layout.previewVisible,
@@ -166,7 +177,10 @@ export function createSheetDockChecks(page) {
 
   async function assertCompactChrome(dialog) {
     const layout = await geometry();
-    const header = await dialog.locator(".sheetHead").boundingBox();
+    const chrome = (await dialog.locator(".sheetHead").count())
+      ? dialog.locator(".sheetHead")
+      : page.getByRole("button", { name: "Close components", exact: true });
+    const header = await chrome.boundingBox();
     assert(
       header && header.y + header.height - layout.dock.top <= 85,
       "The panel header stays compact without a resize grip",

@@ -191,6 +191,18 @@
   flex-direction: column;
   min-height: 0;
 }
+
+/* Keep both component rows visible above the phone's system gesture area. */
+@media (min-width: 360px) and (min-height: 740px) {
+  .workspace[data-sheet-open="true"][data-thread-open="false"][data-debug-open="false"][data-trying="false"]:has(
+      :global(.componentPicker)
+    ) {
+    grid-template-rows:
+      var(--header-height, 64px) minmax(0, 1fr) var(--playback-height, 52px)
+      max(var(--dock-height), calc(290px + env(safe-area-inset-bottom)));
+  }
+}
+
 .sheetPane:has(:global(.textEditor)) {
   border-top: 0;
   border-radius: 0;

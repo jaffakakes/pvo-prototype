@@ -98,8 +98,8 @@ try {
   );
   await page.getByRole("button", { name: "Pause", exact: true }).click();
 
-  await more
-    .getByRole("button", { name: "Close", exact: true })
+  await page
+    .getByRole("button", { name: "Close components", exact: true })
     .press("Escape");
   await page.locator(".toolBar").waitFor({ state: "visible" });
   assert(Math.abs((await geometry()).dock.height - original.dock.height) < 2);

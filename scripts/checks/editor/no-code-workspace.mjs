@@ -47,7 +47,7 @@ try {
     await page.locator(".editorWorkspace").waitFor();
     await settle(page);
     assert((await geometry(page)).dock.height >= 150, `${width}: opening directly into a sheet waits for workspace measurements`);
-    await page.getByRole("dialog", { name: "Add a component", exact: true }).getByRole("button", { name: "Close", exact: true }).click();
+    await page.getByRole("button", { name: "Close components", exact: true }).click();
     await settle(page);
     const original = await geometry(page);
     const headerButtons = await page.locator(".editorHead button").evaluateAll(buttons => buttons.map(button => {
@@ -58,7 +58,7 @@ try {
     await page.getByRole("button", { name: "Components", exact: true }).click();
     await settle(page);
     const opened = await geometry(page);
-    assert(Math.abs(opened.dock.height - (height - opened.header.height) * 3 / 8) < 2, `${width}: editing panels keep the lower three eighths`);
+    assert(opened.dock.height >= (height - opened.header.height) * 3 / 8 - 2, `${width}: component choices can grow to fit above the normal lower region`);
     assert(opened.preview.height <= original.preview.height + 2, `${width}: compact timelines return unused panel space to the player`);
     await page.evaluate(async () => {
       const { useCapture } = await import("/src/store.ts");

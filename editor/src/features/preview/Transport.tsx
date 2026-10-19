@@ -13,6 +13,7 @@ export function Transport({
 }: { threadOpen?: boolean } = {}) {
   const s = useCapture();
   const duration = sceneDuration(s);
+  const componentPickerOpen = s.sheet === "components";
   return (
     <div
       className={`${cx("transport")} ${styles.transport}`}
@@ -59,12 +60,18 @@ export function Transport({
             <button
               type="button"
               className={`${styles.action} ${styles.tryButton}`}
-              onClick={startTry}
-              disabled={duration <= 0}
-              aria-label="Try"
-              title="Try interactive preview"
+              onClick={
+                componentPickerOpen ? () => s.patch({ sheet: null }) : startTry
+              }
+              disabled={!componentPickerOpen && duration <= 0}
+              aria-label={componentPickerOpen ? "Close components" : "Try"}
+              title={
+                componentPickerOpen
+                  ? "Close components"
+                  : "Try interactive preview"
+              }
             >
-              <Icon name="eye" size={23} />
+              <Icon name={componentPickerOpen ? "close" : "eye"} size={23} />
             </button>
           </>
         )}

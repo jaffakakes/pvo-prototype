@@ -282,5 +282,6 @@
   "editor/src/features/settings/AspectRatioPanel.module.css",
   "scripts/checks/helpers/editor-settings.mjs",
   "scripts/checks/editor/aspect-ratio.mjs",
-  "editor/src/features/settings/socialIcons.ts"
+  "editor/src/features/settings/socialIcons.ts",
+  "scripts/checks/editor/component-picker-fit.mjs"
 ]

@@ -15,6 +15,7 @@ export function SheetFrame({
   className,
   fullScreen,
   fillBody,
+  headerless,
   disabled,
   doneLabel,
   navigation,
@@ -30,6 +31,7 @@ export function SheetFrame({
   className?: string;
   fullScreen?: boolean;
   fillBody?: boolean;
+  headerless?: boolean;
   doneLabel?: string;
   children: React.ReactNode;
   navigation?: React.ReactNode;
@@ -62,53 +64,55 @@ export function SheetFrame({
         aria-label={title}
       >
         {!dock && <div className={cx("grabber")} />}
-        <header
-          className={`${cx("sheetHead")} ${dock ? dockedStyles.header : ""}`}
-          {...(disabled ? { inert: "" } : {})}
-        >
-          {onBack && (
-            <button
-              className={cx("sheetClose")}
-              onClick={onBack}
-              aria-label="Back"
-              style={{ marginRight: "auto" }}
-            >
-              <Icon name="back" size={17} />
-            </button>
-          )}
-          {icon && (
-            <span className={cx("componentTypeGlyph")}>
-              <Icon name={icon} size={20} />
-            </span>
-          )}
-          {onReset && (
-            <button
-              className={cx("sheetClose")}
-              onClick={onReset}
-              aria-label="Reset to fields"
-              title="Reset to fields"
-            >
-              <Icon name="reset" size={17} />
-            </button>
-          )}
-          {onDelete && (
-            <button
-              className={cx("sheetClose")}
-              onClick={onDelete}
-              aria-label="Delete component"
-              style={{ color: "var(--red)" }}
-            >
-              <Icon name="delete" size={17} />
-            </button>
-          )}
-          <button
-            className={`${cx("sheetClose")} ${doneLabel ? dockedStyles.done : ""}`}
-            onClick={close}
-            aria-label={doneLabel ?? "Close"}
+        {(!dock || !headerless) && (
+          <header
+            className={`${cx("sheetHead")} ${dock ? dockedStyles.header : ""}`}
+            {...(disabled ? { inert: "" } : {})}
           >
-            {doneLabel ?? <Icon name="close" size={17} />}
-          </button>
-        </header>
+            {onBack && (
+              <button
+                className={cx("sheetClose")}
+                onClick={onBack}
+                aria-label="Back"
+                style={{ marginRight: "auto" }}
+              >
+                <Icon name="back" size={17} />
+              </button>
+            )}
+            {icon && (
+              <span className={cx("componentTypeGlyph")}>
+                <Icon name={icon} size={20} />
+              </span>
+            )}
+            {onReset && (
+              <button
+                className={cx("sheetClose")}
+                onClick={onReset}
+                aria-label="Reset to fields"
+                title="Reset to fields"
+              >
+                <Icon name="reset" size={17} />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                className={cx("sheetClose")}
+                onClick={onDelete}
+                aria-label="Delete component"
+                style={{ color: "var(--red)" }}
+              >
+                <Icon name="delete" size={17} />
+              </button>
+            )}
+            <button
+              className={`${cx("sheetClose")} ${doneLabel ? dockedStyles.done : ""}`}
+              onClick={close}
+              aria-label={doneLabel ?? "Close"}
+            >
+              {doneLabel ?? <Icon name="close" size={17} />}
+            </button>
+          </header>
+        )}
         {navigation}
         {dock ? (
           <div
