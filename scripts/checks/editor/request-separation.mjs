@@ -80,7 +80,7 @@ try {
   assert.equal(submissions.length, 0, "Local form actions make no network request");
 
   await button("More").click();
-  await page.getByRole("switch", { name: "Advanced editing", exact: true }).click();
+  await page.getByRole("switch", { name: "Advanced edits", exact: true }).click();
   await page.evaluate(() => window.capture.getState().patch({ sheet: "component" }));
   await tab("Advanced");
   await tab("Logic");
@@ -103,7 +103,7 @@ try {
   await page.getByLabel("Field 1 name", { exact: true }).fill("Display name");
   assert.equal((await component()).fields.outcome.body, request.body, "Visual wording edits preserve the authored request payload");
   await button("More").click();
-  await page.getByRole("switch", { name: "Advanced editing", exact: true }).click();
+  await page.getByRole("switch", { name: "Advanced edits", exact: true }).click();
   await page.evaluate(() => window.capture.getState().patch({ sheet: "component" }));
   await tab("Action");
   await assertNoRequestSettings();

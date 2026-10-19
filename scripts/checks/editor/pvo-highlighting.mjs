@@ -99,7 +99,7 @@ try {
   await page.getByRole("button", { name: "Open editor" }).click();
   await openEditorSettings(page);
   const more = page.getByRole("dialog", { name: "More" });
-  await more.getByRole("switch", { name: "Advanced editing", exact: true }).click();
+  await more.getByRole("switch", { name: "Advanced edits", exact: true }).click();
   await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await page.getByRole("button", { name: "Components", exact: true }).click();
   await page.locator(".componentTypeTile").filter({ hasText: "Choice" }).click();

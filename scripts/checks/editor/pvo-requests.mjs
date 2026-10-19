@@ -99,8 +99,8 @@ try {
   await page.getByRole("button", { name: "Collapse component tools" }).click();
   await openEditorSettings(page);
   const more = page.getByRole("dialog", { name: "More" });
-  await more.getByRole("switch", { name: "Advanced editing", exact: true }).click();
-  await more.getByRole("switch", { name: "Advanced editing", checked: true }).waitFor();
+  await more.getByRole("switch", { name: "Advanced edits", exact: true }).click();
+  await more.getByRole("switch", { name: "Advanced edits", checked: true }).waitFor();
   await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await page.evaluate(() => window.__languageRequestStore.getState().patch({ selComp: window.__languageRequestId, sheet: "component" }));
   await formSheet.getByRole("tab", { name: "Advanced", exact: true }).click();

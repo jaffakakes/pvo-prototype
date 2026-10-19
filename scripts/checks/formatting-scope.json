@@ -309,5 +309,9 @@
   "editor/src/features/editor-layout/useWorkspaceMeasurements.ts",
   "scripts/checks/editor/playback-chrome.mjs",
   "editor/src/features/preview/geometry.ts",
-  "tests/editor-preview-geometry.test.mjs"
+  "tests/editor-preview-geometry.test.mjs",
+  "editor/src/features/settings/EditorPreferencesSettings.tsx",
+  "editor/src/features/settings/ProjectSettingsMenu.tsx",
+  "editor/src/features/settings/ProjectSettingsMenu.module.css",
+  "scripts/checks/editor/project-settings.mjs"
 ]

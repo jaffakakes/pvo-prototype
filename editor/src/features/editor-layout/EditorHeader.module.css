@@ -236,6 +236,31 @@
   text-overflow: ellipsis;
   caret-color: var(--accent);
 }
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  height: 48px;
+}
+.titleField {
+  display: grid;
+  min-width: 0;
+}
+.projectName,
+.titleMeasure {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+.titleMeasure {
+  visibility: hidden;
+  overflow: hidden;
+  white-space: pre;
+  font: 18px/1.2 var(--f-display);
+}
+@media (max-width: 767px), (any-pointer: coarse) {
+  .titleMeasure {
+    font-size: 16px;
+  }
+}
 .projectName::placeholder {
   color: var(--text);
   opacity: 1;

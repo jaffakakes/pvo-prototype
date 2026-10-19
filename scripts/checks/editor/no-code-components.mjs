@@ -84,7 +84,7 @@ try {
   assert(Math.abs((await page.locator(".editorDock").boundingBox()).height - heightBeforeTry) <= 1);
 
   await openEditorSettings(page);
-  const advancedSwitch = page.getByRole("switch", { name: "Advanced editing", exact: true });
+  const advancedSwitch = page.getByRole("switch", { name: "Advanced edits", exact: true });
   if (await advancedSwitch.getAttribute("aria-checked") !== "true") await advancedSwitch.click();
   await page.evaluate(() => window.capture.getState().patch({ sheet: "component" }));
   await tab("Advanced");

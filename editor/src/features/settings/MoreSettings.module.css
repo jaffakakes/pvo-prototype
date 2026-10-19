@@ -34,6 +34,7 @@
 .themeModes,
 .themeAccents { display: grid; gap: 8px; }
 .themeModes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.iconModes button { display: grid; place-items: center; }
 .themeAccents { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
 .themeModes button,

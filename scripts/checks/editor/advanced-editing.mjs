@@ -56,7 +56,7 @@ async function openMore() {
 
 async function setAdvancedEditing(enabled) {
   const more = await openMore();
-  const toggle = more.getByRole("switch", { name: "Advanced editing", exact: true });
+  const toggle = more.getByRole("switch", { name: "Advanced edits", exact: true });
   assert.equal(await toggle.getAttribute("aria-checked"), String(!enabled));
   const before = await projectSnapshot();
   await toggle.click();
@@ -78,11 +78,11 @@ try {
   assert.equal(await page.evaluate(key => localStorage.getItem(key), preferenceKey), null);
   await recordClip();
   await page.getByRole("button", { name: "Components", exact: true }).click();
-  await page.locator(".componentTypeTile").filter({ hasText: "Choice" }).click();
+  await page.locator(".componentTypeTile").filter({ hasText: "Let viewers choose" }).click();
   let sheet = page.getByRole("dialog", { name: "Choice", exact: true });
   assert.equal(await sheet.getByRole("tab", { name: "Advanced", exact: true }).count(), 0,
     "Advanced authoring must be opt-in for a fresh browser");
-  assert.equal(await sheet.getByRole("textbox", { name: "Option 1 label" }).getAttribute("readonly"), null);
+  assert.equal(await sheet.getByRole("textbox", { name: "Option 1" }).getAttribute("readonly"), null);
 
   await setAdvancedEditing(true);
   sheet = await openChoice();
@@ -96,7 +96,7 @@ try {
   await preview.getByRole("button", { name: "Saved route", exact: true }).waitFor();
   await sheet.getByRole("tab", { name: "Style", exact: true }).click();
   const style = sheet.getByRole("textbox", { name: "Style source" });
-  const savedStyle = (await style.inputValue()).replace("background: #A78BFA;", "background: #2EC4B6;");
+  const savedStyle = (await style.inputValue()).replace(/(#option0\s*\{[\s\S]*?background: )[^;]+;/, "$1#2EC4B6;");
   await style.fill(savedStyle);
   await page.waitForFunction(() => {
     const option = document.querySelector(".compCustomRuntime iframe")?.contentDocument?.querySelector(".pvo-option");
@@ -107,13 +107,13 @@ try {
   sheet = await openChoice();
   assert.equal(await sheet.getByRole("tab", { name: "Advanced", exact: true }).count(), 0);
   assert.equal(await sheet.getByRole("textbox", { name: /source$/ }).count(), 0);
-  assert.equal(await sheet.getByRole("textbox", { name: "Option 1 label" }).inputValue(), "Saved route");
-  assert.equal(await sheet.getByRole("textbox", { name: "Option 1 label" }).getAttribute("readonly"), null,
+  assert.equal(await sheet.getByRole("textbox", { name: "Option 1" }).inputValue(), "Saved route");
+  assert.equal(await sheet.getByRole("textbox", { name: "Option 1" }).getAttribute("readonly"), null,
     "Fields must remain editable when Advanced is hidden");
   await preview.getByRole("button", { name: "Saved route", exact: true }).waitFor();
   assert.equal(await preview.locator(".pvo-option").first().evaluate(element => getComputedStyle(element).backgroundColor), "rgb(46, 196, 182)");
-  await sheet.getByRole("textbox", { name: "Option 1 label" }).fill("Edited with code hidden");
-  await preview.getByRole("button", { name: "Edited with code hidden", exact: true }).waitFor();
+  await sheet.getByRole("textbox", { name: "Option 1" }).fill("Edited visually");
+  await preview.getByRole("button", { name: "Edited visually", exact: true }).waitFor();
   assert.equal(await preview.locator(".pvo-option").first().evaluate(element => getComputedStyle(element).backgroundColor), "rgb(46, 196, 182)",
     "Editing Fields with Advanced hidden must preserve authored Style");
   if (process.env.PVO_ADVANCED_SCREENSHOT) await page.screenshot({ path: process.env.PVO_ADVANCED_SCREENSHOT });
@@ -121,20 +121,21 @@ try {
   await setAdvancedEditing(true);
   sheet = await openChoice();
   await sheet.getByRole("tab", { name: "Advanced", exact: true }).click();
-  assert.equal(await sheet.getByRole("textbox", { name: "Structure source" }).inputValue(), savedStructure.replace("Saved route", "Edited with code hidden"));
+  await sheet.getByRole("tab", { name: "Structure", exact: true }).click();
+  assert.equal(await sheet.getByRole("textbox", { name: "Structure source" }).inputValue(), savedStructure.replace("Saved route", "Edited visually"));
   await sheet.getByRole("tab", { name: "Style", exact: true }).click();
   assert.equal(await sheet.getByRole("textbox", { name: "Style source" }).inputValue(), savedStyle);
 
   await page.reload({ waitUntil: "networkidle" });
   if (await page.getByRole("button", { name: "Record", exact: true }).count()) await recordClip();
   const more = await openMore();
-  assert.equal(await more.getByRole("switch", { name: "Advanced editing", exact: true }).getAttribute("aria-checked"), "true",
+  assert.equal(await more.getByRole("switch", { name: "Advanced edits", exact: true }).getAttribute("aria-checked"), "true",
     "The device preference must survive a reload");
   await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   if (await page.getByRole("button", { name: "Select component layer: choice", exact: true }).count()) await openChoice();
   else {
     await page.getByRole("button", { name: "Components", exact: true }).click();
-    await page.locator(".componentTypeTile").filter({ hasText: "Choice" }).click();
+    await page.locator(".componentTypeTile").filter({ hasText: "Let viewers choose" }).click();
   }
   assert.equal(await page.getByRole("dialog", { name: "Choice", exact: true }).getByRole("tab", { name: "Advanced", exact: true }).isVisible(), true);
   assert.deepEqual(errors, []);

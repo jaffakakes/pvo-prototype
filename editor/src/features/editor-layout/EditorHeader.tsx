@@ -7,6 +7,7 @@ import { useCapture } from "../../state/captureStore";
 import { openSignIn, useAuthGate } from "../../state/auth/authGateStore";
 import { Icon } from "../../ui/Icon";
 import { stopTry } from "../preview/tryMode";
+import { ProjectSettingsMenu } from "../settings/ProjectSettingsMenu";
 import styles from "./EditorHeader.module.css";
 
 export function EditorHeader() {
@@ -56,25 +57,34 @@ export function EditorHeader() {
         <Icon name="back" size={22} />
       </button>
       <div className={styles.projectDetails}>
-        <input
-          className={styles.projectName}
-          aria-label="Project title"
-          title="Edit project title"
-          placeholder="Untitled edit"
-          value={projectName}
-          maxLength={120}
-          readOnly={trying}
-          onChange={(event) =>
-            useCapture.getState().patch({ projectName: event.target.value })
-          }
-          onFocus={(event) => event.target.select()}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              event.currentTarget.blur();
-            }
-          }}
-        />
+        <div className={styles.titleRow}>
+          <div className={styles.titleField}>
+            <span className={styles.titleMeasure} aria-hidden="true">
+              {projectName || "Untitled edit"}
+            </span>
+            <input
+              className={styles.projectName}
+              aria-label="Project title"
+              title="Edit project title"
+              placeholder="Untitled edit"
+              value={projectName}
+              maxLength={120}
+              size={1}
+              readOnly={trying}
+              onChange={(event) =>
+                useCapture.getState().patch({ projectName: event.target.value })
+              }
+              onFocus={(event) => event.target.select()}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  event.currentTarget.blur();
+                }
+              }}
+            />
+          </div>
+          {!trying && <ProjectSettingsMenu />}
+        </div>
         <p className={styles.saveState}>{saveLabel}</p>
       </div>
       {!user && !trying && (

@@ -78,11 +78,11 @@ try {
   await openEditorSettings(page);
   const moreDialog = page.getByRole("dialog", { name: "More" });
   await moreDialog.waitFor({ state: "visible" });
-  const advancedEditing = moreDialog.getByRole("switch", { name: "Advanced editing", exact: true });
+  const advancedEditing = moreDialog.getByRole("switch", { name: "Advanced edits", exact: true });
   assert.equal(await advancedEditing.getAttribute("aria-checked"), "false",
     "Component code editing starts disabled");
   await advancedEditing.click();
-  await moreDialog.getByRole("switch", { name: "Advanced editing", checked: true }).waitFor();
+  await moreDialog.getByRole("switch", { name: "Advanced edits", checked: true }).waitFor();
   await page.getByRole("button", { name: "Close sheet", exact: true }).click();
 
   await page.evaluate(() => window.__requestTestStore.getState().patch({ selComp: window.__requestTestId, sheet: "component" }));

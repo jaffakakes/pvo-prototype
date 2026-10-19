@@ -44,7 +44,7 @@ try {
         .getByRole("button", { name: "Open editor", exact: true })
         .click();
       await settle();
-      assert.equal(await page.locator(".editorHead button").count(), 2);
+      assert.equal(await page.locator(".editorHead button").count(), 3);
       const navigation = page.getByRole("banner", {
         name: "Editor navigation",
         exact: true,
