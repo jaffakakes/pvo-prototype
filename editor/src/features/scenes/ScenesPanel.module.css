@@ -24,11 +24,6 @@
   gap: 8px;
   padding: 0 14px;
 }
-.header h2 {
-  margin: 0;
-  font: 400 16px/1 var(--f-display);
-  white-space: nowrap;
-}
 .switch {
   display: flex;
   padding: 2px;
@@ -51,22 +46,6 @@
   background: var(--text);
   color: var(--surface);
 }
-.close {
-  position: relative;
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  margin-left: auto;
-  border: 2px solid var(--text);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--text);
-  cursor: pointer;
-}
-.close::after,
 .switch button::after {
   content: "";
   position: absolute;

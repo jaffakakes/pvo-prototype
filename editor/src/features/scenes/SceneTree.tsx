@@ -8,7 +8,6 @@ import {
 } from "../../infrastructure/preferences/scenesView";
 import { useCapture } from "../../state/captureStore";
 import { createSceneBranch } from "../../state/scenes/createSceneBranch";
-import { Icon } from "../../ui/Icon";
 import { SceneTreeList } from "./SceneTreeList";
 import { SceneMap } from "./SceneMap";
 import styles from "./ScenesPanel.module.css";
@@ -28,11 +27,11 @@ export function SceneTree({
   onClose,
   onSelect,
 }: Props) {
-  const closeRef = useRef<HTMLButtonElement>(null);
+  const viewRef = useRef<HTMLButtonElement>(null);
   const [view, setView] = useState<ScenesView>(readScenesView);
   const nodes = useMemo(() => sceneGraph(scenes), [scenes]);
   useEffect(() => {
-    closeRef.current?.focus({ preventScroll: true });
+    viewRef.current?.focus({ preventScroll: true });
   }, []);
   const chooseView = (next: ScenesView) => {
     setView(next);
@@ -56,7 +55,6 @@ export function SceneTree({
       }}
     >
       <header className={styles.header}>
-        <h2>Scenes</h2>
         <div
           className={styles.switch}
           role="radiogroup"
@@ -74,6 +72,7 @@ export function SceneTree({
           {(["tree", "map"] as const).map((value) => (
             <button
               key={value}
+              ref={value === view ? viewRef : null}
               role="radio"
               data-view={value}
               tabIndex={value === view ? 0 : -1}
@@ -84,14 +83,6 @@ export function SceneTree({
             </button>
           ))}
         </div>
-        <button
-          ref={closeRef}
-          className={styles.close}
-          onClick={onClose}
-          aria-label="Close scene tree"
-        >
-          <Icon name="close" size={12} />
-        </button>
       </header>
       {view === "tree" ? (
         <SceneTreeList

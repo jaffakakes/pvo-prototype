@@ -265,9 +265,7 @@ try {
         );
         await client.detach();
       }
-      await tree
-        .getByRole("button", { name: "Close scene tree", exact: true })
-        .press("Escape");
+      await tree.getByRole("radio", { checked: true }).press("Escape");
       await tree.waitFor({ state: "hidden" });
       await toggle.click();
       assert.equal(

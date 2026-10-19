@@ -2,7 +2,7 @@
 
 The phone scene-tree button opens a panel over the timeline lanes. The player, its overlaid controls, scene row and toolbar retain their positions. This is a timeline view, separate from editing sheets and their shared player-corner close control.
 
-Tree is the initial view. Tree/Map selection is a device preference stored as `restyle.scenes.view`, outside project history. Close, Escape or opening a Tree row restores the timeline and returns focus to the scene-tree button. Map scene taps navigate with the existing scene command while keeping the panel open. Opening an editing sheet or Try dismisses the panel.
+Tree is the initial view. The panel header contains only the Tree/Map switch, with the selected view focused when the panel opens. Selection is a device preference stored as `restyle.scenes.view`, outside project history. Toggling the scene-tree button, pressing Escape or opening a Tree row restores the timeline and returns focus to the scene-tree button. Map scene taps navigate with the existing scene command while keeping the panel open. Opening an editing sheet or Try dismisses the panel.
 
 `domain/scenes/graph.ts` derives depth-first nodes and exact choice labels from the current component fields, including compiled code-owned choices. Ancestry alone does not imply a viewer route, so an unconnected scene has no invented choice label. Rows show first-frame media, an empty dashed poster when there are no clips, and one status: currently editing, no content yet, or a child count. Multiple incoming options show the first label and a count. Arrow keys move between rows; Enter opens the focused scene. Right-click or hold a non-main row opens its existing scene-management controls.
 

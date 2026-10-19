@@ -122,7 +122,7 @@ async function assertGeometry(width) {
     "Covered timeline controls must leave keyboard navigation");
   if (width === 430 && process.env.PVO_SCENE_TREE_SCREENSHOT)
     await page.screenshot({ path: process.env.PVO_SCENE_TREE_SCREENSHOT.replace(/\.png$/, "-layout.png") });
-  await tree.getByRole("button", { name: "Close scene tree", exact: true }).press("Escape");
+  await tree.getByRole("radio", { checked: true }).press("Escape");
   assert.equal(await treeButton.evaluate(element => element === document.activeElement), true, "Closing returns focus to the tree button");
 }
 
@@ -164,7 +164,7 @@ try {
   await closeMore();
   await openTree();
   assert.equal(await tree.evaluate(element => getComputedStyle(element).animationName), "none");
-  await tree.getByRole("button", { name: "Close scene tree", exact: true }).click();
+  await treeButton.click();
   await openTree();
   await page.getByRole("button", { name: /^(Try|Try viewer preview)$/ }).first().click();
   assert.equal(await tree.count(), 0, "Starting Try must close the tree");
@@ -190,7 +190,7 @@ try {
   await assertCurrent("Main");
   await openTree();
   assert.deepEqual(await treeNames(), ["Main", "Evening look"]);
-  await tree.getByRole("button", { name: "Close scene tree", exact: true }).click();
+  await treeButton.click();
   await page.getByRole("button", { name: "Undo", exact: true }).first().click();
   await assertCurrent("Street look");
   await openTree();
@@ -214,7 +214,7 @@ try {
   await openTree();
   assert.deepEqual(await treeNames(), ["Main", "Street look", "Scene i", "Scene 1", "Scene ii", "Evening look", "Evening look copy"],
     "One undo must remove the new destination scene");
-  await tree.getByRole("button", { name: "Close scene tree", exact: true }).click();
+  await treeButton.click();
   await page.getByRole("button", { name: "Components", exact: true }).click();
   await page.locator(".componentList > div").last().locator("button").first().click();
   const restoredOutcome = await firstOutcome();
@@ -226,7 +226,7 @@ try {
   assert.equal(await page.locator('[data-assistant-region][data-active="false"]').isVisible(), false,
     "The floating assistant must not obscure tree nodes");
   if (process.env.PVO_SCENE_TREE_SCREENSHOT) await page.screenshot({ path: process.env.PVO_SCENE_TREE_SCREENSHOT });
-  await tree.getByRole("button", { name: "Close scene tree", exact: true }).click();
+  await treeButton.click();
   await openEditorSettings(page);
   await more.getByRole("switch", { name: "Reduce motion", exact: true }).click();
   await closeMore();
