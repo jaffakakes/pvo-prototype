@@ -4,7 +4,6 @@ import { setAssistantThreadOpen, useAssistantThread } from "../state/assistant/t
 import { EditorWorkspace } from "../features/editor-layout/EditorWorkspace";
 import { EditorHeader } from "../features/editor-layout/EditorHeader";
 import { Preview } from "../features/preview/Preview";
-import { Transport } from "../features/preview/Transport";
 import { SceneTimeline } from "../features/scenes/SceneTimeline";
 import { Timeline } from "../features/timeline/Timeline";
 import { ToolRow } from "../features/timeline/ToolRow";
@@ -46,7 +45,7 @@ export function Editor() {
     <EditorWorkspace open={sheetOpen} ratioOpen={ratioOpen} textSheet={textSheet} soundSheet={soundSheet} animationSheet={animationSheet} componentSheet={componentSheet} codeEditingId={codeEditingId} trying={trying}
       debugOpen={debugOpen} onCloseDebug={() => setDebugOpen(false)}
       debugPanel={<DebugSheet onClose={() => setDebugOpen(false)} onEditComponent={editDebugComponent} onLocate={locateDebugComponent} />}
-      header={<EditorHeader />} preview={<Preview />} playback={<Transport threadOpen={thread.open && !codeEditingId} />}
+      header={<EditorHeader />} preview={<Preview threadOpen={thread.open && !codeEditingId} />}
       timeline={<><SceneTimeline><Timeline /></SceneTimeline><ToolRow /></>} sheets={<Sheets />}
       threadOpen={thread.open && !codeEditingId} threadCollapsed={thread.collapsed}
       onCloseThread={() => setAssistantThreadOpen(false)}

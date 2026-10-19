@@ -90,7 +90,7 @@ function assertEditorFits(layout, label) {
       `${label}: ${button.label} is horizontally cut off: ${JSON.stringify({ button, tools })}`);
   }
   assert.ok(preview.height >= 100, `${label}: the video preview became unusably small: ${JSON.stringify(layout)}`);
-  assert.ok(header.bottom <= previewArea.top + 1 && previewArea.bottom <= transport.top + 1 &&
+  assert.ok(header.bottom <= previewArea.top + 1 && transport.top >= previewArea.top - 1 && previewArea.bottom <= timeline.top + 1 &&
     transport.bottom <= timeline.top + 1 && timeline.bottom <= toolbar.top + 1,
   `${label}: editor regions overlap: ${JSON.stringify(layout)}`);
   assert.ok(scroll.windowY === 0 && scroll.appTop === 0 &&
@@ -113,7 +113,7 @@ try {
   await page.locator('input[type="file"]').setInputFiles(videoFile);
   await page.getByRole("button", { name: "Open editor" }).click();
   await page.getByRole("button", { name: "Components", exact: true }).click();
-  await page.locator(".componentTypeTile").filter({ hasText: "Tooltip" }).click();
+  await page.getByRole("button", { name: "Add a note", exact: true }).click();
   await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await page.getByRole("button", { name: "Collapse component tools" }).click();
   await page.evaluate(() => document.fonts.ready);

@@ -26,11 +26,17 @@ import { usePlayback } from "./usePlayback";
 import { useOverlayGestures } from "./useOverlayGestures";
 import { usePreviewAreaSize } from "./usePreviewAreaSize";
 import { Icon } from "../../ui/Icon";
+import { Transport } from "./Transport";
+import { PlayerPlayback } from "./PlayerPlayback";
 import { StageMotionPath } from "../animation/stage/StageMotionPath";
 
-type Props = { desktop?: boolean; onAddMedia?(): void };
+type Props = { desktop?: boolean; onAddMedia?(): void; threadOpen?: boolean };
 
-export function Preview({ desktop = false, onAddMedia }: Props = {}) {
+export function Preview({
+  desktop = false,
+  onAddMedia,
+  threadOpen = false,
+}: Props = {}) {
   const s = useCapture();
   const assistantActive = useAssistant((state) => state.phase !== "idle");
   const authoring = useComponentAuthoring();
@@ -122,6 +128,8 @@ export function Preview({ desktop = false, onAddMedia }: Props = {}) {
         style={{ width: bw, height: bh }}
         {...gestures}
         onPointerDownCapture={(event) => {
+          if ((event.target as Element).closest("[data-player-playback]"))
+            return;
           if (focused) {
             const focusedTarget = (
               event.target as Element
@@ -187,6 +195,13 @@ export function Preview({ desktop = false, onAddMedia }: Props = {}) {
             </div>
           )}
         </div>
+        {!desktop && (
+          <PlayerPlayback
+            topZ={dimmerZ + 2}
+            insetControls={(area.width - bw) / 2 < 56}
+            compact={bw < 100}
+          />
+        )}
         {s.texts
           .filter(
             (text) =>
@@ -263,6 +278,12 @@ export function Preview({ desktop = false, onAddMedia }: Props = {}) {
           </div>
         )}
       </div>
+      {!desktop && (
+        <Transport
+          threadOpen={threadOpen}
+          overVideo={(area.width - bw) / 2 < 100}
+        />
+      )}
     </div>
   );
 }

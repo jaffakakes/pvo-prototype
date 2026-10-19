@@ -9,12 +9,10 @@
   /* System gesture areas stay outside every panel size, including transitions. */
   padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0
     env(safe-area-inset-left, 0px);
-  grid-template-rows:
-    var(--header-height, 64px) var(--preview-height, 0px) var(
-      --playback-height,
-      66px
-    )
-    var(--dock-height, 320px);
+  grid-template-rows: var(--header-height, 64px) var(--preview-height, 0px) var(
+      --dock-height,
+      320px
+    );
   grid-template-columns: minmax(0, 1fr);
   overflow: clip;
   transition: grid-template-rows 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -32,28 +30,24 @@
   visibility: hidden;
   pointer-events: none;
 }
-.header,
-.playback {
+.header {
   min-height: 0;
   min-width: 0;
   overflow: clip;
 }
 .header,
-.preview,
-.playback {
+.preview {
   transition:
     opacity 180ms ease,
     visibility 180ms;
 }
 .header[data-visible="false"],
-.preview[data-visible="false"],
-.playback[data-visible="false"] {
+.preview[data-visible="false"] {
   visibility: hidden;
   pointer-events: none;
 }
 .workspace[data-resizing="true"] > .header,
-.workspace[data-resizing="true"] > .preview,
-.workspace[data-resizing="true"] > .playback {
+.workspace[data-resizing="true"] > .preview {
   transition: none;
 }
 .preview {
@@ -66,9 +60,6 @@
 }
 .preview :global(.pvBox) {
   transition: none;
-}
-.playback {
-  min-height: 0;
 }
 .dock {
   position: relative;
@@ -198,7 +189,7 @@
       :global(.componentPicker)
     ) {
     grid-template-rows:
-      var(--header-height, 64px) minmax(0, 1fr) var(--playback-height, 52px)
+      var(--header-height, 64px) minmax(0, 1fr)
       max(var(--dock-height), calc(290px + env(safe-area-inset-bottom)));
   }
 }
@@ -212,7 +203,7 @@
 .workspace[data-text-open="true"]:has(
     :global(.textEditor[data-input-focused="true"])
   ) {
-  grid-template-rows: var(--header-height, 0px) minmax(0, 1fr) 0 auto;
+  grid-template-rows: var(--header-height, 0px) minmax(0, 1fr) auto;
 }
 
 .workspace[data-text-open="true"]:has(
@@ -272,7 +263,6 @@
 :global(.app[data-reduce-motion="true"]) .workspace,
 :global(.app[data-reduce-motion="true"]) .header,
 :global(.app[data-reduce-motion="true"]) .preview,
-:global(.app[data-reduce-motion="true"]) .playback,
 :global(.app[data-reduce-motion="true"]) .timelinePane,
 :global(.app[data-reduce-motion="true"]) .sheetPane,
 :global(.app[data-reduce-motion="true"]) .resizeHandle span {
@@ -293,7 +283,6 @@
   .workspace,
   .header,
   .preview,
-  .playback,
   .timelinePane,
   .sheetPane,
   .resizeHandle span {
@@ -312,20 +301,16 @@
   .media {
     display: block;
     grid-column: 1;
-    grid-row: 2 / 4;
+    grid-row: 2;
     overflow: hidden;
   }
   .preview {
     grid-column: 2;
     grid-row: 2;
   }
-  .playback {
-    grid-column: 2;
-    grid-row: 3;
-  }
   .dock {
     grid-column: 1 / -1;
-    grid-row: 4;
+    grid-row: 3;
   }
   .preview :global(.previewArea) {
     padding: 20px 40px;
@@ -347,15 +332,12 @@
   grid-row: 2;
   background: var(--deep);
 }
-.playback {
-  grid-row: 3;
-}
 .dock {
-  grid-row: 4;
+  grid-row: 3;
 }
 .preview :global(.previewArea) {
   padding: 0;
-  align-items: flex-start;
+  align-items: flex-end;
 }
 .preview :global(.pvBox) {
   border: 0;
@@ -364,4 +346,11 @@
 }
 .preview :global(.pvTag) {
   display: none;
+}
+
+/* Playback now overlays the player; text entry and expanded code keep their focused view. */
+.workspace[data-playback-visible="false"] :global(.transport),
+.workspace[data-playback-visible="false"] :global([data-player-playback]) {
+  visibility: hidden;
+  pointer-events: none;
 }

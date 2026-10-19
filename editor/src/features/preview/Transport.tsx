@@ -2,8 +2,6 @@ import { sceneDuration } from "../../domain/scenes/duration";
 import { useCapture } from "../../state/captureStore";
 import { cx } from "../../styles";
 import { Icon } from "../../ui/Icon";
-import { fmt, pickTime } from "../../ui/formatTime";
-import { togglePlayback } from "../../state/editing/playbackCommands";
 import { startTry } from "./tryMode";
 import { DebugEntry } from "../editor-layout/debugging/DebugEntry";
 import styles from "./Transport.module.css";
@@ -11,7 +9,8 @@ import { useSheetDock } from "../../ui/sheets/SheetDockContext";
 
 export function Transport({
   threadOpen = false,
-}: { threadOpen?: boolean } = {}) {
+  overVideo = false,
+}: { threadOpen?: boolean; overVideo?: boolean } = {}) {
   const s = useCapture();
   const duration = sceneDuration(s);
   const dock = useSheetDock();
@@ -20,22 +19,11 @@ export function Transport({
     <div
       className={`${cx("transport")} ${styles.transport}`}
       data-thread-open={threadOpen}
+      data-over-video={overVideo}
+      data-assistant-playback
       role="toolbar"
       aria-label="Playback controls"
     >
-      <div className={`${cx("transportTime")} ${styles.time}`}>
-        {s.playheadPick ? pickTime(s.t) : fmt(s.t)}{" "}
-        <span>/ {fmt(duration)}</span>
-      </div>
-      <button
-        type="button"
-        className={`${cx("playBtn")} ${styles.play}`}
-        onClick={togglePlayback}
-        aria-label={s.playing ? "Pause" : "Play"}
-        disabled={!!s.tryMode?.holdingId}
-      >
-        <Icon name={s.playing ? "pause" : "play"} size={28} />
-      </button>
       <div className={styles.actions}>
         {s.tryMode ? (
           <DebugEntry variant="mobile" />

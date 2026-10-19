@@ -1,6 +1,6 @@
 # Scenes panel
 
-The phone scene-tree button opens a panel over the timeline lanes. The player, playback controls, scene row and toolbar retain their positions. This is a timeline view, separate from editing sheets and their shared playback-row close control.
+The phone scene-tree button opens a panel over the timeline lanes. The player, its overlaid controls, scene row and toolbar retain their positions. This is a timeline view, separate from editing sheets and their shared player-corner close control.
 
 Tree is the initial view. Tree/Map selection is a device preference stored as `restyle.scenes.view`, outside project history. Close, Escape or opening a Tree row restores the timeline and returns focus to the scene-tree button. Map scene taps navigate with the existing scene command while keeping the panel open. Opening an editing sheet or Try dismisses the panel.
 

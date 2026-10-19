@@ -32,29 +32,23 @@ const {
 
 test("timeline and editing panels split the space below the project header", () => {
   for (const height of [0, 64, 180, 328, 568, 693, 844, 932, 1100]) {
-    const measurements = { height, header: 64, playback: 52 };
+    const measurements = { height, header: 64 };
     const panel = editorPanelHeight(measurements);
     const layout = workspaceGeometry(measurements, panel, false);
-    assert.equal(
-      layout.header + layout.preview + layout.playback + panel,
-      height,
-    );
-    if (height >= 500)
-      assert.equal(layout.preview + layout.playback, (panel * 5) / 3);
+    assert.equal(layout.header + layout.preview + panel, height);
+    if (height >= 500) assert.equal(layout.preview, (panel * 5) / 3);
     if (height >= 328 && height < 500) assert(layout.preview >= 40);
     assert.ok(panel >= 0);
     if (height >= 328) {
       assert.equal(layout.header, 64);
-      assert.equal(layout.playback, 52);
       assert.equal(layout.previewVisible, true);
       assert.equal(layout.headerOpacity, 1);
-      assert.equal(layout.playbackOpacity, 1);
     }
   }
 });
 
 test("keyboard and orientation changes preserve controls and a usable timeline", () => {
-  const measurements = { height: 844, header: 64, playback: 52 };
+  const measurements = { height: 844, header: 64 };
   const original = editorPanelHeight(measurements);
   const keyboard = editorPanelHeight({ ...measurements, height: 608 });
   const landscape = editorPanelHeight({ ...measurements, height: 390 });
@@ -72,13 +66,12 @@ test("keyboard and orientation changes preserve controls and a usable timeline",
 
 test("ratio controls reserve their own row below an exposed timeline", () => {
   for (const height of [390, 568, 844, 932]) {
-    const measurements = { height, header: 64, playback: 52 };
+    const measurements = { height, header: 64 };
     const panel = editorPanelHeight(measurements, true);
     assert(panel - aspectRatioPanelHeight(height) >= 132);
     const layout = workspaceGeometry(measurements, panel, false);
     assert(layout.preview > 0);
     assert.equal(layout.header, 64);
-    assert.equal(layout.playback, 52);
   }
 });
 

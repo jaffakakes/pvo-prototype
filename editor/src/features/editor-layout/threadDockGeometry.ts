@@ -1,10 +1,10 @@
-type Measurements = { height: number; header: number; playback: number };
+type Measurements = { height: number; header: number };
 const PLAYER_MINIMUM = 190;
 const KEYBOARD_THREAD_MINIMUM = 195;
 
 /** Keep a usable player until the keyboard needs space for touch controls and composing. */
 export function threadDockMaximum(measurements: Measurements, keyboardOpen = false) {
-  const available = Math.max(0, measurements.height - measurements.header - measurements.playback);
+  const available = Math.max(0, measurements.height - measurements.header);
   const playerMinimum = keyboardOpen
     ? Math.min(PLAYER_MINIMUM, Math.max(0, available - KEYBOARD_THREAD_MINIMUM))
     : PLAYER_MINIMUM;

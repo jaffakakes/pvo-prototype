@@ -104,12 +104,13 @@ export function createSheetDockChecks(page) {
       "Editing panels have no resize controls",
     );
     const componentPicker = await dialog.locator(".componentPicker").count();
-    if (!layout.inputFocused && !componentPicker)
+    if (
+      !layout.inputFocused &&
+      !componentPicker &&
+      layout.viewportHeight >= 500
+    )
       assert(
-        Math.abs(
-          (layout.dock.height * 5) / 3 -
-            (layout.previewArea.height + layout.playbackRegion.height),
-        ) < 2,
+        Math.abs((layout.dock.height * 5) / 3 - layout.previewArea.height) < 2,
         "Player and tools must use a fixed 62.5/37.5 split",
       );
     if (componentPicker)
@@ -152,8 +153,9 @@ export function createSheetDockChecks(page) {
     );
     if (!(layout.textEditing && layout.inputFocused))
       assert(
-        layout.previewArea.bottom <= layout.transport.top + 1,
-        "Preview and transport overlap",
+        layout.transport.top >= layout.previewArea.top - 1 &&
+          layout.transport.bottom <= layout.previewArea.bottom + 1,
+        "Editing controls stay inside the player",
       );
     assert(
       (layout.textEditing && layout.inputFocused

@@ -303,5 +303,9 @@
   "editor/src/infrastructure/preferences/scenesView.ts",
   "editor/src/state/scenes/createSceneBranch.ts",
   "scripts/checks/editor/scenes-design.mjs",
-  "tests/editor-scenes-panel.test.mjs"
+  "tests/editor-scenes-panel.test.mjs",
+  "editor/src/features/preview/PlayerPlayback.tsx",
+  "editor/src/features/preview/PlayerPlayback.module.css",
+  "editor/src/features/editor-layout/useWorkspaceMeasurements.ts",
+  "scripts/checks/editor/playback-chrome.mjs"
 ]

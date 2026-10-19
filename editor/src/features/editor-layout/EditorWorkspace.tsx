@@ -43,7 +43,6 @@ type Props = {
   header: ReactNode;
   media?: ReactNode;
   preview: ReactNode;
-  playback: ReactNode;
   timeline: ReactNode;
   sheets: ReactNode;
   assistant?: (
@@ -73,7 +72,6 @@ export function EditorWorkspace({
   header,
   media,
   preview,
-  playback,
   timeline,
   sheets,
   assistant,
@@ -119,10 +117,7 @@ export function EditorWorkspace({
     },
     [],
   );
-  const available = Math.max(
-    0,
-    measurements.height - measurements.header - measurements.playback,
-  );
+  const available = Math.max(0, measurements.height - measurements.header);
   const dismiss = useCallback(
     () => (dismissHandler.current ?? onDismiss)(),
     [onDismiss],
@@ -209,14 +204,16 @@ export function EditorWorkspace({
   }, [textEditing, measurements.workspaceRef]);
   const layoutMeasurements = dockThreadOpen
     ? threadDock.measurements
-    : codeExpanded || (textEditing && textInputFocused)
-      ? { ...measurements, playback: 0 }
-      : measurements;
+    : measurements;
   const layout = workspaceGeometry(
     layoutMeasurements,
     panelHeight,
     dockThreadOpen || debugOpen || codeExpanded || textEditing || soundSheet,
   );
+  const playbackVisible =
+    layout.previewVisible &&
+    !codeExpanded &&
+    !(textEditing && textInputFocused);
   const headerVisible =
     !codeExpanded && !(dockThreadOpen && threadDock.compact);
   const style = {
@@ -224,7 +221,6 @@ export function EditorWorkspace({
     "--ratio-panel-height": `${aspectRatioPanelHeight(measurements.height)}px`,
     "--header-height": `${layout.header}px`,
     "--preview-height": `${layout.preview}px`,
-    "--playback-height": `${layout.playback}px`,
     "--keyboard-height": `${keyboardHeight}px`,
   } as CSSProperties;
 
@@ -248,7 +244,7 @@ export function EditorWorkspace({
         data-keyboard-open={keyboardHeight > 0}
         data-code-expanded={codeExpanded}
         data-preview-visible={layout.previewVisible}
-        data-playback-visible={layout.playbackVisible}
+        data-playback-visible={playbackVisible}
         style={style}
         onKeyDown={(event) => {
           if (
@@ -308,16 +304,6 @@ export function EditorWorkspace({
           {...(!layout.previewVisible || assistantActive ? { inert: "" } : {})}
         >
           {preview}
-        </div>
-        <div
-          className={styles.playback}
-          data-assistant-playback
-          data-visible={layout.playbackVisible}
-          aria-hidden={!layout.playbackVisible}
-          style={{ opacity: layout.playbackOpacity }}
-          {...(!layout.playbackVisible || assistantActive ? { inert: "" } : {})}
-        >
-          <div ref={measurements.playbackRef}>{playback}</div>
         </div>
         <div
           className={`editorDock ${styles.dock}`}

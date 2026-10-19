@@ -127,6 +127,21 @@ try {
         const [w, h] = ratio.split(":").map(Number),
           preview = (await geometry()).preview;
         assert(Math.abs(preview.width / preview.height - w / h) < 0.02);
+        const stamp = await page.locator(".transportTime").boundingBox();
+        const close = await page
+          .getByRole("button", { name: "Close sheet", exact: true })
+          .boundingBox();
+        assert(
+          stamp.x >= preview.left - 1 &&
+            stamp.x + stamp.width <= preview.right + 1,
+          "Timestamp stays inside every ratio",
+        );
+        assert(
+          stamp.x + stamp.width <= close.x ||
+            stamp.y + stamp.height <= close.y ||
+            stamp.x >= close.x + close.width,
+          "Timestamp and Preview/Close never overlap",
+        );
       }
       await choices.getByRole("button", { name: "1:1", exact: true }).click();
       await page.getByRole("button", { name: "Undo", exact: true }).click();

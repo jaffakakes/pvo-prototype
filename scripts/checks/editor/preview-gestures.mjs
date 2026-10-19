@@ -10,7 +10,8 @@ const browser = await chromium.launch({
   executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
   headless: true, args: ["--no-sandbox"],
 });
-const context = await browser.newContext({ viewport: { width: 430, height: 932 }, hasTouch: true, isMobile: true, permissions: [] });
+// A short viewport makes the compact text designs scroll without resizing the touch surface.
+const context = await browser.newContext({ viewport: { width: 430, height: 600 }, hasTouch: true, isMobile: true, permissions: [] });
 const page = await context.newPage();
 const cdp = await context.newCDPSession(page);
 const { settle } = createSheetDockChecks(page, context);
@@ -162,21 +163,21 @@ async function scrollStyleSheet() {
   await layer.click();
   await page.locator(".tools").getByRole("button", { name: "Edit text", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Edit text", exact: true });
-  await dialog.getByRole("tab", { name: "Style", exact: true }).click();
-  const scroller = dialog.locator("[data-sheet-body]");
+  await dialog.getByRole("button", { name: "Font styles", exact: true }).click();
+  const scroller = dialog.locator(".textControls");
   await settle();
   assert(await scroller.evaluate(element => element.scrollHeight > element.clientHeight + 40));
   const box = await scroller.boundingBox();
   const center = { x: box.x + 8, y: box.y + box.height / 2 };
   await pinch({ center, factor: 1.7, vertical: true });
-  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ id: 0, x: center.x, y: box.y + box.height - 20 }] });
-  for (let step = 1; step <= 12; step++) {
-    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{
-      id: 0, x: center.x, y: box.y + box.height - 20 - (box.height - 40) * step / 12,
-    }] });
-  }
-  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-  await page.waitForFunction(() => document.querySelector("[data-sheet-body]").scrollTop > 10);
+  await cdp.send("Input.synthesizeScrollGesture", {
+    x: center.x,
+    y: center.y,
+    yDistance: -120,
+    gestureSourceType: "touch",
+    speed: 300,
+  });
+  await page.waitForFunction(() => document.querySelector(".textControls").scrollTop > 10);
   await assertPageScale();
   await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await settle();

@@ -1,34 +1,41 @@
 import { useLayoutEffect, useRef, useState } from "react";
 
-/** Measures available viewport space and the natural navigation/playback heights. */
+/** Measures available viewport space and the natural navigation height. */
 export function useWorkspaceMeasurements() {
   const workspaceRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
-  const playbackRef = useRef<HTMLDivElement>(null);
-  const [measurements, setMeasurements] = useState({ height: 0, width: 390, header: 0, playback: 52 });
+  const [measurements, setMeasurements] = useState({
+    height: 0,
+    width: 390,
+    header: 0,
+  });
 
   useLayoutEffect(() => {
     const workspace = workspaceRef.current;
     const header = headerRef.current;
-    const playback = playbackRef.current;
-    if (!workspace || !header || !playback) return;
+    if (!workspace || !header) return;
 
     const measure = () => {
       const style = getComputedStyle(workspace);
-      const verticalInset = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0);
+      const verticalInset =
+        (parseFloat(style.paddingTop) || 0) +
+        (parseFloat(style.paddingBottom) || 0);
       const next = {
         height: Math.max(0, workspace.clientHeight - verticalInset),
         width: workspace.clientWidth,
         header: header.getBoundingClientRect().height,
-        playback: playback.getBoundingClientRect().height,
       };
-      setMeasurements(previous => previous.height === next.height && previous.width === next.width && previous.header === next.header
-        && previous.playback === next.playback ? previous : next);
+      setMeasurements((previous) =>
+        previous.height === next.height &&
+        previous.width === next.width &&
+        previous.header === next.header
+          ? previous
+          : next,
+      );
     };
     const observer = new ResizeObserver(measure);
     observer.observe(workspace);
     observer.observe(header);
-    observer.observe(playback);
     measure();
     return () => observer.disconnect();
   }, []);
@@ -39,7 +46,10 @@ export function useWorkspaceMeasurements() {
     if (!workspace || !viewport) return;
     // Mobile keyboards can resize the visual viewport without changing 100dvh.
     const fitViewport = () => {
-      const available = viewport.height + viewport.offsetTop - workspace.getBoundingClientRect().top;
+      const available =
+        viewport.height +
+        viewport.offsetTop -
+        workspace.getBoundingClientRect().top;
       workspace.style.maxHeight = `${Math.max(0, available)}px`;
     };
     fitViewport();
@@ -54,5 +64,5 @@ export function useWorkspaceMeasurements() {
     };
   }, []);
 
-  return { workspaceRef, headerRef, playbackRef, ...measurements };
+  return { workspaceRef, headerRef, ...measurements };
 }

@@ -112,7 +112,7 @@ async function run(testCase) {
       assert.equal(await page.locator(".transport").isVisible(), false,
         `${label}: expanded code hides Play and the timer`);
       const transportRegion = await page.locator("[data-assistant-playback]").boundingBox();
-      assert(!transportRegion || transportRegion.height <= 1,
+      assert(await page.locator("[data-assistant-playback]").evaluate(el => getComputedStyle(el).position === "absolute"),
         `${label}: hidden playback controls reserve no workspace height`);
     }
     assert.equal(await page.locator("[data-component-tabs]:visible").count(), 0,
@@ -157,7 +157,7 @@ async function run(testCase) {
       assert.equal(await orb.count(), 0, `${label}: normal mobile component tools have no floating orb`);
       assert(await page.locator(".transport").isVisible(), `${label}: collapse restores Play and the timer`);
       const transportRegion = await page.locator("[data-assistant-playback]").boundingBox();
-      assert(transportRegion && transportRegion.height >= 44, `${label}: restored playback has its usable row height`);
+      assert(transportRegion && transportRegion.height >= 44, `${label}: restored player controls have usable touch targets`);
     }
     else assert.equal(await page.locator('[data-placement="toolbar"] [data-assistant-orb]').count(), 1,
       `${label}: desktop restores its existing toolbar orb`);

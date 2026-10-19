@@ -1,0 +1,72 @@
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.overlay .play {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: white;
+  filter: drop-shadow(0 1px 3px rgb(0 0 0 / 70%));
+  pointer-events: auto;
+  cursor: pointer;
+}
+.play svg {
+  margin: 0;
+}
+.play:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.play:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+.overlay .time {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: auto;
+  padding: 5px 7px;
+  border-radius: 6px;
+  color: #241d25;
+  background: rgb(255 255 255 / 75%);
+  font: 700 11px/1.2 var(--f-ui);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: auto;
+  touch-action: none;
+}
+.time span {
+  color: inherit;
+}
+/* Wide formats share the player's outer corners with the editing controls. */
+.time[data-inset-controls="true"] {
+  bottom: 56px;
+}
+
+.overlay[data-compact="true"] .time {
+  right: 2px;
+  bottom: 4px;
+  padding: 3px;
+  font-size: 9px;
+}
+.overlay[data-compact="true"] .time span {
+  display: block;
+}
+.overlay[data-compact="true"] .play {
+  width: 44px;
+  height: 44px;
+  top: 0;
+  left: 0;
+}

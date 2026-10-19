@@ -38,11 +38,8 @@ try {
       const layout = await geometry();
       if (layout.viewportHeight >= 500)
         assert(
-          Math.abs(
-            (layout.dock.height * 5) / 3 -
-              layout.previewArea.height -
-              layout.transport.height,
-          ) < 2,
+          Math.abs((layout.dock.height * 5) / 3 - layout.previewArea.height) <
+            2,
           "Player and lower region use a fixed 62.5/37.5 split",
         );
       else
@@ -60,7 +57,7 @@ try {
         layout.documentOverflow <= 2 &&
           layout.app.bottom <= layout.viewportHeight + 2,
       );
-      assert(layout.previewArea.bottom <= layout.transport.top + 1);
+      assert(layout.transport.bottom <= layout.previewArea.bottom + 1);
       assert(layout.transport.bottom <= layout.dock.top + 1);
       const tools = await page.locator(".toolBar").boundingBox();
       assert(

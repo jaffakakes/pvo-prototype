@@ -4,7 +4,7 @@ import { threadDockDefault, threadDockMaximum, threadDockMeasurements } from "./
 
 type Options = {
   workspaceRef: RefObject<HTMLDivElement>;
-  measurements: { height: number; header: number; playback: number };
+  measurements: { height: number; header: number };
   open: boolean;
   collapsed: boolean;
   onClose?(): void;

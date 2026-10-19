@@ -45,14 +45,12 @@ try {
       await settle();
       const layout = await geometry();
       const pickerOpen = await page.locator(".componentPicker:visible").count();
-      if (!pickerOpen)
+      if (!pickerOpen && height >= 500)
         assert(
           Math.abs(
             Math.max(
               0,
-              (layout.dock.height * 5) / 3 -
-                layout.previewArea.height -
-                layout.transport.height,
+              (layout.dock.height * 5) / 3 - layout.previewArea.height,
             ),
           ) < 2,
         );
