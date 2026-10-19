@@ -232,5 +232,11 @@
   "tests/sdk/requests.test.mjs",
   "tests/sdk/runtime.test.mjs",
   "tests/server/local-render-jobs.test.mjs",
-  "tests/server/local-reply-repository.test.mjs"
+  "tests/server/local-reply-repository.test.mjs",
+  "editor/src/infrastructure/auth/rememberedSession.ts",
+  "editor/src/infrastructure/auth/client.ts",
+  "editor/src/state/auth/authGateStore.ts",
+  "tests/editor-session-restore.test.mjs",
+  "scripts/checks/editor/session-restore.mjs",
+  "scripts/checks/editor/supabase-fixture.mjs"
 ]

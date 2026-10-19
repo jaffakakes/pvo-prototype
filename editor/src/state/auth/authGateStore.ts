@@ -1,9 +1,16 @@
+import { forgetAccountSession } from "../../infrastructure/auth/rememberedSession";
 import { create } from "zustand";
-import { getAccountSession, logOutAccount, type AccountSession, type AccountUser } from "../../infrastructure/auth/client";
+import {
+  restoreAccountSession,
+  logOutAccount,
+  type AccountSession,
+  type AccountUser,
+} from "../../infrastructure/auth/client";
 import { clearAccountPublication } from "../export/exportArtifactStore";
 import { syncThemeAccount } from "../preferences/themePreferences";
 
-export type AuthSource = "signin" | "recovery" | "export" | "download" | "share" | "replies";
+export type AuthSource =
+  "signin" | "recovery" | "export" | "download" | "share" | "replies";
 type AuthGateState = {
   source: AuthSource | null;
   phase: "idle" | "checking" | "ready" | "error";
@@ -21,7 +28,8 @@ export const useAuthGate = create<AuthGateState>(() => ({
   phase: "idle",
   available: false,
   supabaseAvailable: false,
-  supabasePublishableKey: null, supabaseUrl: null,
+  supabasePublishableKey: null,
+  supabaseUrl: null,
   user: null,
   error: null,
   connecting: false,
@@ -30,11 +38,26 @@ export const useAuthGate = create<AuthGateState>(() => ({
 let sessionRequest: Promise<AccountSession> | null = null;
 let sessionEpoch = 0;
 let signOutRequest: Promise<void> | null = null;
-let pendingAccount: { promise: Promise<boolean>; resolve(value: boolean): void } | null = null;
+let pendingAccount: {
+  promise: Promise<boolean>;
+  resolve(value: boolean): void;
+} | null = null;
 
 function currentSession(): AccountSession {
-  const { available, user, supabaseAvailable, supabasePublishableKey, supabaseUrl } = useAuthGate.getState();
-  return { available, user: signOutRequest ? null : user, supabaseAvailable, supabasePublishableKey, supabaseUrl };
+  const {
+    available,
+    user,
+    supabaseAvailable,
+    supabasePublishableKey,
+    supabaseUrl,
+  } = useAuthGate.getState();
+  return {
+    available,
+    user: signOutRequest ? null : user,
+    supabaseAvailable,
+    supabasePublishableKey,
+    supabaseUrl,
+  };
 }
 
 function resolvePendingAccount(signedIn: boolean) {
@@ -64,37 +87,47 @@ export function refreshAccountSession(): Promise<AccountSession> {
   if (sessionRequest) return sessionRequest;
   const requestEpoch = sessionEpoch;
   useAuthGate.setState({ phase: "checking", error: null });
-  const request = getAccountSession().then(session => {
-    if (requestEpoch !== sessionEpoch) return currentSession();
-    const previousUser = useAuthGate.getState().user;
-    if (previousUser && previousUser.id !== session.user?.id) clearAccountPublication();
-    syncThemeAccount(session.user?.id ?? null);
-    useAuthGate.setState(state => ({
-      phase: "ready",
-      available: session.available,
-      supabaseAvailable: session.supabaseAvailable,
-      supabasePublishableKey: session.supabasePublishableKey, supabaseUrl: session.supabaseUrl,
-      user: session.user,
-      error: null,
-      connecting: session.user ? false : state.connecting,
-    }));
-    if (session.user && pendingAccount) {
-      useAuthGate.setState({ source: null });
-      resolvePendingAccount(true);
-    }
-    return session;
-  }).catch(error => {
-    if (requestEpoch !== sessionEpoch) return currentSession();
-    if (useAuthGate.getState().user) clearAccountPublication();
-    syncThemeAccount(null);
-    useAuthGate.setState({
-      phase: "error",
-      user: null,
-      error: error instanceof Error ? error.message : "Couldn't check your account. Try again.",
-      connecting: false,
+  const request = restoreAccountSession(() => requestEpoch === sessionEpoch)
+    .then((session) => {
+      if (requestEpoch !== sessionEpoch) return currentSession();
+      const previousUser = useAuthGate.getState().user;
+      if (previousUser && previousUser.id !== session.user?.id)
+        clearAccountPublication();
+      syncThemeAccount(session.user?.id ?? null);
+      useAuthGate.setState((state) => ({
+        phase: "ready",
+        available: session.available,
+        supabaseAvailable: session.supabaseAvailable,
+        supabasePublishableKey: session.supabasePublishableKey,
+        supabaseUrl: session.supabaseUrl,
+        user: session.user,
+        error: null,
+        connecting: session.user ? false : state.connecting,
+      }));
+      if (session.user && pendingAccount) {
+        useAuthGate.setState({ source: null });
+        resolvePendingAccount(true);
+      }
+      return session;
+    })
+    .catch((error) => {
+      if (requestEpoch !== sessionEpoch) return currentSession();
+      if (useAuthGate.getState().user) clearAccountPublication();
+      syncThemeAccount(null);
+      useAuthGate.setState({
+        phase: "error",
+        user: null,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Couldn't check your account. Try again.",
+        connecting: false,
+      });
+      throw error;
+    })
+    .finally(() => {
+      if (sessionRequest === request) sessionRequest = null;
     });
-    throw error;
-  }).finally(() => { if (sessionRequest === request) sessionRequest = null; });
   sessionRequest = request;
   return sessionRequest;
 }
@@ -107,7 +140,9 @@ export function refreshAccountSessionAfterSignIn(): Promise<AccountSession> {
 }
 
 /** Check the live session before every protected action; wait without losing the editor when signed out. */
-export async function requireAccount(source: Exclude<AuthSource, "signin"> = "export"): Promise<boolean> {
+export async function requireAccount(
+  source: Exclude<AuthSource, "signin"> = "export",
+): Promise<boolean> {
   if (signOutRequest) return false;
   const requestEpoch = sessionEpoch;
   try {
@@ -123,7 +158,9 @@ export async function requireAccount(source: Exclude<AuthSource, "signin"> = "ex
   if (checkError) setAuthError(checkError);
   if (!pendingAccount) {
     let resolve!: (value: boolean) => void;
-    const promise = new Promise<boolean>(done => { resolve = done; });
+    const promise = new Promise<boolean>((done) => {
+      resolve = done;
+    });
     pendingAccount = { promise, resolve };
   }
   return pendingAccount.promise;
@@ -137,21 +174,30 @@ async function performSignOut(): Promise<void> {
     signOutRequest = null;
     try {
       if (!(await refreshAccountSession()).user) return;
-    } catch { /* The account check retains its error state. */ }
+    } catch {
+      /* The account check retains its error state. */
+    }
     throw error;
   }
   clearAccountPublication();
   syncThemeAccount(null);
-  useAuthGate.setState({ user: null,
-    error: null, connecting: false, phase: "ready" });
+  useAuthGate.setState({
+    user: null,
+    error: null,
+    connecting: false,
+    phase: "ready",
+  });
 }
 
 export function signOutAccount(): Promise<void> {
   if (signOutRequest) return signOutRequest;
   sessionEpoch++;
   sessionRequest = null;
+  forgetAccountSession();
   resolvePendingAccount(false);
-  const request = performSignOut().finally(() => { if (signOutRequest === request) signOutRequest = null; });
+  const request = performSignOut().finally(() => {
+    if (signOutRequest === request) signOutRequest = null;
+  });
   signOutRequest = request;
   return request;
 }

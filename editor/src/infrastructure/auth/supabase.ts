@@ -30,6 +30,8 @@ export function getSupabase(
         },
         auth: {
           flowType: "pkce",
+          persistSession: true,
+          autoRefreshToken: true,
           detectSessionInUrl: false,
           storageKey: `restyle-auth-${new URL(url).hostname.split(".")[0]}`,
         },
