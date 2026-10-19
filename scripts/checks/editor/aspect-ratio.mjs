@@ -124,13 +124,16 @@ try {
         const hit = await button.boundingBox();
         assert(hit.width >= 44 && hit.height >= 44);
         await settle();
-        const { preview, previewArea } = await geometry();
+        const { preview, previewArea, transport, controlsRow } =
+          await geometry();
         const [w, h] = ratio.split(":").map(Number);
         if (ratio === "16:9" || ratio === "1:1") {
           assert(
             Math.abs(
               (preview.top + preview.bottom) / 2 -
-                (previewArea.top + previewArea.bottom) / 2,
+                (previewArea.top +
+                  (controlsRow ? transport.top : previewArea.bottom)) /
+                  2,
             ) < 1,
             `${ratio} video stays vertically centred in the player`,
           );
@@ -140,6 +143,19 @@ try {
             });
         }
         assert(Math.abs(preview.width / preview.height - w / h) < 0.02);
+        for (const action of await page.locator(".transport button").all()) {
+          const bounds = await action.boundingBox();
+          const horizontal =
+            Math.min(bounds.x + bounds.width, preview.right) -
+            Math.max(bounds.x, preview.left);
+          const vertical =
+            Math.min(bounds.y + bounds.height, preview.bottom) -
+            Math.max(bounds.y, preview.top);
+          assert(
+            horizontal <= 0 || vertical <= 0,
+            `${ratio} keeps editing controls separate from video`,
+          );
+        }
         const stamp = await page.locator(".transportTime").boundingBox();
         const close = await page
           .getByRole("button", { name: "Close sheet", exact: true })

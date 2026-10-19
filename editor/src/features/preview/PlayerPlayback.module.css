@@ -5,12 +5,13 @@
 }
 .overlay .play {
   position: absolute;
-  top: 4px;
-  left: 4px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
+  width: 64px;
+  height: 64px;
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -24,8 +25,19 @@
 .play svg {
   margin: 0;
 }
+.glyph {
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+.glyph[data-visible="true"],
+.play:focus-visible .glyph {
+  opacity: 1;
+}
 .play:disabled {
   opacity: 0.4;
+  pointer-events: none;
   cursor: default;
 }
 .play:focus-visible {
@@ -50,11 +62,6 @@
 .time span {
   color: inherit;
 }
-/* Wide formats share the player's outer corners with the editing controls. */
-.time[data-inset-controls="true"] {
-  bottom: 56px;
-}
-
 .overlay[data-compact="true"] .time {
   right: 2px;
   bottom: 4px;
@@ -67,6 +74,4 @@
 .overlay[data-compact="true"] .play {
   width: 44px;
   height: 44px;
-  top: 0;
-  left: 0;
 }

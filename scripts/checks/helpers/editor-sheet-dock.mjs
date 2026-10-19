@@ -46,6 +46,7 @@ export function createSheetDockChecks(page) {
           "true",
         app: rect(element(".app")),
         previewArea: rect(element(".previewArea")),
+        controlsRow: element(".previewArea").dataset.controlsRow === "true",
         preview: rect(preview),
         header: rect(header),
         transport: rect(playback),

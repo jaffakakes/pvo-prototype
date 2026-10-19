@@ -31,9 +31,6 @@
 .tryButton {
   margin-left: auto;
 }
-.transport[data-over-video="true"] .action {
-  filter: drop-shadow(0 1px 2px var(--surface));
-}
 .action:disabled {
   opacity: 0.35;
   cursor: default;

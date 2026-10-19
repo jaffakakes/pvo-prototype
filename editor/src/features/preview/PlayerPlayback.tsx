@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { sceneDuration } from "../../domain/scenes/duration";
 import { togglePlayback } from "../../state/editing/playbackCommands";
 import { useCapture } from "../../state/captureStore";
@@ -9,11 +10,11 @@ import styles from "./PlayerPlayback.module.css";
 /** Player chrome stays separate from authored media and overlay gestures. */
 export function PlayerPlayback({
   topZ,
-  insetControls,
+  videoZ,
   compact,
 }: {
   topZ: number;
-  insetControls: boolean;
+  videoZ: number;
   compact: boolean;
 }) {
   const playing = useCapture((state) => state.playing);
@@ -21,21 +22,36 @@ export function PlayerPlayback({
   const picking = useCapture((state) => !!state.playheadPick);
   const holding = useCapture((state) => !!state.tryMode?.holdingId);
   const duration = useCapture(sceneDuration);
+  const hasPlayed = useRef(playing);
+  const [feedbackVisible, setFeedbackVisible] = useState(true);
+  useEffect(() => {
+    if (playing) hasPlayed.current = true;
+    setFeedbackVisible(true);
+    if (!hasPlayed.current) return;
+    const timeout = window.setTimeout(() => setFeedbackVisible(false), 800);
+    return () => window.clearTimeout(timeout);
+  }, [playing]);
   return (
     <div className={styles.overlay} data-player-playback data-compact={compact}>
       <button
         type="button"
         className={`${cx("playBtn")} ${styles.play}`}
-        style={{ zIndex: topZ }}
+        style={{ zIndex: videoZ }}
         onClick={togglePlayback}
         aria-label={playing ? "Pause" : "Play"}
         disabled={holding || picking || duration <= 0}
       >
-        <Icon name={playing ? "pause" : "play"} size={32} />
+        <span
+          className={styles.glyph}
+          data-playback-feedback
+          data-visible={feedbackVisible}
+          aria-hidden="true"
+        >
+          <Icon name={playing ? "pause" : "play"} size={32} />
+        </span>
       </button>
       <div
         className={`${cx("transportTime")} ${styles.time}`}
-        data-inset-controls={insetControls}
         style={{ zIndex: topZ }}
         aria-label={`Playback time ${pickTime(time)} of ${pickTime(duration)}`}
       >

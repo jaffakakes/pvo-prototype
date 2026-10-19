@@ -60,6 +60,20 @@ try {
       );
       const box = await close.boundingBox();
       assert(box.width >= 44 && box.height >= 44);
+      const preview = await page.locator(".pvBox").boundingBox();
+      for (const button of await controls.getByRole("button").all()) {
+        const action = await button.boundingBox();
+        const horizontal =
+          Math.min(action.x + action.width, preview.x + preview.width) -
+          Math.max(action.x, preview.x);
+        const vertical =
+          Math.min(action.y + action.height, preview.y + preview.height) -
+          Math.max(action.y, preview.y);
+        assert(
+          horizontal <= 0 || vertical <= 0,
+          "Sheet controls stay separate from the video",
+        );
+      }
       assert.equal(
         await close.evaluate((el) => getComputedStyle(el).boxShadow),
         "none",

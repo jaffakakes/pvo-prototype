@@ -163,12 +163,12 @@ try {
       );
       assert.equal(
         layout.preview.bottom,
-        layout.previewArea.bottom,
-        "The video touches the scene row",
+        layout.controlsRow ? layout.transport.top : layout.previewArea.bottom,
+        "The video stops above a separate controls row when gutters are too narrow",
       );
       assert(
         Math.abs(layout.previewArea.bottom - layout.dock.top) < 1,
-        "No playback row separates the player from scenes",
+        "The preview region meets the scene row",
       );
       assert.equal(
         layout.previewArea.top,
@@ -192,9 +192,30 @@ try {
         "rgba(255, 255, 255, 0.75)",
       );
       assert(
-        bounds[0].x >= layout.preview.left && bounds[0].y >= layout.preview.top,
-        "Play is on the video",
+        Math.abs(
+          bounds[0].x +
+            bounds[0].width / 2 -
+            (layout.preview.left + layout.preview.right) / 2,
+        ) < 1 &&
+          Math.abs(
+            bounds[0].y +
+              bounds[0].height / 2 -
+              (layout.preview.top + layout.preview.bottom) / 2,
+          ) < 1,
+        "Play stays centred on the video",
       );
+      for (const box of bounds.slice(1)) {
+        const horizontal =
+          Math.min(box.x + box.width, layout.preview.right) -
+          Math.max(box.x, layout.preview.left);
+        const vertical =
+          Math.min(box.y + box.height, layout.preview.bottom) -
+          Math.max(box.y, layout.preview.top);
+        assert(
+          horizontal <= 0 || vertical <= 0,
+          "Editing buttons never overlap the video",
+        );
+      }
       assert(
         Math.abs(bounds[1].x - 8) < 1 &&
           Math.abs(bounds[3].x + bounds[3].width - width + 8) < 1,
@@ -202,13 +223,30 @@ try {
       );
       await play.click();
       await page.getByRole("button", { name: "Pause", exact: true }).waitFor();
+      const feedback = page.locator("[data-playback-feedback]");
+      await page
+        .locator('[data-playback-feedback][data-visible="true"]')
+        .waitFor();
       await page.waitForTimeout(350);
       assert.deepEqual(
         await stamp.boundingBox(),
         stampBox,
         "Timestamp stays fixed during playback",
       );
+      await page.waitForFunction(
+        () =>
+          getComputedStyle(document.querySelector("[data-playback-feedback]"))
+            .opacity === "0",
+      );
       await page.getByRole("button", { name: "Pause", exact: true }).click();
+      await page
+        .locator('[data-playback-feedback][data-visible="true"]')
+        .waitFor();
+      await page.waitForFunction(
+        () =>
+          getComputedStyle(document.querySelector("[data-playback-feedback]"))
+            .opacity === "0",
+      );
       await page.getByRole("button", { name: "Text", exact: true }).click();
       const text = page.getByRole("dialog", { name: "Add text", exact: true });
       assert.equal(
@@ -479,7 +517,10 @@ try {
       await finishTextEntry(text);
       await page.locator(".textBar").waitFor();
       await page
-        .getByRole("button", { name: "Edit text", exact: true })
+        .getByRole("button", {
+          name: "Edit text: History stays beside Play",
+          exact: true,
+        })
         .click();
       const editText = page.getByRole("dialog", {
         name: "Edit text",

@@ -19,7 +19,7 @@ import { cx } from "../../styles";
 import { TextLayer } from "../text/TextLayer";
 import { ComponentOverlay } from "./ComponentOverlay";
 import { componentVisible } from "../../domain/components/presentation";
-import { fitPreviewSize } from "./geometry";
+import { fitPlayerPreview, fitPreviewSize } from "./geometry";
 import styles from "./Preview.module.css";
 import { runComponentResponse } from "./tryMode";
 import { usePlayback } from "./usePlayback";
@@ -58,13 +58,22 @@ export function Preview({
   usePlayback(videoRef);
   useAudioPlayback();
   useMusicPlayback();
-  const { width: bw, height: bh } = fitPreviewSize(
-    area.width,
-    area.height,
-    projectRatio(s.ratio),
-  );
   const centered = !desktop && (s.ratio === "16:9" || s.ratio === "1:1");
-  const bottomGap = centered ? (area.height - bh) / 2 : 0;
+  const {
+    width: bw,
+    height: bh,
+    controlsInset,
+  } = desktop
+    ? {
+        ...fitPreviewSize(area.width, area.height, projectRatio(s.ratio)),
+        controlsInset: 0,
+      }
+    : fitPlayerPreview(
+        area.width,
+        area.height,
+        projectRatio(s.ratio),
+        centered,
+      );
   const compact = bw < 180;
   const selectedAuthoring = !s.tryMode && !s.playheadPick && !s.playing;
   const endpointAuthoring =
@@ -121,6 +130,7 @@ export function Preview({
       className={`${cx("previewArea")} ${styles.area}`}
       data-desktop={desktop}
       data-centered={centered}
+      data-controls-row={controlsInset > 0}
     >
       <div
         ref={boxRef}
@@ -128,7 +138,7 @@ export function Preview({
         data-trying={!!s.tryMode}
         data-compact={compact}
         data-desktop={desktop}
-        style={{ width: bw, height: bh }}
+        style={{ width: bw, height: bh, marginBottom: controlsInset }}
         {...gestures}
         onPointerDownCapture={(event) => {
           if ((event.target as Element).closest("[data-player-playback]"))
@@ -201,7 +211,7 @@ export function Preview({
         {!desktop && (
           <PlayerPlayback
             topZ={dimmerZ + 2}
-            insetControls={bottomGap < 52 && (area.width - bw) / 2 < 56}
+            videoZ={layerZ(s, "video")}
             compact={bw < 100}
           />
         )}
@@ -281,12 +291,7 @@ export function Preview({
           </div>
         )}
       </div>
-      {!desktop && (
-        <Transport
-          threadOpen={threadOpen}
-          overVideo={bottomGap < 52 && (area.width - bw) / 2 < 100}
-        />
-      )}
+      {!desktop && <Transport threadOpen={threadOpen} />}
     </div>
   );
 }

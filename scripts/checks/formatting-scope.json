@@ -307,5 +307,7 @@
   "editor/src/features/preview/PlayerPlayback.tsx",
   "editor/src/features/preview/PlayerPlayback.module.css",
   "editor/src/features/editor-layout/useWorkspaceMeasurements.ts",
-  "scripts/checks/editor/playback-chrome.mjs"
+  "scripts/checks/editor/playback-chrome.mjs",
+  "editor/src/features/preview/geometry.ts",
+  "tests/editor-preview-geometry.test.mjs"
 ]

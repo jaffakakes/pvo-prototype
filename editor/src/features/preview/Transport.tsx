@@ -9,8 +9,7 @@ import { useSheetDock } from "../../ui/sheets/SheetDockContext";
 
 export function Transport({
   threadOpen = false,
-  overVideo = false,
-}: { threadOpen?: boolean; overVideo?: boolean } = {}) {
+}: { threadOpen?: boolean } = {}) {
   const s = useCapture();
   const duration = sceneDuration(s);
   const dock = useSheetDock();
@@ -19,7 +18,6 @@ export function Transport({
     <div
       className={`${cx("transport")} ${styles.transport}`}
       data-thread-open={threadOpen}
-      data-over-video={overVideo}
       data-assistant-playback
       role="toolbar"
       aria-label="Playback controls"
