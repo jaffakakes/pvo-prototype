@@ -63,7 +63,7 @@ export function Preview({
     area.height,
     projectRatio(s.ratio),
   );
-  const centered = !desktop && s.ratio === "16:9";
+  const centered = !desktop && (s.ratio === "16:9" || s.ratio === "1:1");
   const bottomGap = centered ? (area.height - bh) / 2 : 0;
   const compact = bw < 180;
   const selectedAuthoring = !s.tryMode && !s.playheadPick && !s.playing;

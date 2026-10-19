@@ -126,17 +126,17 @@ try {
         await settle();
         const { preview, previewArea } = await geometry();
         const [w, h] = ratio.split(":").map(Number);
-        if (ratio === "16:9") {
+        if (ratio === "16:9" || ratio === "1:1") {
           assert(
             Math.abs(
               (preview.top + preview.bottom) / 2 -
                 (previewArea.top + previewArea.bottom) / 2,
             ) < 1,
-            "16:9 video stays vertically centred in the player",
+            `${ratio} video stays vertically centred in the player`,
           );
           if (process.env.PVO_EDITOR_ARTIFACTS)
             await page.screenshot({
-              path: `${process.env.PVO_EDITOR_ARTIFACTS}/aspect-ratio-centered-${width}-${theme}.png`,
+              path: `${process.env.PVO_EDITOR_ARTIFACTS}/aspect-ratio-centered-${ratio.replace(":", "x")}-${width}-${theme}.png`,
             });
         }
         assert(Math.abs(preview.width / preview.height - w / h) < 0.02);
