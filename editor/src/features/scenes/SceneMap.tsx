@@ -152,11 +152,6 @@ export function SceneMap({
           </button>
         )}
       </div>
-      <span className={styles.hint}>
-        {viewport.fit
-          ? `${current.scene.name} · tap to zoom in`
-          : "Pinch to zoom · tap a scene to centre it"}
-      </span>
       <div className={styles.controls} role="group" aria-label="Map zoom">
         <button
           aria-label="Zoom in"

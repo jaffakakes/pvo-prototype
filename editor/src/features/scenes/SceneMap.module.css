@@ -180,15 +180,6 @@
   height: 2px;
   background: currentColor;
 }
-.hint {
-  position: absolute;
-  left: 14px;
-  bottom: 8px;
-  max-width: calc(100% - 112px);
-  color: var(--scene-quiet);
-  font: 600 9.5px/1.2 var(--f-ui);
-  pointer-events: none;
-}
 .frame {
   position: absolute;
   border: 2px solid var(--accent);
