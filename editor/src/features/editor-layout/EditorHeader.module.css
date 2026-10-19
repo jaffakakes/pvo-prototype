@@ -202,15 +202,11 @@
   padding: 0;
   border: 2px solid var(--outline);
   border-radius: 10px;
-  background: var(--swatch-magenta);
-  color: var(--ink);
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
   box-shadow: 3px 3px 0 var(--button-shadow);
   font: 800 13px var(--f-ui);
   cursor: pointer;
-}
-:global(:root[data-theme="light"]) .projectHeader .navigationButton {
-  background: var(--ink);
-  color: var(--swatch-magenta);
 }
 .projectHeader .signIn {
   padding: 0 12px;
