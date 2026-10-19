@@ -5,12 +5,12 @@
 /* Editor chrome only. Authored components and the standalone player own their colors. */
 :root {
   color-scheme: dark;
-  --ground: #222226;
-  --bar: #29292e;
-  --surface: #34343a;
-  --input: #404047;
-  --deep: #121215;
-  --preview-backdrop: #2c2c31;
+  --ground: #1e1e22;
+  --bar: #25252a;
+  --surface: #303036;
+  --input: #3c3c43;
+  --deep: #101013;
+  --preview-backdrop: #28282d;
   --text: #f2f0e9;
   --text-secondary: #d8d5cb;
   --ink: #111;
