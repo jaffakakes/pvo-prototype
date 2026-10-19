@@ -63,6 +63,8 @@ export function Preview({
     area.height,
     projectRatio(s.ratio),
   );
+  const centered = !desktop && s.ratio === "16:9";
+  const bottomGap = centered ? (area.height - bh) / 2 : 0;
   const compact = bw < 180;
   const selectedAuthoring = !s.tryMode && !s.playheadPick && !s.playing;
   const endpointAuthoring =
@@ -118,6 +120,7 @@ export function Preview({
       ref={areaRef}
       className={`${cx("previewArea")} ${styles.area}`}
       data-desktop={desktop}
+      data-centered={centered}
     >
       <div
         ref={boxRef}
@@ -198,7 +201,7 @@ export function Preview({
         {!desktop && (
           <PlayerPlayback
             topZ={dimmerZ + 2}
-            insetControls={(area.width - bw) / 2 < 56}
+            insetControls={bottomGap < 52 && (area.width - bw) / 2 < 56}
             compact={bw < 100}
           />
         )}
@@ -281,7 +284,7 @@ export function Preview({
       {!desktop && (
         <Transport
           threadOpen={threadOpen}
-          overVideo={(area.width - bw) / 2 < 100}
+          overVideo={bottomGap < 52 && (area.width - bw) / 2 < 100}
         />
       )}
     </div>
