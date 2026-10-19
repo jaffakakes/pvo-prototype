@@ -31,9 +31,6 @@
   pointer-events: none;
 }
 .tl[data-time-pick="true"] button[role="slider"] { pointer-events: auto; }
-.tl[data-time-pick="true"] .playhead::before {
-  background: var(--violet);
-}
 .holdTag {
   display: inline-flex;
   align-items: center;

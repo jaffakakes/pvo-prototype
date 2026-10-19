@@ -172,26 +172,27 @@
 }
 .playhead {
   position: absolute;
-  transform: translateX(-50%);
   top: 22px;
   bottom: 8px;
-  width: 2.5px;
-  background: var(--text);
-  box-shadow: 0 0 0 1px #000;
+  width: 1px;
+  color: #fff;
+  background: currentColor;
   pointer-events: none;
   z-index: 3;
+}
+:global(:root[data-theme="light"]) .playhead {
+  color: #000;
 }
 .playhead::before {
   content: "";
   position: absolute;
-  top: -8px;
-  left: 50%;
+  top: -5px;
+  left: 0;
   transform: translateX(-50%);
-  width: 14px;
-  height: 14px;
-  background: var(--accent);
-  border: 2px solid var(--outline);
-  border-radius: 5px;
+  width: 8px;
+  height: 10px;
+  background: currentColor;
+  border-radius: 2px;
 }
 .toolBar {
   position: relative;

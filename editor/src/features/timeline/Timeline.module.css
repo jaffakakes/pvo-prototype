@@ -6,8 +6,8 @@
 
 .timeline :global(.tick) { color: var(--muted); }
 .timeline > :global(.timelineContent) { min-height: 100%; }
-/* The 2px timeline edge and 1px cursor shadow leave a 1px visual gap. */
-.timeline :global(.playhead) { bottom: 0; }
+/* Extend into the 2px timeline edge to leave a 1px visual gap. */
+.timeline :global(.playhead) { bottom: -1px; }
 
 .labelRail { position: absolute; inset: 0 auto 0 0; background: var(--ground); z-index: 3; pointer-events: none; }
 .currentTime { position: absolute; left: 16px; top: 7px; z-index: 4; color: var(--highlight); font: 800 10px var(--f-ui); pointer-events: none; }
