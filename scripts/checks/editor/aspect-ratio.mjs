@@ -46,6 +46,18 @@ try {
         .click();
       await settle();
       const original = await geometry();
+      const orb = page.locator("[data-assistant-orb]");
+      const originalOrb = await orb.boundingBox();
+      const assertOrbRestored = async () => {
+        const current = await orb.boundingBox();
+        assert(
+          originalOrb &&
+            current &&
+            Math.abs(current.x - originalOrb.x) < 2 &&
+            Math.abs(current.y - originalOrb.y) < 2,
+          `Orb returns to its position after Ratio closes: ${JSON.stringify({ originalOrb, current })}`,
+        );
+      };
       const trigger = page.getByRole("button", {
         name: "Aspect ratio",
         exact: true,
@@ -143,6 +155,13 @@ try {
         Math.abs((await geometry()).dock.height - original.dock.height) < 2,
         "Close restores normal toolbar and player space",
       );
+      await assertOrbRestored();
+      await open();
+      await page
+        .getByRole("button", { name: "Close sheet", exact: true })
+        .click();
+      await settle();
+      await assertOrbRestored();
       await page
         .locator(".editorHead")
         .getByText("Saved in this browser", { exact: true })
@@ -159,9 +178,15 @@ try {
         .getByRole("button", { name: "Close sheet", exact: true })
         .press("Escape");
       await panel.waitFor({ state: "hidden" });
+      await settle();
+      await assertOrbRestored();
+      if (process.env.PVO_EDITOR_ARTIFACTS)
+        await page.screenshot({
+          path: `${process.env.PVO_EDITOR_ARTIFACTS}/aspect-ratio-closed-${width}-${theme}.png`,
+        });
       assert.deepEqual(errors, []);
       console.log(
-        `${width} × ${height} ${theme}: bottom ratio panel, exposed timeline, ratio preview, Undo/Redo, autosave and X/Escape passed.`,
+        `${width} × ${height} ${theme}: bottom ratio panel, exposed timeline, ratio preview, Undo/Redo, autosave, X/Escape and stable orb position passed.`,
       );
     } finally {
       await context.close();
