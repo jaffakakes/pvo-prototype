@@ -5,12 +5,10 @@ import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { exportJWK, generateKeyPair, SignJWT } from "jose";
 import { createLocalAuthApi } from "../scripts/dev/local-auth.mjs";
 import { createLocalAuthStore } from "../scripts/dev/local-auth-store.mjs";
 
-const ISSUER = "https://test-instance.clerk.accounts.dev";
-const PUBLISHABLE_KEY = "pk_test_testinstance";
+import { PROJECT_URL, ISSUER, PUBLISHABLE_KEY, SUBJECT, fixtureKeys, token as signedToken, authService } from "./supabase-auth.helpers.mjs";
 
 async function beta(directory, options = {}) {
   let api;
@@ -47,40 +45,29 @@ function sessionCookie(response) {
   return header?.split(";", 1)[0];
 }
 
-test("loopback beta exchanges a verified Clerk session for a short-lived local account", async t => {
-  const directory = await mkdtemp(join(tmpdir(), "pvo-local-clerk-"));
+test("loopback beta exchanges a verified Supabase session for a short-lived local account", async t => {
+  const directory = await mkdtemp(join(tmpdir(), "pvo-local-supabase-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
-  const { publicKey, privateKey } = await generateKeyPair("RS256");
-  const jwk = { ...(await exportJWK(publicKey)), kid: "clerk-key", alg: "RS256", use: "sig" };
-  let jwksCalls = 0;
-  const fetcher = async url => {
-    assert.equal(String(url), `${ISSUER}/.well-known/jwks.json`);
-    jwksCalls += 1;
-    return Response.json({ keys: [jwk] });
-  };
-  const options = { clerkPublishableKey: PUBLISHABLE_KEY, clerkIssuer: ISSUER, fetcher };
+  const { pair, jwk } = await fixtureKeys();
+  const fetcher = authService(jwk);
+  const options = { supabasePublishableKey: PUBLISHABLE_KEY, supabaseUrl: PROJECT_URL, fetcher };
   let app = await beta(directory, options);
   t.after(async () => { await app?.close(); });
 
   assert.deepEqual(await (await app.request("/api/auth/session")).json(), {
-    available: false, clerkAvailable: true, clerkPublishableKey: PUBLISHABLE_KEY, canLinkEmail: false, emailLinked: false, user: null,
+    available: true, supabaseAvailable: true, supabasePublishableKey: PUBLISHABLE_KEY, supabaseUrl: PROJECT_URL, user: null,
   });
-  assert.equal((await app.request("/api/auth/google/start")).status, 503);
-  assert.equal((await app.request("/api/auth/clerk/exchange", { method: "POST" })).status, 401);
-  const sign = ({ issuer = ISSUER, azp = app.origin, sts = "active", omitSts = false, exp = "1m" } = {}) =>
-    new SignJWT({ sid: "sess_clerk1", azp, ...(omitSts ? {} : { sts }) })
-      .setProtectedHeader({ alg: "RS256", kid: "clerk-key" })
-      .setIssuer(issuer).setSubject("user_clerk1")
-      .setIssuedAt().setExpirationTime(exp).sign(privateKey);
+  assert.equal((await app.request("/api/auth/google/start")).status, 404);
+  assert.equal((await app.request("/api/auth/supabase/exchange", { method: "POST" })).status, 401);
+  const sign = (changes = {}) => signedToken(pair, changes);
   const token = await sign();
-  assert.equal((await app.request("/api/auth/clerk/exchange", { method: "GET", token })).status, 405);
-  assert.equal((await app.request("/api/auth/clerk/exchange", { method: "POST", token,
+  assert.equal((await app.request("/api/auth/supabase/exchange", { method: "GET", token })).status, 405);
+  assert.equal((await app.request("/api/auth/supabase/exchange", { method: "POST", token,
     headers: { Origin: "https://attacker.example" } })).status, 403);
-  assert.equal((await app.request("/api/auth/clerk/exchange", { method: "POST", token,
+  assert.equal((await app.request("/api/auth/supabase/exchange", { method: "POST", token,
     headers: { "Sec-Fetch-Site": "cross-site" } })).status, 403);
-  const exchange = await app.request("/api/auth/clerk/exchange", { method: "POST", token });
+  const exchange = await app.request("/api/auth/supabase/exchange", { method: "POST", token });
   assert.equal(exchange.status, 200);
-  assert.equal(jwksCalls, 1);
   const cookie = sessionCookie(exchange);
   assert(cookie);
   assert.match(exchange.headers.get("set-cookie"), /Max-Age=900; HttpOnly; SameSite=Lax/);
@@ -90,58 +77,46 @@ test("loopback beta exchanges a verified Clerk session for a short-lived local a
   assert.deepEqual((await (await app.request("/api/auth/session", { cookie })).json()).user, signedIn.user);
 
   const stored = await readFile(join(directory, "auth-accounts.json"), "utf8");
-  assert(!stored.includes("user_clerk1"));
+  assert(!stored.includes("11111111-1111-4111-8111-111111111111"));
   assert(!stored.includes(token));
   assert(!stored.includes(cookie.split("=", 2)[1]));
   assert.equal((await stat(join(directory, "auth-accounts.json"))).mode & 0o077, 0);
-  const repeated = await app.request("/api/auth/clerk/exchange", { method: "POST", token });
+  const repeated = await app.request("/api/auth/supabase/exchange", { method: "POST", token });
   assert.equal((await repeated.json()).user.id, signedIn.user.id);
-  const withoutStatus = await app.request("/api/auth/clerk/exchange", {
-    method: "POST", token: await sign({ omitSts: true }),
-  });
-  assert.equal(withoutStatus.status, 200, "personal-account sessions may omit sts");
-  assert.equal((await withoutStatus.json()).user.id, signedIn.user.id);
-
   await app.close();
   app = null;
-  const googleCookie = (await (await createLocalAuthStore(directory)).startSession({
-    sub: "user_clerk1", name: "Creator",
-  })).split(";", 1)[0];
   app = await beta(directory, options);
-  const googleUser = (await (await app.request("/api/auth/session", { cookie: googleCookie })).json()).user;
-  assert.notEqual(googleUser.id, signedIn.user.id);
   assert.deepEqual((await (await app.request("/api/auth/session", { cookie })).json()).user, signedIn.user);
   assert.equal((await app.request("/api/auth/logout", { method: "POST", cookie })).status, 200);
   assert.equal((await (await app.request("/api/auth/session", { cookie })).json()).user, null);
 
   for (const invalid of [
-    await sign({ issuer: "https://another.clerk.accounts.dev" }),
-    await sign({ azp: "https://attacker.example" }),
-    await sign({ sts: "pending" }),
-    await sign({ sts: "revoked" }),
-    await sign({ sts: null }),
-    await sign({ exp: "-1h" }),
-    `${token.slice(0, -1)}${token.endsWith("A") ? "B" : "A"}`,
+    await sign({ issuer: "https://another.supabase.co/auth/v1" }),
+    await sign({ audience: "other" }),
+    await sign({ anonymous: true }),
+    await sign({ role: "service_role" }),
+    await sign({ expiresAt: 1 }),
+    token.replace(/\.([A-Za-z0-9_-])([^.]*)$/, (_, first, rest) => `.${first === "A" ? "B" : "A"}${rest}`),
   ]) {
-    const rejected = await app.request("/api/auth/clerk/exchange", { method: "POST", token: invalid });
+    const rejected = await app.request("/api/auth/supabase/exchange", { method: "POST", token: invalid });
     assert.equal(rejected.status, 401);
     assert.equal(sessionCookie(rejected), undefined);
   }
 });
 
-test("loopback beta accepts only a private Clerk development configuration", async t => {
-  const directory = await mkdtemp(join(tmpdir(), "pvo-local-clerk-"));
+test("loopback beta accepts only a private Supabase project configuration", async t => {
+  const directory = await mkdtemp(join(tmpdir(), "pvo-local-supabase-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
-  const path = join(directory, "clerk.json");
-  await writeFile(path, JSON.stringify({ publishableKey: PUBLISHABLE_KEY, issuer: ISSUER }), { mode: 0o644 });
+  const path = join(directory, "supabase.json");
+  await writeFile(path, JSON.stringify({ publishableKey: PUBLISHABLE_KEY, url: PROJECT_URL }), { mode: 0o644 });
   await assert.rejects(beta(directory), /mode-0600/);
   await rm(path);
-  await writeFile(path, JSON.stringify({ publishableKey: "pk_live_wrong", issuer: ISSUER }), { mode: 0o600 });
-  await assert.rejects(beta(directory), /development publishable key/);
+  await writeFile(path, JSON.stringify({ publishableKey: "pk_live_wrong", url: PROJECT_URL }), { mode: 0o600 });
+  await assert.rejects(beta(directory), /publishable key/);
   await rm(path);
-  await writeFile(path, JSON.stringify({ publishableKey: PUBLISHABLE_KEY, issuer: ISSUER }), { mode: 0o600 });
+  await writeFile(path, JSON.stringify({ publishableKey: PUBLISHABLE_KEY, url: PROJECT_URL }), { mode: 0o600 });
   const app = await beta(directory);
   t.after(() => app.close());
   const status = await (await app.request("/api/auth/session")).json();
-  assert.equal(status.clerkPublishableKey, PUBLISHABLE_KEY);
+  assert.equal(status.supabasePublishableKey, PUBLISHABLE_KEY);
 });

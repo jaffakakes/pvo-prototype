@@ -35,8 +35,8 @@ try {
         json: {
           user,
           available: true,
-          clerkAvailable: false,
-          clerkPublishableKey: null,
+          supabaseAvailable: false,
+          supabasePublishableKey: null,
           canLinkEmail: false,
           emailLinked: false,
         },

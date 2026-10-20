@@ -50,10 +50,9 @@ function fakeRenderService(page) {
     if (path === "/api/auth/session" && request.method() === "GET")
       return json({
         available: true,
-        clerkAvailable: false,
-        clerkPublishableKey: null,
-        canLinkEmail: false,
-        emailLinked: false,
+        supabaseAvailable: false,
+        supabasePublishableKey: null,
+        supabaseUrl: null,
         user: { id: "export-tester", name: "Export tester" },
       });
     if (path === "/api/renders" && request.method() === "GET")

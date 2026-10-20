@@ -17,7 +17,7 @@ function answerLabel(value: string | number | boolean): string {
 /** The owner inbox is independent of any retained export or open Share dialog. */
 export function ReplyInbox() {
   const accountAvailable = useAuthGate(
-    (state) => state.available || state.clerkAvailable,
+    (state) => state.available || state.supabaseAvailable,
   );
   const {
     boxes,

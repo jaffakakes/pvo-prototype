@@ -34,7 +34,7 @@ async function mockAccountSession(context) {
   await context.route(`${origin}/api/auth/session`, route => {
     accountChecks++;
     return route.fulfill({ status: 200, contentType: "application/json",
-      body: JSON.stringify({ available: true, clerkAvailable: false, clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: { id: "local-render-check", name: "Local render check" } }) });
+      body: JSON.stringify({ available: true, supabaseAvailable: false, supabasePublishableKey: null, supabaseUrl: null, user: { id: "local-render-check", name: "Local render check" } }) });
   });
 }
 try {

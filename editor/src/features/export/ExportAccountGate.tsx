@@ -3,7 +3,7 @@ import {
   refreshAccountSession,
   useAuthGate,
 } from "../../state/auth/authGateStore";
-import { ClerkEmailSignIn } from "../auth/ClerkEmailSignIn";
+import { SupabaseEmailSignIn } from "../auth/SupabaseEmailSignIn";
 import { AccountDisclosure } from "../auth/AccountDisclosure";
 import { AuthProviders } from "../auth/AuthProviders";
 import { useGoogleSignIn } from "../auth/useGoogleSignIn";
@@ -31,8 +31,9 @@ export function ExportAccountGate({
   const {
     phase,
     available,
-    clerkAvailable,
-    clerkPublishableKey,
+    supabaseAvailable,
+    supabasePublishableKey,
+    supabaseUrl,
     error,
     connecting,
   } = useAuthGate();
@@ -62,10 +63,10 @@ export function ExportAccountGate({
         </span>
         <span className={styles.ready}>✓ READY</span>
       </div>
-      {emailOpen && clerkPublishableKey ? (
-        <ClerkEmailSignIn
-          publishableKey={clerkPublishableKey}
-          mode="signin"
+      {emailOpen && supabasePublishableKey && supabaseUrl ? (
+        <SupabaseEmailSignIn
+          url={supabaseUrl}
+          publishableKey={supabasePublishableKey}
           onBack={() => setEmailOpen(false)}
         />
       ) : (
@@ -73,8 +74,8 @@ export function ExportAccountGate({
           googleDisabled={phase === "checking" || !available || connecting}
           emailDisabled={
             phase === "checking" ||
-            !clerkAvailable ||
-            !clerkPublishableKey ||
+            !supabaseAvailable ||
+            !supabasePublishableKey ||
             connecting
           }
           connecting={connecting}
@@ -90,8 +91,8 @@ export function ExportAccountGate({
             type="button"
             disabled={
               phase === "checking" ||
-              !clerkAvailable ||
-              !clerkPublishableKey ||
+              !supabaseAvailable ||
+              !supabasePublishableKey ||
               connecting
             }
             onClick={() => setEmailOpen(true)}
@@ -105,13 +106,13 @@ export function ExportAccountGate({
           Checking your account…
         </p>
       )}
-      {phase === "ready" && !available && !clerkAvailable && (
+      {phase === "ready" && !available && !supabaseAvailable && (
         <p className={styles.status}>
           Sign-in isn't configured here yet. Your edit is still saved in this
           browser.
         </p>
       )}
-      {phase === "ready" && available && !clerkAvailable && (
+      {phase === "ready" && available && !supabaseAvailable && (
         <p className={styles.status}>
           Email sign-in isn't configured here yet.
         </p>

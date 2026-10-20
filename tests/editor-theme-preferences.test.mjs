@@ -51,10 +51,8 @@ test.beforeEach(() => {
 
 const session = user => ({
   available: true,
-  clerkAvailable: false,
-  clerkPublishableKey: null,
-  canLinkEmail: false,
-  emailLinked: false,
+  supabaseAvailable: false,
+  supabasePublishableKey: null, supabaseUrl: null,
   user,
 });
 

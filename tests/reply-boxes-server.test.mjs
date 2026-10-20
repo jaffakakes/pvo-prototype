@@ -74,10 +74,14 @@ test("signed-in owners create boxes, read only their inbox, and remove the colle
     );
     const sameAccountCookie = (
       await createAccountSession(
-        { sub: "fixture-google-subject-1", name: "First creator" },
+        {
+          issuer: "https://restyle-test.supabase.co/auth/v1",
+          sub: "fixture-google-subject-1",
+          name: "First creator",
+        },
         { DB: fixture.db, SESSION_SECRET: SECRET },
       )
-    ).split(";", 1)[0];
+    ).cookie.split(";", 1)[0];
     assert.equal(
       (
         await (

@@ -10,11 +10,13 @@ import { useCapture } from "../../state/captureStore";
 import { Icon } from "../../ui/Icon";
 import { AccountDisclosure } from "./AccountDisclosure";
 import { AuthProviders } from "./AuthProviders";
-import { ClerkEmailSignIn } from "./ClerkEmailSignIn";
+import { SupabaseEmailSignIn } from "./SupabaseEmailSignIn";
+import { useEmailCallback } from "./useEmailCallback";
 import { useGoogleSignIn } from "./useGoogleSignIn";
 import styles from "./AuthDialog.module.css";
 
 export function AuthDialog() {
+  useEmailCallback();
   const source = useAuthGate((state) => state.source);
   const exportSheetOpen = useCapture((state) => state.sheet === "export");
   useEffect(() => {
@@ -36,38 +38,20 @@ function OpenAuthDialog() {
   const {
     phase,
     available,
-    clerkAvailable,
-    clerkPublishableKey,
-    canLinkEmail,
-    emailLinked,
+    source,
+    supabaseAvailable,
+    supabasePublishableKey,
+    supabaseUrl,
     user,
     error,
     connecting,
   } = useAuthGate();
   const [signingOut, setSigningOut] = useState(false);
-  const [step, setStep] = useState<"gate" | "signin" | "signup">("gate");
-  const [linkTargetId, setLinkTargetId] = useState<string | null>(null);
-  const [linkedNotice, setLinkedNotice] = useState(false);
-  const googleLinkTarget = useRef<string | null>(null);
+  const [step, setStep] = useState<"gate" | "signin" | "signup">(source === "recovery" ? "signin" : "gate");
   const emailOpen = step !== "gate";
-  const emailAvailable = clerkAvailable && Boolean(clerkPublishableKey);
+  const emailAvailable = supabaseAvailable && Boolean(supabasePublishableKey);
   const waiting = phase === "checking" || connecting;
-  const beginGoogle = useGoogleSignIn((session) => {
-    const targetId = googleLinkTarget.current;
-    googleLinkTarget.current = null;
-    if (!targetId) {
-      closeAuthGate();
-      return;
-    }
-    if (session.user?.id !== targetId) {
-      setAuthError(
-        "You signed in with a different Google account. Return to the original account and try again.",
-      );
-      return;
-    }
-    setLinkTargetId(targetId);
-    setStep("signin");
-  });
+  const beginGoogle = useGoogleSignIn();
   useEffect(() => {
     const focus = document.activeElement;
     dialog.current?.showModal();
@@ -84,8 +68,6 @@ function OpenAuthDialog() {
     setStep(next);
   };
   const signOut = () => {
-    googleLinkTarget.current = null;
-    setLinkTargetId(null);
     setSigningOut(true);
     setStep("gate");
     void signOutCurrentAccount()
@@ -98,24 +80,8 @@ function OpenAuthDialog() {
       )
       .finally(() => setSigningOut(false));
   };
-  const startEmailLink = () => {
-    if (!user || !canLinkEmail) return;
-    googleLinkTarget.current = user.id;
-    setLinkedNotice(false);
-    beginGoogle("link");
-  };
-  const backFromEmail = () => {
-    changeStep("gate");
-    setLinkTargetId(null);
-  };
-  useEffect(() => {
-    if (!emailOpen || !linkTargetId || user?.id === linkTargetId) return;
-    backFromEmail();
-    setAuthError(
-      "Your Restyle account changed. Sign in with the original Google account and try again.",
-    );
-  }, [emailOpen, linkTargetId, user?.id]);
-  const title = user
+  const backFromEmail = () => changeStep("gate");
+  const title = source === "recovery" ? "Reset password" : user
     ? "Your account"
     : step === "signup"
       ? "Create account"
@@ -123,7 +89,7 @@ function OpenAuthDialog() {
         ? "Welcome back"
         : "Ready to export";
   const description =
-    step === "signup"
+    source === "recovery" ? "Choose a new password for your email account." : step === "signup"
       ? "Your edit stays saved in this browser while you create your account."
       : null;
 
@@ -191,45 +157,15 @@ function OpenAuthDialog() {
             onEmail={() => changeStep("signup")}
           />
         )}
-        {emailOpen && !linkTargetId && clerkPublishableKey && (
-          <ClerkEmailSignIn
+        {emailOpen && supabasePublishableKey && supabaseUrl && (
+          <SupabaseEmailSignIn
             key={step}
-            publishableKey={clerkPublishableKey}
-            mode="signin"
+            url={supabaseUrl}
+            publishableKey={supabasePublishableKey}
+            recovery={source === "recovery"}
             standalone
             initialStep={step}
             onBack={backFromEmail}
-          />
-        )}
-        {user && emailLinked && !emailOpen && (
-          <p className={styles.availability}>
-            {linkedNotice
-              ? "Email sign-in connected. You can now use Google or this email for this Restyle account."
-              : "Email sign-in is connected to this Restyle account."}
-          </p>
-        )}
-        {user && canLinkEmail && !emailOpen && (
-          <p className={styles.availability}>
-            Connect a verified email and password to this Google account to keep
-            the same published links.
-          </p>
-        )}
-        {user && emailOpen && (
-          <p className={styles.availability}>
-            Review the exact email account before connecting it. Your Google
-            sign-in was refreshed for this step.
-          </p>
-        )}
-        {user && emailOpen && linkTargetId && clerkPublishableKey && (
-          <ClerkEmailSignIn
-            publishableKey={clerkPublishableKey}
-            mode="link"
-            expectedUserId={linkTargetId}
-            onBack={backFromEmail}
-            onLinked={() => {
-              backFromEmail();
-              setLinkedNotice(true);
-            }}
           />
         )}
         {!user && phase === "checking" && (
@@ -237,13 +173,13 @@ function OpenAuthDialog() {
             Checking your account…
           </p>
         )}
-        {!user && phase === "ready" && !available && !clerkAvailable && (
+        {!user && phase === "ready" && !available && !supabaseAvailable && (
           <p className={styles.availability}>
             Sign-in isn't configured here yet. Your edit is saved in this
             browser.
           </p>
         )}
-        {!user && phase === "ready" && available && !clerkAvailable && (
+        {!user && phase === "ready" && available && !supabaseAvailable && (
           <p className={styles.status}>
             Email sign-in isn't configured here yet.
           </p>
@@ -271,16 +207,6 @@ function OpenAuthDialog() {
       <footer className={styles.footer}>
         {user ? (
           <>
-            {canLinkEmail && !emailOpen && (
-              <button
-                type="button"
-                className={`${styles.secondary} ${styles.email}`}
-                disabled={connecting || signingOut}
-                onClick={startEmailLink}
-              >
-                {connecting ? "Waiting for Google…" : "Connect email sign-in"}
-              </button>
-            )}
             {!emailOpen && (
               <button
                 type="button"

@@ -15,7 +15,7 @@ try {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, permissions: ["camera", "microphone"], acceptDownloads: true });
     try {
       await page.route("**/api/auth/session", route => route.fulfill({ contentType: "application/json",
-        body: JSON.stringify({ available: true, clerkAvailable: false, clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: { id: "ratio-check", name: "Ratio check" } }) }));
+        body: JSON.stringify({ available: true, supabaseAvailable: false, supabasePublishableKey: null, supabaseUrl: null, user: { id: "ratio-check", name: "Ratio check" } }) }));
       await page.goto(process.env.EDITOR_URL || process.env.RESTYLE_EDITOR_URL || "http://127.0.0.1:5173/", { waitUntil: "networkidle" });
       await page.waitForFunction(() => (document.querySelector(".live")?.videoWidth ?? 0) > 0);
       await page.getByRole("button", { name: "Ratio" }).click();
