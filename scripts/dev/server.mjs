@@ -11,6 +11,7 @@ import {
 import { createLocalRenderApi } from "./render-jobs/routes.mjs";
 import { createLocalReplyBoxApi } from "./reply-boxes/routes.mjs";
 import { createLocalAuthApi } from "./local-auth.mjs";
+import { createLocalAssistantApi } from "./assistant.mjs";
 
 const root = fileURLToPath(new URL("../../dist/", import.meta.url));
 const port = Number(process.env.PVO_PORT || 4173);
@@ -32,6 +33,9 @@ const renderApi = await createLocalRenderApi({ userFor: authApi.userFor });
 const replyApi = await createLocalReplyBoxApi({
   sessions,
   directory: localDataDirectory,
+});
+const assistantApi = createLocalAssistantApi({
+  origin: `http://127.0.0.1:${port}`,
 });
 const mime = {
   ".html": "text/html; charset=utf-8",
@@ -58,6 +62,10 @@ const server = createServer(async (request, response) => {
   } catch {
     response.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
     response.end("Invalid request address");
+    return;
+  }
+  if (assistantApi.handles(pathname)) {
+    await assistantApi.handle(request, response);
     return;
   }
   if (
