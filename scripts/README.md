@@ -64,6 +64,14 @@ The loopback server creates its own private account/session store in that direct
 
 For local Clerk email/password configuration, see the [local account setup](../docs/engineering/cloudflare-publishing.md#local-account-adapter).
 
+## Local assistant connection
+
+The loopback beta forwards foreground assistant, web-search/read and font-tool requests to `https://getrestyle.app` through `scripts/dev/assistant.mjs`. The browser still uses its own local origin. Runpod's Kimi model and transcription run in the cloud; no model or GPU runs on the Mac, and no provider key is needed in the browser or local configuration. Requests use the hosted service's existing usage limits and require internet access.
+
+The adapter accepts only named routes, checks the exact local host/origin before forwarding, bounds request and response sizes, rejects redirects and cancels upstream work when the browser stops or disconnects. Local account cookies, authorization headers and saved-task capabilities are not forwarded. Sign-in, renders and replies keep their existing local adapters. Hosted account tasks are not enabled by this connection.
+
+The backend contract is the deployed version: new frontend capabilities must have matching backend changes released before they work locally. The adapter sends request bodies unchanged; it does not strip unsupported attachments or invent fallback responses. Verify connection with `curl http://127.0.0.1:4173/api/assistant/status`. Regression coverage is `node --test tests/local-assistant.test.mjs`.
+
 ## Browser suites
 
 `npm run check:browser -- editor camera-flash camera-startup` checks front-camera screen light, recording and camera acquisition. `camera-flash` uses real canvas video streams and MediaRecorder with device capability fixtures to cover armed/idle and countdown states, tap/hold stop, recorder failure, ended tracks, camera switching, rear torch cleanup, and reachable recording controls. Set `BROWSER=webkit` for the flash check on an installed Playwright WebKit runtime. These fixtures do not verify a physical phone's light output or torch hardware; screen light follows the device's existing display brightness.

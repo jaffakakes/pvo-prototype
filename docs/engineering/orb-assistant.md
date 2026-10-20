@@ -44,6 +44,10 @@ Drafts, transcripts, sampled images and answers remain outside project persisten
 
 A project fingerprint guards requests, media inspection, preparation and the final commit. Manual changes make the request stale instead of being overwritten. Project changes, unavailable editor modes, Stop and unmounting cancel pending work; late responses cannot apply edits. IDs identify specific objects rather than depending on whichever component is selected when a response arrives.
 
+## Local beta
+
+The Node beta forwards the named foreground assistant routes and its web/font tools to the deployed Restyle backend through `scripts/dev/assistant.mjs`. Kimi/Runpod inference stays hosted; only the editor and forwarding server run locally. No provider secret or local login cookie crosses this adapter into the browser or hosted account session. Hosted budget enforcement, errors and cancellation remain in place. The adapter cannot supply an unreleased backend capability and forwards the current request unchanged. See [local assistant setup](../../scripts/README.md#local-assistant-connection).
+
 ## Native service and model access
 
 The orb uses same-origin **`POST /api/assistant/turn`** with no login dependency. **`GET /api/assistant/status`** reports configured availability and the ChatGPT access gate; editing fails closed when either the selected model or the application budget binding is unavailable. **`POST /api/assistant/transcribe`** transcribes browser-extracted audio. Every provider-backed POST reserves one application-budget request after validation and before inference. All routes return `Cache-Control: no-store`; mutation-style requests require the configured exact origin and reject cross-site requests. Provider credentials stay in Workers bindings, never in the browser. Before each new Orb task, the browser reads status and requires the editing capability; an unavailable, failed or malformed status preserves the draft and prevents a provider turn. There is no preset response fallback or artificial delay.
