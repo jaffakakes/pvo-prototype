@@ -1,3 +1,4 @@
+import { openExportDialog } from "../helpers/editor-export.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { chromium } from "playwright-core";
@@ -50,7 +51,7 @@ try {
   await page.waitForTimeout(3400);
   await page.getByRole("button", { name: "Stop recording" }).click();
   await page.getByRole("button", { name: "Open editor" }).click();
-  await page.getByRole("heading", { name: "Edit" }).waitFor();
+  await page.getByRole("button", { name: "Back to camera", exact: true }).waitFor();
 
   // Card fields, plus a timeline move and trim, are real project edits.
   await page.getByRole("button", { name: "Components", exact: true }).click();
@@ -59,7 +60,7 @@ try {
   await dialog.getByRole("textbox", { name: "Title" }).fill("Learn about this look");
   await dialog.getByRole("textbox", { name: "Text" }).fill("A short interactive card");
   await dialog.getByRole("textbox", { name: "Button 1" }).fill("Skip ahead");
-  await dialog.getByRole("button", { name: "Done" }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   const bar = page.locator(".compBar").first();
   await bar.waitFor();
   const leftBefore = await bar.evaluate(element => Number.parseFloat(element.style.left));
@@ -87,7 +88,7 @@ try {
     .getByRole("button", { name: /Jump to a point/ }).first().click();
   assert.match(await dialog.getByRole("button", { name: /When viewers tap “Skip ahead”/ }).innerText(),
     /Jump to a point/, "Message button should route to a point in this scene");
-  await dialog.getByRole("button", { name: "Done" }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
 
   await page.getByRole("button", { name: "Try", exact: true }).click();
   const messageButton = page.locator(".compCardButtons").getByRole("button", { name: "Skip ahead" });
@@ -108,7 +109,7 @@ try {
   const pause = dialog.getByRole("switch", { name: "Pause if nobody responds" });
   if (await pause.getAttribute("aria-checked") !== "true") await pause.click();
   assert.equal(await pause.getAttribute("aria-checked"), "true", "The Form must wait for a response");
-  await dialog.getByRole("button", { name: "Done" }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   assert.equal(await page.locator(".compBar").count(), 2, "Both interactive layers should have timeline bars");
 
   // In viewer preview, the Form holds until submitted.
@@ -126,8 +127,7 @@ try {
     await page.getByRole("button", { name: "Stop trying", exact: true }).click();
 
   // Interactive components are packaged in the single PVO export.
-  await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
-  await page.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Export and create link" }).click();
+  await openExportDialog(page);
   const exportDialog = page.locator("dialog[data-state]");
   assert.equal(await exportDialog.getByRole("combobox", { name: "Export format" }).count(), 0);
   await exportDialog.getByRole("button", { name: /Export and share/ }).click();

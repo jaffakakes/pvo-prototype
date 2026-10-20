@@ -1,4 +1,5 @@
 import { AudioClipBar } from "../sound/AudioClipBar";
+import { CoverButton } from "../cover/CoverButton";
 import { TimelineKeyframes } from "../animation/TimelineKeyframes";
 import { textStyle } from "../../../../packages/pvo-text-runtime/index.js";
 import { dur } from "../../domain/clips/timing";
@@ -307,6 +308,14 @@ export function Timeline() {
         <span className={styles.currentTime}>
           {fmt(s.t)}.{Math.floor(s.t * 10) % 10}
         </span>
+        <CoverButton
+          style={{
+            position: "absolute",
+            left: 64,
+            top: rowTop("video"),
+            zIndex: 4,
+          }}
+        />
         {layers.map((id) => (
           <button
             key={id}
@@ -355,19 +364,8 @@ export function Timeline() {
                     ? "text"
                     : "components"
               }
-              size={12}
+              size={20}
             />
-            <span>
-              {id === "video" ? (
-                <>
-                  Video<small>Main track</small>
-                </>
-              ) : id.startsWith("text:") ? (
-                "Text"
-              ) : (
-                "Components"
-              )}
-            </span>
           </button>
         ))}
         {s.audioClips.map((clip, index) => (
@@ -389,8 +387,7 @@ export function Timeline() {
               })
             }
           >
-            <Icon name="music" size={12} />
-            <span>Audio {index + 1}</span>
+            <Icon name="music" size={20} />
           </button>
         ))}
         {s.sound > 0 && (
@@ -402,8 +399,7 @@ export function Timeline() {
             onPointerDown={(event) => event.stopPropagation()}
             onClick={() => s.patch({ sheet: "sound" })}
           >
-            <Icon name="music" size={12} />
-            <span>Music</span>
+            <Icon name="music" size={20} />
           </button>
         )}
         {layerDrag.active && (

@@ -1,3 +1,4 @@
+import { finishTextEntry } from "../helpers/editor-text.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
@@ -9,7 +10,8 @@ const browser = await chromium.launch({
   executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
   headless: true, args: ["--no-sandbox"],
 });
-const context = await browser.newContext({ viewport: { width: 430, height: 932 }, hasTouch: true, isMobile: true, permissions: [] });
+// A short viewport makes the compact text designs scroll without resizing the touch surface.
+const context = await browser.newContext({ viewport: { width: 430, height: 600 }, hasTouch: true, isMobile: true, permissions: [] });
 const page = await context.newPage();
 const cdp = await context.newCDPSession(page);
 const { settle } = createSheetDockChecks(page, context);
@@ -161,23 +163,23 @@ async function scrollStyleSheet() {
   await layer.click();
   await page.locator(".tools").getByRole("button", { name: "Edit text", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Edit text", exact: true });
-  await dialog.getByRole("tab", { name: "Style", exact: true }).click();
-  const scroller = dialog.locator("[data-sheet-body]");
+  await dialog.getByRole("button", { name: "Font styles", exact: true }).click();
+  const scroller = dialog.locator(".textControls");
   await settle();
   assert(await scroller.evaluate(element => element.scrollHeight > element.clientHeight + 40));
   const box = await scroller.boundingBox();
   const center = { x: box.x + 8, y: box.y + box.height / 2 };
   await pinch({ center, factor: 1.7, vertical: true });
-  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ id: 0, x: center.x, y: box.y + box.height - 20 }] });
-  for (let step = 1; step <= 12; step++) {
-    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{
-      id: 0, x: center.x, y: box.y + box.height - 20 - (box.height - 40) * step / 12,
-    }] });
-  }
-  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-  await page.waitForFunction(() => document.querySelector("[data-sheet-body]").scrollTop > 10);
+  await cdp.send("Input.synthesizeScrollGesture", {
+    x: center.x,
+    y: center.y,
+    yDistance: -120,
+    gestureSourceType: "touch",
+    speed: 300,
+  });
+  await page.waitForFunction(() => document.querySelector(".textControls").scrollTop > 10);
   await assertPageScale();
-  await dialog.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await settle();
 }
 
@@ -191,7 +193,7 @@ try {
   await page.getByRole("button", { name: "Text", exact: true }).click();
   const addText = page.getByRole("dialog", { name: "Add text", exact: true });
   await addText.getByRole("textbox", { name: "Text content" }).fill("Pinch");
-  await addText.getByRole("button", { name: "Add", exact: true }).click();
+  await finishTextEntry(addText);
   await settle();
   const originalVideoTransform = await page.locator(".pvVideo").evaluate(element => element.style.transform);
   await verifyOverlayGestures(text, "Text");
@@ -199,19 +201,19 @@ try {
   await collapseSelection();
   await page.getByRole("button", { name: "Components", exact: true }).click();
   await page.locator(".componentTypeTile").filter({ hasText: "Add a note" }).click();
-  await page.getByRole("dialog", { name: "Note", exact: true }).getByRole("button", { name: "Done", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await settle();
   const componentHistory = await verifyOverlayGestures(component, "Component");
   assertSameBox(await authorBox(text), textAfterGestures, "Component gestures must not resize or move the text");
   assert.equal(await page.locator(".pvVideo").evaluate(element => element.style.transform), originalVideoTransform,
     "Overlay gestures must not change video scaling");
   const expected = await snapshotOverlays();
-  await pinch({ center: await centerOf(page.locator(".editorHead h1")), factor: 1.7 });
+  await pinch({ center: await centerOf(page.locator(".transportTime")), factor: 1.7 });
   await assertOverlaysUnchanged(expected, "Pinching app chrome must not edit overlays");
   await scrollStyleSheet();
   await assertOverlaysUnchanged(expected, "Pinching and scrolling a sheet must not edit overlays");
 
-  await page.locator(".editorHead").getByRole("button", { name: "Try", exact: true }).click();
+  await page.locator(".transport").getByRole("button", { name: "Try", exact: true }).click();
   const pause = page.getByRole("button", { name: "Pause", exact: true });
   if (await pause.isVisible()) await pause.click();
   await component.waitFor({ state: "visible" });

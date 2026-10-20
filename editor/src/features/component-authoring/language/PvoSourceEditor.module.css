@@ -89,7 +89,8 @@
   width: 100%;
   height: 100%;
   margin: 0;
-  padding: var(--source-padding-y) 40px var(--source-padding-bottom, var(--source-padding-y)) 10px;
+  padding: var(--source-padding-y) 40px
+    var(--source-padding-bottom, var(--source-padding-y)) 10px;
   border: 0;
   border-radius: 0;
   outline: 0;
@@ -126,21 +127,43 @@
 }
 
 .textarea::selection {
-  background: rgba(167, 139, 250, .4);
+  background: rgba(167, 139, 250, 0.4);
   color: transparent;
 }
 
-.plain { color: var(--source-text); }
-.tag { color: #84CCFF; }
-.attribute { color: #FFD08A; }
-.string { color: #B7E596; }
-.keyword { color: #D6B1FF; }
-.function { color: #7CE1CF; }
-.number { color: #FFB68B; }
-.property { color: #9CCAFF; }
-.selector { color: #F3A4CF; }
-.punctuation { color: #BBB8C9; }
-.template { color: #FFE077; }
+.plain {
+  color: var(--source-text);
+}
+.tag {
+  color: #84ccff;
+}
+.attribute {
+  color: #ffd08a;
+}
+.string {
+  color: #b7e596;
+}
+.keyword {
+  color: #d6b1ff;
+}
+.function {
+  color: #7ce1cf;
+}
+.number {
+  color: #ffb68b;
+}
+.property {
+  color: #9ccaff;
+}
+.selector {
+  color: #f3a4cf;
+}
+.punctuation {
+  color: #bbb8c9;
+}
+.template {
+  color: #ffe077;
+}
 
 .expand {
   position: absolute;
@@ -177,8 +200,13 @@
     background: Canvas;
   }
 
-  .highlight { display: none; }
-  .gutter { color: GrayText; border-color: GrayText; }
+  .highlight {
+    display: none;
+  }
+  .gutter {
+    color: GrayText;
+    border-color: GrayText;
+  }
 
   .textarea {
     color: CanvasText;
@@ -202,4 +230,46 @@
     border-color: ButtonText;
     background: ButtonFace;
   }
+}
+
+.frame[data-tone="light"] {
+  --source-surface: #fffdfb;
+  --source-raised: #f5f1eb;
+  --source-text: #241d25;
+  --source-muted: #625b65;
+  --source-edge: #8f858e;
+  --source-focus: #7051c2;
+  --source-line: #ded7d0;
+  --source-padding-bottom: 76px;
+  border: 0;
+  border-radius: 0;
+  color-scheme: light;
+}
+.frame[data-tone="light"] .gutter {
+  background: var(--source-raised);
+}
+.frame[data-tone="light"] :is(.tag, .selector, .keyword) {
+  color: #7042b5;
+}
+.frame[data-tone="light"] :is(.attribute, .property, .function) {
+  color: #325d98;
+}
+.frame[data-tone="light"] .string {
+  color: #267348;
+}
+.frame[data-tone="light"] :is(.number, .template) {
+  color: #934016;
+}
+.frame[data-tone="light"] .punctuation {
+  color: #625b65;
+}
+
+.frame[data-tone="light"] .expand {
+  width: 44px;
+  height: 44px;
+  top: 4px;
+  right: 4px;
+}
+.frame[data-tone="light"] :is(.highlight, .textarea) {
+  padding-right: 54px;
 }

@@ -3,19 +3,15 @@ import { setLibraryMusic } from "../../../state/editing/libraryCommands";
 import { previewSound } from "../../../infrastructure/audio/sound";
 import { Icon } from "../../../ui/Icon";
 import { SOUNDS } from "../../sound/catalog";
-import { LibraryHeading, LibraryNotice } from "./LibraryParts";
+import { LibraryHeading } from "./LibraryParts";
+import { SoundEffectsList } from "../../sound/SoundEffectsList";
 import styles from "./Library.module.css";
 
 export function AudioLibrary({ section, query }: { section: string; query: string }) {
   const sound = useCapture(state => state.sound);
   if (section === "sfx") return <>
     <LibraryHeading>Sound FX</LibraryHeading>
-    <LibraryNotice>Sound effects are not available in this beta.</LibraryNotice>
-    {["Whoosh", "Shutter", "Record scratch", "Pop"].filter(name => name.toLowerCase().includes(query.toLowerCase())).map(name => <div className={styles.audioRow} key={name} data-unavailable>
-      <span className={styles.audioThumb}><Icon name="music" size={16} /></span>
-      <span className={styles.audioInfo}><strong>{name}</strong><small>Unavailable</small></span>
-      <button type="button" disabled aria-label={`Add ${name}`}><Icon name="plus" size={15} /></button>
-    </div>)}
+    <SoundEffectsList query={query} />
   </>;
   const items = SOUNDS.map((track, index) => ({ track, index }))
     .filter(({ track }) => track.name.toLowerCase().includes(query.toLowerCase()));

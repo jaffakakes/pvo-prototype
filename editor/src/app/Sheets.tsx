@@ -5,8 +5,10 @@ import { ComponentsSheets } from "../features/component-authoring/ComponentsShee
 import { DiscardSheet } from "../features/create-project/DiscardSheet";
 import { ExportSheet } from "../features/export/ExportSheet";
 import { MoreSettings } from "../features/settings/MoreSettings";
+import { SoundEffectsSheet } from "../features/sound/SoundEffectsSheet";
 import { SoundSheet } from "../features/sound/SoundSheet";
 import { TextSheet } from "../features/text/TextSheet";
+import { TextTimingSheet } from "../features/text/TextTimingSheet";
 import { useCapture } from "../state/captureStore";
 import { Shell } from "../ui/SheetShell";
 
@@ -20,9 +22,11 @@ export function Sheets() {
       return <ComponentsSheets />;
     case "text":
       return <TextSheet />;
+    case "textTiming":
+      return <TextTimingSheet />;
     case "more":
       return (
-        <Shell title="More" sub="Editor and PVO settings">
+        <Shell title="More">
           <MoreSettings />
         </Shell>
       );
@@ -32,6 +36,11 @@ export function Sheets() {
       return <SpeedSheet />;
     case "crop":
       return <CropSheet />;
+    case "ratio":
+    case "voiceover":
+      return null;
+    case "soundEffects":
+      return <SoundEffectsSheet />;
     case "sound":
       return <SoundSheet />;
     case "animation":

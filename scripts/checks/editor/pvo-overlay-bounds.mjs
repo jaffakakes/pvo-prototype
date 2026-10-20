@@ -123,7 +123,7 @@ try {
   await page.getByRole("button", { name: "Open editor", exact: true }).click();
   await page.getByRole("button", { name: "Components", exact: true }).click();
   await page.locator(".componentTypeTile").filter({ hasText: "Show a message" }).click();
-  await page.getByRole("dialog", { name: "Message", exact: true }).getByRole("button", { name: "Done", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await settle();
   const original = await bounds();
   const firstApplied = await applyRequest("Softer colours");

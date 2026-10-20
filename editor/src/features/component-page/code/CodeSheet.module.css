@@ -1,0 +1,68 @@
+.codeSheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  color: #241d25;
+  background: #fffdfb;
+}
+.fileTabs {
+  display: flex;
+  align-items: end;
+  gap: 2px;
+  padding: 0 10px;
+  flex-shrink: 0;
+  border-bottom: 1.5px solid #ded7d0;
+  background: #f5f1eb;
+}
+.fileTabs button {
+  min-height: 44px;
+  padding: 8px;
+  border: 2px solid transparent;
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  background: none;
+  color: #625b65;
+  font:
+    700 11.5px ui-monospace,
+    monospace;
+}
+.fileTabs button[aria-selected="true"] {
+  background: #fffdfb;
+  border-color: #241d25;
+  color: #241d25;
+}
+.validity {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  max-width: calc(100% - 86px);
+  max-height: 115px;
+  overflow: auto;
+  border: 1.5px solid #267348;
+  border-radius: 8px;
+  padding: 7px 9px;
+  background: #fffdfb;
+  color: #267348;
+  font: 700 10px/1.4 var(--f-ui);
+  z-index: 2;
+}
+.validity[data-state="invalid"] {
+  border-color: #b32743;
+  color: #b32743;
+}
+.validity[data-state="checking"] {
+  border-color: #625b65;
+  color: #625b65;
+}
+.validity button {
+  min-height: 44px;
+  padding: 4px;
+  margin: 3px 6px 0 0;
+  border: 0;
+  background: #f5f1eb;
+  border-radius: 4px;
+  color: #241d25;
+  font: 800 10px var(--f-ui);
+}

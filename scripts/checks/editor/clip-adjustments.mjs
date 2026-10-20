@@ -1,3 +1,4 @@
+import { finishTextEntry } from "../helpers/editor-text.mjs";
 import assert from "node:assert/strict";
 import { chromium } from "playwright-core";
 
@@ -34,23 +35,21 @@ try {
   await page.evaluate(async () => {
     const { useCapture, mkClip } = await import("/src/store.ts");
     const clip = mkClip(10, null, 0);
-    useCapture
-      .getState()
-      .patch({
-        clips: [clip],
-        screen: "editor",
-        sel: 0,
-        t: 8,
-        past: [],
-        future: [],
-      });
+    useCapture.getState().patch({
+      clips: [clip],
+      screen: "editor",
+      sel: 0,
+      t: 8,
+      past: [],
+      future: [],
+    });
   });
   await page.getByRole("button", { name: "Speed", exact: true }).click();
   const speed = page.getByRole("dialog", { name: "Speed", exact: true });
   await speed.getByRole("button", { name: "2x", exact: true }).click();
   assert.equal((await state()).clip.speed, 2);
   assert.equal((await state()).t, 5);
-  await speed.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
 
   await page.getByRole("button", { name: "Crop", exact: true }).click();
   const crop = page.getByRole("dialog", { name: "Crop", exact: true });
@@ -62,16 +61,17 @@ try {
   assert.equal((await state()).past, beforeCrop + 1);
   await crop.getByRole("button", { name: "Mirror", exact: true }).click();
   assert.equal((await state()).clip.mirror, true);
-  await crop.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await page
     .getByRole("button", { name: "Collapse clip tools", exact: true })
     .click();
 
   await page.getByRole("button", { name: "Sound", exact: true }).click();
-  const sound = page.getByRole("dialog", { name: "Sound", exact: true });
+  await page.getByRole("menuitem", { name: "Add sound", exact: true }).click();
+  const sound = page.getByRole("dialog", { name: "Add sound", exact: true });
   await sound.getByRole("button", { name: /Night Drive/ }).click();
+  await sound.getByRole("button", { name: "Use sound", exact: true }).click();
   assert.equal((await state()).sound, 2);
-  await sound.getByRole("button", { name: "Close", exact: true }).click();
   await page.waitForFunction(() =>
     document.querySelector(".audioTrack")?.textContent?.includes("Night Drive"),
   );
@@ -84,15 +84,17 @@ try {
   await text
     .getByRole("textbox", { name: "Text content" })
     .fill("Keep this caption");
-  await text.getByRole("button", { name: "Add", exact: true }).click();
-  await page.getByRole("button", { name: "Edit text", exact: true }).click();
-  const editText = page.getByRole("dialog", { name: "Edit text", exact: true });
-  await editText.getByRole("tab", { name: "Timing", exact: true }).click();
+  await finishTextEntry(text);
+  await page.getByRole("button", { name: "Timing", exact: true }).click();
+  const editText = page.getByRole("dialog", {
+    name: "Text timing",
+    exact: true,
+  });
   await editText
     .getByRole("spinbutton", { name: "Text start", exact: true })
     .fill("1");
   assert.equal((await state()).text.start, 1);
-  await editText.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await page.locator(".textOverlay").waitFor({ state: "visible" });
   assert.deepEqual(errors, []);
   console.log(

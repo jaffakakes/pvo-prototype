@@ -1,60 +1,76 @@
 .soundList {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: min(410px, 55dvh);
-  overflow: auto;
+  min-height: 0;
 }
-.soundList button {
+.soundRow {
   display: flex;
   align-items: center;
+  border-bottom: 1px solid var(--q10);
+}
+.soundRow[data-on="true"] {
+  background: var(--q06);
+}
+.soundChoice {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  min-height: 66px;
   gap: 12px;
-  padding: 10px 12px;
-  background: var(--surface);
-  border: 2px solid var(--q10);
-  border-radius: 14px;
+  padding: 8px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
   text-align: left;
   cursor: pointer;
 }
-.soundList button[data-on="true"] {
-  border: 2.5px solid var(--pale);
-}
-.soundList button > i {
-  width: 40px;
-  height: 40px;
+.soundChoice > i {
+  width: 44px;
+  height: 44px;
   flex: none;
   display: grid;
   place-items: center;
   color: #111;
-  border: 2px solid #000;
-  border-radius: 10px;
 }
-.soundList button > span {
+.soundChoice > span {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
-.soundList strong {
-  font: 800 14px var(--f-ui);
+.soundChoice strong {
+  font: 700 14px var(--f-ui);
 }
-.soundList small {
+.soundRow[data-on="true"] strong {
+  color: var(--accent);
+}
+.soundChoice small {
   color: var(--muted);
   font: 600 11px var(--f-ui);
 }
-.soundList em {
-  font: 700 11px var(--f-ui);
+.soundChoice em {
   color: var(--muted);
+  font: 600 11px var(--f-ui);
   font-style: normal;
 }
-.soundList b {
-  width: 22px;
-  height: 22px;
+.soundChoice > svg {
   flex: none;
+  margin-right: 4px;
+  color: var(--accent);
+}
+.soundAdd {
   display: grid;
   place-items: center;
-  background: var(--accent);
-  border: 2px solid #000;
-  border-radius: 50%;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin-left: 8px;
+  border: 0;
+  border-radius: 0;
+  background: var(--button-secondary-bg);
+  color: var(--text);
+  cursor: pointer;
 }

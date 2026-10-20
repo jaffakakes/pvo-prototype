@@ -16,7 +16,7 @@
   padding: 10px 18px calc(30px + env(safe-area-inset-bottom));
   background: var(--ground);
   border-top: 3px solid var(--outline);
-  border-radius: 26px 26px 0 0;
+  border-radius: 0;
   box-shadow: 0 -6px 0 var(--frame-shadow);
   animation: rsUp 0.28s var(--spring) both;
 }
@@ -30,29 +30,21 @@
 .sheetHead {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 12px;
-}
-.sheetHead h2 {
-  margin: 0;
-  font: 22px/1 var(--f-display);
-}
-.sheetHead p {
-  margin: 5px 0 0;
-  color: var(--muted);
-  font: 600 12px var(--f-ui);
 }
 .sheetClose {
   flex: none;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
   display: grid;
   place-items: center;
-  background: var(--button-secondary-bg);
-  color: var(--button-secondary-text);
-  border: 2px solid var(--button-border);
-  border-radius: 10px;
-  box-shadow: 2px 2px 0 var(--button-shadow);
+  background: transparent;
+  color: var(--text);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
   cursor: pointer;
 }
 .sheetPill {

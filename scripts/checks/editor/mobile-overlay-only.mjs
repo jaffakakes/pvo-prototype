@@ -98,11 +98,8 @@ try {
   assert.equal(await playhead.getAttribute("aria-valuenow"), "5");
 
   const header = page.locator(".editorHead");
-  assert.equal(
-    await header.locator("p").innerText(),
-    "Main · 0:05 · no clips yet",
-  );
-  const tryButton = header.getByRole("button", { name: "Try", exact: true });
+  assert.equal(await header.locator("h1, p").count(), 0);
+  const tryButton = page.locator(".transport").getByRole("button", { name: "Try", exact: true });
   assert.equal(await tryButton.isEnabled(), true);
 
   await page.locator("body").focus();

@@ -172,32 +172,32 @@
 }
 .playhead {
   position: absolute;
-  transform: translateX(-50%);
   top: 22px;
   bottom: 8px;
-  width: 2.5px;
-  background: var(--text);
-  box-shadow: 0 0 0 1px #000;
+  width: 1px;
+  color: #fff;
+  background: currentColor;
   pointer-events: none;
   z-index: 3;
+}
+:global(:root[data-theme="light"]) .playhead {
+  color: #000;
 }
 .playhead::before {
   content: "";
   position: absolute;
-  top: -8px;
-  left: 50%;
+  top: -5px;
+  left: 0;
   transform: translateX(-50%);
-  width: 14px;
-  height: 14px;
-  background: var(--accent);
-  border: 2px solid var(--outline);
-  border-radius: 5px;
+  width: 8px;
+  height: 10px;
+  background: currentColor;
+  border-radius: 2px;
 }
 .toolBar {
   position: relative;
   flex: none;
   background: var(--bar);
-  border-top: 2px solid var(--q10);
 }
 .tools {
   display: flex;
@@ -213,21 +213,17 @@
 .tool {
   flex: 1 0 62px;
   min-width: 0;
-  height: 48px;
+  height: 56px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 4px;
   background: var(--button-secondary-bg);
-  border: 2px solid var(--button-border);
-  border-radius: 12px;
-  box-shadow: 2px 2px 0 var(--button-shadow);
+  border: 0;
+  border-radius: 6px;
   font: 700 10px var(--f-ui);
   cursor: pointer;
-  transition:
-    transform 0.08s,
-    box-shadow 0.08s;
   color: var(--button-secondary-text);
 }
 .tool span {
@@ -235,18 +231,8 @@
   letter-spacing: -0.4px;
   white-space: nowrap;
 }
-.tool:hover {
-  transform: translate(2px, 2px);
-  box-shadow: 0 0 0 var(--button-shadow);
-}
 .tool-collapse {
   flex: 0 0 44px;
-}
-.tool-text svg {
-  color: var(--yellow);
-}
-.tool-sound svg {
-  color: var(--teal);
 }
 .tool-delete {
   color: var(--red);

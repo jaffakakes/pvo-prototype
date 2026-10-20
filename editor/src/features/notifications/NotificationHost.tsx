@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { notificationDefinition, type NotificationKind } from "../../domain/notifications/catalog";
 import { dismissNotification, useNotifications } from "../../state/notifications/notificationStore";
 import { performNotificationAction } from "../../state/assistant/nativeAppliedNotification";
+import { isStorageNotice, ProjectStorageNotice } from "./ProjectStorageNotice";
 import { NotificationIssues } from "./NotificationIssues";
 import { useNotificationContext } from "./useNotificationContext";
 import { useNotificationTimeout } from "./useNotificationTimeout";
@@ -39,7 +40,7 @@ export function NotificationHost({ inlineRestore = false }: { inlineRestore?: bo
   useEffect(() => { setHovered(false); setFocused(false); }, [visibleCurrent?.key, visibleCurrent?.createdAt]);
   useNotificationContext();
   useNotificationTimeout(visibleCurrent, hovered || focused);
-  const notice = visibleCurrent && definition && <div key={`${visibleCurrent.key}:${visibleCurrent.createdAt}`} className={styles.notice}
+  const notice = visibleCurrent && !isStorageNotice(visibleCurrent.id) && definition && <div key={`${visibleCurrent.key}:${visibleCurrent.createdAt}`} className={styles.notice}
     data-notification-id={visibleCurrent.id} data-severity={definition.kind} role="group" aria-label={`${definition.kind} notification`}
     onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
     onFocusCapture={() => setFocused(true)} onBlurCapture={event => {
@@ -62,6 +63,7 @@ export function NotificationHost({ inlineRestore = false }: { inlineRestore?: bo
     {previewHost && visibleCurrent?.id === "assistantApplied"
       ? createPortal(<div className={styles.appliedHost} data-notification-root>{notice}</div>, previewHost)
       : notice}
-    <NotificationIssues hideRestore={inlineRestore} />
+    <NotificationIssues />
+    <ProjectStorageNotice inlineRestore={inlineRestore} />
   </div>;
 }

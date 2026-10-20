@@ -1,3 +1,4 @@
+import { openExportDialog } from "../helpers/editor-export.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
@@ -105,8 +106,7 @@ async function checkAccountGate(phone) {
   const gate = exportSheet.locator("[data-export-account-gate]");
   const beginExport = async () => {
     if (phone) {
-      await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
-      await page.getByRole("button", { name: "Export and create link", exact: true }).click();
+      await openExportDialog(page);
     } else await page.getByRole("banner").getByRole("button", { name: "Export", exact: true }).click();
     await exportSheet.waitFor();
   };
@@ -119,6 +119,9 @@ async function checkAccountGate(phone) {
       "Sign-in must remain inside the existing export dialog");
     assert.match(await gate.getByRole("group", { name: "Selected export settings" }).innerText(), /720p/);
     assert.equal(await gate.getByRole("link", { name: "Privacy Policy" }).count(), 1);
+    assert.equal(await exportSheet.getByRole("button", { name: "Keep editing", exact: true }).count(), 0);
+    assert.doesNotMatch(await gate.innerText(), /Your edit stays right here/);
+    assert.equal(await exportSheet.evaluate(element => getComputedStyle(element).borderTopLeftRadius), "22px");
   };
   const waitForRender = async count => {
     const deadline = Date.now() + 15000;
@@ -144,7 +147,7 @@ async function checkAccountGate(phone) {
     await start();
     await verifyGate();
     assert.equal(renders.length, 0, "Showing sign-in must not create a render job");
-    await exportSheet.getByRole("button", { name: "Keep editing" }).click();
+    await exportSheet.getByRole("button", { name: "Close export", exact: true }).click();
     await exportSheet.waitFor({ state: "hidden" });
 
     await beginExport();

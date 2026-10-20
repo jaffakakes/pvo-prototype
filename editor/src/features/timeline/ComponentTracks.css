@@ -10,9 +10,6 @@
 .toolBar[data-trying="true"] {
   opacity: 0.45;
 }
-.tool-components svg {
-  color: var(--violet);
-}
 .compAdd,
 .compBar,
 .compMarker {

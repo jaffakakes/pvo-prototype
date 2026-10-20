@@ -1,3 +1,4 @@
+import { openEditorSettings } from "../helpers/editor-settings.mjs";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { chromium } from "playwright-core";
@@ -54,7 +55,7 @@ async function setRequestPath(path) {
     const component = state.components.find(item => item.id === window.__languageRequestId);
     return component?.code?.pvoCompiled?.rules[0]?.action?.url?.endsWith(expectedPath);
   }, path);
-  await formSheet.getByRole("button", { name: "Done", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await page.evaluate(() => window.__languageRequestStore.getState().patch({ t: 0, selComp: null }));
 }
 
@@ -94,13 +95,13 @@ try {
   });
 
   const formSheet = page.getByRole("dialog", { name: "Form" });
-  await formSheet.getByRole("button", { name: "Done", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await page.getByRole("button", { name: "Collapse component tools" }).click();
-  await page.locator(".toolBar").getByRole("button", { name: "More", exact: true }).click();
+  await openEditorSettings(page);
   const more = page.getByRole("dialog", { name: "More" });
-  await more.getByRole("switch", { name: "Advanced editing", exact: true }).click();
-  await more.getByRole("switch", { name: "Advanced editing", checked: true }).waitFor();
-  await more.getByRole("button", { name: "Close", exact: true }).click();
+  await more.getByRole("switch", { name: "Advanced edits", exact: true }).click();
+  await more.getByRole("switch", { name: "Advanced edits", checked: true }).waitFor();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await page.evaluate(() => window.__languageRequestStore.getState().patch({ selComp: window.__languageRequestId, sheet: "component" }));
   await formSheet.getByRole("tab", { name: "Advanced", exact: true }).click();
   await formSheet.getByRole("tab", { name: "Logic", exact: true }).click();
@@ -126,7 +127,7 @@ try {
     const component = state.components.find(item => item.id === window.__languageRequestId);
     return component?.code?.custom && component.code.pvoCompiled?.rules[0]?.action?.kind === "request";
   });
-  await formSheet.getByRole("button", { name: "Done", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await page.evaluate(() => window.__languageRequestStore.getState().patch({ t: 0, selComp: null }));
 
   await submitForm();

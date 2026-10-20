@@ -1,3 +1,4 @@
+import { finishTextEntry } from "../helpers/editor-text.mjs";
 import assert from "node:assert/strict";
 import { chromium } from "playwright-core";
 
@@ -71,12 +72,9 @@ async function acceptPicker(dialog) {
   await dialog.waitFor({ state: "visible" });
 }
 
-async function showTimingTab() {
-  const dialog = page.getByRole("dialog", { name: "Edit text" });
+async function textTimingPanel() {
+  const dialog = page.getByRole("dialog", { name: "Text timing" });
   await dialog.waitFor();
-  if (!(await dialog.getByRole("tab", { name: "Timing" }).getAttribute("aria-selected"))?.includes("true")) {
-    await dialog.getByRole("tab", { name: "Timing" }).click();
-  }
   return dialog;
 }
 
@@ -116,7 +114,7 @@ try {
   await acceptPicker(tooltip);
   assert.equal((await tooltip.locator(".componentTiming strong").textContent())?.trim(), "0:01", "Accept did not update component timing");
   assert.notEqual(await tooltipBar.evaluate(element => element.style.left), originalLeft, "Accepted timing did not move the component layer");
-  await tooltip.getByRole("button", { name: "Close" }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
 
   // Jump to time: cancelling preserves Continue; accepting explicitly sets Jump.
   await page.getByRole("button", { name: "Collapse component tools" }).click();
@@ -149,29 +147,29 @@ try {
   await scrubBy(-45);
   await acceptPicker(success);
   assert.match(await success.locator(".outcomeRow[data-on='true']").innerText(), /Jump to time/, "Accept did not save the nested request jump");
-  await success.getByRole("button", { name: "Close" }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
 
   // Text timing uses the same unobstructed picker and preserves its duration.
   await page.getByRole("button", { name: "Collapse component tools" }).click();
   await page.getByRole("button", { name: "Text", exact: true }).click();
   const addText = page.getByRole("dialog", { name: "Add text" });
   await addText.getByRole("textbox", { name: "Text content" }).fill("Playhead check");
-  await addText.getByRole("button", { name: "Add", exact: true }).click();
-  await page.getByRole("button", { name: "Edit text", exact: true }).click();
-  let textDialog = await showTimingTab();
+  await finishTextEntry(addText);
+  await page.getByRole("button", { name: "Timing", exact: true }).click();
+  let textDialog = await textTimingPanel();
   const textStart = await textDialog.getByRole("spinbutton", { name: "Text start" }).inputValue();
   const textEnd = await textDialog.getByRole("spinbutton", { name: "Text end" }).inputValue();
   const span = Number(textEnd) - Number(textStart);
   await beginPicker(textDialog);
   await scrubBy(70);
   await cancelPicker(textDialog);
-  textDialog = await showTimingTab();
+  textDialog = await textTimingPanel();
   assert.equal(await textDialog.getByRole("spinbutton", { name: "Text start" }).inputValue(), textStart, "Cancel changed text start");
   assert.equal(await textDialog.getByRole("spinbutton", { name: "Text end" }).inputValue(), textEnd, "Cancel changed text end");
   await beginPicker(textDialog);
   await scrubBy(70);
   await acceptPicker(textDialog);
-  textDialog = await showTimingTab();
+  textDialog = await textTimingPanel();
   const acceptedStart = Number(await textDialog.getByRole("spinbutton", { name: "Text start" }).inputValue());
   const acceptedEnd = Number(await textDialog.getByRole("spinbutton", { name: "Text end" }).inputValue());
   assert(acceptedStart < Number(textStart) - .2, "Accept did not move text to the picked time");

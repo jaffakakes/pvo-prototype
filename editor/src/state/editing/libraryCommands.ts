@@ -61,9 +61,10 @@ export function selectLibraryComponent(sceneId: string, componentId: string) {
   setComponentAuthoringTab(componentId, "content");
 }
 
-export function setLibraryMusic(index: number) {
+export function setLibraryMusic(index: number): boolean {
   const state = useCapture.getState();
-  if (state.importing || libraryMutationBlocked(state)) return;
+  if (state.importing || libraryMutationBlocked(state)) return false;
   if (state.sound !== index) state.edit({ sound: index });
   useCapture.getState().patch({ sheet: "sound", sel: -1, selComp: null, selText: null });
+  return true;
 }

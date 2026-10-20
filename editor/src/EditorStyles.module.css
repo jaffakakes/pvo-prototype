@@ -3,7 +3,6 @@
 @import "./features/capture/ShutterControls.css";
 @import "./features/editor-layout/EditorChrome.css";
 @import "./features/preview/PreviewStage.css";
-@import "./features/preview/PlaybackTransport.css";
 @import "./features/timeline/TimelineTracks.css";
 @import "./features/assistant/OrbControls.css";
 @import "./ui/sheets/SheetChrome.css";

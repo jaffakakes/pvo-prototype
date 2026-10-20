@@ -43,8 +43,17 @@ export function startSound(context: AudioContext, track: number, destination: Au
 }
 export function previewSound(track: number) {
   if (!track)
-    return;
+    return () => {};
   const context = new AudioContext();
   const source = startSound(context, track, context.destination);
-  window.setTimeout(() => { source.stop(); context.close(); }, 1600);
+  let closed = false;
+  const timer = window.setTimeout(stop, 1600);
+  function stop() {
+    if (closed) return;
+    closed = true;
+    clearTimeout(timer);
+    source.stop();
+    void context.close();
+  }
+  return stop;
 }

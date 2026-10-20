@@ -8,7 +8,7 @@ const bundle = buildSync({ stdin: { resolveDir: process.cwd(), contents: `
   export * from './editor/src/infrastructure/assistant/media/frames.ts';
   export * from './editor/src/infrastructure/assistant/media/audio.ts';
   export * from './editor/src/infrastructure/assistant/media/transcript.ts';
-  export * from './editor/src/infrastructure/assistant/media/wav.ts';
+  export * from './editor/src/infrastructure/audio/wav.ts';
 ` }, bundle: true, write: false, format: "iife", globalName: "inspection", platform: "browser" }).outputFiles[0].text;
 let transcriptBytes = 0;
 const server = createServer(async (request, response) => {

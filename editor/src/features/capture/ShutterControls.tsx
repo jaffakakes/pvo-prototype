@@ -1,7 +1,7 @@
 import { dur, total } from "../../domain/clips/timing";
 import { useCapture } from "../../state/captureStore";
 import { cx } from "../../styles";
-import { Icon } from "../../ui/Icon";
+import { CameraIcon as Icon } from "./CameraIcon";
 import {
   RING_CIRCUMFERENCE,
   ringArcs,
@@ -65,22 +65,13 @@ export function ShutterControls({
       <div className={cx("shutterRow")}>
         <button
           className={cx("sideAction")}
-          onClick={() =>
-            count && s.replacing == null ? removeLast() : onUpload()
-          }
-          aria-label={
-            count && s.replacing == null ? "Undo last take" : "Upload video"
-          }
+          onClick={onUpload}
+          aria-label="Upload video"
         >
           <span className={cx("side50 press")}>
-            <Icon
-              name={count && s.replacing == null ? "undoTake" : "upload"}
-              size={22}
-            />
+            <Icon name="upload" size={22} />
           </span>
-          <span className={cx("sideLabel")}>
-            {count && s.replacing == null ? "Undo" : "Upload"}
-          </span>
+          <span className={cx("sideLabel")}>Upload</span>
         </button>
         <button
           className={cx("shutter")}
@@ -119,13 +110,13 @@ export function ShutterControls({
         {count > 0 && s.replacing == null && (
           <button
             className={cx("sideAction")}
-            onClick={() => onUpload()}
-            aria-label="Upload video"
+            onClick={removeLast}
+            aria-label="Undo last take"
           >
             <span className={cx("side50 press")}>
-              <Icon name="upload" size={22} />
+              <Icon name="undoTake" size={22} />
             </span>
-            <span className={cx("sideLabel")}>Upload</span>
+            <span className={cx("sideLabel")}>Undo</span>
           </button>
         )}
       </div>

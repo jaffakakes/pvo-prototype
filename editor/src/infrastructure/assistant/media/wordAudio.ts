@@ -1,7 +1,7 @@
 import type { WordTimingSource } from "../../../domain/assistant/wordTiming";
 import { loadAssistantAudioSource } from "./audioSource";
 import { cancellable } from "./lifecycle";
-import { monoWav } from "./wav";
+import { monoWav } from "../../audio/wav";
 
 const SAMPLE_RATE = 16000;
 

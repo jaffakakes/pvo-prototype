@@ -15,6 +15,9 @@ import { fmt } from "../../ui/formatTime";
 import { deleteSelectedClip, splitAtPlayhead } from "./clipCommands";
 import { acceptPlayheadPick, cancelPlayheadPick } from "./playheadPick";
 import styles from "./ToolRow.module.css";
+import { AspectRatioPanel } from "../settings/AspectRatioPanel";
+import { SoundMenu } from "../sound/SoundMenu";
+import { VoiceoverControls } from "../sound/VoiceoverControls";
 
 export function ToolRow() {
   const playheadPick = useCapture((state) => state.playheadPick);
@@ -30,6 +33,10 @@ export function ToolRow() {
   const trying = useCapture((state) => state.tryMode !== null);
   const assistantActive = useAssistant((state) => state.phase !== "idle");
   const playhead = useCapture((state) => state.t);
+  const voiceover = useCapture((state) => state.sheet === "voiceover");
+  const ratioOpen = useCapture((state) => state.sheet === "ratio");
+  if (ratioOpen) return <AspectRatioPanel />;
+  if (voiceover) return <VoiceoverControls />;
   if (playheadPick) {
     return (
       <div className={cx("toolBar")} data-time-pick="true">
@@ -86,7 +93,10 @@ export function ToolRow() {
     else if (["textCollapse", "compCollapse", "collapse"].includes(name))
       clearSelection();
     else if (name === "textEdit") s.patch({ sheet: "text", playing: false });
-    else if (name === "animation") s.patch({ sheet: "animation", playing: false, orb: false });
+    else if (name === "textTiming")
+      s.patch({ sheet: "textTiming", playing: false });
+    else if (name === "animation")
+      s.patch({ sheet: "animation", playing: false, orb: false });
     else if (name === "textDuplicate" && selectedText)
       s.duplicateText(selectedText.id);
     else if (name === "textDelete" && selectedText)
@@ -112,8 +122,8 @@ export function ToolRow() {
         playing: false,
       });
     else if (name === "delete") deleteSelectedClip(s);
-    else if (name === "more")
-      s.patch({ sheet: "more", ratioMenu: false, playing: false, orb: false });
+    else if (name === "ratio")
+      s.patch({ sheet: "ratio", ratioMenu: false, playing: false, orb: false });
     else
       s.patch({
         sheet: name as CaptureStateSheet,
@@ -152,7 +162,7 @@ export function ToolRow() {
           ["text", "Text", "text"],
           ["components", "Components", "components"],
           ["music", "Sound", "sound"],
-          ["more", "More", "more"],
+          ["ratio", "Aspect ratio", "ratio"],
         ];
   const activeTools = selectedAudio
     ? [
@@ -171,6 +181,7 @@ export function ToolRow() {
       ? [
           ["down", "", "textCollapse"],
           ["edit", "Edit text", "textEdit"],
+          ["timer", "Timing", "textTiming"],
           ["keyframe", "Animate", "animation"],
           ["plus", "Duplicate", "textDuplicate"],
           ["delete", "Delete", "textDelete"],
@@ -193,25 +204,29 @@ export function ToolRow() {
     >
       {!assistantActive && (
         <div key={toolSet} className={cx("tools")}>
-          {activeTools.map(([icon, label, name]) => (
-            <button
-              key={name}
-              className={cx(`tool tool-${name}`)}
-              onClick={() => action(name)}
-              disabled={trying}
-              aria-label={
-                name === "compCollapse"
-                  ? "Collapse component tools"
-                  : label ||
-                    (selectedText
-                      ? "Collapse text tools"
-                      : "Collapse clip tools")
-              }
-            >
-              <Icon name={icon} size={20} />
-              {label && <span>{label}</span>}
-            </button>
-          ))}
+          {activeTools.map(([icon, label, name]) =>
+            name === "sound" ? (
+              <SoundMenu key={name} disabled={trying} />
+            ) : (
+              <button
+                key={name}
+                className={cx(`tool tool-${name}`)}
+                onClick={() => action(name)}
+                disabled={trying}
+                aria-label={
+                  name === "compCollapse"
+                    ? "Collapse component tools"
+                    : label ||
+                      (selectedText
+                        ? "Collapse text tools"
+                        : "Collapse clip tools")
+                }
+              >
+                <Icon name={icon} size={20} />
+                {label && <span>{label}</span>}
+              </button>
+            ),
+          )}
         </div>
       )}
     </div>

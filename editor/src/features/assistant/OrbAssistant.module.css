@@ -12,6 +12,11 @@
 }
 
 .root button, .root input { font-family: inherit; }
+.root[data-placement="workspace"] { --assistant-orb-bottom: calc(var(--assistant-toolbar-height) - 4px); }
+@media (max-height: 520px) {
+  .root[data-placement="workspace"] { --assistant-orb-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+  .root[data-placement="workspace"] .orb { left: calc(100% - 58px); width: 44px; height: 44px; }
+}
 .root button { cursor: pointer; }
 .root button:disabled { cursor: default; }
 .root button:focus-visible { outline: 2px solid var(--pale); outline-offset: 4px; }

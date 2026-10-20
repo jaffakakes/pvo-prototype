@@ -1,3 +1,4 @@
+import { openExportDialog } from "../helpers/editor-export.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -29,8 +30,8 @@ try {
   await page.goto(editorUrl, { waitUntil: "networkidle" });
   await recordDemo(1200);
   await page.getByRole("button", { name: "Open editor" }).click();
-  await page.getByRole("heading", { name: "Edit" }).waitFor();
-  const editorSummary = page.locator("header.editorHead p");
+  await page.getByRole("button", { name: "Back to camera", exact: true }).waitFor();
+  const editorSummary = page.locator('.scenesRow [aria-current="true"]');
   assert.ok(!(await editorSummary.textContent())?.includes("$"), "Editor subtitle should not contain template punctuation");
 
   // Fields-route authoring: create a Choice, change its copy, and link Option A to a new scene.
@@ -55,7 +56,7 @@ try {
   await page.getByRole("button", { name: "Components", exact: true }).click();
   await page.getByRole("button", { name: /Add a note/ }).click();
   await page.getByRole("dialog", { name: "Note" }).getByRole("textbox", { name: "Text" }).fill("Scene A note");
-  await page.getByRole("button", { name: "Done", exact: true }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   if (process.env.CAPTURE_SHOTS) await page.screenshot({ path: resolve(tmpdir(), "restyle-components-editor.png") });
   assert.equal(await page.locator(".compBar, .compMarker").count(), 1, "Scene A should show only its Tooltip lane item");
   await page.locator(".sceneChip").filter({ hasText: "Main" }).click();
@@ -65,17 +66,14 @@ try {
   await page.getByRole("button", { name: "Try", exact: true }).click();
   await page.getByRole("button", { name: "Stop trying", exact: true }).waitFor({ timeout: 5000 });
   await page.getByRole("button", { name: "Go B", exact: true }).click();
-  await page.locator("header.editorHead[data-trying='true'] p")
-    .filter({ hasText: "Tap like a viewer · Scene A" }).waitFor({ timeout: 5000 });
+  await page.locator('header.editorHead[aria-label="Trying Scene A"]').waitFor({ timeout: 5000 });
   assert.equal(await page.getByRole("button", { name: "Show the whole scene tree" }).count(), 0);
   await page.getByRole("button", { name: "Stop trying", exact: true }).click();
-  await editorSummary.filter({ hasText: /^Main ·/ }).waitFor({ timeout: 5000 });
+  await editorSummary.filter({ hasText: /^Main/ }).waitFor({ timeout: 5000 });
   await page.getByRole("button", { name: "Try", exact: true }).waitFor({ timeout: 5000 });
 
   // Interactive export contains the Main scene and its branch.
-  await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
-  await page.getByRole("dialog", { name: "More" })
-    .getByRole("button", { name: "Export and create link", exact: true }).click();
+  await openExportDialog(page);
   const exportDialog = page.locator("dialog[data-state]");
   await exportDialog.getByRole("button", { name: /Export and share/ }).waitFor();
   assert.equal(await exportDialog.getByRole("combobox", { name: "Export format" }).count(),

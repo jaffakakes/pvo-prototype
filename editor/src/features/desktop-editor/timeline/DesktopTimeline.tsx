@@ -170,7 +170,7 @@ export function DesktopTimeline({
         className={styles.tracks}
         {...(assistantActive ? { inert: "" } : {})}
       >
-        <div className={styles.labels} aria-hidden="true">
+        <div className={styles.labels}>
           <div className={styles.currentTime}>{fmt(state.t)}</div>
           <DesktopVisualLayerLabels rows={layerLayout.rows} scene={scene} />
           {state.audioClips.map((clip) => (

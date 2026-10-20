@@ -5,7 +5,7 @@ import { buildSync } from "esbuild";
 const bundled = buildSync({ stdin: { resolveDir: process.cwd(), contents: `
   export * from './editor/src/domain/assistant/mediaInspection.ts';
   export * from './editor/src/infrastructure/assistant/media/lifecycle.ts';
-  export * from './editor/src/infrastructure/assistant/media/wav.ts';
+  export * from './editor/src/infrastructure/audio/wav.ts';
   export * from './editor/src/infrastructure/assistant/media/audio.ts';
   export * from './editor/src/infrastructure/assistant/media/transcript.ts';
 ` }, bundle: true, write: false, format: "esm", platform: "browser" });

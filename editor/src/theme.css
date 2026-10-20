@@ -5,20 +5,21 @@
 /* Editor chrome only. Authored components and the standalone player own their colors. */
 :root {
   color-scheme: dark;
-  --ground: #0b0b0f;
-  --bar: #111117;
-  --surface: #15151c;
-  --input: #1c1c24;
-  --deep: #060609;
+  --ground: #1e1e22;
+  --bar: #25252a;
+  --surface: #303036;
+  --input: #3c3c43;
+  --deep: #101013;
+  --preview-backdrop: #28282d;
   --text: #f2f0e9;
   --text-secondary: #d8d5cb;
   --ink: #111;
   --muted: rgb(242 240 233 / 62%);
-  --muted-strong: #a7a3b8;
-  --faint: rgb(242 240 233 / 45%);
-  --disabled: #4a4757;
+  --muted-strong: #b6b2be;
+  --faint: #b0abb5;
+  --disabled: #605c68;
   --outline: #000;
-  --line-strong: #4a4852;
+  --line-strong: #817b87;
   --q14: rgb(255 255 255 / 14%);
   --q12: rgb(255 255 255 / 12%);
   --q10: rgb(255 255 255 / 10%);
@@ -103,6 +104,7 @@
   --surface: #fffdfb;
   --input: #eee8e3;
   --deep: #ded7d0;
+  --preview-backdrop: var(--deep);
   --text: #241d25;
   --text-secondary: #3f3941;
   --ink: #151219;
@@ -198,7 +200,14 @@ button,input{font:inherit}button{color:inherit}button:focus-visible,input:focus-
   height: 0;
 }
 @media(min-width:600px) and (max-width:767px) and (min-height:600px){html,body,#root{background:#d4cfc2}#root{display:flex;align-items:center;justify-content:center}.app{width:430px;height:min(932px,calc(100dvh - 56px));border:3px solid var(--outline);border-radius:36px;box-shadow:12px 12px 0 var(--frame-shadow)}}
-@media(min-width:768px){.app[data-screen="camera"]{max-width:600px;margin-inline:auto}}
+.app[data-screen="camera"],
+.app[data-screen="editor"] {
+  width: 100%;
+  height: 100dvh;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
 .projectTransition { margin: auto; padding: 24px; max-width: 480px; text-align: center; font-size: 14px; line-height: 1.6; }
 .createEntry { height: 100%; min-height: 0; }
 .projectTransition button { min-height: 44px; padding: 0 18px; border: 2px solid var(--button-border); border-radius: 12px; background: var(--button-secondary-bg); color: var(--button-secondary-text); cursor: pointer; }

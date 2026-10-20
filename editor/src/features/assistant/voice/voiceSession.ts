@@ -1,4 +1,4 @@
-import { captureMicrophone, type MicrophoneCapture } from "../../../infrastructure/assistant/microphoneCapture";
+import { captureMicrophone, type MicrophoneCapture } from "../../../infrastructure/audio/microphoneCapture";
 import { requireMicrophoneTranscription, transcribeMicrophone } from "../../../infrastructure/assistant/microphoneTranscription";
 import { voiceFailure, type VoiceFailure } from "./voiceFailure";
 

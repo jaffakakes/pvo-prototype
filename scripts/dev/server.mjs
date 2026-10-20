@@ -1,3 +1,4 @@
+import { createLocalProfileApi } from "./account-profile.mjs";
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
@@ -23,6 +24,11 @@ const authApi = await createLocalAuthApi({
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
   clerkPublishableKey: process.env.CLERK_PUBLISHABLE_KEY,
   clerkIssuer: process.env.CLERK_ISSUER,
+});
+const profileApi = createLocalProfileApi({
+  directory: localDataDirectory,
+  origin: `http://127.0.0.1:${port}`,
+  userFor: authApi.userFor,
 });
 const renderApi = await createLocalRenderApi({ userFor: authApi.userFor });
 const replyApi = await createLocalReplyBoxApi({
@@ -57,12 +63,15 @@ const server = createServer(async (request, response) => {
     return;
   }
   if (
+    pathname === "/api/account/profile" ||
     pathname.startsWith("/api/auth/") ||
     pathname.startsWith("/api/renders") ||
     pathname.startsWith("/api/reply-boxes")
   ) {
     try {
-      if (pathname.startsWith("/api/auth/"))
+      if (pathname === "/api/account/profile")
+        await profileApi(request, response);
+      else if (pathname.startsWith("/api/auth/"))
         await authApi.handle(request, response, pathname);
       else if (pathname.startsWith("/api/reply-boxes"))
         await replyApi.handle(request, response, pathname, url.origin);

@@ -19,18 +19,24 @@ import { cx } from "../../styles";
 import { TextLayer } from "../text/TextLayer";
 import { ComponentOverlay } from "./ComponentOverlay";
 import { componentVisible } from "../../domain/components/presentation";
-import { fitPreviewSize } from "./geometry";
+import { fitPlayerPreview, fitPreviewSize } from "./geometry";
 import styles from "./Preview.module.css";
 import { runComponentResponse } from "./tryMode";
 import { usePlayback } from "./usePlayback";
 import { useOverlayGestures } from "./useOverlayGestures";
 import { usePreviewAreaSize } from "./usePreviewAreaSize";
 import { Icon } from "../../ui/Icon";
+import { Transport } from "./Transport";
+import { PlayerPlayback } from "./PlayerPlayback";
 import { StageMotionPath } from "../animation/stage/StageMotionPath";
 
-type Props = { desktop?: boolean; onAddMedia?(): void };
+type Props = { desktop?: boolean; onAddMedia?(): void; threadOpen?: boolean };
 
-export function Preview({ desktop = false, onAddMedia }: Props = {}) {
+export function Preview({
+  desktop = false,
+  onAddMedia,
+  threadOpen = false,
+}: Props = {}) {
   const s = useCapture();
   const assistantActive = useAssistant((state) => state.phase !== "idle");
   const authoring = useComponentAuthoring();
@@ -52,11 +58,22 @@ export function Preview({ desktop = false, onAddMedia }: Props = {}) {
   usePlayback(videoRef);
   useAudioPlayback();
   useMusicPlayback();
-  const { width: bw, height: bh } = fitPreviewSize(
-    area.width,
-    area.height,
-    projectRatio(s.ratio),
-  );
+  const centered = !desktop && (s.ratio === "16:9" || s.ratio === "1:1");
+  const {
+    width: bw,
+    height: bh,
+    controlsInset,
+  } = desktop
+    ? {
+        ...fitPreviewSize(area.width, area.height, projectRatio(s.ratio)),
+        controlsInset: 0,
+      }
+    : fitPlayerPreview(
+        area.width,
+        area.height,
+        projectRatio(s.ratio),
+        centered,
+      );
   const compact = bw < 180;
   const selectedAuthoring = !s.tryMode && !s.playheadPick && !s.playing;
   const endpointAuthoring =
@@ -112,6 +129,8 @@ export function Preview({ desktop = false, onAddMedia }: Props = {}) {
       ref={areaRef}
       className={`${cx("previewArea")} ${styles.area}`}
       data-desktop={desktop}
+      data-centered={centered}
+      data-controls-row={controlsInset > 0}
     >
       <div
         ref={boxRef}
@@ -119,9 +138,11 @@ export function Preview({ desktop = false, onAddMedia }: Props = {}) {
         data-trying={!!s.tryMode}
         data-compact={compact}
         data-desktop={desktop}
-        style={{ width: bw, height: bh }}
+        style={{ width: bw, height: bh, marginBottom: controlsInset }}
         {...gestures}
         onPointerDownCapture={(event) => {
+          if ((event.target as Element).closest("[data-player-playback]"))
+            return;
           if (focused) {
             const focusedTarget = (
               event.target as Element
@@ -187,6 +208,13 @@ export function Preview({ desktop = false, onAddMedia }: Props = {}) {
             </div>
           )}
         </div>
+        {!desktop && (
+          <PlayerPlayback
+            topZ={dimmerZ + 2}
+            videoZ={layerZ(s, "video")}
+            compact={bw < 100}
+          />
+        )}
         {s.texts
           .filter(
             (text) =>
@@ -263,6 +291,7 @@ export function Preview({ desktop = false, onAddMedia }: Props = {}) {
           </div>
         )}
       </div>
+      {!desktop && <Transport threadOpen={threadOpen} />}
     </div>
   );
 }

@@ -1,16 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { total } from "../../domain/clips/timing";
 import { projectRatio } from "../../domain/project/ratio";
 import { sceneRouteLabel } from "../../domain/scenes/references";
 import { useWideLayout } from "../../infrastructure/viewport";
 import { useCapture } from "../../state/captureStore";
 import { cx } from "../../styles";
-import { Icon } from "../../ui/Icon";
+import { CameraIcon as Icon } from "./CameraIcon";
 import { RatioMenu } from "../../ui/RatioMenu";
-import { fmt } from "../../ui/formatTime";
 import { SOUNDS } from "../sound/catalog";
 import { CaptureRecovery } from "./CaptureRecovery";
-import { CameraStorageRecovery } from "./CameraStorageRecovery";
 import recoveryStyles from "./CaptureRecovery.module.css";
 import { ShutterControls } from "./ShutterControls";
 import { getCameraStream, useCamera } from "./useCamera";
@@ -53,9 +50,6 @@ export function Camera() {
   const [viewfinderSize, setViewfinderSize] = useState({ width: 0, height: 0 });
   const { displayCameraStatus, cameraPending, removeLast, flip, startOver } =
     useCameraControls(cameraStatus, startCam);
-  const activeClips = s.clips.filter((c) => c.id !== s.replacing);
-  const used = total(activeClips);
-  const live = s.recording ? s.elapsed : 0;
   const last = s.clips.at(-1);
   const count = s.clips.length;
   const recordingScene = s.recordingInto
@@ -222,20 +216,9 @@ export function Camera() {
             </>
           )}
           <div className={cx("topScrim")} />
-          <div className={cx("camTop")}>
-            <div className={cx("recLine")}>
-              {s.recording && (
-                <span className={cx("recPill")}>
-                  <i />
-                  REC {fmt(live)}
-                </span>
-              )}
-              <span className={cx("timeNote")}>{fmt(used + live)}</span>
-            </div>
-          </div>
           <div className={cx("camControls")}>
             <button
-              className={cx("sq42")}
+              className={cx("sq42 cameraBrand")}
               onClick={startOver}
               aria-label="Start over"
               title="Start over"
@@ -244,9 +227,8 @@ export function Camera() {
                 s.recording ||
                 (!count && s.replacing == null && !s.recordingInto)
               }
-              style={{ opacity: !count && s.replacing == null ? 0.5 : 1 }}
             >
-              <Icon name="close" />
+              <img src="restyle-mark.png" alt="Restyle" />
             </button>
             {wide && (
               <button
@@ -320,12 +302,43 @@ export function Camera() {
                 aria-expanded={s.ratioMenu}
                 title="Ratio"
               >
-                <Icon name="ratio" size={17} />
                 <strong className={cx("railRatioValue")}>{s.ratio}</strong>
-                <Icon name="down" size={13} />
               </button>
               <RatioMenu place="rail" />
             </div>
+            {!!last && !s.recording && s.replacing == null && (
+              <button
+                className={cx("dock")}
+                onClick={() =>
+                  s.patch({
+                    screen: "editor",
+                    recordingInto: null,
+                    sel: -1,
+                    t: 0,
+                  })
+                }
+                aria-label="Open editor"
+              >
+                <span
+                  className={cx("dockThumb")}
+                  style={{ background: last.color }}
+                >
+                  {last.url && (
+                    <video
+                      src={`${last.url}#t=${last.in.toFixed(1)}`}
+                      muted
+                      playsInline
+                      style={{
+                        objectFit: last.fit,
+                        transform: last.mirror ? "scaleX(-1)" : undefined,
+                      }}
+                    />
+                  )}
+                  <span className={cx("dockEdit")}>EDIT</span>
+                  <span className={cx("dockCount")}>{count}</span>
+                </span>
+              </button>
+            )}
           </div>
           {recordingScene && (
             <div className={cx("sceneBanner")}>
@@ -353,40 +366,6 @@ export function Camera() {
               </button>
             </div>
           )}
-          {!!last && !s.recording && s.replacing == null && (
-            <button
-              className={cx("dock")}
-              onClick={() =>
-                s.patch({
-                  screen: "editor",
-                  recordingInto: null,
-                  sel: -1,
-                  t: 0,
-                })
-              }
-              aria-label="Open editor"
-            >
-              <span
-                className={cx("dockThumb")}
-                style={{ background: last.color }}
-              >
-                {last.url && (
-                  <video
-                    src={`${last.url}#t=${last.in.toFixed(1)}`}
-                    muted
-                    playsInline
-                    style={{
-                      objectFit: last.fit,
-                      transform: last.mirror ? "scaleX(-1)" : undefined,
-                    }}
-                  />
-                )}
-                <span className={cx("dockEdit")}>EDIT</span>
-                <span className={cx("dockCount")}>{count}</span>
-              </span>
-              <span className={cx("dockCaption")}>Open editor</span>
-            </button>
-          )}
           <ShutterControls
             cameraPending={cameraPending}
             cameraStatus={cameraStatus}
@@ -404,23 +383,8 @@ export function Camera() {
           )}
         </div>
       </div>
-      <footer className={cx("camFoot")}>
-        <span className={cx("brand")}>
-          <span className={cx("brandMark")}>
-            <img src="restyle-mark.png" alt="" />
-          </span>
-          <span>restyle</span>
-        </span>
-        <span>
-          {recordingScene ? `${recordingScene.name} · ` : ""}
-          {count
-            ? `${count} clip${count === 1 ? "" : "s"} · ${fmt(total(s.clips))}`
-            : "No clips yet"}
-        </span>
-      </footer>
       <div className={recoveryStyles.camera}>
         <CaptureRecovery />
-        <CameraStorageRecovery />
       </div>
       <input
         ref={uploadRef}

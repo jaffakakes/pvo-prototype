@@ -26,34 +26,26 @@
   z-index: 1;
   flex: none;
   min-width: 0;
-  padding: 6px 16px;
+  padding: 0 12px;
   align-items: center;
   gap: 10px;
-  border-bottom: 1px solid var(--q08);
-  background: var(--ground);
+  border-bottom: 0;
+  background: transparent;
 }
 
 .header > div {
   min-width: 0;
 }
 
-.docked .header button { min-width: 44px; min-height: 44px; }
-.docked .header .done { color: var(--highlight); font: 800 13px var(--f-ui); border: 0; background: transparent; }
-
-.header h2,
-.header p {
-  overflow-wrap: anywhere;
+.docked .header button {
+  min-width: 44px;
+  min-height: 44px;
 }
-
-.docked .header h2 {
-  font-size: 20px;
-  line-height: 22px;
-}
-
-.docked .header p {
-  margin-top: 2px;
-  font-size: 11px;
-  line-height: 14px;
+.docked .header .done {
+  color: var(--highlight);
+  font: 800 13px var(--f-ui);
+  border: 0;
+  background: transparent;
 }
 
 .body {
@@ -63,7 +55,7 @@
   min-width: 0;
   min-height: 0;
   gap: 16px;
-  padding: 12px 18px calc(16px + env(safe-area-inset-bottom));
+  padding: 8px 18px calc(16px + env(safe-area-inset-bottom));
   overflow: auto;
   overscroll-behavior: contain;
 }
@@ -72,6 +64,17 @@
 .body > * {
   flex-shrink: 0;
 }
+.compactBody {
+  padding: 8px 14px calc(12px + env(safe-area-inset-bottom));
+  overflow: hidden;
+}
+.compactBody > :global(.textEditor) {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.compactBody :global(.textControls) {
+  max-height: none;
+}
 
 /* The language route grows into available space, or scrolls as a whole in a shallow dock. */
 .fillingBody > :last-child {
@@ -79,10 +82,18 @@
   min-height: min-content;
 }
 
-.docked[data-code-expanded="true"] .fillingBody { padding-bottom: 0; overflow: hidden; }
-.docked[data-code-expanded="true"] .fillingBody > :last-child { flex: 1; min-height: 0; }
+.docked[data-code-expanded="true"] .fillingBody {
+  padding-bottom: 0;
+  overflow: hidden;
+}
+.docked[data-code-expanded="true"] .fillingBody > :last-child {
+  flex: 1;
+  min-height: 0;
+}
 
 /* A phone keyboard can leave only a few hundred pixels for the IDE. */
 @container expanded-code (max-height: 420px) {
-  .docked[data-code-expanded="true"] > .header { display: none; }
+  .docked[data-code-expanded="true"] > .header {
+    display: none;
+  }
 }

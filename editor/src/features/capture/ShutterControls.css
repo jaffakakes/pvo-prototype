@@ -154,38 +154,3 @@
   font: 150px/1 var(--f-display);
   text-shadow: 7px 7px 0 var(--accent);
 }
-.camFoot {
-  height: 64px;
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px calc(env(safe-area-inset-bottom) / 2);
-  color: rgba(242, 240, 233, 0.55);
-  font: 700 12px var(--f-ui);
-}
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  color: var(--text);
-  font: 19px/1 var(--f-display);
-  letter-spacing: -0.4px;
-}
-.brandMark {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  background: var(--surface);
-  border: 2.5px solid #000;
-  border-radius: 10px;
-  box-shadow: 2px 2px 0 var(--accent-soft);
-}
-.brandMark img {
-  width: 22px;
-  height: 22px;
-  object-fit: contain;
-  filter: invert(1);
-}
-html[data-theme="light"] .brandMark img { filter: none; }

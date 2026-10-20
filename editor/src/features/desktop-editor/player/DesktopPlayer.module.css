@@ -8,7 +8,8 @@
 .actions { display: flex; align-items: center; justify-content: flex-end; flex: 1; gap: 6px; min-width: 0; }
 .actions button { display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 30px; flex: none; padding: 0 8px; border: 2px solid var(--button-border); border-radius: 9px; background: var(--button-secondary-bg); font-size: 11px; font-weight: 800; cursor: pointer; color: var(--button-secondary-text); }
 .actions button:disabled { opacity: .5; cursor: not-allowed; }
-.actions .try[data-on="true"] { background: var(--button-primary-bg); border-color: var(--button-border); box-shadow: 2px 2px 0 var(--button-shadow); color: var(--button-primary-text); }
+.actions .try { border: 0; }
+.actions .try[data-on="true"] { background: var(--button-primary-bg); box-shadow: 2px 2px 0 var(--button-shadow); color: var(--button-primary-text); }
 .transport:has([data-variant="desktop"]) .actions { flex: 0 0 auto; }
 .transport:has([data-variant="desktop"]) .ratio { display: none; }
 @media (max-width: 1279px) {
