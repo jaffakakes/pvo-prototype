@@ -4,6 +4,7 @@ import { sceneDuration } from "../../domain/scenes/duration";
 import { useCapture } from "../../state/captureStore";
 import { Icon } from "../../ui/Icon";
 import { useCoverPreview } from "../export/useExportPreviewUrls";
+import { useEditorTransition } from "../../ui/motion/EditorMotion";
 import { CoverPicker } from "./CoverPicker";
 import styles from "./CoverButton.module.css";
 
@@ -14,6 +15,7 @@ export function CoverButton({
   style?: CSSProperties;
   disabled?: boolean;
 }) {
+  const transition = useEditorTransition();
   const main = useCapture((state) =>
     state.scenes.find((scene) => scene.id === "main"),
   );
@@ -42,7 +44,7 @@ export function CoverButton({
         onClick={(event) => {
           event.stopPropagation();
           useCapture.getState().patch({ playing: false, orb: false });
-          setOpen(true);
+          transition("frame", () => setOpen(true));
         }}
       >
         {image && <img src={image} alt="" />}

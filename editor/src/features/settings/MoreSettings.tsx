@@ -5,9 +5,9 @@ import { resetComponentLook } from "../../domain/components/look";
 import { isVisualEditingBlocked } from "../../domain/components/codeOwnership";
 import { editComponentLook } from "../../domain/components/languageLook";
 import { useCapture } from "../../state/captureStore";
-import { setReduceMotion, useEditorPreferences } from "../../state/preferences/editorPreferences";
+import { useEditorPreferences } from "../../state/preferences/editorPreferences";
 import { SceneSettings } from "../scenes/SceneSettings";
-import { AppearanceSettings, AdvancedEditingSetting } from "./EditorPreferencesSettings";
+import { AppearanceSettings, AdvancedEditingSetting, ReduceMotionSetting } from "./EditorPreferencesSettings";
 import { AdvancedSettings } from "./AdvancedSettings";
 import { ProjectStorageStatus } from "./ProjectStorageStatus";
 import { CaptureRecovery } from "../capture/CaptureRecovery";
@@ -21,7 +21,6 @@ export function MoreSettings() {
   const ratio = useCapture(state => state.ratio);
   const edit = useCapture(state => state.edit);
   const advancedEditingEnabled = useEditorPreferences(state => state.advancedEditingEnabled);
-  const reduceMotion = useEditorPreferences(state => state.reduceMotion);
   const currentSceneId = useCapture(state => state.currentSceneId);
   const screen = useCapture(state => state.screen);
   const component = useCapture(state => state.components.find(item => item.id === state.selComp));
@@ -78,15 +77,7 @@ export function MoreSettings() {
       </div>
     </section>
     <AdvancedEditingSetting />
-    <section className={styles.section}>
-      <div className={styles.preferenceRow}>
-        <div className={styles.preferenceCopy}><h3 id="reduce-motion-heading">Reduce motion</h3><p>Use cuts when opening panels and switching scenes.</p></div>
-        <button className={styles.preferenceSwitch} type="button" role="switch" aria-checked={reduceMotion}
-          aria-labelledby="reduce-motion-heading" onClick={() => setReduceMotion(!reduceMotion)}>
-          <span className={styles.switchTrack} aria-hidden="true"><span className={styles.switchThumb} /></span>
-        </button>
-      </div>
-    </section>
+    <ReduceMotionSetting />
     {user && <section className={styles.section} aria-label="Replies">
       <h3>Replies</h3>
       <div className={styles.actions}>

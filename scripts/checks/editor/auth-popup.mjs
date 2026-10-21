@@ -134,10 +134,10 @@ async function checkPopup(phone) {
         borderWidth: style.borderTopWidth, radius: style.borderTopLeftRadius };
     });
     assert.equal(frame.width, phone ? 342 : 520, "The popup must match the handed-off responsive width");
-    assert.equal(frame.background, "rgb(21, 21, 28)");
-    assert.equal(frame.border, "rgb(74, 72, 82)");
+    assert.equal(frame.background, "rgb(48, 48, 54)");
+    assert.equal(frame.border, "rgb(129, 123, 135)");
     assert.equal(frame.borderWidth, "3px");
-    assert.equal(frame.radius, "22px");
+    assert.equal(frame.radius, "24px");
     assert(frame.x >= 0 && frame.right <= (phone ? 390 : 1280), "The popup must stay inside the viewport");
     assert.equal(await gate.getByRole("button", { name: "Continue with Google", exact: true }).isEnabled(), true);
     assert.equal(await gate.getByRole("button", { name: "Continue with email", exact: true }).isEnabled(), true);
@@ -155,7 +155,7 @@ async function checkPopup(phone) {
     await dialog.locator('button[type="submit"]').getByText("Create account", { exact: true }).waitFor();
     for (const [mode, surface, text, accent] of [
       ["light", "rgb(255, 253, 251)", "rgb(36, 29, 37)", "rgb(197, 27, 92)"],
-      ["dark", "rgb(21, 21, 28)", "rgb(242, 240, 233)", "rgb(255, 45, 120)"],
+      ["dark", "rgb(48, 48, 54)", "rgb(242, 240, 233)", "rgb(255, 45, 120)"],
     ]) {
       await page.emulateMedia({ colorScheme: mode });
       await page.waitForFunction(expected => document.documentElement.dataset.theme === expected, mode);
@@ -197,12 +197,9 @@ async function checkPopup(phone) {
     await dialog.waitFor({ state: "hidden" });
     assert.equal(emailCalls, 1, "Email sign-in must finish its session exchange and close the popup");
     assert.deepEqual(await savedProject(page, projectId), before);
-    const accountEntry = phone
-      ? page.getByRole("region", { name: "Account", exact: true }).getByRole("button", { name: "Your account", exact: true })
-      : page.getByRole("banner").getByRole("button", { name: "Account", exact: true });
-    await accountEntry.click();
-    await page.getByRole("dialog", { name: "Your account", exact: true }).getByRole("button", { name: "Sign out", exact: true }).click();
-    await gate.waitFor();
+    await page.getByRole("button", { name: "Account · Popup tester", exact: true }).click();
+    await page.getByRole("menuitem", { name: "Sign out", exact: true }).click();
+    await open();
     const popup = page.waitForEvent("popup");
     await gate.getByRole("button", { name: "Continue with Google", exact: true }).click();
     await popup;

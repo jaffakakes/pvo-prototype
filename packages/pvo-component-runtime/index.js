@@ -1,3 +1,9 @@
+export {
+  componentOpacity,
+  componentRotation,
+  componentLayerMotion,
+} from "./layer.js";
+
 /** Shared visual values for the no-code editor and the standalone player. */
 export {
   MIN_COMPONENT_SCALE,

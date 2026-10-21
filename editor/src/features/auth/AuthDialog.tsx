@@ -47,7 +47,9 @@ function OpenAuthDialog() {
     connecting,
   } = useAuthGate();
   const [signingOut, setSigningOut] = useState(false);
-  const [step, setStep] = useState<"gate" | "signin" | "signup">(source === "recovery" ? "signin" : "gate");
+  const [step, setStep] = useState<"gate" | "signin" | "signup">(
+    source === "recovery" ? "signin" : "gate",
+  );
   const emailOpen = step !== "gate";
   const emailAvailable = supabaseAvailable && Boolean(supabasePublishableKey);
   const waiting = phase === "checking" || connecting;
@@ -81,17 +83,22 @@ function OpenAuthDialog() {
       .finally(() => setSigningOut(false));
   };
   const backFromEmail = () => changeStep("gate");
-  const title = source === "recovery" ? "Reset password" : user
-    ? "Your account"
-    : step === "signup"
-      ? "Create account"
-      : step === "signin"
-        ? "Welcome back"
-        : "Ready to export";
+  const title =
+    source === "recovery"
+      ? "Reset password"
+      : user
+        ? "Your account"
+        : step === "signup"
+          ? "Create account"
+          : step === "signin"
+            ? "Welcome back"
+            : "Ready to export";
   const description =
-    source === "recovery" ? "Choose a new password for your email account." : step === "signup"
-      ? "Your edit stays saved in this browser while you create your account."
-      : null;
+    source === "recovery"
+      ? "Choose a new password for your email account."
+      : step === "signup"
+        ? "Your edit stays saved in this browser while you create your account."
+        : null;
 
   return (
     <dialog

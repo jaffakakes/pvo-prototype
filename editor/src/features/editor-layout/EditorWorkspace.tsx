@@ -7,9 +7,9 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
+import { useToolSwap } from "../../ui/motion/useToolSwap";
 import { SheetDockContext } from "../../ui/sheets/SheetDockContext";
 import { clearSelection } from "../../state/editing/clearSelection";
-import { PanelResizeHandle } from "./PanelResizeHandle";
 import { usePanelResize } from "./usePanelResize";
 import { useWorkspaceMeasurements } from "./useWorkspaceMeasurements";
 import { useSheetKeyboard } from "./useSheetKeyboard";
@@ -27,6 +27,8 @@ import styles from "./EditorWorkspace.module.css";
 
 type Props = {
   open: boolean;
+  activeTool?: string | null;
+  focusTool?: boolean;
   ratioOpen?: boolean;
   componentSheet?: boolean;
   textSheet?: boolean;
@@ -38,7 +40,6 @@ type Props = {
   debugOpen?: boolean;
   onCloseDebug?(): void;
   threadOpen?: boolean;
-  threadCollapsed?: boolean;
   onCloseThread?(): void;
   header: ReactNode;
   media?: ReactNode;
@@ -56,6 +57,8 @@ type Props = {
 
 export function EditorWorkspace({
   open,
+  activeTool = null,
+  focusTool = false,
   ratioOpen = false,
   componentSheet = false,
   textSheet = false,
@@ -67,7 +70,6 @@ export function EditorWorkspace({
   debugOpen = false,
   onCloseDebug,
   threadOpen = false,
-  threadCollapsed = false,
   onCloseThread,
   header,
   media,
@@ -79,6 +81,9 @@ export function EditorWorkspace({
   onDismiss,
 }: Props) {
   const measurements = useWorkspaceMeasurements();
+  const sheetRef = useRef<HTMLDivElement>(null);
+  useToolSwap(sheetRef, open ? activeTool : null);
+  const focused = open && focusTool && !trying && !debugOpen && !threadOpen;
   const [expandedCodeId, setExpandedCodeId] = useState<string | null>(null);
   const [assistantTarget, setAssistantTarget] = useState<HTMLDivElement | null>(
     null,
@@ -151,8 +156,6 @@ export function EditorWorkspace({
     workspaceRef: measurements.workspaceRef,
     measurements,
     open: dockThreadOpen,
-    collapsed: threadCollapsed,
-    onClose: onCloseThread,
   });
   const keyboardHeight = dockThreadOpen
     ? threadDock.keyboardHeight
@@ -180,7 +183,7 @@ export function EditorWorkspace({
   // Playback keeps five eighths; the lower region uses the remaining three eighths.
   // Measurements already follow visualViewport, including the on-screen keyboard.
   let panelHeight = editorPanelHeight(measurements, ratioOpen);
-  if (dockThreadOpen) panelHeight = threadDock.resize.height;
+  if (dockThreadOpen) panelHeight = threadDock.height;
   else if (debugOpen) panelHeight = debugResize.height;
   else if (trying) panelHeight = 0;
   else if (codeExpanded) panelHeight = measurements.height * 0.8;
@@ -204,7 +207,9 @@ export function EditorWorkspace({
   }, [textEditing, measurements.workspaceRef]);
   const layoutMeasurements = dockThreadOpen
     ? threadDock.measurements
-    : measurements;
+    : focused
+      ? { ...measurements, header: 0 }
+      : measurements;
   const layout = workspaceGeometry(
     layoutMeasurements,
     panelHeight,
@@ -215,7 +220,7 @@ export function EditorWorkspace({
     !codeExpanded &&
     !(textEditing && textInputFocused);
   const headerVisible =
-    !codeExpanded && !(dockThreadOpen && threadDock.compact);
+    !focused && !codeExpanded && !(dockThreadOpen && threadDock.compact);
   const style = {
     "--dock-height": `${panelHeight}px`,
     "--ratio-panel-height": `${aspectRatioPanelHeight(measurements.height)}px`,
@@ -232,11 +237,7 @@ export function EditorWorkspace({
         data-sheet-open={open}
         data-animation-open={animationSheet}
         data-text-open={textEditing}
-        data-resizing={
-          dockThreadOpen
-            ? threadDock.resize.dragging
-            : debugOpen && debugResize.dragging
-        }
+        data-resizing={debugOpen && debugResize.dragging}
         data-thread-open={dockThreadOpen}
         data-thread-compact={dockThreadOpen && threadDock.compact}
         data-debug-open={debugOpen}
@@ -277,95 +278,90 @@ export function EditorWorkspace({
           }
         }}
       >
-        <div
-          className={styles.header}
-          data-visible={headerVisible}
-          aria-hidden={!headerVisible}
-          style={{ opacity: headerVisible ? 1 : 0 }}
-          {...(!headerVisible || assistantActive ? { inert: "" } : {})}
-        >
-          <div ref={measurements.headerRef}>{header}</div>
-        </div>
-        {media && (
+        <div className={styles.surface} data-editor-surface>
           <div
-            className={styles.media}
-            {...(trying || assistantActive || dockThreadOpen
+            className={styles.header}
+            data-visible={headerVisible}
+            aria-hidden={!headerVisible}
+            style={{ opacity: headerVisible ? 1 : 0 }}
+            {...(!headerVisible || assistantActive ? { inert: "" } : {})}
+          >
+            <div ref={measurements.headerRef}>{header}</div>
+          </div>
+          {media && (
+            <div
+              className={styles.media}
+              {...(trying || assistantActive || dockThreadOpen
+                ? { inert: "" }
+                : {})}
+            >
+              {media}
+            </div>
+          )}
+          <div
+            className={styles.preview}
+            data-visible={layout.previewVisible}
+            aria-hidden={!layout.previewVisible}
+            style={{ opacity: layout.previewOpacity }}
+            {...(!layout.previewVisible || (assistantActive && !dockThreadOpen)
               ? { inert: "" }
               : {})}
           >
-            {media}
-          </div>
-        )}
-        <div
-          className={styles.preview}
-          data-visible={layout.previewVisible}
-          aria-hidden={!layout.previewVisible}
-          style={{ opacity: layout.previewOpacity }}
-          {...(!layout.previewVisible || assistantActive ? { inert: "" } : {})}
-        >
-          {preview}
-        </div>
-        <div
-          className={`editorDock ${styles.dock}`}
-          data-sheet-open={open}
-          aria-hidden={(trying && !debugOpen) || undefined}
-          {...(trying && !debugOpen ? { inert: "" } : {})}
-        >
-          <div
-            className={styles.timelinePane}
-            data-active={!open && !debugOpen && !dockThreadOpen}
-            aria-hidden={open || debugOpen || dockThreadOpen}
-            {...(open || debugOpen || dockThreadOpen || assistantActive
-              ? { inert: "" }
-              : {})}
-          >
-            <div className={styles.timelineContent}>{timeline}</div>
+            {preview}
           </div>
           <div
-            className={styles.sheetPane}
-            data-active={open && !debugOpen && !dockThreadOpen}
-            aria-hidden={!open || debugOpen || dockThreadOpen}
-            {...(!open || debugOpen || dockThreadOpen ? { inert: "" } : {})}
+            className={`editorDock ${styles.dock}`}
+            data-sheet-open={open}
+            aria-hidden={(trying && !debugOpen) || undefined}
+            {...(trying && !debugOpen ? { inert: "" } : {})}
           >
             <div
-              className={styles.sheetContent}
-              {...(assistantActive && !codeExpanded ? { inert: "" } : {})}
+              className={styles.timelinePane}
+              data-active={!open && !debugOpen && !dockThreadOpen}
+              aria-hidden={open || debugOpen || dockThreadOpen}
+              {...(open || debugOpen || dockThreadOpen || assistantActive
+                ? { inert: "" }
+                : {})}
             >
-              {sheets}
+              <div className={styles.timelineContent}>{timeline}</div>
             </div>
-          </div>
-          {debugOpen && (
-            <section
-              className={debugStyles.mobilePanel}
-              aria-label="Try debugger"
-              data-debug-workspace="mobile"
+            <div
+              data-editor-dock
+              className={styles.sheetPane}
+              data-active={open && !debugOpen && !dockThreadOpen}
+              aria-hidden={!open || debugOpen || dockThreadOpen}
+              {...(!open || debugOpen || dockThreadOpen ? { inert: "" } : {})}
             >
-              <DebugResizeHandle
-                resize={debugResize}
-                maximum={debugGeometry.maximum}
-                normal={debugGeometry.initial}
-                expanded={debugGeometry.expanded}
-                mobile
-              />
-              {debugPanel}
-            </section>
-          )}
+              <div
+                ref={sheetRef}
+                className={styles.sheetContent}
+                {...(assistantActive && !codeExpanded ? { inert: "" } : {})}
+              >
+                {sheets}
+              </div>
+            </div>
+            {debugOpen && (
+              <section
+                className={debugStyles.mobilePanel}
+                aria-label="Try debugger"
+                data-debug-workspace="mobile"
+              >
+                <DebugResizeHandle
+                  resize={debugResize}
+                  maximum={debugGeometry.maximum}
+                  normal={debugGeometry.initial}
+                  expanded={debugGeometry.expanded}
+                  mobile
+                />
+                {debugPanel}
+              </section>
+            )}
+          </div>
         </div>
         {assistant?.(
           codeExpanded,
           assistantTarget,
           dockThreadOpen && threadDock.keyboardHeight > 0,
-        )}
-        {dockThreadOpen && (
-          <div className={styles.threadHandle} data-thread-resize>
-            <PanelResizeHandle
-              label="Resize Restyle thread"
-              active
-              maximum={threadDock.maximum}
-              resize={threadDock.resize}
-              instructions="Drag up for more exchanges; drag down to return to the assistant composer. The player stays visible."
-            />
-          </div>
         )}
       </div>
     </SheetDockContext.Provider>

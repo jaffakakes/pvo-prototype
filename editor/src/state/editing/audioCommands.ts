@@ -10,7 +10,7 @@ import { sceneDuration } from "../../domain/scenes/duration";
 import type { AudioClip } from "../../domain/audio/model";
 import { uid } from "../../infrastructure/ids";
 import { useCapture } from "../captureStore";
-import { useAssistant } from "../assistant/assistantStore";
+import { assistantFocused, useAssistant } from "../assistant/assistantStore";
 import { projectSnapshot } from "../project/history";
 import type { CaptureState } from "../types";
 
@@ -21,7 +21,7 @@ const blocked = () => {
     !!state.playheadPick ||
     state.recording ||
     state.ex === "running" ||
-    useAssistant.getState().phase !== "idle"
+    assistantFocused(useAssistant.getState())
   );
 };
 

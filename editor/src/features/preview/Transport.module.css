@@ -39,11 +39,17 @@
   outline: 2px solid var(--highlight);
   outline-offset: -3px;
 }
-.threadStatus {
-  position: absolute;
-  left: 50%;
-  bottom: 16px;
-  transform: translateX(-50%);
+.time {
   color: var(--text);
-  font: 600 10px/1.2 var(--f-ui);
+  font: 700 11px/1.2 var(--f-ui);
+  font-variant-numeric: tabular-nums;
+}
+.time span {
+  color: var(--muted);
+}
+.transport[data-thread-open="true"] .actions {
+  gap: 0;
+}
+.threadPlay {
+  margin-left: auto;
 }

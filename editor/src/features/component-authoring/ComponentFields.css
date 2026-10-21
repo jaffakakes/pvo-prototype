@@ -8,7 +8,7 @@
 .componentTypeGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 .componentTypeTile {
   min-width: 0;
@@ -28,7 +28,7 @@
   display: grid;
   place-items: center;
   width: 100%;
-  height: 76px;
+  height: 96px;
   overflow: hidden;
   container-type: inline-size;
   background: linear-gradient(145deg, #ff7896, #ff9d69 58%, #ffd23e);
@@ -103,97 +103,6 @@
 }
 .componentTypeTile strong {
   font: 800 13px/1.2 var(--f-ui);
-}
-.componentList {
-  max-height: min(190px, 25dvh);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  overflow-y: auto;
-}
-.componentList > p {
-  margin: 0;
-  color: var(--muted);
-  font: 700 11px var(--f-ui);
-  letter-spacing: 0.4px;
-}
-.componentList > div,
-.componentList > button {
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 7px 9px;
-  background: var(--surface);
-  border: 2px solid var(--q10);
-  border-radius: 12px;
-  text-align: left;
-}
-.componentList > button {
-  background: var(--button-secondary-bg);
-  color: var(--button-secondary-text);
-  border-color: var(--button-border);
-  cursor: pointer;
-}
-.componentListTitle {
-  margin: 4px 0 0;
-  color: var(--muted);
-  font: 700 11px var(--f-ui);
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-}
-.componentList .componentTypeGlyph {
-  width: 22px;
-  height: 22px;
-  min-width: 22px;
-  flex: none;
-  margin: 0;
-  border-radius: 6px;
-  box-shadow: none;
-}
-.componentList > div > button {
-  padding: 0;
-  background: transparent;
-  border: 0;
-  text-align: left;
-  cursor: pointer;
-}
-.componentList > div > button:first-of-type {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-.componentList > div > button:last-child {
-  width: 40px;
-  height: 40px;
-  flex: none;
-  display: grid;
-  place-items: center;
-  background: var(--ground);
-  color: var(--red);
-  border: 2px solid #000;
-  border-radius: 8px;
-}
-.componentList svg {
-  flex: none;
-  color: var(--violet);
-}
-.componentList > div > button:last-child svg {
-  color: var(--red);
-}
-.componentList span {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font: 700 12px var(--f-ui);
-}
-.componentList small {
-  color: var(--muted);
-  font: 600 10px var(--f-ui);
 }
 .componentSheet {
   max-height: calc(100dvh - 20px);

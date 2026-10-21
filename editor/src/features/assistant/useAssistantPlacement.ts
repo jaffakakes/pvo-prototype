@@ -62,8 +62,8 @@ export function useAssistantPlacement(
     if (!workspace || !toolbar || !transport) return;
     const measure = () => {
       // The toolbar is pinned to the dock bottom. Its parent can translate while
-      // entering, so use its size rather than a transient screen position.
-      const toolbarHeight = toolbar?.getBoundingClientRect().height;
+      // entering or recede during assistant focus; measure its layout size.
+      const toolbarHeight = toolbar?.offsetHeight;
       if (toolbarHeight === undefined) return;
       setPlacement((previous) =>
         previous.toolbarHeight === toolbarHeight

@@ -272,6 +272,19 @@ export function parseNativeTurnResult(value) {
         "A saved task proposal cannot be mixed with native edits, observations, an answer or a blocker.",
       );
   }
+  if (
+    value.suggestions !== undefined &&
+    (value.blocked ||
+      value.cloudTask ||
+      value.operations.length ||
+      value.observations.length ||
+      value.suggestions.some((item) => !item.trim()) ||
+      new Set(value.suggestions.map((item) => item.trim().toLowerCase()))
+        .size !== value.suggestions.length)
+  )
+    throw new Error(
+      "Suggestions require unique, nonblank requests on an unblocked terminal response.",
+    );
   value.operations.forEach(validateOperationResponsePolicy);
   value.operations.forEach(validateAnimationOperation);
   if (value.blocked && (value.operations.length || value.observations.length))

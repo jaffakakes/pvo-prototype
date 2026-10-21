@@ -1,3 +1,4 @@
+import { selectComponentLayer } from "../../state/components/componentLayerCommands";
 import { useTimelineTrim } from "./useTimelineTrim";
 import { useTimelineLayerTiming } from "./useTimelineLayerTiming";
 import { sceneDuration } from "../../domain/scenes/duration";
@@ -63,12 +64,7 @@ export function useTimelineGestures() {
             selComp: null,
             playing: false,
           })
-        : s.patch({
-            selComp: id.slice(10),
-            sel: -1,
-            selText: null,
-            playing: false,
-          });
+        : selectComponentLayer(id.slice(10));
   const layerKeyDown = (event: ReactKeyboardEvent) => {
     if (event.key === "Escape" && layerDrag.active) {
       event.preventDefault();

@@ -1,3 +1,5 @@
+import { fmt } from "../../ui/formatTime";
+import { togglePlayback } from "../../state/editing/playbackCommands";
 import { sceneDuration } from "../../domain/scenes/duration";
 import { useCapture } from "../../state/captureStore";
 import { cx } from "../../styles";
@@ -23,6 +25,11 @@ export function Transport({
       aria-label="Playback controls"
     >
       <div className={styles.actions}>
+        {threadOpen && (
+          <span className={styles.time}>
+            {fmt(s.t)} <span>/ {fmt(duration)}</span>
+          </span>
+        )}
         {s.tryMode ? (
           <DebugEntry variant="mobile" />
         ) : (
@@ -45,22 +52,31 @@ export function Transport({
             >
               <Icon name="redo" size={23} />
             </button>
-            <button
-              type="button"
-              className={`${styles.action} ${styles.tryButton}`}
-              onClick={sheetOpen ? dock?.dismissFromTransport : startTry}
-              disabled={sheetOpen ? dock?.dismissDisabled : duration <= 0}
-              aria-label={sheetOpen ? "Close sheet" : "Try"}
-              title={sheetOpen ? "Close sheet" : "Try interactive preview"}
-            >
-              <Icon name={sheetOpen ? "close" : "eye"} size={23} />
-            </button>
+            {threadOpen ? (
+              <button
+                type="button"
+                className={`${styles.action} ${styles.threadPlay}`}
+                onClick={togglePlayback}
+                disabled={duration <= 0}
+                aria-label={s.playing ? "Pause" : "Play"}
+              >
+                <Icon name={s.playing ? "pause" : "play"} size={18} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className={`${styles.action} ${styles.tryButton}`}
+                onClick={sheetOpen ? dock?.dismissFromTransport : startTry}
+                disabled={sheetOpen ? dock?.dismissDisabled : duration <= 0}
+                aria-label={sheetOpen ? "Close sheet" : "Try"}
+                title={sheetOpen ? "Close sheet" : "Try interactive preview"}
+              >
+                <Icon name={sheetOpen ? "close" : "eye"} size={23} />
+              </button>
+            )}
           </>
         )}
       </div>
-      {threadOpen && (
-        <span className={styles.threadStatus}>Paused · Restyle open</span>
-      )}
     </div>
   );
 }

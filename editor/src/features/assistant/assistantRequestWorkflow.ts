@@ -1,7 +1,9 @@
+import type { NativeAttachment } from "../../../../packages/pvo-assistant/native/index.js";
 import type { TaskProposal } from "../../../../packages/pvo-assistant/tasks/index.js";
 import { AssistantServiceError } from "../../domain/assistant/failure";
 import type {
   AssistantAnswer,
+  AssistantSuggestions,
   AssistantEvidence,
   AssistantMessage,
 } from "../../domain/assistant/model";
@@ -10,7 +12,10 @@ import {
   validateNativeBatchEffects,
   type NativeBatch,
 } from "../../domain/assistant/native/batch";
-import { nativeProjectFingerprint } from "../../domain/assistant/native/context";
+import {
+  nativeProjectFingerprint,
+  nativeSuggestionContext,
+} from "../../domain/assistant/native/context";
 import type { AssistantTaskTrace } from "../../domain/assistant/taskDiagnostics";
 import type { ProjectSnapshot } from "../../domain/project/model";
 import {
@@ -21,12 +26,14 @@ import { assistantFailureReason } from "../../infrastructure/assistant/taskDiagn
 import type { AppliedAssistantChange } from "../../state/assistant/applyChanges";
 
 type RequestInput = {
+  attachments?: NativeAttachment[];
   prompt: string;
   history: AssistantMessage[];
   evidence: AssistantEvidence[];
 };
 
 export type AssistantRequestCompletion = {
+  suggestions: AssistantSuggestions;
   savedTaskId?: string;
   planned: NativeBatch | null;
   applied: AppliedAssistantChange | null;
@@ -213,7 +220,15 @@ export function createAssistantRequestWorkflow(adapters: RequestAdapters) {
         });
         applying = false;
       }
+      const completed = adapters.capture();
       feedback.completed({
+        suggestions: {
+          context: nativeSuggestionContext(
+            completed.project,
+            completed.selection,
+          ),
+          items: result.suggestions ?? [],
+        },
         savedTaskId,
         planned,
         applied,

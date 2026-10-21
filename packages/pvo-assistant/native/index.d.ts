@@ -484,7 +484,11 @@ export type NativeExecutionContext = {
   }[];
   receipts: NativePreparationReceipt[];
 };
+export type NativeAttachment =
+  | { kind: "image"; name: string; dataUrl: string }
+  | { kind: "text"; name: string; text: string };
 export type NativeTurnRequest = {
+  attachments?: NativeAttachment[];
   mode: NativeMode;
   prompt: string;
   history: { role: "user" | "assistant"; content: string }[];
@@ -503,8 +507,12 @@ export type NativeTurnResult = {
   blocked?: true;
   /** Requested substantive answer accompanying completed edits, on an unblocked terminal result only. */
   answer?: string;
+  /** Optional next requests grounded in creator intent and the current project. */
+  suggestions?: string[];
   /** Server-derived sampled-frame descriptions, at most 8000 characters combined. */
   evidence?: string[];
+  /** Server-inspected creator reference files; no raw bytes. */
+  attachmentEvidence?: string[];
 };
 export const nativeTurnSchema: Readonly<Record<string, unknown>>;
 export function parseNativeOperation(value: unknown): NativeOperation;

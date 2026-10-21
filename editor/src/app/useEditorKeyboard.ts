@@ -21,7 +21,10 @@ import {
   cancelPlayheadPick,
 } from "../features/timeline/playheadPick";
 import { useCapture } from "../state/captureStore";
-import { useAssistant } from "../state/assistant/assistantStore";
+import {
+  assistantFocused,
+  useAssistant,
+} from "../state/assistant/assistantStore";
 import {
   clearTimelineSelection,
   deleteTimelineSelection,
@@ -35,7 +38,7 @@ export function useEditorKeyboard(enabled = true) {
     if (!enabled) return;
     const keydown = (event: KeyboardEvent) => {
       if (
-        useAssistant.getState().phase !== "idle" ||
+        assistantFocused(useAssistant.getState()) ||
         event.defaultPrevented ||
         document.querySelector(
           'dialog[open], [data-desktop-inspector][aria-modal="true"]',

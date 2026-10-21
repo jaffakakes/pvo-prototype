@@ -23,7 +23,8 @@
   gap: 8px;
   animation: rise 300ms ease-out both;
 }
-.requestRow, .responseRow {
+.requestRow,
+.responseRow {
   display: flex;
   align-items: flex-start;
   gap: 10px;
@@ -98,7 +99,7 @@
   white-space: pre-wrap;
 }
 .exchange[data-undone="true"] .response {
-  opacity: .55;
+  opacity: 0.55;
   text-decoration: line-through;
 }
 .results {
@@ -160,7 +161,7 @@
   color: var(--violet);
 }
 .actions button:disabled {
-  opacity: .4;
+  opacity: 0.4;
 }
 .pending {
   display: flex;
@@ -189,38 +190,67 @@
   overflow-wrap: anywhere;
 }
 
-.exchange[data-variant="phone"] .requestMeta {
-  font-size: 11.5px;
-  font-weight: 700;
+/* Phone uses a plain transcript, with the request as the only filled block. */
+.exchange[data-variant="phone"] {
+  gap: 12px;
 }
-.exchange[data-variant="phone"] .timestamp {
-  font-weight: 600;
+.exchange[data-variant="phone"] .requestRow {
+  justify-content: flex-end;
+}
+.exchange[data-variant="phone"] .requestBody {
+  flex: initial;
+  max-width: 82%;
+  padding: 9px 13px;
+  border-radius: var(--radius-card);
+  background: var(--input);
 }
 .exchange[data-variant="phone"] .request {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
 }
 .exchange[data-variant="phone"] .bubble {
-  gap: 8px;
-  padding: 10px 12px 11px;
+  gap: 4px;
+  padding: 0 28px 0 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 .exchange[data-variant="phone"] .response {
+  color: var(--text);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
 }
-.exchange[data-variant="phone"] .pending {
-  font-size: 12.5px;
+.exchange[data-variant="phone"] .results {
+  gap: 14px;
+}
+.exchange[data-variant="phone"] .resultChip {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
   font-weight: 600;
 }
 .exchange[data-variant="phone"] .actions {
+  margin-left: 0;
   gap: 14px;
-  min-height: 44px;
 }
 .exchange[data-variant="phone"] .actions button {
-  min-width: 44px;
+  min-width: 30px;
   min-height: 44px;
-  font-size: 12px;
-  font-weight: 700;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 800;
+}
+:global(.app[data-reduce-motion="true"]) .exchange,
+:global(.app[data-reduce-motion="true"]) .spinner {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .exchange,
+  .spinner {
+    animation: none;
+  }
 }
 
 @keyframes rise {
@@ -235,5 +265,7 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }

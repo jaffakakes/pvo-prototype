@@ -23,7 +23,8 @@ export function useWorkspaceMeasurements() {
       const next = {
         height: Math.max(0, workspace.clientHeight - verticalInset),
         width: workspace.clientWidth,
-        header: header.getBoundingClientRect().height,
+        // Assistant focus transforms presentation, not the grid measurements.
+        header: header.offsetHeight,
       };
       setMeasurements((previous) =>
         previous.height === next.height &&

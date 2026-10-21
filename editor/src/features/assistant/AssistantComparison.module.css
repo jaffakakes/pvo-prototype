@@ -1,0 +1,9 @@
+.preview {
+  position: absolute;
+  inset: 0;
+  z-index: 10000;
+  overflow: hidden;
+  border-radius: inherit;
+  background: var(--surface);
+  pointer-events: none;
+}

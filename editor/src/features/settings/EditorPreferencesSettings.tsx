@@ -13,6 +13,7 @@ import {
 } from "../../state/preferences/themePreferences";
 import {
   setAdvancedEditingEnabled,
+  setReduceMotion,
   useEditorPreferences,
 } from "../../state/preferences/editorPreferences";
 import { Icon } from "../../ui/Icon";
@@ -23,6 +24,37 @@ const modeLabels: Record<ThemeMode, string> = {
   light: "Light",
   dark: "Dark",
 };
+
+export function ReduceMotionSetting({
+  compact = false,
+}: {
+  compact?: boolean;
+}) {
+  const labelId = useId();
+  const reduceMotion = useEditorPreferences((state) => state.reduceMotion);
+  return (
+    <section className={styles.section} aria-labelledby={labelId}>
+      <div className={styles.preferenceRow}>
+        <div className={styles.preferenceCopy}>
+          <h3 id={labelId}>Reduce motion</h3>
+          {!compact && <p>Use gentle fades instead of movement and zoom.</p>}
+        </div>
+        <button
+          className={styles.preferenceSwitch}
+          type="button"
+          role="switch"
+          aria-checked={reduceMotion}
+          aria-labelledby={labelId}
+          onClick={() => setReduceMotion(!reduceMotion)}
+        >
+          <span className={styles.switchTrack} aria-hidden="true">
+            <span className={styles.switchThumb} />
+          </span>
+        </button>
+      </div>
+    </section>
+  );
+}
 const accentLabels: Record<ThemeAccent, string> = {
   magenta: "Magenta",
   orange: "Orange",

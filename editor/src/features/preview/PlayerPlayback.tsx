@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { sceneDuration } from "../../domain/scenes/duration";
 import { togglePlayback } from "../../state/editing/playbackCommands";
+import { componentLayerTool } from "../../state/components/componentLayerCommands";
 import { useCapture } from "../../state/captureStore";
 import { cx } from "../../styles";
 import { Icon } from "../../ui/Icon";
@@ -37,7 +38,15 @@ export function PlayerPlayback({
         type="button"
         className={`${cx("playBtn")} ${styles.play}`}
         style={{ zIndex: videoZ }}
-        onClick={togglePlayback}
+        onClick={() => {
+          const state = useCapture.getState();
+          if (state.selComp && !state.tryMode)
+            state.patch({
+              selComp: null,
+              ...(componentLayerTool(state.sheet) ? { sheet: null } : {}),
+            });
+          else togglePlayback();
+        }}
         aria-label={playing ? "Pause" : "Play"}
         disabled={holding || picking || duration <= 0}
       >

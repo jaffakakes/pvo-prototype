@@ -1,23 +1,13 @@
-.root[data-has-target="false"][data-assistant-phase="typing"]:not([data-placement="toolbar"]) [data-assistant-composer] {
-  bottom: calc(var(--assistant-inset) + 62px);
-}
-
-.root[data-has-target="false"][data-assistant-phase="typing"]:not([data-placement="toolbar"]) [data-assistant-context] {
-  bottom: calc(var(--assistant-inset) + 112px);
-  background: var(--ground);
-}
-
 .quickActions {
   position: absolute;
   left: 14px;
   right: 14px;
-  bottom: calc(var(--assistant-inset) + 12px);
+  bottom: calc(var(--assistant-inset) + 78px);
   display: flex;
-  justify-content: center;
   gap: 8px;
+  flex-wrap: wrap;
   pointer-events: auto;
 }
-
 .quickActions button {
   display: flex;
   align-items: center;
@@ -25,16 +15,19 @@
   gap: 5px;
   min-width: 0;
   min-height: 44px;
-  padding: 6px 9px;
-  border: 2px solid var(--button-border);
-  border-radius: 12px;
-  background: var(--button-secondary-bg);
-  box-shadow: 3px 3px 0 var(--button-shadow);
-  color: var(--button-secondary-text);
+  padding: 0 11px;
+  border: 2px solid var(--outline);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 2px 2px 0 var(--button-shadow);
+  color: var(--text);
   font-size: 11px;
   font-weight: 800;
   line-height: 1.2;
 }
-
-.quickActions button span { color: var(--violet); }
-.quickActions button:hover { border-color: var(--violet); }
+.quickActions button span {
+  color: var(--accent);
+}
+.quickActions button:hover {
+  border-color: var(--accent);
+}

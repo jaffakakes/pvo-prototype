@@ -76,9 +76,9 @@
   position: absolute;
   inset: 4px;
   border: 2px solid var(--outline);
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   background: var(--surface);
-  box-shadow: 3px 3px 0 var(--button-shadow);
+  box-shadow: var(--shadow-control);
   content: "";
 }
 .close svg {
@@ -93,7 +93,7 @@
   gap: 8px;
   padding: 0 12px;
   border: 1.5px solid var(--q14);
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   background: var(--surface);
   color: var(--muted);
 }
@@ -169,7 +169,7 @@
   width: 40px;
   height: 40px;
   border: 1.5px solid rgb(0 0 0 / 14%);
-  border-radius: 9px;
+  border-radius: var(--radius-small);
 }
 .original {
   background: var(--surface);
@@ -221,10 +221,10 @@
   min-height: 44px;
   padding: 0 10px;
   border: 2px solid var(--outline);
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   background: var(--button-primary-bg);
   color: var(--button-primary-text);
-  box-shadow: 3px 3px 0 var(--button-shadow);
+  box-shadow: var(--shadow-control);
   font: 800 13px var(--f-ui);
   cursor: pointer;
 }
@@ -253,7 +253,7 @@
   height: 44px;
   padding: 0;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: transparent;
   color: inherit;
   cursor: pointer;
@@ -262,7 +262,7 @@
   position: absolute;
   inset: 5px;
   border: 2px solid rgb(255 253 251 / 50%);
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   content: "";
 }
 .previewInfo strong {
@@ -286,7 +286,7 @@
   min-width: 52px;
   padding: 0 12px;
   border: 2px solid var(--ink);
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   background: #fffdfb;
   color: var(--ink);
   box-shadow: 3px 3px 0 rgb(255 253 251 / 35%);

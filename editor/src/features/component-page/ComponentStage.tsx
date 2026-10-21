@@ -71,6 +71,7 @@ export function ComponentStage({
       >
         <div
           ref={ref}
+          data-component-stage-subject
           className={styles.renderer}
           style={
             {

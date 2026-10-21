@@ -1,13 +1,20 @@
 /** Visible exchanges are transient UI records, separate from planner history and project snapshots. */
-export type AssistantThreadStatus = "pending" | "applied" | "answered" | "failed" | "cancelled";
+export type AssistantThreadStatus =
+  "pending" | "applied" | "answered" | "failed" | "cancelled";
 
 export type AssistantThreadTarget =
   | { kind: "component"; sceneId: string; id: string; label: string }
-  | { kind: "clip" | "text" | "audio"; sceneId: string; id: number; label: string };
+  | {
+      kind: "clip" | "text" | "audio";
+      sceneId: string;
+      id: number;
+      label: string;
+    };
 
 export type AssistantExchange = {
   id: string;
   at: number;
+  sceneId: string;
   request: string;
   status: AssistantThreadStatus;
   response: string;

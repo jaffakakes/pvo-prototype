@@ -1,0 +1,79 @@
+.outline {
+  position: absolute;
+  inset: -5px;
+  border: 2px solid #7c5ce6;
+  border-radius: 8px;
+  pointer-events: none;
+}
+.tag {
+  position: absolute;
+  left: -2px;
+  top: -19px;
+  height: 16px;
+  padding: 0 6px;
+  display: flex;
+  align-items: center;
+  border-radius: 5px;
+  background: #6842c1;
+  color: #fff;
+  font: 800 9px var(--f-ui);
+  white-space: nowrap;
+}
+.handle {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  background: #fffdfb;
+  border: 2px solid #241d25;
+  border-radius: 4px;
+  pointer-events: auto;
+  touch-action: none;
+}
+.handle::after {
+  content: "";
+  position: absolute;
+  inset: -9px;
+}
+.handle[data-corner="tl"] {
+  left: -7px;
+  top: -7px;
+  cursor: nwse-resize;
+}
+.handle[data-corner="tr"] {
+  right: -7px;
+  top: -7px;
+  cursor: nesw-resize;
+}
+.handle[data-corner="bl"] {
+  left: -7px;
+  bottom: -7px;
+  cursor: nesw-resize;
+}
+.handle[data-corner="br"] {
+  right: -7px;
+  bottom: -7px;
+  cursor: nwse-resize;
+}
+.handle:focus-visible {
+  outline: 2px solid #7c5ce6;
+  outline-offset: 3px;
+}
+.guides {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+}
+.vertical {
+  position: absolute;
+  left: 50%;
+  inset-block: 0;
+  border-left: 1px solid #a78bfa;
+}
+.horizontal {
+  position: absolute;
+  top: 50%;
+  inset-inline: 0;
+  border-top: 1px solid #a78bfa;
+}

@@ -4,7 +4,7 @@ import { componentEnd } from "../../../domain/components/timing";
 import type { PvoComponent } from "../../../domain/project/model";
 import { useCapture } from "../../../state/captureStore";
 import { pickTime } from "../../../ui/formatTime";
-import { CoverFilmstrip } from "../../cover/CoverFilmstrip";
+import { FrameFilmstrip } from "../../frame-picker/FrameFilmstrip";
 import { beginPlayheadPick } from "../../timeline/playheadPick";
 import styles from "../ComponentPage.module.css";
 
@@ -30,7 +30,7 @@ export function ComponentTiming({ component }: { component: PvoComponent }) {
           edited.current = false;
         }}
       >
-        <CoverFilmstrip
+        <FrameFilmstrip
           scene={scene}
           time={component.at}
           maximum={Math.max(length, component.at, 0.5)}

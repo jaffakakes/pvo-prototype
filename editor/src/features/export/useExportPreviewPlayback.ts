@@ -107,7 +107,7 @@ export function useExportPreviewPlayback({
       video.removeAttribute("src");
       video.load();
     };
-  }, [clip?.id, clip?.url, scene]);
+  }, [clip?.id, clip?.url, clip?.in, clip?.speed, scene.clips, mode]);
 
   useEffect(() => {
     playingRef.current = playing;

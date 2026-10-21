@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from "react";
+import { useEditorTransition } from "./motion/EditorMotion";
 import { useCapture } from "../state/captureStore";
 import { cx } from "../styles";
 import { Icon } from "./Icon";
@@ -16,9 +17,15 @@ export function Shell({
   actions?: React.ReactNode;
   headerless?: boolean;
 }) {
+  const transition = useEditorTransition();
   const close = useCallback(
-    () => useCapture.getState().patch({ sheet: null }),
-    [],
+    () =>
+      transition(
+        "tool",
+        () => useCapture.getState().patch({ sheet: null }),
+        "close",
+      ),
+    [transition],
   );
   const dock = useSheetDock();
   const registerDismiss = dock?.registerDismiss;

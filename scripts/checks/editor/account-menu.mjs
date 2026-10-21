@@ -37,8 +37,7 @@ try {
           available: true,
           supabaseAvailable: false,
           supabasePublishableKey: null,
-          canLinkEmail: false,
-          emailLinked: false,
+          supabaseUrl: null,
         },
       }),
     );

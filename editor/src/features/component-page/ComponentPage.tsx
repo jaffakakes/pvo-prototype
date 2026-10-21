@@ -3,13 +3,8 @@ import {
   isVisualEditingBlocked,
   restoreLastValidPvo,
 } from "../../domain/components/codeOwnership";
-import { editComponentDesign } from "../../domain/components/design";
 import { fieldsShownFor } from "../../domain/components/fields";
-import {
-  componentLook,
-  lookParts,
-  type LookPart,
-} from "../../domain/components/look";
+import { lookParts, type LookPart } from "../../domain/components/look";
 import type { PvoLanguageSource } from "../../domain/components/languageSource";
 import type { PvoComponent } from "../../domain/project/model";
 import { useCapture } from "../../state/captureStore";
@@ -18,6 +13,8 @@ import {
   selectComponentSourcePart,
 } from "../../state/components/componentAuthoringStore";
 import { setAdvancedEditingEnabled } from "../../state/preferences/editorPreferences";
+import { useEditorTransition } from "../../ui/motion/EditorMotion";
+import { useToolSwap } from "../../ui/motion/useToolSwap";
 import { Icon } from "../../ui/Icon";
 import { OrbAssistant } from "../assistant/OrbAssistant";
 import { usePvoCompilation } from "../component-authoring/language/usePvoCompilation";
@@ -26,7 +23,6 @@ import { PageToolbar } from "./PageToolbar";
 import { DesignPanel, type DesignTool } from "./design/DesignPanel";
 import { LogicPanel } from "./logic/LogicPanel";
 import { CodeSheet } from "./code/CodeSheet";
-import { usePageSession } from "./usePageSession";
 import styles from "./ComponentPage.module.css";
 
 const MAIN_TOOLS = [
@@ -44,8 +40,12 @@ const STYLE_TOOLS = [
 ];
 
 export function ComponentPage({ component }: { component: PvoComponent }) {
-  const [tab, setTab] = usePageSession(component.id);
-  const [tool, setTool] = useState<DesignTool>("looks");
+  const transition = useEditorTransition();
+  const sheetRef = useRef<HTMLElement>(null);
+  const [tab, setTab] = useState<"design" | "logic">("design");
+  const [tool, setTool] = useState<DesignTool>(() =>
+    isVisualEditingBlocked(component) ? "code" : "looks",
+  );
   const [styleTools, setStyleTools] = useState(false);
   const [selectedPart, setPart] = useState<LookPart>("whole");
   const [control, setControl] = useState<number | null>(
@@ -56,8 +56,6 @@ export function ComponentPage({ component }: { component: PvoComponent }) {
   const [expanded, setExpanded] = useState(false);
   const [stageTarget, setStageTarget] = useState<HTMLDivElement | null>(null);
   const [codeTarget, setCodeTarget] = useState<HTMLDivElement | null>(null);
-  const [menu, setMenu] = useState(false);
-  const menuRef = useRef<HTMLDetailsElement>(null);
   const feedback = usePvoCompilation(component);
   const blocked = isVisualEditingBlocked(component);
   const fields = fieldsShownFor(component);
@@ -90,6 +88,7 @@ export function ComponentPage({ component }: { component: PvoComponent }) {
   const selectedControl =
     control !== null && control < controls.length ? control : null;
   const code = tool === "code";
+  useToolSwap(sheetRef, `${tab}:${tool}:${sourcePart}:${selectedControl}`);
   const selectPart = (value: LookPart) => {
     setPart(value);
     selectComponentLookPart(component.id, value);
@@ -107,19 +106,15 @@ export function ComponentPage({ component }: { component: PvoComponent }) {
   const close = () => {
     if (document.activeElement instanceof HTMLElement)
       document.activeElement.blur();
-    useCapture.getState().patch({ sheet: null, playing: false });
+    transition(
+      "component",
+      () => useCapture.getState().patch({ sheet: null, playing: false }),
+      "close",
+    );
   };
   useEffect(() => {
     useCapture.getState().patch({ playing: false });
   }, []);
-  useEffect(() => {
-    if (!menu) return;
-    const dismiss = (event: PointerEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) setMenu(false);
-    };
-    window.addEventListener("pointerdown", dismiss);
-    return () => window.removeEventListener("pointerdown", dismiss);
-  }, [menu]);
   const restore = restoreLastValidPvo(component);
   const onRestore = restore
     ? () => useCapture.getState().updateComponent(component.id, restore)
@@ -179,77 +174,6 @@ export function ComponentPage({ component }: { component: PvoComponent }) {
             </button>
           ))}
         </div>
-        <details className={styles.more} ref={menuRef} open={menu}>
-          <summary
-            aria-label="More component options"
-            onClick={(event) => {
-              event.preventDefault();
-              setMenu(!menu);
-            }}
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <circle cx="4" cy="12" r="2" />
-              <circle cx="12" cy="12" r="2" />
-              <circle cx="20" cy="12" r="2" />
-            </svg>
-          </summary>
-          <div className={styles.menu}>
-            <button
-              type="button"
-              onClick={() => {
-                useCapture.getState().duplicateComponent(component.id);
-                setMenu(false);
-              }}
-            >
-              Duplicate
-            </button>
-            <button
-              type="button"
-              disabled={blocked}
-              onClick={() => {
-                const changes = editComponentDesign(component, "whole", {
-                  kind: "preset",
-                  value: componentLook(component).basePreset,
-                });
-                if (changes)
-                  useCapture.getState().updateComponent(component.id, changes);
-                setMenu(false);
-              }}
-            >
-              Reset appearance
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                useCapture.getState().updateComponent(component.id, {
-                  width: undefined,
-                  height: undefined,
-                  scale: 1,
-                  scaleX: undefined,
-                  scaleY: undefined,
-                });
-                setMenu(false);
-              }}
-            >
-              Reset size
-            </button>
-            <button
-              type="button"
-              className={styles.delete}
-              onClick={() =>
-                useCapture.getState().deleteComponent(component.id)
-              }
-            >
-              Delete component
-            </button>
-          </div>
-        </details>
       </header>
       <ComponentStage
         component={component}
@@ -270,6 +194,7 @@ export function ComponentPage({ component }: { component: PvoComponent }) {
         <div className={styles.stageAssistant} ref={setStageTarget} />
       </ComponentStage>
       <section
+        ref={sheetRef}
         className={styles.sheet}
         data-code={code}
         aria-label={

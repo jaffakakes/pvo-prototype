@@ -1,0 +1,102 @@
+:root {
+  --editor-motion-open: 240ms;
+  --editor-motion-close: 180ms;
+  --editor-motion-focus: 300ms;
+  --editor-motion-swap: 120ms;
+  --editor-motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --editor-motion-layout: 240ms;
+  --editor-motion-shift: 16px;
+}
+.app[data-reduce-motion="true"] {
+  --editor-motion-layout: 0ms;
+  --editor-motion-shift: 0px;
+  --editor-motion-swap: 80ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --editor-motion-layout: 0ms;
+    --editor-motion-shift: 0px;
+    --editor-motion-swap: 80ms;
+  }
+}
+
+/* Only the active navigation claims shared elements; playback has none. */
+html[data-editor-motion="tool"]:not([data-editor-motion-reduced="true"]) .pvBox,
+html[data-editor-motion="frame"]:not([data-editor-motion-reduced="true"])
+  .app:not(:has(dialog[open]))
+  .pvBox,
+html[data-editor-motion="frame"]:not([data-editor-motion-reduced="true"])
+  dialog[open]
+  [data-cover-only]
+  [data-picker="true"] {
+  view-transition-name: editor-video;
+}
+html[data-editor-motion="tool"]:not([data-editor-motion-reduced="true"])
+  [data-editor-dock][data-active="true"] {
+  view-transition-name: editor-dock;
+}
+html[data-editor-motion="component"]:not([data-editor-motion-reduced="true"])
+  [data-preview-component][data-sel="true"],
+html[data-editor-motion="component"]:not([data-editor-motion-reduced="true"])
+  [data-component-stage-subject] {
+  view-transition-name: editor-component;
+}
+/* Snapshots handle navigation geometry; don't capture an intermediate CSS layout. */
+html[data-editor-motion] .editorWorkspace,
+html[data-editor-motion] .editorWorkspace > div,
+html[data-editor-motion] [data-editor-surface] > div,
+html[data-editor-motion] [data-editor-dock] {
+  transition: none;
+}
+html[data-editor-motion] dialog[open] {
+  animation: none;
+}
+::view-transition,
+::view-transition-group(*),
+::view-transition-image-pair(*),
+::view-transition-old(*),
+::view-transition-new(*) {
+  pointer-events: none;
+}
+::view-transition-group(*) {
+  animation-duration: var(--editor-motion-focus);
+  animation-timing-function: var(--editor-motion-ease);
+}
+html[data-editor-motion="tool"]::view-transition-group(*) {
+  animation-duration: var(--editor-motion-open);
+}
+html[data-editor-motion-direction="close"]::view-transition-group(*) {
+  animation-duration: var(--editor-motion-close);
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--editor-motion-swap);
+}
+::view-transition-new(editor-dock) {
+  animation: editor-tool-enter var(--editor-motion-open)
+    var(--editor-motion-ease) both;
+}
+::view-transition-old(editor-dock) {
+  animation: editor-tool-exit var(--editor-motion-close) ease-in both;
+}
+html[data-editor-motion-reduced="true"]::view-transition-group(*),
+html[data-editor-motion-reduced="true"]::view-transition-old(*),
+html[data-editor-motion-reduced="true"]::view-transition-new(*) {
+  animation-duration: 80ms;
+}
+@keyframes editor-tool-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--editor-motion-shift));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes editor-tool-exit {
+  to {
+    opacity: 0;
+    transform: translateY(var(--editor-motion-shift));
+  }
+}

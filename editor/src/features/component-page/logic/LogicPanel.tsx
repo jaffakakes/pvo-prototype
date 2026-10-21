@@ -11,7 +11,7 @@ import { useCapture } from "../../../state/captureStore";
 import { createRoutedScene } from "../../../state/scenes/sceneRoutingCommands";
 import { Icon } from "../../../ui/Icon";
 import { pickTime } from "../../../ui/formatTime";
-import { CoverFilmstrip } from "../../cover/CoverFilmstrip";
+import { FrameFilmstrip } from "../../frame-picker/FrameFilmstrip";
 import { FormReplyCollection } from "../../component-authoring/outcomes/FormReplyCollection";
 import { ComponentTiming } from "./ComponentTiming";
 import { MoreOptions } from "./MoreOptions";
@@ -241,7 +241,7 @@ export function LogicPanel({
                           {pickTime(outcome?.kind === "time" ? outcome.t : 0)}{" "}
                           of {pickTime(sceneDuration(scene))}
                         </p>
-                        <CoverFilmstrip
+                        <FrameFilmstrip
                           scene={scene}
                           time={outcome?.kind === "time" ? outcome.t : 0}
                           maximum={sceneDuration(scene)}

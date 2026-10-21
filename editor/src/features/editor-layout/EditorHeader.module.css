@@ -37,7 +37,7 @@
   padding: 0;
   color: var(--text);
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   background: transparent;
   cursor: pointer;
 }
@@ -61,7 +61,7 @@
 }
 .stopTryButton {
   border: 1.5px solid var(--q14);
-  border-radius: 11px;
+  border-radius: var(--radius-control);
   background: var(--button-secondary-bg);
   color: var(--button-secondary-text);
 }
@@ -84,7 +84,7 @@
   width: 6px;
   height: 6px;
   flex: none;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--violet);
 }
 .ratio,
@@ -102,7 +102,7 @@
   padding: 0 10px;
   background: var(--button-primary-bg);
   border: 2px solid var(--button-border);
-  border-radius: 12px;
+  border-radius: var(--radius-control);
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
@@ -147,7 +147,7 @@
   }
   .export {
     padding: 0 16px;
-    box-shadow: 3px 3px 0 var(--button-shadow);
+    box-shadow: var(--shadow-control);
   }
   .guest {
     display: flex;
@@ -157,7 +157,7 @@
     padding: 0 8px 0 12px;
     background: var(--surface);
     border: 2px solid var(--q14);
-    border-radius: 10px;
+    border-radius: var(--radius-control);
     color: var(--muted);
     font-size: 12px;
     cursor: pointer;
@@ -165,13 +165,13 @@
   .guest i {
     width: 7px;
     height: 7px;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     background: var(--green);
   }
   .guest span {
     padding: 5px 8px;
     border: 1px solid var(--q14);
-    border-radius: 7px;
+    border-radius: var(--radius-small);
     background: var(--input);
     color: var(--text);
     font-size: 11px;
@@ -180,7 +180,7 @@
     display: block;
     padding: 9px 12px;
     border: 2px solid var(--q14);
-    border-radius: 10px;
+    border-radius: var(--radius-control);
     font-size: 12px;
   }
 }
@@ -201,10 +201,10 @@
   min-height: 44px;
   padding: 0;
   border: 2px solid var(--outline);
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   background: var(--button-secondary-bg);
   color: var(--button-secondary-text);
-  box-shadow: 3px 3px 0 var(--button-shadow);
+  box-shadow: var(--shadow-control);
   font: 800 13px var(--f-ui);
   cursor: pointer;
 }

@@ -6,8 +6,10 @@
   width: 172px;
   max-width: calc(100vw - 24px);
   background: var(--surface);
-  border: 0;
-  box-shadow: 0 6px 18px rgb(0 0 0 / 20%);
+  border: 2px solid var(--outline);
+  border-radius: var(--radius-panel);
+  overflow: hidden;
+  box-shadow: var(--shadow-floating);
   color: var(--text);
 }
 .menu button {

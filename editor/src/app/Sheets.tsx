@@ -2,6 +2,8 @@ import { CropSheet } from "../features/clip-adjustments/CropSheet";
 import { AnimationSheet } from "../features/animation/AnimationSheet";
 import { SpeedSheet } from "../features/clip-adjustments/SpeedSheet";
 import { ComponentsSheets } from "../features/component-authoring/ComponentsSheets";
+import { ComponentLayerSheet } from "../features/component-layer/ComponentLayerSheet";
+import { ComponentTimingPicker } from "../features/component-layer/ComponentTimingPicker";
 import { DiscardSheet } from "../features/create-project/DiscardSheet";
 import { ExportSheet } from "../features/export/ExportSheet";
 import { MoreSettings } from "../features/settings/MoreSettings";
@@ -39,6 +41,11 @@ export function Sheets() {
     case "ratio":
     case "voiceover":
       return null;
+    case "componentOpacity":
+    case "componentTransform":
+      return <ComponentLayerSheet />;
+    case "componentTiming":
+      return <ComponentTimingPicker />;
     case "soundEffects":
       return <SoundEffectsSheet />;
     case "sound":

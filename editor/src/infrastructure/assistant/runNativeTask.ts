@@ -1,3 +1,4 @@
+import type { NativeAttachment } from "../../../../packages/pvo-assistant/native/index.js";
 import {
   parseTaskProposal,
   type TaskProposal,
@@ -61,6 +62,7 @@ export type NativeTaskResult = {
   batch: NativeBatch | null;
   message: string;
   answer?: string;
+  suggestions?: string[];
   history: AssistantMessage[];
   evidence: AssistantEvidence[];
 };
@@ -130,6 +132,7 @@ export async function runNativeTask(
     mode: NativeMode;
     history: AssistantMessage[];
     evidence?: AssistantEvidence[];
+    attachments?: NativeAttachment[];
   },
   adapters: NativeTaskAdapters,
   signal: AbortSignal,
@@ -170,6 +173,7 @@ async function executeNativeTask(
     mode: NativeMode;
     history: AssistantMessage[];
     evidence?: AssistantEvidence[];
+    attachments?: NativeAttachment[];
   },
   adapters: NativeTaskAdapters,
   signal: AbortSignal,
@@ -245,6 +249,9 @@ async function executeNativeTask(
     const context = {
       prompt: input.prompt,
       mode: input.mode,
+      ...(round === 0 && input.attachments?.length
+        ? { attachments: input.attachments }
+        : {}),
       project: nativeProjectContext(
         project,
         adapters.playhead(),
@@ -289,6 +296,8 @@ async function executeNativeTask(
             ? "audio"
             : "project",
         );
+    for (const description of response.attachmentEvidence ?? [])
+      remember(description, "reference");
     for (const description of response.evidence ?? [])
       remember(description, "project");
     observations = [];
@@ -431,6 +440,7 @@ async function executeNativeTask(
         batch: finished,
         message,
         ...(response.answer ? { answer: response.answer } : {}),
+        ...(response.suggestions ? { suggestions: response.suggestions } : {}),
         history: retainAssistantHistory([
           ...input.history,
           { role: "user" as const, content: input.prompt },

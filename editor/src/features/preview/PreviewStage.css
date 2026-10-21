@@ -27,8 +27,8 @@
   overflow: hidden;
   background: var(--surface);
   border: 2.5px solid var(--outline);
-  border-radius: 16px;
-  box-shadow: 4px 4px 0 var(--button-shadow);
+  border-radius: var(--radius-card);
+  box-shadow: none;
 }
 .pvVideo {
   position: absolute;

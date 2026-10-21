@@ -5,7 +5,7 @@
   gap: 18px;
 }
 
-.exportButton { min-height: 44px; padding: 10px 12px; text-align: left; background: var(--button-secondary-bg); color: var(--button-secondary-text); border: 2px solid var(--button-border); border-radius: 10px; font: 700 12px var(--f-ui); cursor: pointer; }
+.exportButton { min-height: 44px; padding: 10px 12px; text-align: left; background: var(--button-secondary-bg); color: var(--button-secondary-text); border: 2px solid var(--button-border); border-radius: var(--radius-control); font: 700 12px var(--f-ui); cursor: pointer; }
 
 .section {
   display: flex;
@@ -42,7 +42,7 @@
   min-height: 44px;
   min-width: 0;
   border: 2px solid var(--button-border);
-  border-radius: 11px;
+  border-radius: var(--radius-control);
   background: var(--button-secondary-bg);
   color: var(--button-secondary-text);
   font: 700 12px/1.2 var(--f-ui);
@@ -68,7 +68,7 @@
   width: 22px;
   height: 22px;
   border: 1px solid var(--outline);
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--swatch-color);
 }
 
@@ -87,7 +87,7 @@
   color: var(--button-secondary-text);
   background: var(--button-secondary-bg);
   border: 1px solid var(--button-border);
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   font: 700 13px var(--f-ui);
   cursor: pointer;
 }
@@ -113,7 +113,7 @@
   background: var(--button-secondary-bg);
   color: var(--muted);
   border: 2px solid var(--button-border);
-  border-radius: 12px;
+  border-radius: var(--radius-control);
   font: 700 12px var(--f-ui);
   cursor: pointer;
 }
@@ -121,7 +121,6 @@
 .ratios button[data-on="true"] {
   color: var(--text);
   border: 3px solid var(--pale);
-  box-shadow: 2px 2px 0 var(--button-shadow);
   font-weight: 800;
 }
 
@@ -163,7 +162,7 @@
   place-items: center;
   padding: 0;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   background: transparent;
   cursor: pointer;
 }
@@ -180,7 +179,7 @@
   width: 44px;
   height: 26px;
   border: 2px solid var(--q14);
-  border-radius: 20px;
+  border-radius: var(--radius-round);
   background: var(--input);
 }
 
@@ -190,7 +189,7 @@
   left: 2px;
   width: 18px;
   height: 18px;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--text);
   transition: transform 140ms ease;
 }

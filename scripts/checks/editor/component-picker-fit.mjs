@@ -61,6 +61,21 @@ try {
       );
       const tiles = picker.locator(".componentTypeTile");
       assert.equal(await tiles.count(), 4);
+      const formPreview = picker.locator(
+        '.componentTypePreview[data-type="form"]',
+      );
+      const clearance = await formPreview.evaluate((element) => {
+        const outer = element.getBoundingClientRect();
+        const inner = element
+          .querySelector(".componentPreviewPanel")
+          .getBoundingClientRect();
+        return Math.min(inner.top - outer.top, outer.bottom - inner.bottom);
+      });
+      assert(
+        clearance >= 8,
+        "Form preview has space above and below its content",
+      );
+
       assert.equal(await picker.locator(".sheetHead").count(), 0);
       const firstChoice = await tiles.first().boundingBox();
       const pickerBox = await picker.boundingBox();
@@ -117,7 +132,21 @@ try {
       await picker
         .getByRole("button", { name: "Ask for details", exact: true })
         .click();
-      await page.getByRole("dialog", { name: "Form", exact: true }).waitFor();
+      const tools = page.getByRole("toolbar", { name: "Form tools" });
+      await tools.waitFor();
+      await page.keyboard.press("Escape");
+      assert.equal(await page.locator(".compBar").count(), 1);
+      await page
+        .getByRole("button", { name: "Components", exact: true })
+        .click();
+      await picker.waitFor();
+      assert.equal(await picker.getByText(/In this video/i).count(), 0);
+      assert.equal(await picker.getByRole("button").count(), 4);
+      await close.click();
+      await page.locator(".compBar").click();
+      await tools.getByRole("button", { name: "Design", exact: true }).click();
+      await page.locator("[data-component-page]").waitFor();
+
       assert.deepEqual(errors, []);
       console.log(
         `${width} × ${height} ${theme}: ${fits ? "all four choices fit" : "scrolling reaches every choice"}; insertion and restored layout passed.`,

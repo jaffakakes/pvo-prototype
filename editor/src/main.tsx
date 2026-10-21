@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { GoogleCallback } from "./features/auth/GoogleCallback";
 import App from "./app/App";
+import { EditorMotionProvider } from "./ui/motion/EditorMotion";
 import { startProjectAutosave } from "./app/projectAutosave";
 import { registerEditorServiceWorker } from "./infrastructure/pwa/registerServiceWorker";
 import { navigateProject } from "./app/navigation";
@@ -46,7 +47,9 @@ if (new URL(location.href).searchParams.get("auth") === "google") {
       navigateProject(state.localId, true);
     createRoot(document.getElementById("root")!).render(
       <StrictMode>
-        <App />
+        <EditorMotionProvider>
+          <App />
+        </EditorMotionProvider>
       </StrictMode>,
     );
     void revealLaunchSplashWhenReady(appReduceMotion);

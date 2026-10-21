@@ -1,7 +1,19 @@
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+  type PointerEvent,
+} from "react";
 import { microphoneSupported } from "../../../infrastructure/audio/microphoneCapture";
 import type { VoiceFailure } from "./voiceFailure";
-import { createVoiceSession, type VoiceSession, type VoicePhase } from "./voiceSession";
+import {
+  createVoiceSession,
+  type VoiceSession,
+  type VoicePhase,
+} from "./voiceSession";
 
 type Options = {
   enabled?: boolean;
@@ -44,7 +56,10 @@ export function useOrbVoice(options: Options) {
     if (mounted.current) setPressed(false);
     if (!active) return null;
     clearTimeout(active.timer);
-    if (active.pointerId !== undefined && active.button.hasPointerCapture(active.pointerId)) {
+    if (
+      active.pointerId !== undefined &&
+      active.button.hasPointerCapture(active.pointerId)
+    ) {
       active.button.releasePointerCapture(active.pointerId);
     }
     return active;
@@ -64,30 +79,44 @@ export function useOrbVoice(options: Options) {
     const contextKey = current.current.contextKey;
     let voice: VoiceSession;
     try {
-      voice = createVoiceSession({
-        onPhase: value => {
-          sessionPhase.current = value;
-          if (mounted.current) setPhase(value);
+      voice = createVoiceSession(
+        {
+          onPhase: (value) => {
+            sessionPhase.current = value;
+            if (mounted.current) setPhase(value);
+          },
+          onTranscript: (text) => {
+            if (mounted.current) current.current.onListening(text);
+          },
+          onSend: (text) => {
+            session.current = null;
+            if (
+              mounted.current &&
+              current.current.enabled !== false &&
+              current.current.contextKey === contextKey
+            )
+              current.current.onSend(text);
+            else if (mounted.current) current.current.onCancel();
+          },
+          onCancel: () => {
+            session.current = null;
+            if (mounted.current) current.current.onCancel();
+          },
+          onFailure: (failure) => {
+            if (mounted.current) current.current.onFailure(failure);
+          },
         },
-        onTranscript: text => { if (mounted.current) current.current.onListening(text); },
-        onSend: text => {
-          session.current = null;
-          if (mounted.current && current.current.enabled !== false && current.current.contextKey === contextKey)
-            current.current.onSend(text);
-          else if (mounted.current) current.current.onCancel();
+        {
+          startupTimeoutMs: mode === "tap" ? 30000 : 10000,
+          minimumWords: mode === "tap" ? 1 : 2,
         },
-        onCancel: () => {
-          session.current = null;
-          if (mounted.current) current.current.onCancel();
-        },
-        onFailure: failure => { if (mounted.current) current.current.onFailure(failure); },
-      }, {
-        startupTimeoutMs: mode === "tap" ? 30000 : 10000,
-        minimumWords: mode === "tap" ? 1 : 2,
-      });
+      );
     } catch {
       current.current.onCancel();
-      current.current.onFailure({ reason: "failed", detail: "Microphone recording could not be started." });
+      current.current.onFailure({
+        reason: "failed",
+        detail: "Microphone recording could not be started.",
+      });
       return;
     }
     session.current = voice;
@@ -102,11 +131,19 @@ export function useOrbVoice(options: Options) {
   const start = () => {
     if (!press.current) startVoice("tap");
   };
-  const currentTapAction = () => ["starting", "transcribing"].includes(sessionPhase.current) ? "cancel" : "send";
+  const currentTapAction = () =>
+    ["starting", "transcribing"].includes(sessionPhase.current)
+      ? "cancel"
+      : "send";
   const finishTap = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     // Release changes the held flower into Cancel while its trailing click is pending.
-    if (event.detail > 0 && performance.now() < suppressClickUntil.current) return;
+    if (
+      event.detail > 0 &&
+      tapAction.current === null &&
+      performance.now() < suppressClickUntil.current
+    )
+      return;
     // Microphone permission can finish between pressing Cancel and releasing it. Preserve
     // the action the user chose before the button changes to Send.
     const action = tapAction.current ?? currentTapAction();
@@ -115,9 +152,18 @@ export function useOrbVoice(options: Options) {
     else session.current?.release();
   };
 
-  const begin = (button: HTMLButtonElement, input: { pointerId?: number; key?: string }) => {
-    if (current.current.enabled === false || press.current || session.current) return;
-    const active: Press = { time: performance.now(), button, ...input, held: false };
+  const begin = (
+    button: HTMLButtonElement,
+    input: { pointerId?: number; key?: string },
+  ) => {
+    if (current.current.enabled === false || press.current || session.current)
+      return;
+    const active: Press = {
+      time: performance.now(),
+      button,
+      ...input,
+      held: false,
+    };
     press.current = active;
     setPressed(true);
     active.timer = setTimeout(beginVoice, HOLD_DELAY_MS);
@@ -126,19 +172,30 @@ export function useOrbVoice(options: Options) {
     const active = clearPress();
     if (!active) return;
     suppressClickUntil.current = performance.now() + 400;
-    if (active.held) { session.current?.release(); return; }
+    if (active.held) {
+      session.current?.release();
+      return;
+    }
     if (current.current.enabled === false) return;
-    if (performance.now() - active.time < HOLD_DELAY_MS) current.current.onTap();
-    else current.current.onFailure({ reason: "holdShort", detail: "The orb was released before the voice hold threshold." });
+    if (performance.now() - active.time < HOLD_DELAY_MS)
+      current.current.onTap();
+    else
+      current.current.onFailure({
+        reason: "holdShort",
+        detail: "The orb was released before the voice hold threshold.",
+      });
   };
 
   useEffect(() => {
     mounted.current = true;
-    const hidden = () => { if (document.hidden) cancel(); };
+    const hidden = () => {
+      if (document.hidden) cancel();
+    };
     const blurred = () => {
       // A permission dialog can take focus. A tapped microphone does not
       // depend on a held pointer, so let this explicit startup finish.
-      if (sessionMode.current === "tap" && sessionPhase.current === "starting") return;
+      if (sessionMode.current === "tap" && sessionPhase.current === "starting")
+        return;
       cancel();
     };
     document.addEventListener("visibilitychange", hidden);
@@ -152,14 +209,24 @@ export function useOrbVoice(options: Options) {
       window.removeEventListener("pagehide", cancel);
     };
   }, [cancel]);
-  useEffect(() => { if (options.enabled === false) cancel(); }, [options.enabled, cancel]);
-  useEffect(() => { cancel(); }, [options.contextKey, cancel]);
+  useEffect(() => {
+    if (options.enabled === false) cancel();
+  }, [options.enabled, cancel]);
+  useEffect(() => {
+    cancel();
+  }, [options.contextKey, cancel]);
 
   const onPointerDown = (event: PointerEvent<HTMLButtonElement>) => {
-    if (!event.isPrimary || event.button !== 0 || current.current.enabled === false) return;
+    if (
+      !event.isPrimary ||
+      event.button !== 0 ||
+      current.current.enabled === false
+    )
+      return;
     event.preventDefault();
     begin(event.currentTarget, { pointerId: event.pointerId });
-    if (press.current?.pointerId === event.pointerId) event.currentTarget.setPointerCapture(event.pointerId);
+    if (press.current?.pointerId === event.pointerId)
+      event.currentTarget.setPointerCapture(event.pointerId);
   };
   const onPointerUp = (event: PointerEvent<HTMLButtonElement>) => {
     if (press.current?.pointerId !== event.pointerId) return;
@@ -171,27 +238,43 @@ export function useOrbVoice(options: Options) {
   };
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (event.key === "Escape" && (press.current || session.current)) {
-      event.preventDefault(); event.stopPropagation(); cancel(); return;
+      event.preventDefault();
+      event.stopPropagation();
+      cancel();
+      return;
     }
-    if (![" ", "Enter"].includes(event.key) || current.current.enabled === false) return;
+    if (
+      ![" ", "Enter"].includes(event.key) ||
+      current.current.enabled === false
+    )
+      return;
     event.preventDefault();
     event.stopPropagation();
     if (!event.repeat) begin(event.currentTarget, { key: event.key });
   };
   const onKeyUp = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (press.current?.key !== event.key) return;
-    event.preventDefault(); event.stopPropagation(); release();
+    event.preventDefault();
+    event.stopPropagation();
+    release();
   };
 
   return {
-    phase, mode: sessionMode.current, voiceActive: phase !== "idle", isPressed,
+    phase,
+    mode: sessionMode.current,
+    voiceActive: phase !== "idle",
+    isPressed,
     supported: microphoneSupported(),
-    cancel, start,
+    cancel,
+    start,
     tapHandlers: {
       onPointerDown: (event: PointerEvent<HTMLButtonElement>) => {
-        if (event.isPrimary && event.button === 0) tapAction.current = currentTapAction();
+        if (event.isPrimary && event.button === 0)
+          tapAction.current = currentTapAction();
       },
-      onPointerCancel: () => { tapAction.current = null; },
+      onPointerCancel: () => {
+        tapAction.current = null;
+      },
       onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => {
         if (![" ", "Enter"].includes(event.key)) return;
         if (event.repeat) {
@@ -201,18 +284,33 @@ export function useOrbVoice(options: Options) {
         }
         tapAction.current = currentTapAction();
       },
-      onBlur: () => { tapAction.current = null; },
+      onBlur: () => {
+        tapAction.current = null;
+      },
       onClick: finishTap,
     },
     handlers: {
-      onPointerDown, onPointerUp, onPointerCancel: cancelPointer, onLostPointerCapture: cancelPointer,
-      onKeyDown, onKeyUp,
-      onBlur: () => { if (press.current?.key) cancel(); },
-      onContextMenu: (event: MouseEvent<HTMLButtonElement>) => event.preventDefault(),
+      onPointerDown,
+      onPointerUp,
+      onPointerCancel: cancelPointer,
+      onLostPointerCapture: cancelPointer,
+      onKeyDown,
+      onKeyUp,
+      onBlur: () => {
+        if (press.current?.key) cancel();
+      },
+      onContextMenu: (event: MouseEvent<HTMLButtonElement>) =>
+        event.preventDefault(),
       onClick: (event: MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
-        if (event.detail === 0 && performance.now() >= suppressClickUntil.current
-          && current.current.enabled !== false && !press.current && !session.current) current.current.onTap();
+        if (
+          event.detail === 0 &&
+          performance.now() >= suppressClickUntil.current &&
+          current.current.enabled !== false &&
+          !press.current &&
+          !session.current
+        )
+          current.current.onTap();
       },
     },
   };

@@ -9,7 +9,10 @@ import { dur, locate } from "../../domain/clips/timing";
 import { layerOrder, layerZ } from "../../domain/layers/order";
 import { projectRatio } from "../../domain/project/ratio";
 import { useCapture } from "../../state/captureStore";
-import { useAssistant } from "../../state/assistant/assistantStore";
+import {
+  assistantFocused,
+  useAssistant,
+} from "../../state/assistant/assistantStore";
 import {
   setCodePreviewFocus,
   useComponentAuthoring,
@@ -23,6 +26,7 @@ import { fitPlayerPreview, fitPreviewSize } from "./geometry";
 import styles from "./Preview.module.css";
 import { runComponentResponse } from "./tryMode";
 import { usePlayback } from "./usePlayback";
+import { ComponentGuides } from "../component-layer/ComponentSelectionChrome";
 import { useOverlayGestures } from "./useOverlayGestures";
 import { usePreviewAreaSize } from "./usePreviewAreaSize";
 import { Icon } from "../../ui/Icon";
@@ -38,7 +42,7 @@ export function Preview({
   threadOpen = false,
 }: Props = {}) {
   const s = useCapture();
-  const assistantActive = useAssistant((state) => state.phase !== "idle");
+  const assistantActive = useAssistant(assistantFocused);
   const authoring = useComponentAuthoring();
   const advanced = useEditorPreferences(
     (state) => state.advancedEditingEnabled,
@@ -68,12 +72,21 @@ export function Preview({
         ...fitPreviewSize(area.width, area.height, projectRatio(s.ratio)),
         controlsInset: 0,
       }
-    : fitPlayerPreview(
-        area.width,
-        area.height,
-        projectRatio(s.ratio),
-        centered,
-      );
+    : threadOpen
+      ? {
+          ...fitPreviewSize(
+            area.width,
+            Math.max(0, area.height - 52),
+            projectRatio(s.ratio),
+          ),
+          controlsInset: 52,
+        }
+      : fitPlayerPreview(
+          area.width,
+          area.height,
+          projectRatio(s.ratio),
+          centered,
+        );
   const compact = bw < 180;
   const selectedAuthoring = !s.tryMode && !s.playheadPick && !s.playing;
   const endpointAuthoring =
@@ -264,6 +277,7 @@ export function Preview({
             onResponse={runComponentResponse}
           />
         ))}
+        <ComponentGuides />
         {!focused && <StageMotionPath width={bw} height={bh} />}
         {!compact && !s.tryMode && clip && (
           <span className={cx("tag pvTag")}>

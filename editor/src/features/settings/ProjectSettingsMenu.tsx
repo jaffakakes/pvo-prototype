@@ -6,6 +6,7 @@ import { Icon } from "../../ui/Icon";
 import {
   AppearanceSettings,
   AdvancedEditingSetting,
+  ReduceMotionSetting,
 } from "./EditorPreferencesSettings";
 import styles from "./ProjectSettingsMenu.module.css";
 
@@ -92,6 +93,7 @@ export function ProjectSettingsMenu() {
             <div className={styles.settings}>
               <AppearanceSettings iconOnly />
               <AdvancedEditingSetting compact />
+              <ReduceMotionSetting compact />
             </div>
             <div className={styles.footer}>
               {confirmDelete ? (

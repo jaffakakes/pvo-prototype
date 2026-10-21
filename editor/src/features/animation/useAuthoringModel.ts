@@ -2,12 +2,12 @@ import { useState } from "react";
 import { getAuthoringGroups, getAuthoringKeys, getAuthoringLayer, readAuthoringValue } from "../../domain/animation/authoring";
 import type { AnimationTarget } from "../../domain/animation/model";
 import { useCapture } from "../../state/captureStore";
-import { useAssistant } from "../../state/assistant/assistantStore";
+import { assistantFocused, useAssistant } from "../../state/assistant/assistantStore";
 import { useAnimationSelection } from "../../state/animation/selection";
 
 export function useAuthoringModel(target: AnimationTarget) {
   const state = useCapture();
-  const assistantActive = useAssistant(value => value.phase !== "idle");
+  const assistantActive = useAssistant(assistantFocused);
   const selected = useAnimationSelection(value => value.selection);
   const [error, setError] = useState<string | null>(null);
   const scene = state.scenes.find(item => item.id === state.currentSceneId);

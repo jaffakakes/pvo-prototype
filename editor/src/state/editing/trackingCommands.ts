@@ -2,7 +2,7 @@ import type { NativeObjectTrackingObservation, NativeTrackingTarget, NativeVisua
 import { createTrackedAnimation } from "../../domain/animation/trackedAuthoring";
 import type { TrackingStep } from "../../domain/animation/trackingMetadata";
 import { nativeProjectFingerprint } from "../../domain/assistant/native/context";
-import { useAssistant } from "../assistant/assistantStore";
+import { assistantFocused, useAssistant } from "../assistant/assistantStore";
 import { useCapture } from "../captureStore";
 import { projectSnapshot } from "../project/history";
 
@@ -13,7 +13,7 @@ export function commitTrackedAnimation(target: NativeVisualAnimationTarget,
   options: { requestTarget: NativeTrackingTarget; step?: TrackingStep }): boolean {
   const state = useCapture.getState();
   if (state.screen !== "editor" || state.recording || state.importing || state.tryMode || state.playheadPick
-    || state.trim || state.ex === "running" || useAssistant.getState().phase !== "idle")
+    || state.trim || state.ex === "running" || assistantFocused(useAssistant.getState()))
     throw new Error("Finish the current editing operation before applying tracking.");
   if (nativeProjectFingerprint(projectSnapshot(state)) !== expectedFingerprint)
     throw new Error("The project changed while tracking. Run tracking again on the updated video.");

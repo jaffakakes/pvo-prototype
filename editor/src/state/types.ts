@@ -53,6 +53,9 @@ export type SheetName =
   | "discard"
   | "components"
   | "component"
+  | "componentOpacity"
+  | "componentTransform"
+  | "componentTiming"
   | "animation";
 export type OverlayUpdateOptions = {
   /** A reversible drag preview keeps its magnetic playhead fixed until commit. */

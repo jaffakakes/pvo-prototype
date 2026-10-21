@@ -20,10 +20,10 @@
   width: min(336px, calc(100vw - 16px));
   overflow: hidden;
   border: 2px solid var(--outline);
-  border-radius: 22px;
+  border-radius: var(--radius-panel);
   background: var(--surface);
   color: var(--text);
-  box-shadow: 6px 6px 0 var(--accent);
+  box-shadow: var(--shadow-floating);
 }
 
 .settings > section:first-child {

@@ -1,11 +1,11 @@
 import { changeAudioGain, changeSceneAudioGain } from "../../domain/audio/gain";
 import { useCapture } from "../captureStore";
-import { useAssistant } from "../assistant/assistantStore";
+import { assistantFocused, useAssistant } from "../assistant/assistantStore";
 
 function editable() {
   const state = useCapture.getState();
   return !state.recording && !state.importing && !state.tryMode && !state.playheadPick
-    && state.ex !== "running" && useAssistant.getState().phase === "idle";
+    && state.ex !== "running" && !assistantFocused(useAssistant.getState());
 }
 
 export function setSceneAudioGain(sceneId: string, target: "music" | "clip", gain: number, undoable = true): boolean {

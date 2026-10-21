@@ -8,8 +8,8 @@
   height: 36px;
   padding: 0;
   border: 2px solid var(--outline);
-  border-radius: 50%;
-  box-shadow: 2px 2px 0 var(--button-shadow);
+  border-radius: var(--radius-round);
+  box-shadow: var(--shadow-control);
   background: var(--accent);
   color: #fffdfb;
   font: 800 14px var(--f-ui);
@@ -19,7 +19,7 @@
   content: "";
   position: absolute;
   inset: -4px;
-  border-radius: 50%;
+  border-radius: var(--radius-round);
 }
 .avatar img {
   width: 100%;
@@ -30,7 +30,7 @@
 .avatar:active,
 .avatar[aria-expanded="true"] {
   transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 var(--button-shadow);
+  box-shadow: var(--shadow-pressed);
 }
 .panel {
   position: fixed;
@@ -41,10 +41,10 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   border: 2.5px solid var(--outline);
-  border-radius: 18px;
+  border-radius: var(--radius-panel);
   background: var(--surface);
   color: var(--text);
-  box-shadow: 6px 6px 0 var(--accent);
+  box-shadow: var(--shadow-floating);
 }
 .band {
   display: flex;
@@ -59,7 +59,7 @@
   width: 50px;
   height: 50px;
   border-width: 2.5px;
-  box-shadow: 3px 3px 0 var(--button-shadow);
+  box-shadow: var(--shadow-control);
   font-size: 19px;
 }
 .badge {
@@ -71,7 +71,7 @@
   width: 22px;
   height: 22px;
   border: 2px solid var(--outline);
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--surface);
   color: var(--text);
 }
@@ -105,7 +105,7 @@
   min-height: 44px;
   padding: 0 14px;
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--radius-control);
   background: transparent;
   color: var(--text);
   text-align: left;
@@ -176,7 +176,7 @@
   height: 44px;
   padding: 8px 10px;
   border: 2px solid var(--q14);
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   background: var(--input);
   color: var(--text);
   font: 600 16px var(--f-ui);
@@ -205,8 +205,8 @@
   height: 44px;
   margin-top: 16px;
   border: 2px solid var(--outline);
-  border-radius: 10px;
-  box-shadow: 2px 2px 0 var(--button-shadow);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-control);
   background: var(--accent);
   color: white;
   font: 800 14px var(--f-ui);
@@ -243,7 +243,7 @@
 @media (pointer: fine) {
   .avatar:not(:disabled):not([aria-expanded="true"]):hover {
     transform: translate(-1px, -1px);
-    box-shadow: 3px 3px 0 var(--button-shadow);
+    box-shadow: var(--shadow-control);
   }
 }
 @media (max-width: 359px) {

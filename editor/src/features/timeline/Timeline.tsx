@@ -1,3 +1,5 @@
+import { selectComponentLayer } from "../../state/components/componentLayerCommands";
+import { componentTypeName } from "../../domain/components/presentation";
 import { AudioClipBar } from "../sound/AudioClipBar";
 import { CoverButton } from "../cover/CoverButton";
 import { TimelineKeyframes } from "../animation/TimelineKeyframes";
@@ -274,7 +276,7 @@ export function Timeline() {
               onClick={(event) => {
                 if (event.detail === 0 && !s.tryMode) {
                   setCodePreviewFocus(false);
-                  s.patch({ selComp: component.id, sel: -1 });
+                  selectComponentLayer(component.id);
                 }
               }}
               disabled={!!s.tryMode}
@@ -291,7 +293,10 @@ export function Timeline() {
               )}
               <span className={cx("compContent")}>
                 <Icon name={component.type} size={11} />
-                <span>{componentLabel(component)}</span>
+                <span>
+                  {componentTypeName(component)} ·{" "}
+                  {Number(componentLength(component, s.clips).toFixed(1))} s
+                </span>
                 <DebugLayerIssue componentId={component.id} />
               </span>
               {s.selComp === component.id && (

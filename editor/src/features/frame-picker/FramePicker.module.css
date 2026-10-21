@@ -17,6 +17,12 @@
   display: flex;
   flex-direction: column;
 }
+@supports not (view-transition-name: editor-video) {
+  .dialog[open] {
+    animation: editor-tool-enter var(--editor-motion-layout)
+      var(--editor-motion-ease) both;
+  }
+}
 .dialog::backdrop {
   background: var(--preview-backdrop);
 }
@@ -29,7 +35,9 @@
 }
 .header button {
   min-height: 44px;
-  border: 0;
+  border: 2px solid var(--outline);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-control);
   cursor: pointer;
   font: 800 14px var(--f-ui);
 }
@@ -37,12 +45,11 @@
   width: 44px;
   display: grid;
   place-items: center;
-  background: transparent;
-  color: var(--text);
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
 }
 .save {
   padding: 0 24px;
-  border-radius: 10px;
   background: var(--button-primary-bg);
   color: var(--button-primary-text);
 }
@@ -55,15 +62,17 @@
   flex: none;
   width: 100%;
   padding: 24px max(24px, calc((100% - 800px) / 2)) 28px;
+  border-radius: var(--radius-panel) var(--radius-panel) 0 0;
   background: var(--ground);
 }
-.footer p {
+.hint {
   margin: 16px 0 0;
   text-align: center;
   color: var(--muted);
   font: 600 12px var(--f-ui);
 }
 .filmstrip {
+  border-radius: var(--radius-control);
   position: relative;
   height: 72px;
 }
@@ -74,6 +83,7 @@
   grid-template-columns: repeat(8, 1fr);
   overflow: hidden;
   border: 1px solid var(--q14);
+  border-radius: var(--radius-control);
 }
 .frame {
   position: relative;
@@ -88,12 +98,13 @@
   margin: 0;
   opacity: 0;
   cursor: ew-resize;
+  touch-action: none;
 }
 .marker {
   position: absolute;
   top: -6px;
   bottom: -6px;
-  left: var(--cover-position);
+  left: var(--frame-position);
   width: 3px;
   transform: translateX(-50%);
   background: var(--text);
@@ -118,7 +129,7 @@
   .filmstrip {
     height: 48px;
   }
-  .footer p {
+  .hint {
     margin-top: 8px;
   }
 }

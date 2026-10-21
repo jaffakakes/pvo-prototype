@@ -314,7 +314,9 @@ export const nativeTurnSchema = object(
     cloudTask: taskProposalSchema,
     blocked: { type: "boolean", const: true },
     answer: { ...string(8000), minLength: 1 },
+    suggestions: array({ ...string(72), minLength: 1 }, 3),
     evidence: array({ ...string(2000), minLength: 1 }, 6),
+    attachmentEvidence: array({ ...string(2000), minLength: 1 }, 3),
   },
   ["message", "operations", "observations"],
 );
@@ -695,6 +697,27 @@ export const nativeRequestSchema = object(
     project: projectSchema,
     observations: array(observationSchema, 8),
     execution: executionSchema,
+    attachments: array(
+      {
+        anyOf: [
+          object({
+            name: { ...string(160), minLength: 1 },
+            kind: { const: "image" },
+            dataUrl: {
+              ...string(700000),
+              pattern:
+                "^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$",
+            },
+          }),
+          object({
+            name: { ...string(160), minLength: 1 },
+            kind: { const: "text" },
+            text: { ...string(16000), minLength: 1 },
+          }),
+        ],
+      },
+      3,
+    ),
   },
   ["mode", "prompt", "history", "project", "observations"],
 );

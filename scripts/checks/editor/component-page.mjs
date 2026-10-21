@@ -70,6 +70,7 @@ try {
       useCapture.getState().addComponent("form");
       await document.fonts.ready;
     });
+    await page.getByRole("button", { name: "Design", exact: true }).click();
     const root = page.locator("[data-component-page]");
     await root.waitFor();
     await page.getByRole("button", { name: "Soft", exact: true }).click();
@@ -176,6 +177,7 @@ try {
       const id = state.addComponent("choice");
       window.choiceId = id;
     });
+    await page.getByRole("button", { name: "Design", exact: true }).click();
     await page.locator('[data-look-part="button:1"]').click();
     await page.getByRole("button", { name: "Logic", exact: true }).click();
     await page
@@ -195,13 +197,11 @@ try {
       state.patch({ selComp: state.components[0].id });
     });
 
-    await page.evaluate(() =>
-      window.pageCapture.getState().patch({ sheet: "component" }),
-    );
+    await page.getByRole("button", { name: "Design", exact: true }).click();
     await root.waitFor();
     assert.equal(
       await page
-        .getByRole("button", { name: "Logic", exact: true })
+        .getByRole("button", { name: "Design", exact: true })
         .getAttribute("aria-pressed"),
       "true",
     );
@@ -209,7 +209,7 @@ try {
   }
   assert.deepEqual(errors, []);
   console.log(
-    "Component page: responsive layout, design undo, routing, timing, invalid code, restore and remembered tabs passed.",
+    "Component page: responsive layout, design undo, routing, timing, invalid code, restore and explicit Design entry passed.",
   );
 } finally {
   await browser.close();

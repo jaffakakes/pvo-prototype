@@ -1,6 +1,10 @@
+import { useEditorTransition } from "../ui/motion/EditorMotion";
 import { ComponentPage } from "../features/component-page/ComponentPage";
 import { OrbAssistant } from "../features/assistant/OrbAssistant";
-import { useAssistant } from "../state/assistant/assistantStore";
+import {
+  assistantFocused,
+  useAssistant,
+} from "../state/assistant/assistantStore";
 import {
   setAssistantThreadOpen,
   useAssistantThread,
@@ -25,6 +29,15 @@ import { useDebugLifecycle } from "../features/editor-layout/debugging/useDebugL
 
 export function Editor() {
   useDebugLifecycle();
+  const transition = useEditorTransition();
+  const activeTool = useCapture((state) => state.sheet);
+  const focusTool = [
+    "componentOpacity",
+    "componentTransform",
+    "crop",
+    "speed",
+    "animation",
+  ].includes(activeTool ?? "");
   const debugOpen = useDebugUi((state) => state.open);
   const wide = useWideLayout();
   const scenes = useCapture((state) => state.scenes);
@@ -65,7 +78,7 @@ export function Editor() {
       ? (selectedComponent ?? undefined)
       : undefined;
   const trying = useCapture((state) => !!state.tryMode);
-  const assistantActive = useAssistant((state) => state.phase !== "idle");
+  const assistantActive = useAssistant(assistantFocused);
   const thread = useAssistantThread();
   if (!scenes.length) return null;
   if (pageComponent && !wide)
@@ -75,6 +88,8 @@ export function Editor() {
     <>
       <EditorWorkspace
         open={sheetOpen}
+        activeTool={activeTool}
+        focusTool={focusTool}
         ratioOpen={ratioOpen}
         textSheet={textSheet}
         soundSheet={soundSheet}
@@ -103,7 +118,6 @@ export function Editor() {
         }
         sheets={<Sheets />}
         threadOpen={thread.open && !codeEditingId}
-        threadCollapsed={thread.collapsed}
         onCloseThread={() => setAssistantThreadOpen(false)}
         assistant={(expanded, target, keyboardOpen) =>
           !voiceover && (
@@ -115,7 +129,13 @@ export function Editor() {
           )
         }
         assistantActive={assistantActive || thread.open}
-        onDismiss={() => useCapture.getState().patch({ sheet: null })}
+        onDismiss={() =>
+          transition(
+            "tool",
+            () => useCapture.getState().patch({ sheet: null }),
+            "close",
+          )
+        }
       />
     </>
   );

@@ -7,8 +7,8 @@
   padding: 0;
   overflow: hidden;
   border: 3px solid var(--outline);
-  border-radius: 22px;
-  box-shadow: 8px 8px 0 var(--line-strong);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-floating);
   background: var(--surface);
   color: var(--text);
   font-family: var(--f-ui);
@@ -21,7 +21,7 @@
 .dialogTitle { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .close {
   flex: none; width: 36px; height: 36px; display: grid; place-items: center;
-  border: 2px solid var(--button-border); border-radius: 10px; box-shadow: 3px 3px 0 var(--button-shadow);
+  border: 2px solid var(--button-border); border-radius: var(--radius-control); box-shadow: var(--shadow-control);
   background: var(--button-secondary-bg); color: var(--button-secondary-text); font: 700 21px/1 var(--f-ui); cursor: pointer;
 }
 .body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 18px; padding: 8px 28px 20px; overflow: auto; scrollbar-width: thin; }
@@ -30,37 +30,37 @@
 .formatCards button {
   min-height: 80px; width: 100%; display: grid; grid-template-columns: 22px minmax(0, 1fr) auto;
   align-items: start; gap: 12px; padding: 12px 14px; text-align: left;
-  border: 2px solid var(--q14); border-radius: 14px;
+  border: 2px solid var(--q14); border-radius: var(--radius-control);
   background: transparent; color: var(--muted-strong); cursor: pointer;
 }
-.formatCards button[data-selected="true"] { border-color: var(--highlight); box-shadow: 3px 3px 0 var(--button-shadow); background: var(--input); color: var(--text); }
+.formatCards button[data-selected="true"] { border-color: var(--highlight); background: var(--input); color: var(--text); }
 .formatCards button strong { display: block; font: 800 13px/1.25 var(--f-ui); }
 .formatCards button small { display: block; margin-top: 3px; font: 600 11px/1.35 var(--f-ui); opacity: .65; }
 .formatCards button em { font: 700 10px var(--f-ui); font-style: normal; opacity: .62; white-space: nowrap; }
-.radio { width: 22px; height: 22px; display: grid; place-items: center; border: 2px solid var(--line-strong); border-radius: 50%; font: 800 12px var(--f-ui); }
+.radio { width: 22px; height: 22px; display: grid; place-items: center; border: 2px solid var(--line-strong); border-radius: var(--radius-round); font: 800 12px var(--f-ui); }
 [data-selected="true"] > .radio { border-color: var(--line-strong); background: var(--line-strong); }
 .phoneFormat { display: none; }
 .quality { display: flex; gap: 8px; }
 .quality button {
   min-height: 34px; display: inline-flex; align-items: center; gap: 4px; padding: 0 10px;
-  border: 2px solid var(--q14); border-radius: 10px;
+  border: 2px solid var(--q14); border-radius: var(--radius-control);
   background: transparent; color: var(--muted-strong); cursor: pointer;
 }
-.quality button[data-selected="true"] { border-color: var(--highlight); box-shadow: 3px 3px 0 var(--button-shadow); background: var(--input); color: var(--text); }
+.quality button[data-selected="true"] { border-color: var(--highlight); background: var(--input); color: var(--text); }
 .quality strong { font: 800 12px var(--f-ui); }
 .qualityHint { font: 600 10px var(--f-ui); opacity: .65; }
 .qualitySize { display: none; }
 .qualityNote { margin: 8px 0 0; color: var(--text-secondary); font: 600 10.5px/1.4 var(--f-ui); }
-.coverRow { min-height: 126px; display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 2px solid var(--line-strong); border-radius: 14px; }
-.coverThumb, .fileCover { flex: none; display: block; overflow: hidden; border: 2px solid var(--line-strong); border-radius: 7px; background: #000; }
+.coverRow { min-height: 126px; display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 2px solid var(--line-strong); border-radius: var(--radius-card); }
+.coverThumb, .fileCover { flex: none; display: block; overflow: hidden; border: 2px solid var(--line-strong); border-radius: var(--radius-small); background: #000; }
 .coverThumb { width: 56px; height: 100px; }
 .coverThumb img, .fileCover img { width: 100%; height: 100%; display: block; object-fit: contain; }
 .coverCopy { min-width: 0; flex: 1; }
 .coverCopy strong { display: block; font: 800 13px/1.2 var(--f-ui); }
 .coverCopy small { display: block; margin-top: 4px; color: var(--text-secondary); font: 600 10.5px/1.4 var(--f-ui); }
 .coverChange {
-  flex: none; min-height: 40px; padding: 0 10px; border: 2px solid var(--button-border); border-radius: 10px;
-  box-shadow: 3px 3px 0 var(--button-shadow); background: var(--button-secondary-bg); color: var(--button-secondary-text);
+  flex: none; min-height: 40px; padding: 0 10px; border: 2px solid var(--button-border); border-radius: var(--radius-control);
+  box-shadow: var(--shadow-control); background: var(--button-secondary-bg); color: var(--button-secondary-text);
   font: 800 11px var(--f-ui); cursor: pointer;
 }
 .coverCaveat { margin: 6px 0 0; color: var(--text-secondary); font: 600 10.5px/1.35 var(--f-ui); }
@@ -70,12 +70,12 @@
 .footer > p { max-width: 140px; margin: 0; color: var(--text-secondary); font: 600 11px/1.35 var(--f-ui); }
 .primary, .quietAction, .shareAction {
   min-height: 48px; display: inline-flex; align-items: center; justify-content: center;
-  padding: 0 22px; border-radius: 14px; font: 800 15px var(--f-ui); cursor: pointer;
+  padding: 0 22px; border-radius: var(--radius-control); font: 800 15px var(--f-ui); cursor: pointer;
 }
-.primary { min-height: 56px; border: 2px solid var(--button-border); box-shadow: 3px 3px 0 var(--button-shadow); background: var(--button-primary-bg); color: var(--button-primary-text); }
+.primary { min-height: 56px; border: 2px solid var(--button-border); box-shadow: var(--shadow-control); background: var(--button-primary-bg); color: var(--button-primary-text); }
 .primary:disabled { opacity: .48; cursor: not-allowed; }
 .quietAction { border: 2px solid var(--q14); background: transparent; color: var(--muted-strong); }
-.shareAction { border: 2px solid var(--button-border); box-shadow: 3px 3px 0 var(--button-shadow); background: var(--button-secondary-bg); color: var(--button-secondary-text); }
+.shareAction { border: 2px solid var(--button-border); box-shadow: var(--shadow-control); background: var(--button-secondary-bg); color: var(--button-secondary-text); }
 .linkAction { min-height: 44px; padding: 0; border: 0; background: transparent; color: var(--text); font: 700 12px var(--f-ui); text-decoration: underline; cursor: pointer; }
 .pickerDetail { display: flex; flex-direction: column; gap: 9px; padding-top: 8px; }
 .pickerTime { font: 48px/1 var(--f-display); }
@@ -85,28 +85,28 @@
 .progressHeading { display: flex; align-items: end; justify-content: space-between; padding-top: 6px; }
 .progressHeading strong { font: 56px/1 var(--f-display); }
 .progressHeading span { color: var(--text-secondary); font: 700 12px var(--f-ui); }
-.progressTrack { position: relative; flex: none; height: 16px; overflow: hidden; border: 2px solid var(--line-strong); border-radius: 10px; background: var(--deep); }
+.progressTrack { position: relative; flex: none; height: 16px; overflow: hidden; border: 2px solid var(--line-strong); border-radius: var(--radius-control); background: var(--deep); }
 .progressTrack i { display: block; height: 100%; background: var(--text); transition: width .25s linear; }
 .progressTrack b { position: absolute; top: -1px; width: 2px; height: 16px; background: var(--line-strong); }
 .progressAnnouncement { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .stages { display: flex; flex-direction: column; gap: 7px; }
-.stage { min-height: 56px; display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 2px solid transparent; border-radius: 10px; }
-.stage[data-status="active"] { border-color: var(--text); box-shadow: 3px 3px 0 var(--line-strong); background: var(--input); }
+.stage { min-height: 56px; display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 2px solid transparent; border-radius: var(--radius-control); }
+.stage[data-status="active"] { border-color: var(--text); background: var(--input); }
 .stage[data-status="pending"] { opacity: .55; }
-.stageIcon { flex: none; width: 22px; height: 22px; display: grid; place-items: center; border: 2px solid var(--line-strong); border-radius: 50%; font: 800 12px var(--f-ui); }
+.stageIcon { flex: none; width: 22px; height: 22px; display: grid; place-items: center; border: 2px solid var(--line-strong); border-radius: var(--radius-round); font: 800 12px var(--f-ui); }
 .stage[data-status="done"] .stageIcon { border-color: var(--line-strong); background: var(--line-strong); }
-.stageIcon i { display: block; width: 12px; height: 12px; border: 2px solid var(--text); border-right-color: transparent; border-radius: 50%; animation: export-spin .9s linear infinite; }
+.stageIcon i { display: block; width: 12px; height: 12px; border: 2px solid var(--text); border-right-color: transparent; border-radius: var(--radius-round); animation: export-spin .9s linear infinite; }
 @keyframes export-spin { to { transform: rotate(360deg); } }
 .stage strong { display: block; font: 800 12.5px var(--f-ui); }
 .stage small { display: block; margin-top: 2px; color: var(--text-secondary); font: 600 10.5px/1.2 var(--f-ui); }
 .keepOpen { display: flex; align-items: center; gap: 8px; margin: 6px 0 0; font: 600 11px/1.4 var(--f-ui); }
-.keepOpen b { flex: none; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; background: var(--yellow); color: var(--surface); font: 800 13px var(--f-ui); }
+.keepOpen b { flex: none; width: 20px; height: 20px; display: grid; place-items: center; border-radius: var(--radius-round); background: var(--yellow); color: var(--surface); font: 800 13px var(--f-ui); }
 .locked { align-self: flex-start; padding: 7px 9px; border: 2px solid var(--q14); border-radius: 8px; color: var(--muted-strong); font: 700 11px var(--f-ui); }
 .readyBadge { align-self: flex-start; padding: 5px 8px; border-radius: 5px; background: var(--line-strong); font: 800 10px var(--f-ui); }
 .phoneReadyBadge { display: none; }
 .dialog[data-state="done"] .header { padding-bottom: 14px; }
 .dialog[data-state="done"] .footer { display: none; }
-.fileCard { display: flex; align-items: center; gap: 14px; min-height: 126px; padding: 12px; border: 2px solid var(--text); border-radius: 14px; box-shadow: 3px 3px 0 var(--line-strong); background: var(--input); }
+.fileCard { display: flex; align-items: center; gap: 14px; min-height: 126px; padding: 12px; border: 2px solid var(--text); border-radius: var(--radius-card); background: var(--input); }
 .fileCover { width: 56px; height: 100px; }
 .fileCard > span:last-child { min-width: 0; }
 .fileCard strong { display: block; overflow-wrap: anywhere; font: 800 14px/1.35 var(--f-ui); }
@@ -144,13 +144,13 @@
   .section h3, .formatCards, .qualityNote, .coverCopy, .coverCaveat { display: none; }
   .phoneFormat { position: relative; display: block; font-size: 0; }
   .phoneFormat::after { position: absolute; top: 8px; right: 11px; content: "⌄"; color: var(--text); font: 800 20px/1 var(--f-ui); pointer-events: none; }
-  .phoneFormat select { width: 100%; height: 44px; padding: 0 28px 0 10px; appearance: none; border: 2px solid var(--button-border); border-radius: 10px; box-shadow: 3px 3px 0 var(--button-shadow); background: var(--button-secondary-bg); color: var(--button-secondary-text); font: 800 12px var(--f-ui); }
+  .phoneFormat select { width: 100%; height: 44px; padding: 0 28px 0 10px; appearance: none; border: 2px solid var(--button-border); border-radius: var(--radius-control); box-shadow: var(--shadow-control); background: var(--button-secondary-bg); color: var(--button-secondary-text); font: 800 12px var(--f-ui); }
   .quality { flex-direction: column; gap: 6px; }
   .quality button { width: 100%; min-height: 36px; justify-content: space-between; padding: 0 10px; }
   .qualityHint { display: none; }
   .qualitySize { display: inline; color: var(--text-secondary); font: 700 10px var(--f-ui); }
   .coverSection { padding-top: 10px; border-top: 1px solid var(--line-strong); }
-  .coverRow { min-height: 44px; gap: 7px; padding: 5px 7px; border-color: var(--q14); border-radius: 10px; }
+  .coverRow { min-height: 44px; gap: 7px; padding: 5px 7px; border-color: var(--q14); border-radius: var(--radius-control); }
   .coverThumb { width: 18px; height: 32px; border-width: 1px; border-radius: 3px; }
   .coverChange { min-height: 32px; flex: 1; padding: 0; border: 0; box-shadow: none; background: none; text-align: left; font-size: 11px; }
   .warning { grid-column: 1 / -1; }

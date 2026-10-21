@@ -61,6 +61,9 @@ try {
     });
     const range = dialog.getByRole("slider", { name: "Pick a cover frame" });
     await range.waitFor();
+    await page.waitForFunction(
+      () => !document.documentElement.dataset.editorMotion,
+    );
     assert.equal(Number(await range.inputValue()), 0);
     assert.equal(await dialog.getByRole("button").count(), 2);
     const box = await range.boundingBox();
@@ -103,7 +106,7 @@ try {
     await page.keyboard.press("Escape");
     await dialog.waitFor({ state: "hidden" });
     await page.waitForTimeout(1000);
-    await page.reload({ waitUntil: "networkidle" });
+    await page.reload({ waitUntil: "domcontentloaded" });
     await tile.click();
     assert(
       Math.abs(Number(await range.inputValue()) - saved) < 0.02,

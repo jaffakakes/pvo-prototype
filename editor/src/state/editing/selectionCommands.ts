@@ -1,14 +1,13 @@
-import { deleteSelectedAudio, duplicateSelectedAudio, splitSelectedAudio } from "./audioCommands";
+import {
+  deleteSelectedAudio,
+  duplicateSelectedAudio,
+  splitSelectedAudio,
+} from "./audioCommands";
 import { splitClipAt } from "../../domain/clips/editing";
 import {
   selectedSplitTime,
   trimSelectedAtPlayhead,
 } from "../../domain/clips/selectionEditing";
-import { total } from "../../domain/clips/timing";
-import {
-  clampComponentStart,
-  componentLength,
-} from "../../domain/components/timing";
 import { clamp } from "../../domain/project/numbers";
 import { sceneDuration } from "../../domain/scenes/duration";
 import { uid } from "../../infrastructure/ids";
@@ -32,7 +31,10 @@ export function undoTimelineEdit(redo = false) {
 export function splitSelectedClip() {
   const state = useCapture.getState();
   if (state.tryMode) return;
-  if (state.selAudio != null) { splitSelectedAudio(); return; }
+  if (state.selAudio != null) {
+    splitSelectedAudio();
+    return;
+  }
   const time = selectedSplitTime(state.clips, state.sel, state.t);
   const result = time == null ? null : splitClipAt(state.clips, time, uid);
   if (!result) {
@@ -60,21 +62,12 @@ export function trimSelectionAtPlayhead(side: "l" | "r") {
 export function duplicateTimelineSelection() {
   const state = useCapture.getState();
   if (state.tryMode) return;
-  if (state.selAudio != null) { duplicateSelectedAudio(); return; }
-  const length = total(state.clips);
+  if (state.selAudio != null) {
+    duplicateSelectedAudio();
+    return;
+  }
   if (state.selComp) {
-    const original = state.components.find((item) => item.id === state.selComp);
-    if (!original) return;
-    const id = state.duplicateComponent(original.id);
-    if (id) {
-      const at = clampComponentStart(
-        original.at + componentLength(original, state.clips),
-        original.dur,
-        length,
-      );
-      useCapture.getState().updateComponent(id, { at }, false);
-      useCapture.getState().patch({ t: at, playing: false });
-    }
+    state.duplicateComponent(state.selComp);
     return;
   }
   if (state.selText != null) {
