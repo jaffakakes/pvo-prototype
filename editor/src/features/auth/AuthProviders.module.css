@@ -1,0 +1,44 @@
+.providers {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.provider {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  width: 100%;
+  min-height: 56px;
+  padding: 0 8px;
+  border: 2px solid var(--outline);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-control);
+  background: var(--surface);
+  color: var(--text);
+  font: 800 15px/1.25 var(--f-ui);
+  cursor: pointer;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+}
+
+.email {
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+}
+
+.provider:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 700px) {
+  .provider {
+    min-height: 52px;
+    grid-template-columns: 32px minmax(0, 1fr) 32px;
+    font-size: 14.5px;
+  }
+}

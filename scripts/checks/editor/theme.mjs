@@ -65,10 +65,8 @@ await context.route(`${origin}/api/auth/**`, route => {
     return route.fulfill({ status: 200, contentType: "application/json",
       body: JSON.stringify({
         available: true,
-        clerkAvailable: false,
-        clerkPublishableKey: null,
-        canLinkEmail: false,
-        emailLinked: false,
+        supabaseAvailable: false,
+        supabasePublishableKey: null, supabaseUrl: null,
         user: activeUser,
       }) });
   }
@@ -97,7 +95,24 @@ try {
   assert.equal(await modes.getByRole("button", { name: "System" }).getAttribute("aria-pressed"), "true");
   assert.equal(await more.getByRole("group", { name: "Accent color" }).count(), 0,
     "A guest must not be offered account accent choices");
-  assert.match(await more.innerText(), /Magenta is the guest color/);
+  assert.equal(await more.getByRole("heading", { name: "Accent color" }).count(), 0);
+  assert.equal(await more.getByRole("region", { name: "Account" }).count(), 0);
+  assert.doesNotMatch(await more.innerText(), /Magenta is the guest color/);
+  assert.equal(await more.getByRole("region", { name: "Replies" }).count(), 0);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const signIn = page.locator(".editorHead").getByRole("button", { name: "Sign in", exact: true });
+  await signIn.waitFor();
+  const signInBox = await signIn.boundingBox();
+  assert(signInBox && signInBox.x > 195 && signInBox.y <= 20
+    && signInBox.width >= 44 && signInBox.height >= 44,
+  "Guest Sign in belongs at the top right with a reachable touch target");
+  await signIn.click();
+  const auth = page.locator("dialog[data-auth-step]");
+  await auth.waitFor({ state: "visible" });
+  await auth.getByRole("button", { name: "Close sign in", exact: true }).click();
+  await auth.waitFor({ state: "hidden" });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.locator("[data-desktop-editor]").waitFor();
 
   await modes.getByRole("button", { name: "Light" }).click();
   const guestLight = await expectRootTheme(page, { mode: "light", accent: "magenta" });
@@ -124,6 +139,12 @@ try {
   await changeAccount(page);
   const accents = more.getByRole("group", { name: "Accent color" });
   await accents.waitFor();
+  assert.equal(await more.getByRole("region", { name: "Replies" }).count(), 1);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator(".editorHead").getByRole("button", { name: "Back to camera", exact: true }).waitFor();
+  assert.equal(await page.locator(".editorHead").getByRole("button", { name: "Sign in", exact: true }).count(), 0);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.locator("[data-desktop-editor]").waitFor();
   assert.deepEqual(await accents.getByRole("button").allTextContents(),
     ["Magenta", "Orange", "Emerald", "Cyan", "Blue", "Violet"]);
   await accents.getByRole("button", { name: "Cyan" }).click();

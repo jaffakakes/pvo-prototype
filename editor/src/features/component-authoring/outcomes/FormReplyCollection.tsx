@@ -22,7 +22,7 @@ function localOutcome(fields: ComponentFields): PlaybackOutcome {
 /** A creator deliberately provisions one owner-scoped public reply destination. */
 export function FormReplyCollection({ component, fields }: { component: PvoComponent; fields: ComponentFields }) {
   const [client] = useState(() => createRepliesClient());
-  const accountAvailable = useAuthGate(state => state.available || state.clerkAvailable);
+  const accountAvailable = useAuthGate(state => state.available || state.supabaseAvailable);
   const collecting = fields.formSubmitMode === "collect";
   const codeOwned = isCodeOwned(component);
   const [busy, setBusy] = useState(false);
@@ -52,7 +52,7 @@ export function FormReplyCollection({ component, fields }: { component: PvoCompo
     setError(null);
     try {
       const account = await refreshAccountSession();
-      if ((account.available || account.clerkAvailable) && !await requireAccount("replies")) return;
+      if ((account.available || account.supabaseAvailable) && !await requireAccount("replies")) return;
       controller.signal.throwIfAborted();
       const title = collectReplyStartingFields(fields).heading?.trim().slice(0, 120) || "Video replies";
       const box = await client.createBox(title, controller.signal);

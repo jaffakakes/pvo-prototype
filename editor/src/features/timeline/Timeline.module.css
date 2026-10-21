@@ -5,16 +5,20 @@
 }
 
 .timeline :global(.tick) { color: var(--muted); }
+.timeline > :global(.timelineContent) { min-height: 100%; }
+/* Extend into the 2px timeline edge to leave a 1px visual gap. */
+.timeline :global(.playhead) { bottom: -1px; }
 
 .labelRail { position: absolute; inset: 0 auto 0 0; background: var(--ground); z-index: 3; pointer-events: none; }
 .currentTime { position: absolute; left: 16px; top: 7px; z-index: 4; color: var(--highlight); font: 800 10px var(--f-ui); pointer-events: none; }
 .timeline .trackLabel:global(.layerName), .timeline .audioLabel {
   position: absolute;
   left: 8px;
-  width: 100px;
+  width: 44px;
   z-index: 4;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   padding: 0 7px;
   border: 1px solid var(--q08);
@@ -29,7 +33,6 @@
 .trackLabel[data-kind="video"] svg { color: var(--pale); }
 .trackLabel[data-kind="text"] svg { color: var(--yellow); }
 .trackLabel[data-kind="audio"] svg { color: var(--teal); }
-.trackLabel small { display: block; margin-top: 3px; font-size: 9px; font-weight: 600; color: var(--faint); }
 .audioLabel { cursor: pointer; }
 
 .timeline :global(.mute) { background: var(--surface); }

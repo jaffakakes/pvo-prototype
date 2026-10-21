@@ -15,7 +15,7 @@ export function CropSheet() {
       hasSnapshot.current = true;
   };
   return (
-    <Shell title="Crop" sub={`Clip ${state.sel + 1} · zoom and mirror`} actions={<AnimateEntry />}>
+    <Shell title="Crop" actions={<AnimateEntry />}>
       <div className={cx("zoomLabel")}>
         <span>Zoom</span>
         <strong>{Math.round((clip?.zoom ?? 1) * 100)}%</strong>

@@ -3,14 +3,11 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: calc(14px + env(safe-area-inset-top)) 14px 0;
 }
 .viewfinder {
   position: relative;
   flex: 1;
   min-height: 0;
-  border-radius: 28px;
-  border: 3px solid #000;
   overflow: hidden;
   background: var(--surface);
 }
@@ -74,15 +71,6 @@
   box-shadow: 3px 3px 0 #000;
   font: 800 13px var(--f-ui);
 }
-.camTop {
-  position: absolute;
-  left: 18px;
-  right: 18px;
-  top: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
 .segbar {
   display: flex;
   gap: 3px;
@@ -101,47 +89,28 @@
 .segLive {
   background: var(--pale);
 }
-.recLine {
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.recPill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--accent);
-  border: 2px solid #000;
-  border-radius: 20px;
-  padding: 3px 10px;
-  font: 800 11px/1.2 var(--f-ui);
-  box-shadow: 2px 2px 0 #000;
-}
-.recPill i {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--text);
-  animation: rsPulse 0.8s infinite;
-}
-.timeNote {
-  margin-left: auto;
-  background: rgba(0, 0, 0, 0.7);
-  border: 1.5px solid var(--q12);
-  padding: 3px 9px;
-  border-radius: 8px;
-  font: 800 11px/1.2 var(--f-ui);
-}
 .camControls {
   position: absolute;
-  left: 16px;
-  right: 16px;
-  top: 64px;
+  left: calc(16px + env(safe-area-inset-left));
+  right: calc(16px + env(safe-area-inset-right));
+  top: calc(64px + env(safe-area-inset-top));
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+}
+.camControls .cameraBrand {
+  width: 44px;
+  height: 44px;
+}
+.cameraBrand img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  filter: invert(1);
+}
+html[data-theme="light"] .cameraBrand img {
+  filter: none;
 }
 .soundPill {
   height: 40px;
@@ -169,8 +138,8 @@
 }
 .rightRail {
   position: absolute;
-  right: 16px;
-  top: 124px;
+  right: calc(16px + env(safe-area-inset-right));
+  top: calc(124px + env(safe-area-inset-top));
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -215,24 +184,21 @@
   cursor: pointer;
 }
 .dock {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 7px;
+  width: 44px;
+  margin-top: 6px;
   padding: 0;
   background: none;
   border: 0;
   cursor: pointer;
-  animation: rsPop 0.35s var(--spring) both;
 }
 .dockThumb {
   position: relative;
-  width: 66px;
-  height: 90px;
+  width: 44px;
+  height: 60px;
   overflow: visible;
   border: 2.5px solid #000;
   border-radius: 14px;
@@ -251,13 +217,13 @@
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 5px 0 6px;
+  padding: 3px 0 4px;
   background: var(--accent);
   color: var(--button-primary-text);
   border-top: 2px solid #000;
   border-radius: 0 0 11px 11px;
   text-align: center;
-  font: 800 11px/1 var(--f-ui);
+  font: 800 9px/1 var(--f-ui);
   letter-spacing: 0.3px;
 }
 .dockCount {
@@ -275,8 +241,4 @@
   background: var(--text);
   color: var(--ground);
   font: 800 11px var(--f-ui);
-}
-.dockCaption {
-  font: 700 10px var(--f-ui);
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
 }

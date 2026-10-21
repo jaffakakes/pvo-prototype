@@ -1,10 +1,44 @@
+export {
+  componentOpacity,
+  componentRotation,
+  componentLayerMotion,
+} from "./layer.js";
+
 /** Shared visual values for the no-code editor and the standalone player. */
-export { MIN_COMPONENT_SCALE, MAX_COMPONENT_SCALE, MAX_COMPONENT_PIXELS, canvasPixelSize, componentPixelDimension, componentPixelSize, componentPixelTransform, componentScale, componentSize } from "./size.js";
+export {
+  MIN_COMPONENT_SCALE,
+  MAX_COMPONENT_SCALE,
+  MAX_COMPONENT_PIXELS,
+  canvasPixelSize,
+  componentPixelDimension,
+  componentPixelSize,
+  componentPixelTransform,
+  componentScale,
+  componentSize,
+} from "./size.js";
 export { observeComponentSize } from "./measure.js";
 
 export const LOOK_PRESETS = ["bold", "soft", "minimal", "contrast"];
-export const LOOK_NAMES = { bold: "Bold", soft: "Soft", minimal: "Minimal", contrast: "High contrast", custom: "Custom" };
-export const LOOK_PALETTE = ["#F2F0E9", "#15151C", "#000000", "#A78BFA", "#FF9FBC", "#2EC4B6", "#FFD23E", "#00E5A0", "#FF5C5C", "#FF9F43", "#5B8DEF"];
+export const LOOK_NAMES = {
+  bold: "Bold",
+  soft: "Soft",
+  minimal: "Minimal",
+  contrast: "High contrast",
+  custom: "Custom",
+};
+export const LOOK_PALETTE = [
+  "#F2F0E9",
+  "#15151C",
+  "#000000",
+  "#A78BFA",
+  "#FF9FBC",
+  "#2EC4B6",
+  "#FFD23E",
+  "#00E5A0",
+  "#FF5C5C",
+  "#FF9F43",
+  "#5B8DEF",
+];
 export const LOOK_SIZES = {
   heading: { S: 12, M: 14, L: 17, XL: 20 },
   body: { S: 9, M: 10.5, L: 12, XL: 13.5 },
@@ -14,21 +48,53 @@ export const LOOK_SIZES = {
 
 export function createLook(preset = "bold", buttonCount = 2) {
   const base = LOOK_PRESETS.includes(preset) ? preset : "bold";
-  const light = "#F2F0E9", dark = "#15151C", black = "#000000";
-  const whole = { bg: dark, border: black, text: light, radius: 14, align: "center" };
+  const light = "#F2F0E9",
+    dark = "#15151C",
+    black = "#000000";
+  const whole = {
+    bg: dark,
+    border: black,
+    text: light,
+    radius: 14,
+    align: "center",
+  };
   const heading = { color: light, size: "L", align: "center" };
   const body = { color: light, size: "M", weight: 600, align: "center" };
-  const button = { fill: "#FF9FBC", text: dark, border: black, size: "M", weight: 800, radius: 14 };
+  const button = {
+    fill: "#FF9FBC",
+    text: dark,
+    border: black,
+    size: "M",
+    weight: 800,
+    radius: 14,
+  };
   if (base === "soft") {
     Object.assign(whole, { bg: light, border: light, text: dark, radius: 22 });
     Object.assign(heading, { color: dark, size: "M" });
     Object.assign(body, { color: dark });
-    Object.assign(button, { fill: "#C4B3FC", border: "#C4B3FC", weight: 700, radius: 999 });
+    Object.assign(button, {
+      fill: "#C4B3FC",
+      border: "#C4B3FC",
+      weight: 700,
+      radius: 999,
+    });
   } else if (base === "minimal") {
-    Object.assign(whole, { bg: "none", border: "none", radius: 6, align: "left" });
+    Object.assign(whole, {
+      bg: "none",
+      border: "none",
+      radius: 6,
+      align: "left",
+    });
     Object.assign(heading, { size: "M", align: "left" });
     Object.assign(body, { size: "S", align: "left" });
-    Object.assign(button, { fill: "none", text: light, border: light, size: "S", weight: 700, radius: 6 });
+    Object.assign(button, {
+      fill: "none",
+      text: light,
+      border: light,
+      size: "S",
+      weight: 700,
+      radius: 6,
+    });
   } else if (base === "contrast") {
     Object.assign(whole, { bg: black, border: light, radius: 0 });
     Object.assign(heading, { color: "#FFD23E", size: "XL" });
@@ -36,7 +102,11 @@ export function createLook(preset = "bold", buttonCount = 2) {
     Object.assign(button, { fill: light, text: black, size: "L", radius: 0 });
   }
   return {
-    preset: base, basePreset: base, whole, heading, body,
+    preset: base,
+    basePreset: base,
+    whole,
+    heading,
+    body,
     btns: Array.from({ length: buttonCount }, () => ({ ...button })),
   };
 }
@@ -47,29 +117,61 @@ export function cloneLook(look) {
     whole: { ...look.whole },
     heading: { ...look.heading },
     body: { ...look.body },
-    btns: look.btns.map(button => ({ ...button })),
+    btns: look.btns.map((button) => ({ ...button })),
   };
 }
 
 export function normalizeHex(value) {
   if (typeof value !== "string") return null;
   const hex = value.trim().replace(/^#/, "");
-  if (/^[\da-f]{3}$/i.test(hex)) return `#${hex.split("").map(char => char + char).join("").toUpperCase()}`;
+  if (/^[\da-f]{3}$/i.test(hex))
+    return `#${hex
+      .split("")
+      .map((char) => char + char)
+      .join("")
+      .toUpperCase()}`;
   return /^[\da-f]{6}$/i.test(hex) ? `#${hex.toUpperCase()}` : null;
+}
+
+/** Tint colours share the same bounded channels as PVO Style. */
+function normalizeRgba(value) {
+  if (typeof value !== "string") return null;
+  const match =
+    /^rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(0(?:\.\d+)?|1(?:\.0+)?|\.\d+)\s*\)$/i.exec(
+      value.trim(),
+    );
+  if (!match) return null;
+  const [red, green, blue, alpha] = match.slice(1).map(Number);
+  if ([red, green, blue].some((channel) => channel > 255) || alpha > 1)
+    return null;
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
 /** Treat serialized visual values as data, including when a package came from another author. */
 export function normalizeLook(value, buttonCount = 2) {
   const defaults = createLook(value?.basePreset ?? value?.preset, buttonCount);
-  const color = (value, fallback, none = false) => none && value === "none" ? "none" : normalizeHex(value) ?? fallback;
-  const size = (value, fallback) => ["S", "M", "L", "XL"].includes(value) ? value : fallback;
-  const weight = (value, fallback) => [600, 700, 800].includes(value) ? value : fallback;
-  const radius = (value, fallback) => [0, 6, 14, 22, 999].includes(value) ? value : fallback;
-  const align = (value, fallback) => ["left", "center", "right"].includes(value) ? value : fallback;
+  const color = (value, fallback, none = false) =>
+    none && value === "none"
+      ? "none"
+      : (normalizeHex(value) ?? normalizeRgba(value) ?? fallback);
+  const size = (value, fallback) =>
+    ["S", "M", "L", "XL"].includes(value) ? value : fallback;
+  const weight = (value, fallback) =>
+    [600, 700, 800].includes(value) ? value : fallback;
+  const radius = (value, fallback) =>
+    [0, 6, 14, 22, 999].includes(value) ? value : fallback;
+  const align = (value, fallback) =>
+    ["left", "center", "right"].includes(value) ? value : fallback;
   const result = cloneLook(defaults);
-  result.preset = [...LOOK_PRESETS, "custom"].includes(value?.preset) ? value.preset : defaults.preset;
+  result.preset = [...LOOK_PRESETS, "custom"].includes(value?.preset)
+    ? value.preset
+    : defaults.preset;
   for (const key of ["bg", "border", "text"]) {
-    result.whole[key] = color(value?.whole?.[key], defaults.whole[key], key !== "text");
+    result.whole[key] = color(
+      value?.whole?.[key],
+      defaults.whole[key],
+      key !== "text",
+    );
   }
   result.whole.radius = radius(value?.whole?.radius, defaults.whole.radius);
   result.whole.align = align(value?.whole?.align, defaults.whole.align);
@@ -96,8 +198,8 @@ export function normalizeLook(value, buttonCount = 2) {
 /** Pixel units are scaled once by the stage adapter; the values also work in miniature previews. */
 export function lookStyles(value, unit = 1, buttonCount = 2) {
   const look = normalizeLook(value, buttonCount);
-  const px = value => `${value * unit}px`;
-  const paint = value => value === "none" ? "transparent" : value;
+  const px = (value) => `${value * unit}px`;
+  const paint = (value) => (value === "none" ? "transparent" : value);
   return {
     whole: {
       background: paint(look.whole.bg),
@@ -109,7 +211,10 @@ export function lookStyles(value, unit = 1, buttonCount = 2) {
       boxShadow: "none",
     },
     heading: {
-      background: "transparent", border: "0", padding: "0", boxShadow: "none",
+      background: "transparent",
+      border: "0",
+      padding: "0",
+      boxShadow: "none",
       color: look.heading.color,
       fontSize: px(LOOK_SIZES.heading[look.heading.size]),
       textAlign: look.heading.align,
@@ -125,7 +230,7 @@ export function lookStyles(value, unit = 1, buttonCount = 2) {
       lineHeight: "1.4",
       margin: `0 0 ${px(9)}`,
     },
-    buttons: look.btns.map(button => ({
+    buttons: look.btns.map((button) => ({
       background: paint(button.fill),
       color: button.text,
       border: `${px(2)} solid ${paint(button.border)}`,

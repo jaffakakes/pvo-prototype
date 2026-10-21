@@ -10,7 +10,6 @@ type Props = {
   format: ExportFormat;
   quality: ExportQuality;
   unavailable: boolean;
-  close(): void;
   begin(): void;
   saveCover(): void;
   cancel(): void;
@@ -25,7 +24,6 @@ export function ExportFooter({
   format,
   quality,
   unavailable,
-  close,
   begin,
   saveCover,
   cancel,
@@ -34,16 +32,9 @@ export function ExportFooter({
   retry720,
   backToSettings,
 }: Props) {
+  if (mode === "gate") return null;
   return (
     <footer className={styles.footer}>
-      {mode === "gate" && (
-        <>
-          <p>Sign in or create an account with Google or email.</p>
-          <button type="button" className={styles.quietAction} onClick={close}>
-            Keep editing
-          </button>
-        </>
-      )}
       {mode === "setup" && (
         <>
           <p>Your PVO opens through a shareable Restyle link.</p>

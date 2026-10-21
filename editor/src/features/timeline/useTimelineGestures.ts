@@ -1,3 +1,4 @@
+import { selectComponentLayer } from "../../state/components/componentLayerCommands";
 import { useTimelineTrim } from "./useTimelineTrim";
 import { useTimelineLayerTiming } from "./useTimelineLayerTiming";
 import { sceneDuration } from "../../domain/scenes/duration";
@@ -37,7 +38,7 @@ export function useTimelineGestures() {
   const layers = layout.map((row) => row.id);
   const rows = new Map(layout.map((row) => [row.id, row.top]));
   const rowEnd = layout.reduce((end, row) => end + row.height, 30);
-  const timelineHeight = rowEnd + s.audioClips.length * 34 + (s.sound ? 40 : 8);
+  const timelineHeight = rowEnd + s.audioClips.length * 34 + (s.sound ? 40 : 0);
   const selectedLayer: LayerId | null =
     s.selText != null
       ? `text:${s.selText}`
@@ -63,12 +64,7 @@ export function useTimelineGestures() {
             selComp: null,
             playing: false,
           })
-        : s.patch({
-            selComp: id.slice(10),
-            sel: -1,
-            selText: null,
-            playing: false,
-          });
+        : selectComponentLayer(id.slice(10));
   const layerKeyDown = (event: ReactKeyboardEvent) => {
     if (event.key === "Escape" && layerDrag.active) {
       event.preventDefault();

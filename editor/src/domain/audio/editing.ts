@@ -6,6 +6,36 @@ import { audioGain } from "./gain";
 
 export const audioDuration = (clip: AudioClip) =>
   (clip.out - clip.in) / clip.speed;
+
+export type AudioSource = {
+  name: string;
+  url: string;
+  duration: number;
+  start: number;
+};
+
+export function createAudioClip(id: number, source: AudioSource): AudioClip | null {
+  if (
+    !source.url ||
+    !source.name.trim() ||
+    !Number.isFinite(source.duration) ||
+    source.duration < 0.1 ||
+    !Number.isFinite(source.start) ||
+    source.start < 0
+  ) return null;
+  return {
+    id,
+    name: source.name.trim(),
+    url: source.url,
+    srcDur: source.duration,
+    in: 0,
+    out: source.duration,
+    speed: 1,
+    start: source.start,
+    muted: false,
+    gain: 1,
+  };
+}
 export function extractClipAudio(
   clips: Clip[],
   index: number,

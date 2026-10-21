@@ -1,3 +1,5 @@
+import { openExportDialog } from "../helpers/editor-export.mjs";
+import { installSupabaseFixture, fillEmailForm, supabaseUrl, publishableKey } from "./supabase-fixture.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
@@ -5,32 +7,13 @@ import { chromium } from "playwright-core";
 const editorUrl = process.env.EDITOR_URL || process.env.RESTYLE_EDITOR_URL || "http://127.0.0.1:5173/";
 const origin = new URL(editorUrl).origin;
 const fixture = fileURLToPath(new URL("../../../share/assets/preview.mp4", import.meta.url));
-const publishableKey = `pk_test_${Buffer.from("export.clerk.accounts.dev$").toString("base64")}`;
 const browser = await chromium.launch({
   executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
   headless: true,
   args: ["--no-sandbox"],
 });
 
-const clerkModule = `
-  export class Clerk {
-    constructor() { this.session = null; this.user = null; this.listeners = new Set(); }
-    async load() {}
-    addListener(listener) { this.listeners.add(listener); return () => this.listeners.delete(listener); }
-    mountSignIn(host) {
-      const button = document.createElement("button");
-      button.textContent = "Complete mocked email sign-in";
-      button.onclick = () => {
-        this.user = { id: "user_export", primaryEmailAddress: {
-          emailAddress: "export@example.test", verification: { status: "verified" } } };
-        this.session = { id: "sess_export", getToken: async () => "export-email-token" };
-        for (const listener of this.listeners) listener({ session: this.session, user: this.user });
-      };
-      host.replaceChildren(button);
-    }
-    unmountSignIn(host) { host.replaceChildren(); }
-  }
-`;
+
 
 async function checkAccountGate(phone) {
   const context = await browser.newContext({
@@ -43,14 +26,7 @@ async function checkAccountGate(phone) {
   let checks = 0;
   let emailExchanges = 0;
   const renders = [];
-  await context.route(/\/(?:assets\/clerk-[^/]+\.js|node_modules\/\.vite\/deps\/@clerk_clerk-js\.js)(?:\?.*)?$/,
-    route => route.fulfill({ status: 200, contentType: "text/javascript", body: clerkModule }));
-  await context.route("**/npm/@clerk/ui@1/dist/ui.browser.js", route => route.fulfill({
-    status: 200,
-    contentType: "text/javascript",
-    headers: { "Access-Control-Allow-Origin": origin },
-    body: "window.__internal_ClerkUICtor = class ClerkUI {};",
-  }));
+  const provider = await installSupabaseFixture(context);
   await context.route(`${origin}/api/auth/**`, route => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
@@ -59,20 +35,13 @@ async function checkAccountGate(phone) {
       checks++;
       return json({
         available: true,
-        clerkAvailable: true,
-        clerkPublishableKey: publishableKey,
-        canLinkEmail: false,
-        emailLinked: false,
+        supabaseAvailable: true,
+        supabasePublishableKey: publishableKey, supabaseUrl,
         user: signedIn ? { id: "editor-1", name: "Editor tester" } : null,
       });
     }
-    if (path === "/api/auth/google/start" && request.method() === "GET") {
-      signedIn = true;
-      return route.fulfill({ status: 200, contentType: "text/html",
-        body: `<script>window.opener.postMessage({type:"pvo:auth:complete",ok:true},${JSON.stringify(origin)});window.close()</script>` });
-    }
-    if (path === "/api/auth/clerk/exchange" && request.method() === "POST") {
-      assert.equal(request.headers().authorization, "Bearer export-email-token");
+    if (path === "/api/auth/supabase/exchange" && request.method() === "POST") {
+      assert.equal(request.headers().authorization, `Bearer ${provider.session.access_token}`);
       emailExchanges++;
       signedIn = true;
       return json({ user: { id: "editor-1", name: "Editor tester" } });
@@ -105,8 +74,7 @@ async function checkAccountGate(phone) {
   const gate = exportSheet.locator("[data-export-account-gate]");
   const beginExport = async () => {
     if (phone) {
-      await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
-      await page.getByRole("button", { name: "Export and create link", exact: true }).click();
+      await openExportDialog(page);
     } else await page.getByRole("banner").getByRole("button", { name: "Export", exact: true }).click();
     await exportSheet.waitFor();
   };
@@ -119,6 +87,9 @@ async function checkAccountGate(phone) {
       "Sign-in must remain inside the existing export dialog");
     assert.match(await gate.getByRole("group", { name: "Selected export settings" }).innerText(), /720p/);
     assert.equal(await gate.getByRole("link", { name: "Privacy Policy" }).count(), 1);
+    assert.equal(await exportSheet.getByRole("button", { name: "Keep editing", exact: true }).count(), 0);
+    assert.doesNotMatch(await gate.innerText(), /Your edit stays right here/);
+    assert.equal(await exportSheet.evaluate(element => getComputedStyle(element).borderTopLeftRadius), "24px");
   };
   const waitForRender = async count => {
     const deadline = Date.now() + 15000;
@@ -144,7 +115,7 @@ async function checkAccountGate(phone) {
     await start();
     await verifyGate();
     assert.equal(renders.length, 0, "Showing sign-in must not create a render job");
-    await exportSheet.getByRole("button", { name: "Keep editing" }).click();
+    await exportSheet.getByRole("button", { name: "Close export", exact: true }).click();
     await exportSheet.waitFor({ state: "hidden" });
 
     await beginExport();
@@ -158,12 +129,20 @@ async function checkAccountGate(phone) {
     signedIn = false;
     const checksBeforeStart = checks;
     await start();
-    await verifyGate();
-    assert(checks > checksBeforeStart, "Every export checks the live account, including after expiry");
-    await gate.getByRole("button", { name: "Continue with email" }).click();
-    await gate.getByRole("button", { name: "Complete mocked email sign-in" }).click();
     await waitForRender(2);
-    assert.equal(emailExchanges, 1);
+    assert(checks > checksBeforeStart, "Every export checks the live account, including after expiry");
+    assert.equal(await gate.count(), 0, "An accepted provider session restores sign-in without another prompt");
+    assert.equal(emailExchanges, 2, "An expired Restyle cookie is renewed through the provider");
+
+    signedIn = false;
+    provider.session = null;
+    await page.evaluate(() => localStorage.removeItem("restyle-auth-restyle-test"));
+    await start();
+    await verifyGate();
+    await gate.getByRole("button", { name: "Continue with email" }).click();
+    await fillEmailForm(gate, "export@example.test");
+    await waitForRender(3);
+    assert.equal(emailExchanges, 3, "Google, restoration and email each exchange a verified Supabase session");
     assert.deepEqual(errors, []);
     console.log(`${phone ? "Phone" : "Desktop"} export account gate passed: settings first, dismissal, Google/email resume, session expiry, and retained quality.`);
   } finally {

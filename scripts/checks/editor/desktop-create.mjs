@@ -232,7 +232,7 @@ async function run(width) {
   await context.route(`${origin}/api/auth/**`, route => {
     const path = new URL(route.request().url()).pathname;
     if (path === "/api/auth/session") return route.fulfill({ contentType: "application/json",
-      body: JSON.stringify({ available: true, clerkAvailable: false, clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: signedIn ? { id: "editor-test", name: "Editor tester" } : null }) });
+      body: JSON.stringify({ available: true, supabaseAvailable: false, supabasePublishableKey: null, supabaseUrl: null, user: signedIn ? { id: "editor-test", name: "Editor tester" } : null }) });
     if (path === "/api/auth/google/start") {
       signedIn = true;
       return route.fulfill({ contentType: "text/html",
@@ -269,13 +269,13 @@ async function run(width) {
     assert.equal(await clips(page).count(), 1);
     await saved(page, firstId);
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
-    await page.getByRole("dialog", { name: "Create a free account", exact: true }).waitFor();
+    await page.getByRole("dialog", { name: "Ready to export", exact: true }).waitFor();
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Export", exact: true }).click();
     const exportDialog = page.getByRole("dialog", { name: "Export", exact: true });
     await exportDialog.waitFor();
     await exportDialog.getByRole("button", { name: /Export and share/ }).click();
-    const auth = page.getByRole("dialog", { name: "Create a free account to export", exact: true });
+    const auth = page.getByRole("dialog", { name: "Ready to export", exact: true });
     await auth.waitFor();
     const popup = page.waitForEvent("popup");
     await auth.getByRole("button", { name: "Continue with Google" }).click();
@@ -546,7 +546,7 @@ async function mobileTargetedRecoveryImport() {
   await page.locator('[data-notification-id="restoreFailed"]').waitFor();
   await page.getByRole("button", { name: "Dismiss notification", exact: true }).click();
   assert.equal(await page.getByRole("button", { name: "Restore issue", exact: true }).count(), 0);
-  await page.getByText("Storage options", { exact: true }).click();
+  await page.getByRole("button", { name: "Saving paused", exact: true }).click();
   const storage = page.getByRole("region", { name: "Project storage", exact: true });
   await storage.getByRole("button", { name: "Discard saved edit", exact: true }).click();
   await storage.getByRole("button", { name: "Discard and continue", exact: true }).click();

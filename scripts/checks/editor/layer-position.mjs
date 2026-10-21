@@ -196,9 +196,11 @@ try {
 
   await select("text");
   const textSheet = page.getByRole("dialog", { name: "Edit text", exact: true });
-  await textSheet.getByRole("tab", { name: "Style", exact: true }).click();
-  await assertPixelContract(textSheet);
-  fields = await assertPosition(textSheet, textOverlay, { x: 360, y: 1200 }, "Mobile text retained position");
+  await textSheet.getByRole("button", { name: "Text fonts", exact: true }).click();
+  assert.equal(await textSheet.locator("[data-layer-position-controls]").count(), 0, "Font selection stays focused on fonts");
+  let center = await canvasCenter(textOverlay);
+  assertNear(center.x, 360, "Mobile text retained X");
+  assertNear(center.y, 1200, "Mobile text retained Y");
   history = await historyLength();
   await page.evaluate(() => {
     const state = window.positionCapture.getState();
@@ -206,18 +208,15 @@ try {
   });
   await settle();
   assert.equal(await historyLength(), history, "A live text position preview does not create history");
-  fields = await assertPosition(textSheet, textOverlay, { x: 486, y: 960 }, "External text position update");
-  await fields.xField.fill("540");
-  await fields.xField.press("Enter");
-  await settle();
-  assert.equal(await historyLength(), history + 1, "Mobile Enter commits one text position history entry");
-  await assertPosition(textSheet, textOverlay, { x: 540, y: 960 }, "Mobile text after Enter");
+  center = await canvasCenter(textOverlay);
+  assertNear(center.x, 486, "External mobile text X");
+  assertNear(center.y, 960, "External mobile text Y");
 
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.locator("[data-desktop-editor]").waitFor();
   await inspector.getByRole("tab", { name: "Style", exact: true }).click();
   await assertPixelContract(inspector);
-  await assertPosition(inspector, textOverlay, { x: 540, y: 960 }, "Desktop text after responsive round trip");
+  await assertPosition(inspector, textOverlay, { x: 486, y: 960 }, "Desktop text after responsive round trip");
 
   assert.deepEqual(errors, []);
   console.log("PASS: layer X/Y pixel controls commit and stay in sync for text and components on desktop and mobile.");

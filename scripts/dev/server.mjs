@@ -1,3 +1,4 @@
+import { createLocalProfileApi } from "./account-profile.mjs";
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
@@ -10,6 +11,7 @@ import {
 import { createLocalRenderApi } from "./render-jobs/routes.mjs";
 import { createLocalReplyBoxApi } from "./reply-boxes/routes.mjs";
 import { createLocalAuthApi } from "./local-auth.mjs";
+import { createLocalAssistantApi } from "./assistant.mjs";
 
 const root = fileURLToPath(new URL("../../dist/", import.meta.url));
 const port = Number(process.env.PVO_PORT || 4173);
@@ -19,15 +21,21 @@ const sessions = await createLocalSessions({ directory: localDataDirectory });
 const authApi = await createLocalAuthApi({
   directory: localDataDirectory,
   origin: `http://127.0.0.1:${port}`,
-  clientId: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  clerkPublishableKey: process.env.CLERK_PUBLISHABLE_KEY,
-  clerkIssuer: process.env.CLERK_ISSUER,
+  supabasePublishableKey: process.env.SUPABASE_PUBLISHABLE_KEY,
+  supabaseUrl: process.env.SUPABASE_URL,
+});
+const profileApi = createLocalProfileApi({
+  directory: localDataDirectory,
+  origin: `http://127.0.0.1:${port}`,
+  userFor: authApi.userFor,
 });
 const renderApi = await createLocalRenderApi({ userFor: authApi.userFor });
 const replyApi = await createLocalReplyBoxApi({
   sessions,
   directory: localDataDirectory,
+});
+const assistantApi = createLocalAssistantApi({
+  origin: `http://127.0.0.1:${port}`,
 });
 const mime = {
   ".html": "text/html; charset=utf-8",
@@ -56,13 +64,20 @@ const server = createServer(async (request, response) => {
     response.end("Invalid request address");
     return;
   }
+  if (assistantApi.handles(pathname)) {
+    await assistantApi.handle(request, response);
+    return;
+  }
   if (
+    pathname === "/api/account/profile" ||
     pathname.startsWith("/api/auth/") ||
     pathname.startsWith("/api/renders") ||
     pathname.startsWith("/api/reply-boxes")
   ) {
     try {
-      if (pathname.startsWith("/api/auth/"))
+      if (pathname === "/api/account/profile")
+        await profileApi(request, response);
+      else if (pathname.startsWith("/api/auth/"))
         await authApi.handle(request, response, pathname);
       else if (pathname.startsWith("/api/reply-boxes"))
         await replyApi.handle(request, response, pathname, url.origin);

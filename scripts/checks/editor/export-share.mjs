@@ -1,3 +1,4 @@
+import { openExportDialog } from "../helpers/editor-export.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -31,8 +32,7 @@ await page.route(`${origin}/api/**`, route => {
   const path = new URL(request.url()).pathname;
   const respond = (body, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
   if (path === "/api/auth/session")
-    return respond({ available: true, clerkAvailable: false, clerkPublishableKey: null,
-      canLinkEmail: false, emailLinked: false, user: { id: "acceptance-account", name: "Acceptance creator" } });
+    return respond({ available: true, supabaseAvailable: false, supabasePublishableKey: null, supabaseUrl: null, user: { id: "acceptance-account", name: "Acceptance creator" } });
   if (path === "/api/renders") return respond({ available: false, maxSourceBytes: 0, maxSources: 0, formats: [] });
   if (path === "/api/publishing") return respond({ available: true, hasSession: true, maxBytes: 671088640000 });
   if (path === "/api/publications" && request.method() === "GET")
@@ -60,8 +60,7 @@ try {
   await page.locator('input[type="file"]').setInputFiles(videoFile);
   await page.getByRole("button", { name: /^(Open editor|Start editing)$/ }).click();
   await page.locator(".editorWorkspace").waitFor();
-  await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
-  await page.getByRole("button", { name: "Export and create link", exact: true }).click();
+  await openExportDialog(page);
   const exportDialog = page.locator("dialog[data-state]");
   await exportDialog.waitFor();
   assert.equal(await exportDialog.getByRole("radiogroup", { name: "Export format" }).count(), 0,

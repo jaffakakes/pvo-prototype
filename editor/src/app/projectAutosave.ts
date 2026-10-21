@@ -12,11 +12,11 @@ import {
   notify,
   resolveNotification,
 } from "../state/notifications/notificationStore";
+import { navigateProject } from "./navigation";
 import { createProjectAutosaveController } from "./projectAutosaveController";
 
-const persistence = createProjectPersistence(
-  new URL(location.href).searchParams.get("project") ?? undefined,
-);
+const requestedProjectId = new URL(location.href).searchParams.get("project");
+const persistence = createProjectPersistence(requestedProjectId ?? undefined);
 
 function hydrateProject(saved: RestoredProject): void {
   const state = useCapture.getState();
@@ -54,6 +54,16 @@ const autosave = createProjectAutosaveController({
   persistence,
   store: useCapture,
   hydrate: hydrateProject,
+  empty: () => {
+    if (
+      !requestedProjectId ||
+      new URL(location.href).searchParams.get("project") !== requestedProjectId
+    )
+      return;
+    // A missing link is safe to leave; unreadable checkpoints still block writes.
+    navigateProject(null, true);
+    notify("projectMissing", { scope: "project", currentAttempt: true });
+  },
   failed: (kind, error) => {
     console.error(`Restyle project storage (${kind}):`, error);
     notify(kind, { scope: "project" });

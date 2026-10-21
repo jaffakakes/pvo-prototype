@@ -28,6 +28,7 @@ type Props = {
   onPickerTime(time: number): void;
   artifact: CompletedExport | null;
   artifactUrl: string | null;
+  coverOnly?: boolean;
 };
 
 /** A viewer owned by the export dialog, independent of the editor and render decoders. */
@@ -39,6 +40,7 @@ export function ExportPreview({
   onPickerTime,
   artifact,
   artifactUrl,
+  coverOnly = false,
 }: Props) {
   const picture = useRef<HTMLDivElement>(null);
   const [pictureSize, setPictureSize] = useState({ width: 0, height: 0 });
@@ -167,7 +169,13 @@ export function ExportPreview({
   );
 
   return (
-    <div className={styles.well} data-export-preview data-state={mode}>
+    <div
+      className={styles.well}
+      data-export-preview
+      data-state={mode}
+      data-cover-only={coverOnly || undefined}
+      style={{ "--preview-ratio": rw / rh } as CSSProperties}
+    >
       <div
         className={styles.picture}
         ref={picture}
@@ -234,15 +242,17 @@ export function ExportPreview({
         )}
         {interactiveResult && textLayers}
         {interactiveResult && componentLayers}
-        <span
-          className={`${styles.label} ${mode === "picker" ? styles.coverLabel : ""}`}
-        >
-          {mode === "picker"
-            ? `COVER · ${exportClock(pickerTime)}`
-            : inResult
-              ? "✓ EXPORTED FILE"
-              : "PREVIEW"}
-        </span>
+        {!coverOnly && (
+          <span
+            className={`${styles.label} ${mode === "picker" ? styles.coverLabel : ""}`}
+          >
+            {mode === "picker"
+              ? `COVER · ${exportClock(pickerTime)}`
+              : inResult
+                ? "✓ EXPORTED FILE"
+                : "PREVIEW"}
+          </span>
+        )}
         {mode !== "picker" && (
           <button
             type="button"
@@ -254,50 +264,54 @@ export function ExportPreview({
           </button>
         )}
       </div>
-      <div className={styles.transport} data-picker={mode === "picker"}>
-        {mode !== "picker" && (
-          <button
-            type="button"
-            className={styles.play}
-            onClick={togglePlay}
-            aria-label={
-              playing ? "Pause export preview" : "Play export preview"
-            }
-          >
-            {playing ? "Ⅱ" : "▶"}
-          </button>
-        )}
-        <span className={styles.time}>
-          {exportClock(shownTime)} <small>/ {exportClock(duration)}</small>
-        </span>
-        {slider}
-        {mode !== "picker" && (
-          <button
-            type="button"
-            className={styles.desktopMute}
-            onClick={toggleMuted}
-            aria-label={muted ? "Unmute preview" : "Mute preview"}
-          >
-            {muted ? "MUTED" : "◖"}
-          </button>
-        )}
-        {mode === "picker" && (
-          <span className={styles.pickerEnd}>
-            {exportClock(duration, false)}
+      {!coverOnly && (
+        <div className={styles.transport} data-picker={mode === "picker"}>
+          {mode !== "picker" && (
+            <button
+              type="button"
+              className={styles.play}
+              onClick={togglePlay}
+              aria-label={
+                playing ? "Pause export preview" : "Play export preview"
+              }
+            >
+              {playing ? "Ⅱ" : "▶"}
+            </button>
+          )}
+          <span className={styles.time}>
+            {exportClock(shownTime)} <small>/ {exportClock(duration)}</small>
           </span>
-        )}
-      </div>
-      <p className={styles.previewNote}>
-        {mode === "picker"
-          ? "Scrub to the frame you want for the cover."
-          : mode === "exporting"
-            ? "Preview only — the finished file plays here when ready."
-            : mode === "gate"
-              ? "Keep watching while you sign in — nothing is lost."
-              : inResult
-                ? "Playing the exported file — what viewers will get."
-                : "Project preview at the export aspect ratio."}
-      </p>
+          {slider}
+          {mode !== "picker" && (
+            <button
+              type="button"
+              className={styles.desktopMute}
+              onClick={toggleMuted}
+              aria-label={muted ? "Unmute preview" : "Mute preview"}
+            >
+              {muted ? "MUTED" : "◖"}
+            </button>
+          )}
+          {mode === "picker" && (
+            <span className={styles.pickerEnd}>
+              {exportClock(duration, false)}
+            </span>
+          )}
+        </div>
+      )}
+      {!coverOnly && (
+        <p className={styles.previewNote}>
+          {mode === "picker"
+            ? "Scrub to the frame you want for the cover."
+            : mode === "exporting"
+              ? "Preview only — the finished file plays here when ready."
+              : mode === "gate"
+                ? "Keep watching while you sign in — nothing is lost."
+                : inResult
+                  ? "Playing the exported file — what viewers will get."
+                  : "Project preview at the export aspect ratio."}
+        </p>
+      )}
     </div>
   );
 }

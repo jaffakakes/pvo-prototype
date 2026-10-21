@@ -1,3 +1,5 @@
+import { componentLayerMotion } from "../../../../packages/pvo-component-runtime/index.js";
+import { ComponentSelectionChrome } from "../component-layer/ComponentSelectionChrome";
 import { fontFamily } from "../../../../packages/pvo-fonts/index.js";
 import { useAppliedFont } from "./useAppliedFont";
 import {
@@ -46,14 +48,17 @@ export function ComponentOverlay({
   const located = useDebugLocate((state) => state.componentId === component.id);
   const u = width / 247;
   const { ref, size } = useComponentDimensions(component, width);
-  const motion = evaluateAnimation(component.animation, time - component.at);
+  const motion = componentLayerMotion(
+    component,
+    evaluateAnimation(component.animation, time - component.at),
+  );
   const style = {
     left: `${component.x + motion.x}%`,
     top: `${component.y + motion.y}%`,
     zIndex: focus?.zIndex ?? zIndex,
     "--u": `${u}px`,
     width: "max-content",
-    opacity: focus ? 1 : motion.opacity,
+
     ...(focus
       ? {
           "--focus-origin-x": `${-focus.x}px`,
@@ -79,31 +84,36 @@ export function ComponentOverlay({
       data-component-focused={!!focus}
       style={style}
     >
-      {component.code?.custom ? (
-        component.code.pvo ? (
-          <PvoRuntimeOverlay
-            component={component}
-            width={width}
-            trying={trying}
-            isVisible={componentVisible}
-          />
+      <div style={{ opacity: focus ? 1 : motion.opacity }}>
+        {component.code?.custom ? (
+          component.code.pvo ? (
+            <PvoRuntimeOverlay
+              component={component}
+              width={width}
+              trying={trying}
+              isVisible={componentVisible}
+            />
+          ) : (
+            <div className={cx("compTooltip")}>Unsupported component code</div>
+          )
         ) : (
-          <div className={cx("compTooltip")}>Unsupported component code</div>
-        )
-      ) : (
-        <ComponentFieldsView
-          component={component}
-          unit={u}
-          trying={trying}
-          onResponse={onResponse}
-          selectedPart={
-            selected &&
-            session.componentId === component.id &&
-            session.tab === "look"
-              ? session.part
-              : null
-          }
-        />
+          <ComponentFieldsView
+            component={component}
+            unit={u}
+            trying={trying}
+            onResponse={onResponse}
+            selectedPart={
+              selected &&
+              session.componentId === component.id &&
+              session.tab === "look"
+                ? session.part
+                : null
+            }
+          />
+        )}
+      </div>
+      {selected && !trying && (
+        <ComponentSelectionChrome component={component} />
       )}
       {trying && <TryFeedback componentId={component.id} />}
       {located && (

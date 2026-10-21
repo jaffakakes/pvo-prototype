@@ -3,13 +3,16 @@ import {
   dragAudio,
   extractClipAudio,
   splitAudio,
+  createAudioClip,
+  type AudioSource,
 } from "../../domain/audio/editing";
 import { sceneDuration } from "../../domain/scenes/duration";
 import type { AudioClip } from "../../domain/audio/model";
 import { uid } from "../../infrastructure/ids";
 import { useCapture } from "../captureStore";
-import { useAssistant } from "../assistant/assistantStore";
+import { assistantFocused, useAssistant } from "../assistant/assistantStore";
 import { projectSnapshot } from "../project/history";
+import type { CaptureState } from "../types";
 
 const blocked = () => {
   const state = useCapture.getState();
@@ -18,15 +21,54 @@ const blocked = () => {
     !!state.playheadPick ||
     state.recording ||
     state.ex === "running" ||
-    useAssistant.getState().phase !== "idle"
+    assistantFocused(useAssistant.getState())
   );
 };
+
+export type AudioInsertionOwner = Pick<
+  CaptureState,
+  "localId" | "currentSceneId" | "past" | "future"
+>;
+
+/** The caller owns the URL until this command accepts it into project history. */
+export function insertAudioClip(
+  source: AudioSource,
+  owner: AudioInsertionOwner,
+): boolean {
+  const state = useCapture.getState();
+  if (
+    blocked() ||
+    state.localId !== owner.localId ||
+    state.currentSceneId !== owner.currentSceneId ||
+    state.past !== owner.past ||
+    state.future !== owner.future
+  )
+    return false;
+  const clip = createAudioClip(uid(), source);
+  if (!clip) return false;
+  state.edit({
+    audioClips: [...state.audioClips, clip],
+    selAudio: clip.id,
+    sel: -1,
+    selText: null,
+    selComp: null,
+    sheet: null,
+    playing: false,
+  });
+  return true;
+}
 
 export function extractSelectedAudio() {
   const state = useCapture.getState();
   if (blocked()) return;
-  const scene = state.scenes.find(item => item.id === state.currentSceneId);
-  const result = extractClipAudio(state.clips, state.sel, uid(), state.muted, scene?.clipGain);
+  const scene = state.scenes.find((item) => item.id === state.currentSceneId);
+  const result = extractClipAudio(
+    state.clips,
+    state.sel,
+    uid(),
+    state.muted,
+    scene?.clipGain,
+  );
   if (!result) return;
   state.edit({
     clips: result.clips,

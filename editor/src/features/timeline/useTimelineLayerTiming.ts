@@ -1,3 +1,4 @@
+import { selectComponentLayer } from "../../state/components/componentLayerCommands";
 import { useRef, type PointerEvent } from "react";
 import {
   componentLength,
@@ -49,9 +50,15 @@ export function useTimelineLayerTiming(
       active.target.kind === "component"
         ? state.components.some((item) => item.id === active.target.id)
         : state.texts.some((item) => item.id === active.target.id);
-    if (active.selected && !active.moved && !cancelled && exists) {
+    if (
+      active.target.kind === "text" &&
+      active.selected &&
+      !active.moved &&
+      !cancelled &&
+      exists
+    ) {
       state.patch({
-        sheet: active.target.kind === "component" ? "component" : "text",
+        sheet: "text",
         playing: false,
         orb: false,
       });
@@ -94,11 +101,12 @@ export function useTimelineLayerTiming(
       moved: false,
       timing: null,
     };
+    if (target.kind === "component") selectComponentLayer(target.id);
     state.patch({
       sel: -1,
       selComp: target.kind === "component" ? target.id : null,
       selText: target.kind === "text" ? target.id : null,
-      playing: false,
+      ...(target.kind === "text" ? { playing: false } : {}),
       orb: false,
     });
   };
@@ -126,6 +134,7 @@ export function useTimelineLayerTiming(
     const threshold = active.target.kind === "text" ? 3 : 2;
     if (!active.moved && Math.abs(dx) < threshold && !result.snapped) return;
     active.moved = true;
+    useCapture.getState().patch({ playing: false });
     if (!active.timing) {
       active.timing =
         active.target.kind === "component"

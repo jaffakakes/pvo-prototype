@@ -1,3 +1,4 @@
+import { openExportDialog } from "../helpers/editor-export.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -49,10 +50,9 @@ function fakeRenderService(page) {
     if (path === "/api/auth/session" && request.method() === "GET")
       return json({
         available: true,
-        clerkAvailable: false,
-        clerkPublishableKey: null,
-        canLinkEmail: false,
-        emailLinked: false,
+        supabaseAvailable: false,
+        supabasePublishableKey: null,
+        supabaseUrl: null,
         user: { id: "export-tester", name: "Export tester" },
       });
     if (path === "/api/renders" && request.method() === "GET")
@@ -192,13 +192,7 @@ async function exercise(phone) {
   try {
     await openProject(page);
     if (phone) {
-      await page
-        .getByRole("banner")
-        .getByRole("button", { name: "More", exact: true })
-        .click();
-      await page
-        .getByRole("button", { name: "Export and create link", exact: true })
-        .click();
+      await openExportDialog(page);
     } else
       await page
         .getByRole("banner")

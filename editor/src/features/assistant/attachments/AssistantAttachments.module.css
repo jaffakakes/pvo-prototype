@@ -1,0 +1,75 @@
+.attachments {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: 4px;
+  max-width: 50%;
+}
+.add {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+}
+.add::before {
+  content: "";
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.add:disabled {
+  opacity: 0.4;
+}
+.files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-block: 4px;
+}
+.file {
+  position: relative;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--input);
+  color: var(--text);
+}
+.file img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.file span {
+  font-size: 8px;
+  overflow-wrap: anywhere;
+}
+.file svg {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: var(--surface);
+}
+.feedback {
+  position: absolute;
+  bottom: 100%;
+  left: 14px;
+  right: 14px;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+}

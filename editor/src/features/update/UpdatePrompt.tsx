@@ -7,7 +7,8 @@ import {
 } from "../../infrastructure/pwa/registerServiceWorker";
 import { useCapture } from "../../state/captureStore";
 import { useAssistant } from "../../state/assistant/assistantStore";
-import styles from "./UpdatePrompt.module.css";
+import { BottomNotice } from "../../ui/BottomNotice";
+import { useNotifications } from "../../state/notifications/notificationStore";
 
 function updateBlocked(): boolean {
   const state = useCapture.getState();
@@ -16,6 +17,7 @@ function updateBlocked(): boolean {
 }
 
 export function UpdatePrompt() {
+  const storageIssue = useNotifications(state => state.unresolved.some(issue => issue.id === "saveFailed" || issue.id === "restoreFailed"));
   const update = useSyncExternalStore(
     subscribeEditorUpdates,
     getEditorUpdateState,
@@ -36,7 +38,7 @@ export function UpdatePrompt() {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, []);
 
-  if ((!update.available && !update.applying) || busy || assistantBusy || dismissed) return null;
+  if ((!update.available && !update.applying) || busy || assistantBusy || dismissed || storageIssue) return null;
 
   const startUpdate = async () => {
     if (saving || update.applying) return;
@@ -61,31 +63,8 @@ export function UpdatePrompt() {
   const action = update.applying || saving ? "Wait"
     : saveFailed || update.error ? "Retry" : "Update";
 
-  return (
-    <div className={styles.position}>
-      <div className={styles.notice} role="status" aria-live="polite">
-        <button
-          className={styles.update}
-          type="button"
-          aria-label={action === "Retry" ? "Retry update" : "Update"}
-          disabled={saving || update.applying}
-          onClick={() => { void startUpdate(); }}
-        >
-          <img src="restyle-mark.png" alt="" />
-          <span>{label}</span>
-          <strong>{action}</strong>
-        </button>
-        {!saving && !update.applying && (
-          <button
-            className={styles.dismiss}
-            type="button"
-            aria-label="Dismiss update notice"
-            onClick={() => setDismissed(true)}
-          >
-            ×
-          </button>
-        )}
-      </div>
-    </div>
-  );
+  return <BottomNotice message={label} action={action}
+    actionLabel={action === "Retry" ? "Retry update" : "Update"}
+    disabled={saving || update.applying} onAction={() => { void startUpdate(); }}
+    dismissLabel="Dismiss update notice" onDismiss={!saving && !update.applying ? () => setDismissed(true) : undefined} />;
 }

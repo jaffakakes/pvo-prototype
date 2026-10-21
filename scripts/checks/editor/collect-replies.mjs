@@ -1,3 +1,5 @@
+import { openEditorSettings } from "../helpers/editor-settings.mjs";
+import { openExportDialog } from "../helpers/editor-export.mjs";
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
@@ -28,7 +30,7 @@ const creator = await creatorContext.newPage();
 const viewer = await viewerContext.newPage();
 await creator.route(`${origin}/api/auth/session`, route => route.fulfill({
   contentType: "application/json",
-  body: JSON.stringify({ available: true, clerkAvailable: false, clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: { id: "replies-e2e", name: "Test creator" } }),
+  body: JSON.stringify({ available: true, supabaseAvailable: false, supabasePublishableKey: null, supabaseUrl: null, user: { id: "replies-e2e", name: "Test creator" } }),
 }));
 await creator.route(`${origin}/api/renders`, route => route.fulfill({
   contentType: "application/json",
@@ -88,7 +90,7 @@ try {
   assert.equal(box.title, "Questions for video");
   assert.equal(box.count, 0);
   assert.equal(box.url, `${origin}/api/reply-boxes/${box.id}/replies`);
-  await formSheet.getByRole("button", { name: "Done", exact: true }).click();
+  await creator.getByRole("button", { name: "Close sheet", exact: true }).click();
 
   await creator.getByRole("button", { name: "Try", exact: true }).click();
   const tryForm = creator.locator(".compForm");
@@ -99,9 +101,7 @@ try {
   assert.equal((await replies(box.id)).length, 0, "Try must leave the inbox empty");
   await creator.getByRole("button", { name: "Stop trying", exact: true }).click();
 
-  await creator.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
-  await creator.getByRole("dialog", { name: "More" })
-    .getByRole("button", { name: "Export and create link", exact: true }).click();
+  await openExportDialog(creator);
   const exportDialog = creator.locator("dialog[data-state]");
   await exportDialog.getByRole("button", { name: /Export and share/ }).click();
   await creator.locator('dialog[data-state="done"]').waitFor({ timeout: 60000 });
@@ -136,7 +136,7 @@ try {
     return response.ok && (await response.json()).replies.length === 1;
   }, box.id);
 
-  await creator.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
+  await openEditorSettings(creator);
   const more = creator.getByRole("dialog", { name: "More" });
   await more.getByRole("button", { name: "Open replies" }).click();
   await more.getByRole("button").filter({ hasText: "Questions for video" }).click();

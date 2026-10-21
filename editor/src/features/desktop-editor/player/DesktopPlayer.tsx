@@ -36,8 +36,9 @@ export function DesktopPlayer({ onOpenProject, onOpenLibrary }: Props) {
       </button>
       <div className={styles.actions}>
         <button type="button" className={styles.try} data-on={!!tryMode} disabled={!duration || picking}
-          onClick={tryMode ? stopTry : startTry} aria-label={tryMode ? "Stop trying" : "Try"}>
-          <span aria-hidden="true">{tryMode ? "■" : "▷"}</span>{tryMode ? "Stop" : "Try"}
+          onClick={tryMode ? stopTry : startTry} aria-label={tryMode ? "Stop trying" : "Try"}
+          title={tryMode ? "Stop trying" : "Try interactive preview"}>
+          {tryMode ? <><span aria-hidden="true">■</span>Stop</> : <Icon name="eye" size={20} />}
         </button>
         <DebugEntry variant="desktop" />
         <button type="button" className={styles.ratio} onClick={onOpenProject} disabled={!!tryMode}

@@ -1,3 +1,4 @@
+import { openExportDialog } from "../helpers/editor-export.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
@@ -30,8 +31,7 @@ await context.addInitScript(message => {
 const sheet = page.locator("dialog[data-state]");
 const notice = page.locator('[data-notification-id="exportFailed"]');
 async function openExport() {
-  await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
-  await page.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Export and create link" }).click();
+  await openExportDialog(page);
 }
 
 async function assertExportFailure() {
@@ -57,7 +57,7 @@ async function assertExportFailure() {
 
 try {
   await page.route("**/api/auth/session", route => route.fulfill({ contentType: "application/json",
-    body: JSON.stringify({ available: true, clerkAvailable: false, clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: { id: "notification-check", name: "Notification check" } }) }));
+    body: JSON.stringify({ available: true, supabaseAvailable: false, supabasePublishableKey: null, supabaseUrl: null, user: { id: "notification-check", name: "Notification check" } }) }));
   await page.goto(editorUrl, { waitUntil: "networkidle" });
   const visit = page.getByRole("button", { name: "Visit Site", exact: true });
   if (await visit.isVisible()) await visit.click();

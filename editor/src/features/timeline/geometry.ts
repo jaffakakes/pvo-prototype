@@ -2,8 +2,8 @@ import type { LayerId } from "../../domain/layers/model";
 
 export const PPS = 50;
 export const LEAD = 64;
-// 8px inset + 100px labels + 15px clear space in the narrow editor.
-export const PLAYHEAD_X = 123;
+// Leave room for the layer handle and a 56px cover tile before the first clip.
+export const PLAYHEAD_X = 131;
 export const stripLeft = (time: number, shift = 0, playheadX = PLAYHEAD_X) => playheadX - LEAD - time * PPS + shift;
 export function timelineRows(order: LayerId[]) {
   let top = 30;

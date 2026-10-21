@@ -41,23 +41,28 @@ export type TextOverlay = {
 };
 export type Ratio = "9:16" | "1:1" | "4:5" | "16:9";
 export type ComponentType = "tooltip" | "card" | "choice" | "form";
-export type PlaybackOutcome = {
-  kind: "continue";
-} | {
-  kind: "time";
-  t: number;
-} | {
-  kind: "scene";
-  sceneId: string;
-};
-export type Outcome = PlaybackOutcome | {
-  kind: "request";
-  url: string;
-  method: "GET" | "POST";
-  body: string;
-  onSuccess: PlaybackOutcome;
-  onError: PlaybackOutcome | null;
-};
+export type PlaybackOutcome =
+  | {
+      kind: "continue";
+    }
+  | {
+      kind: "time";
+      t: number;
+    }
+  | {
+      kind: "scene";
+      sceneId: string;
+    };
+export type Outcome =
+  | PlaybackOutcome
+  | {
+      kind: "request";
+      url: string;
+      method: "GET" | "POST";
+      body: string;
+      onSuccess: PlaybackOutcome;
+      onError: PlaybackOutcome | null;
+    };
 export type ComponentResponse = {
   index: number;
   outcome: Outcome;
@@ -106,6 +111,9 @@ export type PvoComponent = {
   x: number;
   y: number;
   scale?: number;
+  /** Static layer appearance, composed with animation outside component content. */
+  opacity?: number;
+  rotation?: number;
   /** Independent scale factors; absent axes inherit the legacy uniform scale. */
   scaleX?: number;
   scaleY?: number;

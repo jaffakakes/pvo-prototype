@@ -4,7 +4,8 @@ import { buildSync } from "esbuild";
 
 const bundle = buildSync({
   stdin: {
-    contents: `export { createAssistantRequestWorkflow } from "./editor/src/features/assistant/assistantRequestWorkflow.ts";
+    contents: `export { nativeSuggestionContext } from "./editor/src/domain/assistant/native/context.ts";
+      export { createAssistantRequestWorkflow } from "./editor/src/features/assistant/assistantRequestWorkflow.ts";
       export { prepareNativeBatch } from "./editor/src/domain/assistant/native/batch.ts";`,
     resolveDir: process.cwd(),
   },
@@ -13,7 +14,11 @@ const bundle = buildSync({
   format: "esm",
   platform: "browser",
 });
-const { createAssistantRequestWorkflow, prepareNativeBatch } = await import(
+const {
+  createAssistantRequestWorkflow,
+  prepareNativeBatch,
+  nativeSuggestionContext,
+} = await import(
   `data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString("base64")}`
 );
 
@@ -436,4 +441,41 @@ test("a cloud proposal after prepared native edits discards the batch without a 
   assert.equal(creates, 0);
   assert.equal(f.applications.length, 0);
   assert.equal(f.events.at(-1).kind, "failed");
+});
+
+test("contextual suggestions follow the completed project and expire on project or target changes", async () => {
+  const cards = ["Add an opening title for the launch video"];
+  const f = fixture([edit, { ...done, suggestions: cards }]);
+  await f.submit("Make my launch video square");
+  const { suggestions } = f.events.find(
+    (event) => event.kind === "completed",
+  ).result;
+  const completed = f.adapters.capture();
+  assert.deepEqual(suggestions.items, cards);
+  assert.equal(
+    suggestions.context,
+    nativeSuggestionContext(completed.project, completed.selection),
+  );
+  assert.notEqual(
+    suggestions.context,
+    nativeSuggestionContext(completed.project, {
+      ...completed.selection,
+      textId: 42,
+    }),
+  );
+  f.changeProject();
+  assert.notEqual(
+    suggestions.context,
+    nativeSuggestionContext(f.adapters.capture().project, completed.selection),
+  );
+});
+
+test("a completed request without useful recommendations supplies no fallback cards", async () => {
+  const f = fixture([done]);
+  await f.submit("What is the duration?");
+  assert.deepEqual(
+    f.events.find((event) => event.kind === "completed").result.suggestions
+      .items,
+    [],
+  );
 });

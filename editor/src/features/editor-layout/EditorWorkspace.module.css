@@ -1,78 +1,155 @@
 .workspace {
-  --thread-handle-height: 26px;
   position: relative;
   flex: 1;
   min-height: 0;
   min-width: 0;
   display: grid;
-  background: var(--deep);
+  background: var(--preview-backdrop);
   /* System gesture areas stay outside every panel size, including transitions. */
-  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px);
-  grid-template-rows: var(--header-height, 64px) var(--preview-height, 0px) var(--playback-height, 66px) var(--dock-height, 320px);
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0
+    env(safe-area-inset-left, 0px);
+  grid-template-rows: var(--header-height, 64px) var(--preview-height, 0px) var(
+      --dock-height,
+      320px
+    );
   grid-template-columns: minmax(0, 1fr);
   overflow: clip;
-  transition: grid-template-rows 320ms cubic-bezier(.2, .8, .2, 1);
+  transition: grid-template-rows var(--editor-motion-layout)
+    var(--editor-motion-ease);
 }
 
-.workspace[data-resizing="true"] { transition: none; }
-.media { display: none; min-height: 0; min-width: 0; }
-.workspace[data-playback-visible="false"] ~ :global(.tryBanner) { visibility: hidden; pointer-events: none; }
-.header, .playback { min-height: 0; min-width: 0; overflow: clip; }
-.header, .preview, .playback { transition: opacity 180ms ease, visibility 180ms; }
-.header[data-visible="false"], .preview[data-visible="false"], .playback[data-visible="false"] {
+.surface {
+  position: relative;
+  z-index: 0;
+  display: grid;
+  grid-template-rows: inherit;
+  grid-template-columns: minmax(0, 1fr);
+  grid-row: 1 / -1;
+  grid-column: 1;
+  min-height: 0;
+  min-width: 0;
+  transform-origin: center;
+  transition:
+    transform var(--editor-motion-close) var(--editor-motion-ease),
+    filter var(--editor-motion-close) ease,
+    border-radius var(--editor-motion-close) ease;
+}
+.workspace::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  background: rgb(13 11 19 / 28%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--editor-motion-close) ease;
+}
+.workspace:has(> [data-assistant-focus="true"]) > .surface {
+  transform: scale(0.96);
+  filter: blur(1.5px);
+  border-radius: var(--radius-panel);
+  overflow: clip;
+  transition-duration: var(--editor-motion-focus);
+}
+.workspace:has(> [data-assistant-focus="true"])::after {
+  opacity: 1;
+  transition-duration: var(--editor-motion-focus);
+}
+:global(.app[data-reduce-motion="true"]) .surface {
+  transform: none !important;
+  filter: none !important;
+  transition: none;
+}
+:global(.app[data-reduce-motion="true"]) .workspace::after {
+  transition-duration: 80ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .surface {
+    transform: none !important;
+    filter: none !important;
+    transition: none;
+  }
+  .workspace::after {
+    transition-duration: 80ms;
+  }
+}
+
+.workspace[data-resizing="true"] {
+  transition: none;
+}
+.media {
+  display: none;
+  min-height: 0;
+  min-width: 0;
+}
+.workspace[data-playback-visible="false"] ~ :global(.tryBanner) {
   visibility: hidden;
   pointer-events: none;
 }
-.workspace[data-resizing="true"] > .header,
-.workspace[data-resizing="true"] > .preview,
-.workspace[data-resizing="true"] > .playback { transition: none; }
-.preview { min-height: 0; display: flex; overflow: hidden; }
-.preview :global(.previewArea) { padding: 8px 20px; }
-.preview :global(.pvBox) { transition: none; }
-.playback { min-height: 0; }
-.dock { position: relative; min-height: 0; }
-.threadHandle {
-  position: absolute;
-  z-index: 46;
-  left: 0;
-  right: 84px;
-  bottom: calc(var(--dock-height) - var(--thread-handle-height));
-  height: var(--thread-handle-height);
-  pointer-events: auto;
+.header {
+  min-height: 0;
+  min-width: 0;
+  overflow: clip;
 }
-.threadHandle .resizeHandle { align-items: flex-start; padding: 10px 0 0 84px; }
-.threadHandle .resizeHandle span { width: 46px; height: 6px; background: var(--line-strong); }
-.workspace[data-trying="true"][data-debug-open="false"] .dock { visibility: hidden; overflow: hidden; pointer-events: none; }
-.workspace[data-keyboard-open="true"] :global([data-component-tabs]) { display: none; }
+.header,
+.preview {
+  transition:
+    opacity var(--editor-motion-swap) ease,
+    visibility var(--editor-motion-swap);
+}
+.header[data-visible="false"],
+.preview[data-visible="false"] {
+  visibility: hidden;
+  pointer-events: none;
+}
+.workspace[data-resizing="true"] .header,
+.workspace[data-resizing="true"] .preview {
+  transition: none;
+}
+.preview {
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+.preview :global(.previewArea) {
+  padding: 8px 20px;
+}
+.preview :global(.pvBox) {
+  transition: none;
+}
+.dock {
+  position: relative;
+  min-height: 0;
+}
+.workspace[data-trying="true"][data-debug-open="false"] .dock {
+  visibility: hidden;
+  overflow: hidden;
+  pointer-events: none;
+}
+.workspace[data-keyboard-open="true"] :global([data-component-tabs]) {
+  display: none;
+}
 .workspace[data-keyboard-open="true"] :global([data-sheet-body]) {
   padding-bottom: calc(20px + var(--keyboard-height));
   scroll-padding: 12px 0 24px;
 }
-.workspace[data-thread-open="true"][data-thread-compact="true"] :global([data-thread-header]) { padding: 0 14px; }
-.workspace[data-thread-open="true"][data-thread-compact="true"] :global([data-thread-header]) h2 { font-size: 18px; }
-.workspace[data-thread-open="true"][data-thread-compact="true"] :global([data-thread-session-note]),
-.workspace[data-thread-open="true"][data-thread-compact="true"] :global([data-thread-compose-hint]) { display: none; }
-.workspace[data-thread-open="true"][data-thread-compact="true"] :global([data-thread-compose]) { padding: 6px 14px; }
-/* The empty conversation text scrolls before it can push the composer under the keyboard. */
-.workspace[data-thread-open="true"][data-keyboard-open="true"] :global([data-assistant-thread] > div) {
-  min-height: 0;
-  padding: 6px 12px;
-  justify-content: flex-start;
-  overflow-y: auto;
-}
-
-.timelinePane, .sheetPane {
+.timelinePane,
+.sheetPane {
   position: absolute;
   inset: 0;
   min-height: 0;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transform: translateY(12px);
-  transition: opacity 180ms ease, transform 240ms ease, visibility 240ms;
+  transform: translateY(var(--editor-motion-shift));
+  transition:
+    opacity var(--editor-motion-swap) ease,
+    transform var(--editor-motion-open) var(--editor-motion-ease),
+    visibility var(--editor-motion-open);
 }
 
-.timelinePane[data-active="true"], .sheetPane[data-active="true"] {
+.timelinePane[data-active="true"],
+.sheetPane[data-active="true"] {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
@@ -85,29 +162,77 @@
   overflow: visible;
   background: var(--ground);
 }
-.timelineContent { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+.timelineContent {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
 .timelineContent > :global(.tl) {
   flex: 1 1 0;
   min-height: 0;
   max-height: none;
   background: var(--ground);
 }
-.timelinePane :global(.layerName) { background: var(--ground); }
+.timelinePane :global(.layerName) {
+  background: var(--ground);
+}
 .sheetPane {
   display: flex;
   flex-direction: column;
   overflow: hidden;
   background: var(--ground);
   border-top: 2.5px solid var(--outline);
-  border-radius: 20px 20px 0 0;
+  border-radius: 0;
 }
 
-.sheetContent { display: flex; flex: 1; flex-direction: column; min-height: 0; }
-.workspace[data-code-expanded="true"] .sheetPane { container: expanded-code / size; }
+.sheetContent {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
 
-.workspace[data-panel-fullscreen="true"] .sheetPane {
+/* Keep both component rows visible above the phone's system gesture area. */
+@media (min-width: 360px) and (min-height: 740px) {
+  .workspace[data-sheet-open="true"][data-thread-open="false"][data-debug-open="false"][data-trying="false"]:has(
+      :global(.componentPicker)
+    ) {
+    grid-template-rows:
+      var(--header-height, 64px) minmax(0, 1fr)
+      max(var(--dock-height), calc(320px + env(safe-area-inset-bottom)));
+  }
+}
+
+.sheetPane:has(:global(.textEditor)) {
+  border-top: 0;
   border-radius: 0;
-  border-top-color: transparent;
+  transition: none;
+}
+
+.workspace[data-text-open="true"]:has(
+    :global(.textEditor[data-input-focused="true"])
+  ) {
+  grid-template-rows: var(--header-height, 0px) minmax(0, 1fr) auto;
+}
+
+.workspace[data-text-open="true"]:has(
+    :global(.textEditor[data-input-focused="true"])
+  )
+  .sheetPane {
+  position: relative;
+}
+
+.workspace[data-text-open="true"] :global([data-sheet-body]) {
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+}
+
+.workspace[data-keyboard-open="true"] :global([data-preview-keyboard]) {
+  display: none;
+}
+
+.workspace[data-code-expanded="true"] .sheetPane {
+  container: expanded-code / size;
 }
 
 .resizeHandle {
@@ -125,46 +250,103 @@
 .resizeHandle span {
   width: 48px;
   height: 5px;
-  border-radius: 999px;
+  border-radius: var(--radius-round);
   background: var(--muted);
-  transition: background 120ms ease, width 120ms ease;
+  transition:
+    background 120ms ease,
+    width 120ms ease;
 }
 
-.resizeHandle:hover span, .resizeHandle:focus-visible span {
+.resizeHandle:hover span,
+.resizeHandle:focus-visible span {
   background: var(--highlight);
   width: 56px;
 }
 
-.resizeHandle:focus-visible { outline: 2px solid var(--highlight); }
-.workspace[data-resizing="true"] .resizeHandle span { background: var(--accent); }
-
-:global(.app[data-reduce-motion="true"]) .workspace,
-:global(.app[data-reduce-motion="true"]) .header,
-:global(.app[data-reduce-motion="true"]) .preview,
-:global(.app[data-reduce-motion="true"]) .playback,
-:global(.app[data-reduce-motion="true"]) .timelinePane,
-:global(.app[data-reduce-motion="true"]) .sheetPane,
-:global(.app[data-reduce-motion="true"]) .resizeHandle span { transition: none; }
-
-@media (pointer: coarse) {
-  .workspace { --thread-handle-height: 44px; }
-  .resizeHandle { height: 44px; flex-basis: 44px; }
+.resizeHandle:focus-visible {
+  outline: 2px solid var(--highlight);
+}
+.workspace[data-resizing="true"] .resizeHandle span {
+  background: var(--accent);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .workspace, .header, .preview, .playback, .timelinePane, .sheetPane, .resizeHandle span { transition: none; }
+@media (pointer: coarse) {
+  .workspace {
+  }
+  .resizeHandle {
+    height: 44px;
+    flex-basis: 44px;
+  }
 }
 
 @media (min-width: 1100px) {
-  .workspace { grid-template-columns: 280px minmax(0, 1fr); }
-  .header { grid-column: 1 / -1; grid-row: 1; }
-  .media { display: block; grid-column: 1; grid-row: 2 / 4; overflow: hidden; }
-  .preview { grid-column: 2; grid-row: 2; }
-  .playback { grid-column: 2; grid-row: 3; }
-  .dock { grid-column: 1 / -1; grid-row: 4; }
-  .preview :global(.previewArea) { padding: 20px 40px; }
+  .workspace {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+  .header {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .media {
+    display: block;
+    grid-column: 1;
+    grid-row: 2;
+    overflow: hidden;
+  }
+  .preview {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .dock {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+  .preview :global(.previewArea) {
+    padding: 20px 40px;
+  }
 }
 
-.workspace[data-animation-open="true"] .sheetPane { border-radius: 26px 26px 0 0; border-top: 3px solid var(--outline); box-shadow: 0 -6px 0 color-mix(in srgb, var(--accent) 35%, transparent); background: var(--bar); }
-.workspace[data-animation-open="true"] .sheetPane .resizeHandle { height: 20px; flex-basis: 20px; }
-.workspace[data-animation-open="true"] .sheetPane .resizeHandle span { width: 46px; height: 6px; }
+.workspace[data-animation-open="true"] .sheetPane {
+  border-radius: 0;
+  border-top: 3px solid var(--outline);
+  box-shadow: none;
+  background: var(--bar);
+}
+
+.header {
+  grid-row: 1;
+  z-index: 10;
+}
+.preview {
+  grid-row: 2;
+  background: var(--preview-backdrop);
+}
+.dock {
+  grid-row: 3;
+}
+.preview :global(.previewArea) {
+  padding: 0;
+  align-items: flex-end;
+}
+.preview :global(.previewArea[data-centered="true"]) {
+  align-items: center;
+}
+.preview :global(.pvBox) {
+  border: 0;
+  border-radius: var(--radius-card);
+  box-shadow: none;
+}
+.preview :global(.pvTag) {
+  display: none;
+}
+
+/* Playback now overlays the player; text entry and expanded code keep their focused view. */
+.workspace[data-playback-visible="false"] :global(.transport),
+.workspace[data-playback-visible="false"] :global([data-player-playback]) {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.workspace[data-thread-open="true"] .preview :global([data-player-playback]) {
+  display: none;
+}

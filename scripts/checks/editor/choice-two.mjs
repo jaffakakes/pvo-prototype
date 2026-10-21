@@ -1,3 +1,4 @@
+import { openExportDialog } from "../helpers/editor-export.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { chromium } from "playwright-core";
@@ -27,13 +28,11 @@ try {
   assert.equal(await choiceSheet.getByRole("button", { name: /Add option|Remove option/ }).count(), 0, "Choice options must not be added or removed");
   await choiceSheet.getByRole("textbox", { name: "Option 1" }).fill("Option one");
   await choiceSheet.getByRole("textbox", { name: "Option 2" }).fill("Option two");
-  await choiceSheet.getByRole("button", { name: "Done" }).click();
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   assert.equal(await page.locator(".compChoice button").count(), 2, "Preview must render exactly two Choice buttons");
   assert.deepEqual(await page.locator(".compChoice button").allTextContents(), ["Option one", "Option two"]);
 
-  await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
-  await page.getByRole("dialog", { name: "More" })
-    .getByRole("button", { name: "Export and create link", exact: true }).click();
+  await openExportDialog(page);
   const exportDialog = page.locator("dialog[data-state]");
   await exportDialog.getByRole("button", { name: /Export and share/ }).click();
   await page.locator('dialog[data-state="done"]').waitFor({ timeout: 60000 });

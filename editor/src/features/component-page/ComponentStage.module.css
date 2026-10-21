@@ -1,0 +1,76 @@
+.stage {
+  flex: 1 1 auto;
+  position: relative;
+  min-height: 110px;
+  overflow: hidden;
+  container-type: size;
+}
+.preview {
+  position: absolute;
+  top: calc(50% - 16px);
+  left: 50%;
+  width: max-content;
+  transform-origin: center;
+}
+.renderer {
+  --text: #f2f0e9;
+  --surface: #15151c;
+  --ink: #111;
+  --violet: #a78bfa;
+  --accent: #ff2d78;
+  width: max-content;
+  transform-origin: center;
+}
+.renderer [data-look-part] {
+  cursor: pointer;
+}
+.renderer [data-part-selected="true"] {
+  outline: 2px solid #a78bfa;
+  outline-offset: 5px;
+}
+.renderer :is(input, select, textarea) {
+  pointer-events: none;
+}
+.logicBadge {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100% - 150px);
+  padding: 7px 10px;
+  border: 1.5px solid var(--outline);
+  border-radius: 8px;
+  background: var(--surface);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+@container (max-height: 260px) {
+  .stage :global([data-assistant-region][data-active="false"]) {
+    display: none;
+  }
+}
+.renderer [data-part-selected="true"] {
+  position: relative;
+}
+.renderer [data-part-selected="true"]::after {
+  content: attr(data-look-label);
+  position: absolute;
+  left: 0;
+  top: -22px;
+  padding: 3px 7px;
+  background: #a78bfa;
+  color: #111;
+  border-radius: 4px 4px 0 0;
+  font: 800 10px/1.2 var(--f-ui);
+  pointer-events: none;
+}
+@container (max-height: 150px) {
+  .logicBadge {
+    display: none;
+  }
+  .preview {
+    top: 50%;
+  }
+}

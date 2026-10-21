@@ -1,3 +1,4 @@
+import { openExportDialog } from "../helpers/editor-export.mjs";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdtemp, readFile, writeFile } from "node:fs/promises";
@@ -33,7 +34,7 @@ async function mockAccountSession(context) {
   await context.route(`${origin}/api/auth/session`, route => {
     accountChecks++;
     return route.fulfill({ status: 200, contentType: "application/json",
-      body: JSON.stringify({ available: true, clerkAvailable: false, clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: { id: "local-render-check", name: "Local render check" } }) });
+      body: JSON.stringify({ available: true, supabaseAvailable: false, supabasePublishableKey: null, supabaseUrl: null, user: { id: "local-render-check", name: "Local render check" } }) });
   });
 }
 try {
@@ -67,10 +68,8 @@ try {
     await interactive.getByRole("button", { name: "Components", exact: true }).click();
     await interactive.getByRole("button", { name: /Add a note/ }).click();
     await interactive.getByRole("dialog", { name: "Note" }).getByRole("textbox", { name: "Text" }).fill("Server scene note");
-    await interactive.getByRole("button", { name: "Done", exact: true }).click();
-    await interactive.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
-    await interactive.getByRole("dialog", { name: "More" })
-      .getByRole("button", { name: "Export and create link", exact: true }).click();
+    await interactive.getByRole("button", { name: "Close sheet", exact: true }).click();
+    await openExportDialog(interactive);
     const interactiveDialog = interactive.locator("dialog[data-state]");
     await interactiveDialog.getByRole("radiogroup", { name: "Export quality" })
       .getByRole("radio", { name: /^1080p/ }).click();

@@ -330,7 +330,7 @@ async function checkProgressAndRetries(layout) {
 
 async function checkTranscriptionAllowanceFailure() {
   const url = await page.evaluate(async () => {
-    const { monoWav } = await import("/src/infrastructure/assistant/media/wav.ts");
+    const { monoWav } = await import("/src/infrastructure/audio/wav.ts");
     const { useCapture } = await import("/src/state/captureStore.ts");
     const samples = Float32Array.from({ length: 16000 }, (_, index) => 0.2 * Math.sin(index / 16000 * 440 * Math.PI * 2));
     const url = URL.createObjectURL(new Blob([monoWav(samples, 16000)], { type: "audio/wav" }));

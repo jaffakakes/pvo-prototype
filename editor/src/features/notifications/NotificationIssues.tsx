@@ -1,23 +1,20 @@
 import { useState } from "react";
 import { notificationDefinition } from "../../domain/notifications/catalog";
 import { showNotificationIssue, useNotifications } from "../../state/notifications/notificationStore";
-import { ProjectStorageStatus } from "../settings/ProjectStorageStatus";
 import styles from "./Notifications.module.css";
 
 const issueLabels: Record<string, string> = {
-  saveFailed: "Save issue", restoreFailed: "Restore issue", recordingFailed: "Recording issue", importFailed: "Import issue",
+  recordingFailed: "Recording issue", importFailed: "Import issue",
 };
 
-/** Acknowledged restore errors stay in storage status without repeating a floating prompt. */
-export function NotificationIssues({ hideRestore = false }: { hideRestore?: boolean }) {
+/** Storage failures have a dedicated bottom recovery prompt. */
+export function NotificationIssues() {
   const allUnresolved = useNotifications(state => state.unresolved);
   const current = useNotifications(state => state.current);
-  const restoreAcknowledged = useNotifications(state => state.restoreAcknowledged);
   const [expanded, setExpanded] = useState(false);
-  const unresolved = allUnresolved.filter(issue => issue.id !== "restoreFailed" || (!hideRestore && !restoreAcknowledged));
+  const unresolved = allUnresolved.filter(issue => issue.id !== "restoreFailed" && issue.id !== "saveFailed");
   if (!unresolved.length) return null;
   if (!expanded && unresolved.length === 1 && unresolved[0].key === current?.key) return null;
-  const hasStorageIssue = unresolved.some(issue => issue.id === "saveFailed" || issue.id === "restoreFailed");
   const label = unresolved.length === 1 ? issueLabels[unresolved[0].id] ?? "Unresolved issue" : `Issues (${unresolved.length})`;
   return <div className={styles.issues}>
     <button className={styles.issueToggle} aria-expanded={expanded} aria-controls="notification-issues"
@@ -34,10 +31,9 @@ export function NotificationIssues({ hideRestore = false }: { hideRestore?: bool
           <button className={styles.issueLink} onClick={() => { showNotificationIssue(issue.key); setExpanded(false); }}>
             {definition.message}
           </button>
-          {issue.id !== "saveFailed" && issue.id !== "restoreFailed" && <p>{definition.recovery}</p>}
+          <p>{definition.recovery}</p>
         </li>;
       })}</ul>
-      {hasStorageIssue && <ProjectStorageStatus onlyIssues />}
     </section>}
   </div>;
 }

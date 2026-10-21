@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef } from "react";
-import { nativeProjectFingerprint } from "../../domain/assistant/native/context";
+import {
+  nativeProjectFingerprint,
+  nativeSuggestionContext,
+} from "../../domain/assistant/native/context";
 import { assistantFailureNotification } from "../../domain/assistant/failure";
 import {
   resetAssistant,
@@ -143,6 +146,7 @@ export function useAssistantSession({
     clearNotificationScope("assistant");
     useAssistant.setState({
       phase: "typing",
+      minimized: false,
       failureDetail: null,
       transcript: "",
     });
@@ -151,6 +155,7 @@ export function useAssistantSession({
     workflow.cancel();
     useAssistant.setState({
       phase: "typing",
+      minimized: false,
       transcript: "",
       progress: "",
       answer: null,
@@ -160,22 +165,24 @@ export function useAssistantSession({
     if (useAssistant.getState().phase === "review") return;
     stop();
     clearNotificationScope("assistant");
-    useAssistant.setState({ phase: "idle", answer: null });
+    useAssistant.setState({ phase: "idle", minimized: false, answer: null });
     restorePlayback();
   };
 
   const submit = async (words: string) => {
     const prior = useAssistant.getState();
-    if (!available || prior.phase === "working") return;
+    if (!available || prior.phase === "working" || prior.readingAttachments)
+      return;
     await workflow.submit({
       prompt: words,
       history: prior.history,
       evidence: prior.evidence,
+      attachments: prior.attachments,
     });
   };
   const acknowledge = () => {
     if (!useAssistant.getState().answer) return;
-    useAssistant.setState({ phase: "idle", answer: null });
+    useAssistant.setState({ phase: "idle", minimized: false, answer: null });
     clearNotificationScope("assistant");
     restorePlayback();
   };
@@ -184,13 +191,21 @@ export function useAssistantSession({
     if (answer)
       useAssistant.setState({
         phase: "typing",
+        minimized: false,
         draft: answer.request,
         answer: null,
       });
   };
-  const suggestions = target
-    ? ["Softer colours", "Larger heading", "Bolder"]
-    : ["Explain this", "Refine this", "Check the result"];
+  const suggestionContext = nativeSuggestionContext(projectSnapshot(capture), {
+    clipId: capture.clips[capture.sel]?.id ?? null,
+    textId: capture.selText,
+    componentId: capture.selComp,
+    audioId: capture.selAudio,
+  });
+  const suggestions =
+    state.recommendations?.context === suggestionContext
+      ? state.recommendations.items
+      : [];
   return {
     ...state,
     target,

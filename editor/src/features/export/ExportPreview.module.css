@@ -19,7 +19,7 @@
   max-width: 100%;
   overflow: hidden;
   border: 2px solid var(--line-strong);
-  border-radius: 14px;
+  border-radius: var(--radius-card);
   background: #000;
   box-sizing: border-box;
 }
@@ -54,14 +54,13 @@
   align-items: center;
   padding: 0 9px;
   border: 2px solid var(--line-strong);
-  border-radius: 9px;
-  box-shadow: 3px 3px 0 var(--line-strong);
+  border-radius: var(--radius-small);
   background: var(--surface);
   color: var(--text);
   font: 800 10.5px/1 var(--f-ui);
   white-space: nowrap;
 }
-.coverLabel { border-color: var(--outline); background: var(--yellow); color: var(--surface); box-shadow: 3px 3px 0 var(--outline); }
+.coverLabel { border-color: var(--outline); background: var(--yellow); color: var(--surface); }
 
 .mobileMute { display: none; }
 
@@ -83,11 +82,11 @@
   border: 2px solid var(--button-border);
   background: var(--button-secondary-bg);
   color: var(--button-secondary-text);
-  box-shadow: 3px 3px 0 var(--button-shadow);
+  box-shadow: var(--shadow-control);
   cursor: pointer;
 }
-.play { width: 44px; height: 44px; border-radius: 50%; font: 800 17px var(--f-ui); }
-.desktopMute { min-width: 36px; height: 36px; padding: 0 6px; border-radius: 10px; font: 800 11px var(--f-ui); }
+.play { width: 44px; height: 44px; border-radius: var(--radius-round); font: 800 17px var(--f-ui); }
+.desktopMute { min-width: 36px; height: 36px; padding: 0 6px; border-radius: var(--radius-control); font: 800 11px var(--f-ui); }
 .time { flex: none; font: 800 13px var(--f-ui); white-space: nowrap; }
 .time small { color: var(--muted); font: 700 12px var(--f-ui); }
 .pickerEnd { display: none; }
@@ -102,7 +101,7 @@
   appearance: none;
   -webkit-appearance: none;
   border: 2px solid var(--line-strong);
-  border-radius: 7px;
+  border-radius: var(--radius-small);
   background: linear-gradient(to right, var(--text) var(--seek-pct), var(--deep) var(--seek-pct));
   cursor: pointer;
 }
@@ -112,11 +111,11 @@
   width: 18px;
   height: 18px;
   border: 2px solid var(--line-strong);
-  border-radius: 50%;
+  border-radius: var(--radius-round);
   background: var(--surface);
   box-shadow: 2px 2px 0 var(--line-strong);
 }
-.sliderWrap input::-moz-range-thumb { width: 18px; height: 18px; border: 2px solid var(--line-strong); border-radius: 50%; background: var(--surface); }
+.sliderWrap input::-moz-range-thumb { width: 18px; height: 18px; border: 2px solid var(--line-strong); border-radius: var(--radius-round); background: var(--surface); }
 .pickerSlider input::-webkit-slider-thumb { width: 22px; height: 22px; border-color: var(--ink); background: var(--yellow); box-shadow: 2px 2px 0 var(--ink); }
 .pickerSlider input::-moz-range-thumb { width: 22px; height: 22px; border-color: var(--ink); background: var(--yellow); }
 .ticks { position: absolute; z-index: 3; inset: 0 9px; pointer-events: none; }
@@ -138,14 +137,14 @@
     max-width: none;
     align-self: start;
     margin: 0;
-    border-radius: 10px;
+    border-radius: var(--radius-control);
   }
   .well[data-state="picker"] .picture {
     grid-column: 1 / -1;
     justify-self: center;
     width: 169px;
   }
-  .label { top: 5px; left: 5px; min-height: 22px; padding: 0 6px; border-radius: 7px; font-size: 8.5px; }
+  .label { top: 5px; left: 5px; min-height: 22px; padding: 0 6px; border-radius: var(--radius-small); font-size: 8.5px; }
   .mobileMute {
     position: absolute;
     z-index: 200;
@@ -154,7 +153,7 @@
     width: 28px;
     height: 28px;
     display: grid;
-    border-radius: 8px;
+    border-radius: var(--radius-small);
     font-size: 16px;
   }
   .transport {
@@ -184,4 +183,29 @@
 
 @media (prefers-reduced-motion: reduce) {
   .resultVideo { transition: none; }
+}
+
+/* The cover editor supplies its own filmstrip and actions around this shared scene preview. */
+.well[data-cover-only="true"] {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  container-type: size;
+}
+.well[data-cover-only="true"] .picture {
+  grid-area: 1 / 1;
+  align-self: center;
+  width: min(100cqw, calc(100cqh * var(--preview-ratio)));
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: var(--radius-card);
+  outline: none;
 }

@@ -1,6 +1,12 @@
 import type { Clip, PvoComponent } from "../project/model";
 import { componentEnd } from "./timing";
 
+export function componentTypeName(component: Pick<PvoComponent, "type">) {
+  return { tooltip: "Note", card: "Message", choice: "Choice", form: "Form" }[
+    component.type
+  ];
+}
+
 export function componentLabel(component: PvoComponent) {
   const structure = component.code?.custom
     ? component.code.pvoCompiled?.structure

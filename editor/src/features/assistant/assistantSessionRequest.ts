@@ -142,6 +142,7 @@ export function createAssistantSessionRequest(effects: SessionEffects) {
           effects.pause();
           useAssistant.setState({
             phase: "working",
+            minimized: false,
             draft: prompt,
             transcript: "",
             progress: "",
@@ -162,12 +163,14 @@ export function createAssistantSessionRequest(effects: SessionEffects) {
           );
           useAssistant.setState({
             phase: prior.answer ? "review" : "typing",
+            minimized: false,
             draft: prompt,
             progress: "",
           });
           effects.report(error, "request");
         },
         completed: ({
+          suggestions,
           savedTaskId,
           planned,
           applied,
@@ -176,6 +179,10 @@ export function createAssistantSessionRequest(effects: SessionEffects) {
           history,
           evidence,
         }) => {
+          useAssistant.setState({
+            attachments: [],
+            recommendations: suggestions,
+          });
           if (savedTaskId) {
             completeAssistantExchange(exchangeId, {
               response:
@@ -183,6 +190,7 @@ export function createAssistantSessionRequest(effects: SessionEffects) {
             });
             useAssistant.setState({
               phase: "idle",
+              minimized: false,
               draft: "",
               progress: "",
               answer: null,
@@ -219,6 +227,7 @@ export function createAssistantSessionRequest(effects: SessionEffects) {
             setAssistantThreadOpen(false);
           useAssistant.setState({
             phase: hasAnswer ? "review" : "idle",
+            minimized: hasAnswer && useAssistant.getState().minimized,
             answer: hasAnswer ? answer : null,
             progress: "",
             draft: "",

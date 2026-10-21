@@ -1,54 +1,118 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Scene } from "../../domain/project/model";
-import { sceneDuration } from "../../domain/scenes/duration";
-import { sceneChildren, sceneTree } from "../../domain/scenes/rules";
-import { Icon } from "../../ui/Icon";
-import { fmt } from "../../ui/formatTime";
-import styles from "./Scenes.module.css";
+import { sceneGraph } from "../../domain/scenes/graph";
+import {
+  readScenesView,
+  saveScenesView,
+  type ScenesView,
+} from "../../infrastructure/preferences/scenesView";
+import { useCapture } from "../../state/captureStore";
+import { createSceneBranch } from "../../state/scenes/createSceneBranch";
+import { SceneTreeList } from "./SceneTreeList";
+import { SceneMap } from "./SceneMap";
+import styles from "./ScenesPanel.module.css";
 
 type Props = {
   id: string;
   scenes: Scene[];
   currentSceneId: string;
   onClose(): void;
-  onSelect(id: string): void;
+  onSelect(id: string, keepOpen?: boolean): void;
 };
 
-export function SceneTree({ id, scenes, currentSceneId, onClose, onSelect }: Props) {
-  const closeRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => { closeRef.current?.focus({ preventScroll: true }); }, []);
-
-  return <section id={id} className={`sceneTree ${styles.tree}`} aria-labelledby={`${id}-heading`}
-    onKeyDown={event => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      event.stopPropagation();
-      onClose();
-    }}>
-    <header className={styles.treeHeader}>
-      <h2 id={`${id}-heading`}>Scene tree</h2>
-      <p>Tap a scene to open it</p>
-      <button ref={closeRef} className={styles.close} onClick={onClose} aria-label="Close scene tree">
-        <Icon name="close" size={16} />
-      </button>
-    </header>
-    <div className={styles.treeBody}>
-      {sceneTree(scenes).map(({ scene, depth }) => {
-        const branchCount = sceneChildren(scenes, scene.id).length;
-        const componentCount = scene.components.length;
-        const current = scene.id === currentSceneId;
-        return <button key={scene.id} className={styles.treeNode} data-scene-id={scene.id}
-          style={{ paddingLeft: 14 + depth * 18 }} aria-current={current ? "true" : undefined}
-          aria-label={`Open ${scene.name}, level ${depth + 1}, ${fmt(sceneDuration(scene))}, ${branchCount} ${branchCount === 1 ? "branch" : "branches"}, ${componentCount} ${componentCount === 1 ? "component" : "components"}`}
-          onClick={() => onSelect(scene.id)}>
-          <span className={styles.tick} aria-hidden="true" />
-          <span className={styles.nodeChip} data-on={current}>
-            {scene.name} <small>{fmt(sceneDuration(scene))}</small>
-          </span>
-          <span className={styles.meta}>{branchCount} {branchCount === 1 ? "branch" : "branches"} · {componentCount} {componentCount === 1 ? "component" : "components"}</span>
-        </button>;
-      })}
-    </div>
-  </section>;
+export function SceneTree({
+  id,
+  scenes,
+  currentSceneId,
+  onClose,
+  onSelect,
+}: Props) {
+  const viewRef = useRef<HTMLButtonElement>(null);
+  const [view, setView] = useState<ScenesView>(readScenesView);
+  const nodes = useMemo(() => sceneGraph(scenes), [scenes]);
+  useEffect(() => {
+    viewRef.current?.focus({ preventScroll: true });
+  }, []);
+  const chooseView = (next: ScenesView) => {
+    setView(next);
+    saveScenesView(next);
+  };
+  const add = () => {
+    createSceneBranch();
+    onClose();
+  };
+  return (
+    <section
+      id={id}
+      className={`sceneTree ${styles.panel}`}
+      aria-label="Scene tree"
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          event.stopPropagation();
+          onClose();
+        }
+      }}
+    >
+      <header className={styles.header}>
+        <div
+          className={styles.switch}
+          role="radiogroup"
+          aria-label="Scenes view"
+          onKeyDown={(event) => {
+            if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+            event.preventDefault();
+            const next = view === "tree" ? "map" : "tree";
+            chooseView(next);
+            event.currentTarget
+              .querySelector<HTMLButtonElement>(`[data-view="${next}"]`)
+              ?.focus();
+          }}
+        >
+          {(["tree", "map"] as const).map((value) => (
+            <button
+              key={value}
+              ref={value === view ? viewRef : null}
+              role="radio"
+              data-view={value}
+              tabIndex={value === view ? 0 : -1}
+              aria-checked={value === view}
+              onClick={() => chooseView(value)}
+            >
+              {value === "tree" ? "Tree" : "Map"}
+            </button>
+          ))}
+        </div>
+      </header>
+      {view === "tree" ? (
+        <SceneTreeList
+          nodes={nodes}
+          currentId={currentSceneId}
+          onOpen={onSelect}
+          onAdd={add}
+          onManage={(id) => {
+            onSelect(id);
+            useCapture.getState().patch({ sheet: "more", playing: false });
+          }}
+        />
+      ) : (
+        <SceneMap
+          nodes={nodes}
+          currentId={currentSceneId}
+          onCenter={(id) => onSelect(id, true)}
+          onAdd={add}
+          onChoice={(id) => {
+            const source = scenes.find((scene) =>
+              scene.components.some((component) => component.id === id),
+            );
+            if (!source) return;
+            onSelect(source.id);
+            useCapture
+              .getState()
+              .patch({ selComp: id, sheet: "component", playing: false });
+          }}
+        />
+      )}
+    </section>
+  );
 }

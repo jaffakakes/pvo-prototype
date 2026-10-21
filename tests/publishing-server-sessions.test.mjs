@@ -26,8 +26,8 @@ test("publishing status reads an account session without creating one", async ()
     assert.equal((await f.db.prepare("SELECT COUNT(*) AS count FROM sessions").first()).count, 0);
     assert.equal((await f.request("/api/publishing/session", { method: "POST" })).status, 404);
 
-    const cookie = (await createAccountSession({ sub: "status-test-subject", name: "Creator" },
-      { DB: f.db, SESSION_SECRET: SECRET })).split(";", 1)[0];
+    const cookie = (await createAccountSession({ issuer: "https://restyle-test.supabase.co/auth/v1", sub: "status-test-subject", name: "Creator" },
+      { DB: f.db, SESSION_SECRET: SECRET })).cookie.split(";", 1)[0];
     const signedIn = await f.request("/api/publishing", { session: cookie });
     assert.deepEqual(await signedIn.json(), expectedStatus(true));
     assert.equal(signedIn.headers.get("Set-Cookie"), null);
@@ -51,8 +51,8 @@ test("an expired account session loses management; signing in again recovers its
     assert.deepEqual(await (await f.request("/api/publishing")).json(), expectedStatus(false));
     assert.equal((await reserve(f, file)).response.status, 401);
 
-    const renewed = (await createAccountSession({ sub: "fixture-google-subject-1", name: "First creator" },
-      { DB: f.db, SESSION_SECRET: SECRET })).split(";", 1)[0];
+    const renewed = (await createAccountSession({ issuer: "https://restyle-test.supabase.co/auth/v1", sub: "fixture-google-subject-1", name: "First creator" },
+      { DB: f.db, SESSION_SECRET: SECRET })).cookie.split(";", 1)[0];
     assert.notEqual(renewed, f.cookie);
     const listing = await (await f.request("/api/publications", { session: renewed })).json();
     assert.deepEqual(listing.publications.map(item => item.id), [published.body.id]);
@@ -60,7 +60,7 @@ test("an expired account session loses management; signing in again recovers its
   } finally { await f.close(); }
 });
 
-test("Google accounts have separate publication ownership while viewing remains public", async () => {
+test("Supabase accounts have separate publication ownership while viewing remains public", async () => {
   const f = await workerFixture();
   try {
     assert.notEqual(f.cookie, f.otherCookie);

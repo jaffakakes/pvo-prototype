@@ -1,3 +1,4 @@
+import { openExportDialog } from "../helpers/editor-export.mjs";
 import { chromium } from "playwright-core";
 import { resolve } from "node:path";
 import { tmpdir } from "node:os";
@@ -14,7 +15,7 @@ try {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, permissions: ["camera", "microphone"], acceptDownloads: true });
     try {
       await page.route("**/api/auth/session", route => route.fulfill({ contentType: "application/json",
-        body: JSON.stringify({ available: true, clerkAvailable: false, clerkPublishableKey: null, canLinkEmail: false, emailLinked: false, user: { id: "ratio-check", name: "Ratio check" } }) }));
+        body: JSON.stringify({ available: true, supabaseAvailable: false, supabasePublishableKey: null, supabaseUrl: null, user: { id: "ratio-check", name: "Ratio check" } }) }));
       await page.goto(process.env.EDITOR_URL || process.env.RESTYLE_EDITOR_URL || "http://127.0.0.1:5173/", { waitUntil: "networkidle" });
       await page.waitForFunction(() => (document.querySelector(".live")?.videoWidth ?? 0) > 0);
       await page.getByRole("button", { name: "Ratio" }).click();
@@ -36,8 +37,7 @@ try {
       await page.getByRole("button", { name: /^(Open editor|Start editing)$/ }).click();
       const preview = await page.locator(".pvVideo").evaluate(video => ({ fit: getComputedStyle(video).objectFit, width: video.parentElement.clientWidth, height: video.parentElement.clientHeight }));
       if (preview.fit !== "cover" || Math.abs(preview.width / preview.height - expected.width / expected.height) > .03) throw new Error(`${expected.ratio} preview mismatch: ${JSON.stringify(preview)}`);
-      await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
-      await page.getByRole("dialog", { name: "More" }).getByRole("button", { name: "Export and create link" }).click();
+      await openExportDialog(page);
       await page.locator('dialog[data-state="setup"]').getByRole("radiogroup", { name: "Export quality" })
         .getByRole("radio", { name: /^720p/ }).click();
       await page.locator('dialog[data-state="setup"]').getByRole("button", { name: /Export and share/ }).click();

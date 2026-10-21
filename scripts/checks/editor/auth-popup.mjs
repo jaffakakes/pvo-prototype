@@ -1,3 +1,4 @@
+import { installSupabaseFixture, fillEmailForm, supabaseUrl, publishableKey } from "./supabase-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -8,7 +9,6 @@ import { chromium } from "playwright-core";
 const editorUrl = process.env.EDITOR_URL || process.env.RESTYLE_EDITOR_URL || "http://127.0.0.1:5173/";
 const origin = new URL(editorUrl).origin;
 const fixture = fileURLToPath(new URL("../../../share/assets/preview.mp4", import.meta.url));
-const publishableKey = `pk_test_${Buffer.from("popup.clerk.accounts.dev$").toString("base64")}`;
 const screenshots = await mkdtemp(join(tmpdir(), "restyle-auth-popup-"));
 const browser = await chromium.launch({
   executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
@@ -17,41 +17,7 @@ const browser = await chromium.launch({
 });
 
 // Exercise provider mounting and dismissal without entering credentials or creating an account.
-const clerkModule = `
-  export class Clerk {
-    constructor() { this.session = null; this.user = null; this.listeners = new Set(); }
-    async load() {}
-    addListener(listener) {
-      this.listeners.add(listener);
-      return () => this.listeners.delete(listener);
-    }
-    mount(host, mode) {
-      const form = document.createElement("div");
-      form.dataset.testClerkForm = mode;
-      form.textContent = mode === "signup" ? "Managed create-account form" : "Managed sign-in form";
-      const complete = document.createElement("button");
-      complete.className = "cl-formButtonPrimary";
-      complete.textContent = "Complete mocked email sign-in";
-      complete.onclick = () => {
-        this.user = { id: "popup-clerk-user", primaryEmailAddress: {
-          emailAddress: "popup@example.test", verification: { status: "verified" } } };
-        this.session = { id: "popup-clerk-session", getToken: async () => "popup-email-token" };
-        for (const listener of this.listeners) listener({ session: this.session, user: this.user });
-      };
-      const email = document.createElement("input");
-      email.className = "cl-formFieldInput";
-      email.type = "email";
-      email.setAttribute("aria-label", "Mock email");
-      form.append(email, complete);
-      host.replaceChildren(form);
-    }
-    mountSignIn(host) { this.mount(host, "signin"); }
-    mountSignUp(host) { this.mount(host, "signup"); }
-    unmountSignIn(host) { host.replaceChildren(); }
-    unmountSignUp(host) { host.replaceChildren(); }
-    async signOut() { this.session = null; this.user = null; }
-  }
-`;
+
 
 async function savedProject(page, projectId) {
   return page.evaluate(async id => {
@@ -97,30 +63,18 @@ async function checkPopup(phone) {
   let emailCalls = 0;
   let renderCalls = 0;
   const errors = [];
-  await context.route(/\/(?:assets\/clerk-[^/]+\.js|node_modules\/\.vite\/deps\/@clerk_clerk-js\.js)(?:\?.*)?$/,
-    route => route.fulfill({ status: 200, contentType: "text/javascript", body: clerkModule }));
-  await context.route("**/npm/@clerk/ui@1/dist/ui.browser.js", route => route.fulfill({
-    status: 200, contentType: "text/javascript", headers: { "Access-Control-Allow-Origin": origin },
-    body: "window.__internal_ClerkUICtor = class ClerkUI {};",
-  }));
+  const provider = await installSupabaseFixture(context);
   await context.route(`${origin}/api/auth/**`, route => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
     if (path === "/api/auth/session" && request.method() === "GET") {
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
-        available: true, clerkAvailable: true, clerkPublishableKey: publishableKey,
-        canLinkEmail: false, emailLinked: false,
+        available: true, supabaseAvailable: true, supabasePublishableKey: publishableKey, supabaseUrl,
         user: signedIn ? { id: "popup-editor", name: "Popup tester" } : null,
       }) });
     }
-    if (path === "/api/auth/google/start" && request.method() === "GET") {
-      googleCalls++;
-      signedIn = true;
-      return route.fulfill({ status: 200, contentType: "text/html",
-        body: `<script>window.opener.postMessage({type:"pvo:auth:complete",ok:true},${JSON.stringify(origin)});window.close()</script>` });
-    }
-    if (path === "/api/auth/clerk/exchange" && request.method() === "POST") {
-      assert.equal(request.headers().authorization, "Bearer popup-email-token");
+    if (path === "/api/auth/supabase/exchange" && request.method() === "POST") {
+      assert.equal(request.headers().authorization, `Bearer ${provider.session.access_token}`);
       emailCalls++;
       signedIn = true;
       return route.fulfill({ status: 200, contentType: "application/json", body: '{"ok":true}' });
@@ -140,11 +94,11 @@ async function checkPopup(phone) {
   page.setDefaultTimeout(15000);
   page.on("pageerror", error => errors.push(error.message));
   const dialog = page.locator("dialog[data-auth-step]");
-  const gate = page.getByRole("dialog", { name: "Create a free account", exact: true });
+  const gate = page.getByRole("dialog", { name: "Ready to export", exact: true });
   let trigger;
   const open = async () => {
     trigger = phone
-      ? page.getByRole("region", { name: "Account", exact: true }).getByRole("button", { name: "Sign in", exact: true })
+      ? page.locator(".editorHead").getByRole("button", { name: "Sign in", exact: true })
       : page.getByRole("banner").getByRole("button", { name: "Sign in", exact: true });
     await trigger.click();
     await gate.waitFor();
@@ -168,7 +122,7 @@ async function checkPopup(phone) {
     const before = await waitForSavedProject(page, projectId);
     if (phone) {
       await page.setViewportSize({ width: 390, height: 844 });
-      await page.getByRole("banner").getByRole("button", { name: "More", exact: true }).click();
+      await page.getByRole("button", { name: "Aspect ratio", exact: true }).click();
     }
 
     await open();
@@ -180,13 +134,17 @@ async function checkPopup(phone) {
         borderWidth: style.borderTopWidth, radius: style.borderTopLeftRadius };
     });
     assert.equal(frame.width, phone ? 342 : 520, "The popup must match the handed-off responsive width");
-    assert.equal(frame.background, "rgb(21, 21, 28)");
-    assert.equal(frame.border, "rgb(74, 72, 82)");
+    assert.equal(frame.background, "rgb(48, 48, 54)");
+    assert.equal(frame.border, "rgb(129, 123, 135)");
     assert.equal(frame.borderWidth, "3px");
-    assert.equal(frame.radius, "22px");
+    assert.equal(frame.radius, "24px");
     assert(frame.x >= 0 && frame.right <= (phone ? 390 : 1280), "The popup must stay inside the viewport");
     assert.equal(await gate.getByRole("button", { name: "Continue with Google", exact: true }).isEnabled(), true);
     assert.equal(await gate.getByRole("button", { name: "Continue with email", exact: true }).isEnabled(), true);
+    assert.equal(await gate.getByRole("button", { name: "Keep editing", exact: true }).count(), 0);
+    assert.doesNotMatch(await gate.innerText(), /Your edit stays right here/);
+    assert.match(await gate.innerText(), /By continuing you agree to the Terms and Privacy Policy/);
+    assert.equal(await gate.getByRole("link", { name: "What we share ›", exact: true }).getAttribute("href"), "/privacy.html#sign-in");
     assert.equal(await gate.locator("[data-export-account-gate], [data-export-preview]").count(), 0);
     assert.doesNotMatch(await gate.innerText(), /\.mp4|1080p|720p|export settings/i,
       "Standalone sign-in must not present an export summary");
@@ -194,29 +152,30 @@ async function checkPopup(phone) {
 
     await gate.getByRole("button", { name: "Continue with email", exact: true }).click();
     await page.getByRole("dialog", { name: "Create account", exact: true }).waitFor();
-    await dialog.locator('[data-test-clerk-form="signup"]').waitFor();
+    await dialog.locator('button[type="submit"]').getByText("Create account", { exact: true }).waitFor();
     for (const [mode, surface, text, accent] of [
       ["light", "rgb(255, 253, 251)", "rgb(36, 29, 37)", "rgb(197, 27, 92)"],
-      ["dark", "rgb(21, 21, 28)", "rgb(242, 240, 233)", "rgb(255, 45, 120)"],
+      ["dark", "rgb(48, 48, 54)", "rgb(242, 240, 233)", "rgb(255, 45, 120)"],
     ]) {
       await page.emulateMedia({ colorScheme: mode });
       await page.waitForFunction(expected => document.documentElement.dataset.theme === expected, mode);
       const colors = await dialog.evaluate(element => ({
         surface: getComputedStyle(element).backgroundColor,
         inputText: getComputedStyle(element.querySelector("input")).color,
-        action: getComputedStyle(element.querySelector(".cl-formButtonPrimary")).backgroundColor,
+        action: getComputedStyle(element.querySelector('button[type="submit"]')).backgroundColor,
       }));
       assert.deepEqual(colors, { surface, inputText: text, action: accent },
         "The email form must follow editor surfaces, readable text, and the guest accent in both modes");
     }
+    await page.screenshot({ path: join(screenshots, `${phone ? "phone" : "desktop"}-email.png`) });
     await dialog.getByRole("button", { name: /^Back/ }).click();
     await gate.waitFor();
     await gate.getByRole("button", { name: "Sign in", exact: true }).click();
     await page.getByRole("dialog", { name: "Welcome back", exact: true }).waitFor();
-    await dialog.locator('[data-test-clerk-form="signin"]').waitFor();
+    await dialog.getByLabel("Password", { exact: true }).waitFor();
     await dialog.getByRole("button", { name: /^Back/ }).click();
     await gate.waitFor();
-    await gate.getByRole("button", { name: "Keep editing", exact: true }).click();
+    await gate.getByRole("button", { name: "Close sign in", exact: true }).click();
     await assertDismissed();
 
     await open();
@@ -234,21 +193,19 @@ async function checkPopup(phone) {
 
     await open();
     await gate.getByRole("button", { name: "Sign in", exact: true }).click();
-    await dialog.getByRole("button", { name: "Complete mocked email sign-in", exact: true }).click();
+    await fillEmailForm(dialog, "popup@example.test");
     await dialog.waitFor({ state: "hidden" });
     assert.equal(emailCalls, 1, "Email sign-in must finish its session exchange and close the popup");
     assert.deepEqual(await savedProject(page, projectId), before);
-    const accountEntry = phone
-      ? page.getByRole("region", { name: "Account", exact: true }).getByRole("button", { name: "Your account", exact: true })
-      : page.getByRole("banner").getByRole("button", { name: "Account", exact: true });
-    await accountEntry.click();
-    await page.getByRole("dialog", { name: "Your account", exact: true }).getByRole("button", { name: "Sign out", exact: true }).click();
-    await gate.waitFor();
+    await page.getByRole("button", { name: "Account · Popup tester", exact: true }).click();
+    await page.getByRole("menuitem", { name: "Sign out", exact: true }).click();
+    await open();
     const popup = page.waitForEvent("popup");
     await gate.getByRole("button", { name: "Continue with Google", exact: true }).click();
     await popup;
     await dialog.waitFor({ state: "hidden" });
-    assert.equal(googleCalls, 1);
+    assert.equal(provider.googleCalls, 1);
+    assert.equal(emailCalls, 2, "Google uses the same verified Supabase exchange as email");
     assert.equal(renderCalls, 0, "Standalone Google sign-in must not start an export");
     assert.equal(await page.locator("dialog[data-state]").count(), 0,
       "Standalone Google sign-in must return directly to editing");

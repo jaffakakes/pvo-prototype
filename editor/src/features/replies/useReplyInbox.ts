@@ -15,10 +15,10 @@ import {
 } from "./replyInboxWorkflow";
 
 function accountState(
-  account: Pick<AccountSession, "available" | "clerkAvailable" | "user">,
+  account: Pick<AccountSession, "available" | "supabaseAvailable" | "user">,
 ) {
   return {
-    available: account.available || account.clerkAvailable,
+    available: account.available || account.supabaseAvailable,
     userId: account.user?.id ?? null,
   };
 }

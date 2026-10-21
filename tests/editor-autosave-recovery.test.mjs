@@ -34,6 +34,7 @@ function fixture(t) {
       getStatus: () => storage,
       subscribeStatus: listener => { storageListeners.add(listener); return () => storageListeners.delete(listener); },
     },
+    empty: () => {},
     hydrate: saved => { calls.hydrated.push(saved); patch({ ratio: saved.project.ratio }); },
     failed: (id, error) => calls.failed.push({ id, error }),
     recovered: id => calls.recovered.push(id),
@@ -182,8 +183,35 @@ test("repeated startup shares one restoration and dispose releases workflow subs
   const f = fixture(t);
   await Promise.all([f.controller.start(), f.controller.start()]);
   assert.equal(f.calls.restores, 1);
-  assert.equal(f.calls.schedules.length, 1);
+  assert.equal(f.calls.schedules.length, 0);
   assert.deepEqual(f.listeners(), { state: 1, storage: 1 });
   f.controller.dispose();
   assert.deepEqual(f.listeners(), { state: 0, storage: 0 });
+});
+
+
+test("a missing checkpoint leaves saving ready without overwriting another current project", async t => {
+  const f = fixture(t);
+  await f.controller.start();
+  assert.equal(f.controller.getStatus().phase, "ready");
+  assert.equal(f.calls.schedules.length, 0);
+  await f.controller.saveBeforeUpdate();
+  assert.equal(f.calls.schedules.length, 0);
+  f.patch({ localId: "new-project", ratio: "1:1" });
+  assert.equal(f.calls.schedules.length, 1);
+  assert.equal(f.calls.failed.length, 0);
+});
+
+test("new work begun while checking an absent checkpoint can save safely", async t => {
+  const f = fixture(t);
+  let finish;
+  f.setRestore(() => new Promise(resolve => { finish = resolve; }));
+  const pending = f.controller.start();
+  f.patch({ ratio: "1:1" });
+  finish(null);
+  await pending;
+  assert.equal(f.controller.getStatus().phase, "ready");
+  assert.equal(f.calls.hydrated.length, 0);
+  assert.equal(f.calls.schedules.at(-1).ratio, "1:1");
+  assert.equal(f.calls.failed.length, 0);
 });

@@ -3,20 +3,15 @@
   align-self: flex-end;
 }
 .railAnchor .railRatio {
-  width: 90px;
-  height: 42px;
-  justify-content: space-between;
-  gap: 5px;
-  padding: 0 8px;
+  width: 44px;
+  height: 44px;
+  justify-content: center;
+  padding: 0;
 }
 .railRatioValue {
-  flex: 1;
   white-space: nowrap;
-  text-align: left;
+  text-align: center;
   font: 800 12px/1 var(--f-ui);
-}
-.railRatio svg {
-  flex: none;
 }
 .menuScrim {
   position: fixed;
@@ -35,12 +30,12 @@
   gap: 2px;
   min-width: 148px;
   padding: 6px;
-  background: color-mix(in srgb, var(--bar) 92%, transparent);
+  background: var(--surface);
   border: 2px solid var(--q14);
-  border-radius: 14px;
-  box-shadow: 0 12px 30px color-mix(in srgb, var(--outline) 50%, transparent);
-  backdrop-filter: blur(10px);
-  animation: rsUp 0.22s var(--spring) both;
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-floating);
+  animation: editor-tool-enter var(--editor-motion-layout)
+    var(--editor-motion-ease) both;
 }
 .ratioMenu button {
   display: flex;
@@ -49,7 +44,7 @@
   padding: 8px 10px;
   background: none;
   border: 2px solid transparent;
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   color: var(--text);
   font: 700 12px var(--f-ui);
   text-align: left;

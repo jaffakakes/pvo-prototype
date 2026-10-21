@@ -9,6 +9,7 @@
   border: 0;
   padding: 0;
   background: transparent;
+  color: inherit;
   pointer-events: auto;
   touch-action: none;
   cursor: ew-resize;
@@ -22,7 +23,7 @@
   inset: 0;
 }
 .handle:focus-visible {
-  outline: 2px solid var(--pale);
+  outline: 2px solid currentColor;
   outline-offset: 2px;
   border-radius: 8px;
 }

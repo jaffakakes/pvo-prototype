@@ -1,10 +1,10 @@
 import type { AnimationTarget } from "../../domain/animation/model";
-import { useAssistant } from "../assistant/assistantStore";
+import { assistantFocused, useAssistant } from "../assistant/assistantStore";
 import type { CaptureState } from "../types";
 
 export function canAuthorAnimation(state: CaptureState): boolean {
   return state.screen === "editor" && !state.recording && !state.importing && !state.tryMode && !state.playheadPick
-    && !state.trim && state.ex !== "running" && useAssistant.getState().phase === "idle";
+    && !state.trim && state.ex !== "running" && !assistantFocused(useAssistant.getState());
 }
 
 export function selectedAuthoringTarget(state: CaptureState): AnimationTarget | null {

@@ -1,0 +1,78 @@
+.email,
+.form,
+.review {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  min-width: 0;
+}
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text);
+  font: 700 12px/1.4 var(--f-ui);
+}
+.form input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 50px;
+  padding: 0 14px;
+  border: 2px solid var(--q14);
+  border-radius: var(--radius-control);
+  background: var(--deep);
+  color: var(--text);
+  font: 500 16px/1.4 var(--f-ui);
+  caret-color: var(--text);
+}
+.email button {
+  min-height: 48px;
+  padding: 10px 16px;
+  border: 2px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  background: var(--auth-accent, var(--button-primary-bg));
+  color: var(--auth-accent-text, var(--button-primary-text));
+  font: 800 15px/1.3 var(--f-ui);
+  cursor: pointer;
+}
+.email button:not(.secondary) {
+  box-shadow: var(--shadow-control);
+}
+.email button:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+.email button:disabled,
+.form input:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.email .secondary {
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+}
+.email button:focus-visible,
+.form input:focus-visible {
+  outline: 3px solid var(--text);
+  outline-offset: 3px;
+}
+.status,
+.review p,
+.error {
+  margin: 0;
+  font: 500 13px/1.5 var(--f-ui);
+  overflow-wrap: anywhere;
+}
+.status {
+  color: var(--muted);
+}
+.review p {
+  color: var(--text);
+}
+.error {
+  color: var(--red);
+}
+.standalone {
+  width: 100%;
+}

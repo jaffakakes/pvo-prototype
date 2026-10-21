@@ -1,12 +1,12 @@
 import { changeLayerAnimation, type AnimationChange } from "../../domain/animation/editing";
 import type { AnimationEasing, AnimationProperty, AnimationTarget, LayerAnimation } from "../../domain/animation/model";
-import { useAssistant } from "../assistant/assistantStore";
+import { assistantFocused, useAssistant } from "../assistant/assistantStore";
 import { useCapture } from "../captureStore";
 
 function apply(target: AnimationTarget, change: AnimationChange): boolean {
   const state = useCapture.getState();
   if (state.screen !== "editor" || state.recording || state.importing || state.tryMode || state.playheadPick
-    || state.trim || state.ex === "running" || useAssistant.getState().phase !== "idle") return false;
+    || state.trim || state.ex === "running" || assistantFocused(useAssistant.getState())) return false;
   const scene = state.scenes.find(item => item.id === state.currentSceneId);
   if (!scene) return false;
   const next = changeLayerAnimation(scene, target, change);

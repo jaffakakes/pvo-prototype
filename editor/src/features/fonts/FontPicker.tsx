@@ -7,8 +7,8 @@ import {
 import { initializeFontLibrary, saveLibraryFont, useFontLibrary } from "../../state/fonts/fontLibraryStore";
 import styles from "./FontPicker.module.css";
 
-export function FontPicker({ value, onChange, disabled = false }: {
-  value?: AppliedFont; onChange(font: AppliedFont | undefined): void; disabled?: boolean;
+export function FontPicker({ value, onChange, disabled = false, tile = false }: {
+  value?: AppliedFont; onChange(font: AppliedFont | undefined): void; disabled?: boolean; tile?: boolean;
 }) {
   const library = useFontLibrary();
   const [open, setOpen] = useState(false);
@@ -111,11 +111,11 @@ export function FontPicker({ value, onChange, disabled = false }: {
     });
   };
 
-  return <section className={styles.root} data-font-picker>
+  return <section className={`${styles.root} ${tile ? styles.tile : ""}`} data-font-picker data-open={open}>
     <div className={styles.heading}>
-      <span>Font</span>
+      {!tile && <span>Font</span>}
       <button type="button" disabled={disabled} aria-expanded={open} onClick={() => open ? close() : setOpen(true)}>
-        {value?.family ?? "Default font"} · Browse fonts
+        {tile ? value?.family ?? "More fonts" : `${value?.family ?? "Default font"} · Browse fonts`}
       </button>
     </div>
     {open && <div className={styles.library}>

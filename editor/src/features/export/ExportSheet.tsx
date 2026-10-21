@@ -23,7 +23,7 @@ import { ExportPreview } from "./ExportPreview";
 import { exportClock, exportView } from "./presentation";
 import { useExportProgress } from "./useExportProgress";
 import { useCoverPreview, usePosterPreview } from "./useExportPreviewUrls";
-import { exportCoverAt } from "../../domain/project/cover";
+import { saveProjectCover } from "../../state/editing/coverCommands";
 import { useExportSession } from "./useExportSession";
 import styles from "./ExportSheet.module.css";
 
@@ -121,9 +121,7 @@ export function ExportSheet() {
     s.patch({ sheet: null });
   };
   const saveCover = () => {
-    s.edit({
-      coverAt: exportCoverAt({ scenes: s.scenes, coverAt: pickerTime }),
-    });
+    saveProjectCover(pickerTime);
     setPicking(false);
   };
   const retry720 = () => {
@@ -157,7 +155,6 @@ export function ExportSheet() {
         if (event.target === event.currentTarget) close();
       }}
       aria-labelledby="export-dialog-title"
-      aria-describedby={mode === "gate" ? "export-gate-description" : undefined}
     >
       <div className={styles.layout}>
         <ExportPreview
@@ -171,42 +168,30 @@ export function ExportSheet() {
         />
         <div className={styles.right}>
           <header className={styles.header}>
-            <div>
-              {mode === "done" && (
-                <span
-                  className={`${styles.readyBadge} ${styles.desktopReadyBadge}`}
-                >
-                  ✓ &nbsp;READY
-                </span>
+            <h2
+              id="export-dialog-title"
+              className={styles.dialogTitle}
+              tabIndex={-1}
+            >
+              {mode === "gate" ? (
+                "Ready to export"
+              ) : mode === "picker" ? (
+                "Choose cover"
+              ) : mode === "exporting" ? (
+                "Exporting…"
+              ) : mode === "done" ? (
+                <>
+                  <span className={styles.desktopOnly}>
+                    Your export is ready
+                  </span>
+                  <span className={styles.phoneOnly}>Ready</span>
+                </>
+              ) : mode === "failed" ? (
+                "Export failed"
+              ) : (
+                "Export"
               )}
-              <h2 id="export-dialog-title" tabIndex={-1}>
-                {mode === "gate" ? (
-                  "Create a free account to export"
-                ) : mode === "picker" ? (
-                  "Choose cover"
-                ) : mode === "exporting" ? (
-                  "Exporting…"
-                ) : mode === "done" ? (
-                  <>
-                    <span className={styles.desktopOnly}>
-                      Your export is ready
-                    </span>
-                    <span className={styles.phoneOnly}>Ready</span>
-                  </>
-                ) : mode === "failed" ? (
-                  "Export failed"
-                ) : (
-                  "Export"
-                )}
-              </h2>
-              <p>
-                {mode === "gate"
-                  ? "Your chosen export is ready to start after sign-in."
-                  : mode === "done"
-                    ? "Playing the exported file"
-                    : `${s.projectName || "Untitled video"} · ${s.scenes.length} scene${s.scenes.length === 1 ? "" : "s"} · ${exportClock(allDuration)} · ${s.ratio}`}
-              </p>
-            </div>
+            </h2>
             <button
               type="button"
               className={styles.close}
@@ -332,7 +317,6 @@ export function ExportSheet() {
             format={format}
             quality={s.quality}
             unavailable={emptyScenes.length > 0 || mainDuration <= 0}
-            close={close}
             begin={begin}
             saveCover={saveCover}
             cancel={cancel}

@@ -1,7 +1,7 @@
 import { inspectionAudio, inspectionScene, type InspectionProject, type TranscriptRequest } from "../../../domain/assistant/mediaInspection";
 import { cancellable } from "./lifecycle";
 import { loadAssistantAudioSource, MAX_AUDIO_SOURCE_SECONDS } from "./audioSource";
-import { monoWav } from "./wav";
+import { monoWav } from "../../audio/wav";
 
 const SAMPLE_RATE = 16000;
 const MAX_TOTAL_BYTES = 64 * 1024 * 1024;

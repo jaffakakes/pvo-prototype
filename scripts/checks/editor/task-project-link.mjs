@@ -101,10 +101,9 @@ try {
       json: {
         available: true,
         user: owner ? { id: owner, name: owner } : null,
-        clerkAvailable: false,
-        clerkPublishableKey: null,
-        canLinkEmail: false,
-        emailLinked: false,
+        supabaseAvailable: false,
+        supabasePublishableKey: null,
+        supabaseUrl: null,
       },
     }),
   );

@@ -85,6 +85,7 @@ export function nativeGenerationSchema({
       operations: empty,
       observations: empty,
       answer: generationShape(fields.answer),
+      suggestions: generationShape(fields.suggestions),
     }),
   );
   const blocked = envelope({

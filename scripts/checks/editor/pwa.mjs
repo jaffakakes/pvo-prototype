@@ -306,7 +306,7 @@ try {
   assert.equal(new Set(continued.clips.map(clip => clip.id)).size, 2,
     "New takes after restore must receive distinct clip IDs");
   await page.getByRole("button", { name: "Open editor" }).click();
-  await page.getByRole("heading", { name: "Edit" }).waitFor();
+  await page.getByRole("button", { name: "Back to camera", exact: true }).waitFor();
   await page.waitForFunction(() => {
     const video = document.querySelector(".pvVideo");
     return video instanceof HTMLVideoElement && video.videoWidth > 0 && video.readyState >= 2;
