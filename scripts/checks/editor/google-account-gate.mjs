@@ -89,7 +89,7 @@ async function checkAccountGate(phone) {
     assert.equal(await gate.getByRole("link", { name: "Privacy Policy" }).count(), 1);
     assert.equal(await exportSheet.getByRole("button", { name: "Keep editing", exact: true }).count(), 0);
     assert.doesNotMatch(await gate.innerText(), /Your edit stays right here/);
-    assert.equal(await exportSheet.evaluate(element => getComputedStyle(element).borderTopLeftRadius), "22px");
+    assert.equal(await exportSheet.evaluate(element => getComputedStyle(element).borderTopLeftRadius), "24px");
   };
   const waitForRender = async count => {
     const deadline = Date.now() + 15000;
@@ -129,13 +129,20 @@ async function checkAccountGate(phone) {
     signedIn = false;
     const checksBeforeStart = checks;
     await start();
-    await verifyGate();
-    assert(checks > checksBeforeStart, "Every export checks the live account, including after expiry");
-    await gate.getByRole("button", { name: "Continue with email" }).click();
-    await gate.getByRole("button", { name: "Use another email" }).click();
-    await fillEmailForm(gate, "export@example.test");
     await waitForRender(2);
-    assert.equal(emailExchanges, 2, "Both Google and email exchange Supabase sessions");
+    assert(checks > checksBeforeStart, "Every export checks the live account, including after expiry");
+    assert.equal(await gate.count(), 0, "An accepted provider session restores sign-in without another prompt");
+    assert.equal(emailExchanges, 2, "An expired Restyle cookie is renewed through the provider");
+
+    signedIn = false;
+    provider.session = null;
+    await page.evaluate(() => localStorage.removeItem("restyle-auth-restyle-test"));
+    await start();
+    await verifyGate();
+    await gate.getByRole("button", { name: "Continue with email" }).click();
+    await fillEmailForm(gate, "export@example.test");
+    await waitForRender(3);
+    assert.equal(emailExchanges, 3, "Google, restoration and email each exchange a verified Supabase session");
     assert.deepEqual(errors, []);
     console.log(`${phone ? "Phone" : "Desktop"} export account gate passed: settings first, dismissal, Google/email resume, session expiry, and retained quality.`);
   } finally {
