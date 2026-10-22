@@ -1,5 +1,13 @@
 # Restyle cloud agent: start here when taking over
 
+## Lowercase source-path repair guidance — 22 October 2026
+
+The `823837a` email repetition (`durable-2026-10-22T04-17-17.961Z-7981246f`) exposes a separate repair failure: the model repeatedly alternates `tests/sendThanks.test.mjs` and `./tests/sendThanks.test.mjs` because the generic path diagnostic does not state the lowercase requirement or reject a leading `./` explicitly. It is stopped through the private marker after eleven dispatched calls; known cost $0.466455, one usage-unknown interrupted call, cleanup verified. No source is accepted, no manual hint is supplied, and no email is sent. This remains a failed attempt.
+
+The path parser, tool schema description and implementation-stage instructions now explain lowercase paths with exact valid examples and no `./` prefix. Validation rules are unchanged. Existing path tests additionally cover the observed mixed-case filename and root-prefix variants; fourteen focused package/planner/recovery tests pass. The prior `55f8512` full repository check passed 1,772 tests with four optional skips; this later path-guidance batch still needs its final full check.
+
+Exact next: fresh source-browser email journey after restarting owned Vite5295, then the unchanged final105 matrix on the verified candidate. Complete journey, matrix and beta delivery remain pending; 7R.02/04/05/06 are unchecked. No production work or new permanent resources.
+
 ## Email implementation passes; browser observer corrected — 22 October 2026
 
 Candidate `55f8512` reaches Ready with its original agreement/source/component in nine live calls and no format repairs: `durable-2026-10-22T04-12-50.141Z-80dc0b5b`, $0.321429, no unknown usage. Generated and independent backend checks pass, and the prepared result survives a full Worker restart. The real editor applies its form and receipt Note atomically; its first Try request returns HTTP200. The observer then throws because it reads `build.agreement.connections` instead of the actual saved `{digest,body}` wrapper. This is retained as an incomplete browser attempt, not a complete journey pass. All owned resources were cleaned and no real email was sent.
