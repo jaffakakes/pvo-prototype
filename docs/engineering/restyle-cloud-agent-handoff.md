@@ -1,5 +1,13 @@
 # Restyle cloud agent: start here when taking over
 
+## Email browser path verified with recorded output — 22 October 2026
+
+Live candidate `b7db4c0` reaches Ready in ten calls with checked source and a visible receipt Note: `durable-2026-10-22T04-22-44.995Z-ac6e2182`, $0.383250, no unknown usage, restart and cleanup verified. Its actual Try response displays the example receipt and makes zero provider calls. The browser observer then fails to open Containers because it omitted the desktop More settings step. This stays an incomplete live journey.
+
+A separate zero-inference preflight replays those original decisions, preserving agreement/source bytes and rebinding only the fresh fixture's hosted URL, release ID and component ID. The first preflight (`email-browser-preflight-2026-10-22T04-28-35.549Z`) retains a missing legacy More-button locator failure, cleanup verified. After targeting the actual desktop More settings button, `email-browser-preflight-2026-10-22T04-30-00.409Z` passes real Try, checked-version approval/publication, PVO export, anonymous viewer, Worker restart and saved-result reopen. Try makes zero provider sends; the viewer makes exactly one controlled send/public write and reopening makes none. Receipt screenshots were inspected. This is browser-driver validation with recorded AI output, not a new live-model repetition. Private journals include the preflight script and cleanup receipts.
+
+The driver now opens More settings before Containers and records failure stacks for diagnosis. Full repository check on the unchanged application candidate passes 1,772 tests, four optional skips, zero failures. Owned Vite5295 is PID56077/session82440. Exact next: a fresh complete live-AI connected-email journey, then the unchanged final105 matrix. 7R.02/04/05/06 and actual beta delivery remain pending; no real email, new permanent resource or production release.
+
 ## Lowercase source-path repair guidance — 22 October 2026
 
 The `823837a` email repetition (`durable-2026-10-22T04-17-17.961Z-7981246f`) exposes a separate repair failure: the model repeatedly alternates `tests/sendThanks.test.mjs` and `./tests/sendThanks.test.mjs` because the generic path diagnostic does not state the lowercase requirement or reject a leading `./` explicitly. It is stopped through the private marker after eleven dispatched calls; known cost $0.466455, one usage-unknown interrupted call, cleanup verified. No source is accepted, no manual hint is supplied, and no email is sent. This remains a failed attempt.

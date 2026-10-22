@@ -73,3 +73,7 @@ The fresh `55f8512` email run reaches Ready in nine calls with no format repairs
 ### Source-path repair checkpoint
 
 The next email repetition finds an ambiguous source-path diagnostic: mixed-case filenames are rejected, but the model alternates path prefixes because lowercase is unstated. The eleven-call failed attempt is retained with cleanup verified. Parser/schema/prompt guidance now names the existing lowercase/no-./ requirements; fourteen focused tests pass. No path rule is relaxed. Fresh complete email acceptance and final105 remain required.
+
+### Email browser preflight checkpoint
+
+The b7db4c0 live email reaches Ready in ten calls; its Try receipt is visible with zero provider calls. A missing settings-navigation step stops that live browser proof. A separate recorded-output preflight now passes actual approval, export, anonymous controlled send and reopen with one total send, preserving source/agreement bytes and rebinding only fixture metadata. Full source check passes 1,772 tests plus four optional skips. Fresh live complete acceptance is next, followed by final105; no beta deployment yet.

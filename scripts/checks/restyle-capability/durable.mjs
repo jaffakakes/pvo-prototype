@@ -249,7 +249,11 @@ try {
   }
 } catch (error) {
   report.status = "execution_error";
-  report.failure = { name: error.name, message: error.message };
+  report.failure = {
+    name: error.name,
+    message: error.message,
+    stack: error.stack?.slice(0, 4000),
+  };
   if (error.browserCleanupVerified)
     report.resources.find((item) => item.kind === "browser").cleaned = true;
   if (creator && !creator.page.isClosed()) {

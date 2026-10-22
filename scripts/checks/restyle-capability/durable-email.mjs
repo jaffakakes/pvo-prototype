@@ -163,6 +163,9 @@ export async function checkEmailDelivery(
   const connection = applied.components.find((item) => item.serviceConnection)
     .serviceConnection.connection;
   await page
+    .getByRole("button", { name: "More settings", exact: true })
+    .click();
+  await page
     .getByRole("button", { name: "Open Containers", exact: true })
     .click();
   await page
