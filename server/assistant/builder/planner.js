@@ -1,3 +1,4 @@
+import { generateAuthoringResponse } from "../tasks/modelResponse.js";
 import { connectionSetupAvailable } from "../../connections/credentials.js";
 import { AuthoringRepairError } from "../tasks/repairFeedback.js";
 import { builderInstructions } from "./prompt.js";
@@ -57,7 +58,8 @@ export async function planSavedBuild(
     },
     BUILDER_LIMITS.promptBytes,
   );
-  const response = await models.generate(
+  const response = await generateAuthoringResponse(
+    models,
     {
       messages,
       schema: withEvidenceSchema(

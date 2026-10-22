@@ -23,19 +23,19 @@ test(
         const input = await request.json();
         requests.push(input);
         const decision =
-          requests.length === 1
+          requests.length <= 2
             ? { kind: "build" }
             : {
                 kind: "ask",
                 prompt: "Which day should the event use?",
                 choices: [],
-                ...(requests.length === 2 ? { calls: [] } : {}),
+                ...(requests.length === 3 ? { calls: [] } : {}),
               };
         return Response.json({
           model: "kimi-k2.6",
           choices: [
             {
-              finish_reason: "stop",
+              finish_reason: requests.length === 1 ? "length" : "stop",
               message: { role: "assistant", content: JSON.stringify(decision) },
             },
           ],
@@ -67,15 +67,25 @@ test(
         current.questions.at(-1).prompt,
         "Which day should the event use?",
       );
-      assert.equal(requests.length, 3);
-      assert.equal(current.usage.modelTurns, 3);
+      assert.equal(requests.length, 4);
+      assert.equal(current.usage.modelTurns, 4);
       assert.ok(
-        requests[2].messages.some((message) =>
+        requests[1].messages.some((message) =>
+          message.content.includes("authoring_output_truncated"),
+        ),
+      );
+      assert.ok(
+        requests[1].messages.some((message) =>
+          message.content.includes("no proposal text to retrieve"),
+        ),
+      );
+      assert.ok(
+        requests[3].messages.some((message) =>
           message.content.includes("Unsupported fields: calls"),
         ),
       );
       assert.ok(
-        requests[2].messages.some((message) =>
+        requests[3].messages.some((message) =>
           message.content.includes(
             '"savedSource":{"revision":0,"digest":null}',
           ),
@@ -85,7 +95,7 @@ test(
       const restored = (await fixture.request(path(task))).body.task;
       assert.equal(restored.state, "waiting_for_answer");
       assert.deepEqual(restored.questions, current.questions);
-      assert.equal(requests.length, 3);
+      assert.equal(requests.length, 4);
     } finally {
       await fixture.close();
     }

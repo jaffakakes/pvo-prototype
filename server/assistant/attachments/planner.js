@@ -1,3 +1,4 @@
+import { generateAuthoringResponse } from "../tasks/modelResponse.js";
 import { AuthoringRepairError } from "../tasks/repairFeedback.js";
 import { authoringMessages } from "../tasks/promptContext.js";
 import {
@@ -57,7 +58,7 @@ export async function planTaskAttachment(
       256 * 1024,
     ),
   };
-  const response = await models.generate(request, signal);
+  const response = await generateAuthoringResponse(models, request, signal);
   try {
     if (
       !response ||

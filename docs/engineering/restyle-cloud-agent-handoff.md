@@ -1,5 +1,12 @@
 # Restyle cloud agent: start here when taking over
 
+## Truncated-output recovery verified — 22 October 2026
+
+A cut-off Runpod reply previously escaped authoring repair and was classified as provider unavailable. A shared saved-authoring response boundary now records a fixed truncation correction without retrying inside the model call or retaining private provider text. Empty missing proposals are explicitly unavailable in prompt context, so the AI is not told to retrieve nonexistent source. Plan, builder, draft and attachment planners use the same policy. Capacity, cancellation and other provider errors retain their existing owner.
+
+Checks: two focused response-policy cases pass; planner/context/attachment/durable regression run passes 18 cases with zero failures and one optional Docker skip. The earlier complete controlled Docker journey passed both tests. Diagnostic-only B04.1 and B04.2 each failed at ten minutes (83/76 calls); R01.1 passed in five calls, and R01.2 remains running. These attempts retain source b75bb1f in their private journal. Next: run the combined candidate P01/P02/P03/B04/R01 twice, then the real durable guestbook with live inference. Pilot runs may overlap the tail of the old diagnostic experiment; call/behavior results are useful, but do not treat those elapsed times as an isolated latency comparison. Final acceptance repetitions must run sequentially without that overlap. 7R.02–06 and beta delivery remain incomplete.
+
+
 ## Durable evaluation preflight verified — 22 October 2026
 
 The local reliability driver now runs the actual task/planner/repair/SQLite/validation/hosting/attachment path, forwarding only model inference to Runpod. Every generated workspace command and service invocation uses the network-disabled Docker sandbox; model-written code never enters the host Node fixture. It explicitly excludes extra Node libraries in this test adapter. This is a local coordinator proof, not a new Fly or browser proof.
