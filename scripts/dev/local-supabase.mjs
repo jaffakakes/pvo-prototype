@@ -19,6 +19,11 @@ export async function loadLocalSupabase(directory, publishableKey, url) {
       if (error?.code === "ENOENT") return null;
       throw error;
     }
+    // Node's Windows mode bits cannot establish owner-only access to this file.
+    if (process.platform === "win32")
+      throw new Error(
+        "On Windows, set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY instead of supabase.json.",
+      );
     const details = await stat(path);
     if (!details.isFile() || details.mode & 0o077)
       throw new Error(

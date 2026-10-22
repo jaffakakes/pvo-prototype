@@ -14,7 +14,9 @@ The [architecture map](./docs/engineering/architecture.md) describes the separat
 
 ## Run the prototype
 
-Requires Node.js 22 or newer, Rust with the `wasm32-unknown-unknown` target, and wasm-pack for the PVO compiler. Install Node dependencies with `npm ci`; see [build prerequisites](./scripts/README.md) for the tool and browser checks.
+Development and CI use Node.js 22.23.4, pinned in [.node-version](./.node-version), which includes the October 2026 security fixes. The render-container base image uses the same patched release and a verified image digest. Updating a local runtime does not update an already deployed container; rebuild and redeploy that image when rendering is enabled.
+
+Also requires Rust with the `wasm32-unknown-unknown` target and wasm-pack for the PVO compiler. Install Node dependencies with `npm ci`; see [build prerequisites](./scripts/README.md) for the tool and browser checks.
 
 ```sh
 npm run dev

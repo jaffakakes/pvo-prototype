@@ -52,6 +52,8 @@ The application build includes public About, Privacy and Terms pages from [`publ
 
 The beta uses the existing Stickr Supabase project for both email/password and Google. Put its public project URL and `sb_publishable_…` key in the private `supabase.json` configuration described in the [account setup](../docs/engineering/cloudflare-publishing.md#local-account-adapter). No Google client secret is needed by the Restyle server. Register the exact confirmation, recovery and Google callback URLs for the beta origin in Supabase. Keep Stickr's existing callbacks and Google provider configuration.
 
+On Windows, supply `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` through the server environment instead. The adapter rejects `supabase.json` because Node's POSIX file-mode bits cannot verify Windows ACL privacy. Environment-supplied metadata uses the same public-key and HTTPS-project validation on every platform; macOS/Linux configuration files still require owner-only permissions.
+
 See [accounts and storage](../docs/engineering/accounts-and-storage.md) for local account files, production D1/R2 storage and the schema.
 
 ## Local assistant connection
