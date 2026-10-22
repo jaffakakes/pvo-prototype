@@ -1,12 +1,14 @@
 # Restyle cloud agent: current progress and handoff log
 
-## Iterative product use authorized; PC handoff prepared — 22 October 2026
+## Iterative product use authorized; PC branch shared — 22 October 2026
 
 The creator explicitly requested pushing the current AI changes to GitHub for their PC and using Restyle repeatedly before they take over. [Roadmap 10](restyle-cloud-agent-roadmaps/10-iterative-product-use.md) records the new acceptance emphasis: cumulative work on the same PVO, preservation of working behavior, normal follow-up requests, repair and reopen/resume. Retain each failure and distinguish an ordinary requirement change from Codex supplying a technical rescue. Prior one-shot/pressure evidence is preserved rather than rewritten.
 
-Pending documentation batch after `67e590b`: Roadmap 10, its index link, this progress log and handoff. 10U.01 awaits verified GitHub push; 10U.02–04 are unrun. The source check at `1a1c8c3` passed 1,799 tests (seven optional skips); the later boundary review passed 41 tests plus Chromium isolation. No application change warrants repeating the full suite or rebuilding beta in this batch. Private evidence/dependencies are excluded; the untracked `node_modules` symlink and the dirty Desktop checkout are preserved.
+Roadmap 10, its index link, this progress log and handoff were committed as `2b31fbb` after `67e590b`. The fast-forward push advanced `origin/codex/restyle-simple-harness` from `b694948` to `2b31fbb8eeee64e7f75d8a8230ecc81e5524f2c2`, verified independently by `git ls-remote` and GitHub PR116. 10U.01 is complete; 10U.02–04 are unrun. GitHub checks were in progress at verification, with no new CI pass claimed. This local documentation checkpoint records the successful push.
 
-Exact next: push the existing experimental branch with all local committed test/results records, verify its remote SHA and give PC pull commands; then begin actual iterative product use against a recorded build/backend. PR116 remains draft and stacked on PR111. No merge, deployment, live email or new paid resource is authorized merely by this source handoff.
+The source check at `1a1c8c3` passed 1,799 tests (seven optional skips); the later boundary review passed 41 tests plus Chromium isolation. Application bytes remain `cfec63c`. New documentation links/content and diff whitespace pass. No application change warrants repeating the full suite or rebuilding beta in this batch. Private evidence/dependencies are excluded; the untracked `node_modules` symlink and the dirty Desktop checkout are preserved. Two read-only fetch attempts stalled while Git scanned local refs and were terminated; remote head verification and the normal fast-forward push succeeded. No repository ref repair or worktree removal was attempted.
+
+Exact next: begin actual iterative product use against a recorded frontend/backend, with PC checkout instructions in Roadmap 10. PR116 remains draft and stacked on PR111. No merge, deployment, live email or new paid resource is authorized merely by this source handoff.
 
 ## Product scope corrected; generated-code boundary reviewed — 22 October 2026
 

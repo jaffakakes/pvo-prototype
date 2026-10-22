@@ -2,7 +2,7 @@
 
 The creator wants Codex to use Restyle to build and improve real PVOs, expose its limits, and continue until the creator is comfortable using the AI directly. The primary requirement is cumulative progress: understand existing work, change it safely, repair failures and continue after reopening. First-attempt perfection and low model-call counts are not acceptance gates.
 
-- [ ] **10U.01** Push the current experimental AI branch and evaluation/handoff records to GitHub; verify the remote commit and provide PC checkout instructions.
+- [x] **10U.01** Push the current experimental AI branch and evaluation/handoff records to GitHub; verify the remote commit and provide PC checkout instructions.
 - [ ] **10U.02** Establish an actual product-use baseline: record the served build/backend, create or select a disposable PVO, and capture its initial working behavior.
 - [ ] **10U.03** Exercise one PVO through ordinary requests to build, extend, revise, repair and reopen/continue. Verify preserved behavior after every step and retain failures and any manual intervention.
 - [ ] **10U.04** Extend the same method to varied supported PVO workflows and record capability limits, repeatable defects and improvements. Creator confidence is a user decision; do not mark it achieved from a fixed test count or assume universal reliability.
@@ -36,4 +36,4 @@ Git transfers source and documented configuration, not private model credentials
 
 ## Verification and status
 
-Preparation is documentation-only. The previous full source check passed 1,799 tests with seven optional skips; the subsequent focused boundary review passed 41 tests and a real Chromium isolation check. Application source remains `cfec63c`. Fresh live iterative-use tests have not started. Push verification and the exact next step are recorded in [current progress](../restyle-cloud-agent-progress.md).
+The source/evaluation handoff was pushed at `2b31fbb8eeee64e7f75d8a8230ecc81e5524f2c2`; both `git ls-remote` and GitHub PR116 confirmed that exact SHA. This documentation checkpoint records completion afterward. GitHub checks were in progress at verification. Preparation is documentation-only. The previous full source check passed 1,799 tests with seven optional skips; the subsequent focused boundary review passed 41 tests and a real Chromium isolation check. Application source remains `cfec63c`. Fresh live iterative-use tests have not started. The exact next step is recorded in [current progress](../restyle-cloud-agent-progress.md).
