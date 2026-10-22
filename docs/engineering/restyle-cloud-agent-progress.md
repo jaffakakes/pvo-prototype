@@ -1,6 +1,17 @@
 # Restyle cloud agent: current progress and handoff log
 
 
+## Capability baseline complete — 22 October 2026
+
+**Roadmap 6 (6T.01–03) is complete.** [Results](restyle-capability/results.md): 21 scenarios × two repetitions, **36 passed, four failed, two inconclusive**. Live inference used the unchanged Kimi K2.6 adapter with thinking disabled and temperature 0.6. Native editing/vision were consistent in this set; first-decision planning failed format/output checks; connected coding and final review sometimes needed lengthy repair. Ten final coding/repair runs passed 38 independent cases/84 steps, with 27 schema corrections. This local planner/sandbox baseline does not prove unattended end-to-end beta completion; the report records coordinator/history/escalation and UI coverage limits.
+
+**Evidence and integrity:** 19 unaffected completed cases from v1.1 plus 23 v1.2 runs cover all 42 IDs exactly. Preliminary outputs, three additional planning failures, the invalid connected-reporter attempt and both evaluation-driver corrections remain documented. Journals are private under `~/.codex/secure/restyle-capability/`; final segment is `run-2026-10-22T00-56-24.002Z-cd5d0bc8`. Public evidence/grades contain synthetic data and no credential. Scored usage: 145 calls, estimated $1.4782 at fixed assumed rates; including all preliminary/invalid work, 196 calls, $1.9120 known estimate plus two interrupted attempts with unknown usage. These are not invoices.
+
+**Checks/cleanup:** `RESTYLE_MODEL_SANDBOX=1 npm run check` passes 1,753 tests with zero failures/skips, JavaScript syntax 1,088, dependency checks 1,053 and formatting 852. All 179 journaled test containers are removed and final Docker inventory has no `restyle-model-*` container. Existing local Restyle database/storage/Redis services are preserved; Docker remains running. No new provider account, inbox, email, GitHub issue, cloud VM or published project was created. The earlier email receipt remains recipient-confirmed historical evidence.
+
+**Work/release state:** canonical checkout is the Restyle research-connections worktree, branch `codex/restyle-agent-identity`. Evaluator checkpoints: 073342f, 123739c and 3cb4081; this final batch records results and summary tooling. Application source remains unchanged from c100993 / app implementation 06eeae1. No beta build/deployment, production promotion, PR merge or branch cleanup. PR110/111 stay draft/unmerged. Exact next: review the report's ranked fix proposals and choose a separate controlled fix experiment; do not begin product fixes merely because this measurement task is complete. Broader Roadmap 5 signup/phone remains deferred. Older in-progress checkpoints below are historical.
+
+
 ## Capability baseline in progress — 22 October 2026
 
 **Resume checkpoint:** v1.1 B04.1 was stopped because an evaluation-only unsupported failure code hid its real missing-request defect. Its repair loop is invalid evidence about production. All 19 unaffected completed runs stay retained; protocol v1.2 resumes the 23 remaining repetitions with the current report code and actual bounded history selector. Reporter/history regression checks pass. No product changes.

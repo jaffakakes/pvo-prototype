@@ -12,7 +12,7 @@ The [architecture document](restyle-cloud-agent-architecture.md) explains the id
 
 ## Current phase — measure capability before fixes
 
-[Roadmap 6](restyle-cloud-agent-roadmaps/06-capability-baseline.md) freezes and runs the unchanged Kimi K2.6 baseline. Email MVP 5M.01–12 is complete; broader signup and phone work stay deferred. This measurement phase changes evaluation tooling/documentation only.
+[Roadmap 6](restyle-cloud-agent-roadmaps/06-capability-baseline.md) is complete: 42 scored runs of the unchanged Kimi K2.6 baseline, with [documented results and proposed fixes](restyle-capability/results.md). Product fixes remain a separate next phase. Email MVP 5M.01–12 is complete; broader signup and phone work stay deferred. This measurement phase changes evaluation tooling/documentation only.
 
 ## Roadmap 5 — agent identity and account setup
 

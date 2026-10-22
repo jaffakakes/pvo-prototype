@@ -432,6 +432,7 @@
   "scripts/checks/restyle-capability/probes.mjs",
   "scripts/checks/restyle-capability/provider.mjs",
   "scripts/checks/restyle-capability/run.mjs",
+  "scripts/checks/restyle-capability/summarize.mjs",
   "scripts/checks/service-jobs/live.mjs",
   "scripts/checks/service-submissions/browser-storage.mjs",
   "scripts/checks/tests.mjs",

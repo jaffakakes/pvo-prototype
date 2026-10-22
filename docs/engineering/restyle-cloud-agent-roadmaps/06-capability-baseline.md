@@ -3,8 +3,8 @@
 Authorized 22 October 2026: build and run a broad pressure test, document successes and failures, then decide fixes. No product fixes, model switch, production release, or additional real email in this phase.
 
 - [x] **6T.01** Freeze baseline, scenarios, rubrics and observation windows; verify the evaluation runner cannot award success from generated tests alone.
-- [ ] **6T.02** Run every scenario twice against the unchanged production adapter; preserve every request, response, validation rejection, tool result, generated source and cleanup receipt privately.
-- [ ] **6T.03** Grade against the frozen rubric, distinguish model, harness, provider and unsupported-capability outcomes, and document limitations and a ranked fix backlog without implementing fixes.
+- [x] **6T.02** Run every scenario twice against the unchanged production adapter; preserve every request, response, validation rejection, tool result, generated source and cleanup receipt privately.
+- [x] **6T.03** Grade against the frozen rubric, distinguish model, harness, provider and unsupported-capability outcomes, and document limitations and a ranked fix backlog without implementing fixes.
 
 ## Frozen protocol v1.2
 
@@ -48,7 +48,7 @@ The live model uses real Runpod inference. Synthetic source pages, accounts and 
 
 This baseline does not prove a complete editor → generated UI → export → viewer journey, concurrent production load, phone/signup support, arbitrary providers, real email delivery, speech recognition or visual quality of a rendered generated component. Preserve these as additional test needs before claiming broad readiness. The earlier user-confirmed email receipt remains one historical live example, not a new repetition in this suite.
 
-See the eventual [results](../restyle-capability/results.md). 6T.01 verified: ten runner/sandbox checks pass, including a seeded defect whose generated test passes and independent duplicate-before-full case fails. Preflight caught two evaluation-only mistakes (missing connection-catalog version and an incorrect expected diagnostic label); both were corrected before any live inference. No product fix. Next: run the frozen baseline.
+See the [results](../restyle-capability/results.md). 6T.01 verified: ten runner/sandbox checks pass, including a seeded defect whose generated test passes and independent duplicate-before-full case fails. Preflight caught two evaluation-only mistakes (missing connection-catalog version and an incorrect expected diagnostic label); both were corrected before any live inference. No product fix. Next: run the frozen baseline.
 
 ### Evaluation correction before coding
 
@@ -59,3 +59,7 @@ The preliminary live run was stopped before coding after review found an evaluat
 B04.1 generated a missing-request defect, but the evaluation reporter then used an unsupported failure code. Its repair results are invalid: the model received a generic reporter error instead of the actionable request mismatch and repeatedly read history. Stop and retain this attempt, including its usage and source; do not blame its repair loop on the production product. The reporter now uses the existing `mismatch` code, with an end-to-end report-parser regression. The evaluation also reuses the application's actual bounded history selector, including empty exhausted selections, byte limits and progress context. This replaces the earlier comparison driver's simplified history projection; no application code changes.
 
 Protocol v1.2 resumes the exact same input matrix. Retain all 19 completed, unaffected v1.1 cases (passes and failures), and run only the 23 missing/interrupted repetitions. No retained build used the corrected account/history paths. Journals preserve both driver versions and record predecessor/retained IDs. The full durable coordinator, history sequence allocation and progress-help workflow remain outside this local evaluation.
+
+## Verified completion — 22 October 2026
+
+6T.01–03 complete. All 42 scored repetitions are accounted for: 36 pass, four fail, two inconclusive. Coding/repair final reviews pass 38 independent cases/84 steps; 27 schema corrections and variable call counts remain material findings. All 179 journaled containers are removed, with unrelated existing local services preserved. Full check with Docker enabled: 1,753 passed, zero failures/skips; syntax 1,088, dependency checks 1,053, adopted formatting 852. Results, per-case grades, public evidence and evaluation corrections are in the linked report. No product/model/prompt/deployment change was made. Exact next: review the ranked fix proposals and select a separate fix experiment, then rerun unchanged cases. Account signup/phone and production remain deferred.
