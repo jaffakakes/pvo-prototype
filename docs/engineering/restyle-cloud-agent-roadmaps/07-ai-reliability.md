@@ -89,3 +89,7 @@ The82b0090 matrix is stopped after58 completed cases because P01.3 omits the fro
 ### Declared receipt bounds included
 
 The normal b5107b4 email journey passes, but a supplemental test confirms a valid512-byte receipt overflows its composed status message. Both original journey and failed boundary evidence are retained. Guidance now preserves the whole provider ID separately from fixed status text, and complete email acceptance additionally checks512-byte ASCII/Unicode receipts against the exact generated package. Original21 cases and rubrics are unchanged; fresh journeys/full105 and rebuilt beta remain pending.
+
+### Current complete journey checkpoint
+
+Candidate393ab2f passes fresh generated guestbook/email UI journeys, maximum-size receipt continuations, readable wrapped Notes, missing/revoked setup and lost-inference explicit Retry/restart. Full source, opt-in Docker/browser, editor types, native Rust/WASM and build checks pass. Staged09933f2c5244c24a is not deployed. The fresh unchanged105, final audit and beta verification remain required; 7R.02/05/06 remain unchecked. See current progress for all exact journals, usage, cleanup and limits.
