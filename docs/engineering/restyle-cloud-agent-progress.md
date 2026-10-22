@@ -1,5 +1,15 @@
 # Restyle cloud agent: current progress and handoff log
 
+## Receipt timing mismatch reproduced and corrected — 22 October 2026
+
+The8a39141 three-run P01 diagnostic retains two first-valid semantic passes and one failed run: two proposals contain an unsupported comma-named step field, then the third call times out at300 seconds. Five calls total, $0.255954 known estimate and one unknown usage. All outputs remain in `run-2026-10-22T07-21-57.480Z-d7ac29b5`; longer timeout alone is insufficient. Planned next change: bounded automatic recovery for read-only inference transport failures, keeping each failed attempt/usage and leaving external effects under their existing no-duplicate rules. No retry code is implemented in this checkpoint.
+
+The six-call live guestbook (`durable-2026-10-22T07-24-12.848Z-0ce40f59`, $0.264336) passes current durable checks, actual atomic editor Apply, four Try submissions/latest-three display, export, anonymous viewer and restart/reopen with one total public write. Screenshots were reviewed; empty numbered slots and replay of the saved result remain explicit UI limits. The nine-call email (`durable-2026-10-22T07-28-51.889Z-ef1de848`, $0.353442) passes backend and legal512-byte ASCII/Unicode receipts but fails actual editor application. Both journals have complete usage and verified cleanup; no real email was sent.
+
+The email failure is a real context mismatch: its authorized receipt Note starts at3.1 seconds after a3-second control/video. Server validation includes the entire atomic result, but the editor validates the control before inserting the Note. The screenshot shows “The proposal jumps outside the selected scene's video.” The editor now accounts for the authorized same-scene Note during preparation and still validates actual final routes before committing. A regression reproduces the old failure; all32 focused editor/attachment tests and strict editor types pass after the correction. Added negative coverage rejects a missing Note or a jump beyond the final6.1-second scene, with no partial project/history.
+
+The pre-change full suite now passes1,779 tests with four optional skips after its test-only deadline correction. Staged2a37052d4dc3e846 is rejected/undeployed. Application timing change is pending in this work batch; full/browser verification follows the separate inference-recovery change. Exact next: implement and verify automatic inference retry, then matching-source generated journeys and a fresh unchanged105, rebuild and verified beta. 7R.02/05/06 remain unchecked.
+
 ## Claim-bound regression and clean browser server — 22 October 2026
 
 The8a39141 full source run passes1,778 tests but fails the validation-deadline test's obsolete195-second model-claim expectation. The test now requires315 seconds and holds actual validation until320 seconds, beyond the model claim and within its existing330-second validation claim. All nine focused cancellation/restart/claim tests pass; a clean full rerun is next. This correction changes tests only, with application/evaluator bytes still8a39141.

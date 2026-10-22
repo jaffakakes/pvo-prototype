@@ -81,7 +81,7 @@ async function fixture(withNote = false) {
     structure:
       '<form><heading>Join dinner</heading><field name="guest" kind="name" label="Name"/><submit>Join</submit></form>',
     style: "",
-    logic: `on submit { request(${JSON.stringify({ ...serviceAttachmentRequest(authorization), onSuccess: { kind: "continue" }, onError: null })}); }`,
+    logic: `on submit { request(${JSON.stringify({ ...serviceAttachmentRequest(authorization), onSuccess: withNote ? { kind: "time", t: 3.1 } : { kind: "continue" }, onError: null })}); }`,
   };
   if (withNote)
     command.notes = [
@@ -89,7 +89,7 @@ async function fixture(withNote = false) {
         kind: "component.add",
         sceneId: "main",
         componentType: "tooltip",
-        at: 3,
+        at: 3.1,
         duration: 3,
         source: {
           structure:
@@ -214,6 +214,11 @@ test("saved form and result Note retain matching stable IDs through application,
   const [form, note] = state().components;
   assert.equal(form.id, "component-task-task-1");
   assert.equal(note.id, "component-task-task-2");
+  assert.equal(note.at, 3.1);
+  assert.deepEqual(form.code.pvoCompiled.rules[0].action.onSuccess, {
+    kind: "time",
+    t: 3.1,
+  });
   const displayed = resolveTextTemplate(note.code.pvoCompiled.structure.text, {
     state: { responses: { [form.id]: { result: "accepted" } } },
   });
@@ -254,6 +259,42 @@ test("saved form and result Note retain matching stable IDs through application,
     }),
     /component ID already exists/,
   );
+});
+
+test("future receipt routes require the actual Note and remain within the final scene", async () => {
+  const { result } = await fixture(true);
+  const before = project();
+  const authorization = {
+    ...result.attachment,
+    scope: { ownerId: "owner", projectId: "server", taskId: "task" },
+    origin,
+    now,
+  };
+  await assert.rejects(
+    api.prepareNativeBatch(before, [result.operations[0]], {
+      compile: compilePvoComponent,
+      createId: () => 42,
+      advancedEditingEnabled: false,
+      attachment: authorization,
+    }),
+    /outside the selected scene/,
+  );
+  const invalid = structuredClone(result);
+  const component = invalid.attachment.command.component;
+  component.source.logic = component.source.logic.replace('"t":3.1', '"t":6.2');
+  invalid.operations[0] = component;
+  await assert.rejects(
+    api.prepareSavedResult(before, invalid, {
+      compile: compilePvoComponent,
+      createId: () => 42,
+      advancedEditingEnabled: false,
+      origin,
+      now,
+    }),
+    /outside the selected scene/,
+  );
+  assert.deepEqual(project(), before);
+  assert.equal(state().past.length, 0);
 });
 
 test("saved result rejects extra authority, missing or duplicate proposal matches and foreign receipt scope", async () => {

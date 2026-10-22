@@ -79,10 +79,19 @@ export async function applyComponentOperation(project: ProjectSnapshot, scene: S
     const compiled = await options.compile(next.type, nextSource);
     validateEditableLanguage(compiled);
     const sceneAfter = { ...scene, components: [...scene.components.filter(item => item.id !== next.id), next] };
-    const context = { currentSceneId: scene.id, duration: sceneDuration(sceneAfter),
+    const attachment = matchAttachmentOperation(operation, options.attachment);
+    // The authorized response Note is applied later in this atomic batch.
+    // Final route validation still requires that it actually extends the scene.
+    const duration = attachment
+      ? attachment.command.notes.reduce(
+          (end, note) => note.sceneId === scene.id ? Math.max(end, note.at + note.duration) : end,
+          sceneDuration(sceneAfter),
+        )
+      : sceneDuration(sceneAfter);
+    const context = { currentSceneId: scene.id, duration,
       scenes: project.scenes.map(item => item.id === scene.id ? sceneAfter : item)
         .filter(item => sceneDuration(item) > 0).map(item => ({ id: item.id, name: item.name })) };
-    if (matchAttachmentOperation(operation, options.attachment)) {
+    if (attachment) {
       validateCompiledServiceAttachment(originalCompiled, compiled, options.attachment!, context);
     } else {
       if (!options.advancedEditingEnabled) validateNoCodeAssistantProposal(originalCompiled, compiled);
