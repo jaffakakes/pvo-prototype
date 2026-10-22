@@ -19,7 +19,7 @@ If a criterion proves unsuitable, document its evidence and rationale before cha
 
 - [x] **7R.01** Freeze reliability acceptance criteria and inspect the measured failures and existing owners.
 - [ ] **7R.02** Make planning and tool decisions structurally dependable; preserve meaningful validation and record controlled experiments.
-- [ ] **7R.03** Make final review use current source and advance after successful work; verify recovery in the durable coordinator.
+- [x] **7R.03** Make final review use current source and advance after successful work; verify recovery in the durable coordinator.
 - [ ] **7R.04** Verify connected requests/results, missing/revoked access, interruption and duplicate prevention without false completion.
 - [ ] **7R.05** Run the complete final repeated matrix and full generated-component journeys; preserve all unsuccessful attempts.
 - [ ] **7R.06** Complete source review/checks, beta delivery and release verification; document evidence and clean owned test resources.
@@ -55,3 +55,7 @@ High-reasoning code pilot passes all five scenarios in 2–3 calls each. The ten
 ### Evaluation continuity checkpoint
 
 Protocol v1.3 retains first planning validity separately from saved-feedback repair and bounded missing-account continuation. The seven-call browser guestbook produced a correct first Try reply, then hit an observer frame-detachment race; full UI acceptance is still pending. Missing/revoked-account scoped setup and restart preflights are included. See the latest progress entry; no gate is complete from these changes.
+
+### Generated storage delivery verified
+
+The seven-call `0ad7c08` guestbook passes actual editor application, four Try writes/latest-three display, export, separate anonymous viewer and saved-result reopening after Worker restart with no duplicate write. 7R.03 is complete with focused current-source/repair regressions; 7R.02/04/05/06 still require their remaining acceptance. The source check passes 1,769 cases with four optional skips. Next: live missing/revoked/lost-inference and controlled-email browser journeys, then the unchanged final matrix and beta.

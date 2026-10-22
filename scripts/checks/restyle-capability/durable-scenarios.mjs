@@ -13,9 +13,16 @@ export function durableScenario(name) {
         " Add a new form with name and message fields and a Save button to the main scene. Use a short duration and pause playback until submission. Keep the original request's storage and reading behavior.",
       connectionKey: null,
     };
+  if (name === "connected-email")
+    return {
+      request:
+        "Create a new Message in the main scene with one Send email button, no inputs, a short duration and pause until clicked. Use the already connected AgentMail sender email-sender to send the fixed subject Thanks and body Thanks for watching to its approved recipient friend@example.com. Use an immediate response, not scheduled or background delivery. After acceptance show the actual provider receipt ID in a visible Note. Do not claim delivery confirmation. Read https://docs.agentmail.to/api-reference/inboxes/messages/send for the adapter documentation.",
+      connectionKey: "a".repeat(64),
+      connectedEmail: true,
+    };
   if (!["missing-email-account", "revoked-email-account"].includes(name))
     throw new Error(
-      "Select guestbook, missing-email-account, or revoked-email-account.",
+      "Select guestbook, connected-email, missing-email-account, or revoked-email-account.",
     );
   return {
     request:

@@ -15,17 +15,24 @@ import { measuredFetch, forwardModelRequest, baseline } from "./provider.mjs";
 import { isolatedTaskEffects } from "./effects.mjs";
 import { createDurableBrowser } from "./durable-browser.mjs";
 import { checkDurableDelivery } from "./durable-delivery.mjs";
+import { controlledEmail, checkEmailDelivery } from "./durable-email.mjs";
 import {
   durableScenario,
   seedDurableScenario,
   checkDurableSetup,
 } from "./durable-scenarios.mjs";
 
+import {
+  lostInferenceReply,
+  resumeLostInference,
+} from "./durable-interruption.mjs";
+
 const scenario = process.argv[2] ?? "guestbook";
 const browserJourney = process.argv.includes("--browser");
+const loseFirstReply = process.argv.includes("--lose-first-reply");
 const scenarioInput = durableScenario(scenario);
-if (browserJourney && scenario !== "guestbook")
-  throw new Error("Browser delivery uses the guestbook scenario.");
+if (browserJourney && !["guestbook", "connected-email"].includes(scenario))
+  throw new Error("Browser delivery uses guestbook or connected-email.");
 const directory = join(
   homedir(),
   ".codex/secure/restyle-capability",
@@ -53,6 +60,8 @@ const report = {
   ],
   transitions: [],
   browserJourney,
+  loseFirstReply,
+  interruptionChecks: [],
   browserChecks: [],
 };
 let saving = Promise.resolve();
@@ -75,6 +84,7 @@ const sandbox = await comparisonSandbox(async (resource) => {
   await save();
 });
 report.runtime = { image: sandbox.image, nodeVersion: sandbox.nodeVersion };
+const email = scenarioInput.connectedEmail ? controlledEmail() : null;
 const send = await measuredFetch(async (attempt) => {
   report.attempts[attempt.sequence - 1] = attempt;
   await save();
@@ -93,14 +103,22 @@ try {
     realClock: true,
     workspaces: true,
     services: true,
-    modelFetch: (request) => forwardModelRequest(send, request),
+    modelFetch: loseFirstReply
+      ? lostInferenceReply(send, async (check) => {
+          report.interruptionChecks.push(check);
+          await save();
+        })
+      : (request) => forwardModelRequest(send, request),
     ...isolatedTaskEffects(sandbox),
-    researchFetch: async () => new Response(null, { status: 503 }),
+    researchFetch:
+      email?.researchFetch ?? (async () => new Response(null, { status: 503 })),
+    connectionFetch: email?.connectionFetch,
     connectionKey: scenarioInput.connectionKey,
   });
   report.resources[0].storagePath = fixture.storagePath;
   await save();
   await seedDurableScenario(fixture, scenarioInput);
+  if (email) await email.seed(fixture);
   const request = scenarioInput.request;
   if (browserJourney) {
     report.resources.push({
@@ -149,6 +167,15 @@ try {
       );
     }
     if (
+      loseFirstReply &&
+      task.state === "failed" &&
+      report.interruptionChecks.length === 1
+    ) {
+      report.interruptionChecks.push(await resumeLostInference(fixture, task));
+      await save();
+      continue;
+    }
+    if (
       ["ready", "failed", "stopped", "waiting_for_answer"].includes(task.state)
     )
       break;
@@ -186,7 +213,7 @@ try {
       throw new Error("Prepared result changed across restart.");
     await save();
     if (creator) {
-      await checkDurableDelivery(
+      await (email ? checkEmailDelivery : checkDurableDelivery)(
         creator,
         fixture,
         directory,
@@ -198,11 +225,12 @@ try {
           });
           await save();
         },
+        email,
       );
       report.browserPassed = true;
     }
   }
-  if (scenarioInput.connectionKey) {
+  if (scenarioInput.connectionKey && !email) {
     report.setupCheck = await checkDurableSetup(fixture, task);
     report.status = "private_setup_verified";
   }

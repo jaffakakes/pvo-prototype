@@ -15,6 +15,78 @@ import {
   checkDurableSetup,
 } from "../../scripts/checks/restyle-capability/durable-scenarios.mjs";
 
+import {
+  lostInferenceReply,
+  resumeLostInference,
+} from "../../scripts/checks/restyle-capability/durable-interruption.mjs";
+
+test(
+  "a lost inference reply preserves the failed task across restart and explicit Retry supplies no correction",
+  { timeout: 30000 },
+  async () => {
+    const checks = [];
+    let calls = 0;
+    const fixture = await taskFixture({
+      realClock: true,
+      workspaces: true,
+      modelFetch: lostInferenceReply(
+        async () =>
+          Response.json({
+            model: "kimi-k3",
+            choices: [
+              {
+                finish_reason: "stop",
+                message: {
+                  role: "assistant",
+                  content: JSON.stringify(
+                    ++calls <= 2
+                      ? { kind: "build" }
+                      : {
+                          kind: "ask",
+                          prompt: "Which day should the event use?",
+                          choices: [],
+                        },
+                  ),
+                },
+              },
+            ],
+          }),
+        async (check) => checks.push(check),
+      ),
+      nodeEffect: async () => {
+        throw new Error(
+          "An interrupted planning test must not execute source.",
+        );
+      },
+    });
+    try {
+      const task = await saved(fixture);
+      async function terminal() {
+        for (let n = 0; n < 100; n++) {
+          const current = (await fixture.request(path(task))).body.task;
+          if (["failed", "waiting_for_answer"].includes(current.state))
+            return current;
+          await delay(100);
+        }
+        throw new Error("The interrupted task did not settle.");
+      }
+      const failed = await terminal();
+      const proof = await resumeLostInference(fixture, failed);
+      assert.equal(proof.inputUnchanged, true);
+      assert.equal(checks.length, 1);
+      const recovered = await terminal();
+      assert.equal(recovered.state, "waiting_for_answer");
+      assert.equal(
+        recovered.questions[0].prompt,
+        "Which day should the event use?",
+      );
+      assert.equal(calls, 3);
+    } finally {
+      await fixture.close();
+    }
+  },
+);
+
 test(
   "missing and revoked account evaluation requires real scoped setup and persists it across restart",
   { timeout: 30000 },

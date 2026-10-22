@@ -6,7 +6,7 @@ import {
   openIndependentViewer,
 } from "../cloud-agent-first-release/viewer.mjs";
 
-async function visibleText(page, text) {
+export async function visibleText(page, text) {
   for (const frame of page.frames()) {
     try {
       const matches = frame.getByText(text, { exact: false });
@@ -18,7 +18,7 @@ async function visibleText(page, text) {
   }
   return false;
 }
-async function requireVisible(page, text) {
+export async function requireVisible(page, text) {
   for (let index = 0; index < 100; index++) {
     if (await visibleText(page, text)) return;
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -98,31 +98,7 @@ export async function checkDurableDelivery(
       (await import("/src/features/preview/tryMode.ts")).stopTry(),
     );
   }
-  await page.evaluate(async () =>
-    (await import("/src/state/export/exportCommands.ts")).requestExport(),
-  );
-  await page
-    .getByRole("dialog", { name: "Export", exact: true })
-    .getByRole("button", { name: /Export and share/ })
-    .click();
-  const share = page.locator("[data-share-panel]");
-  await share.waitFor();
-  const downloadEvent = page.waitForEvent("download");
-  await share.locator("[data-download-again]").click();
-  const download = await downloadEvent;
-  assert.equal(await download.failure(), null);
-  const bytes = await readFile(await download.path());
-  await writeFile(directory + "/generated.pvo", bytes, { mode: 0o600 });
-  const packaged = await readPvoProject(new Blob([bytes]));
-  assert.equal(
-    packaged.validation.valid,
-    true,
-    JSON.stringify(packaged.validation.errors),
-  );
-  await record("export", {
-    bytes: bytes.length,
-    components: packaged.manifest.components.length,
-  });
+  const bytes = await exportGenerated(page, directory, record);
   const viewer = await openIndependentViewer(creator.browser, bytes);
   let publicCalls = 0;
   try {
@@ -188,4 +164,33 @@ export async function checkDurableDelivery(
     await viewer.close();
   }
   assert.deepEqual(creator.errors, []);
+}
+
+export async function exportGenerated(page, directory, record) {
+  await page.evaluate(async () =>
+    (await import("/src/state/export/exportCommands.ts")).requestExport(),
+  );
+  await page
+    .getByRole("dialog", { name: "Export", exact: true })
+    .getByRole("button", { name: /Export and share/ })
+    .click();
+  const share = page.locator("[data-share-panel]");
+  await share.waitFor();
+  const downloadEvent = page.waitForEvent("download");
+  await share.locator("[data-download-again]").click();
+  const download = await downloadEvent;
+  assert.equal(await download.failure(), null);
+  const bytes = await readFile(await download.path());
+  await writeFile(directory + "/generated.pvo", bytes, { mode: 0o600 });
+  const packaged = await readPvoProject(new Blob([bytes]));
+  assert.equal(
+    packaged.validation.valid,
+    true,
+    JSON.stringify(packaged.validation.errors),
+  );
+  await record("export", {
+    bytes: bytes.length,
+    components: packaged.manifest.components.length,
+  });
+  return bytes;
 }

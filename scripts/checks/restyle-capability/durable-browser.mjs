@@ -112,7 +112,7 @@ export async function createDurableBrowser(fixture, request, directory) {
       await (
         await import("/src/features/create-project/projectCommands.ts")
       ).createProject({
-        name: "AI reliability guestbook",
+        name: "AI reliability journey",
         ratio: "9:16",
         clips: [mkClip(3, URL.createObjectURL(media), 0)],
       });
@@ -169,7 +169,7 @@ export async function createDurableBrowser(fixture, request, directory) {
         assert.equal(
           value.components.length,
           2,
-          "The requested guestbook needs its form and visible result Note.",
+          "The requested journey needs its connected control and visible result Note.",
         );
         await page.screenshot({ path: directory + "/applied.png" });
         return value;
