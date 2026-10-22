@@ -111,3 +111,8 @@ The8a39141 P01 pilot still loses one request at300 seconds after two schema repa
 ### Automatic inference recovery candidate
 
 Saved read-only inference now has durable10/30-second retries for two consecutive transient failures, then a saved explicit-Retry failure; every attempt/usage and Stop/late-answer boundary remain recorded. This does not retry email/publication or impose a total goal limit. Protocolv1.6 mirrors that actual policy while retaining failed first attempts and all original planning/coding gates. Focused runner/editor/evaluator checks and editor types pass. Live automatic interruption/restart, full checks, matching-source browser journeys and final105 remain required before beta.
+
+
+### Native answer preservation checkpoint
+
+The e2bfae7 candidate passes all four fresh durable/browser journeys and all eight first planning decisions in the first final round, but fails E04: final review drops a correct timing explanation. The candidate is rejected; original output and interrupted work remain retained. Native completion now rejects dropping an existing substantive answer, uses the same repair allowance and explicitly returns the user-facing explanation. Forty-one focused checks pass. Five fresh E04 repetitions, full checks, current journeys, a new unchanged105 and beta delivery are next; no unfinished gate is checked.

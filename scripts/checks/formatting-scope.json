@@ -875,5 +875,6 @@
   "packages/pvo-assistant/tasks/inferenceRecovery.js",
   "scripts/checks/restyle-capability/inference-recovery.mjs",
   "tests/assistant-task-server/inference-recovery.test.mjs",
-  "tests/restyle-capability/inference-recovery.test.mjs"
+  "tests/restyle-capability/inference-recovery.test.mjs",
+  "tests/native-assistant-answer-review.test.mjs"
 ]
