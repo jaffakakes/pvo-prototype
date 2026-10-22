@@ -200,6 +200,7 @@ function validateWait(value) {
   requireTask(
     [
       "model_capacity",
+      "model_connection",
       "model_allowance",
       "workspace_capacity",
       "workspace_allowance",

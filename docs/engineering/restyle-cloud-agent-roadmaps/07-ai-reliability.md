@@ -107,3 +107,7 @@ The follow-up deadline regression updates the obsolete195-second test expectatio
 ### Receipt timing and lost-inference checkpoint
 
 The8a39141 P01 pilot still loses one request at300 seconds after two schema repairs; all failures and usage remain recorded. Its fresh guestbook journey passes, while the email correctly fails editor Apply because its receipt Note begins0.1 seconds after the original video. Editor preparation now includes the authorized same-scene Note and retains final actual-route validation. The reproduced regression, missing-Note/out-of-bounds rejection and32 focused cases pass, as do editor types. Next: automatic read-only inference recovery, current full/browser checks, fresh unchanged105 and rebuilt beta; no acceptance gate is relabelled.
+
+### Automatic inference recovery candidate
+
+Saved read-only inference now has durable10/30-second retries for two consecutive transient failures, then a saved explicit-Retry failure; every attempt/usage and Stop/late-answer boundary remain recorded. This does not retry email/publication or impose a total goal limit. Protocolv1.6 mirrors that actual policy while retaining failed first attempts and all original planning/coding gates. Focused runner/editor/evaluator checks and editor types pass. Live automatic interruption/restart, full checks, matching-source browser journeys and final105 remain required before beta.

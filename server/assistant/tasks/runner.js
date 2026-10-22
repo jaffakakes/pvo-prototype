@@ -1,4 +1,9 @@
 import { recoverExpiredAttachment } from "../attachments/recovery.js";
+import {
+  isTransientInferenceFailure,
+  inferenceRetryDelay,
+  precedingInferenceFailures,
+} from "../../../packages/pvo-assistant/tasks/index.js";
 import { AuthoringRepairError } from "./repairFeedback.js";
 import {
   authoringInput,
@@ -96,6 +101,9 @@ export async function runAuthoringStep(coordinator, claimed) {
           // No await separates this last cancellation check from invoking the read-only planner.
           invoked = true;
           const response = await coordinator.plan(claimed, signal, input);
+          signal.throwIfAborted();
+          if (!coordinator.attempts.current(claimed, coordinator.now()))
+            throw new DOMException("Task stopped", "AbortError");
           command = await prepareAuthoringResponse(
             coordinator,
             claimed,
@@ -120,6 +128,24 @@ export async function runAuthoringStep(coordinator, claimed) {
         };
         if (wait.nextRunAt !== null)
           wait.nextRunAt = Math.max(coordinator.now() + 1000, wait.nextRunAt);
+      } else if (
+        invoked &&
+        !controller.signal.aborted &&
+        isTransientInferenceFailure(error) &&
+        coordinator.attempts.current(claimed, coordinator.now())
+      ) {
+        const task = coordinator.attempts.task(claimed.id);
+        const operation = task.operations.find(
+          (item) => item.id === attempt.operationId,
+        );
+        const retryMs = inferenceRetryDelay(
+          precedingInferenceFailures(task.operations, operation) + 1,
+        );
+        if (retryMs !== null)
+          wait = {
+            reason: "model_connection",
+            nextRunAt: coordinator.now() + retryMs,
+          };
       }
     }
     await coordinator.transaction(() =>

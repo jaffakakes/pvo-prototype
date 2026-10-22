@@ -1,5 +1,15 @@
 # Restyle cloud agent: start here when taking over
 
+## Automatic inference recovery implemented; final verification pending — 22 October 2026
+
+Temporary read-only inference failures now save a durable model_connection wait and retry the same input after10 and30 seconds. Two consecutive automatic retries are allowed; continued failure remains saved for explicit Retry. This is not a saved-goal/request limit and never applies to external writes. Every attempt retains its failed operation and usage. Restart keeps the delay, Stop prevents another dispatch, and replies are fenced before preparation after cancellation or a changed claim. Build-stage failures now expose the existing Retry action instead of the obsolete “building is not available yet” message.
+
+Twenty-four focused runner/recovery/editor/durable cases pass, with one optional Docker case skipped; the separate late-Stop boundary test passes. Seventeen evaluator/editor cases pass with one optional skip, including a deliberately rejected first inference: identical input is retried and firstDecisionValid remains false. That regression initially exposed an empty-HTTP-body capture bug (a503 response was recorded as a transport exception); the evaluator now records its actual rejection, retaining unknown usage. The initial failing log is preserved. Strict editor types pass. Current application/evaluation changes are pending in this batch; complete source checks, optional Docker/browser and live inference are next.
+
+Protocolv1.6 uses the same shared retry delays as the actual runner. It records every attempt, retains first-attempt failures, and includes retries inside the existing six-turn planning observation and600-second/12-call coding gates. All original21 scenarios, rubrics, model/settings and validators are unchanged. The lost-reply journey now requires automatic recovery across restart without a Resume request; prior explicit-Retry evidence remains historical. No acceptance threshold was relaxed.
+
+Exact next: commit this batch, full source/optional checks, fresh live missing/lost/revoked inference and generated guestbook/email journeys, unchanged105, then rebuilt verified beta. No build will overlap a browser journey. 7R.02/05/06 remain unchecked; beta/production status unchanged and all previous failures retained.
+
 ## Receipt timing mismatch reproduced and corrected — 22 October 2026
 
 The8a39141 three-run P01 diagnostic retains two first-valid semantic passes and one failed run: two proposals contain an unsupported comma-named step field, then the third call times out at300 seconds. Five calls total, $0.255954 known estimate and one unknown usage. All outputs remain in `run-2026-10-22T07-21-57.480Z-d7ac29b5`; longer timeout alone is insufficient. Planned next change: bounded automatic recovery for read-only inference transport failures, keeping each failed attempt/usage and leaving external effects under their existing no-duplicate rules. No retry code is implemented in this checkpoint.

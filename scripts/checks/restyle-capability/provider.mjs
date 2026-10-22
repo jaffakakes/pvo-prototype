@@ -71,7 +71,7 @@ export async function measuredFetch(
       // Copy the bounded provider body once so capture cannot leak an unconsumed tee.
       const chunks = [];
       let size = 0;
-      for await (const chunk of response.body) {
+      for await (const chunk of response.body ?? []) {
         size += chunk.length;
         if (size > 128 * 1024)
           throw new Error("Evaluation provider body exceeded the app bound.");

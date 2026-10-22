@@ -17,11 +17,11 @@ import {
 
 import {
   lostInferenceReply,
-  resumeLostInference,
+  restartLostInference,
 } from "../../scripts/checks/restyle-capability/durable-interruption.mjs";
 
 test(
-  "a lost inference reply preserves the failed task across restart and explicit Retry supplies no correction",
+  "a lost inference reply preserves automatic recovery across restart without a Resume action or correction",
   { timeout: 30000 },
   async () => {
     const checks = [];
@@ -61,18 +61,22 @@ test(
     });
     try {
       const task = await saved(fixture);
-      async function terminal() {
-        for (let n = 0; n < 100; n++) {
+      async function terminal(includeWait = false) {
+        for (let n = 0; n < 200; n++) {
           const current = (await fixture.request(path(task))).body.task;
-          if (["failed", "waiting_for_answer"].includes(current.state))
+          if (
+            ["failed", "waiting_for_answer"].includes(current.state) ||
+            (includeWait && current.wait?.reason === "model_connection")
+          )
             return current;
           await delay(100);
         }
         throw new Error("The interrupted task did not settle.");
       }
-      const failed = await terminal();
-      const proof = await resumeLostInference(fixture, failed);
+      const waiting = await terminal(true);
+      const proof = await restartLostInference(fixture, waiting);
       assert.equal(proof.inputUnchanged, true);
+      assert.equal(proof.explicitResume, false);
       assert.equal(checks.length, 1);
       const recovered = await terminal();
       assert.equal(recovered.state, "waiting_for_answer");

@@ -25,7 +25,7 @@ import {
 
 import {
   lostInferenceReply,
-  resumeLostInference,
+  restartLostInference,
 } from "./durable-interruption.mjs";
 
 const scenario = process.argv[2] ?? "guestbook";
@@ -182,10 +182,11 @@ try {
     }
     if (
       loseFirstReply &&
-      task.state === "failed" &&
+      task.state === "waiting" &&
+      task.wait?.reason === "model_connection" &&
       report.interruptionChecks.length === 1
     ) {
-      report.interruptionChecks.push(await resumeLostInference(fixture, task));
+      report.interruptionChecks.push(await restartLostInference(fixture, task));
       await save();
       continue;
     }

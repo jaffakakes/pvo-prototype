@@ -14,6 +14,7 @@ import {
 import { serializeServiceAgreement } from "../../../packages/pvo-assistant/services/index.js";
 import { comparisonWorkspace, digest } from "../model-comparison/workspace.mjs";
 import { comparisonReview } from "../model-comparison/review.mjs";
+import { recordInferenceRetry } from "./inference-recovery.mjs";
 export async function runBuild(scenario, row, sandbox, model, save) {
   const started = performance.now();
   row.operations = [];
@@ -41,6 +42,7 @@ export async function runBuild(scenario, row, sandbox, model, save) {
     digest(serializeServiceAgreement(scenario.agreement)),
   );
   let evidence = null;
+  let inferenceFailures = 0;
   const task = {
     input: {
       request: scenario.request,
@@ -121,8 +123,14 @@ export async function runBuild(scenario, row, sandbox, model, save) {
           evidence,
           model,
         );
+        inferenceFailures = 0;
       } catch (error) {
-        if (!error.feedback) throw error;
+        if (!error.feedback) {
+          if (await recordInferenceRetry(error, row, ++inferenceFailures, save))
+            continue;
+          throw error;
+        }
+        inferenceFailures = 0;
         row.validationRepairs++;
         row.repairs.push(error.feedback);
         evidence = {

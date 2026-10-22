@@ -217,6 +217,7 @@ test("saved capacity and permission waits have honest status, retain answers, an
     );
     for (const reason of [
       "model_capacity",
+      "model_connection",
       "model_allowance",
       "spending_permission",
     ]) {
@@ -244,6 +245,28 @@ test("saved capacity and permission waits have honest status, retain answers, an
       assert.equal(f.views.at(-1).task.questions[0].answer.value, "Friday");
       assert.equal(f.views.at(-1).error, null);
     }
+    const queuedBuild = transitionTask(
+      active,
+      { kind: "checkpoint", stepId: "build" },
+      guard(active),
+    );
+    const building = transitionTask(
+      queuedBuild,
+      { kind: "claim", claimId: "builder", leaseMs: 60000 },
+      guard(queuedBuild),
+    );
+    const failed = transitionTask(
+      building,
+      {
+        kind: "fail",
+        failure: { code: "provider_unavailable", stepId: "build" },
+      },
+      guard(building),
+    );
+    const retry = api.savedTaskStatus(failed);
+    assert.equal(retry.canResume, true);
+    assert.match(retry.message, /unavailable/);
+    assert.doesNotMatch(retry.message, /not available yet/);
   } finally {
     f.session.dispose();
   }

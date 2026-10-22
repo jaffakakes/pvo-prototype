@@ -871,5 +871,9 @@
   "tests/service-validation/report.test.mjs",
   "tests/service-validation/runtime.test.mjs",
   "tests/service-validation/task.helpers.mjs",
-  "tests/service-validation/task.test.mjs"
+  "tests/service-validation/task.test.mjs",
+  "packages/pvo-assistant/tasks/inferenceRecovery.js",
+  "scripts/checks/restyle-capability/inference-recovery.mjs",
+  "tests/assistant-task-server/inference-recovery.test.mjs",
+  "tests/restyle-capability/inference-recovery.test.mjs"
 ]

@@ -17,6 +17,7 @@ export type TaskFailureCode =
   | "budget_exceeded";
 export type TaskWaitReason =
   | "model_capacity"
+  | "model_connection"
   | "model_allowance"
   | "workspace_capacity"
   | "workspace_allowance"
@@ -24,6 +25,12 @@ export type TaskWaitReason =
   | "service_allowance"
   | "spending_permission";
 export type TaskFailure = { code: TaskFailureCode; stepId: string };
+export function isTransientInferenceFailure(error: unknown): boolean;
+export function inferenceRetryDelay(failures: number): number | null;
+export function precedingInferenceFailures(
+  operations: readonly TaskOperation[],
+  current: TaskOperation,
+): number;
 export type TaskArtifact = { id: string; sha256: string; bytes: number };
 export type TaskResult = { artifact: TaskArtifact; baseFingerprint: string };
 export type TaskReference = {
@@ -231,6 +238,7 @@ export const TASK_LIMITS: Readonly<{
   resources: number;
   artifactBytes: number;
   retentionMs: number;
+  authoringAttemptMs: number;
   leaseMs: number;
   defaultLeaseMs: number;
 }>;

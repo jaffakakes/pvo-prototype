@@ -2,6 +2,7 @@ import { planSavedBuild } from "../../../server/assistant/builder/planner.js";
 import { TASK_LIMITS } from "../../../packages/pvo-assistant/tasks/index.js";
 import { researchDefinitions } from "./probes.mjs";
 import { missingAccountResearch } from "./planning-research.mjs";
+import { recordInferenceRetry } from "./inference-recovery.mjs";
 
 /** Preserve the first decision, then use the app's saved-validator feedback without developer hints. */
 export async function runPlanning(scenario, row, models, save) {
@@ -18,6 +19,7 @@ export async function runPlanning(scenario, row, models, save) {
   row.planningTurns = [];
   row.validationRepairs = 0;
   row.firstDecisionValid = false;
+  let inferenceFailures = 0;
   const research =
     scenario.id === "P07" ? await missingAccountResearch(task, feedback) : null;
   try {
@@ -33,12 +35,18 @@ export async function runPlanning(scenario, row, models, save) {
           evidence,
           models,
         );
+        inferenceFailures = 0;
         if (turn === 1) {
           row.firstDecisionValid = true;
           row.firstOutput = decision;
         }
       } catch (error) {
-        if (!error.feedback) throw error;
+        if (!error.feedback) {
+          if (await recordInferenceRetry(error, row, ++inferenceFailures, save))
+            continue;
+          throw error;
+        }
+        inferenceFailures = 0;
         row.validationRepairs++;
         row.planningTurns.push({ turn, repair: error.feedback });
         evidence = {
