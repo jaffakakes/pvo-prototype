@@ -14,8 +14,6 @@ import {
   builderModelSchema,
   builderModelDecision,
   bindBuilderModelDecision,
-} from "./modelInput.js";
-import {
   BUILDER_LIMITS,
   BUILDER_RESEARCH_KINDS,
 } from "../../../packages/pvo-assistant/builder/index.js";

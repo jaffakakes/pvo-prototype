@@ -6,7 +6,7 @@ The creator authorized implementing and testing the simpler harness on 22 Octobe
 
 - [x] **8S.01** Freeze the baseline, candidate scope, fresh tasks and comparison rules before measuring.
 - [x] **8S.02** Remove model-supplied source revision/digest fields; preserve exact-version execution, concurrency rejection and independent review with regression coverage.
-- [ ] **8S.03** Compare both harnesses using the same model/settings, five existing coding/repair tasks and two fresh tasks, twice each. Preserve unsuccessful outputs and all usage.
+- [x] **8S.03** Compare both harnesses using the same model/settings, five existing coding/repair tasks and two fresh tasks, twice each. Preserve unsuccessful outputs and all usage.
 - [ ] **8S.04** Verify complete saved guestbook/email journeys, source checks and resource cleanup. Deliver a verified beta only if the candidate meets the comparison gate.
 
 ## Experiment contract
@@ -26,3 +26,9 @@ Use the existing measured Runpod transport and network-disabled local Docker exe
 The model-input boundary and three focused regression cases are implemented and pass, including actual workspace concurrency/replay. Fresh inventory/invitation inputs parse through the actual contract. Full source checks are running; live inference has not started. Candidate and baseline will run sequentially, alternating which arm goes first by repetition, through the same evaluator and isolated executor. Exact source/evaluator/matrix hashes and every outcome will be retained. Next: finish checks, checkpoint and start the paired run.
 
 Source verification: full `npm run check` passes 1,793 tests, zero failures/cancellations, four optional skips. The follow-up evaluator contract test and fresh fixtures pass separately; strict editor types pass. Source changes are frozen before the paired live run.
+
+## Paired result and final verification
+
+All 28 runs finish: 14/14 per arm, zero format repairs, 42 baseline calls versus 43 candidate calls. Candidate has one autonomously repaired generated-test syntax failure; baseline has zero failed tool attempts. The predeclared no-worse gate therefore rejects rollout. All original results are retained; no threshold changed. See [the report](../restyle-capability/harness-comparison-results.md) and [evidence](../restyle-capability/harness-comparison-evidence.json). All 390 recorded containers are cleaned.
+
+The pure model-input module is subsequently moved into the shared builder package, with byte-identical function bodies and public exports. The existing AgentMail timeout mock receives a bounded keep-alive after its GitHub cancellation is reproduced without a live socket. The final Node 22 full check passes 1,794 tests with four optional skips, no failures/cancellations; editor types, forty focused builder/transport tests and four focused Node 22 checks pass. Next: candidate build and complete saved/browser journeys. Beta remains unchanged because the comparison gate did not pass.

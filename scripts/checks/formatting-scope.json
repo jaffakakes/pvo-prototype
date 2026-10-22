@@ -476,7 +476,7 @@
   "server/assistant/builder/connectionResearch.js",
   "server/assistant/builder/manualAlternatives.js",
   "server/assistant/builder/planner.js",
-  "server/assistant/builder/modelInput.js",
+  "packages/pvo-assistant/builder/modelInput.js",
   "server/assistant/builder/prompt.js",
   "server/assistant/builder/repository.js",
   "server/assistant/builder/researchJournal.js",

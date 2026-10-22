@@ -125,7 +125,7 @@ const files = [
   "scripts/checks/model-comparison/scenarios.mjs",
   "scripts/checks/model-comparison/workspace.mjs",
   "scripts/checks/model-comparison/sandbox.mjs",
-  "server/assistant/builder/modelInput.js",
+  "packages/pvo-assistant/builder/modelInput.js",
   "server/assistant/builder/planner.js",
   "server/assistant/builder/prompt.js",
   "server/assistant/tasks/promptContext.js",

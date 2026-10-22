@@ -104,6 +104,21 @@ export function builderDecisionSchema(
   }>,
   connectionSetup?: boolean,
 ): object;
+export function builderModelTools(
+  definitions: Parameters<typeof builderDecisionSchema>[1],
+): Parameters<typeof builderDecisionSchema>[1];
+export function builderModelSchema(
+  hasAgreement: boolean,
+  definitions: Parameters<typeof builderDecisionSchema>[1],
+  connectionSetup?: boolean,
+): object;
+export function builderModelDecision(value: unknown): unknown;
+export function bindBuilderModelDecision(
+  value: unknown,
+  source: { revision: number; digest: string | null } | null | undefined,
+  options: Parameters<typeof parseBuilderDecision>[1],
+  definitions: Parameters<typeof builderDecisionSchema>[1],
+): BuilderDecision;
 
 export type BuilderReviewFeedback = {
   review: Extract<BuilderDecision, { kind: "review" }>;

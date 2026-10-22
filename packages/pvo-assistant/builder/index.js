@@ -9,6 +9,12 @@ export { builderToolDefinitions } from "./schema.js";
 export { BUILDER_LIMITS, parseBuilderDecision } from "./decisions.js";
 export { builderDecisionSchema } from "./decisionSchema.js";
 export {
+  builderModelTools,
+  builderModelSchema,
+  builderModelDecision,
+  bindBuilderModelDecision,
+} from "./modelInput.js";
+export {
   newBuilderState,
   parseBuilderState,
   builderStage,

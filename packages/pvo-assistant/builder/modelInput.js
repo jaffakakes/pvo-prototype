@@ -1,13 +1,6 @@
-import {
-  builderDecisionSchema,
-  parseBuilderDecision,
-} from "../../../packages/pvo-assistant/builder/index.js";
-import {
-  digest,
-  integer,
-  object,
-  requireTask,
-} from "../../../packages/pvo-assistant/tasks/validation.js";
+import { builderDecisionSchema } from "./decisionSchema.js";
+import { parseBuilderDecision } from "./decisions.js";
+import { digest, integer, object, requireTask } from "../tasks/validation.js";
 
 const sourceFields = {
   workspace_read: ["revision"],
