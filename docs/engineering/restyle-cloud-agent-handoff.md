@@ -1,5 +1,11 @@
 # Restyle cloud agent: start here when taking over
 
+## Persistent retrieval and unavailable-research guidance corrected — 22 October 2026
+
+The actual-capability continuation diagnostic on c9c52bc (`run-2026-10-22T05-10-16.945Z-4482706f`) completes two P07 attempts: one still repeats unavailable reads and exhausts six turns, the other asks a concrete connection question in two. Both original results and separate semantic grades are retained. This confirms a genuine research-planning weakness after fixing the runner; it is not excluded as infrastructure.
+
+The application guidance now explicitly requires independent read operations for requested stored collections, with empty/existing-state read cases and compatible data bounds. It also directs unavailable research to an honest unverified status and concrete question or actually installed private setup, without repeated identical failed reads, invented forms, chat secrets or a changed outcome. Existing validators, account/approval boundaries and request-count policy are unchanged. Focused planner/capability/review/evaluator checks pass; live targeted repeats and the fresh full105 are next. No beta delivery yet, and all incomplete acceptance tasks stay unchecked.
+
 ## Candidate rejected; account evaluation corrected — 22 October 2026
 
 The attempted final matrix on82b0090 is stopped after **58 completed cases: 54 semantic passes, one genuine failure (P01.3), and three incomplete P07 continuations**. B01.3 was interrupted in flight and remains unscored with unknown usage. The missing guestbook read operation fails the original rubric; no criterion changed. Continuing the remaining paid repeats on a rejected candidate would not establish acceptance, so the earlier plan to finish it was replaced by fixing then running a fresh complete105. The pre-annotation journal is preserved with its SHA; all140 recorded Docker resources are cleaned and Docker shows zero restyle-model containers. No original completed output was edited.
