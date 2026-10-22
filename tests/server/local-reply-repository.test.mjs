@@ -58,7 +58,11 @@ test("local reply quotas are serialized and a rejected write does not block the 
     JSON.parse(await readFile(path, "utf8")).length,
     MAX_BOXES_PER_OWNER + 1,
   );
-  assert.equal((await stat(path)).mode & 0o777, 0o600);
+  const storedFile = await stat(path);
+  assert(storedFile.isFile());
+  // Windows ACLs are not represented by Node's POSIX permission bits.
+  if (process.platform !== "win32")
+    assert.equal(storedFile.mode & 0o777, 0o600);
 });
 
 test("concurrent public replies observe the minute quota and resume when its window passes", async (t) => {

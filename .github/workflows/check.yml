@@ -23,3 +23,17 @@ jobs:
       - run: npm run build
       - run: npm run check
       - run: npm run check:editor
+
+  test-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - name: Verify Windows auth, session restoration and subprocess cleanup
+        run: node --test tests/editor-session-restore.test.mjs tests/local-supabase-auth.test.mjs tests/native-mfa-sidecar.test.mjs tests/server/local-reply-repository.test.mjs

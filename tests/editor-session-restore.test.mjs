@@ -28,7 +28,7 @@ const bundled = await build({
     {
       name: "provider-session",
       setup(build) {
-        build.onLoad({ filter: /\/auth\/supabase\.ts$/ }, () => ({
+        build.onLoad({ filter: /[\\/]auth[\\/]supabase\.ts$/ }, () => ({
           contents: `
       export async function getSupabase() { return globalThis.sessionProvider; }
     `,
@@ -152,15 +152,22 @@ test("missing provider credentials and rejected renewal never authenticate local
   );
 });
 
-test("sign-out clears remembered intent and wins against a renewal already in flight", async () => {
+test("sign-out clears remembered intent and wins against a renewal already in flight", async (t) => {
   await acceptedThenExpired();
   let finishExchange;
   pendingExchange = new Promise((resolve) => {
     finishExchange = resolve;
   });
   const restoring = api.refreshAccountSession();
-  while (!calls.includes("/api/auth/supabase/exchange"))
+  t.after(async () => {
+    finishExchange();
+    await restoring;
+  });
+  const deadline = Date.now() + 1000;
+  while (!calls.includes("/api/auth/supabase/exchange")) {
+    assert(Date.now() < deadline, "The pending session renewal did not start.");
     await new Promise((resolve) => setImmediate(resolve));
+  }
   const signingOut = api.signOutAccount();
   finishExchange();
   await Promise.all([restoring, signingOut]);

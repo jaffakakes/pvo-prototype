@@ -43,6 +43,14 @@ disconnect kills the whole subprocess group; owned temporary audio, text and log
 are deleted on every outcome. Request bodies, tokens and private model errors
 are not written to service logs.
 
+Run the sidecar's isolated contract and process-lifecycle tests with
+`node --test tests/native-mfa-sidecar.test.mjs`. They use `python.exe` on Windows
+or `python3` on macOS/Linux for the refinement-log parser, and the current Node
+executable for subprocess fixtures; they do not install or run the MFA model.
+Cancellation terminates a POSIX process group or uses Windows `taskkill /T /F`,
+and waits for termination before removing the job directory. These tests cover
+Windows cleanup, not installation or acoustic accuracy of the pinned MFA runtime.
+
 The current CPU CLI measured 22.77 seconds for a 4-second sample, including
 process/corpus setup. This is a tested local development service, not a hosted
 Cloudflare deployment. Refinement uses a 1 ms feature step; that is not a guarantee
