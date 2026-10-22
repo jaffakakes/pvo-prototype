@@ -111,7 +111,7 @@ export function parseConnectionAdapter(value) {
         ? /^https:\/\/(?:docs\.agentmail\.to\/|www\.agentmail\.to\/docs\/)[A-Za-z0-9_/#?=.&%+-]+$/
         : /^https:\/\/resend\.com\/docs\/[A-Za-z0-9_/#?=.&%+-]+$/
     ).test(value.documentation),
-    "Cite the installed provider's official documentation.",
+    "Adapter documentation must contain only one official HTTPS URL for the installed provider, with no title, quotation or explanation. Put explanatory text in description.",
   );
   const budget = { nodes: 0 };
   validateSchema(value.input, budget);

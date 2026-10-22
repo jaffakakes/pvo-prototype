@@ -59,3 +59,7 @@ Protocol v1.3 retains first planning validity separately from saved-feedback rep
 ### Generated storage delivery verified
 
 The seven-call `0ad7c08` guestbook passes actual editor application, four Try writes/latest-three display, export, separate anonymous viewer and saved-result reopening after Worker restart with no duplicate write. 7R.03 is complete with focused current-source/repair regressions; 7R.02/04/05/06 still require their remaining acceptance. The source check passes 1,769 cases with four optional skips. Next: live missing/revoked/lost-inference and controlled-email browser journeys, then the unchanged final matrix and beta.
+
+### Connected email repair checkpoint
+
+Missing/revoked private setup and lost-inference Retry/restart pass with live inference. The first connected-email journey fails to escape vague documentation-URL feedback; retained eleven-call attempt is not accepted. Current diagnostics/schema guidance make URL-only documentation, code identifier syntax and unique example inputs explicit without weakening validators. Fresh email browser proof and final repeated matrix remain next. The prior staged build is not deployed and must be rebuilt; local4173 is no longer listening, HTTPS beta remains the delivery target.

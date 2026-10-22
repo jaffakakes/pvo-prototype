@@ -1,4 +1,4 @@
-import { mkdir, writeFile, rename } from "node:fs/promises";
+import { mkdir, writeFile, rename, access } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -149,6 +149,19 @@ try {
   let signature;
   const deadline = Date.now() + report.observationMs;
   while (!stopping && Date.now() < deadline) {
+    // A private stop marker lets the owner request normal teardown without Miniflare's process signal handler exiting first.
+    if (
+      await access(join(directory, "stop")).then(
+        () => true,
+        (error) => {
+          if (error.code === "ENOENT") return false;
+          throw error;
+        },
+      )
+    ) {
+      stopping = true;
+      break;
+    }
     const response = await fixture.request(path(task));
     expectStatus(response, 200);
     task = response.body.task;

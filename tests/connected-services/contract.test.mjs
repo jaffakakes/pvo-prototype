@@ -47,6 +47,31 @@ test("generated adapters admit scoped synchronous recipes and reject extra autho
   assert.throws(() => projectAdapterResult(readAdapter(), { title: 42 }));
 });
 
+test("adapter repair feedback identifies URL-only documentation and distinguishes code names from connection IDs", () => {
+  const adapter = readAdapter();
+  for (const documentation of [
+    "Official documentation: " + adapter.documentation,
+    adapter.documentation + " — supported operation",
+    "https://attacker.example/docs",
+  ])
+    assert.throws(
+      () => parseConnectionAdapter({ ...adapter, documentation }),
+      /only one official HTTPS URL.*no title/,
+    );
+  const agreement = connectedAgreement();
+  agreement.connections[0].name = "email-sender";
+  assert.throws(
+    () => parseServiceAgreement(agreement),
+    /Binding name must start with a lowercase letter.*Hyphens/,
+  );
+  agreement.connections[0].name = "issue";
+  agreement.connections[0].connectionId = "email-sender";
+  assert.equal(
+    parseServiceAgreement(agreement).connections[0].connectionId,
+    "email-sender",
+  );
+});
+
 test("agreement binds request names and examples to explicit service operations", () => {
   const agreement = parseServiceAgreement(connectedAgreement());
   assert.deepEqual(
