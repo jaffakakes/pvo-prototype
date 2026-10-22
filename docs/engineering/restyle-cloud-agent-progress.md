@@ -1,5 +1,13 @@
 # Restyle cloud agent: current progress and handoff log
 
+## Iterative product use authorized; PC handoff prepared — 22 October 2026
+
+The creator explicitly requested pushing the current AI changes to GitHub for their PC and using Restyle repeatedly before they take over. [Roadmap 10](restyle-cloud-agent-roadmaps/10-iterative-product-use.md) records the new acceptance emphasis: cumulative work on the same PVO, preservation of working behavior, normal follow-up requests, repair and reopen/resume. Retain each failure and distinguish an ordinary requirement change from Codex supplying a technical rescue. Prior one-shot/pressure evidence is preserved rather than rewritten.
+
+Pending documentation batch after `67e590b`: Roadmap 10, its index link, this progress log and handoff. 10U.01 awaits verified GitHub push; 10U.02–04 are unrun. The source check at `1a1c8c3` passed 1,799 tests (seven optional skips); the later boundary review passed 41 tests plus Chromium isolation. No application change warrants repeating the full suite or rebuilding beta in this batch. Private evidence/dependencies are excluded; the untracked `node_modules` symlink and the dirty Desktop checkout are preserved.
+
+Exact next: push the existing experimental branch with all local committed test/results records, verify its remote SHA and give PC pull commands; then begin actual iterative product use against a recorded build/backend. PR116 remains draft and stacked on PR111. No merge, deployment, live email or new paid resource is authorized merely by this source handoff.
+
 ## Product scope corrected; generated-code boundary reviewed — 22 October 2026
 
 [Roadmap 9 task 9P.05](restyle-cloud-agent-roadmaps/09-broader-pressure-tests.md#post-study-product-scope-and-security-boundary-review--22-october-2026) is complete as a post-study investigation, separate from the frozen AI trial matrix. The creator's correction is now explicit: Restyle edits PVOs and supports collection/storage; a test scenario does not create a requirement for viewer identity, tracking or answer editing. The proposal concerns platform-enforced security around all generated code.

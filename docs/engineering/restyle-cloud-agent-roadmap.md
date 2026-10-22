@@ -12,6 +12,8 @@ The [architecture document](restyle-cloud-agent-architecture.md) explains the id
 
 ## Current phase — reliable MVP delivered for beta review
 
+The current direction is [Roadmap 10: iterative product use](restyle-cloud-agent-roadmaps/10-iterative-product-use.md). The creator wants Codex to build and revise PVOs through Restyle, test continuation and recovery, and document where it gets stuck before the creator takes over. Sharing the experimental source on GitHub is authorized; this does not change the historical rollout result or authorize deployment.
+
 The [simpler harness comparison](restyle-cloud-agent-roadmaps/08-simpler-harness.md) is complete. Both arms pass 14/14 tasks, but the candidate's one extra self-corrected tool failure misses the predeclared rollout gate. Complete guestbook/email browser journeys pass; the current beta remains unchanged. The experimental source and all results remain in draft PR116.
 
 The [broader pressure study](restyle-cloud-agent-roadmaps/09-broader-pressure-tests.md) is complete. Its [results](restyle-capability/pressure-test-results.md) retain 43 prescribed trials, one interrupted start and one supplemental email failure. Coding passes in both arms, but semantic/security weaknesses and incomplete email delivery leave the reliability gate unsatisfied. This study does not replace the earlier comparison's rejected rollout or change the beta.

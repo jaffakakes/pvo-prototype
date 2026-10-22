@@ -1,5 +1,11 @@
 # Restyle cloud agent: start here when taking over
 
+## Current direction: iterative product use and PC handoff — 22 October 2026
+
+The creator authorized pushing `codex/restyle-simple-harness` so it can be pulled on their PC. [Roadmap 10](restyle-cloud-agent-roadmaps/10-iterative-product-use.md) records the testing method: use Restyle through normal creator requests to build, extend, revise, repair and reopen the same PVO. Judge cumulative progress and preservation of existing behavior, with retries allowed and technical rescues recorded. Keep testing varied supported workflows until the creator judges it ready for their own use; do not infer that comfort from a fixed pass count.
+
+10U.01 is prepared and pending verified push. The remaining product-use steps have not started. This batch only adds documentation and uses prior passing source/boundary checks; application bytes remain `cfec63c`. Exact next: verify the branch push, then establish the actual served frontend/backend and run the first same-project usage sequence. PC checkout commands and backend-configuration limits are in Roadmap 10. The experimental draft PR116 stays unmerged; no beta/production deployment or new external message is part of this push.
+
 ## Product scope corrected; generated-code boundary reviewed — 22 October 2026
 
 Read [Roadmap 9's post-study review](restyle-cloud-agent-roadmaps/09-broader-pressure-tests.md#post-study-product-scope-and-security-boundary-review--22-october-2026) before proposing security work. Restyle edits PVOs; collection/storage is an existing capability. The creator rejected treating the token-plan probe as a requirement for viewer identity, device tracking or answer editing. The current proposal is a trusted foundation around generated code. No implementation of those new features is requested or made.
