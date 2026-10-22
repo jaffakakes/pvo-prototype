@@ -543,6 +543,225 @@
       "unknownUsageAttempts": 0
     }
   ],
-  "endToEnd": "pending",
-  "beta": "unchanged"
+  "endToEnd": {
+    "completed": true,
+    "applicationSource": "cfec63cd91c7c4bca4a7086f63decc8331dcca81",
+    "evaluatorSource": "67128d603563b93ba6580d2b86d590a94463906b",
+    "build": {
+      "requestedAt": "2026-10-22T12:11:44.838Z",
+      "source": "cfec63cd91c7c4bca4a7086f63decc8331dcca81",
+      "deployed": false,
+      "sourceDistRestored": true,
+      "backupComplete": true,
+      "builtRevision": "restyle-editor-shell-ddbdc4757632521c",
+      "passed": true,
+      "completedAt": "2026-10-22T12:11:59.454Z"
+    },
+    "checks": {
+      "fullNode22": {
+        "passed": 1794,
+        "skipped": 4,
+        "failed": 0,
+        "cancelled": 0,
+        "source": "cfec63c"
+      },
+      "editorTypes": "passed",
+      "builderAndTransport": {
+        "passed": 40
+      },
+      "focusedNode22": {
+        "passed": 4
+      },
+      "browserPreflight": {
+        "passed": 1
+      },
+      "evaluatorCorrection": {
+        "passed": 14,
+        "optionalSkipped": 1,
+        "regressionFailedBeforeFix": true
+      },
+      "adoptedFormatting": {
+        "passed": 881
+      },
+      "sourceCi": {
+        "source": "cfec63c",
+        "push": "success",
+        "pullRequest": "success",
+        "runs": [
+          39776363106,
+          39776370812
+        ]
+      },
+      "evaluatorCi": {
+        "source": "67128d6",
+        "statusAtCheckpoint": "pending",
+        "runs": [
+          39778936850,
+          39778942114
+        ]
+      }
+    },
+    "journeys": [
+      {
+        "kind": "guestbook",
+        "journal": "durable-2026-10-22T12-16-26.467Z-2465ae57",
+        "journalSha256": "c8a6aa92d0f9a401c37dcbd1f82dc470b1a8a1e2bc9d2345df44025cf17bd164",
+        "source": "cfec63cd91c7c4bca4a7086f63decc8331dcca81",
+        "rawStatus": "ready_needs_semantic_grade",
+        "browserPassed": true,
+        "resultSurvivedRestart": true,
+        "newProviderRequests": 5,
+        "knownNewEstimatedUsd": 0.25007399999999996,
+        "unknownNewUsageAttempts": 0,
+        "resources": 17,
+        "cleanupVerified": true,
+        "receiptBoundaryChecks": [],
+        "completedBrowserChecks": [
+          "try_response",
+          "try_response",
+          "try_response",
+          "try_response",
+          "export",
+          "public_response",
+          "viewer_reopened"
+        ],
+        "failure": null,
+        "note": "Passed functional assertions and visual review. Raw runner status is retained; pass is established by the recorded browser/restart checks, not the raw ready label."
+      },
+      {
+        "kind": "originalEmail",
+        "journal": "durable-2026-10-22T12-21-29.155Z-a6a4046b",
+        "journalSha256": "9ca7f5d6829751bb07f48bf5dc356ecefcc2e9034bdfa886434ca6579ef8e3c8",
+        "source": "cfec63cd91c7c4bca4a7086f63decc8331dcca81",
+        "rawStatus": "execution_error",
+        "browserPassed": false,
+        "resultSurvivedRestart": false,
+        "newProviderRequests": 9,
+        "knownNewEstimatedUsd": 0.327786,
+        "unknownNewUsageAttempts": 0,
+        "resources": 7,
+        "cleanupVerified": true,
+        "receiptBoundaryChecks": [
+          {
+            "receiptBytes": 512,
+            "unicode": false,
+            "requests": 0,
+            "passed": false,
+            "error": "Operation input must be a plain object."
+          }
+        ],
+        "completedBrowserChecks": [],
+        "failure": "Operation input must be a plain object.",
+        "note": "Reached ready, then the evaluator sent null to the legal empty-object input. Original failure retained. Unchanged package passes corrected direct receipt checks."
+      },
+      {
+        "kind": "replay",
+        "journal": "durable-2026-10-22T12-27-21.474Z-cb16c9ab",
+        "journalSha256": "8e503621aa685a8083af89fea019db67a5f76370eb45c2449d68b9b77fe42d45",
+        "source": "cfec63cd91c7c4bca4a7086f63decc8331dcca81",
+        "rawStatus": "operator_interrupted",
+        "browserPassed": false,
+        "resultSurvivedRestart": false,
+        "newProviderRequests": 0,
+        "knownNewEstimatedUsd": 0,
+        "unknownNewUsageAttempts": 0,
+        "resources": 7,
+        "cleanupVerified": true,
+        "receiptBoundaryChecks": [],
+        "completedBrowserChecks": [],
+        "failure": null,
+        "note": "All nine original outputs replayed without modification; identical package/agreement. The old attachment's release ownership correctly rejects the new task. Operator stopped the exhausted replay. Historical response usage is excluded from new inference totals; raw report is retained."
+      },
+      {
+        "kind": "email",
+        "journal": "durable-2026-10-22T12-30-41.445Z-24f49b39",
+        "journalSha256": "acbbafd481597492cebc1a6104bcec14b1d1ba2e1371976165e686e67a86ad88",
+        "source": "67128d603563b93ba6580d2b86d590a94463906b",
+        "rawStatus": "ready_needs_semantic_grade",
+        "browserPassed": true,
+        "resultSurvivedRestart": true,
+        "newProviderRequests": 11,
+        "knownNewEstimatedUsd": 0.429609,
+        "unknownNewUsageAttempts": 0,
+        "resources": 14,
+        "cleanupVerified": true,
+        "receiptBoundaryChecks": [
+          {
+            "receiptBytes": 512,
+            "unicode": false,
+            "requests": 1,
+            "passed": true
+          },
+          {
+            "receiptBytes": 512,
+            "unicode": true,
+            "requests": 1,
+            "passed": true
+          }
+        ],
+        "completedBrowserChecks": [
+          "try_response",
+          "creator_approved_checked_version",
+          "export",
+          "public_response",
+          "viewer_reopened"
+        ],
+        "failure": null,
+        "note": "Passed functional assertions and visual review. Raw runner status is retained; pass is established by the recorded browser/restart checks, not the raw ready label."
+      }
+    ],
+    "originalEmailReceiptRecheck": {
+      "passed": true,
+      "packageDigest": "b24d0ddaf3181b36d8b51aa4edf302b7cb62a33125adbbc464aae497ab42139c",
+      "packageAndAgreementUnchangedInReplay": true,
+      "checks": [
+        {
+          "receiptBytes": 512,
+          "unicode": false,
+          "requests": 1,
+          "passed": true
+        },
+        {
+          "receiptBytes": 512,
+          "unicode": true,
+          "requests": 1,
+          "passed": true
+        }
+      ],
+      "newProviderRequests": 0,
+      "cleanedContainers": 4
+    },
+    "visualLimits": [
+      "Guestbook results are compact and leave empty numbered slots when fewer than three entries exist.",
+      "The email receipt extends the scene beyond the short source clip; the editor Try screenshot shows it on black after the clip ends."
+    ],
+    "resourceAudit": {
+      "checkedAt": "2026-10-22T12:36:05.011Z",
+      "journals": [
+        "run-2026-10-22T11-25-59.160Z-f33c94fa",
+        "durable-2026-10-22T12-16-26.467Z-2465ae57",
+        "durable-2026-10-22T12-21-29.155Z-a6a4046b",
+        "durable-2026-10-22T12-27-21.474Z-cb16c9ab",
+        "durable-2026-10-22T12-30-41.445Z-24f49b39"
+      ],
+      "resourceRecords": 440,
+      "namedContainers": 431,
+      "uniqueContainers": 431,
+      "remainingRecordedContainers": [],
+      "temporaryStoragePaths": 4,
+      "allRecordedStorageAbsent": true,
+      "ownedViteStopped": true,
+      "browserClosuresVerified": true,
+      "beta": {
+        "revision": "restyle-editor-shell-60f4abbf9460f059"
+      },
+      "deployed": false
+    }
+  },
+  "beta": {
+    "disposition": "unchanged",
+    "revision": "restyle-editor-shell-60f4abbf9460f059",
+    "deployed": false,
+    "reason": "The candidate has one failed generated-test attempt versus zero in the baseline, exceeding the preregistered no-worse failed-tool-attempt gate. Both recover/finish all fourteen tasks; this small sample does not establish a causal reliability regression."
+  }
 }

@@ -1,5 +1,13 @@
 # Restyle cloud agent: start here when taking over
 
+## Simpler harness experiment complete; beta retained — 22 October 2026
+
+Roadmap 8 is complete in [draft PR116](https://github.com/jaffakakes/pvo-prototype/pull/116), stacked on PR111. Both arms pass 14/14 paired tasks with zero format repairs; the candidate has one extra autonomously repaired test failure, so the frozen rollout gate rejects deployment. The full guestbook/email browser journeys subsequently pass, including Try isolation, explicit email approval, one controlled send, and restart/reopen without duplicate writes. This does not overturn the earlier comparison result.
+
+Measured source is `e6c2080`; application verification/unchanged-function move is `cfec63c`; the reproduced evaluator-only empty-input correction is `67128d6`. Source CI, 1,794 Node 22 checks (four optional skips), editor types, focused checks, build, browser preflight and final journeys pass. The first email evaluator failure and stopped exact-output replay remain preserved; the original package also passes receipt checks unchanged. See the [report](restyle-capability/harness-comparison-results.md), [evidence](restyle-capability/harness-comparison-evidence.json) and latest [progress](restyle-cloud-agent-progress.md) for journals, validation and visual limits.
+
+Final audit verifies 440 cleaned records, 431 absent containers, four absent temporary storage paths and owned server/browser teardown. Beta remains `restyle-editor-shell-60f4abbf9460f059`; no integration merge or deployment occurred. Exact next product action: creator testing of the existing beta. Keep this candidate unmerged unless a later explicit decision changes its disposition; any further simplification gets a separate measured plan, without replacing these results. Broader signup/phone remains deferred.
+
 ## Saved-journey checkpoint — 22 October 2026
 
 The simpler candidate builds and passes the complete guestbook/browser journey. Email reaches ready, but the receipt evaluator assumes `null` instead of the generated operation's valid empty object. The reproduced evaluator-only correction passes fourteen focused tests with one optional skip; direct checks of the unchanged original package pass both 512-byte ASCII/Unicode receipts. The original failure is retained. A fixed-output replay reproduces identical package/agreement bytes but correctly fails attachment ownership against its new task identity, then is stopped and cleaned without new inference. See the latest [progress entry](restyle-cloud-agent-progress.md) for exact journals and checks.
