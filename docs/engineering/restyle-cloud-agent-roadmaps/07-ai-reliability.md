@@ -51,3 +51,7 @@ The current saved-authoring candidate now uses K3/high reasoning and at least 32
 ### Durable/browser candidate checkpoint
 
 High-reasoning code pilot passes all five scenarios in 2–3 calls each. The ten-call actual guestbook now includes a checked Note but needed four autonomous format repairs. Corrected attachment instructions preserve compiler checks. The new browser driver has passed controlled editor-creation preflight and is ready for live generation through Try/export/viewer/reopen; this does not complete final acceptance. Vite5295 is owned temporarily for this verification.
+
+### Evaluation continuity checkpoint
+
+Protocol v1.3 retains first planning validity separately from saved-feedback repair and bounded missing-account continuation. The seven-call browser guestbook produced a correct first Try reply, then hit an observer frame-detachment race; full UI acceptance is still pending. Missing/revoked-account scoped setup and restart preflights are included. See the latest progress entry; no gate is complete from these changes.

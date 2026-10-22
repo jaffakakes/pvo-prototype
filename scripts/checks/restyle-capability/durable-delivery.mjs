@@ -8,9 +8,13 @@ import {
 
 async function visibleText(page, text) {
   for (const frame of page.frames()) {
-    const matches = frame.getByText(text, { exact: false });
-    for (const match of await matches.all())
-      if (await match.isVisible()) return true;
+    try {
+      const matches = frame.getByText(text, { exact: false });
+      for (const match of await matches.all())
+        if (await match.isVisible()) return true;
+    } catch (error) {
+      if (!frame.isDetached()) throw error;
+    }
   }
   return false;
 }
@@ -163,13 +167,11 @@ export async function checkDurableDelivery(
     await viewer.page.screenshot({ path: directory + "/viewer-results.png" });
     await fixture.restart();
     await viewer.page.reload();
-    await viewer.page
-      .locator("#pvoInput")
-      .setInputFiles({
-        name: "generated.pvo",
-        mimeType: "application/vnd.pvo",
-        buffer: bytes,
-      });
+    await viewer.page.locator("#pvoInput").setInputFiles({
+      name: "generated.pvo",
+      mimeType: "application/vnd.pvo",
+      buffer: bytes,
+    });
     await viewer.page
       .getByRole("button", { name: "Show saved result", exact: true })
       .click();

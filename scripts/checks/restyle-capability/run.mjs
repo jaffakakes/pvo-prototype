@@ -4,20 +4,15 @@ import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { parseArgs } from "node:util";
-import { planSavedBuild } from "../../../server/assistant/builder/planner.js";
 import { nativeAssistantTurn } from "../../../server/assistant/native/service.js";
 import { inspectNativeFrames } from "../../../server/assistant/native/vision.js";
 import { comparisonSandbox } from "../model-comparison/sandbox.mjs";
 import { digest } from "../model-comparison/workspace.mjs";
 import { baseline, measuredModels } from "./provider.mjs";
-import {
-  planningProbes,
-  editorProbes,
-  visionProbes,
-  researchDefinitions,
-} from "./probes.mjs";
+import { planningProbes, editorProbes, visionProbes } from "./probes.mjs";
 import { buildScenarios } from "./build-scenarios.mjs";
 import { runBuild } from "./build.mjs";
+import { runPlanning } from "./planning.mjs";
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -65,7 +60,7 @@ if (values.cases) {
   builds = builds.filter((scenario) => ids.includes(scenario.id));
 }
 const report = {
-  protocol: "restyle-capability-v1.2",
+  protocol: "restyle-capability-v1.3",
   selected,
   predecessor: previous ? positionals[1] : null,
   experiment: values.label ?? null,
@@ -144,25 +139,9 @@ async function run(scenario, repetition) {
   try {
     if (["build", "repair"].includes(scenario.family))
       await runBuild(scenario, row, sandbox, models, save);
-    else if (scenario.family === "planning") {
-      row.output = await planSavedBuild(
-        {
-          input: {
-            request: scenario.request,
-            examples: [],
-            context: { components: [] },
-          },
-          questions: scenario.questions,
-        },
-        { agreement: null, feedback: scenario.feedback, workspace: null },
-        researchDefinitions,
-        {},
-        AbortSignal.timeout(180000),
-        scenario.evidence ?? null,
-        models,
-      );
-      row.status = "needs_semantic_grade";
-    } else if (scenario.family === "editor") {
+    else if (scenario.family === "planning")
+      await runPlanning(scenario, row, models, save);
+    else if (scenario.family === "editor") {
       row.trace = [];
       row.output = await nativeAssistantTurn(scenario.request, {
         models,

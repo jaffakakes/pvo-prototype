@@ -1,5 +1,13 @@
 # Restyle cloud agent: start here when taking over
 
+## Evaluation continuity checkpoint — 22 October 2026
+
+Candidate `9341dc1` reached a checked guestbook with a result Note in seven live calls (`durable-2026-10-22T03-22-40.691Z-e3a152ba/report.json`, known inference cost $0.324333). The first actual Try submission returned the expected saved entry. The browser observer then queried a detached form frame after routing to the result Note; this attempt remains an incomplete browser proof, with cleanup verified. The observer now skips only detached frames and captures a screenshot/body on subsequent failures. It does not change generated source or application behavior.
+
+Evaluation protocol v1.3 preserves each planning first decision and then feeds only actual saved-validator repair feedback into bounded continuation. P07 receives explicitly controlled empty connections/unavailable public research and must reach concrete setup/help, not endless reads. Original scenario inputs and the frozen baseline remain unchanged. Missing/revoked-email durable scenarios now require a real private AgentMail setup question scoped to synthetic friend@example.com, no credential/service creation, and unchanged saved questions across restart. No actual email is sent.
+
+Checks: 21 account/attachment/recovery cases pass. Four planning/durable preflight checks pass, with one optional Docker check skipped; complete Docker coverage remains separate. Next: rerun the full live generated browser journey, run both real missing/revoked setup journeys, then interrupted-inference and final repeated acceptance. All 7R.02–06 gates remain unchecked; beta and production are unchanged. Owned Vite5295 remains needed for browser verification.
+
 ## Durable generation and browser harness checkpoint — 22 October 2026
 
 Candidate `6131fd5` completed the actual guestbook task in ten live calls, with checked source and a compiled response Note. Journal `durable-2026-10-22T03-12-54.720Z-c8ec0b35/report.json` preserves one agreement repair and three attachment repairs; known inference cost $0.416082, restart proof and cleanup verified. It is still awaiting browser/semantic grading. The attachment retries exposed contradictory guidance: the prompt mentioned unsupported text fields and confused a Logic jump action with the request JSON route. Guidance now gives exactly the six supported field kinds and `{kind:"time",t:number}` for a result Note. No parser is relaxed.

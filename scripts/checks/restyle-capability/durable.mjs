@@ -12,15 +12,20 @@ import {
 import { input } from "../../../tests/assistant-tasks/fixtures.mjs";
 import { comparisonSandbox } from "../model-comparison/sandbox.mjs";
 import { measuredFetch, forwardModelRequest, baseline } from "./provider.mjs";
-import { planningProbes } from "./probes.mjs";
 import { isolatedTaskEffects } from "./effects.mjs";
 import { createDurableBrowser } from "./durable-browser.mjs";
 import { checkDurableDelivery } from "./durable-delivery.mjs";
+import {
+  durableScenario,
+  seedDurableScenario,
+  checkDurableSetup,
+} from "./durable-scenarios.mjs";
 
 const scenario = process.argv[2] ?? "guestbook";
 const browserJourney = process.argv.includes("--browser");
-if (scenario !== "guestbook")
-  throw new Error("Select the guestbook durable journey.");
+const scenarioInput = durableScenario(scenario);
+if (browserJourney && scenario !== "guestbook")
+  throw new Error("Browser delivery uses the guestbook scenario.");
 const directory = join(
   homedir(),
   ".codex/secure/restyle-capability",
@@ -91,12 +96,12 @@ try {
     modelFetch: (request) => forwardModelRequest(send, request),
     ...isolatedTaskEffects(sandbox),
     researchFetch: async () => new Response(null, { status: 503 }),
+    connectionKey: scenarioInput.connectionKey,
   });
   report.resources[0].storagePath = fixture.storagePath;
   await save();
-  const request =
-    planningProbes().find((item) => item.id === "P01").request +
-    " Add a new form with name and message fields and a Save button to the main scene. Use a short duration and pause playback until submission. Keep the original request's storage and reading behavior.";
+  await seedDurableScenario(fixture, scenarioInput);
+  const request = scenarioInput.request;
   if (browserJourney) {
     report.resources.push({
       kind: "browser",
@@ -197,9 +202,23 @@ try {
       report.browserPassed = true;
     }
   }
+  if (scenarioInput.connectionKey) {
+    report.setupCheck = await checkDurableSetup(fixture, task);
+    report.status = "private_setup_verified";
+  }
 } catch (error) {
   report.status = "execution_error";
   report.failure = { name: error.name, message: error.message };
+  if (creator && !creator.page.isClosed()) {
+    try {
+      await creator.page.screenshot({ path: directory + "/failure.png" });
+      report.browserFailureText = await creator.page
+        .locator("body")
+        .innerText();
+    } catch (captureError) {
+      report.browserFailureCapture = captureError.message;
+    }
+  }
 } finally {
   if (creator) {
     report.browserErrors = creator.errors;

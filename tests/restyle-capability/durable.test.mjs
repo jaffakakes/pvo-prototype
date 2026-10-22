@@ -9,6 +9,75 @@ import {
   dinnerSource,
 } from "../service-validation/fixtures.mjs";
 import { proposal } from "../service-attachments/task.helpers.mjs";
+import {
+  durableScenario,
+  seedDurableScenario,
+  checkDurableSetup,
+} from "../../scripts/checks/restyle-capability/durable-scenarios.mjs";
+
+test(
+  "missing and revoked account evaluation requires real scoped setup and persists it across restart",
+  { timeout: 30000 },
+  async () => {
+    for (const name of ["missing-email-account", "revoked-email-account"]) {
+      const scenario = durableScenario(name);
+      let calls = 0;
+      const fixture = await taskFixture({
+        realClock: true,
+        services: true,
+        workspaces: true,
+        connectionKey: scenario.connectionKey,
+        modelFetch: async () =>
+          Response.json({
+            model: "kimi-k3",
+            choices: [
+              {
+                finish_reason: "stop",
+                message: {
+                  role: "assistant",
+                  content: JSON.stringify(
+                    ++calls === 1
+                      ? { kind: "build" }
+                      : {
+                          kind: "connect_account",
+                          setup: {
+                            provider: "agentmail",
+                            recipient: "friend@example.com",
+                          },
+                          purpose:
+                            "Approve the sender and recipient privately.",
+                        },
+                  ),
+                },
+              },
+            ],
+          }),
+        nodeEffect: async () => {
+          throw new Error(
+            "Missing-account evaluation must not execute a service.",
+          );
+        },
+      });
+      try {
+        await seedDurableScenario(fixture, scenario);
+        const task = await saved(fixture);
+        let latest;
+        for (let n = 0; n < 100; n++) {
+          latest = (await fixture.request(path(task))).body.task;
+          if (["waiting_for_answer", "failed"].includes(latest.state)) break;
+          await delay(100);
+        }
+        assert.equal(
+          (await checkDurableSetup(fixture, latest)).preservedAcrossRestart,
+          true,
+        );
+        assert.equal(calls, 2);
+      } finally {
+        await fixture.close();
+      }
+    }
+  },
+);
 
 test(
   "durable evaluation uses real planners and saved repair feedback across the model transport",
