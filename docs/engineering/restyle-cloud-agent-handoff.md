@@ -1,5 +1,11 @@
 # Restyle cloud agent: start here when taking over
 
+## Saved-journey checkpoint — 22 October 2026
+
+The simpler candidate builds and passes the complete guestbook/browser journey. Email reaches ready, but the receipt evaluator assumes `null` instead of the generated operation's valid empty object. The reproduced evaluator-only correction passes fourteen focused tests with one optional skip; direct checks of the unchanged original package pass both 512-byte ASCII/Unicode receipts. The original failure is retained. A fixed-output replay reproduces identical package/agreement bytes but correctly fails attachment ownership against its new task identity, then is stopped and cleaned without new inference. See the latest [progress entry](restyle-cloud-agent-progress.md) for exact journals and checks.
+
+Exact next: commit the evaluator correction, run one fresh complete email/browser journey, then final resource audit and evidence. Application bytes remain `cfec63c`; the paired comparison still rejects rollout. Roadmap 8S.04 remains unchecked, and beta remains `restyle-editor-shell-60f4abbf9460f059`.
+
 ## Paired simplification result: retain current beta — 22 October 2026
 
 The frozen e6c2080/67c3862 comparison finishes all28 runs: each arm passes14/14 and52 independent cases/126 steps, with zero format repairs. Baseline42 calls/$1.337682; candidate43 calls/$1.253973. Median76.3s versus74.7s. Candidate autonomously repairs one poll-test syntax error; baseline has zero failed tool attempts. This exceeds the predeclared no-worse gate, so no beta rollout is authorized by the experiment. This small sample does not establish a causal regression or dependable speed/cost improvement. See the sanitized [report](restyle-capability/harness-comparison-results.md) and [evidence](restyle-capability/harness-comparison-evidence.json). All390 recorded containers report cleaned, all frozen files match and both model settings remain fixed. Journal `run-2026-10-22T11-25-59.160Z-f33c94fa` retains every attempt.

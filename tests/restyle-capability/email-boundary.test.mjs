@@ -67,6 +67,24 @@ test("email boundary accepts unchanged maximum ASCII and Unicode receipts", asyn
   ]);
 });
 
+test("email boundary uses the declared empty-object operation input", async () => {
+  const agreement = emailAgreement();
+  agreement.operations[0].input = record();
+  agreement.cases[0].steps[0].input = {};
+  const results = [];
+  const run = execute(() => "Accepted");
+  await checkEmailReceiptBounds(
+    agreement,
+    async (invocation) => {
+      assert.deepEqual(invocation.input, {});
+      return run(invocation);
+    },
+    async (row) => results.push(row),
+  );
+  assert.equal(results.length, 2);
+  assert.ok(results.every((row) => row.passed && row.requests === 1));
+});
+
 test("email boundary rejects composed status overflow and truncated receipt IDs", async () => {
   for (const run of [
     execute((id) => "Accepted: " + id),

@@ -12,10 +12,16 @@ export async function checkEmailReceiptBounds(agreement, execute, record) {
     (item) => item.access === "write" && binding.operations.includes(item.name),
   );
   assert.ok(operation);
+  assert.ok(
+    operation.input.type === "null" ||
+      (operation.input.type === "object" &&
+        operation.input.fields.length === 0),
+    "The fixed email button must not require viewer input.",
+  );
   for (const id of ["r".repeat(512), "🧾".repeat(128)]) {
     const invocation = {
       operation: operation.name,
-      input: null,
+      input: operation.input.type === "null" ? null : {},
       state: agreement.state.initial,
       now: 0,
     };
