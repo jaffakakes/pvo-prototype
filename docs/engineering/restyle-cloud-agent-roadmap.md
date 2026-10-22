@@ -10,6 +10,10 @@ Start with [Roadmap 1](restyle-cloud-agent-roadmaps/01-first-working-component.m
 
 The [architecture document](restyle-cloud-agent-architecture.md) explains the idea. These roadmaps turn it into smaller pieces of work you can implement and verify.
 
+## Current phase — measure capability before fixes
+
+[Roadmap 6](restyle-cloud-agent-roadmaps/06-capability-baseline.md) freezes and runs the unchanged Kimi K2.6 baseline. Email MVP 5M.01–12 is complete; broader signup and phone work stay deferred. This measurement phase changes evaluation tooling/documentation only.
+
 ## Roadmap 5 — agent identity and account setup
 
 The creator authorized AgentMail and AgentPhone on 9 October. Follow the [nine tasks](restyle-cloud-agent-roadmaps/05-agent-identity-and-onboarding.md), including the account-email setup correction 5A.04. Preserve all 134 historical completions. This extends the existing owner/task/vault/service system and keeps production pending.

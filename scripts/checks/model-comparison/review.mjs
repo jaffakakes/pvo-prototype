@@ -1,3 +1,5 @@
+import { isDeepStrictEqual } from "node:util";
+import { executeConnectedOperation } from "../../../server/cloud-services/connectedExecution.js";
 import {
   newServiceTestReport,
   appendServiceCaseResult,
@@ -5,7 +7,13 @@ import {
 } from "../../../packages/pvo-assistant/services/index.js";
 import { prepareServiceArtifact } from "../../../server/assistant/validation/artifact.js";
 
-async function runCases(sandbox, pkg, agreement, cases) {
+export async function runCases(
+  sandbox,
+  pkg,
+  agreement,
+  cases,
+  resolveAccount = null,
+) {
   const results = [];
   for (const scenario of cases) {
     let state = structuredClone(scenario.initialState),
@@ -19,11 +27,34 @@ async function runCases(sandbox, pkg, agreement, cases) {
         now: step.now,
       };
       try {
-        const actual = await sandbox.execute(
-          pkg.files,
-          pkg.entrypoint,
-          invocation,
-        );
+        const requests = [];
+        const actual = agreement.connections?.length
+          ? await executeConnectedOperation({
+              agreement,
+              invocation,
+              signal: AbortSignal.timeout(30000),
+              execute: (input) =>
+                sandbox.execute(pkg.files, pkg.entrypoint, input),
+              invoke: resolveAccount
+                ? async (request) => {
+                    requests.push(request);
+                    return resolveAccount(request, step);
+                  }
+                : null,
+            })
+          : await sandbox.execute(pkg.files, pkg.entrypoint, invocation);
+        if (
+          resolveAccount &&
+          !isDeepStrictEqual(requests, step.requests ?? [])
+        ) {
+          failure = {
+            step: index,
+            code: "account_requests_mismatch",
+            detail:
+              "Actual account requests differ from the independent ordered expectations.",
+          };
+          break;
+        }
         const problem = inspectServiceReply(
           agreement,
           invocation,
@@ -92,6 +123,7 @@ export async function comparisonReview(state, snapshot, scenario, sandbox) {
       artifact.package,
       artifact.agreement,
       artifact.agreement.cases,
+      scenario.resolveAccount,
     );
     for (const result of publicCases)
       report = appendServiceCaseResult(
@@ -111,6 +143,7 @@ export async function comparisonReview(state, snapshot, scenario, sandbox) {
       artifact.package,
       artifact.agreement,
       scenario.holdouts,
+      scenario.resolveAccount,
     );
     const failed = holdouts.find((result) => result.status !== "passed");
     return {

@@ -1,5 +1,13 @@
 # Restyle cloud agent: current progress and handoff log
 
+
+## Capability baseline in progress — 22 October 2026
+
+**6T.01 verified:** frozen 21-scenario/two-repeat protocol and ten runner/sandbox checks pass. Existing Docker runtime is running. Evaluation fixtures were corrected before any live model call; no product changes. Tooling and fixture bytes will be hashed in each journal. Exact next: run 6T.02, then grade 6T.03; see [results](restyle-capability/results.md).
+
+The creator requested a well-rounded pressure test: **test first, fix later, document everything**. Follow [Roadmap 6](restyle-cloud-agent-roadmaps/06-capability-baseline.md). Current product stays at c100993 / app source 06eeae1 with Kimi K2.6 and thinking disabled. No model, prompt, application or deployment changes are authorized in this measurement phase. Canonical checkout remains the Restyle research-connections worktree; Desktop has unrelated pending files. Docker was stopped and is being started using its existing desktop CLI. Test-only containers will be journaled before creation and removed afterward; no new email/provider account is needed. Next: freeze and self-check evaluation fixtures, then run the repeated baseline and record actual failures. The creator has now confirmed receiving the earlier email; this adds recipient-confirmed delivery to that historical single-send proof.
+
+
 ## Email MVP live acceptance complete — 18 October 2026
 
 **5M.04 is verified complete.** After the creator’s action-time “yes do it” approval, the normal account-access control approved the exact checked release. Normal 720p export activated it and published [Restyle email MVP](https://restyle-beta.jaffakakes28.workers.dev/player/iGj7gdbS2heu0Uc3esGhfQ). Reopening Export did not expose the earlier retained Retry, so the normal export action completed again. The project and generated backend remain the checked versions described below.
