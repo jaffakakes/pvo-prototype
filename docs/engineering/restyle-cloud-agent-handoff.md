@@ -1,5 +1,11 @@
 # Restyle cloud agent: start here when taking over
 
+## Receipt boundaries pass; Note wrapping under verification — 22 October 2026
+
+Candidate4dcbde2's fresh nine-call email (`durable-2026-10-22T05-42-48.065Z-6843a774`) passes both legal512-byte ASCII/Unicode continuations and the normal browser flow, exact-version approval, export and saved-result recovery. Its generated status is fixed text and the receipt ID remains unchanged in its own field. Cost$0.353751, no unknown usage, all14 resources cleaned. Full source check passes1,777 tests with four optional skips; earlier optional Docker/browser batch passes21 with zero skips.
+
+Visual inspection identifies the existing default Note's missing long-word wrapping: its unbroken Try receipt is partially clipped despite the visibility locator succeeding. The original functional result is retained, but full visual acceptance remains incomplete. The shared Rust compiler's default Note CSS now uses overflow-wrap:anywhere; no generated artifact, field limit, runtime permission or authoring contract is changed. Native Rust/format and browser/WASM verification are in progress. The scoped Impeccable detector reports no findings. Exact next: build/verify wrapping and fresh current guestbook/email journeys, then the unchanged105 and verified beta. No release or real email.
+
 ## Legal long receipts expose a reply-boundary defect — 22 October 2026
 
 The fresh `1e4133b` guestbook (`durable-2026-10-22T05-29-03.422Z-077d773a`) passes the full generated UI/Try/export/anonymous-viewer/reopen journey in six calls ($0.305628, no unknown usage), with independent reads and all18 resources cleaned. Its screenshot retains empty numbered slots when fewer than three entries exist; saved replies replay rather than refresh. The fresh email (`durable-2026-10-22T05-34-14.639Z-792d207d`) passes the normal journey in nine calls and repairs one invalid capability reference itself. Try sends nothing; the public viewer sends once through the controlled provider and reopening does not resend. All resources are cleaned.
