@@ -1,5 +1,17 @@
 # Restyle cloud agent: current progress and handoff log
 
+## Source checks pass; paired evaluation next — 22 October 2026
+
+Roadmap 8 source binding passes the full source suite: 1,793 tests, zero failures/cancellations, four optional skips. The added selected-planner evaluation test and fresh-case contracts pass separately, as do strict editor types. Initial fixture/assertion failures are retained in `/tmp/restyle-simple-focused.log` and `/tmp/restyle-simple-focused-2.log`; corrected binding proof is `/tmp/restyle-simple-binding.log`, full check `/tmp/restyle-simple-check.log`, evaluator `/tmp/restyle-simple-evaluator.log`. Candidate worktree/branch and frozen paired procedure are unchanged. Next: commit this source/evaluation batch, then all 28 live comparison runs. Beta stays on the existing verified release until the comparison and complete browser journeys pass.
+
+## Simpler source-action boundary prepared — 22 October 2026
+
+The creator authorized implementing and comparing the simpler harness. [Roadmap 8](restyle-cloud-agent-roadmaps/08-simpler-harness.md) freezes one ablation: model actions/review omit source revision/digest bookkeeping; the host captures and binds the trusted pre-inference source. Exact-version commands, compare-and-swap, claims, independent checks, credentials, permissions, external-write deduplication and saved history are unchanged. A write must complete before dependent test/review. Completed decisions are projected back to the new model shape. Existing planning/research and model settings stay fixed.
+
+The new focused tests pass all three boundaries: schema/host binding including edits during inference; rejection of model-supplied fences/unsafe fields/dependent writes; actual workspace stale-write/start/read rejection and stable receipt replay. The first focused run retained one assertion mistake (checking the generic error instead of its saved feedback) and two missing-WASM fixture failures in this new checkout. Corrected the assertion and copied the unchanged baseline compiler output; the full source suite is now running. No product safety rule was relaxed. New inventory/invitation cases validate against the actual agreement parser. Full checks, paired live runs, browser journeys and beta remain pending.
+
+Source is pending in `codex/restyle-simple-harness` at the named worktree. The attempted current-dev prerequisite merge was aborted because it includes the unrelated sign-in migration; this comparison continues the exact unfinished beta baseline `67c3862`. Existing checkout/PR111 and Desktop files remain untouched. Local fixture resources were closed; no new model call, real email or cloud resource has run. Next: finish source checks, checkpoint, then the paired 28-run matrix. Keep every failed attempt and cleanup record in the existing private journal.
+
 ## Node 22 CI fixture corrected and fully checked — 22 October 2026
 
 The earlier GitHub failure is reproduced with Node 22.23.4: the synthetic hung Resend request has no live socket, so its unreferenced timeout signal lets the test process exit with four cancellations. The test now owns a keep-alive interval, clears it at teardown and has a five-second overall deadline. All original assertions and production timeouts remain unchanged. The focused four tests pass on both Node 22.23.4 and Node 25.9.0; a fresh complete Node 22 `npm run check` passes 1,790 tests, zero failures/cancellations and four optional skips.

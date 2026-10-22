@@ -15,7 +15,14 @@ import { serializeServiceAgreement } from "../../../packages/pvo-assistant/servi
 import { comparisonWorkspace, digest } from "../model-comparison/workspace.mjs";
 import { comparisonReview } from "../model-comparison/review.mjs";
 import { recordInferenceRetry } from "./inference-recovery.mjs";
-export async function runBuild(scenario, row, sandbox, model, save) {
+export async function runBuild(
+  scenario,
+  row,
+  sandbox,
+  model,
+  save,
+  planner = planSavedBuild,
+) {
   const started = performance.now();
   row.operations = [];
   row.repairs = [];
@@ -106,7 +113,7 @@ export async function runBuild(scenario, row, sandbox, model, save) {
       };
       let decision;
       try {
-        decision = await planSavedBuild(
+        decision = await planner(
           task,
           context,
           workspace.definitions,

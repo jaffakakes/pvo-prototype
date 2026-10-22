@@ -110,7 +110,7 @@ export function parseBuilderDecision(
     list(value.calls, BUILDER_LIMITS.batchCalls, "Builder tool batch");
     requireTask(
       value.calls.length > 0,
-      'A tools decision needs at least one tool call. To submit existing source for review without more tools, return the review object itself as the entire decision: {"kind":"review","revision":<current revision>,"digest":"<current digest>","entrypoint":"src/service.mjs","tests":["tests/service.test.mjs"],"libraries":[]}. Use your actual saved paths and source identity. Do not repeat successful tests or rewrite unchanged source to fill calls.',
+      'A tools decision needs at least one tool call. To submit existing source for review without more tools, return the review object itself as the entire decision: {"kind":"review","entrypoint":"src/service.mjs","tests":["tests/service.test.mjs"],"libraries":[]}. Use your actual saved paths; Restyle binds the source identity. Do not repeat successful tests or rewrite unchanged source to fill calls.',
     );
     for (const call of value.calls) {
       const parsed = parseBuilderTool(call);

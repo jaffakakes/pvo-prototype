@@ -18,6 +18,7 @@ import { parseServiceAgreement } from "../../packages/pvo-assistant/services/ind
 import { parseBuilderResearchResult } from "../../packages/pvo-assistant/builder/index.js";
 import { parseNativeTurnRequest } from "../../packages/pvo-assistant/native/index.js";
 import { runCases } from "../../scripts/checks/model-comparison/review.mjs";
+import { harnessScenarios } from "../../scripts/checks/restyle-capability/harness-scenarios.mjs";
 
 const response = (model = "kimi-k2.6") =>
   Response.json({
@@ -187,6 +188,40 @@ test("frozen fixtures match current request, feedback and agreement contracts", 
   assert.equal(ids.length, 21);
   assert.equal(new Set(ids).size, 21);
   assert.equal(repairFiles.length, 2);
+  for (const scenario of harnessScenarios()) {
+    parseServiceAgreement(scenario.agreement);
+    parseServiceAgreement({ ...scenario.agreement, cases: scenario.holdouts });
+    assert.equal(ids.includes(scenario.id), false);
+  }
+});
+
+test("paired evaluation runs the selected baseline planner through the same execution loop", async () => {
+  const { runBuild } =
+    await import("../../scripts/checks/restyle-capability/build.mjs");
+  const row = { repetition: 1, attempts: [] };
+  const scenario = harnessScenarios()[0];
+  let calls = 0;
+  await runBuild(
+    scenario,
+    row,
+    {},
+    {
+      generate: () => {
+        throw new Error("Wrong planner");
+      },
+    },
+    async () => {},
+    async (task, context) => {
+      calls++;
+      assert.equal(task.input.request, scenario.request);
+      assert.deepEqual(context.agreement.body, scenario.agreement);
+      assert.deepEqual(context.source, { revision: 0, digest: null });
+      return { kind: "ask", prompt: "Controlled planner marker", choices: [] };
+    },
+  );
+  assert.equal(calls, 1);
+  assert.equal(row.status, "needs_creator_input");
+  assert.equal(row.question.prompt, "Controlled planner marker");
 });
 test("independent connection checker rejects a canned correct answer that never made the expected request", async () => {
   const s = buildScenarios().find((s) => s.id === "B04");

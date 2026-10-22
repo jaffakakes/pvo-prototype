@@ -1,5 +1,15 @@
 # Restyle cloud agent: start here when taking over
 
+## Current checkpoint: candidate verified locally; live comparison next — 22 October 2026
+
+Roadmap 8 source binding passes the full source suite: 1,793 tests, zero failures/cancellations, four optional skips. The added selected-planner evaluation test and fresh-case contracts pass separately, as do strict editor types. Initial fixture/assertion failures are retained in `/tmp/restyle-simple-focused.log` and `/tmp/restyle-simple-focused-2.log`; corrected binding proof is `/tmp/restyle-simple-binding.log`, full check `/tmp/restyle-simple-check.log`, evaluator `/tmp/restyle-simple-evaluator.log`. Candidate worktree/branch and frozen paired procedure are unchanged. Next: commit this source/evaluation batch, then all 28 live comparison runs. Beta stays on the existing verified release until the comparison and complete browser journeys pass.
+
+## Current work: simpler harness comparison — 22 October 2026
+
+Continue in `/Users/christinasmacbook/.codex/worktrees/restyle-simple-harness/pvo-prototype`, branch `codex/restyle-simple-harness`, baseline `67c3862`. [Roadmap 8](restyle-cloud-agent-roadmaps/08-simpler-harness.md) records the authorized scope and frozen comparison. Model source actions/review now omit revision/digest fields; the host binds the snapshot captured before inference, preserving all durable/execution/permission gates. Focused real-workspace stale-write/start/read and replay tests pass. The broader check is running; paired live inference and complete browser journeys have not started. Do not claim a better harness or update beta yet.
+
+Current `origin/dev` (`7583d1a`) was fetched; a prerequisite merge produced unrelated auth/UI conflicts and was aborted. This experiment stays on the exact unfinished beta baseline to avoid confounding the comparison with the separate sign-in migration. Baseline and Desktop are untouched. Exact next: finish full checks, checkpoint source and run `node scripts/checks/restyle-capability/run.mjs builds --compare-with /Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype --repetitions 2 --label source-binding-ablation`. This tests B01–B04/R01/H01/H02 on both arms; no real email is authorized or needed.
+
 ## Current checkpoint: reliability MVP complete through beta — 22 October 2026
 
 Canonical checkout is `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`, branch `codex/restyle-agent-identity`. All six Roadmap 7 tasks are complete through beta. Application `85f7a34` passes the unchanged 105-run acceptance, 38/40 valid planning first decisions, all 25 coding/repair runs and 95 independent cases/210 steps. Four current-source complete durable/browser journeys plus actual research-reference recovery pass. Original failures, the verified P07.4 evaluator correction and remaining planning/UI limits stay in [the final report](restyle-capability/reliability-results.md), evidence and grades. The final source check passes 1,790 tests with zero failures and four optional skips; separate optional sandbox/browser, editor, Rust/WASM and build checks pass.

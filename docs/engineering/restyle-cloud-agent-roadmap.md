@@ -12,6 +12,8 @@ The [architecture document](restyle-cloud-agent-architecture.md) explains the id
 
 ## Current phase — reliable MVP delivered for beta review
 
+The creator has authorized the [simpler harness comparison](restyle-cloud-agent-roadmaps/08-simpler-harness.md). This is a controlled continuation of the current beta, with source bookkeeping moved out of model output. Existing reliability evidence remains historical; the candidate must pass its own paired evaluation and browser gates before replacing beta.
+
 [Roadmap 7](restyle-cloud-agent-roadmaps/07-ai-reliability.md) is **6/6 complete through beta**: the unchanged 105-run final matrix, 38/40 first planning decisions, all 25 coding/repair runs, four complete durable/browser journeys and actual beta Update verification pass. See the [final reliability report and remaining limits](restyle-capability/reliability-results.md). Beta revision `restyle-editor-shell-60f4abbf9460f059` is ready for creator testing; PR111 remains a stacked draft on PR110. [Roadmap 6](restyle-cloud-agent-roadmaps/06-capability-baseline.md) and its [results](restyle-capability/results.md) remain the unchanged comparison baseline. Email MVP 5M.01–12 is complete; broader signup and phone work stay deferred. Production still requires the creator's later approval.
 
 ## Roadmap 5 — agent identity and account setup

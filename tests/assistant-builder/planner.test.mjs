@@ -194,11 +194,12 @@ test("builder schema exposes only the current stage and actually available tools
 });
 
 test("an empty review batch directs the next decision to review without rerunning successful tools", async () => {
-  const rejected = { kind: "tools", calls: [], review };
+  const { revision, digest, ...intent } = review;
+  const rejected = { kind: "tools", calls: [], review: intent };
   await assert.rejects(
     planSavedBuild(
       claim(create()),
-      { agreement: dinnerAgreement() },
+      { agreement: dinnerAgreement(), source: { revision, digest } },
       definitions,
       provider(rejected).env,
       signal(),
@@ -381,7 +382,7 @@ test("closed decision feedback counts extra fields without exposing their names 
   assert.deepEqual(parseBuilderDecision(corrected, stage(false)), corrected);
 });
 
-test("stale review requests are repaired using the current saved source without changing source", async () => {
+test("the model cannot choose a stale review version and the host binds corrected intent", async () => {
   const source = { revision: 2, digest: "e".repeat(64) };
   const context = { agreement: dinnerAgreement(), source };
   await assert.rejects(
@@ -393,9 +394,7 @@ test("stale review requests are repaired using the current saved source without 
       signal(),
     ),
     (error) => {
-      assert.match(error.feedback.message, /current saved source: revision 2/);
-      assert.ok(error.feedback.message.includes(source.digest));
-      assert.match(error.feedback.message, /do not restore an older version/);
+      assert.match(error.feedback.message, /Unsupported field count: 2/);
       return true;
     },
   );
@@ -405,7 +404,12 @@ test("stale review requests are repaired using the current saved source without 
       claim(create()),
       context,
       definitions,
-      provider(corrected).env,
+      provider({
+        kind: review.kind,
+        entrypoint: review.entrypoint,
+        tests: review.tests,
+        libraries: review.libraries,
+      }).env,
       signal(),
     ),
     corrected,

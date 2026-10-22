@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { runpodNativeModels } from "../../server/assistant/native/runpod.js";
 import { planSavedTask } from "../../server/assistant/tasks/planner.js";
+import { builderToolDefinitions } from "../../packages/pvo-assistant/builder/index.js";
 import { planSavedBuild } from "../../server/assistant/builder/planner.js";
 import { planTaskAttachment } from "../../server/assistant/attachments/planner.js";
 import { create, claim } from "../assistant-tasks/fixtures.mjs";
@@ -167,7 +168,7 @@ test("an accepted agreement stays authoritative while stale repair history is pr
     await planSavedBuild(
       task(),
       context,
-      [{ kind: "workspace_list", description: "List saved source" }],
+      builderToolDefinitions(["workspace_list"]),
       {},
       signal(),
       evidence,

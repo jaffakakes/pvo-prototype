@@ -4,6 +4,8 @@ import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { parseArgs } from "node:util";
+import { pathToFileURL } from "node:url";
+import { harnessScenarios } from "./harness-scenarios.mjs";
 import { nativeAssistantTurn } from "../../../server/assistant/native/service.js";
 import { inspectNativeFrames } from "../../../server/assistant/native/vision.js";
 import { comparisonSandbox } from "../model-comparison/sandbox.mjs";
@@ -20,9 +22,28 @@ const { values, positionals } = parseArgs({
     cases: { type: "string" },
     repetitions: { type: "string", default: "2" },
     label: { type: "string" },
+    "compare-with": { type: "string" },
   },
 });
 const selected = positionals[0] ?? "all";
+if (values["compare-with"] && selected !== "builds")
+  throw new Error(
+    "Harness comparison requires builds; start a fresh paired run.",
+  );
+const comparisonRoot = values["compare-with"];
+if (comparisonRoot) {
+  for (const cwd of [process.cwd(), comparisonRoot])
+    execFileSync("git", ["diff", "--quiet", "HEAD"], { cwd });
+}
+const baselinePlanner = comparisonRoot
+  ? (
+      await import(
+        pathToFileURL(
+          join(comparisonRoot, "server/assistant/builder/planner.js"),
+        ).href
+      )
+    ).planSavedBuild
+  : null;
 const repetitions = Number(values.repetitions);
 if (!Number.isSafeInteger(repetitions) || repetitions < 1)
   throw new Error("Repetitions must be a positive integer.");
@@ -50,7 +71,10 @@ const directory = join(
 );
 await mkdir(directory, { recursive: true, mode: 0o700 });
 let probes = [...planningProbes(), ...editorProbes, ...visionProbes];
-let builds = buildScenarios();
+let builds = [
+  ...buildScenarios(),
+  ...(comparisonRoot ? harnessScenarios() : []),
+];
 if (values.cases) {
   const ids = values.cases.split(",");
   const all = [...probes, ...builds];
@@ -64,6 +88,17 @@ const report = {
   selected,
   predecessor: previous ? positionals[1] : null,
   experiment: values.label ?? null,
+  comparison: comparisonRoot
+    ? {
+        baseline: execFileSync("git", ["rev-parse", "HEAD"], {
+          cwd: comparisonRoot,
+          encoding: "utf8",
+        }).trim(),
+        repetitionsPerArm: repetitions,
+        order:
+          "baseline first on odd repetitions; candidate first on even repetitions",
+      }
+    : null,
   retainedRuns: [...completed],
   startedAt: new Date().toISOString(),
   source: execFileSync("git", ["rev-parse", "HEAD"], {
@@ -73,7 +108,7 @@ const report = {
   modelTurnLimit: null,
   buildObservationMs: 600000,
   repetitions,
-  cases: [...probes, ...builds],
+  cases: comparisonRoot ? builds : [...probes, ...builds],
   frozenFiles: {},
   resources: [],
   runs: [],
@@ -90,6 +125,10 @@ const files = [
   "scripts/checks/model-comparison/scenarios.mjs",
   "scripts/checks/model-comparison/workspace.mjs",
   "scripts/checks/model-comparison/sandbox.mjs",
+  "server/assistant/builder/modelInput.js",
+  "server/assistant/builder/planner.js",
+  "server/assistant/builder/prompt.js",
+  "server/assistant/tasks/promptContext.js",
 ];
 for (const file of files)
   report.frozenFiles[file] = digest(await readFile(file));
@@ -118,12 +157,13 @@ if (selected !== "probes") {
   report.runtime = { image: sandbox.image, nodeVersion: sandbox.nodeVersion };
   await save();
 }
-async function run(scenario, repetition) {
+async function run(scenario, repetition, arm = "candidate") {
   if (completed.has(`${scenario.id}.${repetition}`)) return;
   const row = {
     id: scenario.id,
     family: scenario.family,
     repetition,
+    arm,
     status: "running",
     startedAt: new Date().toISOString(),
     attempts: [],
@@ -135,10 +175,17 @@ async function run(scenario, repetition) {
     row.attempts[attempt.sequence - 1] = attempt;
     await save();
   });
-  console.log(`Start ${row.id}.${repetition}`);
+  console.log(`Start ${arm}: ${row.id}.${repetition}`);
   try {
     if (["build", "repair"].includes(scenario.family))
-      await runBuild(scenario, row, sandbox, models, save);
+      await runBuild(
+        scenario,
+        row,
+        sandbox,
+        models,
+        save,
+        arm === "baseline" ? baselinePlanner : undefined,
+      );
     else if (scenario.family === "planning")
       await runPlanning(scenario, row, models, save);
     else if (scenario.family === "editor") {
@@ -201,7 +248,7 @@ async function run(scenario, repetition) {
   row.unknownUsageAttempts = row.attempts.filter((a) => !a.usage).length;
   await save();
   console.log(
-    `End ${row.id}.${repetition}: ${row.status}; ${Math.round(row.elapsedMs / 1000)}s; ${row.attempts.length} calls; known estimate $${row.knownEstimatedUsd.toFixed(4)}`,
+    `End ${arm}: ${row.id}.${repetition}: ${row.status}; ${Math.round(row.elapsedMs / 1000)}s; ${row.attempts.length} calls; known estimate $${row.knownEstimatedUsd.toFixed(4)}`,
   );
 }
 // Sequential cases avoid cross-case contention and make latency interpretable.
@@ -209,7 +256,13 @@ for (let repetition = 1; repetition <= repetitions; repetition++) {
   if (selected !== "builds")
     for (const probe of probes) await run(probe, repetition);
   if (selected !== "probes")
-    for (const scenario of builds) await run(scenario, repetition);
+    for (const scenario of builds)
+      for (const arm of comparisonRoot
+        ? repetition % 2
+          ? ["baseline", "candidate"]
+          : ["candidate", "baseline"]
+        : ["candidate"])
+        await run(scenario, repetition, arm);
 }
 report.completedAt = new Date().toISOString();
 report.cleanupVerified = report.resources.every((x) => x.cleaned);

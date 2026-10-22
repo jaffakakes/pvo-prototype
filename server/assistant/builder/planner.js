@@ -10,10 +10,14 @@ import {
 } from "../tasks/evidenceInput.js";
 import { nativeModels } from "../native/models.js";
 import {
+  builderModelTools,
+  builderModelSchema,
+  builderModelDecision,
+  bindBuilderModelDecision,
+} from "./modelInput.js";
+import {
   BUILDER_LIMITS,
   BUILDER_RESEARCH_KINDS,
-  builderDecisionSchema,
-  parseBuilderDecision,
 } from "../../../packages/pvo-assistant/builder/index.js";
 
 /** One inference only. The durable runner owns claims, budgets and saving the validated decision. */
@@ -27,6 +31,9 @@ export async function planSavedBuild(
   models = nativeModels(env),
 ) {
   const hasAgreement = context.agreement !== null;
+  // Capture before inference: a concurrent edit must never retarget this decision.
+  const source = structuredClone(context.source);
+  const modelTools = builderModelTools(definitions);
   const privateAccountSetupAvailable = connectionSetupAvailable(env);
   if (
     new TextEncoder().encode(JSON.stringify(context.feedback ?? [])).length >
@@ -47,8 +54,11 @@ export async function planSavedBuild(
       questions: task.questions,
       privateAccountSetupAvailable,
       evidence,
-      build: context,
-      tools: definitions
+      build: {
+        ...context,
+        lastDecision: builderModelDecision(context.lastDecision),
+      },
+      tools: modelTools
         .filter(
           (tool) => hasAgreement || BUILDER_RESEARCH_KINDS.includes(tool.kind),
         )
@@ -65,9 +75,9 @@ export async function planSavedBuild(
     {
       messages,
       schema: withEvidenceSchema(
-        builderDecisionSchema(
+        builderModelSchema(
           hasAgreement,
-          definitions,
+          modelTools,
           privateAccountSetupAvailable,
         ),
       ),
@@ -95,22 +105,16 @@ export async function planSavedBuild(
       throw new Error("Builder response exceeds its bound.");
     const decision = JSON.parse(content);
     if (decision?.kind === "history") return parseEvidenceRequest(decision);
-    const parsed = parseBuilderDecision(decision, {
-      hasAgreement,
-      connectionSetup: privateAccountSetupAvailable,
-      available: definitions.map((tool) => tool.kind),
-    });
-    const review = parsed.kind === "review" ? parsed : parsed.review;
-    if (
-      review &&
-      context.source &&
-      (review.revision !== context.source.revision ||
-        review.digest !== context.source.digest)
-    )
-      throw new Error(
-        `Review must use the current saved source: revision ${context.source.revision}, digest ${JSON.stringify(context.source.digest)}. Save source first if revision is 0. Copy the current identity; do not restore an older version to match this rejected request.`,
-      );
-    return parsed;
+    return bindBuilderModelDecision(
+      decision,
+      source,
+      {
+        hasAgreement,
+        connectionSetup: privateAccountSetupAvailable,
+        available: definitions.map((tool) => tool.kind),
+      },
+      modelTools,
+    );
   } catch (error) {
     throw new AuthoringRepairError(
       "builder_response",
