@@ -14,8 +14,11 @@ import { comparisonSandbox } from "../model-comparison/sandbox.mjs";
 import { measuredFetch, forwardModelRequest, baseline } from "./provider.mjs";
 import { planningProbes } from "./probes.mjs";
 import { isolatedTaskEffects } from "./effects.mjs";
+import { createDurableBrowser } from "./durable-browser.mjs";
+import { checkDurableDelivery } from "./durable-delivery.mjs";
 
 const scenario = process.argv[2] ?? "guestbook";
+const browserJourney = process.argv.includes("--browser");
 if (scenario !== "guestbook")
   throw new Error("Select the guestbook durable journey.");
 const directory = join(
@@ -44,6 +47,8 @@ const report = {
     },
   ],
   transitions: [],
+  browserJourney,
+  browserChecks: [],
 };
 let saving = Promise.resolve();
 function save() {
@@ -71,6 +76,7 @@ const send = await measuredFetch(async (attempt) => {
 });
 let fixture,
   task,
+  creator,
   stopping = false;
 const interrupt = () => {
   stopping = true;
@@ -88,21 +94,33 @@ try {
   });
   report.resources[0].storagePath = fixture.storagePath;
   await save();
-  const project = await fixture.project("reliability-guestbook");
-  expectStatus(project, 200);
-  const request = {
-    ...input(),
-    projectId: project.body.project.id,
-    request:
-      planningProbes().find((item) => item.id === "P01").request +
-      " Add a new form with name and message fields and a Save button to the main scene. Use a short duration and pause playback until submission. Keep the original request's storage and reading behavior.",
-    examples: [],
-    context: { ...input().context, components: [] },
-  };
-  report.request = request;
-  const created = await fixture.create(project.body.project.id, request);
-  expectStatus(created, 201);
-  task = created.body.task;
+  const request =
+    planningProbes().find((item) => item.id === "P01").request +
+    " Add a new form with name and message fields and a Save button to the main scene. Use a short duration and pause playback until submission. Keep the original request's storage and reading behavior.";
+  if (browserJourney) {
+    report.resources.push({
+      kind: "browser",
+      name: "generated-component-journey",
+      requestedAt: new Date().toISOString(),
+      cleaned: false,
+    });
+    await save();
+    creator = await createDurableBrowser(fixture, request, directory);
+    task = creator.task;
+  } else {
+    const project = await fixture.project("reliability-guestbook");
+    expectStatus(project, 200);
+    const created = await fixture.create(project.body.project.id, {
+      ...input(),
+      projectId: project.body.project.id,
+      request,
+      examples: [],
+      context: { ...input().context, components: [] },
+    });
+    expectStatus(created, 201);
+    task = created.body.task;
+  }
+  report.request = task.input;
   report.taskId = task.id;
   await save();
   let signature;
@@ -161,11 +179,33 @@ try {
       JSON.stringify(restored.body) === JSON.stringify(result.body);
     if (!report.resultSurvivedRestart)
       throw new Error("Prepared result changed across restart.");
+    await save();
+    if (creator) {
+      await checkDurableDelivery(
+        creator,
+        fixture,
+        directory,
+        async (kind, data) => {
+          report.browserChecks.push({
+            at: new Date().toISOString(),
+            kind,
+            ...data,
+          });
+          await save();
+        },
+      );
+      report.browserPassed = true;
+    }
   }
 } catch (error) {
   report.status = "execution_error";
   report.failure = { name: error.name, message: error.message };
 } finally {
+  if (creator) {
+    report.browserErrors = creator.errors;
+    await creator.close();
+    report.resources.find((item) => item.kind === "browser").cleaned = true;
+  }
   if (fixture) {
     if (task && task.state !== "ready") {
       const current = (await fixture.request(path(task))).body.task;

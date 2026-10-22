@@ -1,5 +1,16 @@
 # Restyle cloud agent: start here when taking over
 
+## Durable generation and browser harness checkpoint — 22 October 2026
+
+Candidate `6131fd5` completed the actual guestbook task in ten live calls, with checked source and a compiled response Note. Journal `durable-2026-10-22T03-12-54.720Z-c8ec0b35/report.json` preserves one agreement repair and three attachment repairs; known inference cost $0.416082, restart proof and cleanup verified. It is still awaiting browser/semantic grading. The attachment retries exposed contradictory guidance: the prompt mentioned unsupported text fields and confused a Logic jump action with the request JSON route. Guidance now gives exactly the six supported field kinds and `{kind:"time",t:number}` for a result Note. No parser is relaxed.
+
+The five-scenario high-reasoning code pilot (`run-2026-10-22T03-15-05.439Z-17306de0/report.json`) passes B01/B02/B03/B04/R01 in 3/3/2/3/2 calls, with generated and independent/hidden cases and verified sandbox cleanup. This is one repetition, not final acceptance.
+
+The durable driver now has `guestbook --browser`: a real editor project creates the saved task; live saved inference runs to its checked artifact; the original generated form/Note are applied, exercised in Try, exported and reopened in a separate anonymous viewer. Foreground native handoff and account identity are explicitly controlled. No generated source, agreement or component is substituted. One controlled browser-creation preflight passes in the Node test runner. An earlier ad-hoc controlled fixture stalled before launching Chrome or calling a model; its three identified processes and exact local storage were removed, recorded under `browser-preflight-2026-10-22T03-18-42.832Z/report.json`. Source Vite PID43103/session7019 on port5295 is owned for the upcoming browser proof and must be stopped afterward; beta4173 remains untouched.
+
+Next: run `node scripts/checks/restyle-capability/durable.mjs guestbook --browser` and inspect its saved screenshots/results; then missing-account/interruption checks and the final 105-run matrix. 7R.02–06 remain unchecked. Full repository/build/browser and beta delivery remain pending. No real email or new cloud compute.
+
+
 ## High-reasoning saved-authoring candidate — 22 October 2026
 
 Following the six-for-six controlled planning replay recorded below, the saved-authoring K3 profile now uses high reasoning and at least 32,768 output tokens. This preserves the existing 180-second saved inference deadline, one-call metering/repair boundary, JSON parsing, local semantic checks and private reasoning exclusion. Native editing/vision remain K2.6. It is still a candidate: repeated capability and complete browser acceptance are not yet passed.

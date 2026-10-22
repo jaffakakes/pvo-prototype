@@ -47,3 +47,7 @@ After the phase/context pilot and retained unsuccessful format experiments, save
 The first K3/low durable run reached backend readiness but omitted the requested visible results, so it is not a semantic pass. The attachment now supports a checked response Note with stable component references and atomic application. Focused tests, editor types and dependency checks pass; full browser/live-model verification is next. The independent K3/high replay passed six of six unchanged planning payloads; adoption remains a separate next batch. No acceptance gate is complete from these small samples.
 
 The current saved-authoring candidate now uses K3/high reasoning and at least 32,768 output tokens, with 36 focused checks passing. The earlier low-setting samples and their failures remain historical evidence. Actual complete durable/browser acceptance and the final matrix are still next.
+
+### Durable/browser candidate checkpoint
+
+High-reasoning code pilot passes all five scenarios in 2–3 calls each. The ten-call actual guestbook now includes a checked Note but needed four autonomous format repairs. Corrected attachment instructions preserve compiler checks. The new browser driver has passed controlled editor-creation preflight and is ready for live generation through Try/export/viewer/reopen; this does not complete final acceptance. Vite5295 is owned temporarily for this verification.
