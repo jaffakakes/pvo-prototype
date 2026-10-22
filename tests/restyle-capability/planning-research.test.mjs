@@ -35,6 +35,91 @@ const context = (messages) =>
     })
     .find((value) => value.input);
 
+const manualDecision = (capabilityId) => ({
+  kind: "manual_alternative",
+  proposal: {
+    capabilityId,
+    originalOutcome: capability().operation,
+    preparedOutcome: "Save thank-you requests for the creator to send later.",
+    limitation: "No email account or private setup is available.",
+    notice: "Request saved; the creator still needs to send the email.",
+    fields: [],
+    steps: [
+      {
+        id: "send",
+        instruction: "Read the saved request and send the email manually.",
+      },
+    ],
+  },
+});
+
+test("a researched manual alternative is terminal help, with a separate semantic grade", async () => {
+  const row = {};
+  let calls = 0;
+  const alternative = manualDecision("planning-1-1");
+  await runPlanning(
+    scenario(),
+    row,
+    {
+      async generate() {
+        calls++;
+        return {
+          content: JSON.stringify(
+            calls === 1
+              ? {
+                  kind: "research",
+                  calls: [
+                    capability({ status: "unverified", selection: "proposed" }),
+                  ],
+                }
+              : alternative,
+          ),
+        };
+      },
+    },
+    async () => {},
+  );
+  assert.equal(calls, 2);
+  assert.equal(row.status, "needs_semantic_grade");
+  assert.equal(row.firstDecisionValid, true);
+  assert.deepEqual(row.output, alternative);
+  assert.equal(
+    row.planningTurns[0].controlledFeedback[0].result.result.verification,
+    "planning_only",
+  );
+});
+
+test("an alternative without a current owned capability is repaired instead of accepted", async () => {
+  const row = {},
+    seen = [];
+  await runPlanning(
+    scenario(),
+    row,
+    {
+      async generate(request) {
+        seen.push(context(request.messages));
+        return {
+          content: JSON.stringify(
+            seen.length === 1
+              ? manualDecision("invented")
+              : {
+                  kind: "ask",
+                  prompt: "Email setup is unavailable. Would you like to wait?",
+                  choices: [],
+                },
+          ),
+        };
+      },
+    },
+    async () => {},
+  );
+  assert.equal(row.status, "needs_semantic_grade");
+  assert.equal(row.firstDecisionValid, false);
+  assert.equal(row.validationRepairs, 1);
+  assert.equal(row.output.kind, "ask");
+  assert.match(seen[1].evidence.repair.message, /current capability/);
+});
+
 test("missing-account evaluation returns real rejection, then planning-only evidence, before a concrete question", async () => {
   const row = {},
     seen = [];

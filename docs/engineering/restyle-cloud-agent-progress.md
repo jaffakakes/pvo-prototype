@@ -1,5 +1,13 @@
 # Restyle cloud agent: current progress and handoff log
 
+## Final reliability acceptance passes; beta delivery pending — 22 October 2026
+
+7R.02/05 are verified. Application85f7a34's fresh unchanged105 final outputs pass their original rubric;38/40 first planning decisions are valid. All25 coding/repair runs pass95 independent cases/210 steps in2–5calls, at most199.7seconds, zero format repairs and no developer hints/source edits. B01.5 autonomously repairs one generated-test syntax error. The matrix has173 calls, $4.694399 known estimate, no unknown usage and348 cleaned containers. Original report hash f65cb0d4f950da6089ef0d11868787fcb77396eb921a7ea9e2982d31a3d2cbf8 and the one P07.4 terminal-classification correction are audited; original raw status/output are preserved.
+
+The additional P04.2 actual research replay recovers across restart in two live calls, $0.063369: it inspects connections and replaces the raw-read reference with the real evidence receipt. The accepted record remains proposed/planning_only with no account access or action. Journal reference-recovery-2026-10-22T09-34-21.987Z-fd6eeb06 has a hash-bound semantic pass and cleanup verified. All four fresh current-source complete journeys remain accepted. Sanitized evidence/grades and [the reliability report](restyle-capability/reliability-results.md) are saved; all earlier rejected candidates, extra planning-quality findings and preparation failures remain documented.
+
+Only after the full frozen matrix ended, evaluatorv1.7 adds actual current-capability validation and recognises manual_alternative as terminal help. Both new regressions fail before the correction; all10 focused evaluator/manual-choice/recovery tests pass afterward. Application code and staged build bytes are unchanged. Final npm run check passes1,790 tests, zero failures and four optional skips in /tmp/restyle-reliability-final-check.log; separate optional sandbox/browser proofs remain valid. Exact next: verify guarded beta deployment and isolated New beta release → Update, finalize evidence/roadmap7R.06, update stacked draftPR111 and verify resource cleanup. No production or new real email.
+
 ## Manual-alternative observation gap verified without changing output — 22 October 2026
 
 P07.4 reaches a truthful manual-alternative proposal in four paid calls with a valid first decision, no schema repair and no send. Protocolv1.6 recognises ask/connect_account/ask_research as terminal help but omits the supported manual_alternative variant, so its original row incorrectly says planning_observation_exhausted. That raw result remains unchanged. The frozen rubric already permits concrete unavailable-setup help; no scenario, model input, criterion or threshold is changed.

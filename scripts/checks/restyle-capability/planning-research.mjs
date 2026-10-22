@@ -4,6 +4,7 @@ import {
   capabilityContext,
 } from "../../../server/assistant/builder/capabilityResearch.js";
 import { contentDigest } from "../../../server/contentDigest.js";
+import { requireManualChoice } from "../../../server/assistant/builder/manualAlternatives.js";
 import {
   parseBuilderResearchResult,
   researchFailure,
@@ -18,6 +19,7 @@ export async function missingAccountResearch(input, initialFeedback) {
     id: "missing-account-probe",
     creationDigest: await contentDigest(JSON.stringify(input.input)),
     archivedQuestions: 0,
+    manualPlans: [],
   };
   const receipts = new Map();
   const save = (operationId, tool, result) => {
@@ -102,6 +104,8 @@ export async function missingAccountResearch(input, initialFeedback) {
       return result;
     },
     capabilities: () => capabilityContext(coordinator, task),
+    validateManualAlternative: (decision) =>
+      requireManualChoice(coordinator, task, decision),
     close: () => database.close(),
   };
 }

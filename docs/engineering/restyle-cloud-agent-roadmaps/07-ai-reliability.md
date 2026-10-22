@@ -18,10 +18,10 @@ If a criterion proves unsuitable, document its evidence and rationale before cha
 ## Tasks
 
 - [x] **7R.01** Freeze reliability acceptance criteria and inspect the measured failures and existing owners.
-- [ ] **7R.02** Make planning and tool decisions structurally dependable; preserve meaningful validation and record controlled experiments.
+- [x] **7R.02** Make planning and tool decisions structurally dependable; preserve meaningful validation and record controlled experiments.
 - [x] **7R.03** Make final review use current source and advance after successful work; verify recovery in the durable coordinator.
 - [x] **7R.04** Verify connected requests/results, missing/revoked access, interruption and duplicate prevention without false completion.
-- [ ] **7R.05** Run the complete final repeated matrix and full generated-component journeys; preserve all unsuccessful attempts.
+- [x] **7R.05** Run the complete final repeated matrix and full generated-component journeys; preserve all unsuccessful attempts.
 - [ ] **7R.06** Complete source review/checks, beta delivery and release verification; document evidence and clean owned test resources.
 
 ## Work and resource journal
@@ -116,3 +116,7 @@ Saved read-only inference now has durable10/30-second retries for two consecutiv
 ### Native answer preservation checkpoint
 
 The e2bfae7 candidate passes all four fresh durable/browser journeys and all eight first planning decisions in the first final round, but fails E04: final review drops a correct timing explanation. The candidate is rejected; original output and interrupted work remain retained. Native completion now rejects dropping an existing substantive answer, uses the same repair allowance and explicitly returns the user-facing explanation. Forty-one focused checks pass. Five fresh E04 repetitions, full checks, current journeys, a new unchanged105 and beta delivery are next; no unfinished gate is checked.
+
+### Final candidate acceptance verified
+
+Application85f7a34 passes the fresh unchanged105-run matrix,38/40 first planning decisions, all25 code/repair runs and95 independent cases/210 steps. Two planning schema repairs and one generated-test syntax repair remain recorded. All four current-source durable/browser journeys and the extra research-reference recovery pass. P07.4 has a hash-bound actual-runtime replay proving the recorded manual_alternative is an unanswered choice; its original evaluator exhausted status is preserved and the terminal-classification correction is separately tested. No generated output or rubric changed. See [the reliability report](../restyle-capability/reliability-results.md) and machine-readable evidence. 7R.02/05 are complete;7R.06 remains pending final checks, beta delivery/Update proof and cleanup.

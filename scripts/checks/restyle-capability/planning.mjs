@@ -1,4 +1,5 @@
 import { planSavedBuild } from "../../../server/assistant/builder/planner.js";
+import { AuthoringRepairError } from "../../../server/assistant/tasks/repairFeedback.js";
 import { TASK_LIMITS } from "../../../packages/pvo-assistant/tasks/index.js";
 import { researchDefinitions } from "./probes.mjs";
 import { missingAccountResearch } from "./planning-research.mjs";
@@ -35,6 +36,17 @@ export async function runPlanning(scenario, row, models, save) {
           evidence,
           models,
         );
+        if (research && decision.kind === "manual_alternative") {
+          try {
+            await research.validateManualAlternative(decision);
+          } catch (error) {
+            throw new AuthoringRepairError(
+              "builder_response",
+              error.message,
+              decision,
+            );
+          }
+        }
         inferenceFailures = 0;
         if (turn === 1) {
           row.firstDecisionValid = true;
@@ -60,7 +72,12 @@ export async function runPlanning(scenario, row, models, save) {
       row.output = decision;
       if (
         scenario.id !== "P07" ||
-        ["ask", "connect_account", "ask_research"].includes(decision.kind)
+        [
+          "ask",
+          "connect_account",
+          "ask_research",
+          "manual_alternative",
+        ].includes(decision.kind)
       ) {
         row.status = "needs_semantic_grade";
         await save();
