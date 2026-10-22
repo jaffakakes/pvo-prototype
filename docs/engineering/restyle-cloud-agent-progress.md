@@ -1,5 +1,9 @@
 # Restyle cloud agent: current progress and handoff log
 
+## Current final matrix: first round passes — 22 October 2026
+
+Application `85f7a34` remains unchanged. In `run-2026-10-22T08-27-15.081Z-a01ee512`, all21 first-round outputs pass the frozen semantic rubric, all8 planning first decisions are valid, and all5 coding/repair cases pass their original public/hidden checks in2–3calls, at most140.1seconds, zero format repairs and no developer intervention. E04 returns the actual timing explanation. The second round is running; no final acceptance or beta deployment is claimed. All prior failures remain recorded. Exact next: finish/grade the remaining84 runs and audit the frozen gates, then verify the staged beta and final evidence.
+
 ## Answer-corrected candidate passes current journeys; final matrix restarted — 22 October 2026
 
 Application `85f7a34` passes all five live E04 repetitions with complete user-facing calculation and zero edits (10 calls, $0.079261 known estimate, no unknown usage), all 41 focused completion checks and the full source suite (1,788 passed, zero failed, four opt-in skips). The unchanged sandbox subsystem previously passed all20 optional cases; current browser preflight passes. Editor types and Rust/WASM/Note-wrapping checks remain valid on unchanged source. All earlier failures are retained.
