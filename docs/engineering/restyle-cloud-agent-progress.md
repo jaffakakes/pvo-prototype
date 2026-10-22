@@ -1,5 +1,16 @@
 # Restyle cloud agent: current progress and handoff log
 
+## Combined candidate pilot and provider probes — 22 October 2026
+
+Candidate `8652a97`, journal `restyle-capability/run-2026-10-22T02-05-54.210Z-bf2856d1/report.json`, completed all ten pilot runs and verified container cleanup. Connected B04 passed in 3 calls/33 seconds both times (zero format repairs); seeded R01 passed in 9/10 calls and 91/109 seconds (1/2 repairs). Initial P01 failed validation both times, P03 failed once, P02 returned a valid clarification both times. Those planning outputs still need semantic grading; this is not acceptance. No model settings changed. The diagnostic-only predecessor also completed: both B04 attempts failed at ten minutes (83/76 calls); R01 passed in 5/18 calls. Preserve every attempt and unknown interrupted usage.
+
+Full `npm run check` at that candidate found a genuine regression: new extra-field diagnostics disclosed arbitrary model-provided key names. The correction reports the unsupported count and the trusted required list, never arbitrary names/values. The original nested-field privacy regression and 18 related planner/local-auth checks now pass. The earlier full run also had two fixture failures because its inherited private umask made deliberately public credential fixtures private; its hanging fixture processes were terminated. Those auth checks pass under the normal 022 umask without app/test changes. Full-suite validation remains pending; protect logs with explicit file permissions rather than changing the test process umask.
+
+Runpod wire probes are private in `schema-probe-2026-10-22T02-13-24.819Z`, `reasoning-probe-2026-10-22T02-14-35.088Z`, and `wire-probe-2026-10-22T02-15-12.310Z`. The nested OpenAI `json_schema` option returned 200 but did not follow even a simple object schema; direct/recursive variants returned 502. Do not claim provider-enforced structure. Thinking enabled at temperature 0.6 returned 502 on all six calls. A small compatibility probe succeeds with thinking enabled and temperature 1, but this is not evidence of task reliability. A six-output replay of the unchanged pilot planning requests is now testing that configuration, journal `reasoning-one-probe-2026-10-22T02-15-56.168Z/report.json`; no app setting has changed. Runpod's [official endpoint documentation](https://docs.runpod.io/public-endpoints/models/moonshot-kimi) does not promise strict schema enforcement.
+
+**Next:** grade the reasoning comparison, choose the smallest evidenced correction, then run actual durable authoring and the complete final matrix. 7R.02–06 remain unchecked. No beta deployment, permanent compute or email; no production promotion.
+
+
 ## Truncated-output recovery verified — 22 October 2026
 
 A cut-off Runpod reply previously escaped authoring repair and was classified as provider unavailable. A shared saved-authoring response boundary now records a fixed truncation correction without retrying inside the model call or retaining private provider text. Empty missing proposals are explicitly unavailable in prompt context, so the AI is not told to retrieve nonexistent source. Plan, builder, draft and attachment planners use the same policy. Capacity, cancellation and other provider errors retain their existing owner.

@@ -269,7 +269,7 @@ test("builder output cannot bypass its stage, invent tool receipts or emit provi
   );
 });
 
-test("closed decision feedback identifies the extra field without changing the accepted contract", async () => {
+test("closed decision feedback counts extra fields without exposing their names or changing the contract", async () => {
   const question = {
     kind: "ask",
     prompt: "Which date?",
@@ -285,7 +285,11 @@ test("closed decision feedback identifies the extra field without changing the a
       signal(),
     ),
     (error) => {
-      assert.match(error.feedback.message, /Unsupported fields: calls/);
+      assert.match(error.feedback.message, /Unsupported field count: 1/);
+      assert.match(
+        error.feedback.message,
+        /Remove every field outside the required list/,
+      );
       assert.match(error.feedback.message, /Missing required fields: none/);
       return true;
     },

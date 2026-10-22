@@ -15,12 +15,7 @@ export function object(value, keys, path) {
   const own = Reflect.ownKeys(value);
   requireTask(
     own.length === keys.length && keys.every((key) => own.includes(key)),
-    `${path} has missing or unsupported fields. Required fields: ${keys.join(", ") || "none"}. Missing required fields: ${keys.filter((key) => !own.includes(key)).join(", ") || "none"}. Unsupported fields: ${
-      own
-        .filter((key) => !keys.includes(key))
-        .map(String)
-        .join(", ") || "none"
-    }.`,
+    `${path} has missing or unsupported fields. Required fields: ${keys.join(", ") || "none"}. Missing required fields: ${keys.filter((key) => !own.includes(key)).join(", ") || "none"}. Unsupported field count: ${own.filter((key) => !keys.includes(key)).length}. Remove every field outside the required list.`,
   );
   for (const key of keys) {
     const descriptor = Object.getOwnPropertyDescriptor(value, key);
