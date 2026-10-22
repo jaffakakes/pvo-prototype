@@ -1,5 +1,13 @@
 # Restyle cloud agent: start here when taking over
 
+## Current checkpoint: native answer correction verified — 22 October 2026
+
+Continue the active reliability goal on `codex/restyle-agent-identity` in `/Users/christinasmacbook/.codex/worktrees/restyle-research-connections/pvo-prototype`. Application/evaluator source is `85f7a34`; the previous candidate was rejected because native completion erased a correct explanation. The new guard and instructions pass 41 focused tests, all five live E04 repetitions (two calls each, $0.079261 known estimate, zero unknown usage), and the full source check (1,788 pass, zero fail, four opt-in skips). The prior opt-in 20-case sandbox suite and browser preflight passed on unchanged affected subsystem code. Strict editor types and Rust/browser wrapping evidence remain unchanged-source verification.
+
+Build is running in `/tmp/restyle-answer-review-build.log` using the preserved private build/backup script. No Vite or beta4173 is running. The last staged beta is rejected and not deployed. Exact next: finish this build, start a recorded fresh Vite5295, run fresh generated guestbook/email browser journeys and missing/lost/revoked setup, then a new unchanged21×5 matrix. Keep all first decisions, retries, failed candidates and usage. Do not change executable source/evaluator during final acceptance. See [progress](restyle-cloud-agent-progress.md) and [Roadmap7](restyle-cloud-agent-roadmaps/07-ai-reliability.md); 7R.02/05/06 remain unchecked.
+
+No real email, broader signup/phone or production release is authorized here. Existing PR111 remains a stacked draft on110; update it after final verification, without merging. Desktop dirty source/dist and unrelated services remain untouched. Private journals, candidate hashes, rejected matrices, resource records and helper scripts are under `~/.codex/secure/restyle-capability/`. Complete the goal only after final acceptance, exact beta/New beta release verification, documentation and owned-resource cleanup.
+
 ## Automatic inference recovery implemented; final verification pending — 22 October 2026
 
 Temporary read-only inference failures now save a durable model_connection wait and retry the same input after10 and30 seconds. Two consecutive automatic retries are allowed; continued failure remains saved for explicit Retry. This is not a saved-goal/request limit and never applies to external writes. Every attempt retains its failed operation and usage. Restart keeps the delay, Stop prevents another dispatch, and replies are fenced before preparation after cancellation or a changed claim. Build-stage failures now expose the existing Retry action instead of the obsolete “building is not available yet” message.
