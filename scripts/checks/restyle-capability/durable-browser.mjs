@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { chromium } from "playwright-core";
 import { ORIGIN } from "../../../tests/assistant-task-server/helpers.mjs";
 import { installAssistantAvailabilityFixture } from "../editor/assistant-fixture.mjs";
@@ -19,6 +19,7 @@ export async function createDurableBrowser(fixture, request, directory) {
   });
   const errors = [];
   let page, task, localId;
+  let stage = "open_editor";
   async function open() {
     page = await context.newPage();
     page.setDefaultTimeout(25000);
@@ -106,6 +107,7 @@ export async function createDurableBrowser(fixture, request, directory) {
       route.fulfill({ contentType: "video/mp4", body: media }),
     );
     await open();
+    stage = "create_project";
     localId = await page.evaluate(async () => {
       const { mkClip } = await import("/src/store.ts");
       const media = await (await fetch("/reliability-source.mp4")).blob();
@@ -118,6 +120,7 @@ export async function createDurableBrowser(fixture, request, directory) {
       });
       return window.resultProbe.useCapture.getState().localId;
     });
+    stage = "request_saved_task";
     await page.locator("[data-assistant-orb]").click();
     await page
       .getByRole("textbox", { name: "Describe a change" })
@@ -177,7 +180,25 @@ export async function createDurableBrowser(fixture, request, directory) {
       close: () => browser.close(),
     };
   } catch (error) {
+    if (page && !page.isClosed()) {
+      try {
+        await page.screenshot({ path: directory + "/creation-failure.png" });
+        await writeFile(
+          directory + "/creation-failure.json",
+          JSON.stringify(
+            { stage, errors, body: await page.locator("body").innerText() },
+            null,
+            2,
+          ),
+          { mode: 0o600 },
+        );
+      } catch {
+        /* Preserve the original failure if the page has already closed. */
+      }
+    }
     await browser.close();
+    error.browserCleanupVerified = true;
+    error.message = `${stage}: ${error.message}`;
     throw error;
   }
 }

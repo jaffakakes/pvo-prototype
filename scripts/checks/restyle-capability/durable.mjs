@@ -250,6 +250,8 @@ try {
 } catch (error) {
   report.status = "execution_error";
   report.failure = { name: error.name, message: error.message };
+  if (error.browserCleanupVerified)
+    report.resources.find((item) => item.kind === "browser").cleaned = true;
   if (creator && !creator.page.isClosed()) {
     try {
       await creator.page.screenshot({ path: directory + "/failure.png" });

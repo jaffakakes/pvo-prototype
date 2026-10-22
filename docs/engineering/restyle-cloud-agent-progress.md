@@ -1,5 +1,13 @@
 # Restyle cloud agent: current progress and handoff log
 
+## Fresh browser environment verified — 22 October 2026
+
+The precise-feedback candidate `a9b66cf` passes the full source check: 1,772 tests pass, four optional checks skip, zero failures. It builds as `restyle-editor-shell-2d643d97400795e1`; guarded beta staging retains 40 immutable assets and original source dist is restored. The verified build is preserved under the existing backup's `verified-build-a9b66cf`; no deployment or announcement yet.
+
+A fresh email attempt (`durable-2026-10-22T03-53-38.883Z-e80b6902`) times out while opening the source editor, **before any model call**. The controlled browser preflight reproduces the same timeout against the warmed Vite instance. Restarting that exact owned server resolves it: the preflight passes in 4.8 seconds. This supports a source-probe/hot-module-state issue, not an AI inference failure; keep the failed evidence. Browser creation already closed its owned browser, but parent cleanup bookkeeping missed the thrown-creation path. The driver now records stage, screenshot/body and confirmed browser teardown on that path. Local fixture storage was removed; no paid request or email occurred.
+
+Source browser proofs must use a freshly started dedicated Vite server after application/module/build changes. Old owned PID43103 is stopped; replacement PID51950/session35382 serves5295. No4173 server is active and Desktop remains untouched. Exact next: fresh connected-email browser journey on this candidate, then the final105-run matrix. 7R.02/04/05/06 remain unchecked.
+
 ## Connected email exposed unclear repair feedback — 22 October 2026
 
 The live missing-account and revoked-account journeys on `911c13a` both pass scoped private setup and saved restart. The missing-account run also loses one genuine inference reply, restarts and uses explicit Retry with unchanged input: three calls, $0.038295 (`durable-2026-10-22T03-42-16.977Z-8d9c9e6a`). Revoked setup uses two calls, $0.036051 (`durable-2026-10-22T03-43-05.669Z-f19e0167`). All owned resources were cleaned. Full controlled Docker durable coverage passes 4/4. Strict editor types and editor connected-services/native-assistant plus player service-submissions browser checks pass, including desktop/phone, loss/restart, private approval and duplicate prevention.
