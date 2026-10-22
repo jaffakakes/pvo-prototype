@@ -1,5 +1,13 @@
 # Restyle cloud agent: start here when taking over
 
+## Product scope corrected; generated-code boundary reviewed — 22 October 2026
+
+Read [Roadmap 9's post-study review](restyle-cloud-agent-roadmaps/09-broader-pressure-tests.md#post-study-product-scope-and-security-boundary-review--22-october-2026) before proposing security work. Restyle edits PVOs; collection/storage is an existing capability. The creator rejected treating the token-plan probe as a requirement for viewer identity, device tracking or answer editing. The current proposal is a trusted foundation around generated code. No implementation of those new features is requested or made.
+
+9P.05 completes a focused source review, 41 passing Node boundary regressions, a passing real Chromium isolation check and a synthetic contract characterization. Most enforcement already exists: sandboxing, private credentials, owner checks, exact-release connection approval and validated host effects. A remaining limitation is that generated service operations receive their agreed service state, and broad public result schemas do not establish confidentiality of data derived from that state. The characterization shows a contract limitation, not a live exploit. Host enforcement and model interpretation/product correctness must be evaluated separately.
+
+This local documentation checkpoint follows `08e2593` on `codex/restyle-simple-harness` and leaves application bytes at `cfec63c`. Evidence and completed cleanup are under `~/.codex/secure/restyle-capability/boundary-review-20261022T171815Z`. No model/provider calls, cloud resources, beta update or deployment. Exact next implementation decision: select a demonstrated gap in an existing supported PVO workflow, define the host-owned data/effect policy and a failing boundary check, then implement only that scope. Preserve prior failures and failed rollout gates; no new generic viewer-identity feature is implied.
+
 ## Broader pressure study complete; reliability gate not satisfied — 22 October 2026
 
 Roadmap 9 tasks 9P.03/04 are complete as evaluation/reporting work. [Results](restyle-capability/pressure-test-results.md) and [sanitized evidence](restyle-capability/pressure-test-evidence.json) retain all 43 prescribed trials, one host-interrupted feedback start, one supplemental email start and a zero-inference quiz replay. This does not mark Restyle broadly reliable. Both coding arms pass 12/12; candidate uses 46 calls/four self-corrected tool failures versus baseline 35/zero. Fourteen probes yield eleven passes, a failed secure-token plan, an incomplete native quiz and a context result outside the persisted-question bound.

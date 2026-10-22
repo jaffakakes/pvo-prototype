@@ -54,6 +54,8 @@ The provider/transport failure is an observed user-visible failure. Its precise 
 
 ## Priorities suggested by the evidence
 
+**Post-study scope correction:** the creator clarified that the security-token scenario must not drive new viewer identity, tracking or answer-editing features. Preserve its measured failure as capability-handling evidence. The [subsequent security boundary review](../restyle-cloud-agent-roadmaps/09-broader-pressure-tests.md#post-study-product-scope-and-security-boundary-review--22-october-2026) maps existing enforcement and its limits; these recommendations do not turn benchmark scenarios into product requirements.
+
 1. Retain sanitized provider/transport failure causes and verify saved recovery through connection failures. The supplemental task exhausted its automatic recovery and never finished.
 2. Make security-dependent plans acknowledge missing supported primitives and reject contradictions between promised randomness and exact examples.
 3. Verify requested native behavior, including right/wrong quiz outcomes, beyond successful compilation and commit.
