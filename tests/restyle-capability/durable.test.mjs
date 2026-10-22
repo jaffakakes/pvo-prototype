@@ -32,7 +32,7 @@ test(
                 ...(requests.length === 3 ? { calls: [] } : {}),
               };
         return Response.json({
-          model: "kimi-k2.6",
+          model: "kimi-k3",
           choices: [
             {
               finish_reason: requests.length === 1 ? "length" : "stop",
@@ -178,7 +178,7 @@ test(
           };
         }
         return Response.json({
-          model: "kimi-k2.6",
+          model: "kimi-k3",
           choices: [
             {
               finish_reason: "stop",

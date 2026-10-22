@@ -36,3 +36,8 @@ First experiment: actionable empty-review-batch feedback and smaller stage-speci
 ## Candidate checkpoint
 
 Diagnostic-only change b75bb1f is insufficient: the first connected run reached its ten-minute observation window without repair. The next candidate changes phase-specific instructions and authoritative source/review context while retaining Kimi K2.6, thinking disabled and temperature 0.6. Agreement generation receives 12,000 output tokens; code generation remains 6,000. The evaluator's extra full-source projection is removed to match the actual coordinator. Targeted tests pass; repeated model runs, complete durable journeys and beta delivery remain unverified. See the latest progress entry and private experiment journal; 7R.02–06 remain unchecked.
+
+
+### Provisional saved-authoring configuration
+
+After the phase/context pilot and retained unsuccessful format experiments, saved authoring now has a Kimi K3/low-reasoning candidate, with at least 16,000 output tokens. Native editing/vision stay on K2.6. Initial K3 planning replay passes four of six first decisions and rejects two extra-field errors, so neither 7R.02 nor the first-decision acceptance target is complete. Next is actual durable execution and repair. Per-request configuration/costs and every negative result remain in private journals and the current progress checkpoint. No beta delivery yet.

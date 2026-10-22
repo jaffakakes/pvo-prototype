@@ -3,7 +3,10 @@ import { AuthoringRepairError } from "./repairFeedback.js";
 /** A cut-off decision needs saved repair, not a provider-outage retry of the same prompt. */
 export async function generateAuthoringResponse(models, request, signal) {
   try {
-    return await models.generate(request, signal);
+    return await models.generate(
+      { ...request, purpose: "saved_authoring" },
+      signal,
+    );
   } catch (error) {
     if (error?.code !== "model_output_truncated") throw error;
     throw new AuthoringRepairError(

@@ -61,7 +61,7 @@ test("the durable model bridge forwards JSON and cancellation without local tran
     return response();
   }, request);
 });
-test("capture uses unchanged application model/settings and retains no credential", async () => {
+test("native capture records application editing settings and retains no credential", async () => {
   const saved = [];
   let sent;
   const models = await measuredModels(async (row) => saved.push(row), {
@@ -83,6 +83,25 @@ test("capture uses unchanged application model/settings and retains no credentia
   assert.equal(saved.at(-1).outcome, "returned");
   assert.equal(saved.at(-1).usage.input, 10);
 });
+test("saved-authoring capture verifies its declared model and prices that model's usage", async () => {
+  const saved = [];
+  const models = await measuredModels(async (row) => saved.push(row), {
+    apiKey: "private-key",
+    fetchImpl: async (_url, options) => {
+      assert.equal(JSON.parse(options.body).model, "kimi-k3");
+      return response("kimi-k3");
+    },
+  });
+  await models.generate(
+    { messages: [], schema: {}, maxTokens: 1200, purpose: "saved_authoring" },
+    AbortSignal.timeout(1000),
+  );
+  const attempt = saved.at(-1);
+  assert.equal(attempt.configuration.model, "kimi-k3");
+  assert.equal(attempt.usage.estimatedUsd, (10 * 3 + 5 * 15) / 1000000);
+  assert.equal(attempt.request.max_tokens, 16000);
+});
+
 test("a substituted model or provider failure cannot be counted as a valid baseline", async () => {
   const saved = [];
   const wrong = await measuredModels(async (row) => saved.push(row), {

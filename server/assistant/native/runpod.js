@@ -3,6 +3,7 @@ import { requestRunpodJson } from "./runpodHttp.js";
 import { NativeAssistantError } from "./errors.js";
 
 export const RUNPOD_NATIVE_MODEL = "kimi-k2.6";
+export const RUNPOD_AUTHORING_MODEL = "kimi-k3";
 const ENDPOINT_PATH = "/v2/moonshot-kimi/openai/v1/chat/completions";
 const invalidResponse = () => new NativeAssistantError("model_output_invalid");
 
@@ -13,15 +14,23 @@ export function runpodNativeModels(
 ) {
   if (typeof apiKey !== "string" || !apiKey.trim())
     throw new HttpError(503, "The assistant model is not configured.");
-  const complete = async (payload, signal) => {
+  const complete = async (payload, signal, authoring = false) => {
     const result = await requestRunpodJson(
       ENDPOINT_PATH,
       {
-        model: RUNPOD_NATIVE_MODEL,
         stream: false,
         ...payload,
-        thinking: { type: "disabled" },
-        temperature: 0.6,
+        ...(authoring
+          ? {
+              model: RUNPOD_AUTHORING_MODEL,
+              reasoning_effort: "low",
+              temperature: 1,
+            }
+          : {
+              model: RUNPOD_NATIVE_MODEL,
+              thinking: { type: "disabled" },
+              temperature: 0.6,
+            }),
       },
       apiKey,
       signal,
@@ -50,9 +59,9 @@ export function runpodNativeModels(
   return {
     textAttemptMs: 60000,
     frameAttemptMs: 60000,
-    generate: async ({ messages, schema, maxTokens }, signal) => ({
-      // This endpoint rejects the planners' union schemas. JSON mode carries the
-      // same schema in trusted instructions; each caller still validates the result.
+    generate: async ({ messages, schema, maxTokens, purpose }, signal) => ({
+      // The endpoint does not enforce these union schemas. Local validation
+      // remains authoritative for both the native editor and saved authoring.
       content: await complete(
         {
           messages: [
@@ -62,10 +71,15 @@ export function runpodNativeModels(
             },
             ...messages,
           ],
-          max_tokens: maxTokens,
+          // Saved authoring reserves room for reasoning as well as final JSON.
+          max_tokens:
+            purpose === "saved_authoring"
+              ? Math.max(16000, maxTokens)
+              : maxTokens,
           response_format: { type: "json_object" },
         },
         signal,
+        purpose === "saved_authoring",
       ),
     }),
     describeFrame: ({ question, image }, signal) =>

@@ -4,9 +4,19 @@ import { createHash } from "node:crypto";
 import {
   runpodNativeModels,
   RUNPOD_NATIVE_MODEL,
+  RUNPOD_AUTHORING_MODEL,
 } from "../../../server/assistant/native/runpod.js";
 import { usageEstimate } from "../model-comparison/providers.mjs";
 
+export const authoringConfiguration = Object.freeze({
+  model: RUNPOD_AUTHORING_MODEL,
+  reasoning: "low",
+  temperature: 1,
+  minimumOutputTokens: 16000,
+  inputRate: 3,
+  cachedRate: 3,
+  outputRate: 15,
+});
 export const baseline = Object.freeze({
   model: RUNPOD_NATIVE_MODEL,
   thinking: "disabled",
@@ -14,10 +24,14 @@ export const baseline = Object.freeze({
   inputRate: 0.95,
   cachedRate: 0.95,
   outputRate: 4,
+  authoring: authoringConfiguration,
 });
 
 /** Capture the actual provider wire request without retaining headers or credentials. */
-export async function measuredFetch(save, { apiKey, fetchImpl = fetch } = {}) {
+export async function measuredFetch(
+  save,
+  { apiKey, fetchImpl = fetch, candidate } = {},
+) {
   apiKey ??= JSON.parse(
     await readFile(
       homedir() + "/.codex/secure/restyle-beta-backend/worker-secrets.json",
@@ -34,10 +48,18 @@ export async function measuredFetch(save, { apiKey, fetchImpl = fetch } = {}) {
         "Evaluation credentials are restricted to the configured model endpoint.",
       );
     const request = JSON.parse(options.body);
+    const configuration =
+      candidate ??
+      (request.model === authoringConfiguration.model
+        ? authoringConfiguration
+        : baseline);
+    if (request.model !== configuration.model)
+      throw new Error("The evaluation did not declare this requested model.");
     const attempt = {
       sequence: ++sequence,
       startedAt: new Date().toISOString(),
       request,
+      configuration,
       promptDigest: createHash("sha256").update(options.body).digest("hex"),
     };
     await save(structuredClone(attempt));
@@ -67,14 +89,14 @@ export async function measuredFetch(save, { apiKey, fetchImpl = fetch } = {}) {
         status: response.status,
         response: body,
         returnedModel: body?.model ?? null,
-        usage: usageEstimate(baseline, body?.usage),
+        usage: usageEstimate(configuration, body?.usage),
         outcome: response.ok ? "returned" : "provider_rejected",
       });
       await save(structuredClone(attempt));
       if (
         response.ok &&
-        body?.model !== baseline.model &&
-        !body?.model?.startsWith(baseline.model + "-")
+        body?.model !== configuration.model &&
+        !body?.model?.startsWith(configuration.model + "-")
       )
         throw new Error("Provider model mismatch; baseline is invalid.");
       return new Response(bytes, {
