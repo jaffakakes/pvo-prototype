@@ -60,7 +60,7 @@ if (values.cases) {
   builds = builds.filter((scenario) => ids.includes(scenario.id));
 }
 const report = {
-  protocol: "restyle-capability-v1.3",
+  protocol: "restyle-capability-v1.4",
   selected,
   predecessor: previous ? positionals[1] : null,
   experiment: values.label ?? null,

@@ -81,3 +81,7 @@ The b7db4c0 live email reaches Ready in ten calls; its Try receipt is visible wi
 ### Fresh connected journey accepted
 
 7R.04 is verified by the fresh live ten-call email journey on82b0090, actual creator approval/export/anonymous viewer and saved-result reopen, plus the preserved missing/revoked and interruption checks. One controlled send, no resend, all cleanup verified; $0.397275 with no unknown usage. The generated source/agreement/component remain unchanged. Final105 started in `run-2026-10-22T04-35-42.038Z-358d9579`; 7R.02/05/06 remain pending.
+
+### Rejected repeated candidate
+
+The82b0090 matrix is stopped after58 completed cases because P01.3 omits the frozen required guestbook read operation. All outputs and one interrupted attempt are retained. Evaluatorv1.4 separately corrects missing-account capability feedback using actual validators and proper batch halting, with four regression cases passing. No rubric is relaxed and no failed application attempt will be resumed as a pass. The next application candidate must complete a fresh105 and current UI journeys before beta delivery.
