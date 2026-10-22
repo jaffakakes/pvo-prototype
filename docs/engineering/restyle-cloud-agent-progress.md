@@ -1,5 +1,13 @@
 # Restyle cloud agent: current progress and handoff log
 
+## Legal long receipts expose a reply-boundary defect — 22 October 2026
+
+The fresh `1e4133b` guestbook (`durable-2026-10-22T05-29-03.422Z-077d773a`) passes the full generated UI/Try/export/anonymous-viewer/reopen journey in six calls ($0.305628, no unknown usage), with independent reads and all18 resources cleaned. Its screenshot retains empty numbered slots when fewer than three entries exist; saved replies replay rather than refresh. The fresh email (`durable-2026-10-22T05-34-14.639Z-792d207d`) passes the normal journey in nine calls and repairs one invalid capability reference itself. Try sends nothing; the public viewer sends once through the controlled provider and reopening does not resend. All resources are cleaned.
+
+Additional source review catches a valid-boundary defect: the email repeats its up-to512-byte receipt ID inside a512-byte message. `receipt-boundary-2026-10-22T05-39-16.765Z` confirms both ASCII and Unicode receipts produce574-byte messages rejected by the actual result validator. Four network-disabled Docker executions are cleaned. The normal browser result stays recorded as passing, but the candidate's overall semantic grade is failed; no original output, case or rubric changes.
+
+The application guidance now accounts for composed-string byte bounds and prefers separate fixed status/unchanged receipt fields. The durable email evaluator adds legal512-byte ASCII/Unicode continuations against the exact checked package before browser acceptance; this supplements the unchanged21-scenario matrix. Twelve focused checks pass, including accepting intact boundary receipts and rejecting overflow/truncation. The preceding21 optional Docker/browser checks also pass with zero skips. Next: verify fresh email and guestbook journeys on the corrected candidate, run the complete unchanged105, rebuild/check and deliver beta. All unfinished7R tasks remain unchecked; staged6424e0a995630521 is not deployed.
+
 ## Explicit setup availability passes five live repeats — 22 October 2026
 
 Candidate `b5107b4` passes all five targeted P07 repeats in `run-2026-10-22T05-22-53.035Z-52d8c8ef`: each first decision satisfies the closed contract, and each final answer truthfully explains unavailable private setup, preserves the requested outcome and offers an actual creator choice without fake forms, credentials or sending claims. Original outputs and separate semantic grades are preserved; this diagnostic does not replace the final105.

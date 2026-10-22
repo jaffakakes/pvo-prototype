@@ -16,6 +16,7 @@ import { isolatedTaskEffects } from "./effects.mjs";
 import { createDurableBrowser } from "./durable-browser.mjs";
 import { checkDurableDelivery } from "./durable-delivery.mjs";
 import { controlledEmail, checkEmailDelivery } from "./durable-email.mjs";
+import { checkEmailReceiptBounds } from "./email-boundary.mjs";
 import {
   durableScenario,
   seedDurableScenario,
@@ -217,6 +218,30 @@ try {
     const result = await fixture.request(path(task) + "/result");
     expectStatus(result, 200);
     report.preparedResult = result.body;
+    if (email) {
+      const identity = result.body.attachment.receipt.identity;
+      const artifact = report["validation-state"].artifacts.find(
+        (row) => row.artifact.identity.packageDigest === identity.packageDigest,
+      )?.artifact;
+      if (!artifact)
+        throw new Error(
+          "The prepared email result has no matching checked package.",
+        );
+      report.receiptBoundaryChecks = [];
+      await checkEmailReceiptBounds(
+        artifact.agreement,
+        (invocation) =>
+          sandbox.execute(
+            artifact.package.files,
+            artifact.package.entrypoint,
+            invocation,
+          ),
+        async (result) => {
+          report.receiptBoundaryChecks.push(result);
+          await save();
+        },
+      );
+    }
     await fixture.restart();
     const restored = await fixture.request(path(task) + "/result");
     expectStatus(restored, 200);

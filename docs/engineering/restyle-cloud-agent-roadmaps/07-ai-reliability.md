@@ -85,3 +85,7 @@ The b7db4c0 live email reaches Ready in ten calls; its Try receipt is visible wi
 ### Rejected repeated candidate
 
 The82b0090 matrix is stopped after58 completed cases because P01.3 omits the frozen required guestbook read operation. All outputs and one interrupted attempt are retained. Evaluatorv1.4 separately corrects missing-account capability feedback using actual validators and proper batch halting, with four regression cases passing. No rubric is relaxed and no failed application attempt will be resumed as a pass. The next application candidate must complete a fresh105 and current UI journeys before beta delivery.
+
+### Declared receipt bounds included
+
+The normal b5107b4 email journey passes, but a supplemental test confirms a valid512-byte receipt overflows its composed status message. Both original journey and failed boundary evidence are retained. Guidance now preserves the whole provider ID separately from fixed status text, and complete email acceptance additionally checks512-byte ASCII/Unicode receipts against the exact generated package. Original21 cases and rubrics are unchanged; fresh journeys/full105 and rebuilt beta remain pending.
