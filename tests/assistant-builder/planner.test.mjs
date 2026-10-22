@@ -5,6 +5,7 @@ import {
   builderToolDefinitions,
   parseBuilderDecision,
   builderDecisionSchema,
+  builderResearchDefinitions,
 } from "../../packages/pvo-assistant/builder/index.js";
 import { planSavedBuild } from "../../server/assistant/builder/planner.js";
 import {
@@ -18,6 +19,55 @@ const stage = (hasAgreement) => ({
 });
 const definitions = builderToolDefinitions(BUILDER_TOOL_KINDS);
 const signal = () => new AbortController().signal;
+
+test("trusted setup availability agrees with the model context, schema and local admission without exposing a key", async () => {
+  const decision = {
+    kind: "connect_account",
+    setup: { provider: "agentmail", recipient: "friend@example.com" },
+    purpose: "Send the requested fixed thank-you email.",
+  };
+  const privateKey = "a".repeat(64);
+  for (const available of [false, true]) {
+    let seen;
+    const planned = planSavedBuild(
+      {
+        input: {
+          request: "Send an email",
+          examples: [],
+          context: { components: [] },
+        },
+        questions: [],
+      },
+      { agreement: null, feedback: [], workspace: null },
+      builderResearchDefinitions(["connections_read"]),
+      available ? { ACCOUNT_CONNECTION_KEY: privateKey } : {},
+      signal(),
+      null,
+      {
+        generate: async (request) => {
+          seen = request;
+          return { content: JSON.stringify(decision) };
+        },
+      },
+    );
+    if (available) assert.deepEqual(await planned, decision);
+    else
+      await assert.rejects(planned, (error) => {
+        assert.equal(error.code, "invalid_result");
+        assert.match(error.feedback.message, /unavailable/);
+        return true;
+      });
+    const data = JSON.parse(
+      seen.messages.find((message) => message.role === "user").content,
+    );
+    assert.equal(data.privateAccountSetupAvailable, available);
+    assert.equal(
+      JSON.stringify(seen.schema).includes('"connect_account"'),
+      available,
+    );
+    assert.equal(JSON.stringify(seen.messages).includes(privateKey), false);
+  }
+});
 const review = {
   kind: "review",
   libraries: [],

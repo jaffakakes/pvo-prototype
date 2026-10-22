@@ -27,6 +27,7 @@ export async function planSavedBuild(
   models = nativeModels(env),
 ) {
   const hasAgreement = context.agreement !== null;
+  const privateAccountSetupAvailable = connectionSetupAvailable(env);
   if (
     new TextEncoder().encode(JSON.stringify(context.feedback ?? [])).length >
     BUILDER_LIMITS.feedbackBytes
@@ -44,6 +45,7 @@ export async function planSavedBuild(
     {
       input: task.input,
       questions: task.questions,
+      privateAccountSetupAvailable,
       evidence,
       build: context,
       tools: definitions
@@ -66,7 +68,7 @@ export async function planSavedBuild(
         builderDecisionSchema(
           hasAgreement,
           definitions,
-          connectionSetupAvailable(env),
+          privateAccountSetupAvailable,
         ),
       ),
       maxTokens: hasAgreement ? 6000 : 12000,
@@ -95,7 +97,7 @@ export async function planSavedBuild(
     if (decision?.kind === "history") return parseEvidenceRequest(decision);
     const parsed = parseBuilderDecision(decision, {
       hasAgreement,
-      connectionSetup: connectionSetupAvailable(env),
+      connectionSetup: privateAccountSetupAvailable,
       available: definitions.map((tool) => tool.kind),
     });
     const review = parsed.kind === "review" ? parsed : parsed.review;

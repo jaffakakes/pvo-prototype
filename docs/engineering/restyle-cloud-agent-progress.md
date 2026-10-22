@@ -1,5 +1,11 @@
 # Restyle cloud agent: current progress and handoff log
 
+## Deployment setup availability is explicit — 22 October 2026
+
+The6add362 targeted pilot (`run-2026-10-22T05-15-27.795Z-c74345dc`) verifies both completed guestbook plans now include independent reads. One missing-account answer correctly explains unavailable setup after three calls; another offers private forms that this deployment cannot open. The partial pilot is retained and stopped with one in-flight P01 attempt unscored. Close review also corrects the earlier c9c52bc P07.2 grade from pass to fail for the same unavailable-form claim; its previous grade file and hash are preserved. No rubric or model output is altered.
+
+The real builder now supplies privateAccountSetupAvailable from the same trusted configuration check used by its schema and local admission, with explicit instructions for false. Only the boolean enters model context, never the key. A regression checks context/schema/parser agreement and secret absence for enabled and disabled deployments. All21 focused checks pass. The preceding full source suite passed1,774 tests with four optional skips. Exact next: five live unavailable-setup repeats, fresh complete generated storage/email journeys, and the final unchanged105 on the accepted candidate, then verified beta. Current7R.02/05/06 remain unchecked; no release yet.
+
 ## Persistent retrieval and unavailable-research guidance corrected — 22 October 2026
 
 The actual-capability continuation diagnostic on c9c52bc (`run-2026-10-22T05-10-16.945Z-4482706f`) completes two P07 attempts: one still repeats unavailable reads and exhausts six turns, the other asks a concrete connection question in two. Both original results and separate semantic grades are retained. This confirms a genuine research-planning weakness after fixing the runner; it is not excluded as infrastructure.
