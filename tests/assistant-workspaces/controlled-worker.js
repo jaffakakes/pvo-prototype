@@ -61,7 +61,7 @@ export class TestWorkspace extends AssistantWorkspace {
     this.ctx.abort("Controlled workspace restart");
   }
   effectTimeoutMs() {
-    return 150;
+    return this.env.LIVE_MODEL ? super.effectTimeoutMs() : 150;
   }
   vm() {
     return JSON.parse(

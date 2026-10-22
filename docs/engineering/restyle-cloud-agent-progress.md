@@ -1,5 +1,14 @@
 # Restyle cloud agent: current progress and handoff log
 
+## Durable evaluation preflight verified — 22 October 2026
+
+The local reliability driver now runs the actual task/planner/repair/SQLite/validation/hosting/attachment path, forwarding only model inference to Runpod. Every generated workspace command and service invocation uses the network-disabled Docker sandbox; model-written code never enters the host Node fixture. It explicitly excludes extra Node libraries in this test adapter. This is a local coordinator proof, not a new Fly or browser proof.
+
+Two preflight checks pass, including a complete controlled-response plan → source → generated test → four independent behavior steps → inactive hosting → compiled attachment journey and immutable-result recovery after a full Worker restart. The other check proves malformed actual provider output reaches saved validator feedback and is repaired on the next real planner call. Credential forwarding is restricted to the configured Runpod model URL and excludes headers from journals. Model replies were controlled in these preflight tests; paid durable inference is next. A misplaced optional-test registration was caught from the test count and corrected before paid inference; both tests now run and pass.
+
+Next: finish the diagnostic-only model comparison, run the cbfa8be candidate on P01/P02/P03/B04/R01, then `node scripts/checks/restyle-capability/durable.mjs guestbook`. Private journals record all requests, source, results, local storage and container cleanup. 7R.02–06 remain unchecked; no beta deployment or new email.
+
+
 ## Reliability candidate: planning and progress corrections — 22 October 2026
 
 **7R.02/03 are in progress, not complete.** The diagnostic-only experiment at b75bb1f is retained under private journal `restyle-capability/run-2026-10-22T01-41-08.427Z-80f94466/report.json`. B04.1 exhausted its ten-minute observation window after 83 calls: generated source default-exported execute and skipped the initial account request; repeated own-test successes did not resolve its independent failure. Remaining repetitions are still running. This disproves sufficiency of the diagnostic-only fix.

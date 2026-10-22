@@ -16,8 +16,8 @@ export const baseline = Object.freeze({
   outputRate: 4,
 });
 
-/** Observe the unchanged application adapter. Never retain HTTP headers or credentials. */
-export async function measuredModels(save, { apiKey, fetchImpl = fetch } = {}) {
+/** Capture the actual provider wire request without retaining headers or credentials. */
+export async function measuredFetch(save, { apiKey, fetchImpl = fetch } = {}) {
   apiKey ??= JSON.parse(
     await readFile(
       homedir() + "/.codex/secure/restyle-beta-backend/worker-secrets.json",
@@ -25,65 +25,79 @@ export async function measuredModels(save, { apiKey, fetchImpl = fetch } = {}) {
     ),
   ).RUNPOD_API_KEY;
   let sequence = 0;
-  return runpodNativeModels(apiKey, {
-    fetch: async (url, options) => {
-      const request = JSON.parse(options.body);
-      const attempt = {
-        sequence: ++sequence,
-        startedAt: new Date().toISOString(),
-        request,
-        promptDigest: createHash("sha256").update(options.body).digest("hex"),
-      };
-      await save(structuredClone(attempt));
-      const start = performance.now();
+  return async (url, options) => {
+    if (
+      String(url) !==
+      "https://api.runpod.ai/v2/moonshot-kimi/openai/v1/chat/completions"
+    )
+      throw new Error(
+        "Evaluation credentials are restricted to the configured model endpoint.",
+      );
+    const request = JSON.parse(options.body);
+    const attempt = {
+      sequence: ++sequence,
+      startedAt: new Date().toISOString(),
+      request,
+      promptDigest: createHash("sha256").update(options.body).digest("hex"),
+    };
+    await save(structuredClone(attempt));
+    const start = performance.now();
+    try {
+      const headers = new Headers(options.headers);
+      headers.set("Authorization", `Bearer ${apiKey}`);
+      const response = await fetchImpl(url, { ...options, headers });
+      // Copy the bounded provider body once so capture cannot leak an unconsumed tee.
+      const chunks = [];
+      let size = 0;
+      for await (const chunk of response.body) {
+        size += chunk.length;
+        if (size > 128 * 1024)
+          throw new Error("Evaluation provider body exceeded the app bound.");
+        chunks.push(chunk);
+      }
+      const bytes = Buffer.concat(chunks);
+      let body = null;
       try {
-        const response = await fetchImpl(url, options);
-        // Copy the bounded provider body once so capture cannot leak an unconsumed tee.
-        const chunks = [];
-        let size = 0;
-        for await (const chunk of response.body) {
-          size += chunk.length;
-          if (size > 128 * 1024)
-            throw new Error("Evaluation provider body exceeded the app bound.");
-          chunks.push(chunk);
-        }
-        const bytes = Buffer.concat(chunks);
-        let body = null;
-        try {
-          body = JSON.parse(bytes.toString());
-        } catch {
-          /* App validates malformed bodies. */
-        }
+        body = JSON.parse(bytes.toString());
+      } catch {
+        /* App validates malformed bodies. */
+      }
+      Object.assign(attempt, {
+        elapsedMs: performance.now() - start,
+        status: response.status,
+        response: body,
+        returnedModel: body?.model ?? null,
+        usage: usageEstimate(baseline, body?.usage),
+        outcome: response.ok ? "returned" : "provider_rejected",
+      });
+      await save(structuredClone(attempt));
+      if (
+        response.ok &&
+        body?.model !== baseline.model &&
+        !body?.model?.startsWith(baseline.model + "-")
+      )
+        throw new Error("Provider model mismatch; baseline is invalid.");
+      return new Response(bytes, {
+        status: response.status,
+        headers: response.headers,
+      });
+    } catch (error) {
+      if (!attempt.outcome) {
         Object.assign(attempt, {
           elapsedMs: performance.now() - start,
-          status: response.status,
-          response: body,
-          returnedModel: body?.model ?? null,
-          usage: usageEstimate(baseline, body?.usage),
-          outcome: response.ok ? "returned" : "provider_rejected",
+          outcome: "transport_unknown",
+          usage: null,
         });
         await save(structuredClone(attempt));
-        if (
-          response.ok &&
-          body?.model !== baseline.model &&
-          !body?.model?.startsWith(baseline.model + "-")
-        )
-          throw new Error("Provider model mismatch; baseline is invalid.");
-        return new Response(bytes, {
-          status: response.status,
-          headers: response.headers,
-        });
-      } catch (error) {
-        if (!attempt.outcome) {
-          Object.assign(attempt, {
-            elapsedMs: performance.now() - start,
-            outcome: "transport_unknown",
-            usage: null,
-          });
-          await save(structuredClone(attempt));
-        }
-        throw error;
       }
-    },
+      throw error;
+    }
+  };
+}
+
+/** Use the application adapter and the same recorded transport as durable evaluation. */
+export async function measuredModels(save, options) {
+  return runpodNativeModels("evaluation-transport", {
+    fetch: await measuredFetch(save, options),
   });
 }

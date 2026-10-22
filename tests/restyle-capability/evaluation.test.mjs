@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { measuredModels } from "../../scripts/checks/restyle-capability/provider.mjs";
+import {
+  measuredModels,
+  measuredFetch,
+} from "../../scripts/checks/restyle-capability/provider.mjs";
 import {
   planningProbes,
   editorProbes,
@@ -75,6 +78,40 @@ test("a substituted model or provider failure cannot be counted as a valid basel
   );
   assert.equal(saved.at(-1).outcome, "transport_unknown");
   assert.equal(saved.at(-1).usage, null);
+});
+
+test("durable inference forwarding restricts the credential destination and excludes headers from journals", async () => {
+  const saved = [];
+  let calls = 0;
+  const send = await measuredFetch(async (row) => saved.push(row), {
+    apiKey: "private-evaluation-key",
+    fetchImpl: async (_url, options) => {
+      calls++;
+      assert.equal(
+        options.headers.get("authorization"),
+        "Bearer private-evaluation-key",
+      );
+      return response();
+    },
+  });
+  const options = {
+    method: "POST",
+    headers: { authorization: "Bearer fixture-placeholder" },
+    body: JSON.stringify({ model: "kimi-k2.6", messages: [] }),
+  };
+  await assert.rejects(
+    send("https://unrelated.example/model", options),
+    /restricted/,
+  );
+  assert.equal(calls, 0);
+  assert.equal(saved.length, 0);
+  await send(
+    "https://api.runpod.ai/v2/moonshot-kimi/openai/v1/chat/completions",
+    options,
+  );
+  assert.equal(calls, 1);
+  assert.ok(!JSON.stringify(saved).includes("private-evaluation-key"));
+  assert.ok(!JSON.stringify(saved).includes("fixture-placeholder"));
 });
 test("frozen fixtures match current request, feedback and agreement contracts", () => {
   const plans = planningProbes();

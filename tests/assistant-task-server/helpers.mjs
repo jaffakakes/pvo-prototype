@@ -20,6 +20,8 @@ export async function taskFixture({
   storage = true,
   broken = false,
   planner = null,
+  modelFetch = null,
+  nodeEffect = null,
   services = false,
   providerControl = null,
   workspaces = false,
@@ -35,6 +37,10 @@ export async function taskFixture({
   productionLeases = false,
   clerk = null,
 } = {}) {
+  if (modelFetch && (!nodeEffect || planner))
+    throw new Error(
+      "Live-model fixtures require an isolated Node effect and the real planner.",
+    );
   modules ??= bundleWorkerModules({
     stdin: {
       resolveDir: process.cwd(),
@@ -116,7 +122,7 @@ export async function taskFixture({
       pausePlanning() { this.planningPaused = true; }
       async resumePlanning() { this.planningPaused = false; await this.scheduleMaintenance(this.now()); }
       // Real host-clock diagnostics seed authoring manually; only service alarms should run automatically.
-      async alarm() { if (!this.planningPaused && (!this.env.REAL_CLOCK || this.env.CONTROLLED_PLAN)) return super.alarm(); }
+      async alarm() { if (!this.planningPaused && (!this.env.REAL_CLOCK || this.env.CONTROLLED_PLAN || this.env.LIVE_MODEL)) return super.alarm(); }
       stepTimeoutMs() { return this.env.CONTROLLED_PLAN ? 1000 : super.stepTimeoutMs(); }
       leaseMs(task) { return this.env.CONTROLLED_PLAN && !this.env.PRODUCTION_LEASES ? 1500 : super.leaseMs(task); }
       async plan(task, signal, input) {
@@ -125,7 +131,7 @@ export async function taskFixture({
         if (!response.ok) throw Object.assign(new Error("Controlled model failure"), {status:response.status});
         return response.json();
       }
-      providerTimeoutMs() { return 500; }
+      providerTimeoutMs() { return this.env.LIVE_MODEL ? super.providerTimeoutMs() : 500; }
       serviceProvider() {
         if (this.providerDisabled) return null;
         const provider = super.serviceProvider();
@@ -146,7 +152,7 @@ export async function taskFixture({
         };
         return { publish: value => call("publish", value), lookup: value => call("lookup", value), cancel: value => call("cancel", value) };
       }
-      workspaceTimeoutMs() { return 500; }
+      workspaceTimeoutMs() { return this.env.LIVE_MODEL ? super.workspaceTimeoutMs() : 500; }
       workspaceProvider() {
         if (this.workspacesDisabled) return null;
         const provider = super.workspaceProvider();
@@ -383,13 +389,23 @@ export async function taskFixture({
           : {}),
         BROKEN: broken,
         CONTROLLED_PLAN: Boolean(planner),
+        LIVE_MODEL: Boolean(modelFetch),
+        ...(modelFetch
+          ? {
+              ASSISTANT_PROVIDER: "runpod",
+              RUNPOD_API_KEY: "evaluation-transport",
+            }
+          : {}),
         PRODUCTION_LEASES: productionLeases,
         CONTROLLED_CLOCK: clock,
         CONTROLLED_SPENDING: spending,
       },
-      ...(clerk ? { outboundService: clerk.fetch } : {}),
+      ...(modelFetch || clerk
+        ? { outboundService: modelFetch ?? clerk.fetch }
+        : {}),
       ...(services ||
       planner ||
+      modelFetch ||
       providerControl ||
       workspaces ||
       researchFetch ||
@@ -399,7 +415,7 @@ export async function taskFixture({
       draftControl
         ? {
             serviceBindings: {
-              NODE_FIXTURE: fixtureNodeEffect,
+              NODE_FIXTURE: nodeEffect ?? fixtureNodeEffect,
               ...(connectionFetch ? { CONNECTION_API: connectionFetch } : {}),
               ...(planner ? { PLANNER: planner } : {}),
               ...(validationControl
@@ -445,7 +461,7 @@ export async function taskFixture({
                     },
                   }
                 : {}),
-              ...(planner
+              ...(planner || modelFetch
                 ? {
                     ASSISTANT_BUDGET: {
                       className: "TestAssistantBudget",
