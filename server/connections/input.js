@@ -29,6 +29,13 @@ export function connectionCommand(kind, value) {
         "Connection revision",
       );
       value = { ...value, setup: parseConnectionSetup(value.setup) };
+      if (value.setup.provider === "agentmail" && "recipient" in value.setup) {
+        if (value.token !== "")
+          throw new Error("Use the saved agent identity.");
+        return structuredClone(value);
+      }
+      if (["agentmail", "agentphone"].includes(value.setup.provider))
+        throw new Error("Use private agent identity setup.");
       if (value.setup.provider === "resend") parseResendCredential(value.token);
       else if (
         typeof value.token !== "string" ||

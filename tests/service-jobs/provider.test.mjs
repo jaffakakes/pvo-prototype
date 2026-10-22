@@ -16,32 +16,39 @@ import {
 } from "./email.fixture.mjs";
 const token = JSON.stringify({ key: EMAIL_KEY, webhookSecret: WEBHOOK_SECRET });
 
-test("Resend transport rejects redirects, reflected keys, oversized results and hung fetch/body promises", async () => {
-  for (const fetcher of [
-    async () =>
-      new Response(null, {
-        status: 302,
-        headers: { Location: "https://bad.example" },
-      }),
-    async () => Response.json({ token: EMAIL_KEY }),
-    async () => Response.json({ data: "x".repeat(65537) }),
-    () => new Promise(() => {}),
-    async () =>
-      new Response(
-        new ReadableStream({
-          pull() {
-            return new Promise(() => {});
-          },
+test(
+  "Resend transport rejects redirects, reflected keys, oversized results and hung fetch/body promises",
+  { timeout: 5000 },
+  async (t) => {
+    // Node 22's timeout signal does not keep the loop alive; these stubs have no socket.
+    const keepAlive = setInterval(() => {}, 1000);
+    t.after(() => clearInterval(keepAlive));
+    for (const fetcher of [
+      async () =>
+        new Response(null, {
+          status: 302,
+          headers: { Location: "https://bad.example" },
         }),
-        { headers: { "Content-Type": "application/json" } },
-      ),
-  ]) {
-    await assert.rejects(
-      resendAdapter(fetcher, 30).verify(emailSetup, token),
-      (error) => error.status === 503 && !error.message.includes(EMAIL_KEY),
-    );
-  }
-});
+      async () => Response.json({ token: EMAIL_KEY }),
+      async () => Response.json({ data: "x".repeat(65537) }),
+      () => new Promise(() => {}),
+      async () =>
+        new Response(
+          new ReadableStream({
+            pull() {
+              return new Promise(() => {});
+            },
+          }),
+          { headers: { "Content-Type": "application/json" } },
+        ),
+    ]) {
+      await assert.rejects(
+        resendAdapter(fetcher, 30).verify(emailSetup, token),
+        (error) => error.status === 503 && !error.message.includes(EMAIL_KEY),
+      );
+    }
+  },
+);
 
 test("uncertain email reconciliation stops before the provider's 24-hour idempotency expiry", async () => {
   let sends = 0;

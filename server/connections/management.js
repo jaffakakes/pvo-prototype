@@ -1,9 +1,12 @@
+import {
+  connectAgentEmail,
+  agentEmailSecret,
+  agentEmailSourceValid,
+} from "./agentEmailConnection.js";
 import { accountServiceEvent } from "./serviceEvents.js";
 import { accountServiceCommand } from "./serviceCalls.js";
-import {
-  GITHUB_OPERATIONS,
-  connectionScopeKey,
-} from "../../packages/pvo-assistant/connections/index.js";
+import { connectionScopeKey } from "../../packages/pvo-assistant/connections/index.js";
+import { connectionGrant } from "./grants.js";
 import { HttpError } from "../http.js";
 import { taskId } from "../assistant/tasks/input.js";
 import { connectionCommand } from "./input.js";
@@ -30,8 +33,9 @@ export class AccountConnections {
       const current = this.get(id);
       if (
         current.connection.status === "connected" &&
-        current.details.expiresAt !== null &&
-        current.details.expiresAt <= this.coordinator.now()
+        ((current.details.expiresAt !== null &&
+          current.details.expiresAt <= this.coordinator.now()) ||
+          !agentEmailSourceValid(this, current))
       )
         this.invalidate(current, "expired");
     }
@@ -84,6 +88,8 @@ export class AccountConnections {
     return this.get(current.id);
   }
   async secret(ownerId, current) {
+    if (current.details.identitySource)
+      return agentEmailSecret(this, ownerId, current);
     if (current.connection.status !== "connected" || !current.credential)
       throw new ConnectionAccessError();
     return openCredential(
@@ -178,6 +184,8 @@ export class AccountConnections {
     }
   }
   async connect(ownerId, input) {
+    if (input.setup.provider === "agentmail" && "recipient" in input.setup)
+      return connectAgentEmail(this, ownerId, input);
     const previous = this.catalog.get(input.id);
     if ((previous?.revision ?? 0) !== input.expectedRevision)
       throw new HttpError(
@@ -227,27 +235,10 @@ export class AccountConnections {
       this.catalog.save(
         {
           id: input.id,
-          name:
-            input.setup.provider === "github"
-              ? `GitHub · ${input.setup.repository}`
-              : `Email · ${input.setup.from}`,
+          ...connectionGrant(input.setup, verified.login),
           provider: input.setup.provider,
           status: "connected",
           revision,
-          permissions:
-            input.setup.provider === "resend"
-              ? ["email:send"]
-              : [
-                  "repository:read",
-                  "issues:read",
-                  ...(input.setup.access === "issues_write"
-                    ? ["issues:write"]
-                    : []),
-                ],
-          operations:
-            input.setup.provider === "github"
-              ? structuredClone(GITHUB_OPERATIONS)
-              : [],
         },
         input.expectedRevision,
       );

@@ -34,3 +34,4 @@ export { builderReviewRequest } from "./review.js";
 export { createResearchEvidence } from "./researchEvidence.js";
 
 export { createCapabilityDecision } from "./capabilityRules.js";
+export { researchFailure } from "./researchFailures.js";

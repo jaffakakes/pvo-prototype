@@ -17,7 +17,7 @@ function receipt(coordinator, task, operationId, kind) {
     row?.settled &&
       row.tool.kind === kind &&
       row.result?.status === "completed",
-    "Use completed research from this task.",
+    `Use a completed ${kind} operation from this task.`,
   );
   return parseBuilderResearchResult(row.tool, row.result).result;
 }

@@ -216,6 +216,49 @@ try {
     .getByRole("button", { name: "Disconnect", exact: true })
     .click();
   await manager.getByText("octocat · Disconnected", { exact: true }).waitFor();
+  await manager
+    .getByRole("button", { name: "Approve agent email recipient", exact: true })
+    .click();
+  await manager
+    .getByLabel("Approved recipient", { exact: true })
+    .fill("friend@example.com");
+  assert.equal(await manager.locator('input[type="password"]').count(), 0);
+  await manager
+    .getByText("This approval does not send an email.", { exact: false })
+    .waitFor();
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page
+      .getByRole("button", { name: /^(Manage|Close) connections$/ })
+      .waitFor();
+    const openConnections = page.getByRole("button", {
+      name: "Manage connections",
+      exact: true,
+    });
+    if (await openConnections.isVisible()) await openConnections.click();
+    await manager.waitFor();
+    const input = manager.getByLabel("Approved recipient", { exact: true });
+    if (!(await input.isVisible())) {
+      await manager
+        .getByRole("button", {
+          name: "Approve agent email recipient",
+          exact: true,
+        })
+        .click();
+      await input.fill("friend@example.com");
+    }
+    await input.waitFor();
+    const metrics = await input.evaluate((element) => ({
+      width: element.getBoundingClientRect().width,
+      height: element.getBoundingClientRect().height,
+      fontSize: parseFloat(getComputedStyle(element).fontSize),
+    }));
+    assert(
+      metrics.height >= 44 && metrics.fontSize >= 16 && metrics.width <= width,
+    );
+    await page.screenshot({ path: `/tmp/restyle-email-approval-${width}.png` });
+  }
+  await manager.getByRole("button", { name: "Cancel", exact: true }).click();
   const secretRows = (await fixture.control({ action: "connection-storage" }))
     .body;
   assert.equal(secretRows.length, 1);
@@ -250,6 +293,15 @@ try {
       ],
     }),
   );
+} catch (error) {
+  const failedPage = context.pages()[0];
+  if (failedPage) {
+    await failedPage.screenshot({
+      path: "/tmp/restyle-email-browser-failure.png",
+    });
+    console.error(await failedPage.locator("body").innerText());
+  }
+  throw error;
 } finally {
   await context.close();
   await browser.close();

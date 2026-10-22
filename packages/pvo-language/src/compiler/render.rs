@@ -129,7 +129,7 @@ pub(super) fn default_css() -> &'static str {
        color:#F2F0E9;font-family:'Open Sauce Sans',system-ui,sans-serif;\
        background:#15151C;border:3px solid #000;border-radius:14px;\
        box-shadow:3px 3px 0 #000;padding:12px;}\n\
-     #pvo-root .pvo-tooltip{width:max-content;max-width:220px;background:#FFD23E;color:#111;font-weight:800;font-size:13px;}\n\
+     #pvo-root .pvo-tooltip{width:max-content;max-width:220px;overflow-wrap:anywhere;background:#FFD23E;color:#111;font-weight:800;font-size:13px;}\n\
      #pvo-root .pvo-card,#pvo-root .pvo-choice,#pvo-root .pvo-form{width:208px;}\n\
      #pvo-root .pvo-choice{display:grid;gap:7px;width:176px;background:transparent;border-width:0;box-shadow:none;padding:0;}\n\
      #pvo-root .pvo-title,#pvo-root .pvo-prompt,#pvo-root .pvo-heading{margin:0 0 8px;font-weight:800;font-size:19px;}\n\

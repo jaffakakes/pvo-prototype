@@ -22,16 +22,6 @@ export async function reserveTaskBudget(env, identity) {
     identity.key,
   );
   if (result.accepted === true) return;
-  if (
-    ["model_capacity", "model_allowance"].includes(result.reason) &&
-    Number.isSafeInteger(result.retryAt)
-  )
-    throw Object.assign(
-      new Error("Saved work is waiting for model capacity."),
-      {
-        taskWait: { reason: result.reason, nextRunAt: result.retryAt },
-      },
-    );
   throw new Error("Inference reservation is closed or invalid.");
 }
 

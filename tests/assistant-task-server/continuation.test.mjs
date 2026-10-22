@@ -286,8 +286,8 @@ test(
         advanced && restarted && recoveredInference && lostPublication,
         true,
       );
-      assert.ok(waits.has("model_capacity"));
-      assert.ok(waits.has("model_allowance"));
+      assert.ok(!waits.has("model_capacity"));
+      assert.ok(!waits.has("model_allowance"));
       assert.ok(now - original.createdAt > 30 * DAY);
       assert.deepEqual(ready.input, original.input);
       assert.equal(ready.questions.length, 1);

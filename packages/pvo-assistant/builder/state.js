@@ -288,6 +288,7 @@ export function builderContext(value) {
     lastDecision = {
       kind: "tools",
       contentOmitted: true,
+      review: lastDecision.review,
       calls: lastDecision.calls.map((call) =>
         call.kind === "workspace_write"
           ? {

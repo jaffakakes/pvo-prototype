@@ -7,6 +7,12 @@ import {
   installedConnectionProvider,
 } from "../../connections/management.js";
 import { ConnectionCatalog } from "../../connections/catalog.js";
+import {
+  AgentIdentity,
+  manageAgentIdentity,
+} from "../../agent-identity/management.js";
+import { identityProvider } from "../../agent-identity/providers.js";
+import { AccountVerification } from "../../account-onboarding/verification.js";
 import { draftTestResults } from "../drafts/testResults.js";
 import { SERVICE_EXECUTION_LIMITS } from "../../../packages/pvo-assistant/services/index.js";
 import { runDraftTestPreparation } from "../drafts/testing.js";
@@ -51,6 +57,7 @@ import {
 } from "../../../packages/pvo-assistant/tasks/index.js";
 import { TaskAttempts } from "./attempts.js";
 import { planSavedTask, savedPlannerAvailable } from "./planner.js";
+import { reviewDiagnostic } from "./reviewDiagnostic.js";
 import { runAuthoringStep, settleAuthoringBudgets } from "./runner.js";
 import { DurableObject } from "cloudflare:workers";
 import { compilePvoComponent } from "../../../packages/pvo-language/worker.js";
@@ -71,7 +78,7 @@ import {
 } from "./input.js";
 
 // Saved code edits may return a full test/agreement; leave time to settle the receipt.
-const AUTHORING_TIMEOUT_MS = 180000;
+const AUTHORING_TIMEOUT_MS = TASK_LIMITS.authoringAttemptMs;
 const AUTHORING_CLAIM_MS = AUTHORING_TIMEOUT_MS + 15000;
 
 /** Private binding: only trusted routes select the object using the authenticated owner. */
@@ -84,6 +91,8 @@ export class AssistantTasks extends DurableObject {
     this.services = new ServiceCatalog(ctx.storage.sql);
     this.connections = new ConnectionCatalog(ctx.storage.sql);
     this.accountConnections = new AccountConnections(this);
+    this.agentIdentity = new AgentIdentity(this);
+    this.accountVerification = new AccountVerification(this);
     this.providers = new ProviderOperations(
       ctx.storage.sql,
       this.repository,
@@ -184,6 +193,9 @@ export class AssistantTasks extends DurableObject {
                 },
                 stepId: task.stepId,
                 repair: this.repairs.context(task),
+                review: reviewDiagnostic(
+                  this.builders.get(task.id).reviewFeedback,
+                ),
               };
             }
             case "tests":
@@ -273,6 +285,7 @@ export class AssistantTasks extends DurableObject {
   }
 
   noteTerminal(now) {
+    this.accountVerification.maintain(now);
     this.providers.noteTerminal(now);
     this.workspaces.noteTerminal(now);
   }
@@ -333,11 +346,26 @@ export class AssistantTasks extends DurableObject {
     });
   }
 
-  manageConnections(ownerId, operation) {
-    return manageAccountConnections(this, ownerId, operation);
+  async manageConnections(ownerId, operation) {
+    try {
+      return await manageAccountConnections(this, ownerId, operation);
+    } finally {
+      this.accountVerification.maintain(this.now());
+    }
   }
   connectionProvider() {
     return installedConnectionProvider();
+  }
+
+  async manageIdentity(ownerId, operation) {
+    try {
+      return await manageAgentIdentity(this, ownerId, operation);
+    } finally {
+      this.accountVerification.maintain(this.now());
+    }
+  }
+  identityProvider(provider) {
+    return identityProvider(provider);
   }
 
   manageServices(ownerId, operation) {
@@ -455,6 +483,7 @@ export class AssistantTasks extends DurableObject {
   async scheduleMaintenance(now) {
     const times = [
       this.repository.nextMaintenance(now),
+      this.accountVerification.nextWakeup(now),
       ...this.drafts.pendingStops().map((entry) => entry.stopPending.nextAt),
       this.attempts.nextBudgetWakeup(),
       this.research.nextWakeup(now),

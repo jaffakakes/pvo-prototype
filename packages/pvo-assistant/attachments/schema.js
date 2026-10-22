@@ -6,6 +6,9 @@ const object = (properties) => ({
   required: Object.keys(properties),
   additionalProperties: false,
 });
+const addComponent = operationSchemas.find(
+  (schema) => schema.properties.kind.const === "component.add",
+);
 const binding = {
   anyOf: [
     object({ kind: { const: "literal" }, value: {} }),
@@ -56,6 +59,18 @@ export const serviceAttachmentSchema = {
       target: { type: ["string", "null"], maxLength: 128 },
       input: { $ref: "#/$defs/binding" },
     }),
+    notes: {
+      type: "array",
+      maxItems: 1,
+      items: object({
+        kind: addComponent.properties.kind,
+        sceneId: addComponent.properties.sceneId,
+        componentType: { const: "tooltip" },
+        at: addComponent.properties.at,
+        duration: addComponent.properties.duration.anyOf[0],
+        source: addComponent.properties.source,
+      }),
+    },
   }),
   $defs: { binding },
 };

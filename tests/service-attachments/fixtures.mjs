@@ -1,6 +1,7 @@
 export function attachment(releaseId) {
   return {
     kind: "service.attach",
+    notes: [],
     component: {
       kind: "component.add",
       sceneId: "main",

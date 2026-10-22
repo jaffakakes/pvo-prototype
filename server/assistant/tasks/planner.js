@@ -1,3 +1,4 @@
+import { generateAuthoringResponse } from "./modelResponse.js";
 import { AuthoringRepairError } from "./repairFeedback.js";
 import { authoringMessages } from "./promptContext.js";
 import {
@@ -44,7 +45,8 @@ export async function planSavedTask(
   evidence = null,
   models = nativeModels(env),
 ) {
-  const response = await models.generate(
+  const response = await generateAuthoringResponse(
+    models,
     {
       schema: withEvidenceSchema(schema),
       temperature: 0.15,

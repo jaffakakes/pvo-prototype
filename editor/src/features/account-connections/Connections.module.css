@@ -89,3 +89,8 @@
   margin: 0;
   accent-color: var(--accent);
 }
+
+.form .recipient {
+  min-height: 44px;
+  font-size: 16px;
+}

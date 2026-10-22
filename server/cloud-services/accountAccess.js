@@ -91,7 +91,7 @@ export async function serviceAccountAccess(host, serviceId, ownerId, input) {
         connection?.scope.provider === "github"
           ? connection.scope.repository
           : connection
-            ? `${connection.scope.from} → ${connection.scope.recipient}`
+            ? `${connection.scope.provider === "agentmail" ? connection.account : connection.scope.from} → ${connection.scope.recipient}`
             : null,
       account: connection?.account ?? null,
       error,

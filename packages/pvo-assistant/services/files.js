@@ -15,7 +15,7 @@ export function parseServiceFilePath(value) {
     /^(src|tests)\/(?:[a-z0-9][a-z0-9_-]*\/)*[a-z0-9][a-z0-9_.-]*\.mjs$/.test(
       value,
     ) && !value.includes(".."),
-    "Service files need unambiguous relative .mjs paths under src/ or tests/.",
+    "Service file paths must be lowercase and begin directly with src/ or tests/, for example src/service.mjs or tests/send-thanks.test.mjs. Do not add a ./ prefix. Use only lowercase letters, digits, underscores, hyphens and filename dots; no uppercase letters, spaces or .. segments.",
   );
   return value;
 }

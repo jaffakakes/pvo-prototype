@@ -1,3 +1,4 @@
+import { AgentEmailConnectionForm } from "./AgentEmailConnectionForm";
 import { connectionScopeKey } from "../../../../packages/pvo-assistant/connections/index.js";
 import { ResendConnectionForm } from "./ResendConnectionForm";
 import { useState } from "react";
@@ -15,6 +16,7 @@ import {
 import { ConnectionForm } from "./ConnectionForm";
 import { useAccountConnections } from "./useAccountConnections";
 import styles from "./Connections.module.css";
+import { AgentIdentityPanel } from "../agent-identity/AgentIdentityPanel";
 
 type TaskSetup = {
   task: TaskRecord;
@@ -27,7 +29,7 @@ export function ConnectionsPanel({ taskSetup }: { taskSetup?: TaskSetup }) {
   const [form, setForm] = useState<{
     id: string;
     existing: AccountConnection | null;
-    provider: "github" | "resend";
+    provider: "github" | "resend" | "agentmail";
   } | null>(null);
   const pending = taskSetup?.question.connection;
   async function attach(id: string, signal: AbortSignal) {
@@ -67,105 +69,122 @@ export function ConnectionsPanel({ taskSetup }: { taskSetup?: TaskSetup }) {
         </p>
       )}
       <ul className={styles.list}>
-        {session.items.map((item) => (
-          <li key={item.connection.id}>
-            <strong>{item.connection.name}</strong>
-            {item.scope.provider === "resend" && (
+        {session.items
+          .filter(
+            (item) =>
+              item.scope.provider === "github" ||
+              item.scope.provider === "resend" ||
+              (item.scope.provider === "agentmail" &&
+                "recipient" in item.scope),
+          )
+          .map((item) => (
+            <li key={item.connection.id}>
+              <strong>{item.connection.name}</strong>
+              {"recipient" in item.scope && (
+                <p>
+                  From{" "}
+                  {item.scope.provider === "resend"
+                    ? item.scope.from
+                    : item.account}{" "}
+                  · To {item.scope.recipient}
+                </p>
+              )}
               <p>
-                From {item.scope.from} · To {item.scope.recipient}
+                {item.account} ·{" "}
+                {item.connection.status === "connected"
+                  ? "recipient" in item.scope
+                    ? "Connected · email sending allowed"
+                    : item.connection.permissions.includes("issues:write")
+                      ? "Connected · issue creation allowed"
+                      : "Connected · read only"
+                  : item.connection.status === "expired"
+                    ? "Access needs attention · reconnect"
+                    : "Disconnected"}
               </p>
-            )}
-            <p>
-              {item.account} ·{" "}
-              {item.connection.status === "connected"
-                ? item.scope.provider === "resend"
-                  ? "Connected · email sending allowed"
-                  : item.connection.permissions.includes("issues:write")
-                    ? "Connected · issue creation allowed"
-                    : "Connected · read only"
-                : item.connection.status === "expired"
-                  ? "Access needs attention · reconnect"
-                  : "Disconnected"}
-            </p>
-            {item.expiresAt !== null && (
-              <p>
-                Token expires {new Date(item.expiresAt).toLocaleDateString()}.
-              </p>
-            )}
-            <div className={styles.actions}>
-              {pending &&
-                connectionScopeKey(pending) ===
-                  connectionScopeKey(item.scope) &&
-                item.connection.status === "connected" &&
-                (pending.provider !== "github" ||
-                  pending.access !== "issues_write" ||
-                  item.connection.permissions.includes("issues:write")) && (
+              {item.expiresAt !== null && (
+                <p>
+                  Token expires {new Date(item.expiresAt).toLocaleDateString()}.
+                </p>
+              )}
+              <div className={styles.actions}>
+                {pending &&
+                  connectionScopeKey(pending) ===
+                    connectionScopeKey(item.scope) &&
+                  item.connection.status === "connected" &&
+                  (pending.provider !== "github" ||
+                    pending.access !== "issues_write" ||
+                    item.connection.permissions.includes("issues:write")) && (
+                    <button
+                      disabled={session.busy}
+                      type="button"
+                      onClick={() => {
+                        void session.run((signal) =>
+                          attach(item.connection.id, signal),
+                        );
+                      }}
+                    >
+                      Use connection and continue
+                    </button>
+                  )}
+                {item.connection.status === "connected" && (
                   <button
                     disabled={session.busy}
                     type="button"
                     onClick={() => {
-                      void session.run((signal) =>
-                        attach(item.connection.id, signal),
-                      );
+                      void session.run(async (signal) => {
+                        await controlAccountConnection(
+                          session.ownerId!,
+                          "check",
+                          item.connection,
+                          signal,
+                        );
+                        await session.reload();
+                      });
                     }}
                   >
-                    Use connection and continue
+                    Check access
                   </button>
                 )}
-              {item.connection.status === "connected" && (
                 <button
-                  disabled={session.busy}
                   type="button"
-                  onClick={() => {
-                    void session.run(async (signal) => {
-                      await controlAccountConnection(
-                        session.ownerId!,
-                        "check",
-                        item.connection,
-                        signal,
-                      );
-                      await session.reload();
-                    });
-                  }}
+                  disabled={session.busy || !session.available}
+                  onClick={() =>
+                    setForm({
+                      id: item.connection.id,
+                      existing: item,
+                      provider:
+                        item.scope.provider === "resend"
+                          ? "resend"
+                          : item.scope.provider === "agentmail"
+                            ? "agentmail"
+                            : "github",
+                    })
+                  }
                 >
-                  Check access
+                  Reconnect
                 </button>
-              )}
-              <button
-                type="button"
-                disabled={session.busy || !session.available}
-                onClick={() =>
-                  setForm({
-                    id: item.connection.id,
-                    existing: item,
-                    provider: item.scope.provider,
-                  })
-                }
-              >
-                Reconnect
-              </button>
-              {item.connection.status !== "revoked" && (
-                <button
-                  disabled={session.busy}
-                  type="button"
-                  onClick={() => {
-                    void session.run(async (signal) => {
-                      await controlAccountConnection(
-                        session.ownerId!,
-                        "disconnect",
-                        item.connection,
-                        signal,
-                      );
-                      await session.reload();
-                    });
-                  }}
-                >
-                  Disconnect
-                </button>
-              )}
-            </div>
-          </li>
-        ))}
+                {item.connection.status !== "revoked" && (
+                  <button
+                    disabled={session.busy}
+                    type="button"
+                    onClick={() => {
+                      void session.run(async (signal) => {
+                        await controlAccountConnection(
+                          session.ownerId!,
+                          "disconnect",
+                          item.connection,
+                          signal,
+                        );
+                        await session.reload();
+                      });
+                    }}
+                  >
+                    Disconnect
+                  </button>
+                )}
+              </div>
+            </li>
+          ))}
       </ul>
       {form &&
         (() => {
@@ -205,7 +224,16 @@ export function ConnectionsPanel({ taskSetup }: { taskSetup?: TaskSetup }) {
               });
             },
           };
-          return form.provider === "resend" ? (
+          return form.provider === "agentmail" ? (
+            <AgentEmailConnectionForm
+              {...props}
+              setup={
+                setup?.provider === "agentmail" && "recipient" in setup
+                  ? setup
+                  : null
+              }
+            />
+          ) : form.provider === "resend" ? (
             <ResendConnectionForm
               {...props}
               setup={setup?.provider === "resend" ? setup : null}
@@ -226,13 +254,35 @@ export function ConnectionsPanel({ taskSetup }: { taskSetup?: TaskSetup }) {
               setForm({
                 id: crypto.randomUUID(),
                 existing: null,
-                provider: pending?.provider ?? "github",
+                provider:
+                  pending?.provider === "agentmail"
+                    ? "agentmail"
+                    : pending?.provider === "resend"
+                      ? "resend"
+                      : "github",
               })
             }
           >
-            {pending?.provider === "resend"
-              ? "Connect email sender"
-              : "Connect GitHub"}
+            {pending?.provider === "agentmail"
+              ? "Approve agent email recipient"
+              : pending?.provider === "resend"
+                ? "Connect email sender"
+                : "Connect GitHub"}
+          </button>
+        )}
+        {!form && !pending && (
+          <button
+            type="button"
+            disabled={session.busy || !session.available}
+            onClick={() =>
+              setForm({
+                id: crypto.randomUUID(),
+                existing: null,
+                provider: "agentmail",
+              })
+            }
+          >
+            Approve agent email recipient
           </button>
         )}
         {!form && !pending && (
@@ -247,7 +297,7 @@ export function ConnectionsPanel({ taskSetup }: { taskSetup?: TaskSetup }) {
               })
             }
           >
-            Connect email sender
+            Connect Resend sender
           </button>
         )}
         <button
@@ -281,9 +331,13 @@ export function ConnectionsPanel({ taskSetup }: { taskSetup?: TaskSetup }) {
         )}
       </div>
       <p>
-        Disconnect removes Restyle’s saved key and blocks future calls. You can
-        also revoke the key in the provider’s settings.
+        Disconnect blocks future calls through that connection. Agent email
+        approvals share your saved identity; disconnect the identity below to
+        stop all its sending approvals.
       </p>
+      {(!taskSetup || pending?.provider === "agentmail") && (
+        <AgentIdentityPanel />
+      )}
     </section>
   );
 }

@@ -19,7 +19,6 @@ export const WORKSPACE_LIMITS: Readonly<{
   startupMs: number;
   outputBytes: number;
   concurrent: number;
-  dailySessions: number;
   cleanupAttempts: number;
 }>;
 export function parseWorkspaceIdentity(value: unknown): WorkspaceIdentity;

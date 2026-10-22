@@ -31,6 +31,8 @@ export function batchProgressEvidence(state) {
         result: {
           status: result.status,
           basisDigest: result.result?.basisDigest ?? null,
+          correction:
+            result.status === "rejected" ? result.result.message : null,
         },
       });
       continue;
@@ -45,12 +47,15 @@ export function batchProgressEvidence(state) {
         request: { kind: tool.kind },
         result: {
           status: result.status,
-          source: result.result
-            ? {
-                url: result.result.source.url,
-                truncated: result.result.source.truncated,
-              }
-            : null,
+          correction:
+            result.status === "rejected" ? result.result.message : null,
+          source:
+            result.status === "completed"
+              ? {
+                  url: result.result.source.url,
+                  truncated: result.result.source.truncated,
+                }
+              : null,
         },
       });
       continue;

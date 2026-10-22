@@ -195,7 +195,12 @@ test("a question can schedule only independent read research and both schema and
         { ...value, calls: [decision()] },
         { hasAgreement: false, available: ["capability_record"] },
       ),
-    /unanswered outcome/,
+    (error) => {
+      assert.match(error.message, /unanswered outcome/);
+      assert.match(error.message, /never capability_record/);
+      assert.match(error.message, /separate research decision/);
+      return true;
+    },
   );
   const schema = builderDecisionSchema(false, definitions).anyOf.find(
     (option) => option.properties.kind.const === "ask_research",

@@ -16,6 +16,7 @@ const reference = { ownerId: "owner", projectId: "project", taskId: "task" };
 const diagnostic = () => ({
   reference,
   stepId: "build",
+  review: null,
   repair: {
     check: "builder_response",
     message: "A required field is missing.",
@@ -39,7 +40,7 @@ test("build diagnostics require the exact account, project and task before expos
   );
   assert.deepEqual(
     parseBuildDiagnostic({ ...value, repair: null }, reference),
-    { stepId: "build", repair: null },
+    { stepId: "build", repair: null, review: null },
   );
 });
 
@@ -56,4 +57,58 @@ test("malformed and oversized build details are rejected before rendering", () =
     mutate(value);
     assert.throws(() => parseBuildDiagnostic(value, reference));
   }
+});
+
+test("independent check diagnostics preserve exact source and failure detail without accepting malformed report metadata", () => {
+  const value = {
+    ...diagnostic(),
+    repair: null,
+    review: {
+      revision: 2,
+      digest: "a".repeat(64),
+      status: "failed",
+      caseId: "send-once",
+      step: 1,
+      detail: "reply.accepted: expected true, received false.",
+    },
+  };
+  assert.deepEqual(parseBuildDiagnostic(value, reference).review, value.review);
+  for (const mutate of [
+    (v) => {
+      delete v.review;
+    },
+    (v) => {
+      v.review.revision = 0;
+    },
+    (v) => {
+      v.review.digest = "not-saved-source";
+    },
+    (v) => {
+      v.review.status = "invented-success";
+    },
+    (v) => {
+      v.review.step = null;
+    },
+    (v) => {
+      v.review.step = -1;
+    },
+    (v) => {
+      v.review.caseId = "<script>";
+    },
+    (v) => {
+      v.review.detail = "😀".repeat(513);
+    },
+  ]) {
+    const changed = structuredClone(value);
+    mutate(changed);
+    assert.throws(() => parseBuildDiagnostic(changed, reference));
+  }
+  value.review = {
+    ...value.review,
+    status: "artifact_error",
+    caseId: null,
+    step: null,
+    detail: "Review source does not match its exact saved bytes.",
+  };
+  assert.deepEqual(parseBuildDiagnostic(value, reference).review, value.review);
 });

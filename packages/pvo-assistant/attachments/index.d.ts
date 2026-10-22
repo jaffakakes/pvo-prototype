@@ -35,6 +35,11 @@ export type ServiceAttachmentCommand = {
     target: string | null;
     input: ServiceInputBinding;
   };
+  notes: (Extract<NativeOperation, { kind: "component.add" }> & {
+    componentType: "tooltip";
+    source: { structure: string; style: string; logic: string };
+    duration: number;
+  })[];
 };
 export type ServiceAttachmentReceipt = {
   identity: ServiceReleaseIdentity;
@@ -100,6 +105,11 @@ export function prepareComponentServiceConnection(
 ): ComponentServiceConnection;
 
 export const serviceAttachmentSchema: Record<string, unknown>;
+export function validateServiceResultNote(
+  compiled: import("../../pvo-language/index.js").CompiledPvoComponent,
+  componentId: string,
+  operation: ServiceOperation,
+): void;
 
 /** A local replay scope, not server authority. Public player checkpoints contain no creator account. */
 export type ServiceSubmissionScope =

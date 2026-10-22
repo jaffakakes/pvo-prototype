@@ -24,13 +24,13 @@ export class NodeMetering {
     return {
       platform: this.sql
         .exec(
-          "SELECT COALESCE(SUM(starts),0) AS count FROM node_usage WHERE day=?",
+          "SELECT COALESCE(SUM(starts),0) AS count FROM node_usage WHERE day=? AND mode='live'",
           day,
         )
         .one().count,
       owner: this.sql
         .exec(
-          "SELECT COALESCE(SUM(starts),0) AS count FROM node_usage WHERE day=? AND owner_id=?",
+          "SELECT COALESCE(SUM(starts),0) AS count FROM node_usage WHERE day=? AND owner_id=? AND mode='live'",
           day,
           ownerId,
         )

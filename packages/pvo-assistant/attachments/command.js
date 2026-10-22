@@ -1,6 +1,13 @@
 import { parseNativeOperation } from "../native/index.js";
 import { parseTaskReference } from "../tasks/index.js";
-import { choice, id, object, requireTask, time } from "../tasks/validation.js";
+import {
+  choice,
+  id,
+  list,
+  object,
+  requireTask,
+  time,
+} from "../tasks/validation.js";
 import { serviceName } from "../services/values.js";
 import { validateAttachmentInput } from "./input.js";
 import { parseServiceAttachmentReceipt } from "./receipt.js";
@@ -9,7 +16,7 @@ import { parseServiceAttachmentReceipt } from "./receipt.js";
 export function parseServiceAttachmentCommand(value) {
   object(
     value,
-    ["kind", "component", "connection"],
+    ["kind", "component", "connection", "notes"],
     "Service attachment command",
   );
   requireTask(
@@ -23,6 +30,18 @@ export function parseServiceAttachmentCommand(value) {
     "A service attachment needs one complete component source proposal.",
   );
   validateServiceConnectionProposal(value.connection);
+  list(value.notes, 1, "Connected result Notes");
+  for (const note of value.notes) {
+    parseNativeOperation(note);
+    requireTask(
+      note.kind === "component.add" &&
+        note.componentType === "tooltip" &&
+        note.sceneId === component.sceneId &&
+        note.source &&
+        note.duration !== null,
+      "A connected result Note must be a complete, finite display-only Note in the same scene.",
+    );
+  }
   return structuredClone(value);
 }
 

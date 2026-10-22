@@ -147,8 +147,11 @@ test(
       );
       assert.deepEqual(missing.body, {
         kind: "web_evidence",
-        status: "unavailable",
-        result: null,
+        status: "rejected",
+        result: {
+          message:
+            "Set sourceOperationId to a completed web_read operation from this task, not a search or evidence note.",
+        },
       });
       await execute(
         first,
@@ -169,8 +172,13 @@ test(
         expectStatus(result, 200);
         assert.deepEqual(result.body, {
           kind: "web_evidence",
-          status: "unavailable",
-          result: null,
+          status: "rejected",
+          result: {
+            message:
+              index === 2
+                ? "Copy exact contiguous excerpts from the saved page text. Do not paraphrase, join passages with ellipses, or invent text."
+                : "Set sourceOperationId to a completed web_read operation from this task, not a search or evidence note.",
+          },
         });
       }
       assert.equal(reads(), 2);
@@ -182,7 +190,7 @@ test(
 );
 
 test(
-  "the saved runner researches, records structured evidence, and presents a question without starting a workshop",
+  "the saved runner repairs rejected excerpts using actionable feedback without rereading or starting a workshop",
   { timeout: 20000 },
   async () => {
     let finalContext;
@@ -204,7 +212,12 @@ test(
           (entry) => entry.result.kind === "web_read",
         );
         const evidence = feedback.find(
-          (entry) => entry.result.kind === "web_evidence",
+          (entry) =>
+            entry.result.kind === "web_evidence" &&
+            entry.result.status === "completed",
+        );
+        const rejection = feedback.find(
+          (entry) => entry.result.status === "rejected",
         );
         if (!source)
           return Response.json({
@@ -214,8 +227,20 @@ test(
         if (!evidence)
           return Response.json({
             kind: "research",
-            calls: [evidenceNote({ sourceOperationId: source.operationId })],
+            calls: [
+              evidenceNote({
+                sourceOperationId: source.operationId,
+                ...(rejection
+                  ? {}
+                  : { excerpts: ["Paraphrased text not on the page."] }),
+              }),
+              ...(rejection ? [] : [{ kind: "connections_read", after: null }]),
+            ],
           });
+        assert.match(
+          rejection.result.result.message,
+          /Copy exact contiguous excerpts/,
+        );
         finalContext = task.builderContext;
         return Response.json({
           kind: "ask",
@@ -241,10 +266,12 @@ test(
         task = await current(fixture, task);
       }
       assert.equal(task.state, "waiting_for_answer");
-      assert.equal(task.usage.toolCalls, 2);
+      assert.equal(task.usage.toolCalls, 3);
       assert.equal(finalContext.agreement, null);
       const note = finalContext.feedback.find(
-        (entry) => entry.result.kind === "web_evidence",
+        (entry) =>
+          entry.result.kind === "web_evidence" &&
+          entry.result.status === "completed",
       ).result;
       assert.equal(note.status, "completed");
       assert.deepEqual(

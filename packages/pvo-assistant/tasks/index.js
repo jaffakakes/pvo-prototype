@@ -1,5 +1,10 @@
 export { TASK_LIMITS, TASK_STATES, TASK_FAILURES } from "./limits.js";
 export {
+  isTransientInferenceFailure,
+  inferenceRetryDelay,
+  precedingInferenceFailures,
+} from "./inferenceRecovery.js";
+export {
   parseTaskInput,
   parseTaskRecord,
   createTask,

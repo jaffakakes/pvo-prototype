@@ -25,7 +25,7 @@ The server journals an action and its compute reservation before an external eff
 | Command time | 15 seconds |
 | Combined stdout/stderr | 16 KiB of valid UTF-8 |
 | Global active sessions | 2 |
-| Global new sessions | 12 per UTC day |
+| Global new sessions | Counted without a daily ceiling |
 | Automatic cleanup attempts | 5, with exponential backoff |
 
 Stop closes the identity before shutdown. An interrupted start/command never silently repeats. A coordinator restart destroys a retained computer, then a new explicit operation may restore the saved source. A source edit also discards the existing computer. Failed shutdown keeps its reservation occupied; time passing alone does not prove that a computer was removed. An explicit trusted reconciliation can retry an exhausted cleanup batch.
@@ -44,6 +44,6 @@ Local tests use real workerd/SQLite/RPC and runtime restarts with controlled Con
 
 ## Capacity waits
 
-Workspace reservation returns `{accepted:true}` or a trusted `{accepted:false,reason,retryAt}`. Concurrent/journal capacity returns `workspace_capacity`; daily allowance returns `workspace_allowance` with the next UTC day. A closed/expired lease is `lease_closed` and cannot reopen. Denied starts persist an interrupted receipt whose capacity result includes `retryAt`; ordinary interruptions retain only their fixed code. Cleanup remains mandatory, and expiry alone never releases an unconfirmed resource slot.
+Workspace reservation returns `{accepted:true}` or a trusted `{accepted:false,reason,retryAt}`. Concurrent capacity returns `workspace_capacity`. Workspace starts have no application daily or reservation-journal count ceiling; exact usage and cancellation tombstones remain recorded until expiry. Provider allowance receipts may still carry `workspace_allowance` and a retry time. A closed/expired lease is `lease_closed` and cannot reopen. Denied starts persist an interrupted receipt whose capacity result includes `retryAt`; ordinary interruptions retain only their fixed code. Cleanup remains mandatory, and expiry alone never releases an unconfirmed resource slot.
 
 The saved builder records the real denial, abandons dependent commands, and saves a waiting task. When capacity is rechecked, a new operation starts from the same stored source. Old receipts/lease tombstones remain immutable; reading an old denied receipt does not pause a new work period. Restart and delayed replies preserve these rules.

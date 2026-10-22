@@ -5,6 +5,7 @@ import {
   builderToolDefinitions,
   parseBuilderDecision,
   builderDecisionSchema,
+  builderResearchDefinitions,
 } from "../../packages/pvo-assistant/builder/index.js";
 import { planSavedBuild } from "../../server/assistant/builder/planner.js";
 import {
@@ -18,6 +19,88 @@ const stage = (hasAgreement) => ({
 });
 const definitions = builderToolDefinitions(BUILDER_TOOL_KINDS);
 const signal = () => new AbortController().signal;
+
+test("question choices retain UTF-8 bounds and give actionable feedback without echoing the value", () => {
+  for (const kind of ["ask", "ask_research"]) {
+    const value = {
+      kind,
+      prompt: "Which booking behavior should be built?",
+      choices: ["😀".repeat(50)],
+      ...(kind === "ask_research"
+        ? { calls: [{ kind: "connections_read", after: null }] }
+        : {}),
+    };
+    const options = { hasAgreement: false, available: ["connections_read"] };
+    assert.deepEqual(parseBuilderDecision(value, options), value);
+    const tooLong = "😀".repeat(51);
+    assert.throws(
+      () => parseBuilderDecision({ ...value, choices: [tooLong] }, options),
+      (error) => {
+        assert.match(
+          error.message,
+          /byte limit of 200; received 204 UTF-8 bytes/,
+        );
+        assert.equal(error.message.includes(tooLong), false);
+        return true;
+      },
+    );
+    assert.throws(
+      () => parseBuilderDecision({ ...value, choices: ["   "] }, options),
+      /Builder choice must contain nonempty text/,
+    );
+    const corrected = { ...value, choices: ["Save booking requests"] };
+    assert.deepEqual(parseBuilderDecision(corrected, options), corrected);
+  }
+});
+
+test("trusted setup availability agrees with the model context, schema and local admission without exposing a key", async () => {
+  const decision = {
+    kind: "connect_account",
+    setup: { provider: "agentmail", recipient: "friend@example.com" },
+    purpose: "Send the requested fixed thank-you email.",
+  };
+  const privateKey = "a".repeat(64);
+  for (const available of [false, true]) {
+    let seen;
+    const planned = planSavedBuild(
+      {
+        input: {
+          request: "Send an email",
+          examples: [],
+          context: { components: [] },
+        },
+        questions: [],
+      },
+      { agreement: null, feedback: [], workspace: null },
+      builderResearchDefinitions(["connections_read"]),
+      available ? { ACCOUNT_CONNECTION_KEY: privateKey } : {},
+      signal(),
+      null,
+      {
+        generate: async (request) => {
+          seen = request;
+          return { content: JSON.stringify(decision) };
+        },
+      },
+    );
+    if (available) assert.deepEqual(await planned, decision);
+    else
+      await assert.rejects(planned, (error) => {
+        assert.equal(error.code, "invalid_result");
+        assert.match(error.feedback.message, /unavailable/);
+        return true;
+      });
+    const data = JSON.parse(
+      seen.messages.find((message) => message.role === "user").content,
+    );
+    assert.equal(data.privateAccountSetupAvailable, available);
+    assert.equal(
+      JSON.stringify(seen.schema).includes('"connect_account"'),
+      available,
+    );
+    assert.equal(JSON.stringify(seen.messages).includes(privateKey), false);
+  }
+});
 const review = {
   kind: "review",
   libraries: [],
@@ -110,6 +193,30 @@ test("builder schema exposes only the current stage and actually available tools
   );
 });
 
+test("an empty review batch directs the next decision to review without rerunning successful tools", async () => {
+  const rejected = { kind: "tools", calls: [], review };
+  await assert.rejects(
+    planSavedBuild(
+      claim(create()),
+      { agreement: dinnerAgreement() },
+      definitions,
+      provider(rejected).env,
+      signal(),
+    ),
+    (error) => {
+      assert.equal(error.code, "invalid_result");
+      assert.match(error.feedback.message, /return the review object itself/);
+      assert.match(error.feedback.message, /Do not repeat successful tests/);
+      assert.deepEqual(JSON.parse(error.feedback.proposal.text), rejected);
+      return true;
+    },
+  );
+  assert.deepEqual(parseBuilderDecision(review, stage(true)), review);
+  assert.throws(() =>
+    parseBuilderDecision({ ...review, digest: "old" }, stage(true)),
+  );
+});
+
 test("a top-level workspace tool gets actionable repair feedback and the corrected batch remains validated", async () => {
   const tool = { kind: "workspace_list" };
   assert.throws(
@@ -155,6 +262,10 @@ test("the builder inference uses saved task goals and feedback without platform 
     { kind: "agreement", agreement },
   );
   const sent = JSON.stringify(mock.calls);
+  const planningInstructions = mock.calls[0].input.messages[0].content;
+  assert.match(planningInstructions, /Every case belongs in agreement.cases/);
+  assert.doesNotMatch(planningInstructions, /Start and its dependent/);
+  assert.equal(mock.calls[0].input.max_tokens, 12000);
   assert.ok(sent.includes(task.input.request));
   assert.ok(!sent.includes("private-session-value"));
   assert.ok(!sent.includes("private-provider-value"));
@@ -187,6 +298,18 @@ test("the builder inference uses saved task goals and feedback without platform 
   assert.ok(
     JSON.stringify(repairing.calls).includes(feedback[0].result.stdout),
   );
+  const implementationInstructions =
+    repairing.calls[0].input.messages[0].content;
+  assert.match(implementationInstructions, /must have a named export/);
+  assert.doesNotMatch(
+    implementationInstructions,
+    /Before generating source, propose/,
+  );
+  assert.doesNotMatch(
+    implementationInstructions,
+    /Inspect external account access/,
+  );
+  assert.equal(repairing.calls[0].input.max_tokens, 6000);
 });
 
 test("builder output cannot bypass its stage, invent tool receipts or emit provider tool calls", async () => {
@@ -226,5 +349,65 @@ test("builder output cannot bypass its stage, invent tool receipts or emit provi
       signal(),
     ),
     (error) => error.code === "invalid_result",
+  );
+});
+
+test("closed decision feedback counts extra fields without exposing their names or changing the contract", async () => {
+  const question = {
+    kind: "ask",
+    prompt: "Which date?",
+    choices: [],
+    calls: [],
+  };
+  await assert.rejects(
+    planSavedBuild(
+      claim(create()),
+      { agreement: null },
+      definitions,
+      provider(question).env,
+      signal(),
+    ),
+    (error) => {
+      assert.match(error.feedback.message, /Unsupported field count: 1/);
+      assert.match(
+        error.feedback.message,
+        /Remove every field outside the required list/,
+      );
+      assert.match(error.feedback.message, /Missing required fields: none/);
+      return true;
+    },
+  );
+  const { calls, ...corrected } = question;
+  assert.deepEqual(parseBuilderDecision(corrected, stage(false)), corrected);
+});
+
+test("stale review requests are repaired using the current saved source without changing source", async () => {
+  const source = { revision: 2, digest: "e".repeat(64) };
+  const context = { agreement: dinnerAgreement(), source };
+  await assert.rejects(
+    planSavedBuild(
+      claim(create()),
+      context,
+      definitions,
+      provider(review).env,
+      signal(),
+    ),
+    (error) => {
+      assert.match(error.feedback.message, /current saved source: revision 2/);
+      assert.ok(error.feedback.message.includes(source.digest));
+      assert.match(error.feedback.message, /do not restore an older version/);
+      return true;
+    },
+  );
+  const corrected = { ...review, ...source };
+  assert.deepEqual(
+    await planSavedBuild(
+      claim(create()),
+      context,
+      definitions,
+      provider(corrected).env,
+      signal(),
+    ),
+    corrected,
   );
 });

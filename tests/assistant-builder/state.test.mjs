@@ -103,6 +103,10 @@ test("builder feedback stays bounded while the saved decision retains full sourc
   assert.equal(context.lastDecision.contentOmitted, true);
   assert.equal(context.lastDecision.calls[0].files[0].bytes, 90000);
   assert.equal(state.decision.calls[0].files[0].content.length, 90000);
+  const bundled = builderContext(
+    acceptBuilderDecision(agreed(), { ...decision, review }),
+  );
+  assert.deepEqual(bundled.lastDecision.review, review);
   for (let index = 0; index < 3; index++) {
     state = beginBuilderBatch(state, index + 1);
     state = recordBuilderTool(state, nextBuilderTool(state), {

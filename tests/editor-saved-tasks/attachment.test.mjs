@@ -21,6 +21,7 @@ import { prepareServicePublication } from "../../server/cloud-services/releaseCo
 import { checkedFixture } from "../service-hosting/fixtures.mjs";
 import { attachment } from "../service-attachments/fixtures.mjs";
 import { api, proposal } from "./helpers.mjs";
+import { resolveTextTemplate } from "../../packages/pvo-sdk/index.js";
 
 initSync({
   module: new WebAssembly.Module(
@@ -36,7 +37,7 @@ const state = () => api.useCapture.getState();
 const project = () => api.projectSnapshot(state());
 const now = Date.now();
 const origin = "https://restyle.example";
-async function fixture() {
+async function fixture(withNote = false) {
   api.useCapture.setState(api.initial());
   api.useEditorPreferences.setState({ advancedEditingEnabled: false });
   api.useAuthGate.setState({
@@ -80,12 +81,32 @@ async function fixture() {
     structure:
       '<form><heading>Join dinner</heading><field name="guest" kind="name" label="Name"/><submit>Join</submit></form>',
     style: "",
-    logic: `on submit { request(${JSON.stringify({ ...serviceAttachmentRequest(authorization), onSuccess: { kind: "continue" }, onError: null })}); }`,
+    logic: `on submit { request(${JSON.stringify({ ...serviceAttachmentRequest(authorization), onSuccess: withNote ? { kind: "time", t: 3.1 } : { kind: "continue" }, onError: null })}); }`,
   };
-  const result = prepareTaskResult(task, [command.component], {
-    command,
-    receipt,
-  });
+  if (withNote)
+    command.notes = [
+      {
+        kind: "component.add",
+        sceneId: "main",
+        componentType: "tooltip",
+        at: 3.1,
+        duration: 3,
+        source: {
+          structure:
+            "<tooltip><text>Result: {state.responses.component-task-task-1.result}</text></tooltip>",
+          style: "",
+          logic: "",
+        },
+      },
+    ];
+  const result = prepareTaskResult(
+    task,
+    [command.component, ...command.notes],
+    {
+      command,
+      receipt,
+    },
+  );
   const body = serializePreparedTaskResult(result);
   const artifact = {
     id: task.id,
@@ -183,6 +204,97 @@ test("saved service connection, compiled request and approved host apply atomica
     api.nativeProjectFingerprint(changed),
     api.nativeProjectFingerprint(project()),
   );
+});
+
+test("saved form and result Note retain matching stable IDs through application, reload, Undo and Redo", async () => {
+  const f = await fixture(true);
+  const before = project();
+  await f.apply();
+  assert.equal(state().past.length, 1);
+  const [form, note] = state().components;
+  assert.equal(form.id, "component-task-task-1");
+  assert.equal(note.id, "component-task-task-2");
+  assert.equal(note.at, 3.1);
+  assert.deepEqual(form.code.pvoCompiled.rules[0].action.onSuccess, {
+    kind: "time",
+    t: 3.1,
+  });
+  const displayed = resolveTextTemplate(note.code.pvoCompiled.structure.text, {
+    state: { responses: { [form.id]: { result: "accepted" } } },
+  });
+  assert.equal(displayed, "Result: accepted");
+  assert.deepEqual(
+    api.restoreCheckpoint(f.stored(), new Map()).project,
+    project(),
+  );
+  state().undo();
+  assert.deepEqual(project(), before);
+  state().redo();
+  assert.deepEqual(
+    state().components.map((item) => item.id),
+    [form.id, note.id],
+  );
+  for (const mutate of [
+    (value) => {
+      value.operations.pop();
+    },
+    (value) => {
+      value.operations.reverse();
+    },
+    (value) => {
+      value.operations.push(value.operations[1]);
+    },
+  ]) {
+    const value = structuredClone(f.result);
+    mutate(value);
+    assert.throws(() => parsePreparedTaskResult(value));
+  }
+  await assert.rejects(
+    api.prepareSavedResult(project(), f.result, {
+      compile: compilePvoComponent,
+      createId: () => 42,
+      advancedEditingEnabled: false,
+      origin,
+      now,
+    }),
+    /component ID already exists/,
+  );
+});
+
+test("future receipt routes require the actual Note and remain within the final scene", async () => {
+  const { result } = await fixture(true);
+  const before = project();
+  const authorization = {
+    ...result.attachment,
+    scope: { ownerId: "owner", projectId: "server", taskId: "task" },
+    origin,
+    now,
+  };
+  await assert.rejects(
+    api.prepareNativeBatch(before, [result.operations[0]], {
+      compile: compilePvoComponent,
+      createId: () => 42,
+      advancedEditingEnabled: false,
+      attachment: authorization,
+    }),
+    /outside the selected scene/,
+  );
+  const invalid = structuredClone(result);
+  const component = invalid.attachment.command.component;
+  component.source.logic = component.source.logic.replace('"t":3.1', '"t":6.2');
+  invalid.operations[0] = component;
+  await assert.rejects(
+    api.prepareSavedResult(before, invalid, {
+      compile: compilePvoComponent,
+      createId: () => 42,
+      advancedEditingEnabled: false,
+      origin,
+      now,
+    }),
+    /outside the selected scene/,
+  );
+  assert.deepEqual(project(), before);
+  assert.equal(state().past.length, 0);
 });
 
 test("saved result rejects extra authority, missing or duplicate proposal matches and foreign receipt scope", async () => {

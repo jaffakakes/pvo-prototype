@@ -75,6 +75,11 @@ export function parseBuilderDecision(
   if (kind === "connect_account") {
     requireTask(connectionSetup, "Private account setup is unavailable.");
     value = { ...value, setup: parseConnectionSetup(value.setup) };
+    requireTask(
+      ["github", "resend"].includes(value.setup.provider) ||
+        (value.setup.provider === "agentmail" && "recipient" in value.setup),
+      "Use the human agent identity setup; account signup automation is not installed yet.",
+    );
     text(value.purpose, 1024, "Connection purpose");
   }
   if (kind === "manual_alternative") parseManualAlternative(value.proposal);
@@ -93,7 +98,7 @@ export function parseBuilderDecision(
       const parsed = parseBuilderResearch(call);
       requireTask(
         kind !== "ask_research" || parsed.kind !== "capability_record",
-        "Waiting research cannot decide the unanswered outcome.",
+        "Waiting research cannot decide the unanswered outcome: ask_research.calls may contain only available web_search, web_read, web_evidence or connections_read calls, never capability_record. Use a separate research decision for capability_record, or omit it and ask the question now.",
       );
       requireTask(
         available.includes(parsed.kind),
@@ -103,7 +108,10 @@ export function parseBuilderDecision(
   }
   if (kind === "tools") {
     list(value.calls, BUILDER_LIMITS.batchCalls, "Builder tool batch");
-    requireTask(value.calls.length > 0, "A tool batch must do work.");
+    requireTask(
+      value.calls.length > 0,
+      'A tools decision needs at least one tool call. To submit existing source for review without more tools, return the review object itself as the entire decision: {"kind":"review","revision":<current revision>,"digest":"<current digest>","entrypoint":"src/service.mjs","tests":["tests/service.test.mjs"],"libraries":[]}. Use your actual saved paths and source identity. Do not repeat successful tests or rewrite unchanged source to fill calls.',
+    );
     for (const call of value.calls) {
       const parsed = parseBuilderTool(call);
       requireTask(

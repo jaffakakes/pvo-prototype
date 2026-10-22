@@ -76,8 +76,11 @@ export async function runServiceStep(
                   canonicalJson(step.requests[index] ?? null) !==
                   canonicalJson(request)
                 )
-                  throw new Error(
-                    "Generated request differs from the independent expected action.",
+                  throw Object.assign(
+                    new Error(
+                      "Generated request differs from the independent expected action.",
+                    ),
+                    { code: "account_request_mismatch" },
                   );
                 completedRequests++;
                 return exampleAccountResult(
@@ -142,6 +145,23 @@ export async function runServiceStep(
         "timeout",
         "Generated code exceeded the validation time limit.",
       );
+    // Only trusted adapter codes select these fixed diagnostics; guest/provider text stays private.
+    const accountFailures = {
+      account_reply_shape: [
+        "invalid_reply",
+        "An account request must return only { request: { connection, input } }; return result and state only after receiving connectionResults.",
+      ],
+      account_request_invalid: [
+        "invalid_reply",
+        "The account request must match a connection binding, permitted operation and input schema in the saved agreement.",
+      ],
+      account_request_mismatch: [
+        "mismatch",
+        "Generated request differs from the independent expected account action.",
+      ],
+    };
+    if (Object.hasOwn(accountFailures, error?.code))
+      return failed(...accountFailures[error.code]);
     const code = ["invalid_reply", "output_limit"].includes(error?.code)
       ? error.code
       : "execution_failed";

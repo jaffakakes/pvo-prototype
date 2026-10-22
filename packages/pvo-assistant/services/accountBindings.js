@@ -38,7 +38,7 @@ export function validateAccountBindings(agreement) {
       binding.operations.every((name) =>
         agreement.operations.some((item) => item.name === name),
       ),
-      "Binding names an unknown service operation.",
+      `Binding operations must name service operations from agreement.operations, not provider adapter operations. Choose from: ${agreement.operations.map((item) => item.name).join(", ")}.`,
     );
     const adapter = parseConnectionAdapter(binding.adapter);
     requireTask(

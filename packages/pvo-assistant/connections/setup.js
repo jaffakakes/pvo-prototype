@@ -1,27 +1,39 @@
 import { object, text, requireTask, id, integer } from "../tasks/validation.js";
+import { identityResource } from "../identity/index.js";
 
 export const GITHUB_OPERATIONS = Object.freeze([
   { id: "github_repository_read", permissions: ["repository:read"] },
   { id: "github_issues_list", permissions: ["issues:read"] },
 ]);
 
+function emailAddress(value) {
+  text(value, 254, "Recipient");
+  requireTask(
+    /^[A-Za-z0-9.!#$%&'*+\/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(
+      value,
+    ),
+    "Use an email address without a display name.",
+  );
+  return value.toLowerCase();
+}
+
 /** Scope is chosen by the creator and stored by the platform, never an invocation URL. */
 export function parseConnectionSetup(value) {
+  if (value?.provider === "agentmail" && Object.hasOwn(value, "recipient")) {
+    object(value, ["provider", "recipient"], "Agent email sender");
+    return { provider: "agentmail", recipient: emailAddress(value.recipient) };
+  }
+  if (["agentmail", "agentphone"].includes(value?.provider)) {
+    object(value, ["provider", "resourceId"], "Agent identity connection");
+    identityResource(value.resourceId);
+    return structuredClone(value);
+  }
   if (value?.provider === "resend") {
     object(value, ["provider", "from", "recipient"], "Email connection");
-    for (const field of ["from", "recipient"]) {
-      text(value[field], 254, field);
-      requireTask(
-        /^[A-Za-z0-9.!#$%&'*+\/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(
-          value[field],
-        ),
-        "Use an email address without a display name.",
-      );
-    }
     return {
       provider: "resend",
-      from: value.from.toLowerCase(),
-      recipient: value.recipient.toLowerCase(),
+      from: emailAddress(value.from),
+      recipient: emailAddress(value.recipient),
     };
   }
   object(
@@ -75,6 +87,10 @@ export function parseConnectionInvocation(value) {
 /** Fixed creator-chosen sender and recipient; generated code supplies only bounded subject and text. */
 export function connectionScopeKey(value) {
   const scope = parseConnectionSetup(value);
+  if (scope.provider === "agentmail" && "recipient" in scope)
+    return `agentmail:send:${scope.recipient}`;
+  if (["agentmail", "agentphone"].includes(scope.provider))
+    return `${scope.provider}:${scope.resourceId}`;
   return scope.provider === "github"
     ? `github:${scope.repository}`
     : `resend:${scope.from}:${scope.recipient}`;

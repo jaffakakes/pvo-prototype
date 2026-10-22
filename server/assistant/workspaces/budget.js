@@ -19,9 +19,6 @@ export class WorkspaceBudget extends DurableObject {
   now() {
     return Date.now();
   }
-  dailySessionLimit() {
-    return limits.dailySessions;
-  }
   prune(now) {
     const sql = this.ctx.storage.sql;
     // An expired but unconfirmed resource still occupies its slot.
@@ -55,11 +52,6 @@ export class WorkspaceBudget extends DurableObject {
       if (lease.startedAt > now || now >= lease.deadlineAt)
         return denied("lease_closed", null);
       if (
-        sql.exec("SELECT COUNT(*) AS count FROM workspace_grants").one()
-          .count >= 4096
-      )
-        return denied("workspace_capacity", now + 30000);
-      if (
         sql
           .exec(
             "SELECT COUNT(*) AS count FROM workspace_grants WHERE released=0",
@@ -68,12 +60,6 @@ export class WorkspaceBudget extends DurableObject {
       )
         return denied("workspace_capacity", now + 30000);
       const day = Math.floor(now / DAY);
-      const used =
-        sql
-          .exec("SELECT count FROM workspace_usage WHERE day=?", day)
-          .toArray()[0]?.count ?? 0;
-      if (used >= this.dailySessionLimit())
-        return denied("workspace_allowance", (day + 1) * DAY);
       sql.exec(
         "INSERT INTO workspace_grants (id,body,released,expires) VALUES (?,?,0,?)",
         lease.id,
@@ -100,12 +86,6 @@ export class WorkspaceBudget extends DurableObject {
       if (prior && !sameLease(JSON.parse(prior.body), lease))
         throw new Error("Workspace lease conflict.");
       if (!prior && this.now() >= lease.expiresAt) return;
-      if (
-        !prior &&
-        sql.exec("SELECT COUNT(*) AS count FROM workspace_grants").one()
-          .count >= 4096
-      )
-        throw new Error("Workspace reservation journal is full.");
       // Also record release before a delayed reserve arrives; it cannot reopen.
       sql.exec(
         "INSERT INTO workspace_grants (id,body,released,expires) VALUES (?,?,1,?) ON CONFLICT(id) DO UPDATE SET released=1",

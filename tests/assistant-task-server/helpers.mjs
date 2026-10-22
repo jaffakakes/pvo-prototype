@@ -20,6 +20,8 @@ export async function taskFixture({
   storage = true,
   broken = false,
   planner = null,
+  modelFetch = null,
+  nodeEffect = null,
   services = false,
   providerControl = null,
   workspaces = false,
@@ -33,7 +35,12 @@ export async function taskFixture({
   draftControl = null,
   spending = true,
   productionLeases = false,
+  clerk = null,
 } = {}) {
+  if (modelFetch && (!nodeEffect || planner))
+    throw new Error(
+      "Live-model fixtures require an isolated Node effect and the real planner.",
+    );
   modules ??= bundleWorkerModules({
     stdin: {
       resolveDir: process.cwd(),
@@ -42,6 +49,8 @@ export async function taskFixture({
     export { TestBudget, TestWorkspace } from './tests/assistant-workspaces/controlled-worker.js';
     import { installCheckedDiagnostic } from "./scripts/checks/cloud-agent-recovery/checked-fixture.js";
     import { installedConnectionProvider } from "./server/connections/providers/installed.js";
+    import { identityProvider } from "./server/agent-identity/providers.js";
+    import { fixtureVerificationMessages, fixtureVerification } from "./tests/account-onboarding/controlled-worker.js";
     import { capabilityContext } from "./server/assistant/builder/capabilityResearch.js";
     import { taskResearchTools } from "./server/assistant/builder/researchTools.js";
     import { publicResearch } from "./server/assistant/builder/researchProvider.js";
@@ -95,6 +104,10 @@ export async function taskFixture({
       constructor(ctx, env) { super(ctx,env);ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS test_spending (id INTEGER PRIMARY KEY, body TEXT NOT NULL)"); }
       now() { return this.clock ?? this.env.CONTROLLED_CLOCK ?? ((this.env.REAL_CLOCK || this.env.CONTROLLED_PLAN) ? Date.now() : Date.UTC(2100, 0, 1)); }
       connectionProvider() { return this.env.CONNECTION_API ? installedConnectionProvider((url, options) => this.env.CONNECTION_API.fetch(url, options)) : super.connectionProvider(); }
+      identityProvider(provider) { return this.env.CONNECTION_API ? identityProvider(provider, (url, options) => this.env.CONNECTION_API.fetch(url, options)) : super.identityProvider(provider); }
+      identityStorage() { return this.ctx.storage.sql.exec("SELECT * FROM agent_identity_channels").toArray(); }
+      verificationMessageProvider(provider) { return fixtureVerificationMessages(this, provider); }
+      verifyAccount(ownerId, input) { return fixtureVerification(this, ownerId, input); }
       connectionStorage() { return this.ctx.storage.sql.exec("SELECT * FROM account_connection_secrets").toArray(); }
       plannerAvailable() { return this.planningPaused ? false : this.env.CONTROLLED_PLAN ? true : super.plannerAvailable(); }
       spendingAllowed(task, capability) {
@@ -109,14 +122,16 @@ export async function taskFixture({
       pausePlanning() { this.planningPaused = true; }
       async resumePlanning() { this.planningPaused = false; await this.scheduleMaintenance(this.now()); }
       // Real host-clock diagnostics seed authoring manually; only service alarms should run automatically.
-      async alarm() { if (!this.planningPaused && (!this.env.REAL_CLOCK || this.env.CONTROLLED_PLAN)) return super.alarm(); }
+      async alarm() { if (!this.planningPaused && (!this.env.REAL_CLOCK || this.env.CONTROLLED_PLAN || this.env.LIVE_MODEL)) return super.alarm(); }
       stepTimeoutMs() { return this.env.CONTROLLED_PLAN ? 1000 : super.stepTimeoutMs(); }
       leaseMs(task) { return this.env.CONTROLLED_PLAN && !this.env.PRODUCTION_LEASES ? 1500 : super.leaseMs(task); }
       async plan(task, signal, input) {
         if (!this.env.CONTROLLED_PLAN) return super.plan(task, signal, input);
-        return (await this.env.PLANNER.fetch("https://planner.test/", { method: "POST", body: JSON.stringify({ ...task, draftContext: input?.draft ?? null, builderContext: input?.build ?? null, attachmentContext: input?.attachment ?? null, evidenceContext: input?.evidence ?? null }), signal })).json();
+        const response = await this.env.PLANNER.fetch("https://planner.test/", { method: "POST", body: JSON.stringify({ ...task, draftContext: input?.draft ?? null, builderContext: input?.build ?? null, attachmentContext: input?.attachment ?? null, evidenceContext: input?.evidence ?? null }), signal });
+        if (!response.ok) throw Object.assign(new Error("Controlled model failure"), {status:response.status});
+        return response.json();
       }
-      providerTimeoutMs() { return 500; }
+      providerTimeoutMs() { return this.env.LIVE_MODEL ? super.providerTimeoutMs() : 500; }
       serviceProvider() {
         if (this.providerDisabled) return null;
         const provider = super.serviceProvider();
@@ -137,7 +152,7 @@ export async function taskFixture({
         };
         return { publish: value => call("publish", value), lookup: value => call("lookup", value), cancel: value => call("cancel", value) };
       }
-      workspaceTimeoutMs() { return 500; }
+      workspaceTimeoutMs() { return this.env.LIVE_MODEL ? super.workspaceTimeoutMs() : 500; }
       workspaceProvider() {
         if (this.workspacesDisabled) return null;
         const provider = super.workspaceProvider();
@@ -286,7 +301,10 @@ export async function taskFixture({
         const stub = env.ASSISTANT_TASKS.getByName("owner:" + owner.id);
         try {
           if (action === "validation-state") return json(await stub.validationState(args.id));
+          if (action === "connection-command") { const result = await stub.manageConnections(owner.id, args.operation); return json(result, result.ok ? 200 : result.status); }
           if (action === "connection-storage") return json(await stub.connectionStorage());
+          if (action === "identity-storage") return json(await stub.identityStorage());
+          if (action === "verify-account") { const result = await stub.verifyAccount(owner.id,args.input); return json(result, result.error ? result.status : 200); }
           if (action === "save-connection") return json(await stub.saveConnection(owner.id,args.connection,args.expectedRevision));
           if (action === "capability-context") return json(await stub.capabilityContext(owner.id,args.id));
           if (action === "research-tool") return json(await stub.researchTool(owner.id,args.id,args.tool,args.operationId,args.guard));
@@ -363,14 +381,31 @@ export async function taskFixture({
         REAL_CLOCK: realClock,
         SESSION_SECRET: SECRET,
         ACCOUNT_CONNECTION_KEY: connectionKey,
+        ...(clerk
+          ? {
+              CLERK_ISSUER: clerk.issuer,
+              CLERK_PUBLISHABLE_KEY: "pk_test_fixture",
+            }
+          : {}),
         BROKEN: broken,
         CONTROLLED_PLAN: Boolean(planner),
+        LIVE_MODEL: Boolean(modelFetch),
+        ...(modelFetch
+          ? {
+              ASSISTANT_PROVIDER: "runpod",
+              RUNPOD_API_KEY: "evaluation-transport",
+            }
+          : {}),
         PRODUCTION_LEASES: productionLeases,
         CONTROLLED_CLOCK: clock,
         CONTROLLED_SPENDING: spending,
       },
+      ...(modelFetch || clerk
+        ? { outboundService: modelFetch ?? clerk.fetch }
+        : {}),
       ...(services ||
       planner ||
+      modelFetch ||
       providerControl ||
       workspaces ||
       researchFetch ||
@@ -380,7 +415,7 @@ export async function taskFixture({
       draftControl
         ? {
             serviceBindings: {
-              NODE_FIXTURE: fixtureNodeEffect,
+              NODE_FIXTURE: nodeEffect ?? fixtureNodeEffect,
               ...(connectionFetch ? { CONNECTION_API: connectionFetch } : {}),
               ...(planner ? { PLANNER: planner } : {}),
               ...(validationControl
@@ -426,7 +461,7 @@ export async function taskFixture({
                     },
                   }
                 : {}),
-              ...(planner
+              ...(planner || modelFetch
                 ? {
                     ASSISTANT_BUDGET: {
                       className: "TestAssistantBudget",

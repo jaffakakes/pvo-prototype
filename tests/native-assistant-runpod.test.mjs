@@ -11,6 +11,7 @@ import {
 } from "../server/assistant/native/runpod.js";
 import { requestRunpodJson } from "../server/assistant/native/runpodHttp.js";
 import { nativeAssistantTurn } from "../server/assistant/native/service.js";
+import { generateAuthoringResponse } from "../server/assistant/tasks/modelResponse.js";
 import {
   nativeDraft,
   nativeInput,
@@ -123,6 +124,31 @@ test("Runpod text uses JSON mode with the complete schema in trusted instruction
     response_format: { type: "json_object" },
   });
   assert.doesNotMatch(call.body, /server-test-key/);
+});
+
+test("saved authoring selects K3 reasoning without changing native editing or forwarding private reasoning", async () => {
+  const reply = completion('{"kind":"build"}');
+  reply.model = "kimi-k3";
+  reply.choices[0].message.reasoning_content = "private model reasoning";
+  const http = transport([reply, completion(JSON.stringify(nativeDraft()))]);
+  const models = runpodNativeModels("server-test-key", http);
+  const result = await generateAuthoringResponse(
+    models,
+    { ...generation, maxTokens: 1200 },
+    signal(),
+  );
+  assert.deepEqual(result, { content: '{"kind":"build"}' });
+  const request = http.calls[0].payload;
+  assert.equal(request.model, "kimi-k3");
+  assert.equal(request.reasoning_effort, "high");
+  assert.equal(request.temperature, 1);
+  assert.equal(request.max_tokens, 32768);
+  assert.equal(request.thinking, undefined);
+  assert.equal(request.purpose, undefined);
+  await models.generate(generation, signal());
+  assert.equal(http.calls[1].payload.model, "kimi-k2.6");
+  assert.equal(http.calls[1].payload.reasoning_effort, undefined);
+  assert.equal(http.calls[1].payload.max_tokens, generation.maxTokens);
 });
 
 test("Runpod sees actual sampled images, then the native planner receives only the resulting evidence", async () => {

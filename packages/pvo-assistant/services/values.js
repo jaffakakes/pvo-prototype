@@ -14,7 +14,7 @@ export function serviceName(value, path) {
     typeof value === "string" &&
       /^[a-z][a-zA-Z0-9_]{0,63}$/.test(value) &&
       !["constructor", "prototype"].includes(value),
-    `${path} must be a safe name of at most 64 characters.`,
+    `${path} must start with a lowercase letter and contain only letters, digits or underscores, at most 64 characters. Hyphens and the reserved names constructor/prototype are not allowed.`,
   );
 }
 

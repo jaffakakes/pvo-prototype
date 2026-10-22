@@ -90,6 +90,23 @@ test(
     try {
       await save();
       const task = await start();
+      const invalid = decision({
+        basis: { ...decision().basis, evidenceIds: ["read-availability"] },
+      });
+      const rejected = await execute(task, invalid, "raw-read-is-not-evidence");
+      assert.deepEqual(rejected, {
+        kind: "capability_record",
+        status: "rejected",
+        result: {
+          message:
+            "Set evidenceIds to completed web_evidence operation IDs from this task, not web_read IDs. Save valid evidence first.",
+        },
+      });
+      await fixture.restart();
+      assert.deepEqual(
+        await execute(task, invalid, "raw-read-is-not-evidence"),
+        rejected,
+      );
       const record = await execute(task, decision(), "ready");
       assert.equal(record.status, "completed");
       assert.equal(record.result.verification, "planning_only");
@@ -156,13 +173,13 @@ test(
       }))
         assert.equal(
           (await execute(task, decision(change), `reject-${key}`)).status,
-          "unavailable",
+          "rejected",
           key,
         );
       await save(connection({ status: "expired", revision: 2 }));
       assert.equal(
         (await execute(task, decision(), "stale")).status,
-        "unavailable",
+        "rejected",
       );
       await execute(
         task,
@@ -182,7 +199,7 @@ test(
             "expired",
           )
         ).status,
-        "unavailable",
+        "rejected",
       );
       const other = await start("another-task");
       assert.equal(
@@ -198,7 +215,7 @@ test(
             "foreign-note",
           )
         ).status,
-        "unavailable",
+        "rejected",
       );
       assert.equal((await rows(fixture)).links.length, 0);
     } finally {
@@ -231,7 +248,7 @@ test(
             "silent-change",
           )
         ).status,
-        "unavailable",
+        "rejected",
       );
       await execute(
         task,
@@ -250,7 +267,7 @@ test(
       assert.equal((await context()).current, false);
       assert.equal(
         (await execute(task, decision(), "stale-docs")).status,
-        "unavailable",
+        "rejected",
       );
       await execute(
         task,
@@ -461,7 +478,7 @@ test(
             "change-without-answer",
           )
         ).status,
-        "unavailable",
+        "rejected",
       );
     } finally {
       await fixture.close();
@@ -490,7 +507,7 @@ test(
       assert.equal((await context()).current, false);
       assert.equal(
         (await execute(task, tool, "stale-empty-list")).status,
-        "unavailable",
+        "rejected",
       );
       await execute(
         task,
@@ -526,7 +543,7 @@ test(
       assert.equal((await context()).current, false);
       assert.equal(
         (await execute(task, available, "ignore-conflict")).status,
-        "unavailable",
+        "rejected",
       );
       assert.equal(
         (

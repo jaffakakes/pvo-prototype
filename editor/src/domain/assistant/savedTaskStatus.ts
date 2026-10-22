@@ -17,6 +17,8 @@ const failureMessages = {
 };
 
 const waitMessages = {
+  model_connection:
+    "The AI connection was interrupted. Your progress is saved and Restyle will retry automatically.",
   model_capacity:
     "Model capacity is busy. Your progress is saved and work will resume automatically.",
   model_allowance:
@@ -43,12 +45,10 @@ export function savedTaskStatus(task: TaskRecord) {
     stopped: "Stopped",
     failed: "Failed",
   }[task.state];
-  const buildUnavailable =
-    task.failure?.code === "provider_unavailable" && task.stepId === "build";
   const uncertain = task.operations.some((operation) =>
     ["planned", "unknown"].includes(operation.status),
   );
-  const message = taskMessage(task, buildUnavailable, uncertain);
+  const message = taskMessage(task, uncertain);
   return {
     label:
       task.state === "ready" && hasPendingManualSteps(task)
@@ -66,7 +66,6 @@ export function savedTaskStatus(task: TaskRecord) {
       task.state === "waiting" ||
       (task.state === "failed" &&
         !!task.failure &&
-        !buildUnavailable &&
         TASK_FAILURES[task.failure.code].retryable),
     question: !["ready", "stopped"].includes(task.state)
       ? (task.questions.find((item) => item.answer === null) ?? null)
@@ -74,15 +73,9 @@ export function savedTaskStatus(task: TaskRecord) {
   };
 }
 
-function taskMessage(
-  task: TaskRecord,
-  buildUnavailable: boolean,
-  uncertain: boolean,
-) {
+function taskMessage(task: TaskRecord, uncertain: boolean) {
   if (task.wait) return waitMessages[task.wait.reason];
   if (task.failure) {
-    if (buildUnavailable)
-      return "Planning is saved. Building hosted services is not available yet.";
     return failureMessages[task.failure.code];
   }
   if (task.state === "ready")

@@ -15,6 +15,21 @@ export class TestBudget extends WorkspaceBudget {
     await this.alarm();
     return true;
   }
+  async batch(leases) {
+    for (const lease of leases) {
+      const first = await this.reserve(lease);
+      if (!first.accepted) return first;
+      const replay = await this.reserve(lease);
+      if (!replay.accepted) return replay;
+      await this.release(lease);
+    }
+    return { accepted: true };
+  }
+  usage() {
+    return this.ctx.storage.sql
+      .exec("SELECT COALESCE(SUM(count),0) AS count FROM workspace_usage")
+      .one().count;
+  }
   inspect() {
     return this.ctx.storage.sql
       .exec("SELECT body,released FROM workspace_grants")
@@ -46,7 +61,7 @@ export class TestWorkspace extends AssistantWorkspace {
     this.ctx.abort("Controlled workspace restart");
   }
   effectTimeoutMs() {
-    return 150;
+    return this.env.LIVE_MODEL ? super.effectTimeoutMs() : 150;
   }
   vm() {
     return JSON.parse(

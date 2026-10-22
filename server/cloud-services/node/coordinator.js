@@ -20,8 +20,7 @@ export class ServiceNodeExecution extends DurableObject {
     this.metering = new NodeMetering(ctx.storage.sql);
     ctx.storage.sql
       .exec(`CREATE TABLE IF NOT EXISTS node_lease(id INTEGER PRIMARY KEY CHECK(id=1),body TEXT NOT NULL);
-      CREATE TABLE IF NOT EXISTS node_receipts(id TEXT PRIMARY KEY,expires_at INTEGER NOT NULL);
-      CREATE TABLE IF NOT EXISTS node_start_fence(id INTEGER PRIMARY KEY CHECK(id=1),expires_at INTEGER NOT NULL);`);
+      CREATE TABLE IF NOT EXISTS node_receipts(id TEXT PRIMARY KEY,expires_at INTEGER NOT NULL);`);
   }
   now() {
     return Date.now();
@@ -63,25 +62,13 @@ export class ServiceNodeExecution extends DurableObject {
     const sql = this.ctx.storage.sql,
       now = this.now();
     sql.exec("DELETE FROM node_receipts WHERE expires_at<=?", now);
-    const prior = sql
-      .exec("SELECT id FROM node_receipts WHERE id=?", id)
-      .toArray().length;
-    if (
-      prior ||
-      sql.exec("SELECT COUNT(*) AS count FROM node_receipts").one().count < 1024
-    )
-      sql.exec(
-        "INSERT OR REPLACE INTO node_receipts(id,expires_at) VALUES(?,?)",
-        id,
-        now + limits.leaseMs,
-      );
-    else
-      // Bound cancellation tombstones without admitting a delayed cancelled request after eviction.
-      sql.exec(
-        "INSERT INTO node_start_fence(id,expires_at) VALUES(1,?) ON CONFLICT(id) DO UPDATE SET expires_at=MAX(expires_at,excluded.expires_at)",
-        now + limits.leaseMs,
-      );
+    sql.exec(
+      "INSERT OR REPLACE INTO node_receipts(id,expires_at) VALUES(?,?)",
+      id,
+      now + limits.leaseMs,
+    );
   }
+
   assertCurrent(lease) {
     const actual = this.lease();
     if (
@@ -93,7 +80,7 @@ export class ServiceNodeExecution extends DurableObject {
       throw nodeExecutionError("execution_cancelled");
   }
   limits() {
-    // Capacity per slot and UTC day, not a goal-wide model/tool-turn ceiling.
+    // Public live requests retain daily admission; build/test modes have no request-count cap.
     return { platform: 500, owner: 50 };
   }
   usage(ownerId, serviceId) {
@@ -121,7 +108,6 @@ export class ServiceNodeExecution extends DurableObject {
   prune(now) {
     const sql = this.ctx.storage.sql;
     sql.exec("DELETE FROM node_receipts WHERE expires_at<=?", now);
-    sql.exec("DELETE FROM node_start_fence WHERE expires_at<=?", now);
     // An unresolved lease still owns its accounting row, however old it is.
     if (!this.lease())
       sql.exec(
@@ -138,7 +124,6 @@ export class ServiceNodeExecution extends DurableObject {
     const sql = this.ctx.storage.sql;
     const candidates = [
       sql.exec("SELECT MIN(expires_at) AS at FROM node_receipts").one().at,
-      sql.exec("SELECT MIN(expires_at) AS at FROM node_start_fence").one().at,
       sql.exec("SELECT (MIN(day)+31)*? AS at FROM node_usage", DAY).one().at,
     ].filter((at) => at !== null);
     if (candidates.length)
@@ -223,15 +208,7 @@ export class ServiceNodeExecution extends DurableObject {
     const lease = await this.ctx.storage.transaction(async () => {
       const sql = this.ctx.storage.sql;
       this.prune(now);
-      if (
-        this.lease() ||
-        (sql
-          .exec("SELECT expires_at FROM node_start_fence WHERE id=1")
-          .toArray()[0]?.expires_at ?? 0) > now ||
-        sql.exec("SELECT COUNT(*) AS count FROM node_receipts").one().count >=
-          1024
-      )
-        throw nodeExecutionError("execution_capacity");
+      if (this.lease()) throw nodeExecutionError("execution_capacity");
       if (
         sql
           .exec("SELECT id FROM node_receipts WHERE id=?", request.id)
@@ -240,7 +217,10 @@ export class ServiceNodeExecution extends DurableObject {
         throw nodeExecutionError("execution_closed");
       const counts = this.limits();
       const used = this.metering.counts(day, request.ownerId);
-      if (used.platform >= counts.platform || used.owner >= counts.owner)
+      if (
+        request.mode === "live" &&
+        (used.platform >= counts.platform || used.owner >= counts.owner)
+      )
         throw nodeExecutionError("execution_allowance");
       const value = {
         id: request.id,

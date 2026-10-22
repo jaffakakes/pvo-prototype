@@ -70,7 +70,7 @@ test("actual diagnostic stores ordinary tasks, rejects unowned access and retain
       if(path === '/startup-failure') {
         return worker.fetch(new Request('https://acceptance.test/health', request), {
           ...env,
-          ASSISTANT_BUDGET: { getByName() { throw new Error('Simulated budget failure: '+env.PROOF_TOKEN); } }
+          PROOF_CONTROL: { getByName() { throw new Error('Simulated control failure: '+env.PROOF_TOKEN); } }
         });
       }
       if(path === '/ledger') {
@@ -148,15 +148,15 @@ test("actual diagnostic stores ordinary tasks, rejects unowned access and retain
     assert.deepEqual(await health.json(), {
       ready: true,
       budgetPolicy: "default",
-      dailyLimits: { global: 60, client: 20 },
+      requestLimit: null,
     });
     const startup = await call("/startup-failure");
     assert.equal(startup.status, 503);
     assert.deepEqual(await startup.json(), {
       error: "acceptance_operation_failed",
       startup: {
-        phase: "budget",
-        message: "Simulated budget failure: [redacted]",
+        phase: "control_binding",
+        message: "Simulated control failure: [redacted]",
       },
     });
     assert.equal(

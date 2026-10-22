@@ -7,7 +7,12 @@ const revision = {
   maximum: Number.MAX_SAFE_INTEGER,
 };
 const digest = { type: "string", pattern: "^[a-f0-9]{64}$" };
-const path = { type: "string", maxLength: 160 };
+const path = {
+  type: "string",
+  maxLength: 160,
+  description:
+    "Lowercase .mjs path beginning directly with src/ or tests/, for example tests/send-thanks.test.mjs. No ./ prefix, uppercase letters, spaces or .. segments.",
+};
 const properties = {
   workspace_list: {},
   workspace_read: {

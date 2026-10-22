@@ -60,6 +60,18 @@ export class WorkspaceOperations {
       .toArray()[0];
     return row ? JSON.parse(row.body) : null;
   }
+  sourceReference(taskId) {
+    const row = this.sql
+      .exec(
+        `SELECT json_extract(body,'$.receipt.result') AS source FROM workspace_operations
+        WHERE task_id=? AND json_extract(body,'$.kind')='save'
+        AND json_extract(body,'$.settled')=1 AND json_extract(body,'$.receipt.status')='completed'
+        ORDER BY json_extract(body,'$.receipt.result.revision') DESC LIMIT 1`,
+        taskId,
+      )
+      .toArray()[0];
+    return row ? JSON.parse(row.source) : { revision: 0, digest: null };
+  }
   saveLink(link) {
     this.sql.exec(
       "INSERT INTO task_workspaces (task_id,body) VALUES (?,?) ON CONFLICT(task_id) DO UPDATE SET body=excluded.body",

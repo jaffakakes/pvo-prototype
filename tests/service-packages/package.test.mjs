@@ -52,6 +52,8 @@ test("service paths reject traversal, absolute paths, hidden files, aliases and 
     "src/service.mjs\0",
     "src/service.mjs?x",
     "Src/service.mjs",
+    "tests/sendThanks.test.mjs",
+    "./src/service.mjs",
     "src/.env.mjs",
     "node_modules/pkg/index.mjs",
     "package.json",

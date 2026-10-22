@@ -15,7 +15,7 @@ export function object(value, keys, path) {
   const own = Reflect.ownKeys(value);
   requireTask(
     own.length === keys.length && keys.every((key) => own.includes(key)),
-    `${path} has missing or unsupported fields. Required fields: ${keys.join(", ") || "none"}. Missing required fields: ${keys.filter((key) => !own.includes(key)).join(", ") || "none"}.`,
+    `${path} has missing or unsupported fields. Required fields: ${keys.join(", ") || "none"}. Missing required fields: ${keys.filter((key) => !own.includes(key)).join(", ") || "none"}. Unsupported field count: ${own.filter((key) => !keys.includes(key)).length}. Remove every field outside the required list.`,
   );
   for (const key of keys) {
     const descriptor = Object.getOwnPropertyDescriptor(value, key);
@@ -32,7 +32,7 @@ export function list(value, maximum, path) {
     Array.isArray(value) &&
       Object.getPrototypeOf(value) === Array.prototype &&
       value.length <= maximum,
-    `${path} exceeds its item limit or is not an array.`,
+    `${path} must be an array within its item limit of ${maximum}; received ${Array.isArray(value) ? value.length + " items" : "a non-array"}.`,
   );
   requireTask(
     Reflect.ownKeys(value).length === value.length + 1,
@@ -51,9 +51,13 @@ export function list(value, maximum, path) {
 export function text(value, maximum, path, allowEmpty = false) {
   requireTask(typeof value === "string", `${path} must be text.`);
   requireTask(
-    (allowEmpty || value.trim().length > 0) &&
-      new TextEncoder().encode(value).length <= maximum,
-    `${path} is empty or exceeds its byte limit.`,
+    allowEmpty || value.trim().length > 0,
+    `${path} must contain nonempty text.`,
+  );
+  const bytes = new TextEncoder().encode(value).length;
+  requireTask(
+    bytes <= maximum,
+    `${path} exceeds its byte limit of ${maximum}; received ${bytes} UTF-8 bytes. Use a shorter value within the declared bound.`,
   );
 }
 

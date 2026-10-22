@@ -151,7 +151,7 @@ export async function accountServiceCommand(coordinator, ownerId, kind, input) {
   const inspecting = Boolean(receipt);
   if (
     inspecting &&
-    adapter.provider === "resend" &&
+    ["resend", "agentmail"].includes(adapter.provider) &&
     receipt.providerIdentity !== current.details.accountId
   )
     throw pending();

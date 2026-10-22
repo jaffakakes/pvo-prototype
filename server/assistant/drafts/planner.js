@@ -1,3 +1,4 @@
+import { generateAuthoringResponse } from "../tasks/modelResponse.js";
 import { REPAIR_STAGES } from "../../../packages/pvo-assistant/maintenance/index.js";
 import {
   supportedNodeLibraries,
@@ -74,7 +75,8 @@ export async function planDraftEdit(
     task.input.context.container.mode === "repair"
       ? "Investigate using the trusted safe baseline and health evidence. Diagnose with exact evidenceKeys before changing code. Use read_published for bounded deployed source reads. If saved draft differs from deployment, explain that the baseline applies to the draft. Account, provider, input and missing-release faults need recovery at their owning boundary; ask for missing details or use done to report the dependency. Only a reproduced backend bug permits repair. Preserve the original agreement and independent cases, make the smallest fix and add a meaningful regression test. Execute for fresh independent checks. Never claim an unpublished repair is live."
       : "Implement the creator's requested behavior change. Update the selected source tests and behavior agreement's expected cases when the requested behavior changes. Preserve unrelated requirements and tests. Do not execute against stale expectations for the previous behavior, or weaken a check merely to make current code pass. Save the requested code, relevant tests and updated agreement before execute. The request and current source determine what is still unfinished; already saved edits need not be repeated.";
-  const response = await models.generate(
+  const response = await generateAuthoringResponse(
+    models,
     {
       schema: draftDecisionSchema,
       temperature: 0.15,

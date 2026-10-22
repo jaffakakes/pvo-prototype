@@ -67,6 +67,28 @@ test("all data kinds validate without coercion and finite fractional numbers rem
   }
 });
 
+test("string data still permits empty values and byte errors identify oversized UTF-8 inputs", () => {
+  const agreement = parseServiceAgreement(echoAgreement(string(4), ""));
+  for (const input of ["", "😀"]) {
+    const invocation = { operation: "echo", input, state: null, now };
+    assert.deepEqual(parseServiceInvocation(agreement, invocation), invocation);
+    assert.deepEqual(
+      parseServiceReply(agreement, invocation, { result: input, state: null }),
+      { result: input, state: null },
+    );
+  }
+  assert.throws(
+    () =>
+      parseServiceInvocation(agreement, {
+        operation: "echo",
+        input: "😀x",
+        state: null,
+        now,
+      }),
+    /Operation input exceeds its byte limit of 4; received 5 UTF-8 bytes/,
+  );
+});
+
 test("input and result limits count JSON escaping/container overhead and reject nested expansion early", () => {
   const agreement = echoAgreement(string(8192), "");
   const invocation = {

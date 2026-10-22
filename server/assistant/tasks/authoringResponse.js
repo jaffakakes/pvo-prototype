@@ -26,7 +26,20 @@ export async function authoringInput(coordinator, task) {
       manualPlans: task.manualPlans,
       connectionSetup: connectionSetupAvailable(coordinator.env)
         ? {
-            providers: ["github", "resend"],
+            providers: ["github", "resend", "agentmail"],
+            agentEmail: {
+              setup: {
+                provider: "agentmail",
+                recipient: "creator-approved email address",
+              },
+              usesSavedIdentity: true,
+              adapterOperation: "agentmail_email_send",
+              method: "POST",
+              path: ["messages", "send"],
+              input: ["subject", "text"],
+              receipt: { id: "string, maxBytes 512" },
+              completion: "accepted for sending; delivery is not confirmed",
+            },
             operations: ["github_repository_read", "github_issues_list"],
             credentialEntry: "private_form",
             generatedServiceAccess: true,
@@ -49,7 +62,12 @@ export async function authoringInput(coordinator, task) {
       ? { attachment: attachmentPlanningContext(coordinator, task) }
       : {}),
     ...(task.stepId === "build"
-      ? { build: coordinator.builders.context(task.id) }
+      ? {
+          build: {
+            ...coordinator.builders.context(task.id),
+            source: coordinator.workspaces.sourceReference(task.id),
+          },
+        }
       : {}),
   };
 }
@@ -240,6 +258,25 @@ export function askForProgressHelp(coordinator, claimed) {
     task.stepId === "build" ? coordinator.builders.get(task.id).round : null;
   const question = coordinator.progress.question(task, round);
   if (!question) return false;
+  const selection = coordinator.evidence.context(task).selection;
+  // Coarse diagnostics only: never log history content, notes, proposals or account data.
+  console.info(
+    JSON.stringify({
+      operation: "assistant-progress-stalled",
+      step: task.stepId,
+      progress: coordinator.progress.context(task),
+      history: selection
+        ? {
+            collection: selection.collection,
+            after: selection.after,
+            offset: selection.offset,
+            sequence: selection.sequence,
+            nextOffset: selection.nextOffset,
+          }
+        : null,
+      repairCheck: coordinator.repairs.context(task)?.check ?? null,
+    }),
+  );
   coordinator.repository.update(
     task.id,
     { kind: "ask", question },

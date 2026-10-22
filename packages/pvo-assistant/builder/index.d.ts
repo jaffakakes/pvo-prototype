@@ -235,6 +235,11 @@ export const BUILDER_RESEARCH_LIMITS: Readonly<{
 }>;
 export type BuilderResearchResult =
   | {
+      kind: "web_evidence" | "capability_record";
+      status: "rejected";
+      result: { message: string };
+    }
+  | {
       kind: "connections_read";
       status: "completed";
       result: import("../connections/index.js").ConnectionPage;
@@ -285,6 +290,13 @@ export function parseBuilderResearchResult(
   tool: BuilderResearch,
   value: unknown,
 ): BuilderResearchResult;
+export function researchFailure(
+  kind: "web_evidence" | "capability_record",
+  error: unknown,
+): Extract<
+  BuilderResearchResult,
+  { status: "rejected" | "unavailable" | "unknown" }
+>;
 export function builderResearchDefinitions(
   available: readonly BuilderResearch["kind"][],
 ): Array<{

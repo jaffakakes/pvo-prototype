@@ -61,6 +61,8 @@ Implement these as separate follow-on tasks. Each needs a concrete demonstration
 
 A browser automation capability may help with some services, but account access and actual supported actions still need verification. The agent should ask for a connection or agree a manual step when it cannot establish a reliable execution path.
 
+The paused email row above records the Roadmap 4 decision on 8 October. The creator resumed that work on 9 October with AgentMail and AgentPhone under [Roadmap 5](05-agent-identity-and-onboarding.md). The completed 4D repair capability and its evidence below stay unchanged.
+
 ## Complete this roadmap
 
 Reuse the recorded 1G evidence for basic updates and service lifecycle. Demonstrate a real repair, the affected update/control behavior with any new connection or job capability, and one additional capability justified by a concrete request. Repeat earlier checks only where a changed dependency creates a concrete risk.

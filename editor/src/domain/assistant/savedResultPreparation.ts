@@ -1,5 +1,6 @@
 import {
   parsePreparedTaskResult,
+  preparedTaskComponentId,
   type PreparedTaskResult,
 } from "../../../../packages/pvo-assistant/results/index.js";
 import type { ProjectSnapshot } from "../project/model";
@@ -16,8 +17,11 @@ export function prepareSavedResult(
   },
 ) {
   const result = parsePreparedTaskResult(value);
+  let componentOrdinal = 0;
   return prepareNativeBatch(project, result.operations, {
     ...options,
+    createComponentId: () =>
+      preparedTaskComponentId(result.taskId, ++componentOrdinal),
     ...(result.attachment
       ? {
           attachment: {

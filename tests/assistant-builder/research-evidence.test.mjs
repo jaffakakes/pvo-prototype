@@ -5,6 +5,7 @@ import {
   parseBuilderResearchResult,
   serializeBuilderResearch,
   createResearchEvidence,
+  researchFailure,
   builderResearchDefinitions,
 } from "../../packages/pvo-assistant/builder/index.js";
 import { planSavedBuild } from "../../server/assistant/builder/planner.js";
@@ -44,6 +45,13 @@ test("structured research records the requested operation and actual source with
 });
 
 test("research rejects invented quotations, authority fields, missing verification work and excessive content", () => {
+  for (const excerpts of [Array(4).fill("A source excerpt"), "not an array"])
+    assert.throws(
+      () => parseBuilderResearch(evidenceNote({ excerpts })),
+      new RegExp(
+        `excerpts must be an array within its item limit of 3; received ${Array.isArray(excerpts) ? "4 items" : "a non-array"}`,
+      ),
+    );
   assert.throws(
     () =>
       createResearchEvidence(
@@ -127,6 +135,10 @@ test("the planner can request evidence before an agreement while network adapter
   assert.deepEqual(result, decision);
   assert.match(JSON.stringify(sent), /source_text_only/);
   assert.match(JSON.stringify(sent), /sourceOperationId/);
+  assert.match(
+    JSON.stringify(sent),
+    /Only history decisions have a notes field/,
+  );
   let calls = 0;
   const provider = publicResearch({
     fetch: async () => {
@@ -174,5 +186,44 @@ test("rewriting a research interpretation or changing receipt times cannot fake 
       ...evidencePage,
       url: "https://calendar.example.com/docs/another",
     }),
+  );
+});
+
+test("research corrections contain only approved diagnostics and cannot manufacture source evidence", () => {
+  const tool = evidenceNote();
+  const rejection = researchFailure(
+    tool.kind,
+    new Error("Research excerpts must appear in the saved page text."),
+  );
+  assert.equal(rejection.status, "rejected");
+  assert.deepEqual(parseBuilderResearchResult(tool, rejection), rejection);
+  for (const error of [
+    new Error("private provider token and response"),
+    new Error("toString"),
+    null,
+  ]) {
+    assert.deepEqual(researchFailure(tool.kind, error), {
+      kind: tool.kind,
+      status: "unavailable",
+      result: null,
+    });
+  }
+  for (const result of [
+    { message: "private provider response" },
+    { ...rejection.result, source: evidencePage },
+    null,
+  ]) {
+    assert.throws(() =>
+      parseBuilderResearchResult(tool, { ...rejection, result }),
+    );
+  }
+  assert.throws(() =>
+    parseBuilderResearchResult(
+      { kind: "web_read", url: evidencePage.url },
+      { ...rejection, kind: "web_read" },
+    ),
+  );
+  assert.throws(() =>
+    parseBuilderResearchResult(tool, { ...rejection, status: "completed" }),
   );
 });
