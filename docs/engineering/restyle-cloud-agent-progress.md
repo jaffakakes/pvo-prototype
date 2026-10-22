@@ -1,5 +1,11 @@
 # Restyle cloud agent: current progress and handoff log
 
+## Recovery candidate passes full checks and live setup — 22 October 2026
+
+Application/evaluator `e2bfae7` passes the full source check: 1,784 tests, zero failures and four optional skips. The separate optional sandbox suite passes all 20 cases with zero skips; strict editor types already passed on this source. The new live missing-account/lost-reply case (`durable-2026-10-22T07-50-47.559Z-309ff9ae`) automatically retries unchanged input after its saved model_connection wait and runtime restart, without Resume or a developer hint. It reaches the exact private AgentMail setup in three calls, $0.044454 known estimate, zero unknown usage. The revoked-account case (`durable-2026-10-22T07-52-16.283Z-adc3c889`) reaches the proper private reconnection in two calls, $0.036783 known estimate, zero unknown usage. Both have separate passing semantic grades tied to report hashes, no credentials/service/send created, restart preservation and verified cleanup.
+
+The candidate build and guarded beta dry run pass. Staged `restyle-editor-shell-ae249aceaa5c1b5c` retains 47 prior immutable assets with zero downloads; source dist was backed up and restored. Nothing is deployed. The fresh owned Vite5295 PID97759/session91795 starts only after building; its resource record is private. Browser preflight and newly generated guestbook/email journeys are next, followed by the unchanged 105-run matrix. Earlier rejected candidates and every failed check remain retained. 7R.02/05/06 remain unchecked; broader signup/phone and production stay deferred.
+
 ## Automatic inference recovery implemented; final verification pending — 22 October 2026
 
 Temporary read-only inference failures now save a durable model_connection wait and retry the same input after10 and30 seconds. Two consecutive automatic retries are allowed; continued failure remains saved for explicit Retry. This is not a saved-goal/request limit and never applies to external writes. Every attempt retains its failed operation and usage. Restart keeps the delay, Stop prevents another dispatch, and replies are fenced before preparation after cancellation or a changed claim. Build-stage failures now expose the existing Retry action instead of the obsolete “building is not available yet” message.
