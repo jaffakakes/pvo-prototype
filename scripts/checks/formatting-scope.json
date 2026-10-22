@@ -428,6 +428,7 @@
   "scripts/checks/player/service-submissions.mjs",
   "scripts/checks/restyle-capability/build-scenarios.mjs",
   "scripts/checks/restyle-capability/build.mjs",
+  "scripts/checks/restyle-capability/history.mjs",
   "scripts/checks/restyle-capability/probes.mjs",
   "scripts/checks/restyle-capability/provider.mjs",
   "scripts/checks/restyle-capability/run.mjs",

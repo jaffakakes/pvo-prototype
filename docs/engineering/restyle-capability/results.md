@@ -30,3 +30,15 @@ Next: execute all 42 runs; grade manually against frozen semantic criteria and i
 ## Preliminary run retained
 
 `run-2026-10-22T00-43-33.322Z-e30e9d53` was deliberately stopped before coding because the evaluation driver had incorrectly nested rejected-proposal feedback. Completed one-step planning and editor observations remain valid supplementary evidence, with all failures retained. The unfinished attempt is operator-interrupted and its charge is unknown. They are not substituted for the complete v1.1 matrix. The driver correction changes no product code, model, scenario or rubric. A new regression check verifies actual planner repair messages contain the exact proposal string.
+
+## Live checkpoint (partial; final grading pending)
+
+Complete v1.1 run: `run-2026-10-22T00-46-13.881Z-aa6ae87c`, source/evaluation checkpoint `123739c`. The first guestbook planning probe exhausted the unchanged 6,000 output-token allowance. First-round image checks returned correct counts/receipt text and did not infer unseen speech/events. First coding guestbook passed agreement and hidden cases after two schema repairs (missing top-level review, then review in the wrong location); no source behavior repair was needed. These are partial observations, not the final score. No intervention changed the measured run.
+
+Final tooling checks at this checkpoint: `npm run check` passes 1,086 JavaScript modules, 1,053 dependency checks, 850 formatted files and 1,749/1,751 Node tests with two optional Docker skips. Both optional checks are included in a separate 11/11 passing targeted run with Docker enabled. These deterministic checks include interrupted tasks, capacity waits, account revocation and uncertain-write recovery; they do not establish live model competence.
+
+### Reporter and history correction (v1.2)
+
+B04.1 generated a missing-request defect, but the evaluation reporter then used an unsupported failure code. Its repair results are invalid: the model received a generic reporter error instead of the actionable request mismatch and repeatedly read history. Stop and retain this attempt, including its usage and source; do not blame its repair loop on the production product. The reporter now uses the existing `mismatch` code, with an end-to-end report-parser regression. The evaluation also reuses the application's actual bounded history selector, including empty exhausted selections, byte limits and progress context. This replaces the earlier comparison driver's simplified history projection; no application code changes.
+
+Protocol v1.2 resumes the exact same input matrix. Retain all 19 completed, unaffected v1.1 cases (passes and failures), and run only the 23 missing/interrupted repetitions. No retained build used the corrected account/history paths. Journals preserve both driver versions and record predecessor/retained IDs. The full durable coordinator, history sequence allocation and progress-help workflow remain outside this local evaluation.

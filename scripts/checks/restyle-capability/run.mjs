@@ -19,8 +19,23 @@ import { buildScenarios } from "./build-scenarios.mjs";
 import { runBuild } from "./build.mjs";
 
 const selected = process.argv[2] ?? "all";
-if (!["all", "probes", "builds"].includes(selected))
-  throw new Error("Select all, probes or builds.");
+if (!["all", "probes", "builds", "resume"].includes(selected))
+  throw new Error(
+    "Select all, probes, builds, or resume followed by a journal path.",
+  );
+const previous =
+  selected === "resume"
+    ? JSON.parse(await readFile(process.argv[3], "utf8"))
+    : null;
+const completed = new Set(
+  (previous?.runs ?? [])
+    .filter(
+      (row) =>
+        !["running", "operator_interrupted"].includes(row.status) &&
+        !row.invalidForScoring,
+    )
+    .map((row) => `${row.id}.${row.repetition}`),
+);
 const directory = join(
   homedir(),
   ".codex/secure/restyle-capability",
@@ -30,8 +45,10 @@ await mkdir(directory, { recursive: true, mode: 0o700 });
 const probes = [...planningProbes(), ...editorProbes, ...visionProbes];
 const builds = buildScenarios();
 const report = {
-  protocol: "restyle-capability-v1.1",
+  protocol: "restyle-capability-v1.2",
   selected,
+  predecessor: previous ? process.argv[3] : null,
+  retainedRuns: [...completed],
   startedAt: new Date().toISOString(),
   source: execFileSync("git", ["rev-parse", "HEAD"], {
     encoding: "utf8",
@@ -61,6 +78,8 @@ const files = [
 for (const file of files)
   report.frozenFiles[file] = digest(await readFile(file));
 report.matrixDigest = digest(JSON.stringify(report.cases));
+if (previous && previous.matrixDigest !== report.matrixDigest)
+  throw new Error("Resume cannot change the frozen input matrix.");
 let pending = Promise.resolve();
 function save() {
   const content = JSON.stringify(report, null, 2) + "\n";
@@ -84,6 +103,7 @@ if (selected !== "probes") {
   await save();
 }
 async function run(scenario, repetition) {
+  if (completed.has(`${scenario.id}.${repetition}`)) return;
   const row = {
     id: scenario.id,
     family: scenario.family,

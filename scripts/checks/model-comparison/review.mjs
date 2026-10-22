@@ -49,7 +49,7 @@ export async function runCases(
         ) {
           failure = {
             step: index,
-            code: "account_requests_mismatch",
+            code: "mismatch",
             detail:
               "Actual account requests differ from the independent ordered expectations.",
           };

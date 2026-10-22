@@ -3,6 +3,10 @@
 
 ## Capability baseline in progress — 22 October 2026
 
+**Resume checkpoint:** v1.1 B04.1 was stopped because an evaluation-only unsupported failure code hid its real missing-request defect. Its repair loop is invalid evidence about production. All 19 unaffected completed runs stay retained; protocol v1.2 resumes the 23 remaining repetitions with the current report code and actual bounded history selector. Reporter/history regression checks pass. No product changes.
+
+**Active run:** protocol v1.1 journal `~/.codex/secure/restyle-capability/run-2026-10-22T00-46-13.881Z-aa6ae87c/report.json`, evaluator commit `123739c`. Final tooling checks pass: 1,749 Node tests, zero failures, two optional skips plus all 11 targeted sandbox checks. 6T.02/03 remain unchecked until all repetitions finish and are graded. Next: continue monitoring this process, preserve every failure, then publish the results/backlog without product fixes.
+
 **Measurement checkpoint:** preliminary probes are preserved under private journal `run-2026-10-22T00-43-33.322Z-e30e9d53`. The run was stopped before coding to correct evaluation-only rejected-proposal forwarding, with a regression check. Restart all 42 cases under protocol v1.1; keep preliminary failures and unknown interrupted usage separate. No product/model changes.
 
 **6T.01 verified:** frozen 21-scenario/two-repeat protocol and ten runner/sandbox checks pass. Existing Docker runtime is running. Evaluation fixtures were corrected before any live model call; no product changes. Tooling and fixture bytes will be hashed in each journal. Exact next: run 6T.02, then grade 6T.03; see [results](restyle-capability/results.md).

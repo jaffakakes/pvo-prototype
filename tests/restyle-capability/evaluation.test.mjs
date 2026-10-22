@@ -110,7 +110,7 @@ test("independent connection checker rejects a canned correct answer that never 
     (_request, step) => ({ title: step.expected.result }),
   );
   assert.equal(bad[0].status, "failed");
-  assert.equal(bad[0].failure.code, "account_requests_mismatch");
+  assert.equal(bad[0].failure.code, "mismatch");
   const good = await runCases(
     {
       execute: async (_files, _entry, input) =>
@@ -207,4 +207,110 @@ test("live builder repair receives the actual rejected proposal as text and can 
   assert.equal(calls, 2);
   assert.equal(row.validationRepairs, 1);
   assert.equal(row.status, "needs_creator_input");
+});
+
+test("missing account request reaches the real report parser as actionable independent feedback", async () => {
+  const { comparisonReview } =
+    await import("../../scripts/checks/model-comparison/review.mjs");
+  const { comparisonWorkspace, digest } =
+    await import("../../scripts/checks/model-comparison/workspace.mjs");
+  const { newBuilderState, acceptBuilderDecision } =
+    await import("../../packages/pvo-assistant/builder/index.js");
+  const { serializeServiceAgreement } =
+    await import("../../packages/pvo-assistant/services/index.js");
+  const scenario = buildScenarios().find((s) => s.id === "B04");
+  const sandbox = {
+    command: async () => ({ exitCode: 0, stdout: "", stderr: "" }),
+    execute: async () => ({ result: "Saved example", state: null }),
+  };
+  const workspace = comparisonWorkspace(sandbox);
+  await workspace.execute(
+    {
+      kind: "workspace_write",
+      expectedRevision: 0,
+      files: [
+        {
+          path: "src/main.mjs",
+          content:
+            "export function execute(){return {result:'Saved example',state:null};}",
+        },
+        {
+          path: "tests/main.test.mjs",
+          content: "import test from 'node:test'; test('shallow',()=>{});",
+        },
+      ],
+    },
+    "seed-connected",
+  );
+  const source = workspace.snapshot();
+  let state = acceptBuilderDecision(
+    newBuilderState(),
+    { kind: "agreement", agreement: scenario.agreement },
+    digest(serializeServiceAgreement(scenario.agreement)),
+  );
+  state = acceptBuilderDecision(state, {
+    kind: "review",
+    libraries: [],
+    revision: source.revision,
+    digest: source.digest,
+    entrypoint: "src/main.mjs",
+    tests: ["tests/main.test.mjs"],
+  });
+  const result = await comparisonReview(
+    state,
+    source,
+    {
+      ...scenario,
+      resolveAccount: (_request, step) => ({ title: step.expected.result }),
+    },
+    sandbox,
+  );
+  assert.equal(result.feedback.error, null);
+  assert.equal(result.feedback.report.status, "failed");
+  assert.match(
+    result.feedback.report.cases[0].failure.detail,
+    /Actual account requests/,
+  );
+});
+
+test("evaluation history uses real byte-bounded fragments and honest exhaustion", async () => {
+  const { selectBuildHistory } =
+    await import("../../scripts/checks/restyle-capability/history.mjs");
+  const row = { decisions: [], reviews: [], operations: [], repairs: [] };
+  const task = { input: { text: "🙂".repeat(3000) }, questions: [] };
+  const request = {
+    kind: "history",
+    collection: "input",
+    after: 0,
+    offset: 0,
+    notes: "saved notes",
+  };
+  const first = selectBuildHistory(
+    request,
+    task,
+    { agreement: null },
+    row,
+    null,
+  );
+  assert.equal(first.selection.sequence, 1);
+  assert.ok(Buffer.byteLength(first.selection.content) <= 4096);
+  assert.ok(first.selection.nextOffset > 0);
+  const second = selectBuildHistory(
+    request,
+    task,
+    { agreement: null },
+    row,
+    null,
+  );
+  assert.equal(second.progress[0].repetitions, 2);
+  const empty = selectBuildHistory(
+    { ...request, after: 1 },
+    task,
+    { agreement: null },
+    row,
+    null,
+  );
+  assert.equal(empty.selection.sequence, null);
+  assert.equal(empty.selection.content, "");
+  assert.equal(empty.selection.nextOffset, null);
 });

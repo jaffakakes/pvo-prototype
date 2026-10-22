@@ -1,3 +1,4 @@
+import { selectBuildHistory } from "./history.mjs";
 import { planSavedBuild } from "../../../server/assistant/builder/planner.js";
 import {
   newBuilderState,
@@ -14,6 +15,8 @@ import { comparisonWorkspace, digest } from "../model-comparison/workspace.mjs";
 import { comparisonReview } from "../model-comparison/review.mjs";
 export async function runBuild(scenario, row, sandbox, model, save) {
   const started = performance.now();
+  row.operations = [];
+  row.repairs = [];
   row.decisions = [];
   row.reviews = [];
   row.validationRepairs = 0;
@@ -115,6 +118,7 @@ export async function runBuild(scenario, row, sandbox, model, save) {
       } catch (error) {
         if (!error.feedback) throw error;
         row.validationRepairs++;
+        row.repairs.push(error.feedback);
         evidence = {
           repair: {
             sequence: row.validationRepairs,
@@ -135,30 +139,13 @@ export async function runBuild(scenario, row, sandbox, model, save) {
         `${scenario.id} / ${row.repetition}: ${decision.kind}, inference calls ${row.attempts.length}`,
       );
       if (decision.kind === "history") {
-        const collection = {
-          input: task.input,
-          agreement: state.agreement,
-          workspace: workspace.snapshot(),
-          operations: state.feedback,
-          reviews: row.reviews,
-        }[decision.collection];
-        const text = JSON.stringify(collection ?? []),
-          points = [...text];
-        evidence = {
-          selection: {
-            collection: decision.collection,
-            sequence: decision.after === 0 ? 1 : null,
-            offset: decision.offset,
-            text: points
-              .slice(decision.offset, decision.offset + 4096)
-              .join(""),
-            nextOffset:
-              points.length > decision.offset + 4096
-                ? decision.offset + 4096
-                : null,
-          },
-          notes: decision.notes,
-        };
+        evidence = selectBuildHistory(
+          decision,
+          task,
+          state,
+          row,
+          workspace.snapshot(),
+        );
         continue;
       }
       if (!["tools", "review"].includes(decision.kind)) {
@@ -183,6 +170,7 @@ export async function runBuild(scenario, row, sandbox, model, save) {
             result = { error: error.message.slice(0, 1024) };
             halt = true;
           }
+          row.operations.push({ ...next, result });
           if (halt) row.toolFailures++;
           state = recordBuilderTool(state, next, result, halt);
           row.savedState = state;

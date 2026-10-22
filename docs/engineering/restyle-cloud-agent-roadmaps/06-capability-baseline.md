@@ -6,7 +6,7 @@ Authorized 22 October 2026: build and run a broad pressure test, document succes
 - [ ] **6T.02** Run every scenario twice against the unchanged production adapter; preserve every request, response, validation rejection, tool result, generated source and cleanup receipt privately.
 - [ ] **6T.03** Grade against the frozen rubric, distinguish model, harness, provider and unsupported-capability outcomes, and document limitations and a ranked fix backlog without implementing fixes.
 
-## Frozen protocol v1.1
+## Frozen protocol v1.2
 
 Baseline: source `c100993`; app source `06eeae1`; `runpodNativeModels`, `kimi-k2.6`, thinking disabled, temperature 0.6. Actual provider-returned model must match. Native editing uses the real 3,000-token planner and its own repair/review flow; saved builder uses 6,000 tokens and 180-second inference attempts; images use the real frame prompt and 350-token response. No prompt tuning between runs.
 
@@ -53,3 +53,9 @@ See the eventual [results](../restyle-capability/results.md). 6T.01 verified: te
 ### Evaluation correction before coding
 
 The preliminary live run was stopped before coding after review found an evaluation-driver error: it nested the validator's already-bounded proposal object inside another `text` field. This could corrupt repair prompts. The driver now forwards the actual object unchanged; a regression test verifies the next real planner call receives string message content and the exact rejected proposal. Product code is untouched. Earlier completed planning/editor probes remain in the preliminary journal as supplementary observations, including all failures. An in-flight attempt is marked interrupted with unknown billing. The complete 42-run matrix is restarted under v1.1; no acceptance criteria or input cases changed.
+
+### Reporter and history correction (v1.2)
+
+B04.1 generated a missing-request defect, but the evaluation reporter then used an unsupported failure code. Its repair results are invalid: the model received a generic reporter error instead of the actionable request mismatch and repeatedly read history. Stop and retain this attempt, including its usage and source; do not blame its repair loop on the production product. The reporter now uses the existing `mismatch` code, with an end-to-end report-parser regression. The evaluation also reuses the application's actual bounded history selector, including empty exhausted selections, byte limits and progress context. This replaces the earlier comparison driver's simplified history projection; no application code changes.
+
+Protocol v1.2 resumes the exact same input matrix. Retain all 19 completed, unaffected v1.1 cases (passes and failures), and run only the 23 missing/interrupted repetitions. No retained build used the corrected account/history paths. Journals preserve both driver versions and record predecessor/retained IDs. The full durable coordinator, history sequence allocation and progress-help workflow remain outside this local evaluation.
