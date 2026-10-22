@@ -1,5 +1,15 @@
 # Restyle cloud agent: current progress and handoff log
 
+## Manual-alternative observation gap verified without changing output — 22 October 2026
+
+P07.4 reaches a truthful manual-alternative proposal in four paid calls with a valid first decision, no schema repair and no send. Protocolv1.6 recognises ask/connect_account/ask_research as terminal help but omits the supported manual_alternative variant, so its original row incorrectly says planning_observation_exhausted. That raw result remains unchanged. The frozen rubric already permits concrete unavailable-setup help; no scenario, model input, criterion or threshold is changed.
+
+Exact recorded research calls/operation IDs and the unchanged final proposal are replayed through the actual task adapter, capability/manual-choice validator and durable runner. `manual-replay-2026-10-22T09-15-13.801Z-579b9bea` passes: the exact proposal becomes an unanswered Use this alternative / Keep my original request question, no agreement or accepted manual plan exists, restart preserves the choice, zero new inference and cleanup verified. The first replay fixture omitted workspace availability and failed before invoking its controlled planner; this zero-inference preparation failure is retained in `manual-replay-2026-10-22T09-14-32.490Z-a1992012`. No generated output was edited or new model answer selected.
+
+Separate hash-bound classification-corrections and replay grades make the raw status discrepancy explicit. The independent auditor accepts this one status correction only with the original output hash, actual runtime proof, unchanged proposal and no new calls. After the matrix finishes, correct the evaluator terminal classifier and add a regression; keep the original measured source/status and all paid attempts. This evaluation correction does not justify reusing a failed product output or changing the first-decision score.
+
+Current application/evaluator bytes remain frozen. Planning first decisions are30/32: P01.4 needs one real schema correction and118.6seconds; P03.2 needs two. Both eventual outputs pass; any further first-decision failure will miss38/40. Exact next: finish the final coding cases and fifth round, live P04 reference-recovery follow-up, final audit/export, the isolated evaluator correction/checks, then verified beta/PR delivery. No acceptance gate is complete and no beta deployment occurred.
+
 ## Final matrix remains unchanged; supplementary recovery pending — 22 October 2026
 
 Application `85f7a34` is still frozen. The first62 outputs in `run-2026-10-22T08-27-15.081Z-a01ee512` pass their original semantic rubric;23/24 planning first decisions are valid. P03.2 takes two actual schema repairs and174.1seconds before a correct final agreement. First-decision failure remains recorded. Completed coding cases pass independent public/hidden checks with no manual edits; the third seeded repair and two more complete rounds remain. No acceptance gate or beta deployment is claimed.
