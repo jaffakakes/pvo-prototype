@@ -1,5 +1,11 @@
 # Restyle cloud agent: start here when taking over
 
+## Final repeated matrix: three rounds complete — 22 October 2026
+
+The unchanged candidate has passed all 63 completed cases; two rounds remain. Planning first decisions are valid in 22/24 completed runs. P07.2 recovers after two schema repairs. P01.3 recovers after four repairs in five calls and 544.9 seconds: extra step/reply fields, too many cases and an out-of-schema empty input were all rejected. Its final persistent guestbook includes independent reads and the requested behavior. The slow recovery and minor generated-description inconsistencies remain explicit in the semantic grades; no failed proposal is discarded. All 15 code/repair runs pass the unchanged independent cases in 2–6 calls, at most 186.3 seconds, with zero format repairs and no developer hints.
+
+Current private usage inventory includes 53 retained journals, 667 dispatched attempts, $16.830923 known fixed-rate estimate and 25 attempts lacking usage (one is the current in-flight call). All 879 recorded resources were cleaned at this checkpoint. The seven private audit/build/browser orchestration scripts and hashes are preserved in `~/.codex/secure/restyle-capability/reliability-tools/`. No application/evaluator byte changes or beta deployment. Exact next: finish and grade the remaining 42 cases, audit the original acceptance gates, then verify beta delivery and publish the final evidence. 7R.02/05/06 remain unchecked.
+
 ## Final repeated matrix: two rounds complete — 22 October 2026
 
 The unchanged candidate has completed and semantically passed42/105 runs in `run-2026-10-22T06-04-50.643Z-f9a2e438`. Planning first decisions pass15/16; P07.2 needs two actual schema repairs before an honest unavailable-account question and stays recorded as a first-decision failure. All ten code/seeded-repair runs pass their generated and independent public/hidden checks in2–6 calls, at most161 seconds, zero format repairs and zero developer interventions. Three early tool failures repair autonomously. Every original scenario and frozen evaluator file still matches its recorded hash.
