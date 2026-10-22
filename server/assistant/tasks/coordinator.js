@@ -78,7 +78,7 @@ import {
 } from "./input.js";
 
 // Saved code edits may return a full test/agreement; leave time to settle the receipt.
-const AUTHORING_TIMEOUT_MS = 180000;
+const AUTHORING_TIMEOUT_MS = TASK_LIMITS.authoringAttemptMs;
 const AUTHORING_CLAIM_MS = AUTHORING_TIMEOUT_MS + 15000;
 
 /** Private binding: only trusted routes select the object using the authenticated owner. */

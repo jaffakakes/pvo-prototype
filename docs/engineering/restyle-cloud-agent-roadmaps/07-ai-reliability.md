@@ -97,3 +97,7 @@ Candidate393ab2f passes fresh generated guestbook/email UI journeys, maximum-siz
 ### First-decision gate rejects the next candidate
 
 The393ab2f full repetition attempt is stopped after three first-decision planning failures make38/40 impossible. All69 completed outputs, their repairs and one interrupted call are retained; the candidate is not accepted or deployed. Waiting-research admission, short UTF-8 choice labels, local/connected case shapes and valid case inputs now receive explicit guidance and precise byte feedback without relaxing any rule. All57 focused checks pass. Next: controlled planning repetitions, current generated journeys and a fresh unchanged105 before beta. See progress for exact journals, the corrected regression-test assumption and cleanup.
+
+### Inference timeout checkpoint
+
+The67c108f targeted15 repetition diagnostic has14 correct first decisions/zero format repairs and one180-second timeout without output. All19 calls and the unknown usage remain recorded. The next candidate shares a300-second saved-authoring attempt deadline and315-second claim between runtime/evaluation; the existing330-second lease maximum and original ten-minute coding gate are unchanged. Protocolv1.5 records timing only, not new scenarios or relaxed rubrics. The staged beta is superseded and undeployed. Exact next: claim/Stop/restart regressions, fresh P01 repetitions, current journeys and full105.

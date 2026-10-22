@@ -39,7 +39,7 @@ test("a model reply near its deadline retains a claim long enough to settle exac
     await started;
     const running = await state(fixture, task);
     // Model decoding and receipt settlement may extend beyond the former shorter planning claims.
-    await fixture.control({ action: "time", now: running.updatedAt + 185000 });
+    await fixture.control({ action: "time", now: running.updatedAt + 305000 });
     release();
     const result = await until(
       () => state(fixture, task),

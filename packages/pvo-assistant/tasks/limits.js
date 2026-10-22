@@ -18,6 +18,7 @@ export const TASK_LIMITS = Object.freeze({
   resources: 8,
   artifactBytes: 1024 * 1024,
   retentionMs: 7 * 24 * 60 * 60_000,
+  authoringAttemptMs: 300_000,
   leaseMs: 330_000,
   defaultLeaseMs: 60_000,
 });

@@ -1,4 +1,5 @@
 import { planSavedBuild } from "../../../server/assistant/builder/planner.js";
+import { TASK_LIMITS } from "../../../packages/pvo-assistant/tasks/index.js";
 import { researchDefinitions } from "./probes.mjs";
 import { missingAccountResearch } from "./planning-research.mjs";
 
@@ -28,7 +29,7 @@ export async function runPlanning(scenario, row, models, save) {
           { agreement: null, feedback, workspace: null },
           researchDefinitions,
           {},
-          AbortSignal.timeout(180000),
+          AbortSignal.timeout(TASK_LIMITS.authoringAttemptMs),
           evidence,
           models,
         );

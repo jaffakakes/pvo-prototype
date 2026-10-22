@@ -1,5 +1,6 @@
 import { selectBuildHistory } from "./history.mjs";
 import { planSavedBuild } from "../../../server/assistant/builder/planner.js";
+import { TASK_LIMITS } from "../../../packages/pvo-assistant/tasks/index.js";
 import {
   newBuilderState,
   acceptBuilderDecision,
@@ -112,7 +113,7 @@ export async function runBuild(scenario, row, sandbox, model, save) {
             Math.max(
               1,
               Math.min(
-                180000,
+                TASK_LIMITS.authoringAttemptMs,
                 Math.floor(600000 - (performance.now() - started)),
               ),
             ),

@@ -1,5 +1,15 @@
 # Restyle cloud agent: start here when taking over
 
+## Planning formats pass; inference allowance corrected — 22 October 2026
+
+The completed67c108f diagnostic (`run-2026-10-22T07-02-31.112Z-98c638f6`) retains all15 P01/P02/P07 repetitions:14 semantically correct first decisions, zero format repairs, and one P01.3 transport-unknown timeout at180 seconds with no output. Nineteen calls cost$0.841110 known estimate; one has unknown usage. All resources are cleaned. This is a failed diagnostic, not final acceptance, and no original output is replaced.
+
+Saved authoring now shares a300-second attempt allowance between the actual coordinator and evaluator, with a315-second claim preserving the15-second settlement margin. This fits the existing330-second lease maximum. Model/settings/prompts and all original21 scenarios/rubrics are unchanged; the coding gate remains600 seconds/12 calls/two format repairs. Evaluation protocolv1.5 records the timing change. The existing near-deadline settlement regression now advances to305 seconds; Stop, late-response and restart cases remain required.
+
+Previous67c108f checks passed1,779 source tests with four opt-in skips, strict editor types and guarded build/dry run. Its optional batch passed20/21 because Vite5295 was not running; after starting the recorded owned serverPID85368, the sole failed browser preflight passed separately. Both logs are retained. Stagedd8141e9b53b49ee3 is now superseded and has not been deployed.
+
+The updated near-deadline claim/Stop/restart/evaluation checks pass19 tests with one optional Docker case skipped; the full source/types and complete opt-in batch are running. Exact next: commit this batch, rerun P01 repetitions, then fresh matching-source generated journeys and the unchanged full105. Rebuild and deliver beta only after acceptance. 7R.02/05/06 stay unchecked; broader signup/phone and production remain deferred.
+
 ## Repeated candidate rejected; planning boundaries clarified — 22 October 2026
 
 Candidate393ab2f cannot satisfy the unchanged first-decision gate: P07.2, P01.3 and P02.4 are three invalid first planning decisions, so reaching38/40 is impossible. The run is stopped with69 completed semantically passing outputs and one interrupted/unscored P07.4. Original report bytes and SHA remain in `report-before-annotation.json`; `stop-record.json` records the exact owned PID78039 and reason. All217 containers are marked cleaned, the process exited143 after SIGTERM, and Docker confirms no remaining `restyle-model-*` container. The pending provider call has unknown usage. This attempt remains a rejected candidate, not a resumed source of selected passes.
