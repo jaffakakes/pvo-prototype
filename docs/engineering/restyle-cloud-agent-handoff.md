@@ -1,5 +1,11 @@
 # Restyle cloud agent: start here when taking over
 
+## Explicit setup availability passes five live repeats — 22 October 2026
+
+Candidate `b5107b4` passes all five targeted P07 repeats in `run-2026-10-22T05-22-53.035Z-52d8c8ef`: each first decision satisfies the closed contract, and each final answer truthfully explains unavailable private setup, preserves the requested outcome and offers an actual creator choice without fake forms, credentials or sending claims. Original outputs and separate semantic grades are preserved; this diagnostic does not replace the final105.
+
+Full source check passes1,775 tests with four optional skips and zero failures; strict editor TypeScript, build and guarded beta dry run pass. Staged release is `restyle-editor-shell-6424e0a995630521`, with42 retained immutable assets and zero downloads. Source dist is restored; build/previous assets are preserved under the existing private backup's `build-b5107b4` directory. Nothing is deployed. Next: fresh complete generated guestbook and connected-email browser journeys on this candidate, then a fresh unchanged105, full semantic review and exact beta verification. 7R.02/05/06 remain unchecked.
+
 ## Deployment setup availability is explicit — 22 October 2026
 
 The6add362 targeted pilot (`run-2026-10-22T05-15-27.795Z-c74345dc`) verifies both completed guestbook plans now include independent reads. One missing-account answer correctly explains unavailable setup after three calls; another offers private forms that this deployment cannot open. The partial pilot is retained and stopped with one in-flight P01 attempt unscored. Close review also corrects the earlier c9c52bc P07.2 grade from pass to fail for the same unavailable-form claim; its previous grade file and hash are preserved. No rubric or model output is altered.
