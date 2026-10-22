@@ -84,6 +84,24 @@ export function authoringMessages(instructions, input, maximum) {
         }),
       });
     }
+    if (value.build?.source) {
+      const source = value.build.source;
+      const checked = value.build.reviewFeedback;
+      const current = checked?.review.digest === source.digest;
+      const failed =
+        current && (checked.report?.status ?? checked.status) === "failed";
+      context.push({
+        role: "user",
+        content: JSON.stringify({
+          savedSource: source,
+          independentCheck: checked ?? null,
+          checksCurrentSource: Boolean(current),
+          nextAction: failed
+            ? "This exact current source failed independent checking. Its passing generated tests do not resolve that failure. Inspect the failed case, correct the implementation, save changed source, then test and request review of the new revision and digest. Do not repeat the unchanged independent review or successful tests. For execution_failed, verify the entrypoint has a named execute export and test the exact saved invocation, including the initial call without connectionResults. Retrieve a missing source file or omitted failure once if needed."
+            : "savedSource is the current committed revision and digest, including after history or repair. Use these exact values for existing-source tools and review, and this revision as expectedRevision for a write. A retained independentCheck with checksCurrentSource:false describes older bytes; use it to diagnose the repair, not to review the old source. After current generated tests pass, submit a standalone review or bundle it with the final tests. Only independent checking can accept the behavior.",
+        }),
+      });
+    }
     const clarification = (value.questions ?? []).reduce(
       (latest, question) =>
         question.answer &&

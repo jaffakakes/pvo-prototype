@@ -62,7 +62,12 @@ export async function authoringInput(coordinator, task) {
       ? { attachment: attachmentPlanningContext(coordinator, task) }
       : {}),
     ...(task.stepId === "build"
-      ? { build: coordinator.builders.context(task.id) }
+      ? {
+          build: {
+            ...coordinator.builders.context(task.id),
+            source: coordinator.workspaces.sourceReference(task.id),
+          },
+        }
       : {}),
   };
 }

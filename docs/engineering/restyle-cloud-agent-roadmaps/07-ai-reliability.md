@@ -32,3 +32,7 @@ Existing Runpod inference and local network-disabled Docker may be used for cont
 
 First experiment: actionable empty-review-batch feedback and smaller stage-specific planning instructions, with exact current source guidance. Preserve schema checks and the original independent behavior cases. Verify targeted regressions before live comparison; do not change the model and prompts simultaneously.
 
+
+## Candidate checkpoint
+
+Diagnostic-only change b75bb1f is insufficient: the first connected run reached its ten-minute observation window without repair. The next candidate changes phase-specific instructions and authoritative source/review context while retaining Kimi K2.6, thinking disabled and temperature 0.6. Agreement generation receives 12,000 output tokens; code generation remains 6,000. The evaluator's extra full-source projection is removed to match the actual coordinator. Targeted tests pass; repeated model runs, complete durable journeys and beta delivery remain unverified. See the latest progress entry and private experiment journal; 7R.02–06 remain unchecked.

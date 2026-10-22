@@ -94,7 +94,12 @@ export async function runBuild(scenario, row, sandbox, model, save) {
       }
       const context = {
         ...builderContext(state),
-        workspace: workspace.snapshot(),
+        source: workspace.snapshot()
+          ? {
+              revision: workspace.snapshot().revision,
+              digest: workspace.snapshot().digest,
+            }
+          : { revision: 0, digest: null },
       };
       let decision;
       try {

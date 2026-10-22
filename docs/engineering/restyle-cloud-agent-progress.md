@@ -1,5 +1,16 @@
 # Restyle cloud agent: current progress and handoff log
 
+## Reliability candidate: planning and progress corrections — 22 October 2026
+
+**7R.02/03 are in progress, not complete.** The diagnostic-only experiment at b75bb1f is retained under private journal `restyle-capability/run-2026-10-22T01-41-08.427Z-80f94466/report.json`. B04.1 exhausted its ten-minute observation window after 83 calls: generated source default-exported execute and skipped the initial account request; repeated own-test successes did not resolve its independent failure. Remaining repetitions are still running. This disproves sufficiency of the diagnostic-only fix.
+
+**Candidate changes:** split initial agreement instructions from implementation instructions; show research instructions only when those tools are available; require compact, correctly nested decisions and named execute exports; give initial agreement output 12,000 tokens while retaining 6,000 for code. Explain the first connected invocation explicitly. Closed-object failures identify extra fields. A trusted projection of the latest completed source-save receipt is supplied on every actual builder inference. Independent failure of those exact bytes remains prominent after later successful tools/history, and stale review requests receive the current source reference before execution. No model/provider/temperature change, schema relaxation, permission change or request-count quota.
+
+**Evaluation correction:** local builds previously injected the whole workspace snapshot, unlike the actual coordinator. They now receive the same revision/digest projection; files are obtained through normal saved decisions/tools. Historical baseline remains unchanged and this context difference must be stated in comparisons. Tests cover the actual coordinator projection, stale review repair, persistent failed-review context and existing restart/Stop fences. Focused runs: planner/review/evaluator 19 pass with one optional Docker skip; context/history planner 17 pass; actual coordinator/review/clarification 10 pass. No failures. These overlapping counts are not a unique suite total.
+
+**Next:** finish and retain the diagnostic-only experiment, then run unchanged P01/P02/P03/B04/R01 twice against this candidate before the final acceptance matrix. Full repository/browser/build checks and beta delivery are pending. No new cloud resource, provider account or email has been created; owned Docker resources are journaled and removed per execution. Continue the active goal; do not mark reliability complete from these unit checks.
+
+
 ## Reliability goal active — 22 October 2026
 
 The creator explicitly authorized fixing Restyle AI and continuing until reliable for the current MVP. [Roadmap 7](restyle-cloud-agent-roadmaps/07-ai-reliability.md) defines the acceptance gates before implementation; 7R.01 is complete. Roadmap 6 remains the immutable comparison baseline. Current goal covers plan/tool correctness, current-source review, autonomous recovery, connected-operation checks, repeated live-model evaluation and full beta journeys. Broader signup/phone and production remain deferred.

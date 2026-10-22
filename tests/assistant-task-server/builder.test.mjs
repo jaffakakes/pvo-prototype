@@ -126,6 +126,17 @@ test(
       assert.equal(result.usage.toolCalls, 6);
       assert.equal(result.usage.reservedToolCalls, 0);
       assert.equal(calls.length, 6);
+      assert.deepEqual(calls[1].builderContext.source, {
+        revision: 0,
+        digest: null,
+      });
+      for (const call of calls.filter(
+        (call) => call.builderContext?.source.revision > 0,
+      ))
+        assert.deepEqual(
+          call.builderContext.source,
+          source(call.builderContext),
+        );
       assert.equal(executions, 2);
       assert.equal(
         calls[2].builderContext.agreement.body.description,

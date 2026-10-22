@@ -112,3 +112,34 @@ test("review identity and failure survive source-decision projection and bounded
   assert.deepEqual(projected.review, review);
   assert.ok(Buffer.byteLength(JSON.stringify(omitted)) <= 4096);
 });
+
+test("current-source failure stays actionable after later successful tools and history reads", () => {
+  const input = context();
+  input.build.source = { revision: review.revision, digest: review.digest };
+  input.build.lastDecision.review = null;
+  input.evidence = {
+    selection: {
+      collection: "reviews",
+      after: 0,
+      offset: 0,
+      sequence: 1,
+      nextOffset: null,
+    },
+    progress: [{ channel: "history", repetitions: 1 }],
+  };
+  const checkpoint = latest(input);
+  assert.equal(checkpoint.checksCurrentSource, true);
+  assert.deepEqual(checkpoint.savedSource, input.build.source);
+  assert.deepEqual(checkpoint.independentCheck, input.build.reviewFeedback);
+  assert.match(checkpoint.nextAction, /correct the implementation/);
+  assert.match(checkpoint.nextAction, /named execute export/);
+  assert.match(checkpoint.nextAction, /Do not repeat/);
+
+  input.build.source = { revision: 2, digest: "b".repeat(64) };
+  const changed = latest(input);
+  assert.equal(changed.checksCurrentSource, false);
+  assert.equal(changed.savedSource.revision, 2);
+  assert.equal(changed.independentCheck.review.revision, 1);
+  assert.match(changed.nextAction, /describes older bytes/);
+  assert.match(changed.nextAction, /After current generated tests pass/);
+});

@@ -179,6 +179,10 @@ test("the builder inference uses saved task goals and feedback without platform 
     { kind: "agreement", agreement },
   );
   const sent = JSON.stringify(mock.calls);
+  const planningInstructions = mock.calls[0].input.messages[0].content;
+  assert.match(planningInstructions, /Every case belongs in agreement.cases/);
+  assert.doesNotMatch(planningInstructions, /Start and its dependent/);
+  assert.equal(mock.calls[0].input.max_tokens, 12000);
   assert.ok(sent.includes(task.input.request));
   assert.ok(!sent.includes("private-session-value"));
   assert.ok(!sent.includes("private-provider-value"));
@@ -211,6 +215,18 @@ test("the builder inference uses saved task goals and feedback without platform 
   assert.ok(
     JSON.stringify(repairing.calls).includes(feedback[0].result.stdout),
   );
+  const implementationInstructions =
+    repairing.calls[0].input.messages[0].content;
+  assert.match(implementationInstructions, /must have a named export/);
+  assert.doesNotMatch(
+    implementationInstructions,
+    /Before generating source, propose/,
+  );
+  assert.doesNotMatch(
+    implementationInstructions,
+    /Inspect external account access/,
+  );
+  assert.equal(repairing.calls[0].input.max_tokens, 6000);
 });
 
 test("builder output cannot bypass its stage, invent tool receipts or emit provider tool calls", async () => {
@@ -250,5 +266,61 @@ test("builder output cannot bypass its stage, invent tool receipts or emit provi
       signal(),
     ),
     (error) => error.code === "invalid_result",
+  );
+});
+
+test("closed decision feedback identifies the extra field without changing the accepted contract", async () => {
+  const question = {
+    kind: "ask",
+    prompt: "Which date?",
+    choices: [],
+    calls: [],
+  };
+  await assert.rejects(
+    planSavedBuild(
+      claim(create()),
+      { agreement: null },
+      definitions,
+      provider(question).env,
+      signal(),
+    ),
+    (error) => {
+      assert.match(error.feedback.message, /Unsupported fields: calls/);
+      assert.match(error.feedback.message, /Missing required fields: none/);
+      return true;
+    },
+  );
+  const { calls, ...corrected } = question;
+  assert.deepEqual(parseBuilderDecision(corrected, stage(false)), corrected);
+});
+
+test("stale review requests are repaired using the current saved source without changing source", async () => {
+  const source = { revision: 2, digest: "e".repeat(64) };
+  const context = { agreement: dinnerAgreement(), source };
+  await assert.rejects(
+    planSavedBuild(
+      claim(create()),
+      context,
+      definitions,
+      provider(review).env,
+      signal(),
+    ),
+    (error) => {
+      assert.match(error.feedback.message, /current saved source: revision 2/);
+      assert.ok(error.feedback.message.includes(source.digest));
+      assert.match(error.feedback.message, /do not restore an older version/);
+      return true;
+    },
+  );
+  const corrected = { ...review, ...source };
+  assert.deepEqual(
+    await planSavedBuild(
+      claim(create()),
+      context,
+      definitions,
+      provider(corrected).env,
+      signal(),
+    ),
+    corrected,
   );
 });
