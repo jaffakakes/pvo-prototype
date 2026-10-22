@@ -1,5 +1,11 @@
 # Restyle cloud agent: current progress and handoff log
 
+## Email implementation passes; browser observer corrected — 22 October 2026
+
+Candidate `55f8512` reaches Ready with its original agreement/source/component in nine live calls and no format repairs: `durable-2026-10-22T04-12-50.141Z-80dc0b5b`, $0.321429, no unknown usage. Generated and independent backend checks pass, and the prepared result survives a full Worker restart. The real editor applies its form and receipt Note atomically; its first Try request returns HTTP200. The observer then throws because it reads `build.agreement.connections` instead of the actual saved `{digest,body}` wrapper. This is retained as an incomplete browser attempt, not a complete journey pass. All owned resources were cleaned and no real email was sent.
+
+The observer now reads `build.agreement.body.connections`. No application or generated code changed. Exact next: rerun connected-email browser acceptance, then start the unchanged final105 matrix. Owned Vite5295 is PID52684/session34138; no4173 server is active. Current full source check is pending in `/tmp/restyle-reliability-candidate-check.log`. 7R.02/04/05/06 remain unchecked, with beta delivery still pending.
+
 ## Connected-case planning boundary clarified — 22 October 2026
 
 Retained failed attempt on `34681c3`: `durable-2026-10-22T03-58-49.194Z-22b98b0c` reached independent review but had frozen an impossible provider-failure case. The same successful connection example and request were expected to return success at one timestamp and failure at another. Review rejected the mismatch; source/agreement were not manually changed. The private stop marker ended the run normally with verified local cleanup: fourteen dispatched calls, $0.707487 known cost and one call with unknown usage at the stop boundary. No provider send occurred.

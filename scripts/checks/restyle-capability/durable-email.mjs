@@ -146,7 +146,8 @@ export async function checkEmailDelivery(
   const build = (
     await fixture.control({ action: "builder-state", id: creator.task.id })
   ).body;
-  const exampleReceipt = build.agreement.connections[0].examples[0].result.id;
+  const exampleReceipt =
+    build.agreement.body.connections[0].examples[0].result.id;
   assert.equal(typeof exampleReceipt, "string");
   assert.ok(JSON.stringify(tryBody).includes(exampleReceipt));
   await requireVisible(page, exampleReceipt);
