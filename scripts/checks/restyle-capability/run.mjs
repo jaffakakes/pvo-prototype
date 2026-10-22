@@ -30,7 +30,7 @@ await mkdir(directory, { recursive: true, mode: 0o700 });
 const probes = [...planningProbes(), ...editorProbes, ...visionProbes];
 const builds = buildScenarios();
 const report = {
-  protocol: "restyle-capability-v1",
+  protocol: "restyle-capability-v1.1",
   selected,
   startedAt: new Date().toISOString(),
   source: execFileSync("git", ["rev-parse", "HEAD"], {

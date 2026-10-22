@@ -3,6 +3,8 @@
 
 ## Capability baseline in progress — 22 October 2026
 
+**Measurement checkpoint:** preliminary probes are preserved under private journal `run-2026-10-22T00-43-33.322Z-e30e9d53`. The run was stopped before coding to correct evaluation-only rejected-proposal forwarding, with a regression check. Restart all 42 cases under protocol v1.1; keep preliminary failures and unknown interrupted usage separate. No product/model changes.
+
 **6T.01 verified:** frozen 21-scenario/two-repeat protocol and ten runner/sandbox checks pass. Existing Docker runtime is running. Evaluation fixtures were corrected before any live model call; no product changes. Tooling and fixture bytes will be hashed in each journal. Exact next: run 6T.02, then grade 6T.03; see [results](restyle-capability/results.md).
 
 The creator requested a well-rounded pressure test: **test first, fix later, document everything**. Follow [Roadmap 6](restyle-cloud-agent-roadmaps/06-capability-baseline.md). Current product stays at c100993 / app source 06eeae1 with Kimi K2.6 and thinking disabled. No model, prompt, application or deployment changes are authorized in this measurement phase. Canonical checkout remains the Restyle research-connections worktree; Desktop has unrelated pending files. Docker was stopped and is being started using its existing desktop CLI. Test-only containers will be journaled before creation and removed afterward; no new email/provider account is needed. Next: freeze and self-check evaluation fixtures, then run the repeated baseline and record actual failures. The creator has now confirmed receiving the earlier email; this adds recipient-confirmed delivery to that historical single-send proof.

@@ -172,3 +172,39 @@ test(
     assert.ok([...resources.values()].every((r) => r.cleaned));
   },
 );
+
+test("live builder repair receives the actual rejected proposal as text and can ask for help", async () => {
+  const { runBuild } =
+    await import("../../scripts/checks/restyle-capability/build.mjs");
+  const row = { repetition: 1, attempts: [] };
+  let calls = 0;
+  await runBuild(
+    buildScenarios()[0],
+    row,
+    {},
+    {
+      generate: async ({ messages }) => {
+        calls++;
+        if (calls === 1) return { content: '{"kind":"invented"}' };
+        assert.ok(messages.every((m) => typeof m.content === "string"));
+        assert.ok(
+          messages.some(
+            (m) =>
+              m.role === "assistant" && m.content === '{"kind":"invented"}',
+          ),
+        );
+        return {
+          content: JSON.stringify({
+            kind: "ask",
+            prompt: "Which name should appear?",
+            choices: ["Ari", "Bo"],
+          }),
+        };
+      },
+    },
+    async () => {},
+  );
+  assert.equal(calls, 2);
+  assert.equal(row.validationRepairs, 1);
+  assert.equal(row.status, "needs_creator_input");
+});

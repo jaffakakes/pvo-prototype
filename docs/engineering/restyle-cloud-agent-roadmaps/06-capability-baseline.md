@@ -6,7 +6,7 @@ Authorized 22 October 2026: build and run a broad pressure test, document succes
 - [ ] **6T.02** Run every scenario twice against the unchanged production adapter; preserve every request, response, validation rejection, tool result, generated source and cleanup receipt privately.
 - [ ] **6T.03** Grade against the frozen rubric, distinguish model, harness, provider and unsupported-capability outcomes, and document limitations and a ranked fix backlog without implementing fixes.
 
-## Frozen protocol v1
+## Frozen protocol v1.1
 
 Baseline: source `c100993`; app source `06eeae1`; `runpodNativeModels`, `kimi-k2.6`, thinking disabled, temperature 0.6. Actual provider-returned model must match. Native editing uses the real 3,000-token planner and its own repair/review flow; saved builder uses 6,000 tokens and 180-second inference attempts; images use the real frame prompt and 350-token response. No prompt tuning between runs.
 
@@ -49,3 +49,7 @@ The live model uses real Runpod inference. Synthetic source pages, accounts and 
 This baseline does not prove a complete editor → generated UI → export → viewer journey, concurrent production load, phone/signup support, arbitrary providers, real email delivery, speech recognition or visual quality of a rendered generated component. Preserve these as additional test needs before claiming broad readiness. The earlier user-confirmed email receipt remains one historical live example, not a new repetition in this suite.
 
 See the eventual [results](../restyle-capability/results.md). 6T.01 verified: ten runner/sandbox checks pass, including a seeded defect whose generated test passes and independent duplicate-before-full case fails. Preflight caught two evaluation-only mistakes (missing connection-catalog version and an incorrect expected diagnostic label); both were corrected before any live inference. No product fix. Next: run the frozen baseline.
+
+### Evaluation correction before coding
+
+The preliminary live run was stopped before coding after review found an evaluation-driver error: it nested the validator's already-bounded proposal object inside another `text` field. This could corrupt repair prompts. The driver now forwards the actual object unchanged; a regression test verifies the next real planner call receives string message content and the exact rejected proposal. Product code is untouched. Earlier completed planning/editor probes remain in the preliminary journal as supplementary observations, including all failures. An in-flight attempt is marked interrupted with unknown billing. The complete 42-run matrix is restarted under v1.1; no acceptance criteria or input cases changed.

@@ -120,7 +120,7 @@ export async function runBuild(scenario, row, sandbox, model, save) {
             sequence: row.validationRepairs,
             check: error.feedback.check,
             message: error.feedback.message,
-            proposal: { text: error.feedback.proposal, truncated: false },
+            proposal: error.feedback.proposal,
           },
         };
         console.log(
