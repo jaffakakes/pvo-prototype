@@ -14,7 +14,7 @@ function modelsFor(output) {
       const payload = JSON.parse(options.body);
       assert.deepEqual(payload.response_format, { type: "json_object" });
       assert.equal(payload.model, "kimi-k3");
-      assert.equal(payload.reasoning_effort, "low");
+      assert.equal(payload.reasoning_effort, "high");
       assert.equal(payload.messages[0].role, "system");
       assert.match(payload.messages[0].content, /"anyOf"/);
       assert.doesNotMatch(options.body, /private-test-key/);

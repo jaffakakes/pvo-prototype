@@ -140,9 +140,9 @@ test("saved authoring selects K3 reasoning without changing native editing or fo
   assert.deepEqual(result, { content: '{"kind":"build"}' });
   const request = http.calls[0].payload;
   assert.equal(request.model, "kimi-k3");
-  assert.equal(request.reasoning_effort, "low");
+  assert.equal(request.reasoning_effort, "high");
   assert.equal(request.temperature, 1);
-  assert.equal(request.max_tokens, 16000);
+  assert.equal(request.max_tokens, 32768);
   assert.equal(request.thinking, undefined);
   assert.equal(request.purpose, undefined);
   await models.generate(generation, signal());

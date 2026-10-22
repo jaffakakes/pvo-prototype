@@ -99,7 +99,7 @@ test("saved-authoring capture verifies its declared model and prices that model'
   const attempt = saved.at(-1);
   assert.equal(attempt.configuration.model, "kimi-k3");
   assert.equal(attempt.usage.estimatedUsd, (10 * 3 + 5 * 15) / 1000000);
-  assert.equal(attempt.request.max_tokens, 16000);
+  assert.equal(attempt.request.max_tokens, 32768);
 });
 
 test("a substituted model or provider failure cannot be counted as a valid baseline", async () => {

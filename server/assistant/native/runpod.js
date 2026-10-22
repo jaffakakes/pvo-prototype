@@ -23,7 +23,7 @@ export function runpodNativeModels(
         ...(authoring
           ? {
               model: RUNPOD_AUTHORING_MODEL,
-              reasoning_effort: "low",
+              reasoning_effort: "high",
               temperature: 1,
             }
           : {
@@ -74,7 +74,7 @@ export function runpodNativeModels(
           // Saved authoring reserves room for reasoning as well as final JSON.
           max_tokens:
             purpose === "saved_authoring"
-              ? Math.max(16000, maxTokens)
+              ? Math.max(32768, maxTokens)
               : maxTokens,
           response_format: { type: "json_object" },
         },

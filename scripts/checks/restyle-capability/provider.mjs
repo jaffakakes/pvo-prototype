@@ -10,9 +10,9 @@ import { usageEstimate } from "../model-comparison/providers.mjs";
 
 export const authoringConfiguration = Object.freeze({
   model: RUNPOD_AUTHORING_MODEL,
-  reasoning: "low",
+  reasoning: "high",
   temperature: 1,
-  minimumOutputTokens: 16000,
+  minimumOutputTokens: 32768,
   inputRate: 3,
   cachedRate: 3,
   outputRate: 15,

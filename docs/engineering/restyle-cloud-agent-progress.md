@@ -1,5 +1,12 @@
 # Restyle cloud agent: current progress and handoff log
 
+## High-reasoning saved-authoring candidate — 22 October 2026
+
+Following the six-for-six controlled planning replay recorded below, the saved-authoring K3 profile now uses high reasoning and at least 32,768 output tokens. This preserves the existing 180-second saved inference deadline, one-call metering/repair boundary, JSON parsing, local semantic checks and private reasoning exclusion. Native editing/vision remain K2.6. It is still a candidate: repeated capability and complete browser acceptance are not yet passed.
+
+Checks: 36 model/actual-planner/builder/evaluation cases pass, one optional Docker case skipped in this focused command. Result-Note implementation is `83e5ace`; its separate checks are recorded below. Next: actual durable guestbook on this combined candidate, then checked display in Try/export/viewer, account/interruption cases and the final repeated matrix. 7R.02–06 remain unchecked; no beta/production deployment or email.
+
+
 ## Connected response display and stronger-planning experiment — 22 October 2026
 
 The first actual K3/low saved guestbook reached Ready in six real calls, passed generated/independent backend checks and preserved its immutable result across a full Worker restart. Journal `durable-2026-10-22T02-43-43.448Z-48e327ce/report.json` records $0.192159 known inference cost and verified local cleanup. **It is not a complete semantic pass:** its form did not show the requested latest entries. Backend readiness alone was insufficient.
