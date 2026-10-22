@@ -51,7 +51,7 @@ test(
       const active = await current(f, task);
       assert.equal(active.stepId, "validate");
       assert.equal(active.claim.expiresAt - active.claim.claimedAt, 330000);
-      await f.control({ action: "time", now: NOW + 70000 });
+      await f.control({ action: "time", now: NOW + 320000 });
       release.resolve();
       assert.equal((await progressing).stepId, "attach");
       assert.equal(
@@ -60,7 +60,7 @@ test(
       );
       assert.ok(
         modelClaims.length > 0 &&
-          modelClaims.every((value) => value === 195000),
+          modelClaims.every((value) => value === 315000),
       );
     } finally {
       release.resolve();

@@ -1,5 +1,13 @@
 # Restyle cloud agent: start here when taking over
 
+## Claim-bound regression and clean browser server — 22 October 2026
+
+The8a39141 full source run passes1,778 tests but fails the validation-deadline test's obsolete195-second model-claim expectation. The test now requires315 seconds and holds actual validation until320 seconds, beyond the model claim and within its existing330-second validation claim. All nine focused cancellation/restart/claim tests pass; a clean full rerun is next. This correction changes tests only, with application/evaluator bytes still8a39141.
+
+Strict editor types and the build/guarded dry run pass. Staged revision2a37052d4dc3e846 retains46 old immutable assets and is not deployed. The optional batch passes20 cases; browser preflight overlaps build-triggered HMR and times out waiting for storage readiness. That failure remains retained. Once the build completes, the old owned VitePID85368 is stopped and the fresh owned serverPID88122/session60040 passes the browser preflight. No rebuild will overlap subsequent browser journeys.
+
+The three-run P01 diagnostic is ongoing: its second first decision contains an unsupported comma-named field and two saved repairs so far. It is retained as a first-decision failure, not discarded. A fresh actual guestbook journey is running in `durable-2026-10-22T07-24-12.848Z-0ce40f59`; no final acceptance is claimed. Exact next: finish diagnostic and current journeys, run unchanged final105, then verify beta and evidence. 7R.02/05/06 remain unchecked.
+
 ## Planning formats pass; inference allowance corrected — 22 October 2026
 
 The completed67c108f diagnostic (`run-2026-10-22T07-02-31.112Z-98c638f6`) retains all15 P01/P02/P07 repetitions:14 semantically correct first decisions, zero format repairs, and one P01.3 transport-unknown timeout at180 seconds with no output. Nineteen calls cost$0.841110 known estimate; one has unknown usage. All resources are cleaned. This is a failed diagnostic, not final acceptance, and no original output is replaced.

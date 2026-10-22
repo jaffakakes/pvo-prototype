@@ -101,3 +101,5 @@ The393ab2f full repetition attempt is stopped after three first-decision plannin
 ### Inference timeout checkpoint
 
 The67c108f targeted15 repetition diagnostic has14 correct first decisions/zero format repairs and one180-second timeout without output. All19 calls and the unknown usage remain recorded. The next candidate shares a300-second saved-authoring attempt deadline and315-second claim between runtime/evaluation; the existing330-second lease maximum and original ten-minute coding gate are unchanged. Protocolv1.5 records timing only, not new scenarios or relaxed rubrics. The staged beta is superseded and undeployed. Exact next: claim/Stop/restart regressions, fresh P01 repetitions, current journeys and full105.
+
+The follow-up deadline regression updates the obsolete195-second test expectation to315 and holds validation to320 seconds; all nine focused lifecycle tests pass. App/evaluator source remains8a39141. The completed build stages2a37052d4dc3e846 with46 retained assets, undeployed. Fresh-server browser preflight passes after retaining an HMR-overlap failure; live P01 and guestbook runs remain in progress.
