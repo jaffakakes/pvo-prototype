@@ -51,9 +51,13 @@ export function list(value, maximum, path) {
 export function text(value, maximum, path, allowEmpty = false) {
   requireTask(typeof value === "string", `${path} must be text.`);
   requireTask(
-    (allowEmpty || value.trim().length > 0) &&
-      new TextEncoder().encode(value).length <= maximum,
-    `${path} is empty or exceeds its byte limit.`,
+    allowEmpty || value.trim().length > 0,
+    `${path} must contain nonempty text.`,
+  );
+  const bytes = new TextEncoder().encode(value).length;
+  requireTask(
+    bytes <= maximum,
+    `${path} exceeds its byte limit of ${maximum}; received ${bytes} UTF-8 bytes. Use a shorter value within the declared bound.`,
   );
 }
 

@@ -98,7 +98,7 @@ export function parseBuilderDecision(
       const parsed = parseBuilderResearch(call);
       requireTask(
         kind !== "ask_research" || parsed.kind !== "capability_record",
-        "Waiting research cannot decide the unanswered outcome.",
+        "Waiting research cannot decide the unanswered outcome: ask_research.calls may contain only available web_search, web_read, web_evidence or connections_read calls, never capability_record. Use a separate research decision for capability_record, or omit it and ask the question now.",
       );
       requireTask(
         available.includes(parsed.kind),

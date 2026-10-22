@@ -24,6 +24,10 @@ const object = (properties) => ({
   required: Object.keys(properties),
   properties,
 });
+const questionChoice = {
+  ...string(TASK_LIMITS.choiceBytes),
+  description: `Short choice label, preferably under 80 UTF-8 bytes and never over ${TASK_LIMITS.choiceBytes} bytes. Put explanations in prompt, not choices.`,
+};
 const data = { $ref: "#/$defs/data" };
 const dataDescription = {
   anyOf: [
@@ -118,7 +122,7 @@ export function builderDecisionSchema(
   const ask = object({
     kind: { const: "ask" },
     prompt: string(TASK_LIMITS.questionBytes),
-    choices: array(string(TASK_LIMITS.choiceBytes), TASK_LIMITS.choices),
+    choices: array(questionChoice, TASK_LIMITS.choices),
   });
   const setup = connectionSetup
     ? [
@@ -160,10 +164,7 @@ export function builderDecisionSchema(
               object({
                 kind: { const: "ask_research" },
                 prompt: string(TASK_LIMITS.questionBytes),
-                choices: array(
-                  string(TASK_LIMITS.choiceBytes),
-                  TASK_LIMITS.choices,
-                ),
+                choices: array(questionChoice, TASK_LIMITS.choices),
                 calls: array(
                   {
                     anyOf: independent.map((tool) => tool.schema),

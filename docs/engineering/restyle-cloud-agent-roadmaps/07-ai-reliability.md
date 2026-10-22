@@ -93,3 +93,7 @@ The normal b5107b4 email journey passes, but a supplemental test confirms a vali
 ### Current complete journey checkpoint
 
 Candidate393ab2f passes fresh generated guestbook/email UI journeys, maximum-size receipt continuations, readable wrapped Notes, missing/revoked setup and lost-inference explicit Retry/restart. Full source, opt-in Docker/browser, editor types, native Rust/WASM and build checks pass. Staged09933f2c5244c24a is not deployed. The fresh unchanged105, final audit and beta verification remain required; 7R.02/05/06 remain unchecked. See current progress for all exact journals, usage, cleanup and limits.
+
+### First-decision gate rejects the next candidate
+
+The393ab2f full repetition attempt is stopped after three first-decision planning failures make38/40 impossible. All69 completed outputs, their repairs and one interrupted call are retained; the candidate is not accepted or deployed. Waiting-research admission, short UTF-8 choice labels, local/connected case shapes and valid case inputs now receive explicit guidance and precise byte feedback without relaxing any rule. All57 focused checks pass. Next: controlled planning repetitions, current generated journeys and a fresh unchanged105 before beta. See progress for exact journals, the corrected regression-test assumption and cleanup.

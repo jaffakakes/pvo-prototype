@@ -20,6 +20,39 @@ const stage = (hasAgreement) => ({
 const definitions = builderToolDefinitions(BUILDER_TOOL_KINDS);
 const signal = () => new AbortController().signal;
 
+test("question choices retain UTF-8 bounds and give actionable feedback without echoing the value", () => {
+  for (const kind of ["ask", "ask_research"]) {
+    const value = {
+      kind,
+      prompt: "Which booking behavior should be built?",
+      choices: ["😀".repeat(50)],
+      ...(kind === "ask_research"
+        ? { calls: [{ kind: "connections_read", after: null }] }
+        : {}),
+    };
+    const options = { hasAgreement: false, available: ["connections_read"] };
+    assert.deepEqual(parseBuilderDecision(value, options), value);
+    const tooLong = "😀".repeat(51);
+    assert.throws(
+      () => parseBuilderDecision({ ...value, choices: [tooLong] }, options),
+      (error) => {
+        assert.match(
+          error.message,
+          /byte limit of 200; received 204 UTF-8 bytes/,
+        );
+        assert.equal(error.message.includes(tooLong), false);
+        return true;
+      },
+    );
+    assert.throws(
+      () => parseBuilderDecision({ ...value, choices: ["   "] }, options),
+      /Builder choice must contain nonempty text/,
+    );
+    const corrected = { ...value, choices: ["Save booking requests"] };
+    assert.deepEqual(parseBuilderDecision(corrected, options), corrected);
+  }
+});
+
 test("trusted setup availability agrees with the model context, schema and local admission without exposing a key", async () => {
   const decision = {
     kind: "connect_account",
