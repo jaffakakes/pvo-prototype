@@ -3,6 +3,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
+import { parseArgs } from "node:util";
 import { planSavedBuild } from "../../../server/assistant/builder/planner.js";
 import { nativeAssistantTurn } from "../../../server/assistant/native/service.js";
 import { inspectNativeFrames } from "../../../server/assistant/native/vision.js";
@@ -18,14 +19,25 @@ import {
 import { buildScenarios } from "./build-scenarios.mjs";
 import { runBuild } from "./build.mjs";
 
-const selected = process.argv[2] ?? "all";
+const { values, positionals } = parseArgs({
+  allowPositionals: true,
+  options: {
+    cases: { type: "string" },
+    repetitions: { type: "string", default: "2" },
+    label: { type: "string" },
+  },
+});
+const selected = positionals[0] ?? "all";
+const repetitions = Number(values.repetitions);
+if (!Number.isSafeInteger(repetitions) || repetitions < 1)
+  throw new Error("Repetitions must be a positive integer.");
 if (!["all", "probes", "builds", "resume"].includes(selected))
   throw new Error(
     "Select all, probes, builds, or resume followed by a journal path.",
   );
 const previous =
   selected === "resume"
-    ? JSON.parse(await readFile(process.argv[3], "utf8"))
+    ? JSON.parse(await readFile(positionals[1], "utf8"))
     : null;
 const completed = new Set(
   (previous?.runs ?? [])
@@ -42,12 +54,21 @@ const directory = join(
   `run-${new Date().toISOString().replaceAll(":", "-")}-${randomUUID().slice(0, 8)}`,
 );
 await mkdir(directory, { recursive: true, mode: 0o700 });
-const probes = [...planningProbes(), ...editorProbes, ...visionProbes];
-const builds = buildScenarios();
+let probes = [...planningProbes(), ...editorProbes, ...visionProbes];
+let builds = buildScenarios();
+if (values.cases) {
+  const ids = values.cases.split(",");
+  const all = [...probes, ...builds];
+  if (ids.some((id) => !all.some((scenario) => scenario.id === id)))
+    throw new Error("Unknown scenario in --cases.");
+  probes = probes.filter((scenario) => ids.includes(scenario.id));
+  builds = builds.filter((scenario) => ids.includes(scenario.id));
+}
 const report = {
   protocol: "restyle-capability-v1.2",
   selected,
-  predecessor: previous ? process.argv[3] : null,
+  predecessor: previous ? positionals[1] : null,
+  experiment: values.label ?? null,
   retainedRuns: [...completed],
   startedAt: new Date().toISOString(),
   source: execFileSync("git", ["rev-parse", "HEAD"], {
@@ -56,7 +77,7 @@ const report = {
   baseline,
   modelTurnLimit: null,
   buildObservationMs: 600000,
-  repetitions: 2,
+  repetitions,
   cases: [...probes, ...builds],
   frozenFiles: {},
   resources: [],
@@ -205,7 +226,7 @@ async function run(scenario, repetition) {
   );
 }
 // Sequential cases avoid cross-case contention and make latency interpretable.
-for (let repetition = 1; repetition <= 2; repetition++) {
+for (let repetition = 1; repetition <= repetitions; repetition++) {
   if (selected !== "builds")
     for (const probe of probes) await run(probe, repetition);
   if (selected !== "probes")

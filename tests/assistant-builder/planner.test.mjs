@@ -110,6 +110,30 @@ test("builder schema exposes only the current stage and actually available tools
   );
 });
 
+test("an empty review batch directs the next decision to review without rerunning successful tools", async () => {
+  const rejected = { kind: "tools", calls: [], review };
+  await assert.rejects(
+    planSavedBuild(
+      claim(create()),
+      { agreement: dinnerAgreement() },
+      definitions,
+      provider(rejected).env,
+      signal(),
+    ),
+    (error) => {
+      assert.equal(error.code, "invalid_result");
+      assert.match(error.feedback.message, /return the review object itself/);
+      assert.match(error.feedback.message, /Do not repeat successful tests/);
+      assert.deepEqual(JSON.parse(error.feedback.proposal.text), rejected);
+      return true;
+    },
+  );
+  assert.deepEqual(parseBuilderDecision(review, stage(true)), review);
+  assert.throws(() =>
+    parseBuilderDecision({ ...review, digest: "old" }, stage(true)),
+  );
+});
+
 test("a top-level workspace tool gets actionable repair feedback and the corrected batch remains validated", async () => {
   const tool = { kind: "workspace_list" };
   assert.throws(

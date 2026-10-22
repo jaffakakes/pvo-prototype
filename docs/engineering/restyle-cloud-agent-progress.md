@@ -1,5 +1,13 @@
 # Restyle cloud agent: current progress and handoff log
 
+## Reliability goal active — 22 October 2026
+
+The creator explicitly authorized fixing Restyle AI and continuing until reliable for the current MVP. [Roadmap 7](restyle-cloud-agent-roadmaps/07-ai-reliability.md) defines the acceptance gates before implementation; 7R.01 is complete. Roadmap 6 remains the immutable comparison baseline. Current goal covers plan/tool correctness, current-source review, autonomous recovery, connected-operation checks, repeated live-model evaluation and full beta journeys. Broader signup/phone and production remain deferred.
+
+**Current work:** inspect and repair the existing planner/validator workflow in the unreleased MVP checkout (`codex/restyle-agent-identity`, baseline `762b293`). The empty tools-batch diagnostic currently encourages unnecessary work when the intended action is standalone review; planning also receives unrelated post-agreement instructions. First controlled change: empty tools batches now receive the exact standalone review shape and instructions to preserve successful work. Targeted verification: 14 tests passed, zero failures, one optional Docker skip. Evaluation CLI now supports named scenario subsets/repetitions/experiment labels; original case inputs and default two-repeat protocol remain unchanged. Exact next: run B04/R01 twice with this diagnostic change alone, retain every result, then address planning separately. No live inference or beta deployment for this phase yet. Only the existing untracked node_modules symlink is present in this source checkout. Desktop unrelated changes remain untouched.
+
+
+
 
 ## Capability baseline complete — 22 October 2026
 

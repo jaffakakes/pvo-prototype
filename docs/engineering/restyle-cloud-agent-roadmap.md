@@ -10,9 +10,9 @@ Start with [Roadmap 1](restyle-cloud-agent-roadmaps/01-first-working-component.m
 
 The [architecture document](restyle-cloud-agent-architecture.md) explains the idea. These roadmaps turn it into smaller pieces of work you can implement and verify.
 
-## Current phase — measure capability before fixes
+## Current phase — make the MVP reliable
 
-[Roadmap 6](restyle-cloud-agent-roadmaps/06-capability-baseline.md) is complete: 42 scored runs of the unchanged Kimi K2.6 baseline, with [documented results and proposed fixes](restyle-capability/results.md). Product fixes remain a separate next phase. Email MVP 5M.01–12 is complete; broader signup and phone work stay deferred. This measurement phase changes evaluation tooling/documentation only.
+[Roadmap 7](restyle-cloud-agent-roadmaps/07-ai-reliability.md) is active under the creator's explicit reliability goal. Fix the measured failures, verify repeated live-model and complete application journeys, then deliver the checked beta. [Roadmap 6](restyle-cloud-agent-roadmaps/06-capability-baseline.md) and its [results](restyle-capability/results.md) remain the unchanged comparison baseline. Email MVP 5M.01–12 is complete; broader signup and phone work stay deferred. Production still requires the creator's later approval.
 
 ## Roadmap 5 — agent identity and account setup
 
