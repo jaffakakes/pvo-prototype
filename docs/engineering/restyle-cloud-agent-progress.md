@@ -1,5 +1,11 @@
 # Restyle cloud agent: current progress and handoff log
 
+## Final repeated matrix: two rounds complete — 22 October 2026
+
+The unchanged candidate has completed and semantically passed42/105 runs in `run-2026-10-22T06-04-50.643Z-f9a2e438`. Planning first decisions pass15/16; P07.2 needs two actual schema repairs before an honest unavailable-account question and stays recorded as a first-decision failure. All ten code/seeded-repair runs pass their generated and independent public/hidden checks in2–6 calls, at most161 seconds, zero format repairs and zero developer interventions. Three early tool failures repair autonomously. Every original scenario and frozen evaluator file still matches its recorded hash.
+
+Application/evaluator bytes remain393ab2f; only documentation checkpoints changed. All239 candidate build files still match the staged beta byte for byte; release09933f2c5244c24a remains undeployed. The four completed live journey/recovery processes exited0 and cleaned their owned resources. Exact next: finish the remaining63 unchanged runs, grade/audit all105, then deliver and verify beta. 7R.02/05/06 remain unchecked.
+
 ## Current candidate passes complete journeys and recovery — 22 October 2026
 
 The fresh final matrix is now running from documentation checkpoint `aa23525` (application `393ab2f`): `run-2026-10-22T06-04-50.643Z-f9a2e438/report.json`, protocol v1.4, the unchanged 21 cases repeated five times. The original matrix digest is verified. No application or evaluator changes will be made during this run. Each first decision, repair, eventual result and cleanup receipt remains recorded; semantic grades are separate.
