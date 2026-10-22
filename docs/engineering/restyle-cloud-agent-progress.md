@@ -1,5 +1,16 @@
 # Restyle cloud agent: current progress and handoff log
 
+## Reliability MVP complete through verified beta — 22 October 2026
+
+All six Roadmap 7 tasks are complete. Application `85f7a34` passes the unchanged 105-run final matrix, with 38/40 valid first planning decisions and all 25 code/repair runs passing 95 independent cases/210 steps. Four complete durable/browser journeys, actual research-reference recovery and the separately documented manual-choice evaluator correction pass. The final full source check passes 1,790 tests, zero failures and four optional skips; separate optional sandbox, browser, editor, Rust/WASM and build evidence remains valid. Final application bytes are unchanged by evaluator/documentation commit `69278a7`.
+
+Guarded beta deployment succeeds with Worker `5d95c808-b1f8-4b43-bce3-98dc1cf98029`, release `restyle-editor-shell-60f4abbf9460f059`. The existing isolated page receives **New beta release** without reloading; **Update** loads exact candidate script/service-worker bytes with one navigation. A separate fresh browser reaches **Start a new edit** with matching script bytes and no errors; its screenshot is visually reviewed. The user's editing session is untouched. Private proof journals are `beta-release-2026-10-22T09-43-17.226Z` and `beta-ready-2026-10-22T09-46-31.035Z`.
+
+Final resource audit verifies all 1,344 records cleaned, 1,278 named test containers and 39 temporary storage paths absent, and no owned listener on 5295/4173. Both beta observers are closed. Existing unrelated containers, Desktop pending source/dist, private evidence and backups are preserved. All 75 retained journals include 963 dispatched attempts, $25.643693 known estimated usage and 27 unknown-usage attempts; failed candidates remain recorded. No new real email, permanent compute or production deployment occurred.
+
+The [final report](restyle-capability/reliability-results.md), sanitized evidence/grades and numbered roadmap contain the exact gates, raw-status correction, costs and remaining planning/UI limits. Changes stay on `codex/restyle-agent-identity` in [draft PR111](https://github.com/jaffakakes/pvo-prototype/pull/111), stacked on PR110 and unmerged. Final delivery documentation/evidence are recorded with this checkpoint; current GitHub CI status is tracked on the draft PR. The next product action is creator beta testing through **New beta release → Update**. Broader signup/phone remains deferred; production needs later explicit approval.
+
+
 ## Final reliability acceptance passes; beta delivery pending — 22 October 2026
 
 7R.02/05 are verified. Application85f7a34's fresh unchanged105 final outputs pass their original rubric;38/40 first planning decisions are valid. All25 coding/repair runs pass95 independent cases/210 steps in2–5calls, at most199.7seconds, zero format repairs and no developer hints/source edits. B01.5 autonomously repairs one generated-test syntax error. The matrix has173 calls, $4.694399 known estimate, no unknown usage and348 cleaned containers. Original report hash f65cb0d4f950da6089ef0d11868787fcb77396eb921a7ea9e2982d31a3d2cbf8 and the one P07.4 terminal-classification correction are audited; original raw status/output are preserved.

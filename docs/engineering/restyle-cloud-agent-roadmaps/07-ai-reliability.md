@@ -22,7 +22,7 @@ If a criterion proves unsuitable, document its evidence and rationale before cha
 - [x] **7R.03** Make final review use current source and advance after successful work; verify recovery in the durable coordinator.
 - [x] **7R.04** Verify connected requests/results, missing/revoked access, interruption and duplicate prevention without false completion.
 - [x] **7R.05** Run the complete final repeated matrix and full generated-component journeys; preserve all unsuccessful attempts.
-- [ ] **7R.06** Complete source review/checks, beta delivery and release verification; document evidence and clean owned test resources.
+- [x] **7R.06** Complete source review/checks, beta delivery and release verification; document evidence and clean owned test resources.
 
 ## Work and resource journal
 
@@ -120,3 +120,10 @@ The e2bfae7 candidate passes all four fresh durable/browser journeys and all eig
 ### Final candidate acceptance verified
 
 Application85f7a34 passes the fresh unchanged105-run matrix,38/40 first planning decisions, all25 code/repair runs and95 independent cases/210 steps. Two planning schema repairs and one generated-test syntax repair remain recorded. All four current-source durable/browser journeys and the extra research-reference recovery pass. P07.4 has a hash-bound actual-runtime replay proving the recorded manual_alternative is an unanswered choice; its original evaluator exhausted status is preserved and the terminal-classification correction is separately tested. No generated output or rubric changed. See [the reliability report](../restyle-capability/reliability-results.md) and machine-readable evidence. 7R.02/05 are complete;7R.06 remains pending final checks, beta delivery/Update proof and cleanup.
+
+
+### Final beta delivery and cleanup verified
+
+All six tasks are complete through beta. Guarded deployment publishes application `85f7a34` as `restyle-editor-shell-60f4abbf9460f059`, Worker `5d95c808-b1f8-4b43-bce3-98dc1cf98029`. The isolated old-client **New beta release → Update** proof preserves the page until the click, then loads exact candidate bytes once. A fresh browser reaches the ready editor-start page with matching script bytes and no errors. Final full checks pass 1,790 tests with zero failures and four optional skips; existing separate optional, browser, type, Rust/WASM and build checks remain valid.
+
+The final resource audit verifies all 1,344 recorded resources cleaned, 1,278 named test containers and 39 temporary storage paths absent, both beta browsers closed and no owned development server. Existing local services, Desktop changes, private journals and backups are preserved. [Final evidence and remaining limits](../restyle-capability/reliability-results.md) distinguish original measured protocol v1.6 from the tested post-run evaluator v1.7 correction. PR111 stays a stacked draft on PR110; no merge or production release. Next product action: creator beta testing. Broader signup/phone remains deferred.

@@ -27,6 +27,24 @@
       "maxCodingFormatRepairs": 0,
       "cleanupVerified": true,
       "resources": 348,
+      "postRunEvaluationCorrection": {
+        "recordedAt": "2026-10-22T09:42:44.243135+00:00",
+        "measuredProtocol": "restyle-capability-v1.6",
+        "currentProtocol": "restyle-capability-v1.7",
+        "applicationUnchanged": true,
+        "paths": [
+          "scripts/checks/restyle-capability/planning-research.mjs",
+          "scripts/checks/restyle-capability/planning.mjs",
+          "scripts/checks/restyle-capability/run.mjs"
+        ],
+        "diffSha256": "83601e529681ed151b8d8e96b4ce93b8889f64e9c52919e3b45fe6e6205e7fea",
+        "matrixJournalSha256": "f65cb0d4f950da6089ef0d11868787fcb77396eb921a7ea9e2982d31a3d2cbf8",
+        "before": "Both new regressions fail; original log retained.",
+        "focused": "10 pass,0 fail",
+        "full": "1790 pass,0 fail,4 optional skips",
+        "reason": "Post-run evaluator-only correction for supported manual alternatives, using the actual current-capability validator. No measured output, request, scenario, rubric or application byte changes.",
+        "applicationSource": "85f7a34c42ab00475a07a09f7b705948cc91282c"
+      },
       "classificationCorrections": [
         {
           "case": "P07.4",
@@ -22567,18 +22585,36 @@
       }
     ]
   },
+  "postRunEvaluationCorrection": {
+    "recordedAt": "2026-10-22T09:42:44.243135+00:00",
+    "measuredProtocol": "restyle-capability-v1.6",
+    "currentProtocol": "restyle-capability-v1.7",
+    "applicationUnchanged": true,
+    "paths": [
+      "scripts/checks/restyle-capability/planning-research.mjs",
+      "scripts/checks/restyle-capability/planning.mjs",
+      "scripts/checks/restyle-capability/run.mjs"
+    ],
+    "diffSha256": "83601e529681ed151b8d8e96b4ce93b8889f64e9c52919e3b45fe6e6205e7fea",
+    "matrixJournalSha256": "f65cb0d4f950da6089ef0d11868787fcb77396eb921a7ea9e2982d31a3d2cbf8",
+    "before": "Both new regressions fail; original log retained.",
+    "focused": "10 pass,0 fail",
+    "full": "1790 pass,0 fail,4 optional skips",
+    "reason": "Post-run evaluator-only correction for supported manual alternatives, using the actual current-capability validator. No measured output, request, scenario, rubric or application byte changes.",
+    "applicationSource": "85f7a34c42ab00475a07a09f7b705948cc91282c"
+  },
   "allRetainedUsage": {
-    "generatedAt": "2026-10-22T09:36:09.025Z",
+    "generatedAt": "2026-10-22T09:50:59.145Z",
     "start": "2026-10-22T01:36:23.000Z",
     "scope": "All retained original reliability-goal journals, including unsuccessful configuration probes and local preflights; excludes reconstructed/resume copies and combined reports. Attempts include transport failures before a provider reply. Fixed-rate estimates are not invoices; interrupted/rejected responses can have unknown usage.",
     "total": {
-      "journals": 73,
+      "journals": 75,
       "attempts": 963,
       "inputTokens": 8449726,
       "outputTokens": 590948,
       "knownEstimatedUsd": 25.64369255,
       "unknownUsageAttempts": 27,
-      "resources": 1342
+      "resources": 1344
     },
     "journals": [
       {
@@ -22596,6 +22632,40 @@
         "transportUnknown": 0,
         "resources": 0,
         "cleanupVerified": null,
+        "unclearedResources": []
+      },
+      {
+        "journal": "beta-ready-2026-10-22T09-46-31.035Z",
+        "file": "report.json",
+        "sha256": "ebee6c42aa9754edbb11f39c8584874600d6cae0308a79774e493dae4c69049c",
+        "source": null,
+        "status": "passed",
+        "complete": true,
+        "attempts": 0,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "knownEstimatedUsd": 0,
+        "unknownUsageAttempts": 0,
+        "transportUnknown": 0,
+        "resources": 1,
+        "cleanupVerified": true,
+        "unclearedResources": []
+      },
+      {
+        "journal": "beta-release-2026-10-22T09-43-17.226Z",
+        "file": "report.json",
+        "sha256": "7612ba3fba048642ab007e8bb3f8f113442c2c2a543454189a7737a1432b66f9",
+        "source": null,
+        "status": "passed",
+        "complete": true,
+        "attempts": 0,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "knownEstimatedUsd": 0,
+        "unknownUsageAttempts": 0,
+        "transportUnknown": 0,
+        "resources": 1,
+        "cleanupVerified": true,
         "unclearedResources": []
       },
       {
@@ -23823,5 +23893,73 @@
         "unclearedResources": []
       }
     ]
+  },
+  "betaDelivery": {
+    "status": "verified",
+    "verifiedAt": "2026-10-22T09:51:33.247441+00:00",
+    "origin": "https://restyle-beta.jaffakakes28.workers.dev",
+    "worker": "restyle-beta",
+    "workerVersion": "5d95c808-b1f8-4b43-bce3-98dc1cf98029",
+    "applicationSource": "85f7a34c42ab00475a07a09f7b705948cc91282c",
+    "source": "69278a7",
+    "expectedRevision": "restyle-editor-shell-60f4abbf9460f059",
+    "oldRevision": "restyle-editor-shell-91566a30124cb187",
+    "cleanupVerified": true,
+    "updateObserver": {
+      "kind": "real-beta-release-observer",
+      "startedAt": "2026-10-22T09:43:17.446Z",
+      "completedAt": "2026-10-22T09:44:46.961Z",
+      "expectedRevision": "restyle-editor-shell-60f4abbf9460f059",
+      "checks": [
+        "Real release push displays New beta release without reloading the existing isolated page.",
+        "The isolated Update action loads the exact candidate script and service-worker bytes once.",
+        "A separate fresh browser context starts directly on the candidate release."
+      ],
+      "errors": [],
+      "initialRelease": {
+        "revision": "restyle-editor-shell-91566a30124cb187"
+      },
+      "serviceWorkerSha256": "a209c8cd3437898e9e514372f9ea2885166c8dfb65189956c2ad2f18b036234a",
+      "status": "passed",
+      "navigations": 1,
+      "cleanupVerified": true,
+      "journal": "beta-release-2026-10-22T09-43-17.226Z",
+      "sha256": "7612ba3fba048642ab007e8bb3f8f113442c2c2a543454189a7737a1432b66f9"
+    },
+    "freshAppReady": {
+      "startedAt": "2026-10-22T09:46:31.036Z",
+      "completedAt": "2026-10-22T09:46:33.251Z",
+      "expectedRevision": "restyle-editor-shell-60f4abbf9460f059",
+      "origin": "https://restyle-beta.jaffakakes28.workers.dev",
+      "errors": [],
+      "scriptSha256": "74e961ea8b627aa6fe38406a3b67aaba19b7dbaebdf37c25a730d9d479953cf5",
+      "status": "passed",
+      "heading": "Start a new edit",
+      "script": "./assets/index-BOnePILH.js",
+      "cleanupVerified": true,
+      "journal": "beta-ready-2026-10-22T09-46-31.035Z",
+      "sha256": "ebee6c42aa9754edbb11f39c8584874600d6cae0308a79774e493dae4c69049c",
+      "screenshotVisuallyReviewed": true
+    }
+  },
+  "finalCleanup": {
+    "verifiedAt": "2026-10-22T09:51:33.247441+00:00",
+    "status": "passed",
+    "recordedResources": 1344,
+    "recordedContainersCheckedAbsent": 1278,
+    "temporaryStoragePathsCheckedAbsent": 39,
+    "remainingOwnedResources": [],
+    "developmentPortsWithoutListeners": [
+      5295,
+      4173
+    ],
+    "preservedContainers": [
+      "restyle-minio-setup-1",
+      "restyle-db-1",
+      "restyle-minio-1",
+      "restyle-serverless-redis-http-1",
+      "restyle-redis-1"
+    ],
+    "retainedResources": "Existing restyle-beta deployment, private journals and build backups intentionally retained. Unrelated local services and Desktop checkout unchanged."
   }
 }
