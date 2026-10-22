@@ -22604,11 +22604,11 @@
     "applicationSource": "85f7a34c42ab00475a07a09f7b705948cc91282c"
   },
   "allRetainedUsage": {
-    "generatedAt": "2026-10-22T09:50:59.145Z",
+    "generatedAt": "2026-10-22T10:04:38.655Z",
     "start": "2026-10-22T01:36:23.000Z",
     "scope": "All retained original reliability-goal journals, including unsuccessful configuration probes and local preflights; excludes reconstructed/resume copies and combined reports. Attempts include transport failures before a provider reply. Fixed-rate estimates are not invoices; interrupted/rejected responses can have unknown usage.",
     "total": {
-      "journals": 75,
+      "journals": 76,
       "attempts": 963,
       "inputTokens": 8449726,
       "outputTokens": 590948,
@@ -22683,6 +22683,23 @@
         "transportUnknown": 0,
         "resources": 2,
         "cleanupVerified": null,
+        "unclearedResources": []
+      },
+      {
+        "journal": "ci-runtime-2026-10-22T10-01-07.190Z",
+        "file": "report.json",
+        "sha256": "20560ec2e74ba1d4e1893ef830749084e44ea925386204b393ad332d02160bcb",
+        "source": "3138d93026c9eb409f47b3ea12cec82794d926a0",
+        "status": "passed",
+        "complete": true,
+        "attempts": 0,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "knownEstimatedUsd": 0,
+        "unknownUsageAttempts": 0,
+        "transportUnknown": 0,
+        "resources": 0,
+        "cleanupVerified": true,
         "unclearedResources": []
       },
       {
@@ -23961,5 +23978,50 @@
       "restyle-redis-1"
     ],
     "retainedResources": "Existing restyle-beta deployment, private journals and build backups intentionally retained. Unrelated local services and Desktop checkout unchanged."
+  },
+  "postRunNode22TestCorrection": {
+    "kind": "node-runtime-test-lifetime",
+    "startedAt": "2026-10-22T10:01:07.190509+00:00",
+    "completedAt": "2026-10-22T10:04:38.361126+00:00",
+    "source": "3138d93026c9eb409f47b3ea12cec82794d926a0",
+    "applicationSource": "85f7a34c42ab00475a07a09f7b705948cc91282c",
+    "status": "passed",
+    "reason": "Node 22 exits the mocked hung-request test before its unreferenced AbortSignal timeout; reproduced with four cancelled tests. The local Node 25 runtime passes.",
+    "change": "Keep the test loop alive with an owned interval and clear it in test teardown; bound the whole test to five seconds. Production code and assertions unchanged.",
+    "node22Version": "v22.23.4",
+    "node25Version": "v25.9.0",
+    "focusedAfter": {
+      "node22": {
+        "pass": 4,
+        "cancelled": 0
+      },
+      "node25": {
+        "pass": 4,
+        "cancelled": 0
+      }
+    },
+    "fullCheck": {
+      "runtime": "Node 22.23.4",
+      "command": "npm exec --yes --package=node@22 -- npm run check",
+      "pass": 1790,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 4,
+      "durationMs": 130099.06325
+    },
+    "testPath": "tests/service-jobs/provider.test.mjs",
+    "testSha256": "02279f6cbac6bc3934d822a47ab0a0345e7aad4d121cb2eb10bca705811b36c3",
+    "diffSha256": "60052b9d36e999835efc45cb74d87aaa4ed879ea7b9d5b312785859f14198381",
+    "scope": "Local reproduction and runtime-compatible test fixture correction; GitHub CI is recorded separately on PR111. Application, measured model output, rubric and inference settings unchanged.",
+    "logs": {
+      "restyle-provider-node22-before.log": "ca7dfc8e33f750bfa34d987d4610a6367812e27903f8408639b91426d9dcd153",
+      "restyle-provider-node25-after.log": "37b24e4ab183a25e37b31815db3edaa11bbdf97afce1d439ce3d045db11f196c",
+      "restyle-pr111-old-ci-job.log": "b81c06be5ea2a71482ef3c70ee3954720e4139afba92a59ec2ea9097a848eaec",
+      "restyle-provider-node22-after.log": "99d17012638de3959632dcf7b522e336f08f696234a898b7b7fe9732be5d9210",
+      "restyle-reliability-node22-full.log": "f08d486430b1c8343f3c7af49a23643bcfdae14e775932238450911621325245"
+    },
+    "cleanupVerified": true,
+    "journal": "ci-runtime-2026-10-22T10-01-07.190Z",
+    "sha256": "20560ec2e74ba1d4e1893ef830749084e44ea925386204b393ad332d02160bcb"
   }
 }
