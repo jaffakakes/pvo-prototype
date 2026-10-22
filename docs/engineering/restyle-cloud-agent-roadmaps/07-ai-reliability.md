@@ -41,3 +41,7 @@ Diagnostic-only change b75bb1f is insufficient: the first connected run reached 
 ### Provisional saved-authoring configuration
 
 After the phase/context pilot and retained unsuccessful format experiments, saved authoring now has a Kimi K3/low-reasoning candidate, with at least 16,000 output tokens. Native editing/vision stay on K2.6. Initial K3 planning replay passes four of six first decisions and rejects two extra-field errors, so neither 7R.02 nor the first-decision acceptance target is complete. Next is actual durable execution and repair. Per-request configuration/costs and every negative result remain in private journals and the current progress checkpoint. No beta delivery yet.
+
+### Connected display checkpoint
+
+The first K3/low durable run reached backend readiness but omitted the requested visible results, so it is not a semantic pass. The attachment now supports a checked response Note with stable component references and atomic application. Focused tests, editor types and dependency checks pass; full browser/live-model verification is next. The independent K3/high replay passed six of six unchanged planning payloads; adoption remains a separate next batch. No acceptance gate is complete from these small samples.

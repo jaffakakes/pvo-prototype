@@ -1,6 +1,10 @@
 import { validateManualComponent } from "../../../packages/pvo-assistant/tasks/index.js";
 import { AuthoringRepairError } from "../tasks/repairFeedback.js";
-import { parseServiceAttachmentCommand } from "../../../packages/pvo-assistant/attachments/index.js";
+import {
+  parseServiceAttachmentCommand,
+  validateServiceResultNote,
+} from "../../../packages/pvo-assistant/attachments/index.js";
+import { preparedTaskComponentId } from "../../../packages/pvo-assistant/results/index.js";
 import { validateNativeResult } from "../native/policy.js";
 import { resolveTaskAttachment } from "./receipt.js";
 
@@ -20,6 +24,11 @@ export async function prepareTaskAttachment(coordinator, task, value) {
   };
   const context = task.input.context;
   const operation = command.component;
+  const operations = [operation, ...command.notes];
+  const componentId =
+    operation.kind === "component.add"
+      ? preparedTaskComponentId(task.id, 1)
+      : operation.componentId;
   if (operation.kind === "component.add" && operation.duration === null)
     throw new AuthoringRepairError(
       "component_validation",
@@ -28,10 +37,13 @@ export async function prepareTaskAttachment(coordinator, task, value) {
     );
   const scenes = context.scenes.map((scene) => ({
     ...scene,
-    duration:
-      operation.kind === "component.add" && operation.sceneId === scene.id
-        ? Math.max(scene.duration, operation.at + operation.duration)
-        : scene.duration,
+    duration: operations.reduce(
+      (duration, item) =>
+        item.kind === "component.add" && item.sceneId === scene.id
+          ? Math.max(duration, item.at + item.duration)
+          : duration,
+      scene.duration,
+    ),
     components: context.components
       .filter((component) => component.sceneId === scene.id)
       .map((component) => ({
@@ -49,13 +61,19 @@ export async function prepareTaskAttachment(coordinator, task, value) {
       },
       {
         message: "Prepared component connection.",
-        operations: [operation],
+        operations,
         observations: [],
       },
       async (type, source) => {
         const compiled = await coordinator.compileAttachment(type, source);
         if (source === operation.source)
           validateManualComponent(task, compiled, command.connection.input);
+        if (command.notes.some((note) => note.source === source))
+          validateServiceResultNote(
+            compiled,
+            componentId,
+            attachment.receipt.operation,
+          );
         return compiled;
       },
       authorization,
@@ -69,7 +87,7 @@ export async function prepareTaskAttachment(coordinator, task, value) {
   }
   const encoded = await coordinator.results.encode(
     task,
-    [operation],
+    operations,
     attachment,
   );
   return {

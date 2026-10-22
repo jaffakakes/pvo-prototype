@@ -146,6 +146,7 @@ export function proposeContainerConnection(
     now,
     command: {
       kind: "service.attach",
+      notes: [],
       component: {
         kind: "component.source",
         sceneId,

@@ -35,9 +35,11 @@ function contentFields(original: PvoComponent, changes: Extract<ComponentOperati
 
 export async function applyComponentOperation(project: ProjectSnapshot, scene: Scene, operation: ComponentOperation, options: NativePreparation): Promise<Scene> {
   const original = operation.kind === "component.add"
-    ? createDefaultComponent(`component-${options.createId()}`, operation.componentType, scene, operation.at)
+    ? createDefaultComponent(options.createComponentId?.() ?? `component-${options.createId()}`, operation.componentType, scene, operation.at)
     : scene.components.find(component => component.id === operation.componentId);
   if (!original) throw new Error("The requested component no longer exists in this scene.");
+  if (operation.kind === "component.add" && project.scenes.some(item => item.components.some(component => component.id === original.id)))
+    throw new Error("The prepared component ID already exists. No changes were applied.");
   if (operation.kind === "component.delete") return { ...scene, components: scene.components.filter(component => component.id !== original.id) };
   if (isVisualEditingBlocked(original)) throw new Error("Finish or discard this component's source draft before editing it with the assistant.");
   let next = original;

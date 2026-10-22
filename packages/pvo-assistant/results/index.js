@@ -13,6 +13,7 @@ import { validateArtifact } from "../tasks/content.js";
 import {
   boundedJson,
   id,
+  integer,
   list,
   object,
   requireTask,
@@ -27,6 +28,13 @@ export const PREPARED_COMPONENT_OPERATIONS = Object.freeze([
   "component.source",
   "component.delete",
 ]);
+
+/** Stable IDs let checked result Notes reference new controls before the editor applies them. */
+export function preparedTaskComponentId(taskId, ordinal) {
+  id(taskId, "Prepared task ID");
+  integer(ordinal, 24, "Prepared component ordinal", 1);
+  return `component-task-${taskId}-${ordinal}`;
+}
 
 /** An immutable component proposal, never a provider action or executable host command. */
 export function parsePreparedTaskResult(value) {
@@ -90,6 +98,18 @@ export function parsePreparedTaskResult(value) {
       ).length === 1,
       "A saved attachment must match exactly one prepared component operation.",
     );
+    for (const note of command.notes)
+      requireTask(
+        value.operations.filter(
+          (operation) => canonicalJson(operation) === canonicalJson(note),
+        ).length === 1,
+        "Each connected result Note must match exactly one prepared operation.",
+      );
+    if (command.notes.length)
+      requireTask(
+        canonicalJson(value.operations[0]) === canonicalJson(command.component),
+        "The connected component must precede its result Note.",
+      );
   }
   boundedJson(value, TASK_LIMITS.artifactBytes, "Prepared result artifact");
   return structuredClone(value);

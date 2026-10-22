@@ -23,6 +23,8 @@ export type NativeBatch = {
 export type NativePreparation = {
   fonts?: ReadonlyMap<string, AppliedFont>;
   createId: () => number;
+  /** Saved results reserve stable component identities for their checked response Notes. */
+  createComponentId?: () => string;
   compile: (type: ComponentType, source: PvoLanguageSource) => Promise<CompiledPvoComponent>;
   advancedEditingEnabled: boolean;
   /** A read-only cancellation flag supplied by the request adapter. */

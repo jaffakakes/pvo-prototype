@@ -29,6 +29,10 @@ export type PreparedTaskResult = {
 };
 export type TaskApplication = TaskReference & { artifact: TaskArtifact };
 export const PREPARED_COMPONENT_OPERATIONS: readonly PreparedComponentOperation["kind"][];
+export function preparedTaskComponentId(
+  taskId: string,
+  ordinal: number,
+): string;
 export function parsePreparedTaskResult(value: unknown): PreparedTaskResult;
 export function prepareTaskResult(
   task: TaskRecord,

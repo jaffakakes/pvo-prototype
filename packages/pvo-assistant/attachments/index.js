@@ -20,6 +20,7 @@ export {
 } from "./component.js";
 
 export { serviceAttachmentSchema } from "./schema.js";
+export { validateServiceResultNote } from "./resultNote.js";
 
 export {
   prepareServiceSubmissionTarget,

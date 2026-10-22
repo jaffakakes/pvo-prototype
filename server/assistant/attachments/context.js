@@ -1,5 +1,6 @@
 import { platformOrigin } from "../../../packages/pvo-assistant/attachments/policy.js";
 import { hasCurrentClaim } from "../tasks/executionClaim.js";
+import { preparedTaskComponentId } from "../../../packages/pvo-assistant/results/index.js";
 
 /** Bounded public descriptions only. Source, private state, creator operations and authority stay server-side. */
 export function attachmentPlanningContext(coordinator, claimed) {
@@ -22,6 +23,7 @@ export function attachmentPlanningContext(coordinator, claimed) {
   const identity = rows[0].identity;
   const origin = platformOrigin(coordinator.env.PUBLIC_ORIGIN);
   return {
+    newComponentId: preparedTaskComponentId(task.id, 1),
     releaseId: identity.resourceId,
     url: `${origin}/api/services/${identity.serviceId}/actions`,
     operations: saved.artifact.agreement.operations.filter(

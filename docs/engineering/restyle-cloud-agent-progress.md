@@ -1,5 +1,18 @@
 # Restyle cloud agent: current progress and handoff log
 
+## Connected response display and stronger-planning experiment — 22 October 2026
+
+The first actual K3/low saved guestbook reached Ready in six real calls, passed generated/independent backend checks and preserved its immutable result across a full Worker restart. Journal `durable-2026-10-22T02-43-43.448Z-48e327ce/report.json` records $0.192159 known inference cost and verified local cleanup. **It is not a complete semantic pass:** its form did not show the requested latest entries. Backend readiness alone was insufficient.
+
+The current attachment contract now includes zero or one checked result Note. New saved components have stable task-derived identities, so Notes can reference their real reply fields before application. The actual compiler and shared public-result validator reject nonexistent fields, whole arrays/objects, another component's state and actions in a Note. Lists use explicit scalar index paths. The operation reply must contain everything needed by the requested display; a separate unconnected read operation is insufficient. Saving, reload and Undo/Redo retain the form/Note together and reject ID collisions. Current scope remains one connected control plus display: saved-result recovery replays its original reply and does not fetch a fresh shared list on reopen.
+
+Checks: 16 focused result-Note/editor/durable tests pass, strict editor TypeScript passes, and 1,056 source-module dependency checks pass. Earlier contract/planner tests also passed. Browser/build/beta delivery remain pending. New package module is covered by the existing recursive package/static-copy rules and adopted formatting.
+
+A controlled replay of the exact six prior planning payloads with K3 **high** reasoning and 32,768 maximum tokens passes all six first-output contracts (`kimi-k3-high-probe-2026-10-22T02-56-00.469Z/report.json`), total known $0.304833. Both corrected-retention plans reject full storage without deleting previous entries. P02 asks about genuinely missing booking intent, although one response is unnecessarily long. This is a small configuration comparison, not final acceptance. The app still uses the low configuration in this work batch; adopt and test high separately next.
+
+**Next:** adopt the evidenced high-reasoning saved-authoring setting, run the current complete durable workflow with live inference, and verify the generated Note in the real browser before the final repeated matrix. 7R.02–06 remain unchecked. All unsuccessful attempts are retained; no new email, beta deployment or production release.
+
+
 ## Saved-authoring model candidate — 22 October 2026
 
 The unchanged six planning requests were replayed against Kimi K2.7 Code/thinking (`kimi-code-probe-2026-10-22T02-32-36.334Z`): both P01 outputs were malformed JSON; P02/P03 passed validation. K3/low reasoning (`kimi-k3-probe-2026-10-22T02-35-45.051Z`) also passed four of six, but its failures were specific extra fields in case input/expected output instead of broken JSON. P01.1 preserves shared durable storage, trim/blank/full rejection and newest-three reads; P03.1 preserves the latest keep-data/no-reset clarification. This small comparison is not proof of the 95% target or overall reliability. All failed outputs remain retained.

@@ -21,6 +21,7 @@ import { prepareServicePublication } from "../../server/cloud-services/releaseCo
 import { checkedFixture } from "../service-hosting/fixtures.mjs";
 import { attachment } from "../service-attachments/fixtures.mjs";
 import { api, proposal } from "./helpers.mjs";
+import { resolveTextTemplate } from "../../packages/pvo-sdk/index.js";
 
 initSync({
   module: new WebAssembly.Module(
@@ -36,7 +37,7 @@ const state = () => api.useCapture.getState();
 const project = () => api.projectSnapshot(state());
 const now = Date.now();
 const origin = "https://restyle.example";
-async function fixture() {
+async function fixture(withNote = false) {
   api.useCapture.setState(api.initial());
   api.useEditorPreferences.setState({ advancedEditingEnabled: false });
   api.useAuthGate.setState({
@@ -82,10 +83,30 @@ async function fixture() {
     style: "",
     logic: `on submit { request(${JSON.stringify({ ...serviceAttachmentRequest(authorization), onSuccess: { kind: "continue" }, onError: null })}); }`,
   };
-  const result = prepareTaskResult(task, [command.component], {
-    command,
-    receipt,
-  });
+  if (withNote)
+    command.notes = [
+      {
+        kind: "component.add",
+        sceneId: "main",
+        componentType: "tooltip",
+        at: 3,
+        duration: 3,
+        source: {
+          structure:
+            "<tooltip><text>Result: {state.responses.component-task-task-1.result}</text></tooltip>",
+          style: "",
+          logic: "",
+        },
+      },
+    ];
+  const result = prepareTaskResult(
+    task,
+    [command.component, ...command.notes],
+    {
+      command,
+      receipt,
+    },
+  );
   const body = serializePreparedTaskResult(result);
   const artifact = {
     id: task.id,
@@ -182,6 +203,56 @@ test("saved service connection, compiled request and approved host apply atomica
   assert.notEqual(
     api.nativeProjectFingerprint(changed),
     api.nativeProjectFingerprint(project()),
+  );
+});
+
+test("saved form and result Note retain matching stable IDs through application, reload, Undo and Redo", async () => {
+  const f = await fixture(true);
+  const before = project();
+  await f.apply();
+  assert.equal(state().past.length, 1);
+  const [form, note] = state().components;
+  assert.equal(form.id, "component-task-task-1");
+  assert.equal(note.id, "component-task-task-2");
+  const displayed = resolveTextTemplate(note.code.pvoCompiled.structure.text, {
+    state: { responses: { [form.id]: { result: "accepted" } } },
+  });
+  assert.equal(displayed, "Result: accepted");
+  assert.deepEqual(
+    api.restoreCheckpoint(f.stored(), new Map()).project,
+    project(),
+  );
+  state().undo();
+  assert.deepEqual(project(), before);
+  state().redo();
+  assert.deepEqual(
+    state().components.map((item) => item.id),
+    [form.id, note.id],
+  );
+  for (const mutate of [
+    (value) => {
+      value.operations.pop();
+    },
+    (value) => {
+      value.operations.reverse();
+    },
+    (value) => {
+      value.operations.push(value.operations[1]);
+    },
+  ]) {
+    const value = structuredClone(f.result);
+    mutate(value);
+    assert.throws(() => parsePreparedTaskResult(value));
+  }
+  await assert.rejects(
+    api.prepareSavedResult(project(), f.result, {
+      compile: compilePvoComponent,
+      createId: () => 42,
+      advancedEditingEnabled: false,
+      origin,
+      now,
+    }),
+    /component ID already exists/,
   );
 });
 

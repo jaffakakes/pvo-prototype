@@ -2,6 +2,8 @@
 
 The attachment contract binds one component proposal to an owned checked release. A parsed receipt or saved connection is data, not permission to activate or invoke a service. The server still checks current ownership, operation, release state and input.
 
+The current `service.attach` command also requires `notes`, an array of zero or one display-only Note in the same scene. The actual compiler and `validateServiceResultNote` admit only declared scalar fields of the selected public reply, including bounded list indices. Whole objects/arrays, unknown fields, another component's state and Note actions are rejected. The connected component precedes its Note in the immutable result. Saved-result preparation reserves stable task-derived component IDs, preserving references through application, reload and Undo/Redo. Reopening can show the saved response without another request; it does not fetch fresh shared data or establish email delivery from HTTP acceptance.
+
 ## Shared submission contract
 
 Try and the player use the same `ServiceSubmission` record:

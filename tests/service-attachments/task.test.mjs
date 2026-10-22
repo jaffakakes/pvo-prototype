@@ -9,6 +9,54 @@ import {
 import { proposal, setup } from "./task.helpers.mjs";
 import { serializePreparedTaskResult } from "../../packages/pvo-assistant/results/index.js";
 
+test("the durable attachment checks response Note paths against actual public schema before saving", async () => {
+  for (const valid of [true, false]) {
+    const { f, task } = await setup({
+      propose: (task) => {
+        const command = proposal(task);
+        command.notes = [
+          {
+            kind: "component.add",
+            sceneId: "scene-one",
+            componentType: "tooltip",
+            at: 3,
+            duration: 4,
+            source: {
+              structure: `<tooltip><text>Result: {state.responses.${task.attachmentContext.newComponentId}.${valid ? "result" : "result.invented"}}</text></tooltip>`,
+              style: "",
+              logic: "",
+            },
+          },
+        ];
+        return command;
+      },
+    });
+    try {
+      expectStatus(await f.control({ action: "sweep" }), 200);
+      const next = await current(f, task);
+      if (valid) {
+        assert.equal(next.state, "ready");
+        const result = (await f.request(path(task) + "/result")).body;
+        assert.equal(result.operations.length, 2);
+        assert.deepEqual(
+          result.operations[1],
+          result.attachment.command.notes[0],
+        );
+        await f.restart();
+        assert.deepEqual(
+          (await f.request(path(task) + "/result")).body,
+          result,
+        );
+      } else {
+        assert.notEqual(next.state, "ready");
+        assert.equal(next.result, null);
+      }
+    } finally {
+      await f.close();
+    }
+  }
+});
+
 test("the durable attach runner compiles a public connection and saves owned immutable result bytes across full restart", async () => {
   const { f, task, calls } = await setup();
   try {
@@ -23,6 +71,7 @@ test("the durable attach runner compiles a public connection and saves owned imm
       ["join"],
     );
     assert.deepEqual(Object.keys(calls[0].attachmentContext).sort(), [
+      "newComponentId",
       "operations",
       "releaseId",
       "url",
