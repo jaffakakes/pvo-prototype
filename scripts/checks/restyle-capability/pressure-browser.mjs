@@ -3,6 +3,27 @@ import assert from "node:assert/strict";
 import { fillGeneratedForm } from "../cloud-agent-first-release/viewer.mjs";
 import { exportGenerated } from "./durable-delivery.mjs";
 import { expectStatus } from "../../../tests/assistant-task-server/helpers.mjs";
+import { control } from "../../../tests/service-actions/helpers.mjs";
+
+/** Synthetic creator approval uses the canonical receipt identity, then publishes that exact release. */
+export async function approvePressureEmail(fixture, saved, record) {
+  const identity = saved.receipt.identity;
+  assert.equal(saved.connection.releaseId, identity.resourceId);
+  expectStatus(
+    await fixture.request(
+      `/api/services/${identity.serviceId}/account-access`,
+      {
+        body: { kind: "approve", releaseId: identity.resourceId },
+      },
+    ),
+    200,
+  );
+  expectStatus(await control(fixture, { identity }, "activate"), 200);
+  await record("controlled_creator_approval", {
+    serviceId: identity.serviceId,
+    releaseId: identity.resourceId,
+  });
+}
 
 /** Real generated UI, Try, export, anonymous mobile viewer and retained receipt. No source repair. */
 export async function checkPressureBrowser(
@@ -47,17 +68,7 @@ export async function checkPressureBrowser(
     (await import("/src/features/preview/tryMode.ts")).stopTry(),
   );
   if (email) {
-    const connection = form.serviceConnection.connection;
-    expectStatus(
-      await fixture.request(
-        `/api/services/${connection.serviceId}/account-access`,
-        { body: { kind: "approve", releaseId: connection.releaseId } },
-      ),
-      200,
-    );
-    await record("controlled_creator_approval", {
-      releaseId: connection.releaseId,
-    });
+    await approvePressureEmail(fixture, form.serviceConnection, record);
   }
   const bytes = await exportGenerated(page, directory, record);
   await checkPressureViewer(

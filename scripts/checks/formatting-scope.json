@@ -891,5 +891,6 @@
   "scripts/checks/restyle-capability/pressure-controls.mjs",
   "scripts/checks/restyle-capability/pressure-viewer.mjs",
   "scripts/checks/restyle-capability/pressure-replay.mjs",
-  "tests/restyle-capability/pressure-controls.test.mjs"
+  "tests/restyle-capability/pressure-controls.test.mjs",
+  "tests/restyle-capability/pressure-approval.test.mjs"
 ]

@@ -1,5 +1,13 @@
 # Restyle cloud agent: start here when taking over
 
+## Browser/load findings retained; email evaluator correction — 22 October 2026
+
+The resumed six-call private-feedback and six-call waitlist journeys pass Apply/Try/export, anonymous phone viewers and restart/reopen without new writes. Private feedback returns only status, but its long mixed Arabic/English placeholder clips visually. The unchanged quiz replay passes without inference. All controlled load stages (1/5/20 viewers) pass: at twenty, twelve initial 429s retry once successfully, leaving one accepted/eight waiting/eleven full; five same-action replays after restart preserve state and receipts.
+
+The prescribed thirteen-call optional-email task reaches ready, survives restart and passes Apply/Try. It repairs an invalid connected input and malformed Tooltip autonomously. The browser evaluation then fails because its approval helper reads a nonexistent service ID from the connection instead of its canonical receipt. Original failure remains recorded. The evaluator correction uses receipt identity and explicitly activates the approved release; calibration against the unchanged original checked package passes, along with three connected-host regressions (four passes, no skips). See the [execution addendum](restyle-capability/pressure-test-execution-addendum.md). No app/model change.
+
+Exact next: finish correction verification, checkpoint, run one explicitly supplemental fresh email journey (45 total starts including the separate interrupted feedback), then final audit/report. Keep the prescribed email failure and do not silently count the new trial in its place. Owned Vite PID2696 remains on 5295; completed per-run worker/browser/container resources are cleaned. 9P.03/04 remain unchecked until final evidence and cleanup.
+
 ## Pressure comparison measured; browser evaluation resumed — 22 October 2026
 
 The frozen `ad18c8a` run completed all 24 paired builds (12/12 per arm), fourteen probes and the G4 boundary build. Candidate builds required four self-corrected tool failures versus zero baseline; final success is equal, without demonstrated superiority. Probe grading identifies an insecure token-plan failure, a partially implemented native quiz, and an oversized context probe that exceeds the persisted sixteen-question contract. These remain findings, not repaired application behavior.
