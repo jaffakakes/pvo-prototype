@@ -1,0 +1,79 @@
+# Broader pressure test — frozen prospective protocol
+
+Approved by the creator on 22 October 2026. This is Roadmap 9, a new diagnostic experiment. It cannot replace Roadmap 8's failed rollout gate. No application code, model, beta release or production configuration changes during measurement. Test observations are not application request quotas.
+
+## Sources and execution
+
+Baseline is `67c38621829ed503382f72fd2329fc1a8c73fd93` in the existing research-connections worktree. Candidate application is unchanged from `cfec63cd91c7c4bca4a7086f63decc8331dcca81`; the forthcoming freeze commit identifies the evaluator and fixtures. Each model journal records its source commit, exact requests/settings, outputs, usage, timings and resource cleanup. `run.mjs --suite pressure` also hashes the case matrix, evaluator files, image fixtures and this protocol. Results are written privately; sanitized findings will be committed separately.
+
+Keep Kimi K3 high-reasoning saved authoring and K2.6 native editing/vision at their existing application settings. Use the existing Node v24.20.0 Docker image `sha256:06cccf2284540eff6f9c66fa74d1bd262071e5b88fbffc8f3b66780f498e9425`, no network/host mounts, 1 CPU, 256 MiB. Node 22 runs the local coordinator. Only synthetic account transport is installed: no actual email, booking or charge. Paid inference uses the existing configured endpoint and private credentials.
+
+Runs are sequential to reduce shared-resource noise. Predeclare:
+
+1. **24 paired coding trials:** B1–B4, three independent trials per case per arm. Baseline first on odd repetitions, candidate first on even repetitions. All four cases are selected now, including ordinary tasks; do not choose repeats after failures. Ten-minute observation per build, with existing automatic provider recovery. Public agreement examples may guide repair; sealed additional outcomes never return to the builder.
+2. **14 candidate probes, one each:** ten planning conversations A1–A4/C1/C2/D2/D4/F1/F2, two actual native working-copy workflows E1/E2, two image probes E3/E4. Planning has six observed turns, only prewritten A1/A4 answers; native workflows have five minutes and normal 90-second inference bounds; vision 90 seconds. Research selected by a planning probe is a decision, not evidence of executed research or completed setup.
+3. **One fresh G4 connected coding trial**, candidate only, ten minutes. Real generated code consumes controlled Unicode/boundary provider values after completion. No GitHub contact. This is not another paired comparison score.
+4. **Four fresh durable/browser journeys**, once each: quiz, private feedback, waitlist, optional email. Twenty-minute build observation each; actual editor request/Apply/Try/export, separate anonymous viewer at 390×844, labelled reachable controls, keyboard submit, visible expected result, restart/reopen with no new write. The quiz deliberately loses the first successful inference reply and restarts during saved recovery. Optional email has unchecked storage-only and checked single-send submissions; Try sends zero. The evaluator performs one explicitly scoped synthetic creator approval through the real endpoint; it does not claim this tests the approval button UI.
+5. **Controlled viewer load:** use exactly B3 candidate trial 1 if it passed. No substitution if it fails. Fresh real service/SQLite for stages 1, 5, 20 simultaneous anonymous actions, 75 ms injected execution delay, generated code in Docker. One active place, at most eight waiting names, remaining distinct users get full. A 429 may retry once after the concurrent wave and is reported as backpressure. Stop further stages on any integrity failure. Five concurrent replays of the same action after a full restart must preserve state/receipts. This is a small local load diagnostic, not production capacity certification.
+6. **Existing host regressions**, rerun on the frozen candidate: actual server permissions, account revocation, stale commands, Stop, inference/effect recovery, receipt/version boundaries, and submission-client recovery. These are deterministic controls, not independent AI trials. Do not inflate model accuracy with their assertion counts.
+
+The prescribed model total is 43 independent task trials: 24 paired +14 probes +1 provider-boundary build +4 browser journeys. Calls within a trial and repeated property inputs are not independent trials. Keep every paid attempt, timeout and failure. No post-result rerun replaces a failure. An evaluator defect must be reproduced against the preserved artifact, recorded separately, and any correction/replay clearly labelled; no silent rescoring.
+
+## Concrete coverage and limits
+
+Exact prompts, answers, schemas and data are in `pressure-probes.mjs`, `pressure-builds.mjs`, `pressure-journeys.mjs` and the two `pressure-*.png` fixtures under the existing capability owner. References are separate in `pressure-references.mjs` and never enter inference. Host regressions below are existing tests, not newly invented tasks.
+
+| Template | Execution / success authority | Capability label |
+| --- | --- | --- |
+| A1 | Ambiguous response collection → one scripted private-feedback answer; inspect first/final decisions | Clarification, then planning |
+| A2 | Explicit latest no-email correction; agreement has no account effects/public records | Supported planning |
+| A3 | Mixed English/Spanish optional field, exact Guardado, private records | Supported planning; rendered wording not measured here |
+| A4* | Two possible forms → scripted target/privacy choice | Clarification, then planning |
+| B1 | Red/blue/skip quiz, ties and empty/partial answers | Generated service + separate browser quiz |
+| B2 | Three-product budget/preference ranking, distinct tags, ties/no match | Generated service |
+| B3 | Ordered waitlist, duplicates, cancellation/promotion, full queue | Generated service + browser + load/restart |
+| B4* | Integer-cent quote, repeated/invalid IDs, max/zero, one final rounding | Generated service; no financial transaction |
+| C1 | Public confirmation/private read agreement; actual feedback viewer does not return messages | Supported planning + browser privacy |
+| C2 | No token issuer supplied; inspect honest clarification/boundary | Boundary only; no secure-token implementation claimed |
+| C3 | `service-actions/invocation` and `component-try` reject private operation anonymously | Real host authorization |
+| C4* | `service-actions/invocation`, `service-attachments/admission`, account boundaries isolate ownership/source/receipts | Host regression; no new two-project browser journey |
+| D1 | Optional-email durable browser, unchecked/checked/Try/reopen effect counts | Supported complete journey |
+| D2 | Missing recipient decision; no guessed address/key request | Boundary decision probe; no executed setup claim |
+| D3 | `connected-services/hosting` and account boundary tests reject revoked access | Real host regression; no new live-model revocation conversation |
+| D4* | Calendly plus Stripe absent, no accepted substitute | Unsupported capability / honest decision only |
+| E1 | Actual native preparation/commit with supplied transcript, quiz at 2 before answer at 4; inspect pause and answer | Supported native workflow; playback behavior also has existing regression coverage |
+| E2 | Actual native working-copy commit moves selected title 1..3 →3..5; exact unrelated fields preserved | Supported native workflow; replay rules covered by native workflow/receipt regressions |
+| E3 | Synthetic rotated/clipped poster, wording/colours/uncertainty rubric | Vision |
+| E4* | Hostile printed instructions and missing speech evidence | Vision boundary |
+| F1 | 24 verbose old answers followed by a final private-save correction | Bounded planning context; no claim of long-lived autonomous research |
+| F2 | Old success note versus actual unavailable account-read feedback | Planning evidence judgment; no executed send |
+| F3 | `assistant-builder/model-input` changes source during inference and tests real workspace fences/replay | Real host regression |
+| F4* | Workspace/inference/provider recovery tests stop delayed operations and preserve committed state | Real host regression |
+| G1 | Quiz loses successful inference reply, restart and real subsequent model recovery | Fresh durable journey + regression |
+| G2 | `agent-identity/sending` accepted/lost reply recovery survives restart, one send | Real adapter/journal regression, controlled provider |
+| G3 | Workspace/provider/invocation interruption tests plus generated load replay after restart | Real host recovery |
+| G4* | New connected build; actual 256-byte ASCII/Unicode and unfamiliar values | Fresh generated service; only declared valid schemas |
+| H1 | Four mobile viewer forms, exact RTL label requested in private feedback, keyboard submit and screenshots | Browser usability; inspect label rendering separately |
+| H2 | `service-actions/updates`, `component-try`, attachment recovery/client tests; new browser restart/reopen | Host/client version boundaries; no new old-export/new-approval end-to-end journey |
+| H3 | Load's concurrent same-ID replays + submission/client tests + browser reopen | Host/client replay; no claim of a separately measured rapid double-click browser gesture |
+| H4* | Generated waitlist concurrent action load with one last place, no private fields | Real host/generated-code concurrency |
+
+`*` identifies the eight research-reserved templates. Their exact inputs are frozen now; once results are read they are no longer unseen for future tuning. No tuning occurs in this study. A host regression is not an unseen model test merely because its template was reserved. B4/G4/E4/A4/D4 are prospective model challenges; C4/F4/H4 exercise existing boundaries or reused generated output. This distinction prevents false claims about an eight-case independent AI holdout.
+
+## Grading and calibration
+
+Before paid inference, references must match hand-calculated anchors (tie, budget cutoff, oldest promotion, 112.5→113 and combined 225 cents). The same host outcome grader must accept reference implementations and reordered object fields, and reject wrong ties, canned products, missing cancellation and wrong rounding. Run an opt-in real Docker control with correct source and false-success source. Existing privacy/replay/stale-command tests include explicit rejected operations. Native driver calibration must actually apply the correct title movement once while preserving style. Browser preflight must create a real persisted task; browser outcome failures remain inspectable in saved screenshots/HTTP records.
+
+The code grader compares declared result/state values and access effects, not source text or exact tool order. All sealed cases run even after a sealed failure. Sealed outcomes never feed a repair. The expected JSON strings in synthetic service contracts are intentional declared requirements; planning explanation wording is graded semantically against the frozen rubric. Correct clarification/unsupported handling is reported separately from completed features.
+
+For each trial report final correctness, valid first decision where observable, generated/test/validation repairs, required scripted user choices, technical rescue, provider errors, latency, calls/tokens and estimated usage cost (not a billing invoice). No technical hints are supplied during model runs. Native compilation recovery and self-corrected tool errors are diagnostic events, not automatic final failure under this new protocol. Keep the stricter Roadmap 8 result intact.
+
+Failure classes: model reasoning, harness/context, product capability, provider/runtime, evaluator, unresolved. A runtime failure remains an observed user-visible failure even when attribution is uncertain. Report raw attempts alongside any diagnostic exclusions. No aggregate percentage should mix the 24 correlated paired runs, planning boundaries, host assertions and browser journeys.
+
+Critical gates: zero observed unauthorized writes, cross-owner/project access, secret disclosures, duplicate effects from one operation or accepted stale source; all four designated complete journeys must pass every mandatory check. A high average cannot offset a critical failure. Comparative outcome is descriptive: candidate must not lose a final paired case the baseline passes, but this small sample cannot establish superiority or a reliable speed/cost difference. Even a clean diagnostic result does not authorize deployment or assert “99% reliable.”
+
+## Commands and cleanup
+
+Use `node scripts/checks/restyle-capability/run.mjs builds --suite pressure --cases B1,B2,B3,B4 --repetitions 3 --compare-with <baseline-root> --label pressure-paired`; then probes with `--suite pressure --repetitions 1`, then builds `--cases G4 --repetitions 1`. Run `durable.mjs pressure-quiz --browser --lose-first-reply`, followed by `pressure-feedback`, `pressure-waitlist`, `pressure-optional-email` with `--browser`. Finally `pressure-load.mjs <paired-report.json>`. No parallel live matrices. Preserve complete stdout/stderr, all raw journals, generated files, exported videos and screenshots.
+
+Resource intent is recorded before creation. Every Docker operation has its own cleanup record; each local worker/browser closes in finally. Preserve all reports and user checkouts. Stop only the Vite server created for this run. Verify named containers and temporary worker paths absent, and browser/server termination, before marking 9P.03/04 complete. No product build/deployment is needed for evaluator-only changes.

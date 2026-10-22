@@ -11,9 +11,9 @@ export async function runPlanning(scenario, row, models, save) {
     input: {
       request: scenario.request,
       examples: [],
-      context: { components: [] },
+      context: scenario.context ?? { components: [] },
     },
-    questions: scenario.questions,
+    questions: structuredClone(scenario.questions),
   };
   const feedback = structuredClone(scenario.feedback);
   let evidence = scenario.evidence ?? null;
@@ -70,6 +70,21 @@ export async function runPlanning(scenario, row, models, save) {
       }
       row.planningTurns.push({ turn, decision });
       row.output = decision;
+      if (decision.kind === "ask" && scenario.scriptedAnswers?.length) {
+        const index = row.scriptedAnswers?.length ?? 0;
+        const value = scenario.scriptedAnswers[index];
+        if (value) {
+          const question = {
+            id: `scripted-${index}`,
+            prompt: decision.prompt,
+            answer: { value, answeredAt: 1000 + index },
+          };
+          task.questions.push(question);
+          (row.scriptedAnswers ??= []).push(question);
+          await save();
+          continue;
+        }
+      }
       if (
         scenario.id !== "P07" ||
         [

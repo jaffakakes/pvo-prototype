@@ -17,6 +17,8 @@ import { createDurableBrowser } from "./durable-browser.mjs";
 import { checkDurableDelivery } from "./durable-delivery.mjs";
 import { controlledEmail, checkEmailDelivery } from "./durable-email.mjs";
 import { checkEmailReceiptBounds } from "./email-boundary.mjs";
+import { pressureJourney } from "./pressure-journeys.mjs";
+import { checkPressureBrowser } from "./pressure-browser.mjs";
 import {
   durableScenario,
   seedDurableScenario,
@@ -31,8 +33,12 @@ import {
 const scenario = process.argv[2] ?? "guestbook";
 const browserJourney = process.argv.includes("--browser");
 const loseFirstReply = process.argv.includes("--lose-first-reply");
-const scenarioInput = durableScenario(scenario);
-if (browserJourney && !["guestbook", "connected-email"].includes(scenario))
+const scenarioInput = pressureJourney(scenario) ?? durableScenario(scenario);
+if (
+  browserJourney &&
+  !scenarioInput.pressure &&
+  !["guestbook", "connected-email"].includes(scenario)
+)
   throw new Error("Browser delivery uses guestbook or connected-email.");
 const directory = join(
   homedir(),
@@ -219,7 +225,7 @@ try {
     const result = await fixture.request(path(task) + "/result");
     expectStatus(result, 200);
     report.preparedResult = result.body;
-    if (email) {
+    if (email && !scenarioInput.pressure) {
       const identity = result.body.attachment.receipt.identity;
       const artifact = report["validation-state"].artifacts.find(
         (row) => row.artifact.identity.packageDigest === identity.packageDigest,
@@ -252,7 +258,13 @@ try {
       throw new Error("Prepared result changed across restart.");
     await save();
     if (creator) {
-      await (email ? checkEmailDelivery : checkDurableDelivery)(
+      await (
+        scenarioInput.pressure
+          ? checkPressureBrowser
+          : email
+            ? checkEmailDelivery
+            : checkDurableDelivery
+      )(
         creator,
         fixture,
         directory,
@@ -265,6 +277,7 @@ try {
           await save();
         },
         email,
+        scenarioInput,
       );
       report.browserPassed = true;
     }

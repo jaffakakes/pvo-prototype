@@ -1,5 +1,17 @@
 # Restyle cloud agent: current progress and handoff log
 
+## Pressure fixtures calibrated; execution pending — 22 October 2026
+
+9P.02 is complete: the [prospective protocol](restyle-capability/pressure-test-protocol.md) freezes cases, three paired trials per builder case, scoring, observation windows, no hidden-feedback repairs and the 43-task run matrix. Five calibration tests pass (including real Docker reference/negative controls and actual native commit), and the real browser task-creation preflight passes. Three evaluator fixture defects and a formatting check failure were corrected before inference; original logs are retained. Full Node 22 source check passes: 1,799 tests, zero failures/cancellations, five optional skips; JavaScript, dependency boundaries and adopted formatting pass. No product/model changes or paid test requests yet.
+
+Current resources: owned Vite PID46920 at 127.0.0.1:5295; calibration Docker/browser resources cleaned. Resource journal and logs are private under `~/.codex/secure/restyle-capability/pressure-20261022`. This batch is pending commit. Exact next: finish source verification, commit the frozen evaluator, then 9P.03 in declared order. Record all outcomes and cleanup; no deployment or application repair.
+
+## Broader pressure tests authorized and being implemented — 22 October 2026
+
+The creator approved implementing and running Roadmap 9. Work continues in the isolated `codex/restyle-simple-harness` worktree; application files and model settings remain unchanged. New fixtures cover unseen coding goals, multi-turn planning, actual native editing, vision, browser delivery and controlled concurrent viewer actions. No live inference has started. Calibration has already caught two malformed native test fixtures (missing transcript text and wrong font shape); these are evaluator preparation defects, not model failures.
+
+Planned resources before creation: existing pinned network-disabled Docker image with individually journalled temporary containers; temporary Miniflare/SQLite directories; isolated headless Chromium contexts; one owned Vite server on port 5295; configured Kimi model endpoint only. All provider email effects are controlled synthetic calls, never real email. Private evidence under `~/.codex/secure/restyle-capability/pressure-20261022` and per-run journals. Cleanup must be verified at completion. Exact next: finish precise fixtures/calibration and prospective protocol, freeze source before paid calls (9P.02), then run all declared trials without product fixes.
+
 ## Broader pressure test research complete — 22 October 2026
 
 The creator requested efficient, broader testing and research into realistic requests and edge cases. [Roadmap 9](restyle-cloud-agent-roadmaps/09-broader-pressure-tests.md) records completed research (9P.01) and leaves implementation/execution unchecked. The [research](restyle-capability/pressure-test-research.md) cites official OpenAI/Anthropic guidance, NIST, property-based testing documentation and interactive-video product examples. It maps existing coverage and proposes 32 templates across intent, new features, privacy, accounts, editing/vision, context, failures and real-viewer behavior. These are proposed fixtures, not new measured results or claims about real customer frequency.

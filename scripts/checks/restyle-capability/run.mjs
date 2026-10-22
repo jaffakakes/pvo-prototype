@@ -15,6 +15,11 @@ import { planningProbes, editorProbes, visionProbes } from "./probes.mjs";
 import { buildScenarios } from "./build-scenarios.mjs";
 import { runBuild } from "./build.mjs";
 import { runPlanning } from "./planning.mjs";
+import { pressureBuilds } from "./pressure-builds.mjs";
+import { pressureProbes } from "./pressure-probes.mjs";
+import { runCases } from "../model-comparison/review.mjs";
+import { prepareServiceArtifact } from "../../../server/assistant/validation/artifact.js";
+import { runPressureNative } from "./pressure-native.mjs";
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -23,9 +28,12 @@ const { values, positionals } = parseArgs({
     repetitions: { type: "string", default: "2" },
     label: { type: "string" },
     "compare-with": { type: "string" },
+    suite: { type: "string", default: "regression" },
   },
 });
 const selected = positionals[0] ?? "all";
+if (!["regression", "pressure"].includes(values.suite))
+  throw new Error("Unknown suite.");
 if (values["compare-with"] && selected !== "builds")
   throw new Error(
     "Harness comparison requires builds; start a fresh paired run.",
@@ -75,6 +83,10 @@ let builds = [
   ...buildScenarios(),
   ...(comparisonRoot ? harnessScenarios() : []),
 ];
+if (values.suite === "pressure") {
+  probes = pressureProbes();
+  builds = pressureBuilds();
+}
 if (values.cases) {
   const ids = values.cases.split(",");
   const all = [...probes, ...builds];
@@ -84,7 +96,11 @@ if (values.cases) {
   builds = builds.filter((scenario) => ids.includes(scenario.id));
 }
 const report = {
-  protocol: "restyle-capability-v1.7",
+  protocol:
+    values.suite === "pressure"
+      ? "restyle-pressure-v1"
+      : "restyle-capability-v1.7",
+  suite: values.suite,
   selected,
   predecessor: previous ? positionals[1] : null,
   experiment: values.label ?? null,
@@ -115,6 +131,9 @@ const report = {
 };
 const files = [
   "docs/engineering/restyle-cloud-agent-roadmaps/06-capability-baseline.md",
+  ...(values.suite === "pressure"
+    ? ["docs/engineering/restyle-capability/pressure-test-protocol.md"]
+    : []),
   ...(await readdir("scripts/checks/restyle-capability"))
     .filter((x) => x.endsWith(".mjs"))
     .map((x) => "scripts/checks/restyle-capability/" + x),
@@ -177,7 +196,7 @@ async function run(scenario, repetition, arm = "candidate") {
   });
   console.log(`Start ${arm}: ${row.id}.${repetition}`);
   try {
-    if (["build", "repair"].includes(scenario.family))
+    if (["build", "repair"].includes(scenario.family)) {
       await runBuild(
         scenario,
         row,
@@ -186,9 +205,37 @@ async function run(scenario, repetition, arm = "candidate") {
         save,
         arm === "baseline" ? baselinePlanner : undefined,
       );
-    else if (scenario.family === "planning")
+      if (row.status === "passed" && scenario.sealedCases) {
+        const artifact = await prepareServiceArtifact(
+          row.savedState,
+          row.source,
+        );
+        row.artifact = artifact;
+        row.sealedResults = [];
+        // Each case is independent; keep checking after a failure. No result returns to inference.
+        for (const item of scenario.sealedCases) {
+          row.sealedResults.push(
+            ...(await runCases(
+              sandbox,
+              artifact.package,
+              artifact.agreement,
+              [item],
+              scenario.id === "G4"
+                ? async (_request, step) => ({ title: step.expected.result })
+                : null,
+            )),
+          );
+          await save();
+        }
+        row.status = row.sealedResults.every((item) => item.status === "passed")
+          ? "passed"
+          : "sealed_check_failed";
+      }
+    } else if (scenario.family === "planning")
       await runPlanning(scenario, row, models, save);
-    else if (scenario.family === "editor") {
+    else if (scenario.family === "editor" && values.suite === "pressure") {
+      await runPressureNative(scenario, row, models, save);
+    } else if (scenario.family === "editor") {
       row.trace = [];
       row.output = await nativeAssistantTurn(scenario.request, {
         models,

@@ -879,5 +879,13 @@
   "scripts/checks/restyle-capability/inference-recovery.mjs",
   "tests/assistant-task-server/inference-recovery.test.mjs",
   "tests/restyle-capability/inference-recovery.test.mjs",
-  "tests/native-assistant-answer-review.test.mjs"
+  "tests/native-assistant-answer-review.test.mjs",
+  "scripts/checks/restyle-capability/pressure-browser.mjs",
+  "scripts/checks/restyle-capability/pressure-builds.mjs",
+  "scripts/checks/restyle-capability/pressure-journeys.mjs",
+  "scripts/checks/restyle-capability/pressure-load.mjs",
+  "scripts/checks/restyle-capability/pressure-native.mjs",
+  "scripts/checks/restyle-capability/pressure-probes.mjs",
+  "scripts/checks/restyle-capability/pressure-references.mjs",
+  "tests/restyle-capability/pressure.test.mjs"
 ]

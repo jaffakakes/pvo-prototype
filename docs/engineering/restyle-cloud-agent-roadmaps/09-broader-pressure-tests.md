@@ -1,14 +1,16 @@
 # Roadmap 9 — broader pressure test research
 
-The creator requested research into efficient, broad pressure testing of the simpler harness, with realistic user requests and edge cases. Research is complete; the executable suite below is proposed and has not run. The previous comparison result and beta disposition remain unchanged.
+The creator requested research into efficient, broad pressure testing of the simpler harness, with realistic user requests and edge cases. Research and evaluator calibration are complete. The creator authorized execution; the frozen live suite has not started. The previous comparison result and beta disposition remain unchanged.
 
 - [x] **9P.01** Research primary evaluation guidance and realistic interactive-video use cases; map existing coverage and propose new scenario families.
-- [ ] **9P.02** Convert the research templates into precise fixtures, supported-capability labels, scripted user answers and independent reference/negative controls. Freeze sources, graders, trial selection and acceptance rules before model evaluation.
+- [x] **9P.02** Convert the research templates into precise fixtures, supported-capability labels, scripted user answers and independent reference/negative controls. Freeze sources, graders, trial selection and acceptance rules before model evaluation.
 - [ ] **9P.03** Run the predeclared broad diagnostic and paired builder comparison, with separate repeatability, browser and controlled-load measurements. Retain all attempts and cleanup evidence.
 - [ ] **9P.04** Report category-level results, first versus eventual success, human intervention, root causes, usability and cost; rank fixes without changing the evaluated candidate mid-run.
 
 The [research and 32 scenario templates](../restyle-capability/pressure-test-research.md) distinguish source guidance from proposed Restyle-specific choices. The eight reserved templates need concrete frozen fixtures before they can count as held-out cases. Three trials and controlled viewer-load stages are starting design choices, not statistical reliability guarantees or product request limits.
 
-Current work is documentation only, continuing the existing unreleased experiment in `codex/restyle-simple-harness`. No paid model run, new test infrastructure, app modification, real email or deployment occurred during research. Documentation link/content checks are appropriate; product rebuild and browser tests are not applicable.
+The [frozen protocol](../restyle-capability/pressure-test-protocol.md) specifies 43 fresh task trials (24 paired builder trials, 14 probes, one connected boundary build, four durable/browser journeys), actual native commits, sealed post-build checks and separate controlled load/host regressions. Existing host tests are distinguished from unseen model tests. No application source or model switch.
 
-Exact next: implement and calibrate 9P.02 using the existing test owners. Validate outcome grading against known-correct and deliberately broken outputs before starting a live run. Keep evaluation-driver bugs distinct from model/product failures. Keep Roadmap 8's rejected rollout gate intact; this is a new prospective experiment, not a replacement score for the old one.
+Calibration: five evaluator checks pass including real Docker positive/negative controls and actual native commit; browser task-creation preflight passes. Three fixture preparation defects were corrected before inference (transcript text, font shape, normalized layer order); the first source check found one formatting issue, corrected. All original logs remain private. Full Node 22 source check passes 1,799 tests with zero failures/cancellations and five optional skips; syntax, dependency boundaries and formatting pass. No measured trial has begun.
+
+Exact next: complete source verification, freeze the evaluated commit and run 9P.03 exactly as declared. Keep Roadmap 8's rejected rollout gate intact. Do not fix the application or feed sealed failures back to the model during measurement.
