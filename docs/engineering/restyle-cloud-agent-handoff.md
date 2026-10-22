@@ -1,5 +1,15 @@
 # Restyle cloud agent: start here when taking over
 
+## Fresh complete email journey passed; final matrix running — 22 October 2026
+
+**7R.04 complete.** Candidate `82b0090` passes the fresh live-AI email journey `durable-2026-10-22T04-31-10.380Z-7ba2ff63` in ten calls, $0.397275, no unknown usage. Independent review accepts the original generated source; its prepared result survives Worker restart. The actual editor applies the Message/receipt Note atomically. Try shows its example receipt with zero provider sends; actual creator controls approve the exact checked release and publish it; export validates. A separate anonymous viewer makes exactly one controlled AgentMail send with the fixed recipient/subject/body, displays the actual returned receipt, and reopens after Worker restart without a second public request or send. Screenshots and source were semantically reviewed; the separate private semantic grade records the immutable journal hash. Source/agreement/component were not manually corrected. All owned journey resources were cleaned; no real email was sent.
+
+Together with the recorded missing/revoked-account and lost-inference Retry/restart journeys and independent lost-provider-reply/idempotency checks, this verifies the connected/recovery task. It does not claim automatic Retry or confirmed mail delivery. Full source checks on the unchanged app pass 1,772 tests, four optional skips, zero failures.
+
+The unchanged 21-scenario final matrix has now started, five repetitions each: `run-2026-10-22T04-35-42.038Z-358d9579/report.json`, source `82b0090`, protocolv1.3. No application tuning or human hints during this run; retain every result and distinguish first decision from repair. 7R.02/05/06 remain unchecked until all acceptance gates and beta delivery pass. Next: grade all105 outputs, verify the 40 planning and25 coding gates, then deliver the checked beta. Dedicated Vite5295 PID56077/session82440 is stopped and no listener remains; unrelated local services remain.
+
+The unchanged candidate also passes a fresh build and strict editor TypeScript. Staged revision is `restyle-editor-shell-a0a3e38c8a0a9acc`, with 41 immutable editor assets retained (41,432,152 bytes), zero downloads, and guarded beta dry run passing. The build is preserved at the existing backup’s `verified-build-82b0090`; original canonical source dist is restored and Desktop is untouched. It is not deployed while the final matrix is pending.
+
 ## Email browser path verified with recorded output — 22 October 2026
 
 Live candidate `b7db4c0` reaches Ready in ten calls with checked source and a visible receipt Note: `durable-2026-10-22T04-22-44.995Z-ac6e2182`, $0.383250, no unknown usage, restart and cleanup verified. Its actual Try response displays the example receipt and makes zero provider calls. The browser observer then fails to open Containers because it omitted the desktop More settings step. This stays an incomplete live journey.

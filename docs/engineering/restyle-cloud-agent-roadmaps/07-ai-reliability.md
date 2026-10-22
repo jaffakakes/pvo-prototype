@@ -20,7 +20,7 @@ If a criterion proves unsuitable, document its evidence and rationale before cha
 - [x] **7R.01** Freeze reliability acceptance criteria and inspect the measured failures and existing owners.
 - [ ] **7R.02** Make planning and tool decisions structurally dependable; preserve meaningful validation and record controlled experiments.
 - [x] **7R.03** Make final review use current source and advance after successful work; verify recovery in the durable coordinator.
-- [ ] **7R.04** Verify connected requests/results, missing/revoked access, interruption and duplicate prevention without false completion.
+- [x] **7R.04** Verify connected requests/results, missing/revoked access, interruption and duplicate prevention without false completion.
 - [ ] **7R.05** Run the complete final repeated matrix and full generated-component journeys; preserve all unsuccessful attempts.
 - [ ] **7R.06** Complete source review/checks, beta delivery and release verification; document evidence and clean owned test resources.
 
@@ -77,3 +77,7 @@ The next email repetition finds an ambiguous source-path diagnostic: mixed-case 
 ### Email browser preflight checkpoint
 
 The b7db4c0 live email reaches Ready in ten calls; its Try receipt is visible with zero provider calls. A missing settings-navigation step stops that live browser proof. A separate recorded-output preflight now passes actual approval, export, anonymous controlled send and reopen with one total send, preserving source/agreement bytes and rebinding only fixture metadata. Full source check passes 1,772 tests plus four optional skips. Fresh live complete acceptance is next, followed by final105; no beta deployment yet.
+
+### Fresh connected journey accepted
+
+7R.04 is verified by the fresh live ten-call email journey on82b0090, actual creator approval/export/anonymous viewer and saved-result reopen, plus the preserved missing/revoked and interruption checks. One controlled send, no resend, all cleanup verified; $0.397275 with no unknown usage. The generated source/agreement/component remain unchanged. Final105 started in `run-2026-10-22T04-35-42.038Z-358d9579`; 7R.02/05/06 remain pending.
