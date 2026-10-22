@@ -887,5 +887,9 @@
   "scripts/checks/restyle-capability/pressure-native.mjs",
   "scripts/checks/restyle-capability/pressure-probes.mjs",
   "scripts/checks/restyle-capability/pressure-references.mjs",
-  "tests/restyle-capability/pressure.test.mjs"
+  "tests/restyle-capability/pressure.test.mjs",
+  "scripts/checks/restyle-capability/pressure-controls.mjs",
+  "scripts/checks/restyle-capability/pressure-viewer.mjs",
+  "scripts/checks/restyle-capability/pressure-replay.mjs",
+  "tests/restyle-capability/pressure-controls.test.mjs"
 ]

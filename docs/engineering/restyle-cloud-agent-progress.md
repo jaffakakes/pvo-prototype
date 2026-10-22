@@ -1,5 +1,15 @@
 # Restyle cloud agent: current progress and handoff log
 
+## Pressure comparison measured; browser evaluation resumed — 22 October 2026
+
+The frozen `ad18c8a` run completed all 24 paired builds (12/12 per arm), fourteen probes and the G4 boundary build. Candidate builds required four self-corrected tool failures versus zero baseline; final success is equal, without demonstrated superiority. Probe grading identifies an insecure token-plan failure, a partially implemented native quiz, and an oversized context probe that exceeds the persisted sixteen-question contract. These remain findings, not repaired application behavior.
+
+The first quiz reaches ready and passes Apply/Try/export and saved inference recovery. Its raw browser failure is an evaluator defect: the control has a valid `aria-label`, while the grader read only native label text. The corrected grader uses the browser accessibility snapshot; real Chrome positive ARIA/native/RTL and negative unlabeled/overflow controls pass. Five focused checks pass with one optional Docker skip. The unchanged exported quiz will be replayed without new model calls, with the original failure preserved.
+
+A computer restart interrupted feedback after six recorded model replies, before a durable result/export. The original journal and pre-restart matrix are retained; this is an incomplete infrastructure attempt, not an AI outcome. Old server PID46920, browser and temporary worker storage are absent. Resume one fresh feedback trial, then the previously unstarted waitlist/email trials and preselected waitlist load diagnostic. This produces 43 prescribed completed trials plus one interrupted start; no failed model output is substituted. See the [execution addendum](restyle-capability/pressure-test-execution-addendum.md).
+
+Application files/settings remain identical to `cfec63c`; no product fixes, real email or deployment. Corrected evaluator batch is pending commit. Planned resources before resumption: owned Vite on 5295, isolated browsers/workers and individually journalled containers using the same pinned image. Evidence is private under `~/.codex/secure/restyle-capability/pressure-20261022`. 9P.03/04 remain unchecked pending remaining outcomes, resource audit and report.
+
 ## Pressure fixtures calibrated; execution pending — 22 October 2026
 
 9P.02 is complete: the [prospective protocol](restyle-capability/pressure-test-protocol.md) freezes cases, three paired trials per builder case, scoring, observation windows, no hidden-feedback repairs and the 43-task run matrix. Five calibration tests pass (including real Docker reference/negative controls and actual native commit), and the real browser task-creation preflight passes. Three evaluator fixture defects and a formatting check failure were corrected before inference; original logs are retained. Full Node 22 source check passes: 1,799 tests, zero failures/cancellations, five optional skips; JavaScript, dependency boundaries and adopted formatting pass. No product/model changes or paid test requests yet.
