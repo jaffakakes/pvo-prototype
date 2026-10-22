@@ -67,7 +67,11 @@ export function connectionBindingsSchema(data) {
           "Local code identifier, separate from the saved connectionId: lowercase first letter, then letters, digits or underscores; no hyphens.",
       },
       connectionId: string(128),
-      operations: array(string(64), 8, 1),
+      operations: {
+        ...array(string(64), 8, 1),
+        description:
+          "Names from agreement.operations that may use this connection, not provider adapter operation IDs.",
+      },
       adapter,
       examples: {
         ...array(object({ input: {}, result: {} }), 12, 1),

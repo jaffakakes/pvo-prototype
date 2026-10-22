@@ -87,6 +87,12 @@ test("agreement binds request names and examples to explicit service operations"
       input: { number: 7 },
     }),
   );
+  const providerOperation = connectedAgreement();
+  providerOperation.connections[0].operations = ["github_issues_list"];
+  assert.throws(
+    () => parseServiceAgreement(providerOperation),
+    /agreement.operations, not provider adapter operations.*lookup/,
+  );
   const duplicate = connectedAgreement();
   duplicate.connections.push(duplicate.connections[0]);
   assert.throws(() => parseServiceAgreement(duplicate));

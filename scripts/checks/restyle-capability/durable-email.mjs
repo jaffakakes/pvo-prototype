@@ -159,6 +159,52 @@ export async function checkEmailDelivery(
   await page.evaluate(async () =>
     (await import("/src/features/preview/tryMode.ts")).stopTry(),
   );
+  const connection = applied.components.find((item) => item.serviceConnection)
+    .serviceConnection.connection;
+  await page
+    .getByRole("button", { name: "Open Containers", exact: true })
+    .click();
+  await page
+    .locator("summary")
+    .filter({ hasText: "Checked version account access" })
+    .click();
+  const access = page.getByRole("region", {
+    name: "Checked version account access",
+    exact: true,
+  });
+  const approvalEvent = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/account-access") &&
+      response.request().method() === "POST" &&
+      response.request().postDataJSON().kind === "approve",
+  );
+  await access
+    .getByRole("button", { name: "Approve this version’s access", exact: true })
+    .click();
+  const approval = await approvalEvent;
+  assert.equal(approval.status(), 200);
+  assert.equal(
+    approval.request().postDataJSON().releaseId,
+    connection.releaseId,
+  );
+  await access.getByText(/Approved for this version/).waitFor();
+  const publicationEvent = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/activate") &&
+      response.request().method() === "POST",
+  );
+  await page
+    .getByRole("button", { name: "Publish checked version", exact: true })
+    .click();
+  assert.equal((await publicationEvent).status(), 200);
+  assert.equal(email.calls.length, 0);
+  await record("creator_approved_checked_version", {
+    releaseId: connection.releaseId,
+    providerCalls: 0,
+  });
+  await page.evaluate(() =>
+    window.resultProbe.useCapture.getState().patch({ sheet: null }),
+  );
   const bytes = await exportGenerated(page, directory, record);
   const viewer = await openIndependentViewer(creator.browser, bytes);
   let publicCalls = 0;
@@ -168,12 +214,15 @@ export async function checkEmailDelivery(
       async (route) => {
         const request = route.request();
         assert.equal((await request.allHeaders()).cookie, undefined);
-        const response = await fixture.request(new URL(request.url).pathname, {
-          method: request.method(),
-          session: null,
-          headers: { Origin: viewer.origin },
-          ...(request.postData() ? { body: request.postDataJSON() } : {}),
-        });
+        const response = await fixture.request(
+          new URL(request.url()).pathname,
+          {
+            method: request.method(),
+            session: null,
+            headers: { Origin: viewer.origin },
+            ...(request.postData() ? { body: request.postDataJSON() } : {}),
+          },
+        );
         assert.equal(
           response.status,
           request.method() === "OPTIONS" ? 204 : 200,

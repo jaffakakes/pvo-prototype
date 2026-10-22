@@ -63,3 +63,7 @@ The seven-call `0ad7c08` guestbook passes actual editor application, four Try wr
 ### Connected email repair checkpoint
 
 Missing/revoked private setup and lost-inference Retry/restart pass with live inference. The first connected-email journey fails to escape vague documentation-URL feedback; retained eleven-call attempt is not accepted. Current diagnostics/schema guidance make URL-only documentation, code identifier syntax and unique example inputs explicit without weakening validators. Fresh email browser proof and final repeated matrix remain next. The prior staged build is not deployed and must be rebuilt; local4173 is no longer listening, HTTPS beta remains the delivery target.
+
+### Connected agreement semantics checkpoint
+
+The `34681c3` email attempt preserved an impossible failure case and was correctly rejected by independent review. It is retained as a failed attempt, fourteen dispatched calls with one unknown usage, cleanup verified. Agreement-stage guidance now describes the real successful-example/host-failure boundary and existing receipt recovery; binding diagnostics identify service operation names. Thirteen focused tests pass. The browser observer adds real checked-version approval before delivery. Fresh generated email acceptance and the unchanged final105 matrix are next; 7R.02/04/05/06 remain unchecked. See the current progress entry for exact evidence and costs.

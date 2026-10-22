@@ -1,5 +1,13 @@
 # Restyle cloud agent: start here when taking over
 
+## Connected-case planning boundary clarified — 22 October 2026
+
+Retained failed attempt on `34681c3`: `durable-2026-10-22T03-58-49.194Z-22b98b0c` reached independent review but had frozen an impossible provider-failure case. The same successful connection example and request were expected to return success at one timestamp and failure at another. Review rejected the mismatch; source/agreement were not manually changed. The private stop marker ended the run normally with verified local cleanup: fourteen dispatched calls, $0.707487 known cost and one call with unknown usage at the stop boundary. No provider send occurred.
+
+The next candidate explains the actual connection-example boundary before agreement generation: provider failures belong to the trusted host/error UI; generated cases cannot manufacture them from a successful example or a special timestamp. It also directs simple action/receipt features to existing response recovery instead of unrequested receipt history or send-count limits. Binding diagnostics now name the allowed service operations and distinguish provider adapter IDs. No validator or independent case is relaxed.
+
+The email browser observer now exercises actual checked-version approval/publication before export and correctly reads the saved connection's release ID and Playwright request URL. This preserves the approval boundary. Thirteen focused contract, planner and controlled email checks pass. Actual live generated email acceptance, final 105-run matrix, updated build and beta delivery remain pending. 7R.02/04/05/06 stay unchecked. Next: restart the owned Vite5295 server after source changes and run a fresh connected-email browser journey, then the final repeated matrix if it passes. No new permanent compute, real email or production release.
+
 ## Fresh browser environment verified — 22 October 2026
 
 The precise-feedback candidate `a9b66cf` passes the full source check: 1,772 tests pass, four optional checks skip, zero failures. It builds as `restyle-editor-shell-2d643d97400795e1`; guarded beta staging retains 40 immutable assets and original source dist is restored. The verified build is preserved under the existing backup's `verified-build-a9b66cf`; no deployment or announcement yet.
