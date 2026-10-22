@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   measuredModels,
   measuredFetch,
+  forwardModelRequest,
 } from "../../scripts/checks/restyle-capability/provider.mjs";
 import {
   planningProbes,
@@ -29,6 +30,37 @@ const response = (model = "kimi-k2.6") =>
     ],
     usage: { prompt_tokens: 10, completion_tokens: 5 },
   });
+
+test("the durable model bridge forwards JSON and cancellation without local transport headers", async () => {
+  const controller = new AbortController();
+  const body = JSON.stringify({ model: "kimi-k2.6", messages: [] });
+  const request = new Request(
+    "https://api.runpod.ai/v2/moonshot-kimi/openai/v1/chat/completions",
+    {
+      method: "POST",
+      body,
+      signal: controller.signal,
+      headers: {
+        "Content-Length": "1",
+        Host: "local-worker.test",
+        Authorization: "Bearer local-placeholder",
+        "X-MF-Original-URL": "http://local-worker.test/private",
+      },
+    },
+  );
+  await forwardModelRequest(async (url, options) => {
+    assert.equal(url, request.url);
+    assert.equal(options.body, body);
+    assert.equal(options.redirect, "manual");
+    assert.deepEqual(options.headers, {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    });
+    controller.abort();
+    assert.equal(options.signal.aborted, true);
+    return response();
+  }, request);
+});
 test("capture uses unchanged application model/settings and retains no credential", async () => {
   const saved = [];
   let sent;

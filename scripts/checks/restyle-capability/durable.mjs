@@ -11,7 +11,7 @@ import {
 } from "../../../tests/assistant-task-server/helpers.mjs";
 import { input } from "../../../tests/assistant-tasks/fixtures.mjs";
 import { comparisonSandbox } from "../model-comparison/sandbox.mjs";
-import { measuredFetch, baseline } from "./provider.mjs";
+import { measuredFetch, forwardModelRequest, baseline } from "./provider.mjs";
 import { planningProbes } from "./probes.mjs";
 import { isolatedTaskEffects } from "./effects.mjs";
 
@@ -82,13 +82,7 @@ try {
     realClock: true,
     workspaces: true,
     services: true,
-    modelFetch: async (request) =>
-      send(request.url, {
-        method: request.method,
-        headers: request.headers,
-        body: await request.text(),
-        signal: request.signal,
-      }),
+    modelFetch: (request) => forwardModelRequest(send, request),
     ...isolatedTaskEffects(sandbox),
     researchFetch: async () => new Response(null, { status: 503 }),
   });

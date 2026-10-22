@@ -81,7 +81,7 @@ test(
       );
       assert.ok(
         requests[3].messages.some((message) =>
-          message.content.includes("Unsupported fields: calls"),
+          message.content.includes("Unsupported field count: 1"),
         ),
       );
       assert.ok(

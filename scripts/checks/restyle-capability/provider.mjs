@@ -101,3 +101,14 @@ export async function measuredModels(save, options) {
     fetch: await measuredFetch(save, options),
   });
 }
+
+/** Forward model bytes, never the local Worker's transport headers. */
+export async function forwardModelRequest(send, request) {
+  return send(request.url, {
+    method: request.method,
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: await request.text(),
+    signal: request.signal,
+    redirect: "manual",
+  });
+}
