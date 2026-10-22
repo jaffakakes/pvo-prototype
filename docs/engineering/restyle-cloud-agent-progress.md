@@ -1,5 +1,13 @@
 # Restyle cloud agent: current progress and handoff log
 
+## Broader pressure test research complete — 22 October 2026
+
+The creator requested efficient, broader testing and research into realistic requests and edge cases. [Roadmap 9](restyle-cloud-agent-roadmaps/09-broader-pressure-tests.md) records completed research (9P.01) and leaves implementation/execution unchecked. The [research](restyle-capability/pressure-test-research.md) cites official OpenAI/Anthropic guidance, NIST, property-based testing documentation and interactive-video product examples. It maps existing coverage and proposes 32 templates across intent, new features, privacy, accounts, editing/vision, context, failures and real-viewer behavior. These are proposed fixtures, not new measured results or claims about real customer frequency.
+
+The design separates regression from new capability tests, development from held-out data, model completion from self-repair, and application/provider/evaluator failures. It reuses each generated artifact for cheap boundary/concurrency checks and pairs old/new harnesses only on affected routes. Exact fixtures, capability labels, references, graders, repeated-trial selection and prospective acceptance must be frozen before live inference. The old Roadmap 8 gate remains failed and beta remains unchanged.
+
+This work batch contains only the two new research/roadmap documents and their overview/progress/handoff links in `codex/restyle-simple-harness`; no app source, dependency, model request or resource creation. Documentation content and relative links are checked before completion. Exact next task is 9P.02: implement/calibrate fixtures against known-correct and deliberately broken outcomes. No new pressure-test result or beta deployment is claimed.
+
 ## Simpler harness experiment complete; beta retained — 22 October 2026
 
 All Roadmap 8 verification tasks are complete. The frozen paired result remains 14/14 passes per arm, zero format repairs, and one candidate self-corrected generated-test failure versus zero baseline failures. The predeclared gate rejects rollout; no result or threshold was changed. Source remains isolated in [draft PR116](https://github.com/jaffakakes/pvo-prototype/pull/116), stacked on PR111: measured candidate `e6c2080`, unchanged-function ownership/source-check batch `cfec63c`, evaluator-only correction `67128d6`. Full [report](restyle-capability/harness-comparison-results.md) and [sanitized evidence](restyle-capability/harness-comparison-evidence.json) include all successes, failed attempts and exact hashes.

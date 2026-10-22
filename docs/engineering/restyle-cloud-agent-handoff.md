@@ -1,5 +1,11 @@
 # Restyle cloud agent: start here when taking over
 
+## Broader pressure test research complete — 22 October 2026
+
+The latest request is research into a broad, efficient pressure test of the simpler candidate. [Roadmap 9](restyle-cloud-agent-roadmaps/09-broader-pressure-tests.md) has 9P.01 complete; 9P.02–04 are unimplemented/unrun. The [research](restyle-capability/pressure-test-research.md) contains primary sources, coverage gaps, 32 scenario templates and a proposed staged method. It is a prospective test design, not a reliability result. Existing Roadmap 8 results, draft PR116 and beta disposition stay unchanged.
+
+Exact next: turn the templates into capability-labelled fixtures, scripted user replies, reference outcomes and negative controls; freeze graders, selections and thresholds before live inference. Reuse existing evaluator/browser owners. Keep self-repair separate from failed completion, and test-runner errors separate from AI errors. Research work is documentation only, with no new model call, resource or deployment.
+
 ## Simpler harness experiment complete; beta retained — 22 October 2026
 
 Roadmap 8 is complete in [draft PR116](https://github.com/jaffakakes/pvo-prototype/pull/116), stacked on PR111. Both arms pass 14/14 paired tasks with zero format repairs; the candidate has one extra autonomously repaired test failure, so the frozen rollout gate rejects deployment. The full guestbook/email browser journeys subsequently pass, including Try isolation, explicit email approval, one controlled send, and restart/reopen without duplicate writes. This does not overturn the earlier comparison result.
