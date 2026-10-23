@@ -2,7 +2,7 @@ import { DurableObject } from "cloudflare:workers";
 
 const validKey = (key) => typeof key === "string" && /^[a-f0-9]{64}$/.test(key);
 
-// One object coordinates a UTC day's inference allowance across foreground and saved work.
+// One object records a UTC day's inference usage across foreground and saved work.
 export class AssistantBudget extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
@@ -11,12 +11,29 @@ export class AssistantBudget extends DurableObject {
       CREATE TABLE IF NOT EXISTS reservations (id TEXT PRIMARY KEY, client TEXT NOT NULL, minute INTEGER NOT NULL, state TEXT NOT NULL)`);
   }
 
+  now() {
+    return Date.now();
+  }
+
   async reserve(key, operationKey = null) {
     if (!validKey(key) || (operationKey !== null && !validKey(operationKey)))
       return false;
-    const now = Date.now();
+    return (await this.reserveDecision(key, operationKey)).accepted;
+  }
+
+  // Saved goals need to distinguish accepted work from a closed reservation.
+  reserveTask(key, operationKey) {
+    return this.reserveDecision(key, operationKey);
+  }
+
+  async reserveDecision(key, operationKey) {
+    if (!validKey(key) || (operationKey !== null && !validKey(operationKey)))
+      throw new Error("Invalid inference reservation identity.");
+    const now = this.now();
     const minute = Math.floor(now / 60000);
-    const accepted = this.ctx.storage.transactionSync(() => {
+    const denied = (reason, retryAt) => ({ accepted: false, reason, retryAt });
+    const accepted = { accepted: true };
+    const decision = this.ctx.storage.transactionSync(() => {
       const sql = this.ctx.storage.sql;
       if (operationKey) {
         const prior = sql
@@ -25,12 +42,11 @@ export class AssistantBudget extends DurableObject {
             operationKey,
           )
           .toArray()[0];
-        if (prior) return prior.client === key && prior.state !== "released";
-        if (
-          sql.exec("SELECT COUNT(*) AS count FROM reservations").one().count >=
-          4096
-        )
-          return false;
+        if (prior) {
+          if (prior.client !== key || prior.state === "released")
+            return denied("reservation_closed", null);
+          return accepted;
+        }
       }
       const global = sql
         .exec("SELECT total FROM counts WHERE key = 'global'")
@@ -39,12 +55,6 @@ export class AssistantBudget extends DurableObject {
         .exec("SELECT total, minute, burst FROM counts WHERE key = ?", key)
         .toArray()[0];
       const burst = client?.minute === minute ? client.burst : 0;
-      if (
-        (global?.total ?? 0) >= 60 ||
-        (client?.total ?? 0) >= 20 ||
-        burst >= 12
-      )
-        return false;
       sql.exec(
         "INSERT OR REPLACE INTO counts (key, total, minute, burst) VALUES ('global', ?, ?, 0)",
         (global?.total ?? 0) + 1,
@@ -64,10 +74,10 @@ export class AssistantBudget extends DurableObject {
           key,
           minute,
         );
-      return true;
+      return accepted;
     });
-    if (accepted) await this.scheduleExpiry(now);
-    return accepted;
+    if (decision.accepted) await this.scheduleExpiry(now);
+    return decision;
   }
 
   async settle(key, operationKey, consumed) {
@@ -88,15 +98,11 @@ export class AssistantBudget extends DurableObject {
       // A cancelled reservation may reach this object before its delayed reserve call.
       if (!reservation) {
         if (consumed) return false;
-        if (
-          sql.exec("SELECT COUNT(*) AS count FROM reservations").one().count <
-          4096
-        )
-          sql.exec(
-            "INSERT INTO reservations (id, client, minute, state) VALUES (?, ?, 0, 'released')",
-            operationKey,
-            key,
-          );
+        sql.exec(
+          "INSERT INTO reservations (id, client, minute, state) VALUES (?, ?, 0, 'released')",
+          operationKey,
+          key,
+        );
         return true;
       }
       if (reservation.client !== key) return false;
@@ -119,7 +125,7 @@ export class AssistantBudget extends DurableObject {
       }
       return true;
     });
-    await this.scheduleExpiry(Date.now());
+    await this.scheduleExpiry(this.now());
     return result;
   }
 

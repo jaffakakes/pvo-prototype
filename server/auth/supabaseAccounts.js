@@ -1,6 +1,6 @@
 import { randomId } from "../identity.js";
 
-async function linkedUser(identity, db) {
+export async function userForSupabase(identity, db) {
   return db
     .prepare(
       `SELECT users.id, users.display_name AS name FROM supabase_identities
@@ -12,7 +12,7 @@ async function linkedUser(identity, db) {
 }
 
 export async function accountForSupabase(identity, db) {
-  const existing = await linkedUser(identity, db);
+  const existing = await userForSupabase(identity, db);
   if (existing) return existing;
   const id = randomId();
   try {
@@ -32,7 +32,7 @@ export async function accountForSupabase(identity, db) {
     return { id, name: identity.name };
   } catch (error) {
     // A concurrent exchange may have created this identity first.
-    const winner = await linkedUser(identity, db);
+    const winner = await userForSupabase(identity, db);
     if (!winner) throw error;
     return winner;
   }

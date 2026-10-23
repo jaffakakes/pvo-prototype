@@ -1,4 +1,10 @@
+import { acceptManualAnswer, resolveManualStep } from "./manual.js";
 import { TASK_FAILURES, TASK_LIMITS as limits } from "./limits.js";
+import {
+  checkpointTaskOperations,
+  checkpointTaskQuestions,
+  checkpointTaskQuestionBytes,
+} from "./checkpoint.js";
 import { parseTaskRecord } from "./record.js";
 import { object, id, integer, requireTask, text } from "./validation.js";
 import {
@@ -17,14 +23,23 @@ import {
 const fields = {
   claim: ["claimId", "leaseMs"],
   checkpoint: ["stepId"],
+  wait: ["reason", "nextRunAt"],
   ask: ["question"],
+  ask_research: ["question"],
+  resolve_manual: ["questionId", "stepId", "operationId", "status", "note"],
   answer: ["questionId", "questionRevision", "operationId", "value"],
+  answer_connection: [
+    "questionId",
+    "questionRevision",
+    "operationId",
+    "value",
+    "connectionId",
+  ],
   complete: ["result"],
   fail: ["failure"],
   resume: [],
   stop: [],
   recover: [],
-  expire: [],
   reconcile_operation: ["operation"],
   record_operation: ["operation"],
   reserve_usage: ["modelTurns", "toolCalls"],
@@ -33,7 +48,9 @@ const fields = {
 };
 const workerCommands = [
   "checkpoint",
+  "wait",
   "ask",
+  "ask_research",
   "complete",
   "fail",
   "record_operation",
@@ -60,23 +77,18 @@ export function transitionTask(value, command, guard) {
     );
   requireTask(
     !["ready", "stopped"].includes(task.state) ||
-      ["reconcile_operation", "reconcile_usage"].includes(command.kind),
+      ["reconcile_operation", "reconcile_usage", "resolve_manual"].includes(
+        command.kind,
+      ),
     "This task attempt is terminal.",
   );
-  if (
-    ![
-      "stop",
-      "recover",
-      "expire",
-      "reconcile_operation",
-      "reconcile_usage",
-    ].includes(command.kind)
-  )
-    requireTask(guard.now < task.deadlineAt, "Task deadline has passed.");
+  checkpointTaskOperations(task, command.operation?.id ?? command.operationId);
+  checkpointTaskQuestions(task, command.questionId);
   task.updatedAt = guard.now;
   const replay = applyCommand(task, command, guard);
   if (replay) return parseTaskRecord(value);
   task.revision++;
+  checkpointTaskQuestionBytes(task, command.questionId);
   return parseTaskRecord(task);
 }
 
@@ -84,17 +96,20 @@ function applyCommand(task, command, guard) {
   switch (command.kind) {
     case "claim": {
       requireTask(
-        task.state === "queued" && guard.now >= task.nextRunAt,
+        ["queued", "waiting"].includes(task.state) &&
+          task.nextRunAt !== null &&
+          guard.now >= task.nextRunAt,
         "Task cannot be claimed yet.",
       );
       id(command.claimId, "Claim ID");
       integer(command.leaseMs, limits.leaseMs, "Claim duration", 1);
       task.state = "running";
+      task.wait = null;
       task.generation++;
       task.claim = {
         id: command.claimId,
         claimedAt: guard.now,
-        expiresAt: Math.min(guard.now + command.leaseMs, task.deadlineAt),
+        expiresAt: guard.now + command.leaseMs,
       };
       task.nextRunAt = null;
       break;
@@ -106,9 +121,39 @@ function applyCommand(task, command, guard) {
         !hasUnsettledOperations(task.operations),
         "Reconcile unfinished operations before advancing steps.",
       );
+      requireTask(
+        !task.questions.some((question) => question.answer === null) ||
+          command.stepId === "build",
+        "Answer the pending question before dependent work.",
+      );
       task.stepId = command.stepId;
-      finishClaim(task, "queued");
+      finishClaim(
+        task,
+        task.questions.some((question) => question.answer === null)
+          ? "waiting_for_answer"
+          : "queued",
+      );
       break;
+    case "wait":
+      requireSettledUsage(task);
+      requireTask(
+        !hasUnsettledOperations(task.operations),
+        "Reconcile unfinished operations before waiting.",
+      );
+      requireTask(
+        command.nextRunAt === null || command.nextRunAt > guard.now,
+        "A scheduled wait must wake in the future.",
+      );
+      finishClaim(task, "waiting");
+      task.wait = { reason: command.reason };
+      task.nextRunAt = command.nextRunAt;
+      break;
+    case "ask_research":
+      requireTask(
+        task.stepId === "build",
+        "Independent research requires the build step.",
+      );
+    // Both commands save the same question; only the independent research batch stays queued.
     case "ask":
       validateQuestion(command.question);
       requireTask(
@@ -118,10 +163,20 @@ function applyCommand(task, command, guard) {
       );
       requireSettledUsage(task);
       task.questions.push(structuredClone(command.question));
-      finishClaim(task, "waiting_for_answer");
+      finishClaim(
+        task,
+        command.kind === "ask_research" ? "queued" : "waiting_for_answer",
+      );
       break;
     case "answer":
+    case "answer_connection":
       return answerQuestion(task, command);
+    case "resolve_manual":
+      requireTask(
+        task.state !== "running",
+        "Wait for current work before recording a manual result.",
+      );
+      return resolveManualStep(task, command);
     case "complete":
       validateResult(command.result);
       task.result = structuredClone(command.result);
@@ -134,10 +189,11 @@ function applyCommand(task, command, guard) {
       break;
     case "resume":
       requireTask(
-        task.state === "failed" && TASK_FAILURES[task.failure.code].retryable,
+        (task.state === "failed" &&
+          TASK_FAILURES[task.failure.code].retryable) ||
+          task.state === "waiting",
         "Task failure cannot be resumed.",
       );
-      requireTask(task.retries < limits.retries, "Task retry limit reached.");
       task.retries++;
       task.failure = null;
       finishClaim(task, "queued");
@@ -149,16 +205,6 @@ function applyCommand(task, command, guard) {
       break;
     case "recover":
       recoverClaim(task, guard.now);
-      break;
-    case "expire":
-      requireTask(
-        ["queued", "running", "waiting_for_answer"].includes(task.state) &&
-          guard.now >= task.deadlineAt,
-        "Only an unfinished task past its deadline can expire.",
-      );
-      preserveUncertainOperations(task, guard.now);
-      task.failure = { code: "deadline_exceeded", stepId: task.stepId };
-      finishClaim(task, "failed");
       break;
     case "reconcile_operation":
       requireTask(
@@ -208,18 +254,34 @@ function answerQuestion(task, command) {
     (item) => item.id === command.questionId,
   );
   requireTask(question, "Question was not found.");
+  if (command.kind === "answer_connection") {
+    requireTask(
+      Boolean(question.connection),
+      "This question does not request an account.",
+    );
+    id(command.connectionId, "Saved connection reference");
+  } else
+    requireTask(
+      !question.connection ||
+        command.value === "Continue without this connection",
+      "Use private account setup to connect, or explicitly continue without it.",
+    );
   const used = task.questions.find(
     (item) => item.answer?.operationId === command.operationId,
   );
   if (used) {
     requireTask(
-      used === question && used.answer.value === command.value,
+      used === question &&
+        used.answer.value === command.value &&
+        used.answer.connectionId === command.connectionId,
       "Answer identity conflicts with its original input.",
     );
     return true;
   }
   requireTask(
-    task.state === "waiting_for_answer" &&
+    ["waiting_for_answer", "queued", "running", "waiting", "failed"].includes(
+      task.state,
+    ) &&
       question.answer === null &&
       question.revision === command.questionRevision,
     "Question is no longer awaiting this answer.",
@@ -228,9 +290,13 @@ function answerQuestion(task, command) {
     operationId: command.operationId,
     value: command.value,
     answeredAt: task.updatedAt,
+    ...(command.kind === "answer_connection"
+      ? { connectionId: command.connectionId }
+      : {}),
   };
+  acceptManualAnswer(task, question);
   question.revision++;
-  finishClaim(task, "queued");
+  if (task.state === "waiting_for_answer") finishClaim(task, "queued");
   return false;
 }
 
@@ -240,21 +306,17 @@ function recoverClaim(task, now) {
     "Only an expired execution claim can be recovered.",
   );
   preserveUncertainOperations(task, now);
-  if (now >= task.deadlineAt || task.retries >= limits.retries) {
-    task.failure = {
-      code: now >= task.deadlineAt ? "deadline_exceeded" : "budget_exceeded",
-      stepId: task.stepId,
-    };
-    finishClaim(task, "failed");
-  } else {
-    task.retries++;
-    finishClaim(task, "queued");
-  }
+  task.retries++;
+  finishClaim(task, "queued");
 }
 
 function updateUsage(task, command) {
-  integer(command.modelTurns, limits.modelTurns, "Model turn reservation");
-  integer(command.toolCalls, limits.toolCalls, "Tool call reservation");
+  integer(
+    command.modelTurns,
+    Number.MAX_SAFE_INTEGER,
+    "Model turn reservation",
+  );
+  integer(command.toolCalls, Number.MAX_SAFE_INTEGER, "Tool call reservation");
   requireTask(
     command.modelTurns + command.toolCalls > 0,
     "A usage change must reserve or settle work.",

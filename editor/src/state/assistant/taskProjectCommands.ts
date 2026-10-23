@@ -4,6 +4,7 @@ import {
 } from "../../../../packages/pvo-assistant/tasks/index.js";
 import {
   linkProjectTask,
+  linkProjectServer,
   ownedTaskReference,
   ownedPendingTask,
   stageProjectTask,
@@ -64,6 +65,21 @@ export function assertTaskLinkRequest(request: TaskLinkRequest): void {
     throw new Error(
       "The project or account changed before this task could be linked.",
     );
+}
+
+/** The authenticated project lookup supplies ownership without inventing an authoring task. */
+export function linkSavedProject(
+  request: TaskLinkRequest,
+  projectId: string,
+): TaskLinkRequest {
+  assertTaskLinkRequest(request);
+  useCapture.getState().patch({
+    assistantTaskLinks: linkProjectServer(request.links, request.localId, {
+      ownerId: request.ownerId,
+      projectId,
+    }),
+  });
+  return beginTaskLinkRequest();
 }
 
 /** Consume a validated owned task response; store its IDs only. */

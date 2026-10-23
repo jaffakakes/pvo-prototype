@@ -1,3 +1,4 @@
+import { parseComponentServiceConnection } from "../../../../packages/pvo-assistant/attachments/index.js";
 import { validateFontAsset } from "../../../../packages/pvo-fonts/index.js";
 import { layerOrder } from "../layers/order";
 import { cloneLook } from "../components/look";
@@ -15,6 +16,13 @@ export const cloneOutcome = (outcome: Outcome): Outcome =>
     : { ...outcome };
 export const cloneComponent = (component: PvoComponent): PvoComponent => ({
   ...component,
+  ...(component.serviceConnection
+    ? {
+        serviceConnection: parseComponentServiceConnection(
+          component.serviceConnection,
+        ),
+      }
+    : {}),
   ...(component.font ? { font: validateFontAsset(component.font) } : {}),
   ...(component.animation
     ? { animation: cloneAnimation(component.animation) }

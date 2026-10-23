@@ -42,11 +42,13 @@ export function exportProgress(
         : 0;
   const progress = Math.min(100, Math.max(0, percent));
   const stage =
-    renderStage === "preparing" || renderStage === "uploading"
-      ? 0
-      : renderStage === "downloading" || progress >= 96
-        ? 2
-        : 1;
+    renderStage === "activating"
+      ? 3
+      : renderStage === "preparing" || renderStage === "uploading"
+        ? 0
+        : renderStage === "downloading" || progress >= 96
+          ? 2
+          : 1;
   let sceneNumber = 1;
   if (format === "pvo" && duration > 0) {
     let boundary = 0;

@@ -62,6 +62,18 @@ export async function supabaseIdentityFromRequest(
   publishableKey,
   fetcher = fetch,
 ) {
+  return (
+    await supabaseEmailFromRequest(request, projectUrl, publishableKey, fetcher)
+  ).identity;
+}
+
+/** Private setup uses Auth's current verified contact, bound to the signed subject. */
+export async function supabaseEmailFromRequest(
+  request,
+  projectUrl,
+  publishableKey,
+  fetcher = fetch,
+) {
   const token = /^Bearer ([A-Za-z0-9_.-]{1,16384})$/.exec(
     request.headers.get("Authorization") || "",
   )?.[1];
@@ -89,11 +101,14 @@ export async function supabaseIdentityFromRequest(
       throw new Error("Unconfirmed email");
     const name = user.user_metadata?.full_name;
     return {
-      ...identity,
-      name:
-        typeof name === "string" && name.trim()
-          ? name.trim().slice(0, 120)
-          : "Creator",
+      identity: {
+        ...identity,
+        name:
+          typeof name === "string" && name.trim()
+            ? name.trim().slice(0, 120)
+            : "Creator",
+      },
+      email: user.email.trim(),
     };
   } catch {
     throw new HttpError(401, INVALID_TOKEN);

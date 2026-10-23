@@ -203,7 +203,10 @@ test("Stop preserves unknown outcomes; stale workers and unreconciled resume are
       }),
       409,
     );
-    await fixture.control({ action: "time", now: task.expiresAt });
+    await fixture.control({
+      action: "time",
+      now: (await fixture.request(path(task))).body.task.expiresAt,
+    });
     const retained = await fixture.control({ action: "sweep" });
     assert.equal(
       retained.body.records.length,

@@ -11,7 +11,7 @@ import {
 } from "../../state/auth/authGateStore";
 import { useCapture } from "../../state/captureStore";
 import { useExportArtifact } from "../../state/export/exportArtifactStore";
-import { downloadCompletedExport } from "./exportWorkflow";
+import { useExportDownload } from "./useExportDownload";
 import { SharePanel } from "../publishing/SharePanel";
 import { captureCoverFrame } from "./captureCoverFrame";
 import { ExportAccountGate } from "./ExportAccountGate";
@@ -33,7 +33,7 @@ export function ExportSheet() {
   const exportGateOpen = useAuthGate((state) => state.source === "export");
   const main = s.scenes.find((scene) => scene.id === "main");
   const {
-    failure,
+    failure: exportFailure,
     failureStage,
     showShare,
     setShowShare,
@@ -41,6 +41,8 @@ export function ExportSheet() {
     start,
     cancel,
   } = useExportSession("pvo");
+  const downloads = useExportDownload();
+  const failure = exportFailure ?? downloads.failure;
   const [picking, setPicking] = useState(false);
   const [shareBusy, setShareBusy] = useState(false);
   const [pickerTime, setPickerTime] = useState(s.coverAt);
@@ -129,10 +131,9 @@ export function ExportSheet() {
     begin();
   };
   const download = async () => {
-    if (!(await requireAccount("download"))) return;
     const current = useExportArtifact.getState();
     if (current.url && current.artifact)
-      downloadCompletedExport(current.url, current.artifact.filename);
+      await downloads.download(current.artifact, current.url);
   };
   const backToSettings = () => {
     setPicking(false);

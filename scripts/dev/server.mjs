@@ -23,12 +23,14 @@ const sessions = await createLocalSessions({ directory: localDataDirectory });
 const authApi = await createLocalAuthApi({
   directory: localDataDirectory,
   origin: `http://127.0.0.1:${port}`,
+  publicOrigin: process.env.PVO_PUBLIC_ORIGIN,
   supabasePublishableKey: process.env.SUPABASE_PUBLISHABLE_KEY,
   supabaseUrl: process.env.SUPABASE_URL,
 });
 const profileApi = createLocalProfileApi({
   directory: localDataDirectory,
   origin: `http://127.0.0.1:${port}`,
+  publicOrigin: process.env.PVO_PUBLIC_ORIGIN,
   userFor: authApi.userFor,
 });
 const renderApi = await createLocalRenderApi({ userFor: authApi.userFor });

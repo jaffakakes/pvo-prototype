@@ -1,4 +1,18 @@
+import { recoverExpiredAttachment } from "../attachments/recovery.js";
+import {
+  isTransientInferenceFailure,
+  inferenceRetryDelay,
+  precedingInferenceFailures,
+} from "../../../packages/pvo-assistant/tasks/index.js";
+import { AuthoringRepairError } from "./repairFeedback.js";
+import {
+  authoringInput,
+  askForProgressHelp,
+  prepareAuthoringResponse,
+  finishAuthoringAttempt,
+} from "./authoringResponse.js";
 import { withAssistantDeadline } from "../deadline.js";
+import { transitionGuard, taskClaim } from "./executionClaim.js";
 import { creationDigest } from "./input.js";
 import {
   taskBudgetIdentity,
@@ -12,17 +26,57 @@ export async function runAuthoringStep(coordinator, claimed) {
   coordinator.active.set(claimed.id, controller);
   let attempt;
   try {
+    if (
+      claimed.stepId === "attach" &&
+      (await coordinator.transaction(() =>
+        recoverExpiredAttachment(coordinator, claimed),
+      ))
+    )
+      return;
+    if (
+      !claimed.questions.some((question) => question.answer === null) &&
+      (await coordinator.transaction(() =>
+        askForProgressHelp(coordinator, claimed),
+      ))
+    )
+      return;
+    if (claimed.questions.some((question) => question.answer === null)) {
+      await coordinator.transaction(() => {
+        const task = coordinator.attempts.task(claimed.id);
+        if (coordinator.attempts.current(claimed, coordinator.now()))
+          coordinator.repository.update(
+            task.id,
+            { kind: "checkpoint", stepId: "build" },
+            transitionGuard(task, coordinator.now(), taskClaim(task)),
+          );
+      });
+      return;
+    }
     const operationId = `inference-${claimed.generation}`;
     const identity = await taskBudgetIdentity(
       claimed,
       operationId,
       coordinator.now(),
     );
-    const digest = await creationDigest({
-      input: claimed.input,
-      questions: claimed.questions,
-      stepId: claimed.stepId,
-    });
+    let input;
+    try {
+      input = await authoringInput(coordinator, claimed);
+    } catch {
+      await coordinator.transaction(() => {
+        if (!coordinator.attempts.current(claimed, coordinator.now())) return;
+        const task = coordinator.attempts.task(claimed.id);
+        coordinator.repository.update(
+          task.id,
+          {
+            kind: "fail",
+            failure: { code: "invalid_result", stepId: task.stepId },
+          },
+          transitionGuard(task, coordinator.now(), taskClaim(task)),
+        );
+      });
+      return;
+    }
+    const digest = await creationDigest(input);
     attempt = await coordinator.transaction(() =>
       coordinator.attempts.begin(claimed, identity, digest, coordinator.now()),
     );
@@ -30,6 +84,8 @@ export async function runAuthoringStep(coordinator, claimed) {
     let command = null;
     let code = null;
     let invoked = false;
+    let wait = null;
+    let feedback = null;
     try {
       await withAssistantDeadline(
         async (signal) => {
@@ -44,7 +100,16 @@ export async function runAuthoringStep(coordinator, claimed) {
             throw new DOMException("Task stopped", "AbortError");
           // No await separates this last cancellation check from invoking the read-only planner.
           invoked = true;
-          command = await coordinator.plan(claimed, signal);
+          const response = await coordinator.plan(claimed, signal, input);
+          signal.throwIfAborted();
+          if (!coordinator.attempts.current(claimed, coordinator.now()))
+            throw new DOMException("Task stopped", "AbortError");
+          command = await prepareAuthoringResponse(
+            coordinator,
+            claimed,
+            response,
+            input,
+          );
         },
         coordinator.stepTimeoutMs(),
         controller.signal,
@@ -52,14 +117,47 @@ export async function runAuthoringStep(coordinator, claimed) {
     } catch (error) {
       if (!invoked) attempt.dispatched = false;
       code = stepFailureCode(error, controller.signal);
+      if (error instanceof AuthoringRepairError) feedback = error.feedback;
+      if (
+        !controller.signal.aborted &&
+        (error?.taskWait || error?.status === 429)
+      ) {
+        wait = error.taskWait ?? {
+          reason: "model_capacity",
+          nextRunAt: coordinator.now() + 60000,
+        };
+        if (wait.nextRunAt !== null)
+          wait.nextRunAt = Math.max(coordinator.now() + 1000, wait.nextRunAt);
+      } else if (
+        invoked &&
+        !controller.signal.aborted &&
+        isTransientInferenceFailure(error) &&
+        coordinator.attempts.current(claimed, coordinator.now())
+      ) {
+        const task = coordinator.attempts.task(claimed.id);
+        const operation = task.operations.find(
+          (item) => item.id === attempt.operationId,
+        );
+        const retryMs = inferenceRetryDelay(
+          precedingInferenceFailures(task.operations, operation) + 1,
+        );
+        if (retryMs !== null)
+          wait = {
+            reason: "model_connection",
+            nextRunAt: coordinator.now() + retryMs,
+          };
+      }
     }
     await coordinator.transaction(() =>
-      coordinator.attempts.finish(
+      finishAuthoringAttempt(
+        coordinator,
         claimed,
         attempt,
         command,
         code,
         coordinator.now(),
+        wait,
+        feedback,
       ),
     );
   } finally {

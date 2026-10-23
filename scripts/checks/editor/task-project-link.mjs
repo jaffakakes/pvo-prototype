@@ -20,7 +20,12 @@ const task = createTask(
     projectId: reference.projectId,
     request: "Create an RSVP",
     examples: [],
-    context: { fingerprint: "fixture-project", components: [] },
+    context: {
+      fingerprint: "fixture-project",
+      currentSceneId: "main",
+      scenes: [{ id: "main", name: "Main", duration: 12 }],
+      components: [],
+    },
   },
   {
     id: reference.taskId,

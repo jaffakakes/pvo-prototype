@@ -10,13 +10,13 @@ This prototype is creator-authored. It intentionally excludes signatures, viewer
 
 The current PVO file begins with a fixed package prefix and JSON header, followed by the unchanged bytes of every referenced media asset.
 
-| Field | Value |
-| --- | --- |
-| magic | eight bytes: `PVOPACK1` |
-| header length | unsigned 32-bit big-endian integer |
-| header | UTF-8 JSON manifest and asset index |
-| payload | original media assets at indexed byte ranges |
-| maximum manifest | 2 MiB |
+| Field            | Value                                        |
+| ---------------- | -------------------------------------------- |
+| magic            | eight bytes: `PVOPACK1`                      |
+| header length    | unsigned 32-bit big-endian integer           |
+| header           | UTF-8 JSON manifest and asset index          |
+| payload          | original media assets at indexed byte ranges |
+| maximum manifest | 2 MiB                                        |
 
 Asset index entries declare a stable ID, name, MIME type, payload-relative byte offset, and byte length. Asset byte ranges must be valid and may not overlap. Packaging does not transcode or join the source videos.
 
@@ -61,12 +61,12 @@ Components may also carry optional sanitized `html`/`css` presentation plus norm
 
 Every card, choice, and form component declares a timed `presentation` and a `response_policy`:
 
-| Field | Value | Meaning |
-| --- | --- | --- |
-| `dispatch` | `interaction` | Run the selected button, option, or submit action when the viewer responds. |
-| `dispatch` | `layer_end` | Remember the response locally and run its action when `presentation.end` is reached. |
-| `unanswered` | `continue` | Cross `presentation.end` without running an action when nobody responded. |
-| `unanswered` | `pause` | Pause at `presentation.end` and keep the component available until the viewer responds. |
+| Field        | Value         | Meaning                                                                                 |
+| ------------ | ------------- | --------------------------------------------------------------------------------------- |
+| `dispatch`   | `interaction` | Run the selected button, option, or submit action when the viewer responds.             |
+| `dispatch`   | `layer_end`   | Remember the response locally and run its action when `presentation.end` is reached.    |
+| `unanswered` | `continue`    | Cross `presentation.end` without running an action when nobody responded.               |
+| `unanswered` | `pause`       | Pause at `presentation.end` and keep the component available until the viewer responds. |
 
 The two fields are independent. With `layer_end`, the latest valid response before the boundary is the one dispatched. A response supplied after playback has paused dispatches immediately because the layer boundary has already been reached. No empty or made-up response is dispatched when nobody responds. A request begins only when its response action is dispatched. Tooltip components do not accept a response policy because they have no viewer action.
 
@@ -97,24 +97,24 @@ Components store curves at `components[].restyle_capture.animation`; text and me
 }
 ```
 
-| Property | Meaning | Neutral value | Bounds |
-| --- | --- | --- | --- |
-| `x`, `y` | Offsets from the authored center, in canvas width/height percentage points | 0 | −1000 to 1000 |
-| `scaleX`, `scaleY` | Multipliers of authored dimensions, around the center | 1 | 0 to 10 |
-| `rotation` | Additional clockwise degrees around the center | 0 | −36000 to 36000 |
-| `opacity` | Multiplier of authored opacity | 1 | 0 to 1 |
-| `gain` | Multiplier of authored volume | 1 | 0 to 1 |
+| Property           | Meaning                                                                    | Neutral value | Bounds          |
+| ------------------ | -------------------------------------------------------------------------- | ------------- | --------------- |
+| `x`, `y`           | Offsets from the authored center, in canvas width/height percentage points | 0             | −1000 to 1000   |
+| `scaleX`, `scaleY` | Multipliers of authored dimensions, around the center                      | 1             | 0 to 10         |
+| `rotation`         | Additional clockwise degrees around the center                             | 0             | −36000 to 36000 |
+| `opacity`          | Multiplier of authored opacity                                             | 1             | 0 to 1          |
+| `gain`             | Multiplier of authored volume                                              | 1             | 0 to 1          |
 
 Video supports every property. Text and components support visual properties only; audio and music support only `gain`. Missing curves use neutral values. Curve arrays contain 1–4096 keys, with at most 16384 keys per layer. Every key has exactly `time`, `value` and `easing`; unknown properties are invalid. Times must be finite, strictly increasing, unique and within 0–86400 seconds, and values must be finite and within their property's bounds.
 
 Easing belongs to the outgoing interval. For normalized interval progress `u`, `linear` uses `u`, `ease-in` uses `u²`, `ease-out` uses `1 − (1 − u)²`, and `ease-in-out` uses `2u²` before the midpoint and `1 − (−2u + 2)² / 2` afterward. `hold` keeps the left key's value until the next key's timestamp. Evaluation holds endpoint values outside a curve's range; a single key therefore holds its value throughout the layer. Curves do not extend a layer's authored lifetime.
 
-| Layer | Curve clock at scene time `t` |
-| --- | --- |
+| Layer                     | Curve clock at scene time `t`                         |
+| ------------------------- | ----------------------------------------------------- |
 | Video / independent audio | `in + (t - start) * speed` in original source seconds |
-| Text | `t - text.start` |
-| Component | `t - component.restyle_capture.at` |
-| Music | `t` |
+| Text                      | `t - text.start`                                      |
+| Component                 | `t - component.restyle_capture.at`                    |
+| Music                     | `t`                                                   |
 
 Source-clock keys may lie outside the current trim; preserving them keeps motion aligned after trimming, splitting or changing speed. Moving text or a component moves its local curve with it. The authoring API accepts scene times and converts them to this stored clock once. See the [shared runtime contract](packages/pvo-animation/README.md) and [manifest schema](packages/pvo-sdk/pvo-manifest.schema.json).
 
@@ -124,17 +124,17 @@ Restyle PVO export renders each scene's static crop, zoom, mirror and audio mix 
 
 ### Actions
 
-| Type | Effect |
-| --- | --- |
-| `show` / `hide` | change component visibility |
-| `set` | write state or add to a numeric value |
-| `goto_scene` | seek to a named scene start |
-| `seek` | seek to a scene or absolute time |
-| `request` | make an HTTP request and run `on_success` or `on_error` |
-| `open_url` | ask before opening an external URL |
-| `chain` | execute actions in order |
-| `branch` | execute the first matching case |
-| `custom` | hand a named event to an extended host player; optional `into` stores its returned result in state |
+| Type            | Effect                                                                                             |
+| --------------- | -------------------------------------------------------------------------------------------------- |
+| `show` / `hide` | change component visibility                                                                        |
+| `set`           | write state or add to a numeric value                                                              |
+| `goto_scene`    | seek to a named scene start                                                                        |
+| `seek`          | seek to a scene or absolute time                                                                   |
+| `request`       | make an HTTP request and run `on_success` or `on_error`                                            |
+| `open_url`      | ask before opening an external URL                                                                 |
+| `chain`         | execute actions in order                                                                           |
+| `branch`        | execute the first matching case                                                                    |
+| `custom`        | hand a named event to an extended host player; optional `into` stores its returned result in state |
 
 Every action may have `when`. Conditions read either state (`{"key":"path","is":"left"}`) or a request response (`{"response":"/ok","is":true}`). Supported comparisons are `is`, `not`, `gt`, `gte`, `lt`, `lte`, `in`, and `exists`.
 
@@ -150,7 +150,9 @@ For a component with `response_policy`, the player dispatches its authored actio
 
 Restart clears captured responses and runtime state, then returns to the first clip of the main timeline.
 
-Restyle packages carry `restyle_capture` for presentation: canvas positions, sizes, looks, animation, text layers and each scene's layer order. They declare no playback actions of their own. Restyle exports response timing and unanswered behavior through the standard `response_policy`; routes remain explicit actions.
+Restyle packages carry `restyle_capture` for presentation: canvas positions, sizes, looks, animation, text layers and each scene's layer order. Playback routes remain standard actions. Restyle exports response timing and unanswered behavior through the standard `response_policy`; routes remain explicit actions.
+
+A Restyle service connection uses `components[].restyle_capture.service_connection`, containing exactly `origin`, `serviceId`, `releaseId`, `operation`, `event`, `target` and `input`. Its [closed descriptor and submission contract](packages/pvo-assistant/attachments/README.md) belongs to the service attachment package. It carries no creator account, credential, private receipt or readiness permission. The Restyle player admits it against the actual compiled/declared control and request before host-owned invocation; ordinary SDK validation alone is insufficient. The service still checks live activation and input on each call. Playback destinations remain the component's standard request success/error actions. Normal editor projection and activation-on-delivery are verified in roadmap 1E.06–09. Background operations use the same descriptor and request syntax; the host translates live submission into a saved job and exposes its private receipt through the [background contract](docs/engineering/restyle-background-work.md). The existing `state.responses.<component-id>` receives its job envelope, including `job.label` and the agreed `job.result`. No private receipt key is exported.
 
 At a component's layer end, the reference editor and player require its animated center to be on canvas and its animation opacity and both scale factors to exceed `0.000001` before pausing for an unanswered response. A component below video is eligible when the video has faded or its transformed opaque rectangle no longer covers that center. Coverage accounts for translation, scaling, rotation and canvas aspect ratio. This is a conservative center test, not pixel-level testing of every button, transparent region or other overlay. Motion updates retain component DOM and sandbox state. Zero-opacity or collapsed components cannot receive input.
 

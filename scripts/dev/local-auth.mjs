@@ -21,11 +21,12 @@ function error(response, status, message) {
 export async function createLocalAuthApi({
   directory,
   origin,
+  publicOrigin,
   supabasePublishableKey,
   supabaseUrl,
   fetcher = fetch,
 }) {
-  const policy = createLocalOriginPolicy(origin);
+  const policy = createLocalOriginPolicy(origin, publicOrigin);
   const supabase = await loadLocalSupabase(
     directory,
     supabasePublishableKey,

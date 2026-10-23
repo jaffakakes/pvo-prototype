@@ -1,3 +1,4 @@
+import { readPlayerServiceConnections } from "../services/connections.js";
 import { createFontScope } from "../../packages/pvo-fonts/index.js";
 import { restoreManifestFonts } from "../../packages/pvo-fonts/portable.js";
 import { readPvo, validatePvo } from "../../packages/pvo-sdk/index.js";
@@ -42,6 +43,7 @@ export function createProjectLoader({ session, refs, adapters }) {
     // Detach the old runtime immediately; a late Promise may mutate it, but can
     // no longer affect the replacement project or render into this session.
     session.actionRuntime = null;
+    session.serviceConnections = new Map();
     return operation;
   }
 
@@ -81,11 +83,17 @@ export function createProjectLoader({ session, refs, adapters }) {
           languageValidation.errors[0] ||
             "PVO language produced an invalid component.",
         );
+      const nextServiceConnections = await readPlayerServiceConnections(
+        decoded.manifest,
+        nextLanguageSources,
+      );
+      if (!projectLoadIsCurrent(operation)) return;
       adapters.destroyCustomOverlays();
       revokeAssetUrls();
       fontScope = nextFonts;
       adoptedFonts = true;
       session.manifest = decoded.manifest;
+      session.serviceConnections = nextServiceConnections;
       session.actionRuntime = adapters.makeActionRuntime(session.manifest);
       session.pvoLanguageSources = nextLanguageSources;
       session.captureMode = session.manifest.restyle_capture?.version === 1;

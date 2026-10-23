@@ -1,3 +1,4 @@
+import type { PublicServiceConnection } from "../../../../packages/pvo-assistant/attachments/index.js";
 import { validateFontAsset } from "../../../../packages/pvo-fonts/index.js";
 import { formFieldDefinition } from "../../../../packages/pvo-sdk/manifest/component-values.js";
 import { cloneAnimation } from "../../../../packages/pvo-animation/index.js";
@@ -90,6 +91,7 @@ function manifestComponent(
   available: Set<string>,
   languages: CompiledLanguages,
   canvas: ComponentDimensions,
+  connection?: PublicServiceConnection,
 ): ManifestComponent {
   // Visual forms use native manifest controls; code-owned forms use compiled source.
   const visualForm =
@@ -263,6 +265,7 @@ function manifestComponent(
   }
   outcomes.forEach((outcome) => assertOutcome(outcome, scene, available));
   result.restyle_capture = {
+    ...(connection ? { service_connection: connection } : {}),
     version: 1,
     ...(component.animation
       ? { animation: cloneAnimation(component.animation) }
@@ -333,6 +336,7 @@ export function buildPvoManifest(
   }>,
   languages: CompiledLanguages = new Map(),
   poster?: { id: string; type: "image/png" | "image/webp" },
+  connections: Map<string, PublicServiceConnection> = new Map(),
 ): PvoManifest {
   if (!rendered.length)
     throw new Error("Record or upload a clip before exporting.");
@@ -424,6 +428,7 @@ export function buildPvoManifest(
           available,
           languages,
           projectCanvasSize(state.ratio),
+          connections.get(component.id),
         ),
       ),
     ),

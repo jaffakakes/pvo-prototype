@@ -12,6 +12,14 @@
     {
       "path": "server/render/start.js",
       "reason": "The render container's Dockerfile starts this process directly."
+    },
+    {
+      "path": "server/cloud-services/node/guest/server.mjs",
+      "reason": "The isolated Node executor's Dockerfile and sandbox start this private process directly."
+    },
+    {
+      "path": "server/cloud-services/node/guest/supervisor.mjs",
+      "reason": "The Fly executor starts this private supervisor through its configured init command."
     }
   ]
 }

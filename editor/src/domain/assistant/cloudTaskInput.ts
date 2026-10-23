@@ -26,6 +26,7 @@ export function cloudTaskInput(
         id: component.id,
         sceneId: scene.id,
         type: component.type,
+        sourceVisibility: component.source ? "full" : "design",
         source,
       };
     }),
@@ -35,6 +36,15 @@ export function cloudTaskInput(
     operationId: identity.operationId,
     request,
     ...parseTaskProposal(proposal),
-    context: { fingerprint: identity.fingerprint, components },
+    context: {
+      fingerprint: identity.fingerprint,
+      currentSceneId: context.currentSceneId,
+      scenes: context.scenes.map(({ id, name, duration }) => ({
+        id,
+        name,
+        duration,
+      })),
+      components,
+    },
   });
 }

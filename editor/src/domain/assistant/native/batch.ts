@@ -1,4 +1,5 @@
 import { DEFAULT_TEXT_STYLE } from "../../../../../packages/pvo-text-runtime/index.js";
+import { matchAttachmentOperation } from "../../../../../packages/pvo-assistant/attachments/index.js";
 import {
   parseNativeOperation,
   type NativeOperation,
@@ -22,6 +23,10 @@ import {
 import { applyMediaOperation } from "./mediaOperations";
 import { nativePreparationReceipt, nativeReceiptValues } from "./receipts";
 import { applyFontOperation } from "./fontOperations";
+import {
+  validateAttachmentBatchInput,
+  connectNativeBatchAttachment,
+} from "./serviceAttachments";
 import type {
   NativeBatch,
   NativePlaybackOperation,
@@ -120,10 +125,12 @@ export async function prepareNativeBatch(
   if (input.length > 24)
     throw new Error("An assistant edit batch supports at most 24 operations.");
   const operations = input.map(parseNativeOperation);
+  validateAttachmentBatchInput(operations, options);
   let project = copy(before);
   const playback: NativePlaybackOperation[] = [];
   const receipts: NativeBatch["receipts"] = [];
   let exportFormat: NativeBatch["exportFormat"] = null;
+  let attachment: NativeBatch["attachment"];
   for (const operation of operations) {
     cancelled(options);
     const previousValues = nativeReceiptValues(project);
@@ -270,6 +277,26 @@ export async function prepareNativeBatch(
           operation,
           options,
         );
+        if (matchAttachmentOperation(operation, options.attachment)) {
+          const component =
+            operation.kind === "component.add"
+              ? updated.components.find(
+                  (item) =>
+                    !scene.components.some((before) => before.id === item.id),
+                )
+              : updated.components.find(
+                  (item) =>
+                    item.id ===
+                    ("componentId" in operation ? operation.componentId : null),
+                );
+          if (!component)
+            throw new Error("The prepared service component is missing.");
+          attachment = {
+            authorization: structuredClone(options.attachment!),
+            sceneId: scene.id,
+            componentId: component.id,
+          };
+        }
       }
       project.scenes = project.scenes.map((item) =>
         item.id === scene.id
@@ -294,7 +321,7 @@ export async function prepareNativeBatch(
   if (JSON.stringify(project) !== JSON.stringify(before))
     validateNativeComponentRoutes(project);
   validateNativeBatchEffects({ project, playback, exportFormat });
-  return {
+  const batch = {
     before: copy(before),
     project,
     operations,
@@ -302,5 +329,8 @@ export async function prepareNativeBatch(
     playback,
     exportFormat,
     advancedEditingEnabled: options.advancedEditingEnabled,
+    ...(attachment ? { attachment } : {}),
   };
+  connectNativeBatchAttachment(batch);
+  return batch;
 }

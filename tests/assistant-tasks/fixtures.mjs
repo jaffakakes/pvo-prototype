@@ -20,11 +20,14 @@ export function input() {
     ],
     context: {
       fingerprint: "100-abc-def",
+      currentSceneId: "scene-one",
+      scenes: [{ id: "scene-one", name: "Main", duration: 10 }],
       components: [
         {
           id: "form-one",
           sceneId: "scene-one",
           type: "form",
+          sourceVisibility: "full",
           source: { structure: "form", style: "", logic: "" },
         },
       ],

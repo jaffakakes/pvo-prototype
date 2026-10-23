@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createServer } from "node:http";
+import { createServer, request as httpRequest } from "node:http";
 import { mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -61,7 +61,7 @@ test("loopback aliases require matching host/origin and the configured port", ()
     assert.throws(() => createLocalOriginPolicy(origin));
 });
 
-test("auth, profiles and assistant work on either loopback address without redirects", async (t) => {
+test("auth, profiles and assistant work on loopback and the configured phone origin without redirects", async (t) => {
   const directory = await mkdtemp(join(tmpdir(), "restyle-origin-test-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   let auth, profile, assistant;
@@ -82,35 +82,71 @@ test("auth, profiles and assistant work on either loopback address without redir
   });
   const port = server.address().port;
   const origin = `http://127.0.0.1:${port}`;
+  const publicOrigin = "https://phone.ngrok.test";
   const { pair, jwk } = await fixtureKeys();
   auth = await createLocalAuthApi({
     directory,
     origin,
+    publicOrigin,
     supabaseUrl: PROJECT_URL,
     supabasePublishableKey: PUBLISHABLE_KEY,
     fetcher: authService(jwk),
   });
-  profile = createLocalProfileApi({ directory, origin, userFor: auth.userFor });
+  profile = createLocalProfileApi({
+    directory,
+    origin,
+    publicOrigin,
+    userFor: auth.userFor,
+  });
   assistant = createLocalAssistantApi({
     origin,
+    publicOrigin,
     fetcher: async () => {
       forwarded++;
       return Response.json({ available: true });
     },
   });
   const signed = await token(pair);
-  for (const hostname of ["localhost", "127.0.0.1"]) {
-    const host = `${hostname}:${port}`,
-      requestOrigin = `http://${host}`;
+  for (const requestOrigin of [
+    `http://localhost:${port}`,
+    origin,
+    publicOrigin,
+  ]) {
+    const host = new URL(requestOrigin).host;
     const send = (path, options = {}) =>
-      fetch(requestOrigin + path, {
-        ...options,
-        redirect: "manual",
-        headers: {
-          Host: host,
-          ...(options.method ? { Origin: requestOrigin } : {}),
-          ...options.headers,
-        },
+      new Promise((resolve, reject) => {
+        const request = httpRequest(
+          origin + path,
+          {
+            method: options.method || "GET",
+            headers: {
+              Host: host,
+              ...(options.method ? { Origin: requestOrigin } : {}),
+              ...options.headers,
+            },
+          },
+          (response) => {
+            const chunks = [];
+            response.on("data", (chunk) => chunks.push(chunk));
+            response.once("error", reject);
+            response.once("end", () => {
+              const headers = new Headers();
+              for (let i = 0; i < response.rawHeaders.length; i += 2)
+                headers.append(
+                  response.rawHeaders[i],
+                  response.rawHeaders[i + 1],
+                );
+              resolve(
+                new Response(Buffer.concat(chunks), {
+                  status: response.statusCode,
+                  headers,
+                }),
+              );
+            });
+          },
+        );
+        request.once("error", reject);
+        request.end(options.body);
       });
     const session = await send("/api/auth/session");
     assert.equal(session.status, 200);

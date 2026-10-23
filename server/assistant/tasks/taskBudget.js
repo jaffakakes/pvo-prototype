@@ -17,8 +17,12 @@ function budget(env, identity) {
 }
 
 export async function reserveTaskBudget(env, identity) {
-  if (!(await budget(env, identity).reserve(identity.client, identity.key)))
-    throw new HttpError(429, "The assistant has reached its usage limit.");
+  const result = await budget(env, identity).reserveTask(
+    identity.client,
+    identity.key,
+  );
+  if (result.accepted === true) return;
+  throw new Error("Inference reservation is closed or invalid.");
 }
 
 export async function settleTaskBudget(env, identity, consumed) {

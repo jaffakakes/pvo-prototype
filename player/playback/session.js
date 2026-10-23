@@ -1,7 +1,10 @@
 let diagnosticSessionSequence = 0;
 
 /** Per-viewer playback and resource state, owned by the application composition. */
-export function createPlaybackSession({ onDiagnostic, captureDiagnosticBodies } = {}) {
+export function createPlaybackSession({
+  onDiagnostic,
+  captureDiagnosticBodies,
+} = {}) {
   return {
     onDiagnostic,
     captureDiagnosticBodies,
@@ -31,6 +34,7 @@ export function createPlaybackSession({ onDiagnostic, captureDiagnosticBodies } 
     overlayResetRevision: 0,
     captureMode: false,
     pvoLanguageSources: new Map(),
+    serviceConnections: new Map(),
     mountedCustom: new Map(),
     actionRuntime: null,
     forcedVisible: new Set(),
@@ -41,4 +45,4 @@ export function createPlaybackSession({ onDiagnostic, captureDiagnosticBodies } 
   };
 }
 
-export const POST_OUTCOME_EPSILON = .001;
+export const POST_OUTCOME_EPSILON = 0.001;

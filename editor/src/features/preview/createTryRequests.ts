@@ -1,3 +1,4 @@
+import { createTryServiceRequests } from "./createTryServiceRequests";
 import {
   describeRequestFailure,
   type PvoDiagnosticContext,
@@ -11,26 +12,27 @@ import type { TrySessionHost, TrySessionState } from "./trySessionHost";
 import type { createTryDiagnostics } from "./createTryDiagnostics";
 import type { createTryRuntimeBridge } from "./createTryRuntimeBridge";
 
-type RequestHost = Pick<TrySessionHost, "beginRequest" | "finishRequest"> & {
+type RequestHost = Pick<
+  TrySessionHost,
+  "beginRequest" | "finishRequest" | "services" | "feedback"
+> & {
   getState(): Pick<
     TrySessionState,
-    "tryMode" | "currentSceneId" | "components"
+    "tryMode" | "currentSceneId" | "components" | "localId"
   >;
   diagnostics: Pick<ReturnType<typeof createTryDiagnostics>, "event">;
 };
-type RequestOutcome = Extract<
-  ComponentResponse["outcome"],
-  { kind: "request" }
->;
-
 /** Owns pending Try requests, their cancellation and operation-scoped feedback. */
 export function createTryRequests(
   host: RequestHost,
   runtime: Pick<
     ReturnType<typeof createTryRuntimeBridge>,
-    "current" | "isCurrent"
+    "current" | "isCurrent" | "bindServiceRequest"
   >,
 ) {
+  const prepareServiceRequest = host.services
+    ? createTryServiceRequests(host.services)
+    : null;
   const requestOperations = new Map<
     string,
     {
@@ -58,12 +60,18 @@ export function createTryRequests(
 
   async function execute(
     component: PvoComponent,
-    outcome: RequestOutcome,
+    response: ComponentResponse,
     diagnosticContext: PvoDiagnosticContext,
   ) {
+    const outcome = response.outcome;
+    if (outcome.kind !== "request") return false;
     const state = host.getState();
+    const { localId, currentSceneId } = state;
     const activeRuntime = runtime.current();
     if (!activeRuntime) return false;
+    const previousPhase = host.feedback()[component.id]?.phase;
+    const retrySaved =
+      previousPhase === "failed" || previousPhase === "emptyScene";
     const operation = host.beginRequest(component.id);
     const requestOperation = {
       controller: new AbortController(),
@@ -71,6 +79,30 @@ export function createTryRequests(
     };
     requestOperations.set(component.id, requestOperation);
     const previewInteraction = { routeFailed: false };
+    const componentSnapshot = JSON.stringify(component);
+    const serviceScope = component.serviceConnection
+      ? JSON.stringify(host.services?.scope())
+      : null;
+    let releaseServiceRequest: (() => void) | undefined;
+    const isCurrent = () => {
+      const latest = host.getState();
+      const current =
+        runtime.isCurrent(activeRuntime) &&
+        !!latest.tryMode &&
+        latest.localId === localId &&
+        latest.currentSceneId === currentSceneId &&
+        requestOperations.get(component.id) === requestOperation &&
+        JSON.stringify(
+          latest.components.find((item) => item.id === component.id),
+        ) === componentSnapshot &&
+        (serviceScope === null ||
+          JSON.stringify(host.services?.scope()) === serviceScope);
+      if (!current) {
+        requestOperation.controller.abort();
+        host.finishRequest(component.id, operation, false);
+      }
+      return current;
+    };
     let actionReady = false;
     let requestErrorSeen = false;
     const unsubscribe = activeRuntime.subscribe((event) => {
@@ -79,6 +111,21 @@ export function createTryRequests(
     });
     try {
       const action = actionFor(outcome, component.id);
+      if (component.serviceConnection && !prepareServiceRequest)
+        throw new Error(
+          "Component testing is unavailable in this preview host.",
+        );
+      const serviceRequest = prepareServiceRequest?.(
+        component,
+        response,
+        isCurrent,
+        retrySaved,
+      );
+      if (serviceRequest)
+        releaseServiceRequest = runtime.bindServiceRequest(
+          previewInteraction,
+          serviceRequest,
+        );
       actionReady = true;
       await activeRuntime.execute(action, {
         componentId: component.id,
@@ -110,7 +157,7 @@ export function createTryRequests(
       if (
         runtime.isCurrent(activeRuntime) &&
         latest.tryMode &&
-        latest.currentSceneId === state.currentSceneId
+        latest.currentSceneId === currentSceneId
       ) {
         // Authored error routes already communicated the result. An empty-scene
         // route has its own operation key, so completion cannot erase its status.
@@ -127,6 +174,7 @@ export function createTryRequests(
         !previewInteraction.routeFailed
       );
     } finally {
+      releaseServiceRequest?.();
       unsubscribe();
       if (requestOperations.get(component.id) === requestOperation)
         requestOperations.delete(component.id);

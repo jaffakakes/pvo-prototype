@@ -6,8 +6,13 @@ import { HttpError } from "../../server/http.js";
 import { json } from "./http.mjs";
 import { createLocalOriginPolicy } from "./local-origins.mjs";
 
-export function createLocalProfileApi({ directory, origin, userFor }) {
-  const policy = createLocalOriginPolicy(origin);
+export function createLocalProfileApi({
+  directory,
+  origin,
+  publicOrigin,
+  userFor,
+}) {
+  const policy = createLocalOriginPolicy(origin, publicOrigin);
   const root = join(directory, "account-profiles");
   const pathFor = (id) =>
     join(root, `${createHash("sha256").update(id).digest("hex")}.json`);

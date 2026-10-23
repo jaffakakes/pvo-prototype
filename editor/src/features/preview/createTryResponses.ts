@@ -154,7 +154,7 @@ export function createTryResponses({
         diagnosticContext.interactionId,
       );
     }
-    return requests.execute(component, outcome, diagnosticContext);
+    return requests.execute(component, response, diagnosticContext);
   }
 
   async function dispatchCapturedResponse(

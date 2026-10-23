@@ -387,6 +387,17 @@ export interface RuntimeHandlers {
     },
     context: RuntimeContext,
   ): unknown | Promise<unknown>;
+  /** Trusted host policy only, from 1 to 360000 ms. Undefined keeps the 15000 ms default; PVO content cannot set this. */
+  requestTimeoutMs?(
+    request: {
+      url: string;
+      method: string;
+      headers: Record<string, string>;
+      body?: string;
+      redirect: "error";
+    },
+    context: RuntimeContext,
+  ): number | undefined;
   openUrl?(url: string, context: RuntimeContext): unknown | Promise<unknown>;
   custom?(
     name: string,

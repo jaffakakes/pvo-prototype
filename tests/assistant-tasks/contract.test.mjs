@@ -35,7 +35,8 @@ test("creation takes identity from trusted metadata and returns detached exact s
   );
   assert.equal(task.state, "queued");
   assert.equal(task.ownerId, ownerId);
-  assert.equal(task.deadlineAt, now + TASK_LIMITS.lifetimeMs);
+  assert.equal(task.finishedAt, null);
+  assert.equal(task.expiresAt, null);
   const copy = parseTaskRecord(task);
   copy.input.examples[0].expected = "different";
   assert.notDeepEqual(copy, task);
@@ -73,6 +74,55 @@ test("closed input and nested records reject owner injection and credential-bear
   );
 });
 
+test("saved component preparation has bounded real scene identities/timing and explicit source visibility", () => {
+  assert.deepEqual(parseTaskInput(input()).context.scenes, [
+    { id: "scene-one", name: "Main", duration: 10 },
+  ]);
+  for (const mutate of [
+    (value) => {
+      delete value.context.scenes;
+    },
+    (value) => {
+      value.context.currentSceneId = "missing";
+    },
+    (value) => {
+      value.context.scenes.push(value.context.scenes[0]);
+    },
+    (value) => {
+      value.context.scenes[0].duration = Infinity;
+    },
+    (value) => {
+      value.context.scenes[0].duration = -1;
+    },
+    (value) => {
+      value.context.scenes[0].duration = 86401;
+    },
+    (value) => {
+      value.context.components[0].sceneId = "missing";
+    },
+    (value) => {
+      delete value.context.components[0].sourceVisibility;
+    },
+    (value) => {
+      value.context.components[0].sourceVisibility = "trusted";
+    },
+    (value) => {
+      value.context.scenes = Array.from(
+        { length: TASK_LIMITS.scenes + 1 },
+        (_, i) => ({ id: `scene-${i}`, name: "Scene", duration: 1 }),
+      );
+    },
+  ]) {
+    const value = input();
+    mutate(value);
+    assert.throws(() => parseTaskInput(value));
+  }
+  const blank = input();
+  blank.context.scenes[0].duration = 0;
+  blank.context.components[0].sourceVisibility = "design";
+  assert.doesNotThrow(() => parseTaskInput(blank));
+});
+
 test("text budgets count UTF-8 bytes and input aggregate limits apply across source sections", () => {
   const value = input();
   value.request = "é".repeat(TASK_LIMITS.requestBytes / 2);
@@ -82,8 +132,9 @@ test("text budgets count UTF-8 bytes and input aggregate limits apply across sou
   const large = input();
   large.context.components = Array.from({ length: 3 }, (_, index) => ({
     id: `component-${index}`,
-    sceneId: "scene",
+    sceneId: "scene-one",
     type: "form",
+    sourceVisibility: "full",
     source: {
       structure: "s".repeat(20_000),
       style: "s".repeat(20_000),
@@ -181,9 +232,9 @@ test("duplicate creation compares the actual validated input as well as its supp
   );
 });
 
-test("question counts and references remain bounded after repeated valid answers", () => {
+test("40 answered questions keep recent context bounded without ending the goal", () => {
   let task = create();
-  for (let index = 0; index < TASK_LIMITS.questions; index++) {
+  for (let index = 0; index < 40; index++) {
     task = claim(task);
     task = command(task, {
       kind: "ask",
@@ -195,9 +246,10 @@ test("question counts and references remain bounded after repeated valid answers
       operationId: `answer-${index}`,
     });
   }
+  assert.equal(task.archivedQuestions + task.questions.length, 40);
+  assert.ok(task.questions.length <= 9);
   task = claim(task);
-  assert.throws(
-    () => command(task, { kind: "ask", question: question() }),
-    /item limit/,
-  );
+  task = command(task, { kind: "ask", question: question() });
+  assert.equal(task.state, "waiting_for_answer");
+  assert.equal(task.questions.at(-1).answer, null);
 });

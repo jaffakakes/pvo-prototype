@@ -497,9 +497,9 @@ test("HTTP development inference requires opt-in, exact loopback origin and same
   }
 });
 
-test("anonymous inference stops at the shared daily request cap", async (t) => {
+test("anonymous inference continues beyond former client and global request caps", async (t) => {
   const fixture = await nativeFixture({
-    outputs: Array.from({ length: 60 }, () => ({ response: nativeDraft() })),
+    outputs: Array.from({ length: 65 }, () => ({ response: nativeDraft() })),
   });
   t.after(fixture.close);
   const status = await (await fixture.fetch("status")).json();
@@ -518,19 +518,19 @@ test("anonymous inference stops at the shared daily request cap", async (t) => {
   const responses = await Promise.all(
     Array.from({ length: 65 }, (_, index) =>
       fixture.turn(nativeInput(), {
-        headers: { "CF-Connecting-IP": `192.0.2.${index + 1}` },
+        headers: { "CF-Connecting-IP": "192.0.2.1" },
       }),
     ),
   );
   assert.equal(
     responses.filter((response) => response.status === 200).length,
-    60,
+    65,
   );
   assert.equal(
     responses.filter((response) => response.status === 429).length,
-    5,
+    0,
   );
-  assert.equal(fixture.calls.length, 60);
+  assert.equal(fixture.calls.length, 65);
   for (const response of responses.filter(
     (response) => response.status === 200,
   ))

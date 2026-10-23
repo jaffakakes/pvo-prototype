@@ -180,18 +180,19 @@ test("receipt time, step, duplicate IDs, failure classifications, and resource f
   assert.equal(task.operations[0].status, "failed");
 });
 
-test("operation history cannot silently evict old duplicate-prevention receipts", () => {
+test("settled receipt checkpoints keep the current record bounded and account for every removed receipt", () => {
   let task = claim(create());
-  for (let index = 0; index < TASK_LIMITS.operations; index++) {
+  for (let index = 0; index < 100; index++) {
     task = record(task, { ...operation(task), id: `op-${index}` });
     task = settle(task);
+    assert.equal(task.archivedOperations + task.operations.length, index + 1);
+    assert.ok(task.operations.length <= TASK_LIMITS.operations);
   }
-  assert.throws(
-    () => record(task, { ...operation(task), id: "one-too-many" }),
-    /history is full/,
-  );
-  assert.equal(task.operations[0].id, "op-0");
-  assert.equal(task.operations.length, 64);
+  assert.equal(task.operations.at(-1).id, "op-99");
+  task = record(task, { ...operation(task), id: "uncertain-last" });
+  const stopped = command(task, { kind: "stop" }, { claim: null });
+  assert.equal(stopped.operations.at(-1).status, "unknown");
+  assert.equal(stopped.archivedOperations + stopped.operations.length, 101);
 });
 
 test("trusted reconciliation can finish a cancelled receipt without restarting work or accepting a stale worker", () => {
@@ -227,4 +228,18 @@ test("trusted reconciliation can finish a cancelled receipt without restarting w
       }),
     /cannot start/,
   );
+});
+
+test("replaying the oldest current receipt does not lose it during checkpointing", () => {
+  let task = claim(create());
+  for (let index = 0; index < 32; index++) {
+    task = record(task, { ...operation(task), id: `op-${index}` });
+    task = settle(task);
+  }
+  task = record(task, { ...operation(task), id: "pending" });
+  const oldest = structuredClone(task.operations[0]);
+  assert.deepEqual(record(task, oldest), task);
+  task = settle(task);
+  assert.equal(task.archivedOperations, 1);
+  assert.equal(task.operations.at(-1).status, "completed");
 });

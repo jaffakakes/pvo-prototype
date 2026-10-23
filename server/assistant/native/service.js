@@ -65,6 +65,7 @@ export function nativeAssistantTurn(
       });
       let messages = contextMessages;
       let reviewed = false;
+      let reviewedAnswer = false;
       let repaired = false;
       let phase = "initial";
       for (let attempt = 0; attempt < 3; attempt++) {
@@ -164,6 +165,17 @@ export function nativeAssistantTurn(
             );
           await validateNativeResult(request, parsed, compile);
           operationSignal.throwIfAborted();
+          if (
+            reviewedAnswer &&
+            !parsed.answer &&
+            !parsed.blocked &&
+            !parsed.cloudTask &&
+            !parsed.operations.length &&
+            !parsed.observations.length
+          )
+            throw new Error(
+              "The completion review dropped the requested answer. Return the actual explanation in answer, preserving or correcting the candidate using available evidence. A review verdict alone does not answer the creator.",
+            );
           if (phase !== "initial")
             trace({
               stage: phase,
@@ -180,6 +192,7 @@ export function nativeAssistantTurn(
             !parsed.observations.length
           ) {
             reviewed = true;
+            reviewedAnswer = Boolean(parsed.answer);
             phase = "review";
             trace({
               stage: "review",

@@ -1,0 +1,127 @@
+# Roadmap 7 — reliable AI for the current MVP
+
+Authorized 22 October 2026: make Restyle AI reliable, fix the measured failures, and continue until the supported MVP passes meaningful independent verification. This supersedes Roadmap 6's test-only restriction; its original baseline remains unchanged. Broader account signup/phone and production release remain deferred.
+
+## Completion criteria
+
+Reliability here means the supported MVP completes correctly and recovers from the measured mistakes, not that arbitrary AI requests are guaranteed to work.
+
+- Repeat the unchanged 21 baseline scenarios five times on the final candidate. Keep every result. All final outputs must meet their original semantic criteria; report first-decision failures separately from autonomous recovery. Planning may recover through the actual saved validator feedback. Missing-account cases must reach a concrete setup/help decision within a bounded multi-turn test instead of remaining inconclusive.
+- For the 25 coding/seeded-repair runs, every independent public and hidden case must pass without developer hints, edited source or altered agreements. Each run must finish within ten minutes and 12 inference calls, with at most two format repairs. These are measurement gates, not application request-count limits.
+- At least 95% of the 40 planning first decisions must satisfy the closed output contract. No accepted fake account request, invented result, stale-source approval or weakened isolation/permission boundary is allowed.
+- Exercise the actual durable coordinator with live inference, including planning through checked source, saved repair feedback, restart, missing/revoked account and interrupted inference. Genuine user decisions may wait; preventable technical repair must not need a person to supply schema or source corrections.
+- Verify complete generated UI → Try → export → viewer/reopen journeys for supported local storage and the connected MVP. Use controlled account effects for repeated tests; the existing recipient-confirmed email receipt is historical live evidence. Do not resend it simply to test recovery.
+- Pass the appropriate repository, editor, browser and build checks. Deliver the candidate to the authorized beta, verify exact served release and preserve open clients. Record usage, resources, cleanup, remaining limits and the exact next task.
+
+If a criterion proves unsuitable, document its evidence and rationale before changing it; never relabel a failed attempt as a pass. Keep the first-decision baseline and eventual-workflow metrics distinct.
+
+## Tasks
+
+- [x] **7R.01** Freeze reliability acceptance criteria and inspect the measured failures and existing owners.
+- [x] **7R.02** Make planning and tool decisions structurally dependable; preserve meaningful validation and record controlled experiments.
+- [x] **7R.03** Make final review use current source and advance after successful work; verify recovery in the durable coordinator.
+- [x] **7R.04** Verify connected requests/results, missing/revoked access, interruption and duplicate prevention without false completion.
+- [x] **7R.05** Run the complete final repeated matrix and full generated-component journeys; preserve all unsuccessful attempts.
+- [x] **7R.06** Complete source review/checks, beta delivery and release verification; document evidence and clean owned test resources.
+
+## Work and resource journal
+
+Continue the existing unreleased Restyle MVP implementation in the research-connections checkout, branch `codex/restyle-agent-identity`, based on baseline `762b293`. Current `origin/dev` is `7583d1a` and contains a separate editor/auth integration; this work continues the unfinished MVP stack rather than incorporating that separate release work or changing the creator's identity. PR110/111 remain draft/unmerged. Desktop pending files and serving assets are preserved.
+
+Existing Runpod inference and local network-disabled Docker may be used for controlled experiments. Each paid request and test container is recorded before dispatch in a private journal; no credentials enter source/reports. Record any needed beta/Fly test resources before creation and cleanup afterward. No additional provider account or permanent compute is planned.
+
+First experiment: actionable empty-review-batch feedback and smaller stage-specific planning instructions, with exact current source guidance. Preserve schema checks and the original independent behavior cases. Verify targeted regressions before live comparison; do not change the model and prompts simultaneously.
+
+## Candidate checkpoint
+
+Diagnostic-only change b75bb1f is insufficient: the first connected run reached its ten-minute observation window without repair. The next candidate changes phase-specific instructions and authoritative source/review context while retaining Kimi K2.6, thinking disabled and temperature 0.6. Agreement generation receives 12,000 output tokens; code generation remains 6,000. The evaluator's extra full-source projection is removed to match the actual coordinator. Targeted tests pass; repeated model runs, complete durable journeys and beta delivery remain unverified. See the latest progress entry and private experiment journal; 7R.02–06 remain unchecked.
+
+### Provisional saved-authoring configuration
+
+After the phase/context pilot and retained unsuccessful format experiments, saved authoring now has a Kimi K3/low-reasoning candidate, with at least 16,000 output tokens. Native editing/vision stay on K2.6. Initial K3 planning replay passes four of six first decisions and rejects two extra-field errors, so neither 7R.02 nor the first-decision acceptance target is complete. Next is actual durable execution and repair. Per-request configuration/costs and every negative result remain in private journals and the current progress checkpoint. No beta delivery yet.
+
+### Connected display checkpoint
+
+The first K3/low durable run reached backend readiness but omitted the requested visible results, so it is not a semantic pass. The attachment now supports a checked response Note with stable component references and atomic application. Focused tests, editor types and dependency checks pass; full browser/live-model verification is next. The independent K3/high replay passed six of six unchanged planning payloads; adoption remains a separate next batch. No acceptance gate is complete from these small samples.
+
+The current saved-authoring candidate now uses K3/high reasoning and at least 32,768 output tokens, with 36 focused checks passing. The earlier low-setting samples and their failures remain historical evidence. Actual complete durable/browser acceptance and the final matrix are still next.
+
+### Durable/browser candidate checkpoint
+
+High-reasoning code pilot passes all five scenarios in 2–3 calls each. The ten-call actual guestbook now includes a checked Note but needed four autonomous format repairs. Corrected attachment instructions preserve compiler checks. The new browser driver has passed controlled editor-creation preflight and is ready for live generation through Try/export/viewer/reopen; this does not complete final acceptance. Vite5295 is owned temporarily for this verification.
+
+### Evaluation continuity checkpoint
+
+Protocol v1.3 retains first planning validity separately from saved-feedback repair and bounded missing-account continuation. The seven-call browser guestbook produced a correct first Try reply, then hit an observer frame-detachment race; full UI acceptance is still pending. Missing/revoked-account scoped setup and restart preflights are included. See the latest progress entry; no gate is complete from these changes.
+
+### Generated storage delivery verified
+
+The seven-call `0ad7c08` guestbook passes actual editor application, four Try writes/latest-three display, export, separate anonymous viewer and saved-result reopening after Worker restart with no duplicate write. 7R.03 is complete with focused current-source/repair regressions; 7R.02/04/05/06 still require their remaining acceptance. The source check passes 1,769 cases with four optional skips. Next: live missing/revoked/lost-inference and controlled-email browser journeys, then the unchanged final matrix and beta.
+
+### Connected email repair checkpoint
+
+Missing/revoked private setup and lost-inference Retry/restart pass with live inference. The first connected-email journey fails to escape vague documentation-URL feedback; retained eleven-call attempt is not accepted. Current diagnostics/schema guidance make URL-only documentation, code identifier syntax and unique example inputs explicit without weakening validators. Fresh email browser proof and final repeated matrix remain next. The prior staged build is not deployed and must be rebuilt; local4173 is no longer listening, HTTPS beta remains the delivery target.
+
+### Connected agreement semantics checkpoint
+
+The `34681c3` email attempt preserved an impossible failure case and was correctly rejected by independent review. It is retained as a failed attempt, fourteen dispatched calls with one unknown usage, cleanup verified. Agreement-stage guidance now describes the real successful-example/host-failure boundary and existing receipt recovery; binding diagnostics identify service operation names. Thirteen focused tests pass. The browser observer adds real checked-version approval before delivery. Fresh generated email acceptance and the unchanged final105 matrix are next; 7R.02/04/05/06 remain unchecked. See the current progress entry for exact evidence and costs.
+
+The fresh `55f8512` email run reaches Ready in nine calls with no format repairs and preserved result across restart. Browser application and first Try return succeed, but the observer reads the saved agreement wrapper incorrectly and stops. Its one-field correction is evaluation-only; the incomplete attempt remains retained. Fresh complete browser acceptance is still required before 7R.04/05.
+
+### Source-path repair checkpoint
+
+The next email repetition finds an ambiguous source-path diagnostic: mixed-case filenames are rejected, but the model alternates path prefixes because lowercase is unstated. The eleven-call failed attempt is retained with cleanup verified. Parser/schema/prompt guidance now names the existing lowercase/no-./ requirements; fourteen focused tests pass. No path rule is relaxed. Fresh complete email acceptance and final105 remain required.
+
+### Email browser preflight checkpoint
+
+The b7db4c0 live email reaches Ready in ten calls; its Try receipt is visible with zero provider calls. A missing settings-navigation step stops that live browser proof. A separate recorded-output preflight now passes actual approval, export, anonymous controlled send and reopen with one total send, preserving source/agreement bytes and rebinding only fixture metadata. Full source check passes 1,772 tests plus four optional skips. Fresh live complete acceptance is next, followed by final105; no beta deployment yet.
+
+### Fresh connected journey accepted
+
+7R.04 is verified by the fresh live ten-call email journey on82b0090, actual creator approval/export/anonymous viewer and saved-result reopen, plus the preserved missing/revoked and interruption checks. One controlled send, no resend, all cleanup verified; $0.397275 with no unknown usage. The generated source/agreement/component remain unchanged. Final105 started in `run-2026-10-22T04-35-42.038Z-358d9579`; 7R.02/05/06 remain pending.
+
+### Rejected repeated candidate
+
+The82b0090 matrix is stopped after58 completed cases because P01.3 omits the frozen required guestbook read operation. All outputs and one interrupted attempt are retained. Evaluatorv1.4 separately corrects missing-account capability feedback using actual validators and proper batch halting, with four regression cases passing. No rubric is relaxed and no failed application attempt will be resumed as a pass. The next application candidate must complete a fresh105 and current UI journeys before beta delivery.
+
+### Declared receipt bounds included
+
+The normal b5107b4 email journey passes, but a supplemental test confirms a valid512-byte receipt overflows its composed status message. Both original journey and failed boundary evidence are retained. Guidance now preserves the whole provider ID separately from fixed status text, and complete email acceptance additionally checks512-byte ASCII/Unicode receipts against the exact generated package. Original21 cases and rubrics are unchanged; fresh journeys/full105 and rebuilt beta remain pending.
+
+### Current complete journey checkpoint
+
+Candidate393ab2f passes fresh generated guestbook/email UI journeys, maximum-size receipt continuations, readable wrapped Notes, missing/revoked setup and lost-inference explicit Retry/restart. Full source, opt-in Docker/browser, editor types, native Rust/WASM and build checks pass. Staged09933f2c5244c24a is not deployed. The fresh unchanged105, final audit and beta verification remain required; 7R.02/05/06 remain unchecked. See current progress for all exact journals, usage, cleanup and limits.
+
+### First-decision gate rejects the next candidate
+
+The393ab2f full repetition attempt is stopped after three first-decision planning failures make38/40 impossible. All69 completed outputs, their repairs and one interrupted call are retained; the candidate is not accepted or deployed. Waiting-research admission, short UTF-8 choice labels, local/connected case shapes and valid case inputs now receive explicit guidance and precise byte feedback without relaxing any rule. All57 focused checks pass. Next: controlled planning repetitions, current generated journeys and a fresh unchanged105 before beta. See progress for exact journals, the corrected regression-test assumption and cleanup.
+
+### Inference timeout checkpoint
+
+The67c108f targeted15 repetition diagnostic has14 correct first decisions/zero format repairs and one180-second timeout without output. All19 calls and the unknown usage remain recorded. The next candidate shares a300-second saved-authoring attempt deadline and315-second claim between runtime/evaluation; the existing330-second lease maximum and original ten-minute coding gate are unchanged. Protocolv1.5 records timing only, not new scenarios or relaxed rubrics. The staged beta is superseded and undeployed. Exact next: claim/Stop/restart regressions, fresh P01 repetitions, current journeys and full105.
+
+The follow-up deadline regression updates the obsolete195-second test expectation to315 and holds validation to320 seconds; all nine focused lifecycle tests pass. App/evaluator source remains8a39141. The completed build stages2a37052d4dc3e846 with46 retained assets, undeployed. Fresh-server browser preflight passes after retaining an HMR-overlap failure; live P01 and guestbook runs remain in progress.
+
+### Receipt timing and lost-inference checkpoint
+
+The8a39141 P01 pilot still loses one request at300 seconds after two schema repairs; all failures and usage remain recorded. Its fresh guestbook journey passes, while the email correctly fails editor Apply because its receipt Note begins0.1 seconds after the original video. Editor preparation now includes the authorized same-scene Note and retains final actual-route validation. The reproduced regression, missing-Note/out-of-bounds rejection and32 focused cases pass, as do editor types. Next: automatic read-only inference recovery, current full/browser checks, fresh unchanged105 and rebuilt beta; no acceptance gate is relabelled.
+
+### Automatic inference recovery candidate
+
+Saved read-only inference now has durable10/30-second retries for two consecutive transient failures, then a saved explicit-Retry failure; every attempt/usage and Stop/late-answer boundary remain recorded. This does not retry email/publication or impose a total goal limit. Protocolv1.6 mirrors that actual policy while retaining failed first attempts and all original planning/coding gates. Focused runner/editor/evaluator checks and editor types pass. Live automatic interruption/restart, full checks, matching-source browser journeys and final105 remain required before beta.
+
+### Native answer preservation checkpoint
+
+The e2bfae7 candidate passes all four fresh durable/browser journeys and all eight first planning decisions in the first final round, but fails E04: final review drops a correct timing explanation. The candidate is rejected; original output and interrupted work remain retained. Native completion now rejects dropping an existing substantive answer, uses the same repair allowance and explicitly returns the user-facing explanation. Forty-one focused checks pass. Five fresh E04 repetitions, full checks, current journeys, a new unchanged105 and beta delivery are next; no unfinished gate is checked.
+
+### Final candidate acceptance verified
+
+Application85f7a34 passes the fresh unchanged105-run matrix,38/40 first planning decisions, all25 code/repair runs and95 independent cases/210 steps. Two planning schema repairs and one generated-test syntax repair remain recorded. All four current-source durable/browser journeys and the extra research-reference recovery pass. P07.4 has a hash-bound actual-runtime replay proving the recorded manual_alternative is an unanswered choice; its original evaluator exhausted status is preserved and the terminal-classification correction is separately tested. No generated output or rubric changed. See [the reliability report](../restyle-capability/reliability-results.md) and machine-readable evidence. 7R.02/05 are complete;7R.06 remains pending final checks, beta delivery/Update proof and cleanup.
+
+### Final beta delivery and cleanup verified
+
+All six tasks are complete through beta. Guarded deployment publishes application `85f7a34` as `restyle-editor-shell-60f4abbf9460f059`, Worker `5d95c808-b1f8-4b43-bce3-98dc1cf98029`. The isolated old-client **New beta release → Update** proof preserves the page until the click, then loads exact candidate bytes once. A fresh browser reaches the ready editor-start page with matching script bytes and no errors. Final full checks pass 1,790 tests with zero failures and four optional skips; existing separate optional, browser, type, Rust/WASM and build checks remain valid.
+
+The final resource audit verifies all 1,344 recorded resources cleaned, 1,278 named test containers and 39 temporary storage paths absent, both beta browsers closed and no owned development server. Existing local services, Desktop changes, private journals and backups are preserved. [Final evidence and remaining limits](../restyle-capability/reliability-results.md) distinguish original measured protocol v1.6 from the tested post-run evaluator v1.7 correction. PR111 stays a stacked draft on PR110; no merge or production release. Next product action: creator beta testing. Broader signup/phone remains deferred.
+
+The final Node 22 CI portability follow-up changes only the hung-request test lifetime, preserving its assertions. The failure reproduces before the fix; four focused cases pass on Node 22/25 and the complete Node 22 check passes 1,790 tests, zero failures/cancellations and four optional skips. Application bytes and all measured AI evidence remain unchanged; current GitHub CI is recorded on draft PR111.

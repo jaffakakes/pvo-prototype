@@ -1,4 +1,13 @@
 import { accountProfileRoute } from "./account/routes.js";
+import {
+  accountConnectionRoute,
+  isAccountConnectionRoute,
+} from "./connections/routes.js";
+import {
+  agentIdentityRoute,
+  isAgentIdentityRoute,
+} from "./agent-identity/routes.js";
+import { hostedServiceRoute, isServiceRoute } from "./cloud-services/routes.js";
 import { configuration } from "./config.js";
 import { releaseRoute } from "./releases/routes.js";
 import { HttpError, json, notFound } from "./http.js";
@@ -27,6 +36,12 @@ export async function handleRequest(request, env) {
   const url = new URL(request.url);
   const config = configuration(env, url.origin);
   try {
+    if (isAgentIdentityRoute(url.pathname))
+      return await agentIdentityRoute(request, env, config);
+    if (isAccountConnectionRoute(url.pathname))
+      return await accountConnectionRoute(request, env, config);
+    if (isServiceRoute(url.pathname))
+      return await hostedServiceRoute(request, env, config);
     if (url.pathname.startsWith("/api/web/")) return await webRoute(request);
     if (url.pathname.startsWith("/api/imessage/"))
       return await imessageRoute(request, env);

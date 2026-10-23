@@ -16,6 +16,10 @@ The local beta server uses `scripts/dev/releases.mjs` to provide the same protoc
 
 `node --test tests/release-channel.test.mjs` checks authorization, deployed-asset validation, fan-out, deduplication, and persisted replay after a runtime restart. `npm run check:browser -- editor pwa` checks push delivery without polling, reconnect catch-up, explicit activation, recording protection, saved footage, offline startup, and storage-failure protection.
 
+## Generated Node.js services
+
+Restyle's Worker continues to own routing and durable service records. Generated Container code runs through the private Fly adapter, configured separately from video publishing. See [Container hosting settings and beta availability](restyle-containers-contract.md#hosting-configuration-and-beta-availability) for the exact binding, immutable image and secret requirements. Do not infer backend availability from a static beta build or enable paid hosting from a disposable diagnostic's credentials.
+
 ## Resources and launch configuration
 
 The configured Worker uses the private R2 Standard bucket `pvo-publications-media` and D1 database `pvo-publications-google`, bound as `MEDIA` and `DB`. The resources are provisioned in the Worker's account and recorded in Wrangler. Keep public bucket access through `r2.dev` disabled:
@@ -36,15 +40,15 @@ The configured Worker uses the private R2 Standard bucket `pvo-publications-medi
 
 Apply the checked-in D1 migrations with `npx wrangler d1 migrations apply DB --remote` before enabling sign-in or uploads. In particular, apply [migration 0004](../../migrations/0004_supabase_identities.sql) before deploying a Worker whose signed-in session route queries `supabase_identities`; otherwise account checks fail. Apply [migration 0005](../../migrations/0005_multipart_uploads.sql) before deploying multipart routes; it adds the R2 upload ID to upload attempts. The new Supabase identity schema has not been applied to production by this task. Do not treat the former Clerk migration history as proof of its presence. Migration 0005 has not been verified there. The [initial schema](../../migrations/0001_publishing.sql) stores users, hashed account sessions, publications and upload attempts. Resource provisioning and remote schema application are deployment setup, not actions performed by a build or the tests.
 
-| Store | Data |
-| --- | --- |
-| Cloudflare D1 `users` | Restyle user ID, display label, creation time. Google supplies a name; email accounts start with the generic label “Creator”. |
-| D1 `supabase_identities` | Supabase issuer and user subject mapped to one Restyle user; no email or password. |
-| D1 `sessions` | Hash of a random Restyle session token, user ID and expiry. The raw token stays in an HttpOnly cookie. |
-| D1 publishing tables | Publication metadata, ownership, upload attempts and quotas. |
-| Private Cloudflare R2 | Bytes of published video/PVO exports. |
-| Browser IndexedDB | Editable draft projects and source media on that device. |
-| Supabase | Email identifiers, passwords, verification, password reset and its own session records. |
+| Store                    | Data                                                                                                                          |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| Cloudflare D1 `users`    | Restyle user ID, display label, creation time. Google supplies a name; email accounts start with the generic label “Creator”. |
+| D1 `supabase_identities` | Supabase issuer and user subject mapped to one Restyle user; no email or password.                                            |
+| D1 `sessions`            | Hash of a random Restyle session token, user ID and expiry. The raw token stays in an HttpOnly cookie.                        |
+| D1 publishing tables     | Publication metadata, ownership, upload attempts and quotas.                                                                  |
+| Private Cloudflare R2    | Bytes of published video/PVO exports.                                                                                         |
+| Browser IndexedDB        | Editable draft projects and source media on that device.                                                                      |
+| Supabase                 | Email identifiers, passwords, verification, password reset and its own session records.                                       |
 
 Supabase owns verified provider linking; Restyle maps only the resulting Supabase UUID. It never merges D1 accounts by comparing email strings. Both sign-in methods use the same `supabase_identities` table. Historical direct-Google and Clerk records are not read, transferred or deleted by this change.
 
