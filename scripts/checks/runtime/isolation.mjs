@@ -1,7 +1,7 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { sourceModules } from "../helpers/source-assets.mjs";
-import { chromium } from "playwright-core";
 
 // Internal renderer isolation regression; this is not a creator-facing JavaScript authoring route.
 const runtimeAssets = new Map(
@@ -11,7 +11,16 @@ const runtimeAssets = new Map(
   ),
 );
 runtimeAssets.set("/runtime.js", runtimeAssets.get("/index.js"));
-for (const [path, asset] of await sourceModules(new URL("../../../packages/pvo-fonts/", import.meta.url), "/pvo-fonts")) runtimeAssets.set(path, asset);
+for (const [path, asset] of await sourceModules(
+  new URL("../../../packages/pvo-fonts/", import.meta.url),
+  "/pvo-fonts",
+))
+  runtimeAssets.set(path, asset);
+for (const [path, asset] of await sourceModules(
+  new URL("../../../packages/pvo-sdk/runtime/", import.meta.url),
+  "/pvo-sdk/runtime",
+))
+  runtimeAssets.set(path, asset);
 const leaks = [];
 const hostRequests = [];
 const server = createServer((request, response) => {
@@ -42,10 +51,7 @@ const server = createServer((request, response) => {
 });
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
-const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROME_PATH ||
-    "C:/Program Files/Google/Chrome/Application/chrome.exe",
+const browser = await launchBrowser({
   headless: true,
 });
 const page = await browser.newPage();
@@ -63,7 +69,9 @@ try {
       componentId: "test-component",
       onDiagnostic(event) {
         window.__diagnostics.push(event);
-        throw new Error("A broken observer must not affect component execution.");
+        throw new Error(
+          "A broken observer must not affect component execution.",
+        );
       },
       html: `<div class="safe">{{prompt}}</div><button onclick="onPick('street')">Street</button><form onsubmit="pvo.submit(fields)"><input name="alias" value="Ada"><button type="submit">Send</button></form><img src="${origin}/leak?img"><a href="${origin}/leak?nav">link</a><script>parent.__breached=true</script><iframe src="${origin}/leak?frame"></iframe>`,
       css: `.safe{color:#A78BFA;background-image:url(${origin}/leak?css)}`,
@@ -121,17 +129,31 @@ try {
     { method: "submit", args: [{ alias: "Ada" }] },
   ]);
   const diagnostics = await page.evaluate(() => window.__diagnostics);
-  assert.ok(diagnostics.some(event => event.type === "component.ready"));
-  assert.equal(diagnostics.filter(event => event.type === "interaction.received").length, 2);
-  assert.doesNotMatch(JSON.stringify(diagnostics), /Ada/, "diagnostics must not retain form input");
+  assert.ok(diagnostics.some((event) => event.type === "component.ready"));
+  assert.equal(
+    diagnostics.filter((event) => event.type === "interaction.received").length,
+    2,
+  );
+  assert.doesNotMatch(
+    JSON.stringify(diagnostics),
+    /Ada/,
+    "diagnostics must not retain form input",
+  );
   await page.evaluate(() => {
     window.__handle.setPending(true);
-    document.querySelector('iframe[sandbox="allow-same-origin"]').contentDocument
-      .querySelector("form").dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    document
+      .querySelector('iframe[sandbox="allow-same-origin"]')
+      .contentDocument.querySelector("form")
+      .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     window.__handle.setPending(false);
   });
-  assert.ok((await page.evaluate(() => window.__diagnostics)).some(event =>
-    event.type === "interaction.ignored" && event.reason === "request_pending"));
+  assert.ok(
+    (await page.evaluate(() => window.__diagnostics)).some(
+      (event) =>
+        event.type === "interaction.ignored" &&
+        event.reason === "request_pending",
+    ),
+  );
   assert.equal((await page.evaluate(() => window.__actions)).length, 2);
   assert.equal(await page.evaluate(() => window.__breached), undefined);
   assert.deepEqual(
@@ -266,8 +288,11 @@ try {
     "hung custom code must not freeze the host",
   );
   await page.evaluate(() => window.__handle.destroy());
-  assert.equal((await page.evaluate(() => window.__diagnostics.at(-1))).type, "component.inactive",
-    "normal disposal is not an unavailable-component failure");
+  assert.equal(
+    (await page.evaluate(() => window.__diagnostics.at(-1))).type,
+    "component.inactive",
+    "normal disposal is not an unavailable-component failure",
+  );
   assert.equal(
     await page.locator("iframe").count(),
     0,
@@ -275,24 +300,42 @@ try {
   );
 
   // Exercise the host-owned control path used when WebKit blocks listeners in a scriptless iframe.
-  await page.evaluate(async origin => {
-    Object.defineProperty(navigator, "vendor", { configurable: true, value: "Apple Computer, Inc." });
+  await page.evaluate(async (origin) => {
+    Object.defineProperty(navigator, "vendor", {
+      configurable: true,
+      value: "Apple Computer, Inc.",
+    });
     const { mountCustomComponent } = await import(`${origin}/runtime.js`);
     window.__actions = [];
     window.__handle = mountCustomComponent(document.getElementById("host"), {
-      componentId: "webkit-form", interactive: true,
+      componentId: "webkit-form",
+      interactive: true,
       html: '<form onsubmit="pvo.submit(fields)"><input name="phone" value="123"><button type="submit">Send test</button></form>',
-      css: "", js: "", onAction: action => window.__actions.push(action),
+      css: "",
+      js: "",
+      onAction: (action) => window.__actions.push(action),
     });
   }, origin);
   const proxy = page.locator("[data-pvo-control-proxy]");
   await proxy.waitFor();
-  assert.equal(await page.locator('iframe[sandbox="allow-same-origin"]').getAttribute("sandbox"), "allow-same-origin");
+  assert.equal(
+    await page
+      .locator('iframe[sandbox="allow-same-origin"]')
+      .getAttribute("sandbox"),
+    "allow-same-origin",
+  );
   await proxy.click();
   await page.waitForFunction(() => window.__actions.length === 1);
-  assert.deepEqual((await page.evaluate(() => window.__actions))[0], { method: "submit", args: [{ phone: "123" }] });
+  assert.deepEqual((await page.evaluate(() => window.__actions))[0], {
+    method: "submit",
+    args: [{ phone: "123" }],
+  });
   await page.evaluate(() => window.__handle.setInteractive(false));
-  assert.equal(await proxy.isVisible(), false, "authoring must hide the host control");
+  assert.equal(
+    await proxy.isVisible(),
+    false,
+    "authoring must hide the host control",
+  );
   await page.evaluate(() => window.__handle.setInteractive(true));
   assert.equal(await proxy.isVisible(), true);
   await page.evaluate(() => window.__handle.destroy());

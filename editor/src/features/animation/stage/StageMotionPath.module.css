@@ -25,22 +25,22 @@
   width: 10px;
   height: 10px;
   box-sizing: border-box;
-  border: 2px solid #000;
+  border: 2px solid var(--strong);
   border-radius: 2px;
   background: var(--animation-track-color);
   transform: rotate(45deg);
 }
 .handle[aria-pressed="true"] .diamond {
-  background: #ff2d78;
+  background: var(--animation-track-color);
   transform: rotate(45deg) scale(1.25);
-  box-shadow: 0 0 0 3px #ff2d784d;
+  box-shadow: 2px 2px 0 var(--strong);
 }
-.handle:focus-visible { outline: 2px solid #ff9fbc; outline-offset: 2px; }
+.handle:focus-visible { outline: 2px solid var(--strong); outline-offset: 2px; }
 .tracked {
   position: absolute;
   z-index: 10000;
   box-sizing: border-box;
-  border: 2px dashed #ff9fbc;
+  border: 2px dashed var(--pale);
   border-radius: 4px;
   pointer-events: none;
 }
@@ -52,8 +52,8 @@
   padding: 2px 4px;
   overflow: hidden;
   border-radius: 3px;
-  color: #ff9fbc;
-  background: #000c;
+  color: var(--text);
+  background: var(--surface);
   font: 800 9px/1.25 var(--f-ui);
   text-overflow: ellipsis;
   white-space: nowrap;

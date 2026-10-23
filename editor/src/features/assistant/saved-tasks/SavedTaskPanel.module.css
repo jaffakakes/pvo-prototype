@@ -67,7 +67,7 @@
   opacity: 0.55;
 }
 .choices button[aria-pressed="true"] {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--strong);
 }
 .hint {
   color: var(--muted);

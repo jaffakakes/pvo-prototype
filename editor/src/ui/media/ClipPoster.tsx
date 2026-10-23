@@ -17,7 +17,7 @@ export function ClipPoster({ clip }: { clip: Pick<Clip, "url" | "in" | "color"> 
       video.load();
     };
   }, [clip.url, clip.in]);
-  return <span className={styles.poster} style={{ backgroundColor: clip.color }} aria-hidden="true">
+  return <span className={styles.poster} style={{ backgroundColor: `var(--media-placeholder, ${clip.color})` }} aria-hidden="true">
     {clip.url && <video ref={element} muted playsInline preload="metadata" tabIndex={-1} />}
   </span>;
 }

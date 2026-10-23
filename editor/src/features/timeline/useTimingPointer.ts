@@ -1,7 +1,7 @@
+import { useLayerPointer } from "./useLayerPointer";
+import type { useLayerDrag } from "./useLayerDrag";
 import { useGestureCancellation } from "./useGestureCancellation";
-import { beginAudioTimingDrag } from "../../state/editing/audioCommands";
 import { useRef, type PointerEvent } from "react";
-import { beginComponentTimingDrag } from "../../state/components/componentTimingDrag";
 import {
   beginTimelineTimingDrag,
   type TimelineTimingTarget,
@@ -21,7 +21,9 @@ type Transaction = {
 export function useTimingPointer(
   pixelsPerSecond: number,
   snap?: TimingSnapSettings,
+  layerDrag?: ReturnType<typeof useLayerDrag>,
 ) {
+  const layerPointer = useLayerPointer(layerDrag, pixelsPerSecond, snap);
   const gesture = useRef<{
     pointerId: number;
     element: HTMLElement;
@@ -44,12 +46,19 @@ export function useTimingPointer(
     begin(event: PointerEvent<HTMLElement>, target: Target, edgeTime?: number) {
       event.stopPropagation();
       if (event.button > 0 || gesture.current) return;
-      const transaction =
-        target.kind === "audio"
-          ? beginAudioTimingDrag(target.id, target.mode)
-          : target.kind === "component"
-            ? beginComponentTimingDrag(target.id, target.mode)
-            : beginTimelineTimingDrag(target);
+      if (target.kind !== "clip") {
+        const id = `${target.kind}:${target.id}` as
+          `audio:${number}` | `text:${number}` | `component:${string}`;
+        const mode =
+          target.mode === "start"
+            ? "l"
+            : target.mode === "end"
+              ? "r"
+              : target.mode;
+        layerPointer.begin(event, id, mode, edgeTime ?? null);
+        return;
+      }
+      const transaction = beginTimelineTimingDrag(target);
       if (!transaction) return;
       const element = event.currentTarget;
       const renderedWidth = element.getBoundingClientRect().width;
@@ -70,6 +79,7 @@ export function useTimingPointer(
       element.setPointerCapture(event.pointerId);
     },
     move(event: PointerEvent<HTMLElement>) {
+      layerPointer.move(event);
       const active = gesture.current;
       if (active?.pointerId !== event.pointerId) return;
       const delta =
@@ -86,6 +96,7 @@ export function useTimingPointer(
       active.transaction.update(result.delta, result.snapped);
     },
     end(event: PointerEvent<HTMLElement>) {
+      layerPointer.end(event);
       const active = gesture.current;
       if (active?.pointerId !== event.pointerId) return;
       gesture.current = null;

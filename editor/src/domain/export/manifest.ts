@@ -1,4 +1,5 @@
 import { validateFontAsset } from "../../../../packages/pvo-fonts/index.js";
+import { formFieldDefinition } from "../../../../packages/pvo-sdk/manifest/component-values.js";
 import { cloneAnimation } from "../../../../packages/pvo-animation/index.js";
 import { manifestMediaAnimations } from "./mediaAnimation";
 import { sceneDuration } from "../scenes/duration";
@@ -32,7 +33,7 @@ import {
   validateFormFields,
 } from "../components/forms";
 import { cloneLook } from "../components/look";
-import { layerOrder } from "../layers/order";
+import { visualLayerOrder, layerOrder } from "../layers/order";
 import type {
   Outcome,
   ProjectSnapshot,
@@ -236,14 +237,6 @@ function manifestComponent(
           ? actionFor(fields.failureOutcome)
           : { type: "chain", actions: [] };
     } else {
-      const labels = {
-        name: "Name",
-        email: "Email",
-        phone: "Phone",
-        short: "Short text",
-        number: "Number",
-        yesno: "Yes or no",
-      };
       const formFields =
         structure?.type === "form"
           ? structure.fields
@@ -255,29 +248,7 @@ function manifestComponent(
         structure?.type === "form"
           ? (structure.heading ?? "")
           : (fields.heading ?? "");
-      result.fields = formFields.map((field) => ({
-        name: field.name,
-        label:
-          "label" in field && typeof field.label === "string"
-            ? field.label
-            : labels[field.kind],
-        type:
-          field.kind === "email"
-            ? ("email" as const)
-            : field.kind === "number"
-              ? ("number" as const)
-              : field.kind === "yesno"
-                ? ("choice" as const)
-                : ("text" as const),
-        ...(field.kind === "yesno"
-          ? {
-              options: [
-                { label: "Yes", value: "yes" },
-                { label: "No", value: "no" },
-              ],
-            }
-          : {}),
-      }));
+      result.fields = formFields.map(formFieldDefinition);
       result.submit_label =
         structure?.type === "form"
           ? structure.submit
@@ -400,7 +371,8 @@ export function buildPvoManifest(
         rendered.map(({ scene }) => [
           scene.id,
           {
-            order: layerOrder(scene),
+            order: visualLayerOrder(scene),
+            timelineOrder: layerOrder(scene),
             texts: scene.texts.map(
               ({ animationTracking: _tracking, ...text }) => text,
             ),

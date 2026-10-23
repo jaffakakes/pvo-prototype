@@ -30,45 +30,15 @@
 }
 
 .heading button:disabled {
-  opacity: .45;
+  opacity: 0.45;
   cursor: default;
 }
 
-.fields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  max-width: 520px;
-}
-
-.field {
-  display: grid;
-  gap: 7px;
-  min-width: 0;
-  font: 700 12px/1.4 var(--f-ui);
-  color: var(--text);
-}
-
-.field input {
-  width: 100%;
-  min-width: 0;
-  min-height: 44px;
-  box-sizing: border-box;
-  padding: 10px 12px;
-  border: 1px solid var(--line-strong);
-  border-radius: 10px;
-  background: var(--input);
-  color: inherit;
-  font: 700 14px/1.4 var(--f-ui);
-}
-
-.field input:focus-visible,
 .heading button:focus-visible {
-  outline: 3px solid var(--highlight);
+  outline: 3px solid var(--strong);
   outline-offset: 2px;
 }
 
-.unit,
 .size p {
   color: var(--muted);
 }

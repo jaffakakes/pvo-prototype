@@ -11,7 +11,7 @@ const api = await import(`data:text/javascript;base64,${Buffer.from(bundle.outpu
 const clip = changes => ({ id: 1, url: "blob:http://localhost/source", srcDur: 12, in: 2, out: 10,
   speed: 2, color: "#000", zoom: 1, mirror: false, width: 640, height: 360, fit: "contain", ...changes });
 const project = changes => ({ ratio: "16:9", scenes: [{ id: "main", name: "Main", parent: null,
-  clips: [clip()], texts: [], components: [], muted: false, sound: 0, ...changes }] });
+  clips: [clip()], texts: [], components: [], muted: false, music: null, ...changes }] });
 const request = changes => ({ kind: "object_tracking", sceneId: "main", clipId: 1, start: 0, end: .2,
   target: { kind: "point", x: .4, y: .6 }, ...changes });
 const capture = async () => { const { width, height, frames } = trackingInput(); return { width, height, frames }; };

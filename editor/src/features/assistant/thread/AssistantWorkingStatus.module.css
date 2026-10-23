@@ -1,0 +1,37 @@
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  color: var(--strong);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.logo {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--strong);
+}
+.logo img {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  filter: none;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+:global(html[data-theme="light"]) .logo img {
+  filter: invert(1);
+}

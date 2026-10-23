@@ -1,13 +1,9 @@
-import type {
-  ExportFormat,
-  ExportQuality,
-} from "../../domain/publishing/model";
+import type { ExportQuality } from "../../domain/publishing/model";
 import type { ExportView } from "./presentation";
 import styles from "./ExportSheet.module.css";
 
 type Props = {
   mode: ExportView;
-  format: ExportFormat;
   quality: ExportQuality;
   unavailable: boolean;
   begin(): void;
@@ -21,7 +17,6 @@ type Props = {
 
 export function ExportFooter({
   mode,
-  format,
   quality,
   unavailable,
   begin,

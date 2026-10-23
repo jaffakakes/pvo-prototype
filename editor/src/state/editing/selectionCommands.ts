@@ -104,8 +104,8 @@ export function deleteTimelineSelection() {
   if (state.selAudio != null) deleteSelectedAudio();
   else if (state.selComp) state.deleteComponent(state.selComp);
   else if (state.selText != null) state.deleteText(state.selText);
-  else if (state.sheet === "sound" && state.sound)
-    state.edit({ sound: 0, sheet: null });
+  else if (state.selMusic && state.music)
+    state.edit({ music: null, selMusic: false, sheet: null });
   else if (state.sel >= 0) {
     const clips = state.clips.filter((_, i) => i !== state.sel);
     state.edit({

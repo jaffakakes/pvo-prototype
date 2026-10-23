@@ -4,15 +4,20 @@ import { join } from "node:path";
 import { profileResponse } from "../../server/account/profile.js";
 import { HttpError } from "../../server/http.js";
 import { json } from "./http.mjs";
+import { createLocalOriginPolicy } from "./local-origins.mjs";
 
 export function createLocalProfileApi({ directory, origin, userFor }) {
+  const policy = createLocalOriginPolicy(origin);
   const root = join(directory, "account-profiles");
   const pathFor = (id) =>
     join(root, `${createHash("sha256").update(id).digest("hex")}.json`);
   return async (request, response) => {
     try {
-      if (request.headers.host !== new URL(origin).host)
+      const requestOrigin = policy.originFor(request);
+      if (!requestOrigin)
         throw new HttpError(400, "This account address is invalid.");
+      if (!policy.accepts(request))
+        throw new HttpError(403, "This operation must start from the editor.");
       const chunks = [];
       let bytes = 0;
       for await (const chunk of request) {
@@ -21,13 +26,13 @@ export function createLocalProfileApi({ directory, origin, userFor }) {
           throw new HttpError(413, "The profile is too large.");
         chunks.push(chunk);
       }
-      const webRequest = new Request(new URL(request.url, origin), {
+      const webRequest = new Request(new URL(request.url, requestOrigin), {
         method: request.method,
         headers: request.headers,
         ...(chunks.length ? { body: Buffer.concat(chunks) } : {}),
       });
       const result = await profileResponse(webRequest, {
-        origin,
+        origin: requestOrigin,
         user: await userFor(request),
         read: async (id) => {
           try {

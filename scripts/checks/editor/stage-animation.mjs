@@ -1,8 +1,11 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
-import { chromium } from "playwright-core";
 
-const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true });
+import { createSheetDockChecks } from "../helpers/editor-sheet-dock.mjs";
+
+const browser = await launchBrowser({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 960 }, serviceWorkers: "block" });
+const { settle } = createSheetDockChecks(page);
 const errors = [];
 page.on("pageerror", error => errors.push(error.message));
 const snapshot = () => page.evaluate(() => {
@@ -157,20 +160,22 @@ try {
   assert.equal((await snapshot()).t, 0);
   assert.equal((await snapshot()).past, beforeSeek);
   await page.setViewportSize({ width: 430, height: 932 });
+  await settle();
   await page.evaluate(() => {
     window.stageCheck.selection.getState().clear();
-    window.stageCheck.useCapture.getState().patch({ sheet: "animation", t: 1.5 });
+    window.stageCheck.useCapture.getState().patch({ sheet: "keyframes", t: 1.5 });
   });
   const beforeMobileBaseDrag = await snapshot();
+  await settle();
   await moveTitle(20, 15);
   result = await snapshot();
-  assert.equal(result.sheet, "animation");
+  assert.equal(result.sheet, "keyframes");
   assert(result.texts[0].x > beforeMobileBaseDrag.texts[0].x
     && result.texts[0].y > beforeMobileBaseDrag.texts[0].y,
-  "Opening Animate alone must still drag the base placement");
+  `Opening Keyframes alone must still drag the base placement: ${JSON.stringify({ before: beforeMobileBaseDrag, after: result })}`);
   assert.deepEqual(result.texts[0].animation, beforeMobileBaseDrag.texts[0].animation,
-    "Opening Animate alone must not add a keyframe");
-  await page.locator("[data-animation-sheet]").getByRole("button", { name: "Keyframe", exact: true }).click();
+    "Opening Keyframes alone must not add a keyframe");
+  await page.getByRole("toolbar", { name: "Keyframe controls", exact: true }).getByRole("button", { name: "Add keyframe", exact: true }).click();
   const selectedMobileKey = await snapshot();
   assert.equal(selectedMobileKey.selectedKey.group, "position",
     "The mobile Keyframe button explicitly selects a Position key");
@@ -195,7 +200,7 @@ try {
     commands.setAuthoringValue({ kind: "text", id: 10 }, "position", 3, { x: 65, y: 45 }, { wholeTransform: true });
   });
   await page.locator('.textOverlay').waitFor();
-  assert.equal(await page.locator('.textLayer[data-layer-id="text:10"]').count(), 1, "Animate displays the selected text's final keyframe");
+  assert.equal(await page.locator('.textLayer[data-layer-id="text:10"]').count(), 1, "Keyframes displays the selected text's final keyframe");
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.evaluate(() => window.stageCheck.useCapture.getState().patch({ sheet: null }));
   await page.locator('.textOverlay').waitFor();
@@ -217,10 +222,10 @@ try {
     const id = useCapture.getState().addComponent("tooltip");
     const state = useCapture.getState();
     state.patch({ components: state.components.map(component => ({ ...component, at: 0, dur: 3 })),
-      t: 3, playing: false, sheet: "animation", selComp: id, selText: null });
+      t: 3, playing: false, sheet: "keyframes", selComp: id, selText: null });
   });
   await page.locator('[data-preview-component]').waitFor();
-  assert.equal(await page.locator('[data-preview-component]').count(), 1, "Animate displays the selected component's final keyframe");
+  assert.equal(await page.locator('[data-preview-component]').count(), 1, "Keyframes displays the selected component's final keyframe");
   await page.evaluate(() => {
     const { useCapture, preview } = window.stageCheck;
     useCapture.getState().patch({ t: 2.5 });
@@ -230,5 +235,5 @@ try {
   await page.locator('[data-preview-component]').waitFor({ state: "detached" });
   await page.evaluate(() => window.stageCheck.preview.stopTry());
   assert.deepEqual(errors, []);
-  console.log("Stage animation passed: static base dragging, explicit Position key selection, preserved animated curves, mobile Animate placement, cancellation, path seek, authoring endpoints and exclusive playback/Try bounds.");
+  console.log("Stage animation passed: static base dragging, explicit Position key selection, preserved animated curves, mobile Keyframes placement, cancellation, path seek, authoring endpoints and exclusive playback/Try bounds.");
 } finally { await browser.close(); }

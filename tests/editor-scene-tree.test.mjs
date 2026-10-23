@@ -145,7 +145,7 @@ test("scene navigation clears editing state and preserves project undo and redo"
   const branch = state.createScene();
   state.updateScene(branch, { name: "Renamed" });
   state.undo();
-  state.patch({ t: 4, sheet: "more", selText: 99, playing: true, playheadPick: { kind: "text-start", textId: 1, sceneId: branch, originalT: 0 } });
+  state.patch({ t: 4, sheet: "replies", selText: 99, playing: true, playheadPick: { kind: "text-start", textId: 1, sceneId: branch, originalT: 0 } });
   const before = useCapture.getState();
   state.switchScene("main");
   const after = useCapture.getState();

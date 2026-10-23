@@ -1,8 +1,8 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
-import { chromium } from "playwright-core";
 
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+
+const browser = await launchBrowser({
   headless: true, args: ["--no-sandbox"],
 });
 const context = await browser.newContext({ viewport: { width: 320, height: 568 }, hasTouch: true });
@@ -69,11 +69,35 @@ try {
     "Brief events and a second critical issue cannot replace the current critical notice");
   await page.waitForTimeout(4300);
   assert.equal(await notice.count(), 1, "Save failures never expire");
+  await page.clock.install({ time: new Date("2026-10-21T12:00:00Z") });
+  await page.clock.pauseAt(new Date("2026-10-21T12:00:01Z"));
   await dismiss.click();
   assert.equal(await page.evaluate(() => window.notificationFixture.useNotifications.getState().unresolved.length), 2,
     "Dismissal does not resolve durable failures");
   assert(await page.locator("[data-notification-root] button:visible").count() > 0,
     "Acknowledged issues need an accessible way back");
+  const reminder = page.getByRole("button", { name: "Saving paused", exact: true });
+  await reminder.waitFor();
+  await page.clock.runFor(9999);
+  assert.equal(await reminder.count(), 1, "Saving paused remains for ten seconds");
+  await page.clock.runFor(1);
+  assert.equal(await reminder.count(), 0, "Saving paused dismisses after ten seconds");
+  assert.equal(await page.evaluate(() => window.notificationFixture.useNotifications.getState().unresolved.length), 2,
+    "Expiring the reminder does not resolve or discard unsaved work");
+  await page.evaluate(() => {
+    const fixture = window.notificationFixture;
+    fixture.showNotificationIssue(fixture.useNotifications.getState().unresolved.find(issue => issue.id === "saveFailed").key);
+  });
+  await notice.waitFor();
+  await dismiss.click();
+  await reminder.click();
+  const closeDetails = page.getByRole("button", { name: "Close save details", exact: true });
+  await closeDetails.waitFor();
+  await page.clock.runFor(10_000);
+  assert.equal(await closeDetails.count(), 1, "The reminder timer must not close open recovery details");
+  await closeDetails.click();
+  assert.equal(await reminder.count(), 0);
+  await page.clock.resume();
   await page.evaluate(() => {
     const fixture = window.notificationFixture;
     fixture.resolveNotification("saveFailed", "project");

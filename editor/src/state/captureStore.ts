@@ -9,6 +9,11 @@ import { createSessionActions } from "./project/sessionActions";
 import { createTextActions } from "./editing/textActions";
 import type { CaptureState } from "./types";
 import { taskLinksForProject } from "../domain/assistant/taskProjectLink";
+import {
+  appendHistory,
+  committedHistory,
+  HISTORY_LIMIT,
+} from "../domain/project/history";
 
 function projectValues(
   state: CaptureState,
@@ -31,8 +36,7 @@ export const useCapture = create<CaptureState>((set, get) => ({
   edit: (values) =>
     set((state) => ({
       ...projectValues(state, values),
-      past: [...state.past, projectSnapshot(state)].slice(-40),
-      future: [],
+      ...committedHistory(state.past, projectSnapshot(state)),
     })),
   undo: () =>
     set((state) => {
@@ -41,7 +45,10 @@ export const useCapture = create<CaptureState>((set, get) => ({
       return {
         ...restore(state, project),
         past: state.past.slice(0, -1),
-        future: [projectSnapshot(state), ...state.future].slice(0, 40),
+        future: [projectSnapshot(state), ...state.future].slice(
+          0,
+          HISTORY_LIMIT,
+        ),
       };
     }),
   redo: () =>
@@ -50,7 +57,7 @@ export const useCapture = create<CaptureState>((set, get) => ({
       const project = state.future[0];
       return {
         ...restore(state, project),
-        past: [...state.past, projectSnapshot(state)].slice(-40),
+        past: appendHistory(state.past, projectSnapshot(state)),
         future: state.future.slice(1),
       };
     }),

@@ -1,3 +1,4 @@
+import { FORM_VALUE_LIMIT } from "../../../../packages/pvo-sdk/runtime/form-values.js";
 import { useState, type CSSProperties } from "react";
 import { lookStyles } from "../../../../packages/pvo-component-runtime/index.js";
 import { resolveTextTemplate } from "../../../../packages/pvo-sdk/index.js";
@@ -206,7 +207,7 @@ export function ComponentFieldsView({
                 aria-label={field.label}
                 placeholder={field.label}
                 rows={3}
-                maxLength={1024}
+                maxLength={FORM_VALUE_LIMIT}
                 value={formValues[field.name] ?? ""}
                 onChange={(event) =>
                   setFieldValue(field.name, event.target.value)

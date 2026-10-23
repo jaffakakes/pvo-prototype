@@ -2,11 +2,12 @@ import type { PointerEvent, RefObject } from "react";
 import { useEffect, useRef, useState } from "react";
 import { type LayerId } from "../../domain/layers/model";
 import { beginLayerReorderDrag } from "../../state/editing/layerReorderDrag";
-import { dragLayer, timelineRows } from "./geometry";
+import { dragLayerRows, timelineRows, type LayerRowGeometry } from "./geometry";
 
 type Axis = "pending" | "layer" | "time";
 type Gesture = {
   id: LayerId;
+  rows: LayerRowGeometry[];
   order: LayerId[];
   x: number;
   y: number;
@@ -17,7 +18,10 @@ type Gesture = {
   label: boolean;
   transaction: NonNullable<ReturnType<typeof beginLayerReorderDrag>>;
 };
-export function useLayerDrag(timeline: RefObject<HTMLDivElement>) {
+export function useLayerDrag(
+  timeline: RefObject<HTMLDivElement>,
+  measureRows?: () => LayerRowGeometry[],
+) {
   const gesture = useRef<Gesture | null>(null);
   const frame = useRef(0);
   const [active, setActive] = useState<{
@@ -42,7 +46,7 @@ export function useLayerDrag(timeline: RefObject<HTMLDivElement>) {
       host = timeline.current;
     if (!drag || !host || drag.axis !== "layer") return;
     const delta = drag.latestY - drag.y + host.scrollTop - drag.scroll;
-    const layers = dragLayer(drag.order, drag.id, delta);
+    const layers = dragLayerRows(drag.order, drag.id, delta, drag.rows);
     if (!drag.transaction.update(layers)) {
       cancelPreview();
       return false;
@@ -78,14 +82,21 @@ export function useLayerDrag(timeline: RefObject<HTMLDivElement>) {
     const transaction = beginLayerReorderDrag(id);
     if (!transaction) return;
     const order = transaction.order;
+    const rows = measureRows?.() ?? timelineRows(order);
+    const row = rows.find((row) => row.id === id);
+    if (!row) {
+      transaction.cancel();
+      return;
+    }
     gesture.current = {
       id,
+      rows,
       order,
       x: event.clientX,
       y: event.clientY,
       latestY: event.clientY,
       scroll: timeline.current?.scrollTop ?? 0,
-      top: timelineRows(order).find((row) => row.id === id)!.top,
+      top: row.top,
       axis: "pending",
       label,
       transaction,

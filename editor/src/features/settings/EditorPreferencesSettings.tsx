@@ -17,7 +17,7 @@ import {
   useEditorPreferences,
 } from "../../state/preferences/editorPreferences";
 import { Icon } from "../../ui/Icon";
-import styles from "./MoreSettings.module.css";
+import styles from "./EditorPreferencesSettings.module.css";
 
 const modeLabels: Record<ThemeMode, string> = {
   system: "System",

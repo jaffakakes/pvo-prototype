@@ -14,7 +14,7 @@ const { captureExportSnapshot, publicationInput, renderCompletedExport, useExpor
 function project() {
   return { currentSceneId: "main", ratio: "9:16", coverAt: 1.2, quality: "720p", allowedDomains: ["example.com"], scenes: [{
     id: "main", name: "Main", parent: null, clips: [{ id: 1, url: "blob:original", in: 0, out: 2, speed: 1, zoom: 1, mirror: false, color: "#000" }],
-    texts: [{ id: 1, text: "Original", start: 0, end: 2, style: { color: "#fff" } }], components: [], layers: ["video", "text:1"], muted: true, sound: 0,
+    texts: [{ id: 1, text: "Original", start: 0, end: 2, style: { color: "#fff" } }], components: [], layers: ["video", "text:1"], muted: true, music: null,
   }] };
 }
 function adapters(overrides = {}) {

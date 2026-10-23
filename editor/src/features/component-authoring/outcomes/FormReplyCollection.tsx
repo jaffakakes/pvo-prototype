@@ -102,8 +102,8 @@ export function FormReplyCollection({ component, fields }: { component: PvoCompo
         <p>This changes the current edit. Videos already shared with this reply box can still receive answers.</p>
       </div>
       <p className={styles.note}>{accountAvailable
-        ? "Open More → Replies to read them. Replies and boxes are deleted after 180 days. Sign in again if your session expires."
-        : "Open More → Replies to read them. Replies and boxes are deleted after 180 days. Clearing site data loses this browser’s access."}</p>
+        ? "Open Replies from your account menu to read them. Replies and boxes are deleted after 180 days. Sign in again if your session expires."
+        : "Open Replies from your account menu to read them. Replies and boxes are deleted after 180 days. Clearing site data loses this browser’s access."}</p>
     </> : <>
       <div className={styles.card}>
         <strong>Collect replies</strong>

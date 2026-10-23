@@ -1,3 +1,4 @@
+import { FORM_VALUE_LIMIT } from "../../packages/pvo-sdk/runtime/form-values.js";
 import { fontFamily } from "../../packages/pvo-fonts/index.js";
 import { applyComponentAppearance } from "./appearance.js";
 
@@ -223,9 +224,10 @@ export function renderFieldsComponent(root, component, visualUnit) {
       input.required = Boolean(field.required);
       if (input instanceof HTMLTextAreaElement) {
         input.rows = 3;
-        input.maxLength = 1024;
+        input.maxLength = FORM_VALUE_LIMIT;
       }
       if (input instanceof HTMLInputElement) {
+        input.maxLength = FORM_VALUE_LIMIT;
         input.type =
           field.type === "email"
             ? "email"

@@ -1,14 +1,24 @@
-import { parseAnimation, VISUAL_ANIMATION_PROPERTIES } from "../../pvo-animation/index.js";
+import {
+  parseAnimation,
+  VISUAL_ANIMATION_PROPERTIES,
+} from "../../pvo-animation/index.js";
 
 /** Validate numeric animation before any host evaluates it or applies CSS. */
 export function validateManifestAnimation(manifest, errors) {
   const animation = (value, path, properties) => {
     if (value === undefined) return;
-    try { parseAnimation(value, properties); }
-    catch (error) { errors.push(`${path}: ${error.message}`); }
+    try {
+      parseAnimation(value, properties);
+    } catch (error) {
+      errors.push(`${path}: ${error.message}`);
+    }
   };
   for (const [index, component] of (manifest.components || []).entries())
-    animation(component?.restyle_capture?.animation, `components[${index}].restyle_capture.animation`, VISUAL_ANIMATION_PROPERTIES);
+    animation(
+      component?.restyle_capture?.animation,
+      `components[${index}].restyle_capture.animation`,
+      VISUAL_ANIMATION_PROPERTIES,
+    );
   const scenes = manifest.restyle_capture?.scene_layers;
   if (scenes === undefined) return;
   if (!scenes || typeof scenes !== "object" || Array.isArray(scenes)) {
@@ -18,21 +28,74 @@ export function validateManifestAnimation(manifest, errors) {
   for (const [id, layers] of Object.entries(scenes)) {
     const path = `restyle_capture.scene_layers.${id}`;
     if (!layers || typeof layers !== "object" || Array.isArray(layers)) {
-      errors.push(`${path} must be an object.`); continue;
+      errors.push(`${path} must be an object.`);
+      continue;
     }
-    if (!(manifest.scenes || []).some(scene => scene.id === id)) errors.push(`${path} references a missing scene.`);
+    if (!(manifest.scenes || []).some((scene) => scene.id === id))
+      errors.push(`${path} references a missing scene.`);
     for (const key of ["texts", "clips", "audioClips"]) {
       if (layers[key] === undefined) continue;
-      if (!Array.isArray(layers[key])) { errors.push(`${path}.${key} must be an array.`); continue; }
+      if (!Array.isArray(layers[key])) {
+        errors.push(`${path}.${key} must be an array.`);
+        continue;
+      }
       for (const [index, layer] of layers[key].entries()) {
-        animation(layer?.animation, `${path}.${key}[${index}].animation`,
-          key === "texts" ? VISUAL_ANIMATION_PROPERTIES : key === "audioClips" ? ["gain"] : undefined);
-        if (key !== "texts" && layer?.animation !== undefined
-          && (![layer.start, layer.in, layer.out, layer.speed].every(Number.isFinite)
-            || layer.start < 0 || layer.in < 0 || layer.out <= layer.in || layer.speed <= 0))
-          errors.push(`${path}.${key}[${index}] has an invalid animation source clock.`);
+        animation(
+          layer?.animation,
+          `${path}.${key}[${index}].animation`,
+          key === "texts"
+            ? VISUAL_ANIMATION_PROPERTIES
+            : key === "audioClips"
+              ? ["gain"]
+              : undefined,
+        );
+        if (
+          key !== "texts" &&
+          layer?.animation !== undefined &&
+          (![layer.start, layer.in, layer.out, layer.speed].every(
+            Number.isFinite,
+          ) ||
+            layer.start < 0 ||
+            layer.in < 0 ||
+            layer.out <= layer.in ||
+            layer.speed <= 0)
+        )
+          errors.push(
+            `${path}.${key}[${index}] has an invalid animation source clock.`,
+          );
       }
     }
-    animation(layers.musicAnimation, `${path}.musicAnimation`, ["gain"]);
+    if (layers.music !== undefined) {
+      const music = layers.music;
+      if (
+        !music ||
+        typeof music !== "object" ||
+        Array.isArray(music) ||
+        ![music.start, music.duration, music.offset, music.gain].every(
+          Number.isFinite,
+        ) ||
+        music.start < 0 ||
+        music.duration < 0.05 ||
+        music.offset < 0 ||
+        music.gain < 0 ||
+        music.gain > 1 ||
+        !Number.isInteger(music.track) ||
+        music.track < 1 ||
+        music.track > 4
+      )
+        errors.push(`${path}.music has an invalid source or timeline clock.`);
+      else animation(music.animation, `${path}.music.animation`, ["gain"]);
+    }
+    if (
+      layers.timelineOrder !== undefined &&
+      (!Array.isArray(layers.timelineOrder) ||
+        layers.timelineOrder.some(
+          (value) =>
+            typeof value !== "string" ||
+            !/^(?:video|music|audio:\d+|text:\d+|component:.+)$/.test(value),
+        ) ||
+        new Set(layers.timelineOrder).size !== layers.timelineOrder.length)
+    )
+      errors.push(`${path}.timelineOrder must contain unique typed layer IDs.`);
   }
 }

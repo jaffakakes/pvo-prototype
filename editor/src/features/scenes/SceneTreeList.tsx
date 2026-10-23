@@ -1,13 +1,7 @@
-import {
-  useEffect,
-  useRef,
-  type CSSProperties,
-  type PointerEvent,
-} from "react";
+import { useState, type CSSProperties } from "react";
 import type { SceneNode } from "../../domain/scenes/graph";
 import { Icon } from "../../ui/Icon";
-import { fmt } from "../../ui/formatTime";
-import { ScenePoster } from "./ScenePoster";
+import { SceneTreeRow } from "./SceneTreeRow";
 import styles from "./ScenesPanel.module.css";
 
 type Props = {
@@ -15,7 +9,7 @@ type Props = {
   currentId: string;
   onOpen(id: string): void;
   onAdd(): void;
-  onManage(id: string): void;
+  onAction(id: string, action: "rename" | "delete"): void;
 };
 
 export function SceneTreeList({
@@ -23,12 +17,9 @@ export function SceneTreeList({
   currentId,
   onOpen,
   onAdd,
-  onManage,
+  onAction,
 }: Props) {
-  const hold = useRef<ReturnType<typeof setTimeout>>();
-  const pressed = useRef<{ x: number; y: number; fired: boolean }>();
-  const cancelHold = () => clearTimeout(hold.current);
-  useEffect(() => cancelHold, []);
+  const [revealedId, setRevealedId] = useState<string | null>(null);
   const current = nodes.find((node) => node.scene.id === currentId)!;
   const rows: (SceneNode | null)[] = [...nodes];
   const currentIndex = rows.indexOf(current);
@@ -41,15 +32,6 @@ export function SceneTreeList({
       node ? [[node.scene.id, index] as const] : [],
     ),
   );
-  const startHold = (event: PointerEvent, id: string) => {
-    cancelHold();
-    pressed.current = { x: event.clientX, y: event.clientY, fired: false };
-    if (event.pointerType !== "mouse" && id !== "main")
-      hold.current = setTimeout(() => {
-        if (pressed.current) pressed.current.fired = true;
-        onManage(id);
-      }, 550);
-  };
   return (
     <div
       className={styles.rows}
@@ -57,7 +39,9 @@ export function SceneTreeList({
         if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key))
           return;
         const buttons = [
-          ...event.currentTarget.querySelectorAll<HTMLButtonElement>("button"),
+          ...event.currentTarget.querySelectorAll<HTMLButtonElement>(
+            "[data-scene-id], [data-add-scene]",
+          ),
         ];
         const index = buttons.indexOf(
           document.activeElement as HTMLButtonElement,
@@ -91,7 +75,9 @@ export function SceneTreeList({
         if (!node)
           return (
             <button
+              type="button"
               key="add"
+              data-add-scene
               className={styles.addRow}
               style={{ marginLeft: (current.depth + 1) * 18 }}
               onClick={onAdd}
@@ -101,69 +87,22 @@ export function SceneTreeList({
               Add a branch to {current.scene.name}
             </button>
           );
-        const active = node.scene.id === currentId;
-        const status = active
-          ? "Currently editing"
-          : !node.scene.clips.length
-            ? "No content yet"
-            : node.children.length
-              ? `${node.children.length} ${node.children.length === 1 ? "branch" : "branches"}`
-              : "";
-        const route = node.reachedBy[0];
-        const choice = route
-          ? `Choice: ${route.label}${node.reachedBy.length > 1 ? ` +${node.reachedBy.length - 1}` : ""}`
-          : "";
         return (
-          <button
+          <div
             key={node.scene.id}
-            className={styles.node}
-            data-scene-id={node.scene.id}
+            className={styles.sceneRow}
             style={{ marginLeft: node.depth * 18 }}
-            aria-current={active ? "true" : undefined}
-            aria-label={`Open ${node.scene.name}, level ${node.depth + 1}, ${status || fmt(node.duration)}${choice ? `, reached by ${choice}` : ""}`}
-            onPointerDown={(event) => startHold(event, node.scene.id)}
-            onPointerUp={cancelHold}
-            onPointerCancel={cancelHold}
-            onPointerMove={(event) => {
-              if (
-                pressed.current &&
-                Math.hypot(
-                  event.clientX - pressed.current.x,
-                  event.clientY - pressed.current.y,
-                ) > 8
-              )
-                cancelHold();
-            }}
-            onContextMenu={(event) => {
-              if (node.scene.id !== "main") {
-                event.preventDefault();
-                cancelHold();
-                onManage(node.scene.id);
-              }
-            }}
-            onClick={() => {
-              if (!pressed.current?.fired) onOpen(node.scene.id);
-              pressed.current = undefined;
-            }}
           >
             {connector}
-            <ScenePoster scene={node.scene} />
-            <span className={styles.name}>{node.scene.name}</span>
-            {!!node.scene.clips.length && !active && (
-              <span className={styles.duration}>{fmt(node.duration)}</span>
-            )}
-            {choice && (
-              <span className={styles.pill} title={choice}>
-                {choice}
-              </span>
-            )}
-            {status && (
-              <span className={styles.status}>
-                {active && <i />}
-                {status}
-              </span>
-            )}
-          </button>
+            <SceneTreeRow
+              node={node}
+              active={node.scene.id === currentId}
+              revealed={revealedId === node.scene.id}
+              onReveal={(open) => setRevealedId(open ? node.scene.id : null)}
+              onOpen={() => onOpen(node.scene.id)}
+              onAction={(action) => onAction(node.scene.id, action)}
+            />
+          </div>
         );
       })}
     </div>

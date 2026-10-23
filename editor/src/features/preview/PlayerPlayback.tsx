@@ -13,10 +13,12 @@ export function PlayerPlayback({
   topZ,
   videoZ,
   compact,
+  hidePlay = false,
 }: {
   topZ: number;
   videoZ: number;
   compact: boolean;
+  hidePlay?: boolean;
 }) {
   const playing = useCapture((state) => state.playing);
   const time = useCapture((state) => state.t);
@@ -34,31 +36,33 @@ export function PlayerPlayback({
   }, [playing]);
   return (
     <div className={styles.overlay} data-player-playback data-compact={compact}>
-      <button
-        type="button"
-        className={`${cx("playBtn")} ${styles.play}`}
-        style={{ zIndex: videoZ }}
-        onClick={() => {
-          const state = useCapture.getState();
-          if (state.selComp && !state.tryMode)
-            state.patch({
-              selComp: null,
-              ...(componentLayerTool(state.sheet) ? { sheet: null } : {}),
-            });
-          else togglePlayback();
-        }}
-        aria-label={playing ? "Pause" : "Play"}
-        disabled={holding || picking || duration <= 0}
-      >
-        <span
-          className={styles.glyph}
-          data-playback-feedback
-          data-visible={feedbackVisible}
-          aria-hidden="true"
+      {!hidePlay && (
+        <button
+          type="button"
+          className={`${cx("playBtn")} ${styles.play}`}
+          style={{ zIndex: videoZ }}
+          onClick={() => {
+            const state = useCapture.getState();
+            if (state.selComp && !state.tryMode)
+              state.patch({
+                selComp: null,
+                ...(componentLayerTool(state.sheet) ? { sheet: null } : {}),
+              });
+            else togglePlayback();
+          }}
+          aria-label={playing ? "Pause" : "Play"}
+          disabled={holding || picking || duration <= 0}
         >
-          <Icon name={playing ? "pause" : "play"} size={32} />
-        </span>
-      </button>
+          <span
+            className={styles.glyph}
+            data-playback-feedback
+            data-visible={feedbackVisible}
+            aria-hidden="true"
+          >
+            <Icon name={playing ? "pause" : "play"} size={32} />
+          </span>
+        </button>
+      )}
       <div
         className={`${cx("transportTime")} ${styles.time}`}
         style={{ zIndex: topZ }}

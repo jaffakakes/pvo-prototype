@@ -6,7 +6,7 @@
   font: 700 12px var(--f-ui);
 }
 .componentTiming strong {
-  color: var(--highlight);
+  color: var(--strong);
   font: 800 14px var(--f-ui);
 }
 .componentTiming > button {
@@ -91,8 +91,8 @@
   cursor: pointer;
 }
 .outcomeRow[data-on="true"] {
-  border: 2.5px solid var(--pale);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--highlight) 22%, transparent);
+  border: 2.5px solid var(--strong);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--strong) 22%, transparent);
 }
 .outcomeRow > i {
   width: 22px;
@@ -104,7 +104,7 @@
   border-radius: 50%;
 }
 .outcomeRow[data-on="true"] > i {
-  background: var(--accent);
+  background: var(--strong);
   color: var(--button-primary-text);
   border: 2px solid var(--outline);
 }
@@ -140,7 +140,7 @@
   border-radius: 50%;
 }
 .outcomeRow[data-on="true"] .outcomeMain > i {
-  background: var(--accent);
+  background: var(--strong);
   color: var(--button-primary-text);
   border: 2px solid var(--outline);
 }

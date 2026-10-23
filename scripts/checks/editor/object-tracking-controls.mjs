@@ -1,11 +1,12 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { mkdir, readFile } from "node:fs/promises";
-import { chromium } from "playwright-core";
+
 
 // This checks manual authoring with real video extraction and a deterministic
 // measurement fixture. SAM model quality is assessed separately on the GPU.
 const video = await readFile(new URL("../../../share/assets/preview.mp4", import.meta.url));
-const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true });
+const browser = await launchBrowser({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 960 }, serviceWorkers: "block" });
 const errors = [], requests = [];
 let pending = null, hold = false, available = true, statusRequests = 0;
@@ -43,8 +44,8 @@ const applied = () => page.evaluate(() => window.trackingControls.useCapture.get
 const history = () => page.evaluate(() => window.trackingControls.useCapture.getState().past.length);
 const metadata = () => page.evaluate(() => window.trackingControls.useCapture.getState().texts[0].animationTracking);
 const picker = page.locator("[data-tracking-point-picker]");
-const choose = async (mobile = false) => {
-  await page.getByRole("button", { name: mobile ? "✦ Follow…" : "✦ Follow something on the video…", exact: true }).click();
+const choose = async () => {
+  await page.getByRole("button", { name: "✦ Follow something on the video…", exact: true }).click();
   await picker.waitFor();
   const box = await picker.boundingBox();
   await picker.click({ position: { x: box.width * .25, y: box.height * .4 } });
@@ -103,20 +104,20 @@ try {
   assert.equal(await applied(), undefined, "A cancelled response cannot apply later");
 
   hold = false;
-  await page.setViewportSize({ width: 430, height: 932 });
-  await page.evaluate(() => window.trackingControls.useCapture.getState().patch({ sheet: "animation", t: 0 }));
-  await page.getByRole("button", { name: "✦ Follow…", exact: true }).click();
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.evaluate(() => window.trackingControls.useCapture.getState().patch({ sheet: null, t: 0 }));
+  await page.getByRole("button", { name: "✦ Follow something on the video…", exact: true }).click();
   await picker.waitFor();
   await mkdir("/tmp/pvo-keyframe-review", { recursive: true });
-  await page.screenshot({ path: "/tmp/pvo-keyframe-review/tracking-mobile-pick.png" });
+  await page.screenshot({ path: "/tmp/pvo-keyframe-review/tracking-keyboard-pick.png" });
   await picker.press("ArrowRight"); await picker.press("Enter");
   await page.locator("[data-tracked-keyframes]").waitFor();
   const latest = requests.at(-1);
   assert(Math.abs(latest.target.x - .52) < .0001 && latest.target.y === .5, "Keyboard picking uses normalized canvas coordinates");
-  await page.screenshot({ path: "/tmp/pvo-keyframe-review/tracking-mobile.png" });
+  await page.screenshot({ path: "/tmp/pvo-keyframe-review/tracking-keyboard.png" });
   const beforeUnmount = await history();
   hold = true;
-  await page.getByRole("button", { name: "Re-track object", exact: true }).click(); await waitPending();
+  await page.getByRole("button", { name: "Re-track", exact: true }).click(); await waitPending();
   available = false;
   const beforeUnavailableCheck = statusRequests;
   await page.evaluate(() => window.trackingControls.useCapture.getState().patch({ selText: null, sel: 0 }));
@@ -124,17 +125,17 @@ try {
   await release();
   assert.equal(await history(), beforeUnmount, "Switching selection cancels the owned job");
   assert.equal(await page.evaluate(() => window.trackingControls.useCapture.getState().clips[0].animation), undefined);
-  assert.equal(await page.getByRole("button", { name: "✦ Follow…", exact: true }).count(), 0,
+  assert.equal(await page.getByRole("button", { name: "✦ Follow something on the video…", exact: true }).count(), 0,
     "Follow stays hidden when status reports object tracking unavailable");
   const beforeTrackedUnavailableCheck = statusRequests;
   await page.evaluate(() => window.trackingControls.useCapture.getState().patch({ selText: 7, sel: -1 }));
   await waitStatusRequest(beforeTrackedUnavailableCheck);
-  assert.equal(await page.getByRole("button", { name: "Re-track object", exact: true }).isDisabled(), true,
+  assert.equal(await page.getByRole("button", { name: "Re-track", exact: true }).isDisabled(), true,
     "Existing tracks cannot start a guaranteed-fail provider request");
   assert.equal(await page.getByRole("button", { name: "A key every 0.5 seconds", exact: true }).isEnabled(), true,
     "Local tracking edits remain available without the provider capability");
   assert.deepEqual(errors, []);
   console.log(JSON.stringify({ passed: true, requests: requests.length, actualFrames: requests[0].frames.length,
-    checks: ["desktop point picking", "real JPEG extraction", "readable key density", "cached refit", "detach/Undo", "stale result rejection", "cancellation", "mobile keyboard picking", "unmount cancellation", "unavailable capability gating"] }));
+    checks: ["desktop point picking", "real JPEG extraction", "readable key density", "cached refit", "detach/Undo", "stale result rejection", "cancellation", "desktop keyboard picking", "unmount cancellation", "unavailable capability gating"] }));
 } catch (error) { console.error({ errors, body: (await page.locator("body").innerText()).slice(0, 5000) }); throw error; }
 finally { if (pending) await release(); await browser.close(); }

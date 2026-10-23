@@ -11,7 +11,7 @@ const { runNativeTask, AssistantServiceError } = await import("data:text/javascr
 
 function fixture(trace) {
   const project = { currentSceneId: "main", ratio: "9:16", allowedDomains: [], scenes: [
-    { id: "main", name: "Private project title", parent: null, muted: false, sound: -1,
+    { id: "main", name: "Private project title", parent: null, muted: false, music: null,
       clips: [], texts: [], components: [], audioClips: [] },
   ] };
   return {

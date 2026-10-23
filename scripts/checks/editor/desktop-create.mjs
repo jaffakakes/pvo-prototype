@@ -1,16 +1,16 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
+
 
 const editorUrl = process.env.EDITOR_URL || process.env.RESTYLE_EDITOR_URL || "http://127.0.0.1:5173/";
 const videoFile = fileURLToPath(new URL("../../../share/assets/preview.mp4", import.meta.url));
 const videoBytes = await readFile(videoFile);
 const screenshots = await mkdtemp(join(tmpdir(), "restyle-create-project-"));
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+const browser = await launchBrowser({
   headless: true,
   args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"],
 });
@@ -164,7 +164,7 @@ function checkpoint(id, components = [], assetIds = []) {
     projectName: id === "legacy-project" ? "Legacy edit" : "Keep me",
     savedAt: Date.now(),
     project: {
-      scenes: [{ id: "main", name: "Main", parent: null, clips: [], texts: [], components, muted: false, sound: 0 }],
+      scenes: [{ id: "main", name: "Main", parent: null, clips: [], texts: [], components, muted: false, music: null }],
       currentSceneId: "main", ratio: "9:16", coverAt: 0, allowedDomains: [],
     },
     past: [], future: [], assetIds,

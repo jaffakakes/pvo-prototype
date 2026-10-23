@@ -1,13 +1,7 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
-import { chromium } from "playwright-core";
 
-const chromePath =
-  process.env.CHROME_PATH ||
-  (process.platform === "darwin"
-    ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-    : "C:/Program Files/Google/Chrome/Application/chrome.exe");
-const browser = await chromium.launch({
-  executablePath: chromePath,
+const browser = await launchBrowser({
   headless: true,
 });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -563,7 +557,7 @@ try {
       texts: [],
       components: [],
       muted: false,
-      sound: 0,
+      music: null,
       layers: ["video"],
     };
     useCapture.getState().patch({

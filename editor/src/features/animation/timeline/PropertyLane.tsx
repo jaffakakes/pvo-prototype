@@ -7,7 +7,7 @@ import {
 import type { Scene } from "../../../domain/project/model";
 import { useAnimationSelection } from "../../../state/animation/selection";
 import { EasingGlyph } from "../EasingChips";
-import { GROUP_LABELS, formatKeyTime, formatKeyValue } from "../presentation";
+import { GROUP_LABELS, formatKeyTime, formatKeyValue, animationTrackColor } from "../presentation";
 import { sameAnimationTarget, type AnimationLane } from "./model";
 import { useKeyframeDrag } from "./useKeyframeDrag";
 import styles from "./PropertyLane.module.css";
@@ -33,7 +33,7 @@ export function PropertyLaneLabel({
   return (
     <div
       className={styles.label}
-      style={{ ...style, "--key-color": layer.color } as CSSProperties}
+      style={{ ...style, "--key-color": animationTrackColor(lane.target) } as CSSProperties}
       data-single={lane.single}
       data-keyframe-lane-label={lane.single ? "all" : lane.groups[0]}
     >
@@ -98,7 +98,7 @@ export function PropertyLane({
           {
             left: layer.start * zoom,
             width: (layer.end - layer.start) * zoom,
-            "--key-color": layer.color,
+            "--key-color": animationTrackColor(lane.target),
           } as CSSProperties
         }
       >

@@ -8,8 +8,8 @@ const mentionsPunchline = step => assert.match(answer(step), /(?:want\s+)?proble
 function singleClipFixture(media, speed = 1) {
   return {
     currentSceneId: "main", ratio: "9:16", allowedDomains: [],
-    scenes: [{ id: "main", name: "Meme compilation", parent: null, muted: false, sound: 0,
-      musicGain: 1, clipGain: 1, texts: [], components: [], audioClips: [],
+    scenes: [{ id: "main", name: "Meme compilation", parent: null, muted: false, music: null,
+      clipGain: 1, texts: [], components: [], audioClips: [],
       clips: [{ id: 101, url: media.url, color: "#222222", srcDur: media.duration,
         in: 0, out: media.duration, speed, zoom: 1, mirror: false,
         width: media.width, height: media.height, fit: "contain" }],

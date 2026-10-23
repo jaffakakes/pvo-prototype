@@ -27,8 +27,8 @@
   cursor: pointer;
 }
 .layerName[data-sel="true"] {
-  color: var(--pale);
-  border-left: 3px solid var(--pale);
+  color: var(--strong);
+  border-left: 3px solid var(--strong);
 }
 .layerName,
 .tlClip {
@@ -49,9 +49,9 @@
   left: 67px;
   right: 4px;
   pointer-events: none;
-  border: 1px dashed var(--pale);
+  border: 1px dashed var(--strong);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--pale) 8%, transparent);
+  background: color-mix(in srgb, var(--strong) 8%, transparent);
 }
 .textBar {
   touch-action: none;
@@ -75,8 +75,8 @@
 }
 .textBar[data-sel="true"] {
   box-shadow:
-    inset 0 0 0 2px var(--pale),
-    0 0 0 2px color-mix(in srgb, var(--pale) 30%, transparent);
+    inset 0 0 0 2.5px var(--strong),
+    3px 3px 0 var(--strong);
   z-index: 2;
 }
 .textBar[data-sel="true"] .compHandle {

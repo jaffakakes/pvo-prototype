@@ -107,7 +107,7 @@
   background: transparent;
   color: var(--text);
   font: 600 16px var(--f-ui);
-  caret-color: var(--accent);
+  caret-color: var(--strong);
 }
 .browser .search input:focus {
   outline: none;
@@ -118,7 +118,7 @@
   opacity: 1;
 }
 .search:focus-within {
-  border-color: var(--accent);
+  border-color: var(--strong);
 }
 .list {
   flex: 1 1 0;
@@ -205,14 +205,14 @@
   font: 600 12px var(--f-ui);
 }
 .row[data-preview="true"] strong {
-  color: var(--accent);
+  color: var(--strong);
 }
 .inUse {
   display: flex;
   align-items: center;
   flex: none;
   gap: 5px;
-  color: var(--accent);
+  color: var(--strong);
   font: 800 11px var(--f-ui);
 }
 .use {
@@ -295,7 +295,7 @@
 }
 .browser button:focus-visible,
 .list:focus-visible {
-  outline: 2px solid var(--highlight);
+  outline: 2px solid var(--strong);
   outline-offset: -3px;
 }
 .preview button:focus-visible {

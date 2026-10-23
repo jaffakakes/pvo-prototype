@@ -16,7 +16,7 @@ const bundle = buildSync({ stdin: { resolveDir: process.cwd(), contents: `
 const api = await import(`data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString("base64")}`);
 const key = (time, value, easing = "linear") => ({ time, value, easing });
 const sample = (time, x, y = 0.5, visible = true) => ({ time, x, y, visible, width: 0.2, height: 0.2, score: visible ? 0.9 : 0 });
-function scene() { return { id: "main", name: "Main", parent: null, muted: false, sound: 0,
+function scene() { return { id: "main", name: "Main", parent: null, muted: false, music: null,
   clips: [{ id: 1, url: "blob:source", color: "#000", srcDur: 30, in: 4, out: 24, speed: 2,
     width: 320, height: 240, fit: "cover", zoom: 1, mirror: false }], audioClips: [], components: [],
   texts: [{ id: 2, text: "Label", color: 2, start: 1, end: 9, x: 50, y: 50 }],

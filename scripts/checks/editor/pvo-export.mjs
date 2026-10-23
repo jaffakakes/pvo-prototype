@@ -1,11 +1,11 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
-import { chromium } from "playwright-core";
+
 import { readPvoProject } from "../../../packages/pvo-sdk/index.js";
 
 // Run against `npm run dev:editor`; a demo clip keeps this check independent
 // of camera hardware while still exercising the real canvas/media exporter.
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+const browser = await launchBrowser({
   headless: true,
   args: ["--no-sandbox"],
 });

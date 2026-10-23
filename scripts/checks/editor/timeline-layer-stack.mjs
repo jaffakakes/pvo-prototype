@@ -1,17 +1,13 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
-import { chromium } from "playwright-core";
+
 
 const editorUrl =
   process.env.EDITOR_URL ||
   process.env.RESTYLE_EDITOR_URL ||
   "http://127.0.0.1:5173/";
-const chromePath =
-  process.env.CHROME_PATH ||
-  (process.platform === "darwin"
-    ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-    : "C:/Program Files/Google/Chrome/Application/chrome.exe");
-const browser = await chromium.launch({
-  executablePath: chromePath,
+
+const browser = await launchBrowser({
   headless: true,
   args: ["--no-sandbox"],
 });
@@ -58,7 +54,7 @@ async function seedMobileFixture() {
       texts: [],
       components: [],
       muted: false,
-      sound: 0,
+      music: null,
       layers: ["video"],
     };
     useCapture.getState().patch({

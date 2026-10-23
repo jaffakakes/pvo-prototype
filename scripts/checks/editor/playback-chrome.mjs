@@ -1,7 +1,8 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import { finishTextEntry } from "../helpers/editor-text.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
+
 import { createSheetDockChecks } from "../helpers/editor-sheet-dock.mjs";
 
 const editorUrl =
@@ -11,10 +12,7 @@ const editorUrl =
 const videoFile = fileURLToPath(
   new URL("../../../share/assets/preview.mp4", import.meta.url),
 );
-const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROME_PATH ||
-    "C:/Program Files/Google/Chrome/Application/chrome.exe",
+const browser = await launchBrowser({
   headless: true,
   args: ["--no-sandbox"],
 });

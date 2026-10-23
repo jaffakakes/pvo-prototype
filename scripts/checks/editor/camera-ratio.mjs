@@ -1,5 +1,6 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import { openExportDialog } from "../helpers/editor-export.mjs";
-import { chromium } from "playwright-core";
+
 import { resolve } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -9,7 +10,7 @@ const cases = [
   { ratio: "4:5", width: 720, height: 900, fillsPortrait: true },
   { ratio: "16:9", width: 1280, height: 720, fillsPortrait: false },
 ];
-const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe", headless: true, args: ["--no-sandbox", "--use-fake-device-for-media-stream"] });
+const browser = await launchBrowser({ headless: true, args: ["--no-sandbox", "--use-fake-device-for-media-stream"] });
 try {
   for (const expected of cases) {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, permissions: ["camera", "microphone"], acceptDownloads: true });

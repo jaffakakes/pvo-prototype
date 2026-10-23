@@ -21,7 +21,7 @@ const source = {
   logic: 'on submit { continue(); }',
 };
 const project = () => ({ currentSceneId: "main", ratio: "9:16", allowedDomains: [], scenes: [{
-  id: "main", name: "Main", parent: null, muted: false, sound: 0, texts: [], components: [], audioClips: [],
+  id: "main", name: "Main", parent: null, muted: false, music: null, texts: [], components: [], audioClips: [],
   clips: [{ id: 10, url: "blob:private-video", srcDur: 6, in: 0, out: 6, speed: 1, zoom: 1,
     mirror: false, fit: "contain", color: "#000000", width: 720, height: 1280 }],
 }] });

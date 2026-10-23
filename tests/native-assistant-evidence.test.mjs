@@ -10,7 +10,7 @@ const api = await import(`data:text/javascript;base64,${Buffer.from(bundled.outp
 function project() {
   const clip = { id: 1, url: "blob:http://localhost/private-footage", srcDur: 12, in: 2, out: 10,
     speed: 2, zoom: 1, mirror: false, width: 320, height: 240, fit: "contain", color: "#000" };
-  const scene = { id: "main", name: "Main", parent: null, muted: false, sound: 0,
+  const scene = { id: "main", name: "Main", parent: null, muted: false, music: null,
     clips: [clip, { ...clip, id: 2, url: "blob:http://localhost/second-private-footage" }],
     audioClips: [{ id: 3, name: "Voiceover", url: "blob:http://localhost/private-voiceover",
       srcDur: 15, in: 1, out: 9, speed: 1, start: 2, muted: false }], texts: [], components: [] };
@@ -31,7 +31,7 @@ test("speech evidence survives overlay, framing and editor-context changes while
     value => { value.scenes[0].clips[0].color = "#f00"; },
     value => { value.scenes[0].name = "Renamed"; },
     value => { value.scenes[0].audioClips[0].name = "Renamed voiceover"; },
-    value => { value.scenes[0].musicGain = 0.4; value.scenes[0].sound = 2; },
+    value => { value.scenes[0].music = { track: 2, start: 0, duration: 4, offset: 0, gain: 0.4 }; },
     value => { value.currentSceneId = "another-scene"; },
     value => { value.allowedDomains.push("example.com"); },
   ]) {

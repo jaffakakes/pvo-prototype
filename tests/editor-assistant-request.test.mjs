@@ -51,7 +51,7 @@ function fixture(responses = [edit, done]) {
         name: "Main",
         parent: null,
         muted: false,
-        sound: -1,
+        music: null,
         clips: [],
         texts: [],
         components: [],

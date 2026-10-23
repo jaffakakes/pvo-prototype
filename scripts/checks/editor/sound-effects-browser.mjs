@@ -1,14 +1,12 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { mkdir } from "node:fs/promises";
-import { chromium } from "playwright-core";
+
 import { createSheetDockChecks } from "../helpers/editor-sheet-dock.mjs";
 
 const url = process.env.EDITOR_URL || "http://127.0.0.1:5173/";
-const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROME_PATH ||
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+const browser = await launchBrowser({
   headless: true,
 });
 const context = await browser.newContext({
@@ -36,7 +34,7 @@ const current = () =>
       await import("/src/state/captureStore.ts")
     ).useCapture.getState();
     return {
-      sound: state.sound,
+      sound: state.music?.track ?? 0,
       audio: state.audioClips,
       past: state.past.length,
       t: state.t,
@@ -81,9 +79,12 @@ try {
     );
   await page.getByRole("button", { name: "Open editor", exact: true }).click();
   await page.evaluate(async () => {
-    (await import("/src/state/captureStore.ts")).useCapture
-      .getState()
-      .patch({ sound: 2, t: 2.5, past: [], future: [] });
+    (await import("/src/state/captureStore.ts")).useCapture.getState().patch({
+      music: { track: 2, start: 0, duration: 4, offset: 0, gain: 1 },
+      t: 2.5,
+      past: [],
+      future: [],
+    });
     (await import("/src/state/preferences/soundLibrary.ts")).toggleSavedSound(
       "Night Drive",
     );

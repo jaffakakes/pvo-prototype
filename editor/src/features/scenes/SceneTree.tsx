@@ -6,10 +6,11 @@ import {
   saveScenesView,
   type ScenesView,
 } from "../../infrastructure/preferences/scenesView";
-import { useCapture } from "../../state/captureStore";
+import { openComponentDesign } from "../../state/components/componentLayerCommands";
 import { createSceneBranch } from "../../state/scenes/createSceneBranch";
 import { SceneTreeList } from "./SceneTreeList";
 import { SceneMap } from "./SceneMap";
+import { SceneActionDialog } from "./SceneActionDialog";
 import styles from "./ScenesPanel.module.css";
 
 type Props = {
@@ -29,6 +30,10 @@ export function SceneTree({
 }: Props) {
   const viewRef = useRef<HTMLButtonElement>(null);
   const [view, setView] = useState<ScenesView>(readScenesView);
+  const [action, setAction] = useState<{
+    id: string;
+    kind: "rename" | "delete";
+  } | null>(null);
   const nodes = useMemo(() => sceneGraph(scenes), [scenes]);
   useEffect(() => {
     viewRef.current?.focus({ preventScroll: true });
@@ -83,6 +88,11 @@ export function SceneTree({
             </button>
           ))}
         </div>
+        {view === "tree" && (
+          <span className={styles.actionHint}>
+            Slide left to rename or delete
+          </span>
+        )}
       </header>
       {view === "tree" ? (
         <SceneTreeList
@@ -90,10 +100,7 @@ export function SceneTree({
           currentId={currentSceneId}
           onOpen={onSelect}
           onAdd={add}
-          onManage={(id) => {
-            onSelect(id);
-            useCapture.getState().patch({ sheet: "more", playing: false });
-          }}
+          onAction={(id, kind) => setAction({ id, kind })}
         />
       ) : (
         <SceneMap
@@ -107,10 +114,16 @@ export function SceneTree({
             );
             if (!source) return;
             onSelect(source.id);
-            useCapture
-              .getState()
-              .patch({ selComp: id, sheet: "component", playing: false });
+            openComponentDesign(id);
           }}
+        />
+      )}
+      {action && (
+        <SceneActionDialog
+          key={`${action.id}:${action.kind}`}
+          sceneId={action.id}
+          action={action.kind}
+          onClose={() => setAction(null)}
         />
       )}
     </section>

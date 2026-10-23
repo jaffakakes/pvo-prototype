@@ -1,0 +1,84 @@
+.guides {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  pointer-events: none;
+  cursor: grab;
+  outline-offset: -4px;
+}
+.guides:active {
+  cursor: grabbing;
+}
+.guides:focus-visible {
+  outline: 3px solid var(--strong);
+}
+.frame {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.grid {
+  position: absolute;
+  inset: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background-image:
+    linear-gradient(
+      to right,
+      transparent calc(100% - 1px),
+      rgba(255, 255, 255, 0.55) 0
+    ),
+    linear-gradient(
+      to bottom,
+      transparent calc(100% - 1px),
+      rgba(255, 255, 255, 0.55) 0
+    );
+  background-size:
+    calc(100% / 3) 100%,
+    100% calc(100% / 3);
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6));
+  pointer-events: none;
+}
+.corner {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  pointer-events: auto;
+  cursor: nwse-resize;
+}
+.corner::after {
+  content: "";
+  position: absolute;
+  width: 19px;
+  height: 19px;
+  border: solid white;
+  border-width: 4px 0 0 4px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.65));
+}
+.corner[data-crop-handle="top-left"] {
+  top: 0;
+  left: 0;
+}
+.corner[data-crop-handle="top-right"] {
+  top: 0;
+  right: 0;
+  transform: rotate(90deg);
+  cursor: nesw-resize;
+}
+.corner[data-crop-handle="bottom-left"] {
+  bottom: 0;
+  left: 0;
+  transform: rotate(-90deg);
+  cursor: nesw-resize;
+}
+.corner[data-crop-handle="bottom-right"] {
+  bottom: 0;
+  right: 0;
+  transform: rotate(180deg);
+}
+.corner:focus-visible {
+  outline: 3px solid var(--strong);
+  outline-offset: -4px;
+}
+.guides[data-compact="true"] .corner {
+  pointer-events: none;
+}

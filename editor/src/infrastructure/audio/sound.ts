@@ -21,29 +21,51 @@ export function soundBuffer(context: AudioContext, track: number) {
     const phase = t * 2 - beat;
     const frequency = notes[beat % notes.length];
     const envelope = Math.exp(-phase * 3.5);
-    const bass = Math.sin(2 * Math.PI * frequency * .5 * t) * .15 * envelope;
-    const chord = Math.sin(2 * Math.PI * frequency * t) * .065 * envelope;
-    const kickPhase = t % .5;
-    const kick = Math.sin(2 * Math.PI * (72 - 45 * kickPhase) * kickPhase) * .16 * Math.exp(-kickPhase * 23);
-    const hat = (Math.sin(i * 17.39) * Math.sin(i * 3.71)) * .025 * Math.exp(-(t % .25) * 70);
+    const bass = Math.sin(2 * Math.PI * frequency * 0.5 * t) * 0.15 * envelope;
+    const chord = Math.sin(2 * Math.PI * frequency * t) * 0.065 * envelope;
+    const kickPhase = t % 0.5;
+    const kick =
+      Math.sin(2 * Math.PI * (72 - 45 * kickPhase) * kickPhase) *
+      0.16 *
+      Math.exp(-kickPhase * 23);
+    const hat =
+      Math.sin(i * 17.39) *
+      Math.sin(i * 3.71) *
+      0.025 *
+      Math.exp(-(t % 0.25) * 70);
     data[i] = bass + chord + kick + hat;
   }
   return buffer;
 }
-export function startSound(context: AudioContext, track: number, destination: AudioNode, volume = 1, offset = 0) {
+export function startSound(
+  context: AudioContext,
+  track: number,
+  destination: AudioNode,
+  volume = 1,
+  offset = 0,
+  when = 0,
+  duration?: number,
+) {
   const source = context.createBufferSource();
   source.buffer = soundBuffer(context, track);
   source.loop = true;
   const gain = context.createGain();
   gain.gain.value = audioGain(volume);
   source.connect(gain).connect(destination);
-  source.onended = () => { source.disconnect(); gain.disconnect(); };
-  source.start(0, offset % source.buffer.duration);
+  source.onended = () => {
+    source.disconnect();
+    gain.disconnect();
+  };
+  source.start(
+    when,
+    ((offset % source.buffer.duration) + source.buffer.duration) %
+      source.buffer.duration,
+    duration,
+  );
   return source;
 }
 export function previewSound(track: number) {
-  if (!track)
-    return () => {};
+  if (!track) return () => {};
   const context = new AudioContext();
   const source = startSound(context, track, context.destination);
   let closed = false;

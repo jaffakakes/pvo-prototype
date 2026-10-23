@@ -17,9 +17,12 @@ export interface AssistantThreadProps extends AssistantExchangeActions {
   variant: "desktop" | "phone";
   items: readonly AssistantExchange[];
   savedTask?: ReactNode;
-  changeStrip?: ReactNode;
+  timeline?: ReactNode;
   attachments?: ReactNode;
+  orb?: ReactNode;
+  targetLabel?: string;
   collapsed: boolean;
+  keyboardOpen?: boolean;
   draft: string;
   composeEnabled?: boolean;
   autoFocus?: boolean;
@@ -33,9 +36,12 @@ export function AssistantThread({
   variant,
   items,
   savedTask,
-  changeStrip,
+  timeline,
   attachments,
+  orb,
+  targetLabel,
   collapsed,
+  keyboardOpen = false,
   draft,
   composeEnabled = false,
   autoFocus = false,
@@ -58,6 +64,7 @@ export function AssistantThread({
   const input = useRef<HTMLTextAreaElement>(null);
   const list = useRef<HTMLOListElement>(null);
   const followLatest = useRef(true);
+  const transcriptScroll = useRef(0);
   const touch = useRef<{ x: number; y: number } | null>(null);
   const phone = variant === "phone";
   const earlierCount = Math.max(0, items.length - 1);
@@ -65,9 +72,11 @@ export function AssistantThread({
 
   useLayoutEffect(() => {
     const element = list.current;
-    if (element && followLatest.current)
-      element.scrollTop = element.scrollHeight;
-  }, [items, collapsed]);
+    if (!element || keyboardOpen) return;
+    element.scrollTop = followLatest.current
+      ? element.scrollHeight
+      : transcriptScroll.current;
+  }, [items, collapsed, keyboardOpen]);
 
   useEffect(() => {
     if (autoFocus && composeEnabled)
@@ -80,6 +89,7 @@ export function AssistantThread({
       data-variant={variant}
       data-assistant-thread
       data-collapsed={!phone && collapsed}
+      data-keyboard={phone && keyboardOpen ? "up" : "down"}
       role="dialog"
       aria-label={phone ? "Restyle thread" : undefined}
       aria-labelledby={phone ? undefined : titleId}
@@ -94,7 +104,7 @@ export function AssistantThread({
         // Only dismiss from the strip or the top of the transcript, never while composing.
         if (
           !phone ||
-          target.closest("button, form") ||
+          target.closest("button, form, input") ||
           (list.current?.scrollTop ?? 0) > 0
         )
           return;
@@ -145,14 +155,16 @@ export function AssistantThread({
           </button>
         </header>
       )}
-      {phone && changeStrip}
+      {phone && timeline}
       <ol
         ref={list}
         className={styles.list}
         id={listId}
         aria-label="Restyle exchanges"
         onScroll={(event) => {
+          if (keyboardOpen) return;
           const element = event.currentTarget;
+          transcriptScroll.current = element.scrollTop;
           followLatest.current =
             element.scrollHeight - element.scrollTop - element.clientHeight <
             24;
@@ -196,7 +208,10 @@ export function AssistantThread({
             aria-label="Describe a change"
             autoComplete="off"
             maxLength={2000}
-            disabled={!composeEnabled || busy}
+            disabled={
+              (!composeEnabled || busy) && !(phone && keyboardOpen && busy)
+            }
+            readOnly={busy}
             value={draft}
             rows={1}
             onChange={(event) => onDraftChange(event.currentTarget.value)}
@@ -212,6 +227,12 @@ export function AssistantThread({
             }}
             placeholder="Ask anything"
           />
+          {phone && targetLabel && (
+            <span className={styles.targetChip} data-thread-target>
+              {targetLabel}
+            </span>
+          )}
+          {phone && orb && <div className={styles.orbSlot}>{orb}</div>}
         </div>
       </form>
     </section>

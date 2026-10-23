@@ -1,6 +1,7 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { chromium } from "playwright-core";
+
 import { fontFamily } from "../../../packages/pvo-fonts/index.js";
 
 const bytes = await readFile(new URL("../../../editor/src/fonts/peace-sans.woff2", import.meta.url));
@@ -9,8 +10,7 @@ const asset = {
   licenseUrl: "https://foundry.example/license", licenseText: "Fixture font licence.",
   faces: [{ dataUrl: `data:font/woff2;base64,${bytes.toString("base64")}`, weight: "400", style: "normal" }],
 };
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe", headless: true,
+const browser = await launchBrowser({ headless: true,
 });
 const context = await browser.newContext({ viewport: { width: 1440, height: 960 } });
 const page = await context.newPage();
@@ -54,7 +54,7 @@ async function projectFixture(projectId) {
     const { navigateProject } = await import("/src/app/navigation.ts");
     window.fontLibraryCapture = (await import("/src/store.ts")).useCapture;
     const clip = { id: 1, url: null, color: "#4d4257", srcDur: 20, in: 0, out: 20, speed: 1, zoom: 1, mirror: false, width: 720, height: 1280, fit: "cover" };
-    const scene = { id: "main", name: "Main", parent: null, clips: [clip], texts: [], components: [], muted: true, sound: -1, layers: ["video"] };
+    const scene = { id: "main", name: "Main", parent: null, clips: [clip], texts: [], components: [], muted: true, music: null, layers: ["video"] };
     const capture = window.fontLibraryCapture.getState();
     capture.patch({ localId: projectId, scenes: [scene], currentSceneId: "main", clips: [clip], texts: [], components: [], layers: ["video"], screen: "editor", sheet: null, selComp: null, t: 4, past: [], future: [] });
     window.fontLibraryCapture.getState().addComponent("tooltip");

@@ -1,3 +1,4 @@
+import { animationTrackColor } from "../presentation";
 import { useMemo, type CSSProperties } from "react";
 import { getAuthoringKeys, getAuthoringLayer, readAuthoringValue } from "../../../domain/animation/authoring";
 import type { AnimationTarget } from "../../../domain/animation/model";
@@ -30,7 +31,7 @@ export function StageMotionPath({ width, height, pathDots = true }: { width: num
         const position = readAuthoringValue(scene, target, "position", time);
         return typeof position === "number" ? { x: 50, y: 50 } : position;
       } });
-    return { ...path, color: layer.color, start: layer.start, end: layer.end };
+    return { ...path, color: animationTrackColor(target), start: layer.start, end: layer.end };
   }, [scene, target?.kind, targetId, width, height, pathDots]);
   if (!geometry || !target || state.tryMode || state.playheadPick || state.recording || state.importing
     || state.ex === "running" || state.t < geometry.start || state.t > geometry.end) return null;

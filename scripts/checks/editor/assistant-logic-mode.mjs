@@ -1,11 +1,12 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
+
 import { parseNativeTurnRequest } from "../../../packages/pvo-assistant/native/index.js";
 import { componentSourceResult, finishAssistantVerification, installAssistantAvailabilityFixture, selectedAssistantComponent } from "./assistant-fixture.mjs";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url)).replaceAll("\\", "/");
-const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe", headless: true });
+const browser = await launchBrowser({ headless: true });
 const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
 await installAssistantAvailabilityFixture(page);
 page.setDefaultTimeout(12000);
@@ -52,7 +53,7 @@ try {
     window.compilePvo = (await import(`/@fs/${root}packages/pvo-language/index.js`)).compilePvoComponent;
     window.preferences.setState({ advancedEditingEnabled: false });
     const clips = [mkClip(10, null, 0)];
-    useCapture.getState().patch({ scenes: [{ id: "main", name: "Main", clips, texts: [], components: [], layers: ["video"], muted: true, sound: -1 }],
+    useCapture.getState().patch({ scenes: [{ id: "main", name: "Main", clips, texts: [], components: [], layers: ["video"], muted: true, music: null }],
       currentSceneId: "main", clips, texts: [], components: [], layers: ["video"], screen: "editor", sheet: null,
       selComp: null, t: 0, past: [], future: [], playing: false });
     useCapture.getState().addComponent("card");

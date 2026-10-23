@@ -3,7 +3,11 @@ import { trimClipHandle } from "../../domain/clips/trim";
 import { clamp } from "../../domain/project/numbers";
 import { dragTextTiming } from "../../domain/text/timing";
 import { useCapture } from "../captureStore";
-import { projectSnapshot } from "../project/history";
+import {
+  projectSnapshot,
+  commitGestureHistory,
+  ownsHistory,
+} from "../project/history";
 
 export type TimelineTimingTarget =
   | { kind: "clip"; id: number; mode: "l" | "r" }
@@ -30,9 +34,7 @@ export function beginTimelineTimingDrag(
   let changed = false;
   const unchangedHistory = () => {
     const state = useCapture.getState();
-    return (
-      !ended && state.past === before.past && state.future === before.future
-    );
+    return !ended && ownsHistory(state, before);
   };
   const active = () => {
     const state = useCapture.getState();
@@ -121,10 +123,8 @@ export function beginTimelineTimingDrag(
       }
       if (changed) {
         const state = useCapture.getState();
-        state.patch({
+        commitGestureHistory(state, before, snapshot, {
           t: clamp(clip ? before.t : state.t, 0, sceneDuration(state)),
-          past: [...state.past, snapshot].slice(-40),
-          future: [],
         });
       }
       ended = true;

@@ -6,7 +6,8 @@ import type { Scene } from "../project/model";
 export type SceneDurationSource = Pick<
   Scene,
   "clips" | "audioClips" | "texts" | "components"
->;
+> &
+  Partial<Pick<Scene, "music">>;
 
 const finiteEnd = (value: number) =>
   Number.isFinite(value) ? Math.max(0, value) : 0;
@@ -15,6 +16,7 @@ const finiteEnd = (value: number) =>
 export function sceneDuration(scene: SceneDurationSource): number {
   return Math.max(
     finiteEnd(total(scene.clips)),
+    finiteEnd(scene.music ? scene.music.start + scene.music.duration : 0),
     ...(scene.audioClips ?? []).map((clip) =>
       finiteEnd(clip.start + audioDuration(clip)),
     ),

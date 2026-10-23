@@ -341,6 +341,7 @@ export type NativeProjectContext = {
     muted: boolean;
     musicGain: number;
     clipGain: number;
+    musicClock?: { start: number; duration: number; offset: number };
     musicAnimation?: LayerAnimation;
     clips: {
       id: number;
@@ -432,6 +433,7 @@ export type NativeEntityState =
         | "muted"
         | "musicGain"
         | "clipGain"
+        | "musicClock"
         | "musicAnimation"
       >;
     }

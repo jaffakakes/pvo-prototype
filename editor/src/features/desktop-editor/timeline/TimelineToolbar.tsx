@@ -1,12 +1,10 @@
 import { getLayerTracking } from "../../../domain/animation/trackingMetadata";
 import { getAuthoringLayer } from "../../../domain/animation/authoring";
 import {
-  addSelectedAuthoringKey,
   deleteSelectedAuthoringKey,
   selectedAuthoringTarget,
 } from "../../../state/animation/commands";
 import { useAnimationSelection } from "../../../state/animation/selection";
-import { formatKeyTime } from "../../animation/presentation";
 import { extractSelectedAudio } from "../../../state/editing/audioCommands";
 import type { CSSProperties, ReactNode } from "react";
 import { dur } from "../../../domain/clips/timing";
@@ -53,7 +51,7 @@ function Tool({
   keyframeControl = false,
 }: {
   label: string;
-  tone?: "keyframe" | "delete";
+  tone?: "delete";
   keyframeControl?: boolean;
   icon?: string;
   path?: string;
@@ -103,7 +101,7 @@ export function TimelineToolbar({
   const component = state.components.find((item) => item.id === state.selComp);
   const text = state.texts.find((item) => item.id === state.selText);
   const clip = state.clips[state.sel];
-  const audio = state.sheet === "sound" && !!state.sound;
+  const audio = state.selMusic && !!state.music;
   const extracted = state.audioClips.find((item) => item.id === state.selAudio);
   const keySelection = useAnimationSelection((value) => value.selection);
   const animationTarget = selectedAuthoringTarget(state);
@@ -122,7 +120,7 @@ export function TimelineToolbar({
         : clip
           ? `Clip ${state.sel + 1} · ${dur(clip).toFixed(1)}s`
           : audio
-            ? SOUNDS[state.sound]?.name
+            ? SOUNDS[state.music?.track ?? 0]?.name
             : "Nothing selected";
   const blocked = !!state.tryMode || !!state.playheadPick || assistantActive;
   return (
@@ -190,16 +188,6 @@ export function TimelineToolbar({
             if (!deleteSelectedAuthoringKey()) deleteTimelineSelection();
           }}
         />
-        <Tool
-          label={`Add keyframe at ${formatKeyTime(state.t)} · K`}
-          path="M12 3l9 9-9 9-9-9z"
-          tone="keyframe"
-          keyframeControl
-          disabled={blocked || !animationTarget}
-          onClick={() => {
-            addSelectedAuthoringKey();
-          }}
-        />
         <span
           style={
             { "--selection-color": animationLayer?.color } as CSSProperties
@@ -246,6 +234,11 @@ export function TimelineToolbar({
         <input
           className={styles.zoom}
           type="range"
+          style={
+            {
+              "--range-fill": `${((zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100}%`,
+            } as CSSProperties
+          }
           min={MIN_ZOOM}
           max={MAX_ZOOM}
           value={zoom}

@@ -1,22 +1,35 @@
-import { invalidateActionOperations, reconcileResponseProgress } from "../actions/operations.js";
+import {
+  invalidateActionOperations,
+  reconcileResponseProgress,
+} from "../actions/operations.js";
 import { updateRequestStatus } from "../actions/request-status.js";
 
 /** Own media-element loading and seeking; playback rules and UI arrive as ports. */
 export function createVideoController({ session, refs, adapters }) {
-  const seekIsCurrent = (operation) => operation.id === session.seekSequence
-    && operation.routeRevision === session.playbackRouteRevision;
+  const seekIsCurrent = (operation) =>
+    operation.id === session.seekSequence &&
+    operation.routeRevision === session.playbackRouteRevision;
 
   function waitForVideo(eventName, token) {
     return new Promise((resolve, reject) => {
-      const onEvent = () => { cleanup(); resolve(); };
-      const onError = () => { cleanup(); reject(new Error("This media cannot be played in the browser.")); };
+      const onEvent = () => {
+        cleanup();
+        resolve();
+      };
+      const onError = () => {
+        cleanup();
+        reject(new Error("This media cannot be played in the browser."));
+      };
       const cleanup = () => {
         refs.video.removeEventListener(eventName, onEvent);
         refs.video.removeEventListener("error", onError);
       };
       refs.video.addEventListener(eventName, onEvent, { once: true });
       refs.video.addEventListener("error", onError, { once: true });
-      if (token !== session.loadToken) { cleanup(); resolve(); }
+      if (token !== session.loadToken) {
+        cleanup();
+        resolve();
+      }
     });
   }
 
@@ -25,14 +38,18 @@ export function createVideoController({ session, refs, adapters }) {
     if (!clip) return adapters.finishExperience();
     const asset = session.assets.get(clip.asset_id);
     const url = session.assetUrls.get(clip.asset_id);
-    if (!asset || !url) throw new Error(`PVO media "${clip.asset_id}" is missing.`);
+    if (!asset || !url)
+      throw new Error(`PVO media "${clip.asset_id}" is missing.`);
     const token = ++session.loadToken;
     session.switchingClip = true;
     refs.video.pause();
     session.currentClipIndex = index;
     session.renderedOverlayKey = "";
     adapters.updateTimelineLabel(session.currentTimeline);
-    if (refs.video.dataset.assetId !== clip.asset_id) {
+    if (
+      refs.video.dataset.assetId !== clip.asset_id ||
+      refs.video.src !== url
+    ) {
       refs.video.dataset.assetId = clip.asset_id;
       refs.video.src = url;
       refs.video.load();
@@ -53,7 +70,12 @@ export function createVideoController({ session, refs, adapters }) {
 
   async function performSeek(value, autoplay, options, operation) {
     if (!seekIsCurrent(operation)) return;
-    if (!session.currentTimeline || session.finished || session.awaitingComponent) return;
+    if (
+      !session.currentTimeline ||
+      session.finished ||
+      session.awaitingComponent
+    )
+      return;
     const currentElapsed = adapters.elapsedTime();
     const target = adapters.clipAtElapsedTime(value);
     if (!target) return;
@@ -61,24 +83,36 @@ export function createVideoController({ session, refs, adapters }) {
       adapters.replaceActionRuntime(true);
       adapters.setStatus("");
     }
-    const crossedBoundaries = reconcileResponseProgress(session, currentElapsed, target.elapsed, {
-      responseBoundaries: options.responseBoundaries,
-      isBoundaryEligible: (component) => !session.forcedHidden.has(component.id)
-        && (session.capturedResponses.has(component.id)
-          || adapters.componentCanReceiveResponse(component, Number(component.presentation?.end || 0))),
-    });
+    const crossedBoundaries = reconcileResponseProgress(
+      session,
+      currentElapsed,
+      target.elapsed,
+      {
+        responseBoundaries: options.responseBoundaries,
+        isBoundaryEligible: (component) =>
+          !session.forcedHidden.has(component.id) &&
+          (session.capturedResponses.has(component.id) ||
+            adapters.componentCanReceiveResponse(
+              component,
+              Number(component.presentation?.end || 0),
+            )),
+      },
+    );
     if (crossedBoundaries.length) {
       const crossing = crossedBoundaries[0];
-      const component = session.manifest?.components?.find((item) => item.id === crossing.componentId);
+      const component = session.manifest?.components?.find(
+        (item) => item.id === crossing.componentId,
+      );
       const boundary = adapters.clipAtElapsedTime(crossing.boundary);
       if (component && boundary) {
-        if (boundary.index !== session.currentClipIndex) await loadClip(boundary.index, false);
+        if (boundary.index !== session.currentClipIndex)
+          await loadClip(boundary.index, false);
         if (!seekIsCurrent(operation)) return;
         const boundaryClip = adapters.activeClip();
         if (!boundaryClip) return;
         refs.video.pause();
         refs.video.currentTime = Math.min(
-          boundaryClip.end - (session.captureMode ? .001 : .01),
+          boundaryClip.end - (session.captureMode ? 0.001 : 0.01),
           boundaryClip.start + boundary.local,
         );
         session.awaitingComponent = component;
@@ -86,7 +120,13 @@ export function createVideoController({ session, refs, adapters }) {
         adapters.renderOverlays(true);
         adapters.updateProgress();
         if (crossing.work === "wait") {
-          adapters.setStatus(component.kind === "form" ? "Submit to continue" : "Choose to continue", false, true);
+          adapters.setStatus(
+            component.kind === "form"
+              ? "Submit to continue"
+              : "Choose to continue",
+            false,
+            true,
+          );
           adapters.showControls();
           return;
         }
@@ -95,33 +135,55 @@ export function createVideoController({ session, refs, adapters }) {
         try {
           await adapters.dispatchCapturedResponse(component.id);
         } finally {
-          if (session.deferredContinueSeekId === operation.id) session.deferredContinueSeekId = null;
+          if (session.deferredContinueSeekId === operation.id)
+            session.deferredContinueSeekId = null;
         }
-        if (!seekIsCurrent(operation) || session.finished || session.awaitingComponent) return;
+        if (
+          !seekIsCurrent(operation) ||
+          session.finished ||
+          session.awaitingComponent
+        )
+          return;
         updateRequestStatus(session, adapters.setStatus);
         return performSeek(target.elapsed, autoplay, options, operation);
       }
     }
-    if (target.index !== session.currentClipIndex) await loadClip(target.index, false);
+    if (target.index !== session.currentClipIndex)
+      await loadClip(target.index, false);
     if (!seekIsCurrent(operation)) return;
     const clip = adapters.activeClip();
     if (!clip) return;
-    refs.video.currentTime = Math.min(clip.end - (session.captureMode ? .001 : .01), clip.start + target.local);
+    refs.video.currentTime = Math.min(
+      clip.end - (session.captureMode ? 0.001 : 0.01),
+      clip.start + target.local,
+    );
     session.renderedOverlayKey = "";
     adapters.renderOverlays(true);
     adapters.updateProgress();
-    if (autoplay && seekIsCurrent(operation)) await refs.video.play().catch(() => adapters.showControls());
+    if (autoplay && seekIsCurrent(operation))
+      await refs.video.play().catch(() => adapters.showControls());
   }
 
   async function seekToElapsed(value, autoplay = false, options = {}) {
-    if (!session.currentTimeline || session.finished || session.awaitingComponent) return;
+    if (
+      !session.currentTimeline ||
+      session.finished ||
+      session.awaitingComponent
+    )
+      return;
     const operation = {
       id: ++session.seekSequence,
       routeRevision: session.playbackRouteRevision,
     };
-    return performSeek(value, autoplay, {
-      responseBoundaries: options.responseBoundaries === "skip" ? "skip" : "enforce",
-    }, operation);
+    return performSeek(
+      value,
+      autoplay,
+      {
+        responseBoundaries:
+          options.responseBoundaries === "skip" ? "skip" : "enforce",
+      },
+      operation,
+    );
   }
 
   return { loadClip, seekToElapsed };

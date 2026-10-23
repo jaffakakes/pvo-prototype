@@ -114,15 +114,50 @@ test("an incomplete local source can be retried, then the completed job exposes 
   }
   assert.equal(jobs.start(job), true);
   await rendered.promise;
-  // close joins the execution queue before removing its private temporary files.
-  await jobs.close();
+  await new Promise(setImmediate);
   assert.deepEqual(publicJob(job), {
     id: job.id,
     status: "ready",
     progress: 1,
     resultUrl: `/api/renders/${job.id}/result`,
   });
+  // Shutdown cancels any remaining owners before removing the result.
+  await jobs.close();
   assert.equal(existsSync(job.directory), false);
+});
+
+test("expiry, cancellation and shutdown wait for file owners before removal", async (t) => {
+  for (const reason of ["expiry", "cancel", "close"]) {
+    let time = 0;
+    const jobs = await createLocalRenderJobs({ now: () => time });
+    t.after(() => jobs.close());
+    const job = await jobs.create("owner", { source: {}, assets: new Map() });
+    const release = job.ownership.acquire("upload");
+    time = 31 * 60 * 1000;
+    let completed = false;
+    const cleanup = (
+      reason === "expiry"
+        ? jobs.prune()
+        : reason === "close"
+          ? jobs.close()
+          : jobs.cancel(job)
+    ).then(() => {
+      completed = true;
+    });
+    await new Promise(setImmediate);
+    assert.equal(job.controller.signal.aborted, true);
+    assert.equal(job.activeUploads, 1);
+    assert.equal(completed, false);
+    assert.equal(existsSync(job.directory), true);
+    release();
+    await cleanup;
+    assert.equal(job.activeUploads, 0);
+    assert.equal(existsSync(job.directory), false);
+    assert.equal(jobs.get(job.id), undefined);
+    const removal = job.removal;
+    await jobs.cancel(job);
+    assert.equal(job.removal, removal, "Removal is shared and happens once");
+  }
 });
 
 test("loopback keeps its larger upload budget while sharing hosted source validation", async () => {

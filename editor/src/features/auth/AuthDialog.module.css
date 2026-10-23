@@ -155,7 +155,7 @@
 }
 
 .dialog button:focus-visible {
-  outline: 3px solid var(--highlight);
+  outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
 

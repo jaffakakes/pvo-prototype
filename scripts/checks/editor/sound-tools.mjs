@@ -1,11 +1,8 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
-import { chromium } from "playwright-core";
 
 const url = process.env.EDITOR_URL || "http://127.0.0.1:5173/";
-const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROME_PATH ||
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+const browser = await launchBrowser({
   headless: true,
 });
 const context = await browser.newContext({
@@ -26,7 +23,7 @@ const current = () =>
     return {
       audio: s.audioClips,
       past: s.past.length,
-      sound: s.sound,
+      sound: s.music?.track ?? 0,
       t: s.t,
       sheet: s.sheet,
     };
@@ -43,7 +40,7 @@ try {
     useCapture.getState().patch({
       clips: [mkClip(10, null, 0)],
       screen: "editor",
-      sound: 0,
+      music: null,
       t: 2.5,
       sel: -1,
       past: [],

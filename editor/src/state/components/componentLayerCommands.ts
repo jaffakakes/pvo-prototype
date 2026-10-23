@@ -9,7 +9,7 @@ import { setAdvancedEditingEnabled } from "../preferences/editorPreferences";
 
 export const COMPONENT_LAYER_TOOLS = {
   opacity: "componentOpacity",
-  transform: "componentTransform",
+  transform: "crop",
   timing: "componentTiming",
 } as const;
 export type ComponentLayerTool = keyof typeof COMPONENT_LAYER_TOOLS;
@@ -35,8 +35,11 @@ export function selectComponentLayer(id: string) {
     sel: -1,
     selText: null,
     selAudio: null,
+    selMusic: false,
     orb: false,
-    ...(state.selComp !== id || state.sheet === "component"
+    ...((state.selComp !== id || state.sheet === "component") &&
+    state.sheet !== "crop" &&
+    state.sheet !== "keyframes"
       ? { sheet: null }
       : {}),
   });
@@ -47,16 +50,26 @@ export function openComponentLayerTool(tool: ComponentLayerTool) {
   state.patch({
     sheet: COMPONENT_LAYER_TOOLS[tool],
     orb: false,
-    ...(tool === "timing" ? { playing: false } : {}),
+    playing: false,
   });
 }
-export function openComponentDesign() {
+export function openComponentDesign(componentId?: string) {
   const state = useCapture.getState();
-  const component = state.components.find((item) => item.id === state.selComp);
+  const component = state.components.find(
+    (item) => item.id === (componentId ?? state.selComp),
+  );
   if (!component || state.tryMode) return;
   if (isVisualEditingBlocked(component)) {
     setAdvancedEditingEnabled(true);
     selectComponentSourcePart(component.id, "structure");
   } else setComponentAuthoringTab(component.id, "look");
-  state.patch({ sheet: "component", playing: false, orb: false });
+  state.patch({
+    sel: -1,
+    selText: null,
+    selComp: component.id,
+    sheet: "component",
+    playing: false,
+    orb: false,
+    ratioMenu: false,
+  });
 }

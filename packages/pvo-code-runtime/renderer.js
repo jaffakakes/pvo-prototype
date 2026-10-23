@@ -1,8 +1,15 @@
 import { createFontScope, fontFamily } from "../pvo-fonts/index.js";
 import { sanitizeMarkup, sanitizeCss } from "./sanitize.js";
 import { setRenderedFormPending } from "./form-feedback.js";
+import { limitRenderedFormValues } from "./rendered-form-values.js";
 
-export function createRenderer(renderFrame, renderShell, report, setHandlers, onFit) {
+export function createRenderer(
+  renderFrame,
+  renderShell,
+  report,
+  setHandlers,
+  onFit,
+) {
   let fontScope = null;
   let activeFont = null;
   let disposed = false;
@@ -44,9 +51,15 @@ export function createRenderer(renderFrame, renderShell, report, setHandlers, on
     const root = doc?.getElementById("pvo-root");
     if (!root) return report("Component renderer is unavailable.");
     try {
-      const safe = sanitizeMarkup(sources.html, sources.fields, options.state, report);
+      const safe = sanitizeMarkup(
+        sources.html,
+        sources.fields,
+        options.state,
+        report,
+      );
       setHandlers(safe.handlers);
       root.replaceChildren(doc.importNode(safe.fragment, true));
+      limitRenderedFormValues(root);
       let style = doc.getElementById("pvo-custom-style");
       if (!style) {
         style = doc.createElement("style");
@@ -64,11 +77,19 @@ export function createRenderer(renderFrame, renderShell, report, setHandlers, on
         fontScope?.dispose();
         fontScope = options.font ? createFontScope(doc) : null;
         activeFont = options.font;
-        fontStyle.textContent = activeFont ? `#pvo-root,#pvo-root *{font-family:"${fontFamily(activeFont)}"!important}` : "";
+        fontStyle.textContent = activeFont
+          ? `#pvo-root,#pvo-root *{font-family:"${fontFamily(activeFont)}"!important}`
+          : "";
         const loading = fontScope;
-        if (loading) void loading.load(activeFont).then(() => {
-          if (!disposed && loading === fontScope) fit(options);
-        }).catch(error => { if (!disposed && loading === fontScope) report(error); });
+        if (loading)
+          void loading
+            .load(activeFont)
+            .then(() => {
+              if (!disposed && loading === fontScope) fit(options);
+            })
+            .catch((error) => {
+              if (!disposed && loading === fontScope) report(error);
+            });
       }
       setRenderedFormPending(root, options.pending);
       fit(options);
@@ -77,5 +98,13 @@ export function createRenderer(renderFrame, renderShell, report, setHandlers, on
     }
   }
 
-  return { fit, render, dispose() { disposed = true; fontScope?.dispose(); fontScope = null; } };
+  return {
+    fit,
+    render,
+    dispose() {
+      disposed = true;
+      fontScope?.dispose();
+      fontScope = null;
+    },
+  };
 }

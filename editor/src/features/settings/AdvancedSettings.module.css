@@ -50,7 +50,7 @@
 }
 
 .domainBox input:focus-visible {
-  border-color: var(--pale);
+  border-color: var(--strong);
 }
 
 .domainBox p {

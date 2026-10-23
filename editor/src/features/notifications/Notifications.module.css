@@ -68,17 +68,17 @@
   box-shadow: 3px 3px 0 #000;
   border-radius: 12px;
 }
-.notice[data-notification-id="assistantApplied"] .icon { color: var(--accent); }
+.notice[data-notification-id="assistantApplied"] .icon { color: var(--button-primary-bg); }
 .action {
   min-height: 44px;
   padding: 0 8px;
   border: 0;
   background: transparent;
-  color: var(--pale);
+  color: var(--selection);
   font: 800 12px var(--f-ui);
   cursor: pointer;
 }
-.action:focus-visible { outline: 2px solid var(--pale); outline-offset: -2px; }
+.action:focus-visible { outline: 2px solid var(--selection); outline-offset: -2px; }
 .issues { position: relative; max-width: 100%; pointer-events: auto; }
 .issueToggle {
   display: flex;

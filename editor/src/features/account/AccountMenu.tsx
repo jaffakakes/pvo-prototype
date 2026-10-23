@@ -215,6 +215,22 @@ function SignedInMenu({ name: accountName }: { name: string }) {
                     <AccountIcon kind="discord" />
                     Join our Discord
                   </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={styles.item}
+                    onClick={() => {
+                      close();
+                      useCapture.getState().patch({
+                        sheet: "replies",
+                        playing: false,
+                        orb: false,
+                      });
+                    }}
+                  >
+                    <AccountIcon kind="info" />
+                    Replies
+                  </button>
                   <a
                     role="menuitem"
                     className={styles.item}

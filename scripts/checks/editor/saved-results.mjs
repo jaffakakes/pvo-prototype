@@ -1,6 +1,7 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { chromium } from "playwright-core";
+
 import {
   taskFixture,
   ORIGIN,
@@ -10,10 +11,7 @@ import { installAssistantAvailabilityFixture } from "./assistant-fixture.mjs";
 
 const editorUrl = process.env.EDITOR_URL || "http://127.0.0.1:5295/";
 const fixture = await taskFixture();
-const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROME_PATH ||
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+const browser = await launchBrowser({
   headless: true,
 });
 const context = await browser.newContext({

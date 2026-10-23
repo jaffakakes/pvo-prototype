@@ -8,16 +8,22 @@ import { failure, json } from "../http.mjs";
 export async function downloadResult(response, job) {
   if (job.status !== "ready")
     return failure(response, 409, "The render is not ready.");
-  const path = join(job.directory, "result.mp4");
-  const { size } = await stat(path);
-  response.writeHead(200, {
-    "Content-Type": "video/mp4",
-    "Content-Disposition": 'attachment; filename="restyle-video.mp4"',
-    "Content-Length": size,
-    "Cache-Control": "no-store",
-  });
-  createReadStream(path).pipe(response);
-  return;
+  const release = job.ownership.acquire("download");
+  try {
+    const path = join(job.directory, "result.mp4");
+    const { size } = await stat(path);
+    response.writeHead(200, {
+      "Content-Type": "video/mp4",
+      "Content-Disposition": 'attachment; filename="restyle-video.mp4"',
+      "Content-Length": size,
+      "Cache-Control": "no-store",
+    });
+    await pipeline(createReadStream(path), response, {
+      signal: job.controller.signal,
+    });
+  } finally {
+    release();
+  }
 }
 
 export async function uploadSource(request, response, job, assetId, removeJob) {
@@ -28,7 +34,7 @@ export async function uploadSource(request, response, job, assetId, removeJob) {
   if (declared !== asset.bytes)
     return failure(response, 422, "Source file size changed during upload.");
   asset.uploading = true;
-  job.activeUploads += 1;
+  const release = job.ownership.acquire("upload");
   const path = join(job.directory, "sources", assetId);
   let received = 0;
   try {
@@ -61,7 +67,7 @@ export async function uploadSource(request, response, job, assetId, removeJob) {
     );
   } finally {
     asset.uploading = false;
-    job.activeUploads -= 1;
+    release();
     if (job.status === "cancelled" && job.activeUploads === 0)
       await removeJob(job);
   }

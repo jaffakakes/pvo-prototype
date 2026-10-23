@@ -23,14 +23,13 @@ export type RestoredProject = {
   sel: number;
   selComp: string | null;
   selText: number | null;
-  exportFormat: "video" | "pvo";
   quality: ExportQuality;
   savedAt: number;
 };
 
 type ResumePosition = Pick<
   RestoredProject,
-  "screen" | "t" | "sel" | "selComp" | "selText" | "exportFormat" | "quality"
+  "screen" | "t" | "sel" | "selComp" | "selText" | "quality"
 >;
 
 export type PersistenceSnapshot = ProjectSnapshot &
@@ -92,7 +91,6 @@ export function captureCheckpoint(state: PersistenceSnapshot): CheckpointDraft {
       sel: state.sel,
       selComp: state.selComp,
       selText: state.selText,
-      exportFormat: state.exportFormat,
       quality: state.quality,
     },
   };
@@ -188,7 +186,12 @@ export function restoreCheckpoint(
     project: remapProjectMedia(record.project, urlMap),
     past: record.past.map((item) => remapProjectMedia(item, urlMap)),
     future: record.future.map((item) => remapProjectMedia(item, urlMap)),
-    ...record.resume,
+    screen: record.resume.screen,
+    t: record.resume.t,
+    sel: record.resume.sel,
+    selComp: record.resume.selComp,
+    selText: record.resume.selText,
+    quality: record.resume.quality,
     savedAt: record.savedAt,
   };
 }

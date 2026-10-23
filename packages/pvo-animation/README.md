@@ -32,7 +32,7 @@ Each property holds an ordered, unique, nonempty list of `{time,value,easing}`. 
 
 - Video clips and independent audio use **original-source seconds**. Evaluate at `sourceIn + (sceneTime - layerStart) * speed`. Trim, split, speed and reorder operations retain the curves; motion stays attached to the original media.
 - Text uses seconds relative to `start`; components use seconds relative to `at`. Moving a layer moves its animation with it. Changing an overlay's start also moves its animation origin. End trimming hides the later portion without deleting the curve.
-- Scene `musicAnimation` uses scene seconds.
+- Music uses original-source seconds in `music.animation`, evaluated at `music.offset + sceneTime - music.start`. Its authored `duration` bounds playback; moving it preserves its curves and source offset.
 
 The editor's `domain/animation` converts between those clocks and scene seconds. Manual commands and `animation.set/remove` assistant operations accept **scene seconds**, use the same pure mutation rule, and produce one Undo entry per command or validated assistant batch. `animation.set` replaces only named property curves; `animation.clear` removes one or all curves. Animation is persisted alongside its layer and deep-cloned in project history. Stored curves can extend beyond a trimmed visible range, allowing later extension to recover the motion.
 

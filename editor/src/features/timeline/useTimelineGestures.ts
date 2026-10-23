@@ -1,4 +1,8 @@
-import { selectComponentLayer } from "../../state/components/componentLayerCommands";
+import { reorderLayerKey } from "./layerKeyboard";
+import {
+  selectedLayerId,
+  selectTimelineLayer,
+} from "../../state/editing/layerSelection";
 import { useTimelineTrim } from "./useTimelineTrim";
 import { useTimelineLayerTiming } from "./useTimelineLayerTiming";
 import { sceneDuration } from "../../domain/scenes/duration";
@@ -7,13 +11,12 @@ import type {
   PointerEvent as ReactPointerEvent,
 } from "react";
 import { useRef } from "react";
-import { locate } from "../../domain/clips/timing";
 import { type LayerId } from "../../domain/layers/model";
 import { layerOrder } from "../../domain/layers/order";
 import { clamp } from "../../domain/project/numbers";
 import { useCapture } from "../../state/captureStore";
 import { stopTry } from "../preview/tryMode";
-import { PPS, timelineRows } from "./geometry";
+import { PPS, timelineRows, TIMELINE_HEADER_HEIGHT } from "./geometry";
 import { usePlayheadScrub } from "./usePlayheadScrub";
 import { useLayerDrag } from "./useLayerDrag";
 
@@ -37,34 +40,15 @@ export function useTimelineGestures() {
   const layout = timelineRows(layerOrder(s));
   const layers = layout.map((row) => row.id);
   const rows = new Map(layout.map((row) => [row.id, row.top]));
-  const rowEnd = layout.reduce((end, row) => end + row.height, 30);
-  const timelineHeight = rowEnd + s.audioClips.length * 34 + (s.sound ? 40 : 0);
-  const selectedLayer: LayerId | null =
-    s.selText != null
-      ? `text:${s.selText}`
-      : s.selComp
-        ? `component:${s.selComp}`
-        : s.sel >= 0
-          ? "video"
-          : null;
+  const rowEnd = layout.reduce(
+    (end, row) => end + row.height,
+    TIMELINE_HEADER_HEIGHT,
+  );
+  const timelineHeight = rowEnd;
+  const selectedLayer = selectedLayerId(s);
   const rowTop = (id: LayerId) =>
     layerDrag.active?.id === id ? layerDrag.active.top : rows.get(id);
-  const selectLayer = (id: LayerId) =>
-    id === "video"
-      ? s.patch({
-          sel: locate(s.t, s.clips)?.i ?? 0,
-          selComp: null,
-          selText: null,
-          playing: false,
-        })
-      : id.startsWith("text:")
-        ? s.patch({
-            selText: Number(id.slice(5)),
-            sel: -1,
-            selComp: null,
-            playing: false,
-          })
-        : selectComponentLayer(id.slice(10));
+  const selectLayer = selectTimelineLayer;
   const layerKeyDown = (event: ReactKeyboardEvent) => {
     if (event.key === "Escape" && layerDrag.active) {
       event.preventDefault();
@@ -72,22 +56,7 @@ export function useTimelineGestures() {
       layerDrag.end(true);
       pointer.current = null;
     }
-    if (
-      !event.altKey ||
-      !["ArrowUp", "ArrowDown"].includes(event.key) ||
-      s.tryMode
-    )
-      return;
-    const target = (event.target as HTMLElement).closest<HTMLElement>(
-      "[data-layer-id],[data-reorder-layer]",
-    );
-    const id = (target?.dataset.layerId ?? target?.dataset.reorderLayer) as
-      LayerId | undefined;
-    if (id) {
-      event.preventDefault();
-      event.stopPropagation();
-      s.reorderLayer(id, event.key === "ArrowUp" ? "up" : "down");
-    }
+    reorderLayerKey(event);
   };
 
   const scrubDown = (event: ReactPointerEvent) => {

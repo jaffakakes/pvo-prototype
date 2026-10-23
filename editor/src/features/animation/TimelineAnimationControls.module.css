@@ -1,0 +1,63 @@
+.controls {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+}
+.controls button {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+.controls button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 2px var(--outline);
+}
+.controls button:first-child[aria-pressed="true"] {
+  color: var(--accent);
+}
+.controls button[aria-pressed="true"]::before,
+.controls button:hover:not(:disabled)::before {
+  background: var(--input);
+}
+.controls button:focus-visible {
+  outline: none;
+}
+.controls button:focus-visible::before {
+  outline: 3px solid var(--strong);
+  outline-offset: 2px;
+}
+.controls button:disabled {
+  color: var(--muted);
+  opacity: 0.45;
+  cursor: default;
+}
+.error {
+  position: absolute;
+  z-index: 8;
+  top: 34px;
+  right: 0;
+  width: 180px;
+  padding: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: 600 11px/1.4 var(--f-ui);
+}

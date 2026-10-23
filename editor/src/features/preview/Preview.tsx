@@ -6,7 +6,7 @@ import { sceneDuration } from "../../domain/scenes/duration";
 import { componentEnd } from "../../domain/components/timing";
 import { useLayoutEffect, useRef, useState } from "react";
 import { dur, locate } from "../../domain/clips/timing";
-import { layerOrder, layerZ } from "../../domain/layers/order";
+import { visualLayerOrder, layerZ } from "../../domain/layers/order";
 import { projectRatio } from "../../domain/project/ratio";
 import { useCapture } from "../../state/captureStore";
 import {
@@ -26,13 +26,15 @@ import { fitPlayerPreview, fitPreviewSize } from "./geometry";
 import styles from "./Preview.module.css";
 import { runComponentResponse } from "./tryMode";
 import { usePlayback } from "./usePlayback";
-import { ComponentGuides } from "../component-layer/ComponentSelectionChrome";
-import { useOverlayGestures } from "./useOverlayGestures";
+import { useCanvasTransform } from "./useCanvasTransform";
 import { usePreviewAreaSize } from "./usePreviewAreaSize";
 import { Icon } from "../../ui/Icon";
 import { Transport } from "./Transport";
 import { PlayerPlayback } from "./PlayerPlayback";
 import { StageMotionPath } from "../animation/stage/StageMotionPath";
+import { useSheetDock } from "../../ui/sheets/SheetDockContext";
+import { CropGuides } from "./CropGuides";
+import { useAnimationSelection } from "../../state/animation/selection";
 
 type Props = { desktop?: boolean; onAddMedia?(): void; threadOpen?: boolean };
 
@@ -42,6 +44,9 @@ export function Preview({
   threadOpen = false,
 }: Props = {}) {
   const s = useCapture();
+  const selectedKey = useAnimationSelection((state) => state.selection);
+  const threadKeyboardOpen = useSheetDock()?.threadKeyboardOpen ?? false;
+  const threadTransportInset = threadKeyboardOpen ? 0 : 44;
   const assistantActive = useAssistant(assistantFocused);
   const authoring = useComponentAuthoring();
   const advanced = useEditorPreferences(
@@ -50,7 +55,7 @@ export function Preview({
   const { areaRef, area } = usePreviewAreaSize();
   const boxRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const gestures = useOverlayGestures(boxRef, desktop);
+  const gestures = useCanvasTransform(boxRef, desktop);
   const located = s.trim
     ? { c: s.clips[s.trim.i], i: s.trim.i }
     : locate(s.t, s.clips);
@@ -59,6 +64,7 @@ export function Preview({
   const sceneTail = s.t >= total(s.clips) && duration > total(s.clips);
   const clip = sceneTail ? undefined : located?.c;
   const motion = evaluateAnimation(clip?.animation, sourceTime);
+  const videoTransform = `translate(${motion.x}%, ${motion.y}%) rotate(${motion.rotation}deg) scale(${motion.scaleX}, ${motion.scaleY})`;
   usePlayback(videoRef);
   useAudioPlayback();
   useMusicPlayback();
@@ -76,10 +82,10 @@ export function Preview({
       ? {
           ...fitPreviewSize(
             area.width,
-            Math.max(0, area.height - 52),
+            Math.max(0, area.height - threadTransportInset),
             projectRatio(s.ratio),
           ),
-          controlsInset: 52,
+          controlsInset: threadTransportInset,
         }
       : fitPlayerPreview(
           area.width,
@@ -89,8 +95,36 @@ export function Preview({
         );
   const compact = bw < 180;
   const selectedAuthoring = !s.tryMode && !s.playheadPick && !s.playing;
+  const hasVisualClipKeys = Object.entries(clip?.animation?.tracks ?? {}).some(
+    ([property, keys]) => property !== "gain" && !!keys?.length,
+  );
+  const inlinePlayback =
+    !desktop &&
+    !threadOpen &&
+    !s.tryMode &&
+    !s.playheadPick &&
+    (s.sheet === "crop" ||
+      s.sheet === "keyframes" ||
+      s.sheet === "volumeKeyframes" ||
+      (!!clip && s.clips[s.sel]?.id === clip.id && hasVisualClipKeys));
+  const clipKeySelected =
+    selectedKey?.sceneId === s.currentSceneId &&
+    selectedKey.target.kind === "clip" &&
+    selectedKey.target.id === clip?.id &&
+    selectedKey.group !== "volume" &&
+    Math.abs(selectedKey.time - s.t) < 0.001;
+  const cropEditing =
+    selectedAuthoring &&
+    !assistantActive &&
+    !!clip &&
+    s.clips[s.sel]?.id === clip.id &&
+    (s.sheet === "crop" ||
+      (!desktop &&
+        !threadOpen &&
+        (s.sheet === "keyframes" || (s.sheet === null && clipKeySelected))));
   const endpointAuthoring =
-    selectedAuthoring && (desktop || s.sheet === "animation");
+    selectedAuthoring &&
+    (desktop || s.sheet === "crop" || s.sheet === "keyframes");
   const visibleComponents = s.components.filter(
     (component) =>
       componentVisible(component, s.clips, s.t, s.tryMode?.holdingId ?? null) ||
@@ -99,7 +133,7 @@ export function Preview({
         (desktop ||
           s.sheet === "component" ||
           assistantActive ||
-          (s.sheet === "animation" &&
+          ((s.sheet === "crop" || s.sheet === "keyframes") &&
             Math.abs(s.t - componentEnd(component, s.clips)) < 1e-6))),
   );
   const codeEditing =
@@ -107,7 +141,7 @@ export function Preview({
     authoring.codePreviewFocus &&
     authoring.tab === "advanced" &&
     authoring.componentId === s.selComp &&
-    s.sheet !== "animation" &&
+    s.sheet !== "keyframes" &&
     (desktop || s.sheet === "component");
   const focusCandidate =
     codeEditing && selectedAuthoring && !assistantActive
@@ -135,7 +169,7 @@ export function Preview({
     });
   }, [focusCandidate, s.t]);
   const focused = focusCandidate?.id === focusAnchor?.id ? focusAnchor : null;
-  const dimmerZ = layerOrder(s).length + 1;
+  const dimmerZ = visualLayerOrder(s).length + 1;
 
   return (
     <div
@@ -151,8 +185,12 @@ export function Preview({
         data-trying={!!s.tryMode}
         data-compact={compact}
         data-desktop={desktop}
+        data-cropping={cropEditing}
+        data-transforming={
+          cropEditing || s.sheet === "crop" || s.sheet === "keyframes"
+        }
         style={{ width: bw, height: bh, marginBottom: controlsInset }}
-        {...gestures}
+        {...gestures.handlers}
         onPointerDownCapture={(event) => {
           if ((event.target as Element).closest("[data-player-playback]"))
             return;
@@ -168,7 +206,7 @@ export function Preview({
               return;
             }
           }
-          gestures.onPointerDownCapture(event);
+          gestures.handlers.onPointerDownCapture(event);
           if (
             desktop &&
             !event.defaultPrevented &&
@@ -195,7 +233,7 @@ export function Preview({
           style={{
             zIndex: layerZ(s, "video"),
             opacity: motion.opacity,
-            transform: `translate(${motion.x}%, ${motion.y}%) rotate(${motion.rotation}deg) scale(${motion.scaleX}, ${motion.scaleY})`,
+            transform: videoTransform,
           }}
         >
           {clip?.url ? (
@@ -221,8 +259,18 @@ export function Preview({
             </div>
           )}
         </div>
-        {!desktop && (
+        {cropEditing && clip && (
+          <CropGuides
+            key={`${s.currentSceneId}:${clip.id}`}
+            scale={motion.scaleX}
+            transform={videoTransform}
+            compact={bw < 96 || bh < 96}
+            topZ={dimmerZ + 3}
+          />
+        )}
+        {!desktop && !cropEditing && s.sheet !== "crop" && (
           <PlayerPlayback
+            hidePlay={inlinePlayback}
             topZ={dimmerZ + 2}
             videoZ={layerZ(s, "video")}
             compact={bw < 100}
@@ -277,8 +325,12 @@ export function Preview({
             onResponse={runComponentResponse}
           />
         ))}
-        <ComponentGuides />
-        {!focused && <StageMotionPath width={bw} height={bh} />}
+        {!focused && !cropEditing && <StageMotionPath width={bw} height={bh} />}
+        {gestures.error && (
+          <p className={styles.transformError} role="alert">
+            {gestures.error}
+          </p>
+        )}
         {!compact && !s.tryMode && clip && (
           <span className={cx("tag pvTag")}>
             <i />
@@ -305,7 +357,9 @@ export function Preview({
           </div>
         )}
       </div>
-      {!desktop && <Transport threadOpen={threadOpen} />}
+      {!desktop && !threadKeyboardOpen && (
+        <Transport threadOpen={threadOpen} inlinePlayback={inlinePlayback} />
+      )}
     </div>
   );
 }

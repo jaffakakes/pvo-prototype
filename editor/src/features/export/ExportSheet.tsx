@@ -314,7 +314,6 @@ export function ExportSheet() {
 
           <ExportFooter
             mode={mode}
-            format={format}
             quality={s.quality}
             unavailable={emptyScenes.length > 0 || mainDuration <= 0}
             begin={begin}

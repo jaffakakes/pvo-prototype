@@ -1,12 +1,12 @@
-import { openEditorSettings } from "../helpers/editor-settings.mjs";
+import { launchBrowser } from "../helpers/browser.mjs";
 import { openExportDialog } from "../helpers/editor-export.mjs";
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+
 import { readFile } from "node:fs/promises";
-import { homedir } from "node:os";
+
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
+
 import { readPvoProject } from "../../../packages/pvo-sdk/index.js";
 
 // Run against a built local beta server with an isolated PVO_LOCAL_DATA_DIR.
@@ -15,15 +15,11 @@ const editorUrl = process.env.EDITOR_URL || "http://127.0.0.1:4187/editor/";
 const origin = new URL(editorUrl).origin;
 if (!/^(127\.0\.0\.1|localhost)$/.test(new URL(editorUrl).hostname))
   throw new Error("Collect replies browser check requires a local beta server.");
-const candidates = [process.env.CHROME_PATH,
-  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-  join(homedir(), "Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
-  "/usr/bin/google-chrome", "/usr/bin/chromium",
-  "C:/Program Files/Google/Chrome/Application/chrome.exe"].filter(Boolean);
-const chromePath = candidates.find(path => existsSync(path));
-if (!chromePath) throw new Error("Set CHROME_PATH to a Chrome or Chromium executable.");
+
+
+
 const videoFile = fileURLToPath(new URL("../../../share/assets/preview.mp4", import.meta.url));
-const browser = await chromium.launch({ executablePath: chromePath, headless: true, args: ["--no-sandbox"] });
+const browser = await launchBrowser({ headless: true, args: ["--no-sandbox"] });
 const creatorContext = await browser.newContext({ viewport: { width: 430, height: 932 }, acceptDownloads: true });
 const viewerContext = await browser.newContext({ viewport: { width: 430, height: 932 } });
 const creator = await creatorContext.newPage();
@@ -136,9 +132,9 @@ try {
     return response.ok && (await response.json()).replies.length === 1;
   }, box.id);
 
-  await openEditorSettings(creator);
-  const more = creator.getByRole("dialog", { name: "More" });
-  await more.getByRole("button", { name: "Open replies" }).click();
+  await creator.getByRole("button", { name: /^Account ·/ }).click();
+  await creator.getByRole("menuitem", { name: "Replies", exact: true }).click();
+  const more = creator.getByRole("dialog", { name: "Replies" });
   await more.getByRole("button").filter({ hasText: "Questions for video" }).click();
   await more.getByText("Viewer says hello", { exact: true }).waitFor();
   assert.equal((await replies(box.id))[0].answers.find(answer => answer.name === "Name")?.value,

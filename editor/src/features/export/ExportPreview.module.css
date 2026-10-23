@@ -24,7 +24,7 @@
   box-sizing: border-box;
 }
 
-.picture[data-picker="true"] { outline: 2px dashed var(--highlight); outline-offset: -7px; }
+.picture[data-picker="true"] { outline: 2px dashed var(--focus); outline-offset: -7px; }
 
 .sourceFrame,
 .videoLayer,
@@ -123,7 +123,7 @@
 .previewNote { margin: 0; color: var(--muted); font: 600 11px/1.2 var(--f-ui); }
 
 .well button:focus-visible,
-.sliderWrap input:focus-visible { outline: 3px solid var(--highlight); outline-offset: 2px; }
+.sliderWrap input:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 
 @media (max-width: 700px) {
   .well { display: contents; }

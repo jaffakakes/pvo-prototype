@@ -16,7 +16,7 @@
   min-width: 0;
   min-height: 44px;
   padding: 0 11px;
-  border: 2px solid var(--outline);
+  border: 2px dashed var(--strong);
   border-radius: 10px;
   background: var(--surface);
   box-shadow: 2px 2px 0 var(--button-shadow);
@@ -26,8 +26,8 @@
   line-height: 1.2;
 }
 .quickActions button span {
-  color: var(--accent);
+  color: var(--strong);
 }
 .quickActions button:hover {
-  border-color: var(--accent);
+  border-color: var(--strong);
 }

@@ -1,3 +1,4 @@
+import type { AnimationTarget } from "../../domain/animation/model";
 import type { AnimationGroup, AuthoringValue } from "../../domain/animation/authoring";
 
 export const GROUP_LABELS: Record<AnimationGroup, string> = {
@@ -25,3 +26,10 @@ export const CONTROL_RANGES = {
   opacity: { min: 0, max: 100, step: 1 },
   volume: { min: 0, max: 100, step: 1 },
 } as const;
+
+export function animationTrackColor(target: AnimationTarget): string {
+  if (target.kind === "clip") return "var(--pale)";
+  if (target.kind === "component") return "var(--violet)";
+  if (target.kind === "text") return "var(--yellow)";
+  return "var(--teal)";
+}

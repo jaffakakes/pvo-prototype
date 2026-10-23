@@ -1,5 +1,5 @@
 import { createLocalProfileApi } from "./account-profile.mjs";
-import { createReadStream, existsSync, statSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,6 +12,8 @@ import { createLocalRenderApi } from "./render-jobs/routes.mjs";
 import { createLocalReplyBoxApi } from "./reply-boxes/routes.mjs";
 import { createLocalAuthApi } from "./local-auth.mjs";
 import { createLocalAssistantApi } from "./assistant.mjs";
+import { createOllamaAssistantFetch } from "./ollama/assistant.mjs";
+import { sendMediaFile } from "./media-response.mjs";
 
 const root = fileURLToPath(new URL("../../dist/", import.meta.url));
 const port = Number(process.env.PVO_PORT || 4173);
@@ -36,6 +38,14 @@ const replyApi = await createLocalReplyBoxApi({
 });
 const assistantApi = createLocalAssistantApi({
   origin: `http://127.0.0.1:${port}`,
+  publicOrigin: process.env.PVO_PUBLIC_ORIGIN,
+  ...(process.env.PVO_ASSISTANT_PROVIDER === "ollama"
+    ? {
+        fetcher: createOllamaAssistantFetch({
+          model: process.env.PVO_OLLAMA_MODEL,
+        }),
+      }
+    : {}),
 });
 const mime = {
   ".html": "text/html; charset=utf-8",
@@ -108,45 +118,20 @@ const server = createServer(async (request, response) => {
   const extension = extname(file).toLowerCase();
   const isVideo = extension === ".mp4" || extension === ".mov";
   const fileSize = statSync(file).size;
-  const range = request.headers.range;
-  if (range && isVideo) {
-    const match = /^bytes=(\d*)-(\d*)$/.exec(range);
-    if (!match) {
-      response.writeHead(416, { "Content-Range": `bytes */${fileSize}` });
-      response.end();
-      return;
-    }
-    const start = match[1] ? Number(match[1]) : 0;
-    const end = match[2]
-      ? Math.min(Number(match[2]), fileSize - 1)
-      : fileSize - 1;
-    if (start > end || start >= fileSize) {
-      response.writeHead(416, { "Content-Range": `bytes */${fileSize}` });
-      response.end();
-      return;
-    }
-    response.writeHead(206, {
-      "Content-Type": mime[extension],
-      "Content-Length": end - start + 1,
-      "Content-Range": `bytes ${start}-${end}/${fileSize}`,
-      "Accept-Ranges": "bytes",
-      "Cache-Control": "no-store",
-    });
-    createReadStream(file, { start, end }).pipe(response);
-    return;
-  }
-  response.writeHead(200, {
-    "Content-Type": mime[extension] || "application/octet-stream",
-    "Content-Length": fileSize,
-    ...(isVideo ? { "Accept-Ranges": "bytes" } : {}),
-    "Cache-Control": "no-store",
+  sendMediaFile(request, response, file, {
+    size: fileSize,
+    type: mime[extension] || "application/octet-stream",
+    video: isVideo,
   });
-  createReadStream(file).pipe(response);
 });
-const closeReleases = attachReleaseNotifications(server, root);
+const closeReleases = attachReleaseNotifications(server, root, {
+  publicOrigin: process.env.PVO_PUBLIC_ORIGIN,
+});
 server.on("close", closeReleases);
 server.on("close", () => {
-  void Promise.all([renderApi.close(), replyApi.close()]);
+  void Promise.all([renderApi.close(), replyApi.close()]).catch((error) =>
+    console.error("Local API cleanup failed:", error?.name),
+  );
 });
 server.listen(port, "127.0.0.1", () => {
   console.log(`PVO prototype: http://127.0.0.1:${port}`);

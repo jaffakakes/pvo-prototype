@@ -16,7 +16,7 @@
 
 .dock button:focus-visible,
 .sheet button:focus-visible {
-  outline: 3px solid var(--pale);
+  outline: 3px solid var(--strong);
   outline-offset: 2px;
 }
 
@@ -82,13 +82,13 @@
 .stateTabs button[aria-selected="true"] {
   background: var(--input);
   border-color: var(--outline);
-  box-shadow: 2px 2px 0 var(--accent);
+  box-shadow: 2px 2px 0 var(--strong);
   color: var(--text);
   font-weight: 800;
 }
 
 .workspaceTabs button[aria-selected="true"] svg {
-  color: var(--pale);
+  color: var(--strong);
 }
 
 .errorBadge {
@@ -144,7 +144,7 @@
 
 .videoTime {
   flex: none;
-  color: var(--highlight);
+  color: var(--accent);
   font-size: 13px;
   font-variant-numeric: tabular-nums;
   font-weight: 800;
@@ -167,7 +167,7 @@
 
 .statusGlyph[data-state="held"] { background: var(--yellow); }
 .statusGlyph[data-state="failed"] { background: var(--red); }
-.statusGlyph[data-state="waiting"] { background: var(--pale); }
+.statusGlyph[data-state="waiting"] { background: var(--strong); }
 .statusGlyph[data-state="stopped"] { background: var(--disabled); }
 
 .statusWords {
@@ -227,10 +227,10 @@
   flex: none;
   height: 26px;
   padding: 0 9px;
-  border: 2px solid color-mix(in srgb, var(--pale) 45%, transparent);
+  border: 2px solid color-mix(in srgb, var(--strong) 45%, transparent);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--pale) 8%, transparent);
-  color: var(--pale);
+  background: color-mix(in srgb, var(--strong) 8%, transparent);
+  color: var(--strong);
   font-size: 11px;
   font-weight: 800;
   white-space: nowrap;
@@ -241,8 +241,8 @@
   width: 10px;
   height: 10px;
   flex: none;
-  border: 2px solid color-mix(in srgb, var(--pale) 30%, transparent);
-  border-top-color: var(--pale);
+  border: 2px solid color-mix(in srgb, var(--strong) 30%, transparent);
+  border-top-color: var(--strong);
   border-radius: 50%;
   box-sizing: border-box;
   animation: debugSpin .9s linear infinite;
@@ -282,7 +282,7 @@
 }
 
 .captureButton { font-weight: 700; color: var(--text-secondary); }
-.captureButton[data-active="true"] { border-color: color-mix(in srgb, var(--pale) 60%, transparent); }
+.captureButton[data-active="true"] { border-color: color-mix(in srgb, var(--strong) 60%, transparent); }
 .reportButton,
 .secondaryButton { border-color: var(--button-border); background: var(--button-secondary-bg); color: var(--button-secondary-text); box-shadow: 2px 2px 0 var(--button-shadow); }
 .primaryButton { border-color: var(--button-border); background: var(--button-primary-bg); color: var(--button-primary-text); box-shadow: 2px 2px 0 var(--button-shadow); }
@@ -314,10 +314,10 @@
 
 [data-active="true"] > .toggleTrack,
 .toggleTrack[data-active="true"],
-[aria-pressed="true"] > .toggleTrack { background: var(--accent); }
+[aria-pressed="true"] > .toggleTrack { background: var(--strong); }
 [data-active="true"] > .toggleTrack i,
 .toggleTrack[data-active="true"] i,
-[aria-pressed="true"] > .toggleTrack i { transform: translateX(12px); }
+[aria-pressed="true"] > .toggleTrack i { transform: translateX(12px); background: var(--onStrong); }
 
 .desktopBody {
   display: flex;
@@ -394,7 +394,7 @@
   white-space: nowrap;
 }
 
-.filterButton[data-active="true"] { border-color: var(--pale); color: var(--text); }
+.filterButton[data-active="true"] { border-color: var(--strong); color: var(--text); }
 .filterButton svg { flex: none; }
 
 .listFooter {
@@ -414,7 +414,7 @@
 
 .listFooter > span { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .followButton { display: inline-flex; align-items: center; gap: 8px; padding: 0; border: 0; background: none; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
-.textButton { padding: 0; border: 0; background: none; color: var(--highlight) !important; font-size: 11.5px; font-weight: 800; white-space: nowrap; }
+.textButton { padding: 0; border: 0; background: none; color: var(--strong) !important; font-size: 11.5px; font-weight: 800; white-space: nowrap; }
 
 .popoverScrim {
   position: absolute;
@@ -466,7 +466,7 @@
   border: 2px solid var(--outline);
   border-radius: 10px;
   background: var(--surface);
-  box-shadow: 3px 3px 0 var(--accent);
+  box-shadow: 3px 3px 0 var(--strong);
   font-size: 11.5px;
   font-weight: 700;
   line-height: 1.4;

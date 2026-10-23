@@ -5,7 +5,8 @@ import { buildSync } from "esbuild";
 const bundle = buildSync({
   stdin: {
     contents: `export { createTrySession } from './editor/src/features/preview/createTrySession.ts';
-    export { initial } from './editor/src/state/project/initial.ts';`,
+    export { initial } from './editor/src/state/project/initial.ts';
+    export { useCapture } from './editor/src/state/captureStore.ts';`,
     resolveDir: process.cwd(),
   },
   bundle: true,
@@ -13,14 +14,90 @@ const bundle = buildSync({
   format: "esm",
   platform: "browser",
 });
-const { createTrySession, initial } = await import(
+const { createTrySession, initial, useCapture } = await import(
   `data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString("base64")}`
 );
 
-function fixture(time, request = async () => new Response("{}"), component = {
-  id: "card", type: "card", at: 5, dur: null,
-  responsePolicy: { dispatch: "interaction", unanswered: "continue" }, fields: {},
-}, { allowStartFailure = false, allowPlaybackFailure = false, diagnostics } = {}) {
+test("real-store Try restoration keeps audio selection and normalizes deleted targets", () => {
+  for (const mode of ["same-scene", "routed", "deleted"]) {
+    const state = initial();
+    const clip = {
+      id: 1,
+      url: "blob:video",
+      in: 0,
+      out: 10,
+      srcDur: 10,
+      speed: 1,
+    };
+    const audio = {
+      id: 2,
+      url: "blob:audio",
+      start: 0,
+      in: 0,
+      out: 10,
+      srcDur: 10,
+      speed: 1,
+      gain: 1,
+    };
+    const main = { ...state.scenes[0], clips: [clip], audioClips: [audio] };
+    const branch = {
+      ...main,
+      id: "branch",
+      parent: main.id,
+      name: "Branch",
+      audioClips: [],
+    };
+    useCapture.setState({
+      ...state,
+      scenes: [main, branch],
+      clips: [clip],
+      audioClips: [audio],
+      selAudio: 2,
+      sel: -1,
+      screen: "editor",
+      t: 1,
+    });
+    const session = createTrySession({
+      getState: useCapture.getState,
+      request: fetch,
+      publishRuntimeState() {},
+      feedback: () => ({}),
+      clearFeedback() {},
+      clearNotice() {},
+      startFailed: () => assert.fail("Try should start"),
+      playbackFailed: () => assert.fail("Try should not fail"),
+      emptyScene() {},
+      beginRequest: () => 1,
+      finishRequest() {},
+    });
+    session.startTry();
+    assert(useCapture.getState().tryMode);
+    if (mode === "routed")
+      useCapture.getState().patch({ currentSceneId: branch.id });
+    if (mode === "deleted") useCapture.getState().patch({ audioClips: [] });
+    session.stopTry();
+    const restored = useCapture.getState();
+    assert.equal(restored.currentSceneId, main.id);
+    assert.equal(restored.selAudio, mode === "deleted" ? null : 2);
+    assert.equal(restored.tryMode, null);
+    assert.equal(restored.playing, false);
+    assert.equal(restored.t, 1);
+  }
+});
+
+function fixture(
+  time,
+  request = async () => new Response("{}"),
+  component = {
+    id: "card",
+    type: "card",
+    at: 5,
+    dur: null,
+    responsePolicy: { dispatch: "interaction", unanswered: "continue" },
+    fields: {},
+  },
+  { allowStartFailure = false, allowPlaybackFailure = false, diagnostics } = {},
+) {
   const state = initial();
   state.t = time;
   state.clips = [{ id: 1, in: 0, out: 10, srcDur: 10, speed: 1 }];
@@ -55,7 +132,8 @@ function fixture(time, request = async () => new Response("{}"), component = {
     },
     playbackFailed() {
       playbackFailures += 1;
-      if (!allowPlaybackFailure) assert.fail("Preview playback should not fail");
+      if (!allowPlaybackFailure)
+        assert.fail("Preview playback should not fail");
     },
     emptyScene() {},
     beginRequest(id) {
@@ -82,24 +160,57 @@ function fixture(time, request = async () => new Response("{}"), component = {
 
 function diagnosticFixture() {
   const records = [];
-  return { records, sink: {
-    start: () => "run",
-    stop() {},
-    record: (_run, event) => records.push(event),
-    state() {},
-    capture: () => false,
-  } };
+  return {
+    records,
+    sink: {
+      start: () => "run",
+      stop() {},
+      record: (_run, event) => records.push(event),
+      state() {},
+      capture: () => false,
+    },
+  };
 }
 
 test("animated opacity, collapsed scale and off-canvas position cannot create an unanswered Try hold", () => {
-  for (const [property, value] of [["opacity", 0], ["scaleX", 0], ["scaleY", 0], ["x", 100]]) {
-    const component = { id: "hidden-choice", type: "choice", sceneId: "main", x: 50, y: 50,
-      at: 1, dur: 3, responsePolicy: { dispatch: "layer_end", unanswered: "pause" },
-      fields: { prompt: "Choose", options: [{ label: "A", outcome: { kind: "continue" } }, { label: "B", outcome: { kind: "continue" } }] },
-      animation: { tracks: { [property]: [{ time: 0, value: property === "x" ? 0 : 1, easing: "linear" }, { time: 3, value, easing: "linear" }] } } };
+  for (const [property, value] of [
+    ["opacity", 0],
+    ["scaleX", 0],
+    ["scaleY", 0],
+    ["x", 100],
+  ]) {
+    const component = {
+      id: "hidden-choice",
+      type: "choice",
+      sceneId: "main",
+      x: 50,
+      y: 50,
+      at: 1,
+      dur: 3,
+      responsePolicy: { dispatch: "layer_end", unanswered: "pause" },
+      fields: {
+        prompt: "Choose",
+        options: [
+          { label: "A", outcome: { kind: "continue" } },
+          { label: "B", outcome: { kind: "continue" } },
+        ],
+      },
+      animation: {
+        tracks: {
+          [property]: [
+            { time: 0, value: property === "x" ? 0 : 1, easing: "linear" },
+            { time: 3, value, easing: "linear" },
+          ],
+        },
+      },
+    };
     const harness = fixture(3.9, undefined, component);
     harness.session.startTry();
-    assert.equal(harness.session.advanceTry(harness.state, 4.1), false, property);
+    assert.equal(
+      harness.session.advanceTry(harness.state, 4.1),
+      false,
+      property,
+    );
     assert.equal(harness.state.tryMode.holdingId, null, property);
     assert.equal(harness.state.playing, true, property);
     harness.session.stopTry();
@@ -107,31 +218,91 @@ test("animated opacity, collapsed scale and off-canvas position cannot create an
 });
 
 test("a below-video component can pause once animated footage reveals its interaction center", () => {
-  for (const [property, value] of [["opacity", 0], ["x", 100], ["scaleX", 0]]) {
-    const component = { id: "revealed-choice", type: "choice", sceneId: "main", x: 50, y: 50,
-      at: 1, dur: 3, responsePolicy: { dispatch: "layer_end", unanswered: "pause" },
-      fields: { prompt: "Choose", options: [{ label: "A", outcome: { kind: "continue" } }, { label: "B", outcome: { kind: "continue" } }] } };
+  for (const [property, value] of [
+    ["opacity", 0],
+    ["x", 100],
+    ["scaleX", 0],
+  ]) {
+    const component = {
+      id: "revealed-choice",
+      type: "choice",
+      sceneId: "main",
+      x: 50,
+      y: 50,
+      at: 1,
+      dur: 3,
+      responsePolicy: { dispatch: "layer_end", unanswered: "pause" },
+      fields: {
+        prompt: "Choose",
+        options: [
+          { label: "A", outcome: { kind: "continue" } },
+          { label: "B", outcome: { kind: "continue" } },
+        ],
+      },
+    };
     const harness = fixture(3.9, undefined, component);
     harness.state.layers = ["component:revealed-choice", "video"];
-    harness.state.clips[0].animation = { tracks: { [property]: [{ time: 0, value: property === "x" ? 0 : 1, easing: "linear" }, { time: 4, value, easing: "linear" }] } };
+    harness.state.clips[0].animation = {
+      tracks: {
+        [property]: [
+          { time: 0, value: property === "x" ? 0 : 1, easing: "linear" },
+          { time: 4, value, easing: "linear" },
+        ],
+      },
+    };
     harness.session.startTry();
-    assert.equal(harness.session.advanceTry(harness.state, 4.1), true, property);
+    assert.equal(
+      harness.session.advanceTry(harness.state, 4.1),
+      true,
+      property,
+    );
     assert.equal(harness.state.tryMode.holdingId, component.id, property);
-    assert.equal(harness.state.t, 4, "Visibility uses the exact boundary, not the previous or next frame");
+    assert.equal(
+      harness.state.t,
+      4,
+      "Visibility uses the exact boundary, not the previous or next frame",
+    );
     harness.session.stopTry();
   }
 });
 
 test("a failed deferred request retains its failure but releases a now-invisible retry hold", async () => {
-  const outcome = { kind: "request", url: "https://example.com/fail", method: "POST", body: "{}", onSuccess: { kind: "continue" }, onError: null };
-  const component = { id: "fade-card", sceneId: "main", type: "card", x: 50, y: 50, at: 1, dur: 3,
-    responsePolicy: { dispatch: "layer_end", unanswered: "pause" }, fields: { title: "Send", buttons: [{ label: "Send", outcome }] },
-    animation: { tracks: { opacity: [{ time: 0, value: 1, easing: "linear" }, { time: 3, value: 0, easing: "linear" }] } } };
-  const harness = fixture(3.9, async () => new Response("failure", { status: 503 }), component);
+  const outcome = {
+    kind: "request",
+    url: "https://example.com/fail",
+    method: "POST",
+    body: "{}",
+    onSuccess: { kind: "continue" },
+    onError: null,
+  };
+  const component = {
+    id: "fade-card",
+    sceneId: "main",
+    type: "card",
+    x: 50,
+    y: 50,
+    at: 1,
+    dur: 3,
+    responsePolicy: { dispatch: "layer_end", unanswered: "pause" },
+    fields: { title: "Send", buttons: [{ label: "Send", outcome }] },
+    animation: {
+      tracks: {
+        opacity: [
+          { time: 0, value: 1, easing: "linear" },
+          { time: 3, value: 0, easing: "linear" },
+        ],
+      },
+    },
+  };
+  const harness = fixture(
+    3.9,
+    async () => new Response("failure", { status: 503 }),
+    component,
+  );
   harness.session.startTry();
   await harness.session.runComponentResponse(component, { index: 0, outcome });
   harness.session.advanceTry(harness.state, 4.1);
-  await new Promise(resolve => setTimeout(resolve, 0));
+  await new Promise((resolve) => setTimeout(resolve, 0));
   assert.equal(harness.state.tryMode.holdingId, null);
   assert.equal(harness.state.playing, true);
   assert.equal(harness.feedback()[component.id].phase, "failed");
@@ -140,49 +311,133 @@ test("a failed deferred request retains its failure but releases a now-invisible
 
 test("Try diagnostic trace distinguishes a captured answer from its deferred execution", async () => {
   const trace = diagnosticFixture();
-  const component = { id: "question", type: "choice", sceneId: "main", at: 1, dur: 4,
+  const component = {
+    id: "question",
+    type: "choice",
+    sceneId: "main",
+    at: 1,
+    dur: 4,
     responsePolicy: { dispatch: "layer_end", unanswered: "pause" },
-    fields: { prompt: "Question", options: [{ label: "A", outcome: { kind: "continue" } }] } };
+    fields: {
+      prompt: "Question",
+      options: [{ label: "A", outcome: { kind: "continue" } }],
+    },
+  };
   const harness = fixture(2, undefined, component, { diagnostics: trace.sink });
   harness.session.startTry();
-  await harness.session.runComponentResponse(component, { index: 0, outcome: { kind: "continue" } });
-  assert(trace.records.some(event => event.type === "response.deferred" && event.waitUntil === 5));
-  assert(!trace.records.some(event => event.type === "action.selected"));
+  await harness.session.runComponentResponse(component, {
+    index: 0,
+    outcome: { kind: "continue" },
+  });
+  assert(
+    trace.records.some(
+      (event) => event.type === "response.deferred" && event.waitUntil === 5,
+    ),
+  );
+  assert(!trace.records.some((event) => event.type === "action.selected"));
   harness.session.advanceTry(harness.state, 5);
   await Promise.resolve();
-  const selected = trace.records.find(event => event.type === "action.selected");
+  const selected = trace.records.find(
+    (event) => event.type === "action.selected",
+  );
   assert(selected);
-  assert.equal(selected.interactionId, trace.records.find(event => event.type === "interaction.received").interactionId);
-  assert(trace.records.some(event => event.type === "playback.released"));
+  assert.equal(
+    selected.interactionId,
+    trace.records.find((event) => event.type === "interaction.received")
+      .interactionId,
+  );
+  assert(trace.records.some((event) => event.type === "playback.released"));
 });
 
 test("Try attaches SDK requests to their input and explains repeated pending presses", async () => {
   let complete;
-  const pending = new Promise(resolve => { complete = resolve; });
+  const pending = new Promise((resolve) => {
+    complete = resolve;
+  });
   const trace = diagnosticFixture();
-  const component = { id: "question", type: "choice", sceneId: "main", at: 1, dur: 4,
-    responsePolicy: { dispatch: "interaction", unanswered: "continue" }, fields: {} };
-  const harness = fixture(2, () => pending, component, { diagnostics: trace.sink });
+  const component = {
+    id: "question",
+    type: "choice",
+    sceneId: "main",
+    at: 1,
+    dur: 4,
+    responsePolicy: { dispatch: "interaction", unanswered: "continue" },
+    fields: {},
+  };
+  const harness = fixture(2, () => pending, component, {
+    diagnostics: trace.sink,
+  });
   harness.session.startTry();
-  const response = { index: 0, outcome: { kind: "request", url: "https://example.com/test", method: "GET", body: "", onSuccess: { kind: "continue" }, onError: null } };
+  const response = {
+    index: 0,
+    outcome: {
+      kind: "request",
+      url: "https://example.com/test",
+      method: "GET",
+      body: "",
+      onSuccess: { kind: "continue" },
+      onError: null,
+    },
+  };
   const first = harness.session.runComponentResponse(component, response);
   await harness.session.runComponentResponse(component, { ...response });
-  const request = trace.records.find(event => event.type === "request.started");
-  assert(request, "The observer must be connected to runtime handlers, not the manifest");
-  assert.equal(request.interactionId, trace.records.find(event => event.type === "interaction.received").interactionId);
-  assert(trace.records.some(event => event.type === "interaction.ignored" && event.reason === "request_pending"));
+  const request = trace.records.find(
+    (event) => event.type === "request.started",
+  );
+  assert(
+    request,
+    "The observer must be connected to runtime handlers, not the manifest",
+  );
+  assert.equal(
+    request.interactionId,
+    trace.records.find((event) => event.type === "interaction.received")
+      .interactionId,
+  );
+  assert(
+    trace.records.some(
+      (event) =>
+        event.type === "interaction.ignored" &&
+        event.reason === "request_pending",
+    ),
+  );
   complete(new Response("{}"));
   await first;
-  assert(trace.records.some(event => event.type === "request.completed" && event.requestId === request.requestId));
+  assert(
+    trace.records.some(
+      (event) =>
+        event.type === "request.completed" &&
+        event.requestId === request.requestId,
+    ),
+  );
 });
 
 test("throwing diagnostic observers cannot prevent Try actions or cleanup", async () => {
-  const fail = () => { throw new Error("observer failed"); };
-  const component = { id: "question", type: "choice", sceneId: "main", at: 1, dur: 4,
-    responsePolicy: { dispatch: "interaction", unanswered: "continue" }, fields: {} };
-  const harness = fixture(2, undefined, component, { diagnostics: { start: fail, stop: fail, record: fail, state: fail, capture: fail } });
+  const fail = () => {
+    throw new Error("observer failed");
+  };
+  const component = {
+    id: "question",
+    type: "choice",
+    sceneId: "main",
+    at: 1,
+    dur: 4,
+    responsePolicy: { dispatch: "interaction", unanswered: "continue" },
+    fields: {},
+  };
+  const harness = fixture(2, undefined, component, {
+    diagnostics: {
+      start: fail,
+      stop: fail,
+      record: fail,
+      state: fail,
+      capture: fail,
+    },
+  });
   harness.session.startTry();
-  await harness.session.runComponentResponse(component, { index: 0, outcome: { kind: "time", t: 7 } });
+  await harness.session.runComponentResponse(component, {
+    index: 0,
+    outcome: { kind: "time", t: 7 },
+  });
   assert.equal(harness.state.t, 7);
   harness.session.stopTry();
   assert.equal(harness.state.tryMode, null);
@@ -191,44 +446,101 @@ test("throwing diagnostic observers cannot prevent Try actions or cleanup", asyn
 test("a Try started at the end records its actual restart position", () => {
   let startingTime;
   const trace = diagnosticFixture();
-  const harness = fixture(10, undefined, undefined, { diagnostics: { ...trace.sink, start(source) { startingTime = source.t; return "run"; } } });
+  const harness = fixture(10, undefined, undefined, {
+    diagnostics: {
+      ...trace.sink,
+      start(source) {
+        startingTime = source.t;
+        return "run";
+      },
+    },
+  });
   harness.session.startTry();
   assert.equal(harness.state.t, 0);
   assert.equal(startingTime, 0);
 });
 
-test("only an unexecuted deferred response is reported as superseded", async t => {
+test("only an unexecuted deferred response is reported as superseded", async (t) => {
   t.mock.method(console, "warn", () => {});
   const deferredTrace = diagnosticFixture();
-  const component = { id: "question", type: "choice", sceneId: "main", at: 1, dur: 4,
-    responsePolicy: { dispatch: "layer_end", unanswered: "pause" }, fields: {} };
-  const deferred = fixture(2, undefined, component, { diagnostics: deferredTrace.sink });
+  const component = {
+    id: "question",
+    type: "choice",
+    sceneId: "main",
+    at: 1,
+    dur: 4,
+    responsePolicy: { dispatch: "layer_end", unanswered: "pause" },
+    fields: {},
+  };
+  const deferred = fixture(2, undefined, component, {
+    diagnostics: deferredTrace.sink,
+  });
   deferred.session.startTry();
-  await deferred.session.runComponentResponse(component, { index: 0, outcome: { kind: "continue" } });
-  await deferred.session.runComponentResponse(component, { index: 1, outcome: { kind: "continue" } });
-  assert.equal(deferredTrace.records.filter(record => record.reason === "superseded").length, 1);
+  await deferred.session.runComponentResponse(component, {
+    index: 0,
+    outcome: { kind: "continue" },
+  });
+  await deferred.session.runComponentResponse(component, {
+    index: 1,
+    outcome: { kind: "continue" },
+  });
+  assert.equal(
+    deferredTrace.records.filter((record) => record.reason === "superseded")
+      .length,
+    1,
+  );
 
   const retryTrace = diagnosticFixture();
-  const immediate = { ...component, responsePolicy: { dispatch: "interaction", unanswered: "pause" } };
-  const retry = fixture(2, async () => new Response("", { status: 404 }), immediate, { diagnostics: retryTrace.sink });
+  const immediate = {
+    ...component,
+    responsePolicy: { dispatch: "interaction", unanswered: "pause" },
+  };
+  const retry = fixture(
+    2,
+    async () => new Response("", { status: 404 }),
+    immediate,
+    { diagnostics: retryTrace.sink },
+  );
   retry.session.startTry();
-  const response = { index: 0, outcome: { kind: "request", method: "GET", url: "https://example.com/test", body: "", onSuccess: { kind: "continue" }, onError: null } };
+  const response = {
+    index: 0,
+    outcome: {
+      kind: "request",
+      method: "GET",
+      url: "https://example.com/test",
+      body: "",
+      onSuccess: { kind: "continue" },
+      onError: null,
+    },
+  };
   await retry.session.runComponentResponse(immediate, response);
   await retry.session.runComponentResponse(immediate, { ...response });
-  assert.equal(retryTrace.records.filter(record => record.type === "request.failed").length, 2);
-  assert(!retryTrace.records.some(record => record.reason === "superseded"));
+  assert.equal(
+    retryTrace.records.filter((record) => record.type === "request.failed")
+      .length,
+    2,
+  );
+  assert(!retryTrace.records.some((record) => record.reason === "superseded"));
 });
 
 test("Try rejects a buttonless pausing Message in any scene", () => {
   const active = {
-    id: "active-message", type: "card", sceneId: "main", at: 1, dur: 2,
+    id: "active-message",
+    type: "card",
+    sceneId: "main",
+    at: 1,
+    dur: 2,
     responsePolicy: { dispatch: "interaction", unanswered: "continue" },
     fields: { buttons: [] },
   };
   const harness = fixture(1, undefined, active, { allowStartFailure: true });
   const inactiveClip = { ...harness.state.clips[0], id: 2 };
   const inactiveMessage = {
-    id: "inactive-message", type: "card", sceneId: "branch", at: 1, dur: 2,
+    id: "inactive-message",
+    type: "card",
+    sceneId: "branch",
+    at: 1,
+    dur: 2,
     responsePolicy: { dispatch: "layer_end", unanswered: "pause" },
     fields: { buttons: [] },
   };
@@ -250,12 +562,19 @@ test("Try rejects a buttonless pausing Message in any scene", () => {
 test("Try rejects every interactive component without the current response policy before playback starts", () => {
   for (const type of ["choice", "form"]) {
     const component = {
-      id: `stale-${type}`, type, sceneId: "main", at: 0, dur: 2,
-      fields: type === "choice"
-        ? { prompt: "Choose", options: [] }
-        : { heading: "Details", formFields: [], submitLabel: "Continue" },
+      id: `stale-${type}`,
+      type,
+      sceneId: "main",
+      at: 0,
+      dur: 2,
+      fields:
+        type === "choice"
+          ? { prompt: "Choose", options: [] }
+          : { heading: "Details", formFields: [], submitLabel: "Continue" },
     };
-    const harness = fixture(0, undefined, component, { allowStartFailure: true });
+    const harness = fixture(0, undefined, component, {
+      allowStartFailure: true,
+    });
 
     harness.session.startTry();
 
@@ -267,7 +586,9 @@ test("Try rejects every interactive component without the current response polic
 });
 
 test("a playback failure exits an active Try without reporting a startup failure", () => {
-  const harness = fixture(1, undefined, undefined, { allowPlaybackFailure: true });
+  const harness = fixture(1, undefined, undefined, {
+    allowPlaybackFailure: true,
+  });
   harness.session.startTry();
 
   harness.session.failTry(new Error("frame failed"));
@@ -312,10 +633,16 @@ test("a late request response cannot resume a stopped preview or restore cleared
     });
   });
   session.startTry();
-  const pending = session.runComponentResponse(state.components[0], { index: 0, outcome: {
-    kind: "request", url: "https://example.com/save", method: "GET",
-    onSuccess: { kind: "continue" }, onError: null,
-  } });
+  const pending = session.runComponentResponse(state.components[0], {
+    index: 0,
+    outcome: {
+      kind: "request",
+      url: "https://example.com/save",
+      method: "GET",
+      onSuccess: { kind: "continue" },
+      onError: null,
+    },
+  });
   await requested;
   assert.equal(feedback().card.phase, "pending");
   session.stopTry();
@@ -331,66 +658,127 @@ test("a late request response cannot resume a stopped preview or restore cleared
   assert.equal(state.tryMode, null);
   assert.equal(state.playing, false);
   assert.deepEqual(feedback(), {});
-  assert.equal(runtimeState(), null, "A stopped session must ignore late runtime state events");
+  assert.equal(
+    runtimeState(),
+    null,
+    "A stopped session must ignore late runtime state events",
+  );
 });
 
 test("an active preview publishes request response state and clears it when stopped", async () => {
-  const { session, state, runtimeState } = fixture(2, async () => new Response(
-    JSON.stringify({ message: "Saved" }),
-    { status: 200, headers: { "content-type": "application/json" } },
-  ));
+  const { session, state, runtimeState } = fixture(
+    2,
+    async () =>
+      new Response(JSON.stringify({ message: "Saved" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+  );
   session.startTry();
   assert.deepEqual(runtimeState(), {});
 
-  await session.runComponentResponse(state.components[0], { index: 0, outcome: {
-    kind: "request", url: "https://example.com/save", method: "GET",
-    onSuccess: { kind: "continue" }, onError: null,
-  } });
+  await session.runComponentResponse(state.components[0], {
+    index: 0,
+    outcome: {
+      kind: "request",
+      url: "https://example.com/save",
+      method: "GET",
+      onSuccess: { kind: "continue" },
+      onError: null,
+    },
+  });
 
-  assert.deepEqual(runtimeState(), { responses: { card: { message: "Saved" } } });
+  assert.deepEqual(runtimeState(), {
+    responses: { card: { message: "Saved" } },
+  });
   session.stopTry();
   assert.equal(runtimeState(), null);
 });
 
 test("all four response-policy combinations keep dispatch timing separate from unanswered playback", async () => {
   const requestOutcome = {
-    kind: "request", url: "https://example.com/save", method: "POST", body: "{}",
-    onSuccess: { kind: "continue" }, onError: null,
+    kind: "request",
+    url: "https://example.com/save",
+    method: "POST",
+    body: "{}",
+    onSuccess: { kind: "continue" },
+    onError: null,
   };
   for (const dispatch of ["interaction", "layer_end"])
     for (const unanswered of ["continue", "pause"]) {
       let requests = 0;
       const component = {
-        id: `card-${dispatch}-${unanswered}`, type: "card", at: 2, dur: 2,
+        id: `card-${dispatch}-${unanswered}`,
+        type: "card",
+        at: 2,
+        dur: 2,
         responsePolicy: { dispatch, unanswered },
         fields: { buttons: [{ label: "Send", outcome: requestOutcome }] },
       };
-      const answered = fixture(2.5, async () => {
-        requests += 1;
-        return new Response('{"saved":true}', { status: 200, headers: { "content-type": "application/json" } });
-      }, component);
+      const answered = fixture(
+        2.5,
+        async () => {
+          requests += 1;
+          return new Response('{"saved":true}', {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+        },
+        component,
+      );
       answered.session.startTry();
-      await answered.session.runComponentResponse(component, { index: 0, outcome: requestOutcome });
-      assert.equal(requests, dispatch === "interaction" ? 1 : 0, `${dispatch}/${unanswered} dispatched at the wrong time`);
+      await answered.session.runComponentResponse(component, {
+        index: 0,
+        outcome: requestOutcome,
+      });
+      assert.equal(
+        requests,
+        dispatch === "interaction" ? 1 : 0,
+        `${dispatch}/${unanswered} dispatched at the wrong time`,
+      );
       answered.state.t = 3.9;
       answered.session.advanceTry(answered.state, 4.05);
       await new Promise((resolve) => setImmediate(resolve));
-      assert.equal(requests, 1, `${dispatch}/${unanswered} did not dispatch exactly once`);
-      assert.equal(answered.state.playing, true, `${dispatch}/${unanswered} treated an answered response as unanswered`);
+      assert.equal(
+        requests,
+        1,
+        `${dispatch}/${unanswered} did not dispatch exactly once`,
+      );
+      assert.equal(
+        answered.state.playing,
+        true,
+        `${dispatch}/${unanswered} treated an answered response as unanswered`,
+      );
       answered.session.stopTry();
 
       requests = 0;
-      const unansweredSession = fixture(3.9, async () => {
-        requests += 1;
-        return new Response("{}");
-      }, component);
+      const unansweredSession = fixture(
+        3.9,
+        async () => {
+          requests += 1;
+          return new Response("{}");
+        },
+        component,
+      );
       unansweredSession.session.startTry();
-      const consumed = unansweredSession.session.advanceTry(unansweredSession.state, 4.05);
-      assert.equal(requests, 0, `${dispatch}/${unanswered} synthesized an unanswered request`);
+      const consumed = unansweredSession.session.advanceTry(
+        unansweredSession.state,
+        4.05,
+      );
+      assert.equal(
+        requests,
+        0,
+        `${dispatch}/${unanswered} synthesized an unanswered request`,
+      );
       assert.equal(unansweredSession.state.playing, unanswered !== "pause");
-      assert.equal(unansweredSession.state.tryMode.holdingId,
-        unanswered === "pause" ? component.id : null);
-      assert.equal(consumed, dispatch === "layer_end" || unanswered === "pause");
+      assert.equal(
+        unansweredSession.state.tryMode.holdingId,
+        unanswered === "pause" ? component.id : null,
+      );
+      assert.equal(
+        consumed,
+        dispatch === "layer_end" || unanswered === "pause",
+      );
       unansweredSession.session.stopTry();
     }
 });
@@ -398,18 +786,31 @@ test("all four response-policy combinations keep dispatch timing separate from u
 test("a response supplied after an unanswered pause dispatches immediately", async () => {
   let requests = 0;
   const outcome = {
-    kind: "request", url: "https://example.com/save", method: "GET",
-    onSuccess: { kind: "continue" }, onError: null,
+    kind: "request",
+    url: "https://example.com/save",
+    method: "GET",
+    onSuccess: { kind: "continue" },
+    onError: null,
   };
   const component = {
-    id: "late-card", type: "card", at: 2, dur: 2,
+    id: "late-card",
+    type: "card",
+    at: 2,
+    dur: 2,
     responsePolicy: { dispatch: "layer_end", unanswered: "pause" },
     fields: { buttons: [{ label: "Send", outcome }] },
   };
-  const current = fixture(3.9, async () => {
-    requests += 1;
-    return new Response("{}", { status: 200, headers: { "content-type": "application/json" } });
-  }, component);
+  const current = fixture(
+    3.9,
+    async () => {
+      requests += 1;
+      return new Response("{}", {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    },
+    component,
+  );
   current.session.startTry();
   current.session.advanceTry(current.state, 4.05);
   assert.equal(current.state.playing, false);
@@ -422,9 +823,17 @@ test("a response supplied after an unanswered pause dispatches immediately", asy
 
 test("a failed layer-end route stays retryable at its boundary", async () => {
   const component = {
-    id: "route-card", type: "card", sceneId: "main", at: 2, dur: 2,
+    id: "route-card",
+    type: "card",
+    sceneId: "main",
+    at: 2,
+    dur: 2,
     responsePolicy: { dispatch: "layer_end", unanswered: "pause" },
-    fields: { buttons: [{ label: "Missing", outcome: { kind: "scene", sceneId: "missing" } }] },
+    fields: {
+      buttons: [
+        { label: "Missing", outcome: { kind: "scene", sceneId: "missing" } },
+      ],
+    },
   };
   const current = fixture(2.5, undefined, component);
   current.session.startTry();
@@ -451,20 +860,36 @@ test("a failed layer-end route stays retryable at its boundary", async () => {
 
 test("a failed interaction still counts as answered for pause-if-nobody-responds", async () => {
   const component = {
-    id: "answered-failure", type: "choice", sceneId: "main", at: 2, dur: 2,
+    id: "answered-failure",
+    type: "choice",
+    sceneId: "main",
+    at: 2,
+    dur: 2,
     responsePolicy: { dispatch: "interaction", unanswered: "pause" },
-    fields: { options: [
-      { label: "Send", outcome: { kind: "continue" } },
-      { label: "Skip", outcome: { kind: "continue" } },
-    ] },
+    fields: {
+      options: [
+        { label: "Send", outcome: { kind: "continue" } },
+        { label: "Skip", outcome: { kind: "continue" } },
+      ],
+    },
   };
-  const harness = fixture(2.5, async () => { throw new Error("offline"); }, component);
+  const harness = fixture(
+    2.5,
+    async () => {
+      throw new Error("offline");
+    },
+    component,
+  );
   harness.session.startTry();
   await harness.session.runComponentResponse(component, {
     index: 0,
     outcome: {
-      kind: "request", method: "GET", url: "https://example.com/result", body: "",
-      onSuccess: { kind: "continue" }, onError: null,
+      kind: "request",
+      method: "GET",
+      url: "https://example.com/result",
+      body: "",
+      onSuccess: { kind: "continue" },
+      onError: null,
     },
   });
   assert(harness.state.tryMode.capturedResponses[component.id]);
@@ -478,24 +903,41 @@ test("a failed interaction still counts as answered for pause-if-nobody-responds
 
 test("Try shows a 404 on the affected component and clears it after retry", async () => {
   const component = {
-    id: "retry-request", type: "choice", sceneId: "main", at: 2, dur: 2,
+    id: "retry-request",
+    type: "choice",
+    sceneId: "main",
+    at: 2,
+    dur: 2,
     responsePolicy: { dispatch: "interaction", unanswered: "pause" },
-    fields: { options: [
-      { label: "Send", outcome: { kind: "continue" } },
-      { label: "Skip", outcome: { kind: "continue" } },
-    ] },
+    fields: {
+      options: [
+        { label: "Send", outcome: { kind: "continue" } },
+        { label: "Skip", outcome: { kind: "continue" } },
+      ],
+    },
   };
   let attempts = 0;
-  const harness = fixture(2.5, async () => {
-    attempts += 1;
-    return attempts === 1 ? new Response("Not found", { status: 404 })
-      : new Response("{}", { headers: { "Content-Type": "application/json" } });
-  }, component);
+  const harness = fixture(
+    2.5,
+    async () => {
+      attempts += 1;
+      return attempts === 1
+        ? new Response("Not found", { status: 404 })
+        : new Response("{}", {
+            headers: { "Content-Type": "application/json" },
+          });
+    },
+    component,
+  );
   const response = {
     index: 0,
     outcome: {
-      kind: "request", method: "GET", url: "https://example.com/result", body: "",
-      onSuccess: { kind: "continue" }, onError: null,
+      kind: "request",
+      method: "GET",
+      url: "https://example.com/result",
+      body: "",
+      onSuccess: { kind: "continue" },
+      onError: null,
     },
   };
   harness.session.startTry();
@@ -511,11 +953,17 @@ test("Try shows a 404 on the affected component and clears it after retry", asyn
 
 test("a missing Form destination is captured first and fails only at its dispatch time", async () => {
   const form = {
-    id: "deferred-form", type: "form", sceneId: "main", at: 2, dur: 2,
+    id: "deferred-form",
+    type: "form",
+    sceneId: "main",
+    at: 2,
+    dur: 2,
     responsePolicy: { dispatch: "layer_end", unanswered: "pause" },
     fields: {
       formFields: [{ name: "Name", type: "text" }],
-      formSubmitMode: "request", destination: "", failureOutcome: null,
+      formSubmitMode: "request",
+      destination: "",
+      failureOutcome: null,
       submitLabel: "Send",
     },
   };
@@ -523,7 +971,10 @@ test("a missing Form destination is captured first and fails only at its dispatc
   current.session.startTry();
   await current.session.runFormSubmission(form, { field_1: "Ada" });
   assert.deepEqual(current.feedback(), {});
-  assert.deepEqual(current.state.tryMode.capturedResponses[form.id].formValues, { field_1: "Ada" });
+  assert.deepEqual(
+    current.state.tryMode.capturedResponses[form.id].formValues,
+    { field_1: "Ada" },
+  );
 
   current.state.t = 3.9;
   current.session.advanceTry(current.state, 4.05);
@@ -539,7 +990,11 @@ test("a missing Form destination is captured first and fails only at its dispatc
   const routedSession = fixture(2.5, undefined, routed);
   routedSession.session.startTry();
   await routedSession.session.runFormSubmission(routed, { field_1: "Ada" });
-  assert.equal(routedSession.state.t, 2.5, "The failure route must not run at interaction time");
+  assert.equal(
+    routedSession.state.t,
+    2.5,
+    "The failure route must not run at interaction time",
+  );
   routedSession.state.t = 3.9;
   routedSession.session.advanceTry(routedSession.state, 4.05);
   await new Promise((resolve) => setImmediate(resolve));
@@ -550,43 +1005,74 @@ test("a missing Form destination is captured first and fails only at its dispatc
 
 test("a seek from one request cancels another request and clears its pending feedback", async () => {
   const first = {
-    id: "first", type: "card", at: 1, dur: 5,
-    responsePolicy: { dispatch: "interaction", unanswered: "continue" }, fields: {},
+    id: "first",
+    type: "card",
+    at: 1,
+    dur: 5,
+    responsePolicy: { dispatch: "interaction", unanswered: "continue" },
+    fields: {},
   };
   const second = {
-    id: "second", type: "card", at: 1, dur: 5,
-    responsePolicy: { dispatch: "interaction", unanswered: "continue" }, fields: {},
+    id: "second",
+    type: "card",
+    at: 1,
+    dur: 5,
+    responsePolicy: { dispatch: "interaction", unanswered: "continue" },
+    fields: {},
   };
   const releases = new Map();
-  const current = fixture(2, (url) => new Promise((resolve) => {
-    releases.set(String(url), resolve);
-  }), first);
+  const current = fixture(
+    2,
+    (url) =>
+      new Promise((resolve) => {
+        releases.set(String(url), resolve);
+      }),
+    first,
+  );
   current.state.components = [first, second];
   current.state.scenes[0].components = current.state.components;
   current.session.startTry();
 
-  const firstRun = current.session.runComponentResponse(first, { index: 0, outcome: {
-    kind: "request", url: "https://example.com/first", method: "GET",
-    onSuccess: { kind: "time", t: 6 }, onError: null,
-  } });
-  const secondRun = current.session.runComponentResponse(second, { index: 0, outcome: {
-    kind: "request", url: "https://example.com/second", method: "GET",
-    onSuccess: { kind: "continue" }, onError: null,
-  } });
+  const firstRun = current.session.runComponentResponse(first, {
+    index: 0,
+    outcome: {
+      kind: "request",
+      url: "https://example.com/first",
+      method: "GET",
+      onSuccess: { kind: "time", t: 6 },
+      onError: null,
+    },
+  });
+  const secondRun = current.session.runComponentResponse(second, {
+    index: 0,
+    outcome: {
+      kind: "request",
+      url: "https://example.com/second",
+      method: "GET",
+      onSuccess: { kind: "continue" },
+      onError: null,
+    },
+  });
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(current.feedback().first.phase, "pending");
   assert.equal(current.feedback().second.phase, "pending");
 
-  releases.get("https://example.com/first")(new Response("{}", {
-    status: 200, headers: { "content-type": "application/json" },
-  }));
+  releases.get("https://example.com/first")(
+    new Response("{}", {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    }),
+  );
   await firstRun;
   assert.equal(current.state.t, 6);
   assert.equal(current.feedback().second, undefined);
 
-  releases.get("https://example.com/second")(new Response("{}", {
-    status: 200, headers: { "content-type": "application/json" },
-  }));
+  releases.get("https://example.com/second")(
+    new Response("{}", {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    }),
+  );
   await secondRun;
   assert.equal(current.feedback().second, undefined);
   current.session.stopTry();
@@ -594,59 +1080,98 @@ test("a seek from one request cancels another request and clears its pending fee
 
 test("Try lets an interaction request finish at the final frame before ending", async () => {
   let respond;
-  const response = new Promise((resolve) => { respond = resolve; });
+  const response = new Promise((resolve) => {
+    respond = resolve;
+  });
   const component = {
-    id: "last-request", type: "choice", sceneId: "main", at: 8, dur: 2,
+    id: "last-request",
+    type: "choice",
+    sceneId: "main",
+    at: 8,
+    dur: 2,
     responsePolicy: { dispatch: "interaction", unanswered: "continue" },
-    fields: { options: [
-      { label: "Send", outcome: { kind: "continue" } },
-      { label: "Skip", outcome: { kind: "continue" } },
-    ] },
+    fields: {
+      options: [
+        { label: "Send", outcome: { kind: "continue" } },
+        { label: "Skip", outcome: { kind: "continue" } },
+      ],
+    },
   };
   const harness = fixture(9.8, async () => response, component);
   harness.session.startTry();
   const pending = harness.session.runComponentResponse(component, {
     index: 0,
     outcome: {
-      kind: "request", method: "GET", url: "https://example.com/result", body: "",
-      onSuccess: { kind: "continue" }, onError: null,
+      kind: "request",
+      method: "GET",
+      url: "https://example.com/result",
+      body: "",
+      onSuccess: { kind: "continue" },
+      onError: null,
     },
   });
   await new Promise((resolve) => setImmediate(resolve));
 
   assert.equal(harness.session.advanceTry(harness.state, 10.1), true);
-  assert(harness.state.tryMode, "The active request was aborted by the scene ending");
+  assert(
+    harness.state.tryMode,
+    "The active request was aborted by the scene ending",
+  );
   assert.equal(harness.state.playing, false);
 
-  respond(new Response('{"message":"done"}', { headers: { "Content-Type": "application/json" } }));
+  respond(
+    new Response('{"message":"done"}', {
+      headers: { "Content-Type": "application/json" },
+    }),
+  );
   await pending;
-  assert(harness.runtimeHistory.some((state) => state?.responses?.[component.id]?.message === "done"));
+  assert(
+    harness.runtimeHistory.some(
+      (state) => state?.responses?.[component.id]?.message === "done",
+    ),
+  );
   assert.equal(harness.state.tryMode, null);
 });
 
 test("Try keeps a final-frame request failure visible until a successful retry", async (t) => {
   t.mock.method(console, "warn", () => {});
   let respond;
-  const response = new Promise((resolve) => { respond = resolve; });
+  const response = new Promise((resolve) => {
+    respond = resolve;
+  });
   const component = {
-    id: "last-failure", type: "choice", sceneId: "main", at: 8, dur: 2,
+    id: "last-failure",
+    type: "choice",
+    sceneId: "main",
+    at: 8,
+    dur: 2,
     responsePolicy: { dispatch: "interaction", unanswered: "continue" },
-    fields: { options: [
-      { label: "Send", outcome: { kind: "continue" } },
-      { label: "Skip", outcome: { kind: "continue" } },
-    ] },
+    fields: {
+      options: [
+        { label: "Send", outcome: { kind: "continue" } },
+        { label: "Skip", outcome: { kind: "continue" } },
+      ],
+    },
   };
   let attempts = 0;
-  const harness = fixture(9.8, async () => {
-    attempts += 1;
-    return attempts === 1 ? response : new Response("{}", { status: 200 });
-  }, component);
+  const harness = fixture(
+    9.8,
+    async () => {
+      attempts += 1;
+      return attempts === 1 ? response : new Response("{}", { status: 200 });
+    },
+    component,
+  );
   harness.session.startTry();
   const answer = {
     index: 0,
     outcome: {
-      kind: "request", method: "GET", url: "https://example.com/result", body: "",
-      onSuccess: { kind: "continue" }, onError: null,
+      kind: "request",
+      method: "GET",
+      url: "https://example.com/result",
+      body: "",
+      onSuccess: { kind: "continue" },
+      onError: null,
     },
   };
   const pending = harness.session.runComponentResponse(component, answer);
@@ -663,7 +1188,9 @@ test("Try keeps a final-frame request failure visible until a successful retry",
   assert.equal(harness.state.playing, false);
   assert.equal(harness.state.tryMode.dispatched.includes(component.id), false);
   assert.deepEqual(harness.feedback()[component.id].failure, {
-    kind: "http", status: 404, message: "Request not found (404).",
+    kind: "http",
+    status: 404,
+    message: "Request not found (404).",
   });
 
   await harness.session.runComponentResponse(component, answer);
@@ -675,22 +1202,34 @@ test("Try keeps a final-frame request failure visible until a successful retry",
 test("Try completes an authored final-frame error route without showing a failure", async (t) => {
   t.mock.method(console, "warn", () => {});
   let respond;
-  const response = new Promise((resolve) => { respond = resolve; });
+  const response = new Promise((resolve) => {
+    respond = resolve;
+  });
   const component = {
-    id: "routed-failure", type: "choice", sceneId: "main", at: 8, dur: 2,
+    id: "routed-failure",
+    type: "choice",
+    sceneId: "main",
+    at: 8,
+    dur: 2,
     responsePolicy: { dispatch: "interaction", unanswered: "continue" },
-    fields: { options: [
-      { label: "Send", outcome: { kind: "continue" } },
-      { label: "Skip", outcome: { kind: "continue" } },
-    ] },
+    fields: {
+      options: [
+        { label: "Send", outcome: { kind: "continue" } },
+        { label: "Skip", outcome: { kind: "continue" } },
+      ],
+    },
   };
   const harness = fixture(9.8, async () => response, component);
   harness.session.startTry();
   const pending = harness.session.runComponentResponse(component, {
     index: 0,
     outcome: {
-      kind: "request", method: "GET", url: "https://example.com/result", body: "",
-      onSuccess: { kind: "continue" }, onError: { kind: "continue" },
+      kind: "request",
+      method: "GET",
+      url: "https://example.com/result",
+      body: "",
+      onSuccess: { kind: "continue" },
+      onError: { kind: "continue" },
     },
   });
   await new Promise((resolve) => setImmediate(resolve));

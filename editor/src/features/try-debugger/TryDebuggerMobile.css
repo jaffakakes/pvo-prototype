@@ -38,13 +38,13 @@
 .statusLine[data-density="mobile"] .statusTitle { display: flex; align-items: center; gap: 6px; max-width: 100%; font-size: 14px; font-weight: 600; line-height: 1.4; white-space: normal; overflow-wrap: anywhere; }
 .statusMeta { display: flex; align-items: center; flex-wrap: wrap; column-gap: 6px; row-gap: 2px; min-width: 0; color: var(--muted); font-size: 12px; font-weight: 400; line-height: 1.4; }
 .statusMeta > span + span::before { margin-right: 6px; color: var(--faint); content: "·"; }
-.statusMeta .requestInline { color: var(--pale); }
+.statusMeta .requestInline { color: var(--strong); }
 
 .mobileHeader > .moreButton,
 .mobileHeader > .closeButton { width: 44px; height: 44px; flex: none; border: 0; border-radius: 8px; background: none; box-shadow: none; color: var(--muted-strong); }
 .mobileTabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); flex: none; min-height: 44px; margin: 0 12px 2px; padding: 0; border-bottom: 1px solid var(--q10); box-sizing: border-box; }
 .mobileTabs button { display: flex; align-items: center; justify-content: center; gap: 5px; min-width: 0; min-height: 44px; padding: 0 4px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font-size: 13px; font-weight: 400; }
-.mobileTabs button[aria-selected="true"] { border-bottom-color: var(--pale); color: var(--text); font-weight: 600; }
+.mobileTabs button[aria-selected="true"] { border-bottom-color: var(--strong); color: var(--text); font-weight: 600; }
 .mobileTabs .tabCount { border: 0; background: none; color: inherit; font-weight: 400; }
 .mobileContent { display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
 .mobileChips { display: flex; align-items: center; gap: 2px; flex: none; padding: 0 8px 2px 12px; }
@@ -52,7 +52,7 @@
 .mobileChips .filterButton > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mobileChips .filterButton > svg { flex: none; }
 .sheet .iconButton { display: inline-flex; align-items: center; justify-content: center; gap: 3px; flex: none; min-width: 44px; height: 44px; padding: 0 7px; border: 0; border-radius: 8px; background: none; color: var(--muted-strong); font-size: 11px; font-weight: 500; }
-.sheet .iconButton[data-active="true"] { color: var(--pale); background: color-mix(in srgb, var(--pale) 7%, transparent); }
+.sheet .iconButton[data-active="true"] { color: var(--strong); background: color-mix(in srgb, var(--strong) 7%, transparent); }
 .sheet .iconButton:hover, .mobileHeader > button:hover { background: var(--q06); }
 .mobileContent .activityList,
 .mobileContent .requestsList { gap: 0; padding: 0 16px 18px; }
@@ -113,7 +113,7 @@
 .detailDisclosure > summary::-webkit-details-marker { display: none; }
 .detailDisclosure > summary::after { width: 6px; height: 6px; margin-left: auto; margin-right: 4px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-45deg); content: ""; }
 .detailDisclosure[open] > summary::after { transform: rotate(45deg); }
-.detailDisclosure > summary:focus-visible { outline: 2px solid var(--pale); outline-offset: -2px; }
+.detailDisclosure > summary:focus-visible { outline: 2px solid var(--strong); outline-offset: -2px; }
 .detailDisclosure > summary > span { color: var(--muted); font-weight: 400; }
 .detailDisclosure .stages h3, .detailDisclosure .playbackCard > h3 { display: none; }
 .sheet .stageRow[data-last="true"] { background: none; }

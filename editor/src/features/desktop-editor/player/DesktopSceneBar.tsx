@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { sceneChildren } from "../../../domain/scenes/rules";
 import { useCapture } from "../../../state/captureStore";
+import { TimelineAnimationControls } from "../../animation/TimelineAnimationControls";
 import styles from "./DesktopSceneBar.module.css";
 
 export function DesktopSceneBar({ onOpenTree }: { onOpenTree(): void }) {
@@ -29,6 +30,7 @@ export function DesktopSceneBar({ onOpenTree }: { onOpenTree(): void }) {
       <button type="button" className={`${styles.chip} ${styles.add}`} disabled={trying || importing}
         onClick={() => useCapture.getState().createScene()} aria-label="New scene branching from here">＋ Scene</button>
     </div>
+    <TimelineAnimationControls />
     <button type="button" className={styles.tree} onClick={onOpenTree} aria-label="Show the whole scene tree">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M3 3h5v5H3zM16 10h5v5h-5zM16 18h5v3h-5zM5 8v11h11M5 12h11" />

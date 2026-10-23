@@ -35,12 +35,19 @@ export function ProjectStorageNotice({
     getProjectStorageStatus,
   );
   const [details, setDetails] = useState(false);
+  const [reminderVisible, setReminderVisible] = useState(false);
   const visible = (id: NotificationId) =>
     isStorageNotice(id) && !(inlineRestore && id === "restoreFailed");
   const notice = current && visible(current.id) ? current : null;
   const issue = unresolved.find((item) => visible(item.id));
   useEffect(() => setDetails(false), [issue?.key]);
-  if (!notice && !issue) return null;
+  useEffect(() => {
+    setReminderVisible(Boolean(issue && !notice));
+    if (!issue || notice) return;
+    const timeout = window.setTimeout(() => setReminderVisible(false), 10_000);
+    return () => window.clearTimeout(timeout);
+  }, [issue?.key, notice?.key]);
+  if (!notice && (!issue || (!details && !reminderVisible))) return null;
   const busy = status.phase === "retrying" || status.storage.phase === "saving";
   const content =
     details && issue ? (
@@ -68,12 +75,12 @@ export function ProjectStorageNotice({
             ? undefined
             : busy
               ? "Wait"
-              : status.recoveryBlocked
+              : status.recoveryBlocked || status.storage.conflict
                 ? "Review"
                 : "Retry"
         }
         actionLabel={
-          status.recoveryBlocked
+          status.recoveryBlocked || status.storage.conflict
             ? "Review save issue"
             : notice.id === "restoreFailed"
               ? "Retry restore"
@@ -84,7 +91,8 @@ export function ProjectStorageNotice({
           notice.id === "projectMissing"
             ? undefined
             : () => {
-                if (status.recoveryBlocked) setDetails(true);
+                if (status.recoveryBlocked || status.storage.conflict)
+                  setDetails(true);
                 else void retryProjectStorage();
               }
         }

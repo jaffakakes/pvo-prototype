@@ -7,7 +7,7 @@ import {
 } from "react";
 import { evaluateAnimation } from "../../../../packages/pvo-animation/index.js";
 import { dur } from "../../domain/clips/timing";
-import { layerOrder, layerZ } from "../../domain/layers/order";
+import { visualLayerOrder, layerZ } from "../../domain/layers/order";
 import type { Scene, Ratio } from "../../domain/project/model";
 import { projectRatio } from "../../domain/project/ratio";
 import type { CompletedExport } from "../../domain/publishing/model";
@@ -79,7 +79,7 @@ export function ExportPreview({
   const motion = evaluateAnimation(clip?.animation, located?.lt ?? 0);
   const scrubMax = Math.max(0.1, duration);
   const seekPercent = Math.min(100, Math.max(0, (shownTime / scrubMax) * 100));
-  const layers = useMemo(() => layerOrder(scene), [scene]);
+  const layers = useMemo(() => visualLayerOrder(scene), [scene]);
   const visibleTexts = layers.flatMap((id) =>
     id.startsWith("text:")
       ? scene.texts.filter(

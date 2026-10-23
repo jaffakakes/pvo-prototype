@@ -13,23 +13,7 @@ import {
 } from "./policy.js";
 import { channelId, runtimeDocument } from "./runtime-document.js";
 import { createRenderer } from "./renderer.js";
-
-function formFields(form) {
-  const result = Object.create(null);
-  for (const [key, value] of new FormData(form)) {
-    if (
-      typeof key !== "string" ||
-      key.length > 64 ||
-      key === "__proto__" ||
-      key === "constructor" ||
-      key === "prototype"
-    )
-      continue;
-    if (Object.keys(result).length >= 20) break;
-    result[key] = String(value).slice(0, 500);
-  }
-  return result;
-}
+import { readRenderedFormValues } from "./rendered-form-values.js";
 
 /**
  * Mount a single custom component. The caller is responsible for validating
@@ -56,9 +40,15 @@ export function mountCustomComponent(container, initial) {
   function diagnostic(type, detail = {}) {
     if (disposed || typeof options.onDiagnostic !== "function") return;
     try {
-      const result = options.onDiagnostic({ type, componentId: options.componentId, ...detail });
+      const result = options.onDiagnostic({
+        type,
+        componentId: options.componentId,
+        ...detail,
+      });
       if (result && typeof result.catch === "function") result.catch(() => {});
-    } catch { /* An observer cannot change sandbox execution. */ }
+    } catch {
+      /* An observer cannot change sandbox execution. */
+    }
   }
   const report = (error, reason = "runtime_error") => {
     if (!disposed) {
@@ -91,12 +81,18 @@ export function mountCustomComponent(container, initial) {
   runtimeFrame.srcdoc = runtimeDocument(channel, nonce);
 
   let controlProxies;
-  const renderer = createRenderer(renderFrame, renderShell, error => {
-    renderSucceeded = false;
-    report(error, "render_error");
-  }, (next) => {
-    handlers = next;
-  }, scale => controlProxies?.sync(scale));
+  const renderer = createRenderer(
+    renderFrame,
+    renderShell,
+    (error) => {
+      renderSucceeded = false;
+      report(error, "render_error");
+    },
+    (next) => {
+      handlers = next;
+    },
+    (scale) => controlProxies?.sync(scale),
+  );
   function fitRenderer() {
     renderer.fit(options);
   }
@@ -112,7 +108,10 @@ export function mountCustomComponent(container, initial) {
     clearTimeout(entry.timer);
     entry.timer = setTimeout(() => {
       if (!pending.has(eventId)) return;
-      report("Component function timed out and was restarted.", "function_timeout");
+      report(
+        "Component function timed out and was restarted.",
+        "function_timeout",
+      );
       restartWorker();
     }, delay);
   }
@@ -184,15 +183,20 @@ export function mountCustomComponent(container, initial) {
     const element = control?.closest?.("[data-pvo-click]");
     if (element) {
       const eventId = ++eventSerial;
-      diagnostic("interaction.received", { eventId, target: element.getAttribute("data-pvo-id")?.slice(0, 80) });
+      diagnostic("interaction.received", {
+        eventId,
+        target: element.getAttribute("data-pvo-id")?.slice(0, 80),
+      });
       const handler = handlers.get(element.getAttribute("data-pvo-click"));
-      if (handler)
-        invoke(
-          handler,
-          element.closest("form") ? formFields(element.closest("form")) : {},
+      if (handler) {
+        const form = element.closest("form");
+        const fields = form ? readRenderedFormValues(form) : {};
+        if (fields) invoke(handler, fields, eventId);
+      } else
+        diagnostic("interaction.ignored", {
           eventId,
-        );
-      else diagnostic("interaction.ignored", { eventId, reason: "no_matching_rule" });
+          reason: "no_matching_rule",
+        });
       return;
     }
     const button = control?.closest?.('button[type="submit"]');
@@ -202,7 +206,8 @@ export function mountCustomComponent(container, initial) {
   }
 
   function onRendererClick(event) {
-    if (!event.target?.closest?.('[data-pvo-click],button[type="submit"]')) return;
+    if (!event.target?.closest?.('[data-pvo-click],button[type="submit"]'))
+      return;
     event.preventDefault();
     activateRendererControl(event.target);
   }
@@ -219,14 +224,19 @@ export function mountCustomComponent(container, initial) {
       diagnostic("interaction.ignored", { eventId, reason: "request_pending" });
       return;
     }
-    if (!form?.checkValidity?.()) {
+    const fields = form && readRenderedFormValues(form);
+    if (!fields || !form?.checkValidity?.()) {
       diagnostic("interaction.ignored", { eventId, reason: "invalid_fields" });
       form?.reportValidity?.();
       return;
     }
     const handler = handlers.get(form.getAttribute("data-pvo-submit"));
-    if (handler) invoke(handler, formFields(form), eventId);
-    else diagnostic("interaction.ignored", { eventId, reason: "no_matching_rule" });
+    if (handler) invoke(handler, fields, eventId);
+    else
+      diagnostic("interaction.ignored", {
+        eventId,
+        reason: "no_matching_rule",
+      });
   }
 
   function onRendererKeyDown(event) {
@@ -256,12 +266,16 @@ export function mountCustomComponent(container, initial) {
     startTimer = setTimeout(() => {
       if (workerReady || disposed) return;
       runtimeFrame.contentWindow?.postMessage({ channel, kind: "stop" }, "*");
-      report("Component Functions did not start and were stopped.", "start_timeout");
+      report(
+        "Component Functions did not start and were stopped.",
+        "start_timeout",
+      );
     }, START_TIMEOUT_MS);
   }
 
   let startTimer = setTimeout(() => {
-    if (!runtimeReady) report("Component sandbox did not start.", "sandbox_timeout");
+    if (!runtimeReady)
+      report("Component sandbox did not start.", "sandbox_timeout");
   }, START_TIMEOUT_MS);
   function onRuntimeMessage(event) {
     if (
@@ -289,7 +303,10 @@ export function mountCustomComponent(container, initial) {
       return;
     }
     if (data.kind === "done") {
-      diagnostic("action.completed", { eventId: data.eventId, phase: "bridge" });
+      diagnostic("action.completed", {
+        eventId: data.eventId,
+        phase: "bridge",
+      });
       if (Number.isInteger(data.eventId)) finishEvent(data.eventId);
       return;
     }
@@ -315,7 +332,10 @@ export function mountCustomComponent(container, initial) {
       size = Infinity;
     }
     if (size > MAX_ACTION_BYTES) {
-      diagnostic("interaction.ignored", { eventId: data.eventId, reason: "action_too_large" });
+      diagnostic("interaction.ignored", {
+        eventId: data.eventId,
+        reason: "action_too_large",
+      });
       if (isRequest)
         finishRequest(data, false, "Component request is too large.");
       else report("Component action is too large.");
@@ -324,7 +344,10 @@ export function mountCustomComponent(container, initial) {
     const now = performance.now();
     actionTimes = actionTimes.filter((time) => now - time < 1_000);
     if (actionTimes.length >= MAX_ACTIONS_PER_SECOND) {
-      diagnostic("interaction.ignored", { eventId: data.eventId, reason: "rate_limit" });
+      diagnostic("interaction.ignored", {
+        eventId: data.eventId,
+        reason: "rate_limit",
+      });
       if (isRequest)
         finishRequest(data, false, "Component action rate limit reached.");
       else report("Component action rate limit reached.");
@@ -334,7 +357,10 @@ export function mountCustomComponent(container, initial) {
     if (!isRequest) {
       Promise.resolve()
         .then(() =>
-          options.onAction?.({ method: data.method, args: data.args }, { eventId: data.eventId }),
+          options.onAction?.(
+            { method: data.method, args: data.args },
+            { eventId: data.eventId },
+          ),
         )
         .catch(report);
       return;
@@ -345,7 +371,10 @@ export function mountCustomComponent(container, initial) {
       typeof data.args[0] !== "object" ||
       Array.isArray(data.args[0])
     ) {
-      diagnostic("interaction.ignored", { eventId: data.eventId, reason: "invalid_request" });
+      diagnostic("interaction.ignored", {
+        eventId: data.eventId,
+        reason: "invalid_request",
+      });
       finishRequest(
         data,
         false,
@@ -358,7 +387,10 @@ export function mountCustomComponent(container, initial) {
       .then(() => {
         if (!options.onAction)
           throw new Error("Requests are unavailable in this PVO host.");
-        return options.onAction({ method: "request", args: data.args }, { eventId: data.eventId });
+        return options.onAction(
+          { method: "request", args: data.args },
+          { eventId: data.eventId },
+        );
       })
       .then(
         (value) => {
@@ -393,7 +425,12 @@ export function mountCustomComponent(container, initial) {
   renderFrame.addEventListener("load", onRenderLoad);
   window.addEventListener("message", onRuntimeMessage);
   renderShell.append(renderFrame);
-  controlProxies = createControlProxies(renderFrame, renderShell, activateRendererControl, options.interactive !== false);
+  controlProxies = createControlProxies(
+    renderFrame,
+    renderShell,
+    activateRendererControl,
+    options.interactive !== false,
+  );
   container.append(renderShell, runtimeFrame);
 
   return {

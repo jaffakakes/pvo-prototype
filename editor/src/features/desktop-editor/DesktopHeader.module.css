@@ -19,7 +19,7 @@
   border: 2.5px solid var(--outline);
   border-radius: 11px;
   background: var(--surface);
-  box-shadow: 3px 3px 0 var(--accent-soft);
+  box-shadow: 3px 3px 0 var(--strong);
 }
 .mark img { width: 22px; height: 22px; object-fit: contain; filter: invert(1); }
 :global(html[data-theme="light"]) .mark img { filter: none; }

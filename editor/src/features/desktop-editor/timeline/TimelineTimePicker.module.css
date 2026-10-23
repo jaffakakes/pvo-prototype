@@ -29,7 +29,7 @@
 }
 
 .copy .error {
-  color: var(--pale);
+  color: var(--strong);
 }
 
 .time {

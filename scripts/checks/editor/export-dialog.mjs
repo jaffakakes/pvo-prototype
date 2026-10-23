@@ -1,8 +1,8 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import { openExportDialog } from "../helpers/editor-export.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
 
 const editorUrl =
   process.env.EDITOR_URL ||
@@ -13,10 +13,7 @@ const fixture = fileURLToPath(
 );
 const videoBytes = await readFile(fixture);
 const origin = new URL(editorUrl).origin;
-const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROME_PATH ||
-    "C:/Program Files/Google/Chrome/Application/chrome.exe",
+const browser = await launchBrowser({
   headless: true,
   args: ["--no-sandbox"],
 });

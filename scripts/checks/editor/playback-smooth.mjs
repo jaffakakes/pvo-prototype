@@ -1,10 +1,10 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import { resolve } from "node:path";
-import { chromium } from "playwright-core";
+
 
 const editorUrl = process.env.EDITOR_URL || process.env.RESTYLE_EDITOR_URL || "http://127.0.0.1:5173/";
 const videoFile = resolve("share/assets/preview.mp4");
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+const browser = await launchBrowser({
   headless: true,
   args: ["--no-sandbox"],
 });

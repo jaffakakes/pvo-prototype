@@ -1,12 +1,10 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { mkdir, readFile } from "node:fs/promises";
-import { chromium } from "playwright-core";
+
 import { parseNativeTurnRequest } from "../../../packages/pvo-assistant/native/index.js";
 import { installAssistantAvailabilityFixture } from "./assistant-fixture.mjs";
-const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROME_PATH ||
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+const browser = await launchBrowser({
   headless: true,
 });
 const url = process.env.EDITOR_URL || "http://127.0.0.1:5191/";
@@ -96,7 +94,7 @@ try {
         screen: "editor",
         localId: crypto.randomUUID(),
         clips: [mkClip(12, null, 0)],
-        sound: -1,
+        music: null,
         muted: true,
         t: 2,
         playing: false,

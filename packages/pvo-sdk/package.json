@@ -8,11 +8,21 @@
       "types": "./index.d.ts",
       "import": "./index.js"
     },
-    "./schema": "./pvo-manifest.schema.json"
+    "./schema": "./pvo-manifest.schema.json",
+    "./forms": {
+      "types": "./runtime/form-values.d.ts",
+      "import": "./runtime/form-values.js"
+    },
+    "./components": {
+      "types": "./manifest/component-values.d.ts",
+      "import": "./manifest/component-values.js"
+    }
   },
   "types": "./index.d.ts",
   "sideEffects": false,
-  "dependencies": { "@pvo/pvo-animation": "0.1.0" },
+  "dependencies": {
+    "@pvo/pvo-animation": "0.1.0"
+  },
   "engines": {
     "node": ">=18"
   },

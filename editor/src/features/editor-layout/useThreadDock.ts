@@ -1,4 +1,4 @@
-import { useEffect, useState, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useState, type RefObject } from "react";
 import {
   threadDockMaximum,
   threadDockMeasurements,
@@ -38,19 +38,10 @@ function useThreadKeyboard(
             focused.isContentEditable) &&
           !!focused.closest("[data-assistant-thread]");
         if (!composing) viewportBaseline = window.innerHeight;
-        const obscured = Math.max(
-          0,
-          viewportBaseline - viewport.height - viewport.offsetTop,
-        );
+        // Panning toward the focused field does not reduce keyboard occlusion.
+        const obscured = Math.max(0, viewportBaseline - viewport.height);
         const next = composing && obscured > 100 ? obscured : 0;
         setKeyboardHeight(next);
-        if (next && focused instanceof HTMLElement) {
-          focused.scrollIntoView({
-            block: "nearest",
-            inline: "nearest",
-            behavior: "instant",
-          });
-        }
       });
     };
 
@@ -71,16 +62,46 @@ function useThreadKeyboard(
   return keyboardHeight;
 }
 
-/** The transcript fills the lower 65%, while keeping the player usable above the keyboard. */
+/** The open transcript uses 65%; keyboard entry fits just the timeline and composer. */
 export function useThreadDock({ workspaceRef, measurements, open }: Options) {
   const keyboardHeight = useThreadKeyboard(workspaceRef, open);
+  const [contentHeight, setContentHeight] = useState(0);
+  const keyboardOpen = keyboardHeight > 0;
+  useLayoutEffect(() => {
+    const workspace = workspaceRef.current;
+    if (!open || !keyboardOpen || !workspace) return;
+    const parts = [
+      workspace.querySelector<HTMLElement>("[data-assistant-mini-timeline]"),
+      workspace.querySelector<HTMLElement>("[data-thread-compose]"),
+    ].filter((element): element is HTMLElement => !!element);
+    const measure = () => {
+      const height = parts.reduce((sum, element) => {
+        const style = getComputedStyle(element);
+        return (
+          sum +
+          element.getBoundingClientRect().height +
+          (parseFloat(style.marginTop) || 0) +
+          (parseFloat(style.marginBottom) || 0)
+        );
+      }, 0);
+      setContentHeight((previous) =>
+        Math.abs(previous - height) < 0.5 ? previous : height,
+      );
+    };
+    const observer = new ResizeObserver(measure);
+    parts.forEach((element) => observer.observe(element));
+    measure();
+    return () => observer.disconnect();
+  }, [open, keyboardOpen, workspaceRef]);
   const layoutMeasurements = threadDockMeasurements(
     measurements,
     keyboardHeight > 0,
   );
   const maximum = threadDockMaximum(layoutMeasurements, keyboardHeight > 0);
   return {
-    height: Math.min(maximum, layoutMeasurements.height * 0.65),
+    height: keyboardOpen
+      ? Math.min(layoutMeasurements.height, contentHeight || 188)
+      : Math.min(maximum, layoutMeasurements.height * 0.65),
     measurements: layoutMeasurements,
     keyboardHeight,
     compact: layoutMeasurements !== measurements,

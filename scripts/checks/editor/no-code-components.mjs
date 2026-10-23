@@ -1,9 +1,9 @@
-import { openEditorSettings } from "../helpers/editor-settings.mjs";
+import { launchBrowser } from "../helpers/browser.mjs";
+import { openEditorSettings, closeEditorSettings } from "../helpers/editor-settings.mjs";
 import assert from "node:assert/strict";
-import { chromium } from "playwright-core";
 
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+
+const browser = await launchBrowser({
   headless: true, args: ["--no-sandbox"],
 });
 const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
@@ -28,7 +28,7 @@ try {
     window.capture = (await import("/src/store.ts")).useCapture;
     const state = window.capture.getState();
     const clip = { id: 1, url: null, color: "#4d4257", srcDur: 20, in: 0, out: 20, speed: 1, zoom: 1, mirror: false, width: 720, height: 1280, fit: "cover" };
-    const scene = { id: "main", name: "Main", parent: null, clips: [clip], texts: [], components: [], muted: true, sound: -1, layers: ["video"] };
+    const scene = { id: "main", name: "Main", parent: null, clips: [clip], texts: [], components: [], muted: true, music: null, layers: ["video"] };
     state.patch({ scenes: [scene], currentSceneId: "main", clips: [clip], texts: [], components: [], layers: ["video"], screen: "editor", sheet: "components", selComp: null, t: 4, past: [], future: [] });
   });
   await page.getByRole("button", { name: /Let viewers choose/ }).click();
@@ -86,6 +86,7 @@ try {
   await openEditorSettings(page);
   const advancedSwitch = page.getByRole("switch", { name: "Advanced edits", exact: true });
   if (await advancedSwitch.getAttribute("aria-checked") !== "true") await advancedSwitch.click();
+  await closeEditorSettings(page);
   await page.evaluate(() => window.capture.getState().patch({ sheet: "component" }));
   await tab("Advanced");
   const structure = page.getByRole("textbox", { name: "Structure source", exact: true });

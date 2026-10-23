@@ -9,7 +9,7 @@ import { useProjectMedia } from "../../create-project/useProjectMedia";
 
 function editingLocked(state: CaptureState) {
   return state.importing || state.recording || state.tryMode !== null || state.playheadPick !== null
-    || state.ex === "running" || ["more", "export", "discard"].includes(state.sheet ?? "");
+    || state.ex === "running" || ["replies", "export", "discard"].includes(state.sheet ?? "");
 }
 
 export function useLibraryMedia(onImport: () => void) {

@@ -27,7 +27,7 @@ const attachment = { anchor: "center", offsetX: 0, offsetY: 0 };
 const key = (time, value, easing = "linear") => ({ time, value, easing });
 const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-8, `${actual} should equal ${expected}`);
 function fixture() {
-  return { scenes: [{ id: "main", name: "Main", parent: null, muted: false, sound: 0,
+  return { scenes: [{ id: "main", name: "Main", parent: null, muted: false, music: null,
     clips: [{ id: 1, url: "blob:source", color: "#000", srcDur: 30, in: 4, out: 24, speed: 2,
       width: 320, height: 240, fit: "cover", zoom: 1, mirror: false }],
     texts: [{ id: 2, text: "Car", color: 0, start: 1, end: 9, x: 45, y: 30 }], components: [], audioClips: [],

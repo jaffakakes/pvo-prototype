@@ -1,5 +1,4 @@
 import { fmt } from "../../ui/formatTime";
-import { togglePlayback } from "../../state/editing/playbackCommands";
 import { sceneDuration } from "../../domain/scenes/duration";
 import { useCapture } from "../../state/captureStore";
 import { cx } from "../../styles";
@@ -8,14 +7,23 @@ import { startTry } from "./tryMode";
 import { DebugEntry } from "../editor-layout/debugging/DebugEntry";
 import styles from "./Transport.module.css";
 import { useSheetDock } from "../../ui/sheets/SheetDockContext";
+import { togglePlayback } from "../../state/editing/playbackCommands";
 
 export function Transport({
   threadOpen = false,
-}: { threadOpen?: boolean } = {}) {
+  inlinePlayback = false,
+}: { threadOpen?: boolean; inlinePlayback?: boolean } = {}) {
   const s = useCapture();
   const duration = sceneDuration(s);
   const dock = useSheetDock();
   const sheetOpen = s.sheet !== null && s.sheet !== "export" && !s.playheadPick;
+  const toolOpen = [
+    "speed",
+    "crop",
+    "volume",
+    "keyframes",
+    "volumeKeyframes",
+  ].includes(s.sheet ?? "");
   return (
     <div
       className={`${cx("transport")} ${styles.transport}`}
@@ -52,24 +60,33 @@ export function Transport({
             >
               <Icon name="redo" size={23} />
             </button>
-            {threadOpen ? (
+            {inlinePlayback && !threadOpen && (
               <button
                 type="button"
-                className={`${styles.action} ${styles.threadPlay}`}
+                className={`${styles.action} ${styles.playButton}`}
+                aria-label={s.playing ? "Pause" : "Play"}
                 onClick={togglePlayback}
                 disabled={duration <= 0}
-                aria-label={s.playing ? "Pause" : "Play"}
               >
-                <Icon name={s.playing ? "pause" : "play"} size={18} />
+                <Icon name={s.playing ? "pause" : "play"} size={23} />
               </button>
-            ) : (
+            )}
+            {!threadOpen && (
               <button
                 type="button"
                 className={`${styles.action} ${styles.tryButton}`}
                 onClick={sheetOpen ? dock?.dismissFromTransport : startTry}
                 disabled={sheetOpen ? dock?.dismissDisabled : duration <= 0}
-                aria-label={sheetOpen ? "Close sheet" : "Try"}
-                title={sheetOpen ? "Close sheet" : "Try interactive preview"}
+                aria-label={
+                  sheetOpen ? (toolOpen ? "Close tool" : "Close sheet") : "Try"
+                }
+                title={
+                  sheetOpen
+                    ? toolOpen
+                      ? "Close tool"
+                      : "Close sheet"
+                    : "Try interactive preview"
+                }
               >
                 <Icon name={sheetOpen ? "close" : "eye"} size={23} />
               </button>

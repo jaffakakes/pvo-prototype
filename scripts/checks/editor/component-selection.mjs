@@ -1,11 +1,9 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
-const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROME_PATH ||
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+
+const browser = await launchBrowser({
   headless: true,
 });
 const artifacts =
@@ -45,7 +43,7 @@ try {
           texts: [],
           components: [],
           muted: true,
-          sound: 0,
+          music: null,
           layers: ["video"],
         };
         useCapture.getState().patch({
@@ -74,7 +72,7 @@ try {
       },
       {
         theme,
-        mediaPath: `/@fs${fileURLToPath(new URL("../../../share/assets/preview.mp4", import.meta.url))}`,
+        mediaPath: `/@fs/${fileURLToPath(new URL("../../../share/assets/preview.mp4", import.meta.url)).replaceAll("\\", "/")}`,
       },
     );
     if (width >= 1024) {
@@ -160,16 +158,19 @@ try {
       () => !document.documentElement.dataset.editorMotion,
     );
     await tools.getByRole("button", { name: "Transform", exact: true }).click();
-    await page.getByRole("slider", { name: "Rotation", exact: true }).waitFor();
+    await page
+      .getByRole("region", { name: "Transform", exact: true })
+      .waitFor();
     await page.waitForFunction(
       () => !document.documentElement.dataset.editorMotion,
     );
     assert.equal(await tools.isVisible(), false);
-    assert.equal(await page.locator("[data-component-resize]").count(), 4);
-    await page.getByRole("slider", { name: "Rotation", exact: true }).focus();
-    await page.keyboard.press("Shift+ArrowRight");
-    assert.match(await overlay.getAttribute("style"), /rotate\(10deg\)/);
-    const handle = page.locator('[data-component-resize][data-corner="br"]');
+    assert.equal(await page.locator("[data-transform-handle]").count(), 4);
+    await page
+      .getByRole("group", { name: "Transform form", exact: true })
+      .press("Shift+]");
+    assert.match(await overlay.getAttribute("style"), /rotate\(5deg\)/);
+    const handle = page.locator('[data-transform-handle][data-corner="br"]');
     const h = await handle.boundingBox();
     const prior = await page.evaluate(
       () => window.layerCapture.getState().past.length,
@@ -183,7 +184,7 @@ try {
       prior + 1,
     );
     await page.getByRole("button", { name: "Reset", exact: true }).click();
-    await closeSheet.click();
+    await page.getByRole("button", { name: "Close tool", exact: true }).click();
     await tools.waitFor();
     await page.waitForFunction(
       () => !document.documentElement.dataset.editorMotion,

@@ -87,6 +87,31 @@
   pointer-events: auto;
 }
 
+.threadDone {
+  position: absolute;
+  top: calc(8px + env(safe-area-inset-top, 0px));
+  left: 10px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  min-width: 66px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 2px solid var(--outline);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  box-shadow: var(--shadow-control);
+  color: var(--text);
+  font: 800 12.5px/1 var(--f-ui);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.threadDone:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: 4px;
+}
+
 @keyframes openThread {
   from {
     opacity: 0;

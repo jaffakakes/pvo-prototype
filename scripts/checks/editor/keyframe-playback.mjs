@@ -1,13 +1,13 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { chromium, webkit } from "playwright-core";
+import { webkit } from "playwright-core";
 
 const editorUrl = process.env.EDITOR_URL || process.env.RESTYLE_EDITOR_URL || "http://127.0.0.1:5173/";
 const media = await readFile(new URL("../../../share/assets/preview.mp4", import.meta.url));
 const browser = process.env.BROWSER === "webkit"
   ? await webkit.launch({ headless: true })
-  : await chromium.launch({
-    executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  : await launchBrowser({
     headless: true,
   });
 const page = await browser.newPage({ viewport: { width: 1440, height: 960 }, serviceWorkers: "block" });
@@ -133,16 +133,20 @@ try {
     () => page.getByRole("button", { name: "Stop trying", exact: true }).click());
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => window.keyframePlayback.useCapture.getState().patch({ sheet: null }));
+  await page.locator('.pvBox[data-desktop="false"]').waitFor();
   await seek(1);
-  await page.getByRole("button", { name: "◆ Animate", exact: true }).click();
-  const sheet = page.locator("[data-animation-sheet]");
-  await sheet.getByRole("button", { name: "Keyframe", exact: true }).click();
-  await assertPlayback("Phone with Animate open");
-  await sheet.getByRole("button", { name: "Keyframe at 0:01.0", exact: true }).click();
-  await assertPlayback("Phone Space after ribbon key selection", () => page.keyboard.press("Space"));
-  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
+  const timelineControls = page.getByRole("toolbar", { name: "Keyframe controls", exact: true });
+  await timelineControls.getByRole("button", { name: "Add keyframe", exact: true }).click();
+  await timelineControls.getByRole("button", { name: "Graphs", exact: true }).click();
+  await page.getByRole("region", { name: "Graphs", exact: true }).waitFor();
+  await assertPlayback("Phone with Graphs open");
+  await page.getByRole("button", { name: "Close tool", exact: true }).click();
   await seek(.5);
-  await assertPlayback("Phone after closing Animate");
+  // Outside authoring mode, the preview's first tap returns a selected component to placement mode.
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  assert.equal(await page.evaluate(() => window.keyframePlayback.useCapture.getState().selComp), null);
+  await assertPlayback("Phone after closing Graphs");
   assert.deepEqual(errors, [], "Keyframe playback has no browser runtime errors");
   console.log("PASS: component keyframes retain real decoded playback through desktop and phone authoring.");
 } catch (error) {

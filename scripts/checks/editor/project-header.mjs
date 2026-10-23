@@ -1,14 +1,9 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
 
 const editorUrl = process.env.EDITOR_URL || "http://127.0.0.1:5173/";
-const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROME_PATH ||
-    (process.platform === "darwin"
-      ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-      : "C:/Program Files/Google/Chrome/Application/chrome.exe"),
+const browser = await launchBrowser({
   headless: true,
 });
 const context = await browser.newContext({
@@ -21,7 +16,10 @@ const errors = [];
 page.on("pageerror", (error) => errors.push(error.message));
 
 try {
-  await page.goto(editorUrl, { waitUntil: "networkidle" });
+  await page.goto(editorUrl, { waitUntil: "domcontentloaded" });
+  await page
+    .locator("#restyle-launch-splash")
+    .waitFor({ state: "hidden", timeout: 30000 });
   await page
     .locator('input[type="file"]')
     .setInputFiles(
@@ -75,7 +73,10 @@ try {
     { ...before, projectName: "Weekend edit" },
     "Renaming preserves clips, identity and edit history",
   );
-  await page.reload({ waitUntil: "networkidle" });
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page
+    .locator("#restyle-launch-splash")
+    .waitFor({ state: "hidden", timeout: 30000 });
   await saved.waitFor();
   assert.equal(
     await title.inputValue(),
@@ -121,7 +122,10 @@ try {
   await page.getByRole("button", { name: "Retry save", exact: true }).click();
   await page.getByRole("button", { name: "Open editor", exact: true }).click();
   await saved.waitFor();
-  await page.reload({ waitUntil: "networkidle" });
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page
+    .locator("#restyle-launch-splash")
+    .waitFor({ state: "hidden", timeout: 30000 });
   await saved.waitFor();
   assert.equal(
     await title.inputValue(),

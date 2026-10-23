@@ -1,12 +1,12 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
+
 import { parseNativeTurnRequest } from "../../../packages/pvo-assistant/native/index.js";
 import { finishAssistantVerification, installAssistantAvailabilityFixture } from "./assistant-fixture.mjs";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url)).replaceAll("\\", "/");
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+const browser = await launchBrowser({
   headless: true,
 });
 const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
@@ -71,7 +71,7 @@ try {
     const metadata = await readVideoMetadata(url);
     const clip = { id: 1, url, srcDur: metadata.duration, in: 0, out: Math.min(8, metadata.duration), speed: 1,
       color: "#442244", zoom: 1, mirror: false, width: metadata.width, height: metadata.height, fit: "contain" };
-    useCapture.getState().patch({ screen: "editor", clips: [clip], ratio: "16:9", t: 0.5, playing: false, sound: 0 });
+    useCapture.getState().patch({ screen: "editor", clips: [clip], ratio: "16:9", t: 0.5, playing: false, music: null });
     useCapture.getState().addComponent("tooltip");
     useCapture.getState().patch({ selComp: null, sheet: null, t: 0.5, past: [], future: [] });
   }, root);

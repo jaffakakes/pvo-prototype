@@ -1,5 +1,6 @@
 import { createLocalAuthStore } from "./local-auth-store.mjs";
 import { loadLocalSupabase } from "./local-supabase.mjs";
+import { createLocalOriginPolicy } from "./local-origins.mjs";
 
 import { supabaseIdentityFromRequest } from "../../server/auth/supabase.js";
 
@@ -24,15 +25,7 @@ export async function createLocalAuthApi({
   supabaseUrl,
   fetcher = fetch,
 }) {
-  const base = new URL(origin);
-  if (
-    base.origin !== origin ||
-    base.protocol !== "http:" ||
-    base.hostname !== "127.0.0.1"
-  )
-    throw new Error(
-      "Local sign-in requires a canonical http://127.0.0.1 origin.",
-    );
+  const policy = createLocalOriginPolicy(origin);
   const supabase = await loadLocalSupabase(
     directory,
     supabasePublishableKey,
@@ -49,11 +42,10 @@ export async function createLocalAuthApi({
 
   async function handle(request, response, pathname) {
     if (!pathname.startsWith("/api/auth/")) return false;
-    if (
-      request.headers.host !== base.host ||
-      new URL(request.url, origin).origin !== origin
-    )
+    if (!policy.originFor(request))
       return error(response, 400, "This sign-in address is invalid.");
+    if (!policy.accepts(request))
+      return error(response, 403, "This operation must start from the editor.");
     if (pathname === "/api/auth/session") {
       if (request.method !== "GET")
         return error(response, 405, "This sign-in operation is not supported.");
@@ -73,16 +65,6 @@ export async function createLocalAuthApi({
           response,
           503,
           "Email sign-in is not configured here yet.",
-        );
-      if (
-        request.headers.origin !== origin ||
-        (request.headers["sec-fetch-site"] &&
-          !["same-origin", "none"].includes(request.headers["sec-fetch-site"]))
-      )
-        return error(
-          response,
-          403,
-          "This operation must start from the editor.",
         );
       const authorization = request.headers.authorization;
       const token =
@@ -114,16 +96,6 @@ export async function createLocalAuthApi({
     if (pathname === "/api/auth/logout") {
       if (request.method !== "POST")
         return error(response, 405, "This sign-in operation is not supported.");
-      if (
-        request.headers.origin !== origin ||
-        (request.headers["sec-fetch-site"] &&
-          !["same-origin", "none"].includes(request.headers["sec-fetch-site"]))
-      )
-        return error(
-          response,
-          403,
-          "This operation must start from the editor.",
-        );
       return json(
         response,
         200,

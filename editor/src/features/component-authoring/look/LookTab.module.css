@@ -27,7 +27,7 @@
 }
 
 .tab button:focus-visible,.tab input:focus-visible {
-  outline: 3px solid var(--highlight);
+  outline: 3px solid var(--strong);
   outline-offset: 2px;
 }
 
@@ -80,7 +80,7 @@
 }
 
 .preset[data-on=true] {
-  border: 2px solid var(--highlight);
+  border: 2px solid var(--strong);
   padding: 4px;
 }
 
@@ -91,7 +91,7 @@
   bottom: 8px;
   width: 6px;
   height: 6px;
-  background: var(--highlight);
+  background: var(--strong);
   border-radius: 50%;
 }
 
@@ -178,7 +178,7 @@
 }
 
 .swatch[data-on=true] {
-  border-color: var(--highlight);
+  border-color: var(--strong);
 }
 
 .swatch>span {
@@ -191,7 +191,7 @@
 }
 
 .none {
-  background: linear-gradient(135deg,transparent 46%,var(--highlight) 47%,var(--highlight) 53%,transparent 54%);
+  background: linear-gradient(135deg,transparent 46%,var(--strong) 47%,var(--strong) 53%,transparent 54%);
 }
 
 .custom {
@@ -244,7 +244,7 @@
   flex: 1;
   min-width: 0;
   min-height: 44px;
-  accent-color: var(--highlight);
+  accent-color: var(--strong);
 }
 
 .customPanel input[type=text] {

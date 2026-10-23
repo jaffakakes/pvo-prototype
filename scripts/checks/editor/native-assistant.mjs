@@ -1,9 +1,10 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
-import { chromium } from "playwright-core";
+
 import { parseNativeTurnRequest } from "../../../packages/pvo-assistant/native/index.js";
 import { finishAssistantVerification, installAssistantAvailabilityFixture, preparedAssistantReceipts } from "./assistant-fixture.mjs";
 
-const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true });
+const browser = await launchBrowser({ headless: true });
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
 await installAssistantAvailabilityFixture(context);
 const calls = [];
@@ -393,7 +394,7 @@ try {
     const { initial } = await import("/src/state/project/initial.ts");
     const { mkClip } = await import("/src/store.ts");
     useCapture.setState(initial());
-    useCapture.getState().patch({ screen: "editor", clips: [mkClip(10, null, 0)], sound: 1, playing: false });
+    useCapture.getState().patch({ screen: "editor", clips: [mkClip(10, null, 0)], music: { track: 1, start: 0, duration: 10, offset: 0, gain: 1 }, playing: false });
   });
   await orb.click();
   await submit("Describe this project", "answer");
@@ -406,7 +407,7 @@ try {
   let current = await snapshot();
   assert.equal(current.texts[0].text, "Summer sale");
   assert.equal(current.clips[0].in, 1);
-  assert.equal(current.scene.musicGain, .25);
+  assert.equal(current.scene.music.gain, .25);
   assert.equal(current.past, 1, "Three native edits commit as one history entry");
   await page.locator('[data-notification-id="assistantApplied"]').getByRole("button", { name: "Undo", exact: true }).click();
   assert.equal((await snapshot()).texts.length, 0);

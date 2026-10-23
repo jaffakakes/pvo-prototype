@@ -1,9 +1,10 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
-import { chromium } from "playwright-core";
+
 
 const directory = await mkdtemp(join(tmpdir(), "pvo-audio-check-"));
 const input = join(directory, "tone.mp4");
@@ -28,10 +29,7 @@ execFileSync("ffmpeg", [
   "-shortest",
   input,
 ]);
-const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROME_PATH ||
-    "C:/Program Files/Google/Chrome/Application/chrome.exe",
+const browser = await launchBrowser({
   headless: true,
   args: ["--autoplay-policy=no-user-gesture-required"],
 });

@@ -1,7 +1,8 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
-import { chromium } from "playwright-core";
+
 import { playerSourceAssets } from "../helpers/player-assets.mjs";
 import { validateFontAsset, fontFamily } from "../../../packages/pvo-fonts/index.js";
 import { packageManifestFonts } from "../../../packages/pvo-fonts/portable.js";
@@ -43,7 +44,7 @@ const server = createServer((request, response) => {
 });
 await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
 origin = `http://127.0.0.1:${server.address().port}`;
-const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe", headless: true });
+const browser = await launchBrowser({ headless: true });
 const page = await browser.newPage();
 const failures = [];
 const external = [];

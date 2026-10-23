@@ -27,7 +27,7 @@ export function ComponentInspectorFrame({ title, sub, navigation, children, disa
   return <>
     <div className={componentStyles.chrome} {...(disabled ? { inert: "" } : {})}>
       <InspectorHeader title={heading} subtitle={subtitle} kind="component" icon="components"
-        onDeselect={dock?.expanded ? () => dock.setExpanded(false) : clearTimelineSelection}
+        onDeselect={dock?.expanded ? () => dock.setExpanded?.(false) : clearTimelineSelection}
         closeLabel={dock?.expanded ? "Collapse component editor" : undefined} />
     </div>
     <div className={componentStyles.navigation} hidden={dock?.expanded} {...(disabled ? { inert: "" } : {})}>{navigation}</div>

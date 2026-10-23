@@ -119,17 +119,6 @@ export function Camera() {
     if (uploadRef.current) uploadRef.current.value = "";
   };
 
-  const hint = s.countdown
-    ? "Tap to cancel"
-    : s.recording
-      ? "Release or tap to stop"
-      : s.replacing != null
-        ? "Record the new take"
-        : recordingScene && !count
-          ? `Record or upload the first take for ${recordingScene.name}`
-          : count
-            ? "Tap or hold to add another clip"
-            : "Tap or hold to record";
   const fallbackTitle =
     displayCameraStatus === "starting" ? "Starting camera…" : "Camera is off";
   const showFallback =
@@ -236,7 +225,11 @@ export function Camera() {
                 onClick={() => s.patch({ sheet: "sound" })}
               >
                 <Icon name="music" size={15} />{" "}
-                <span>{s.sound ? SOUNDS[s.sound].name : "Add sound"}</span>
+                <span>
+                  {(s.music?.track ?? 0)
+                    ? SOUNDS[s.music?.track ?? 0].name
+                    : "Add sound"}
+                </span>
               </button>
             )}
             <button
@@ -370,7 +363,6 @@ export function Camera() {
             cameraPending={cameraPending}
             cameraStatus={cameraStatus}
             microphoneAvailable={microphoneAvailable}
-            hint={hint}
             removeLast={removeLast}
             onUpload={() => uploadRef.current?.click()}
             onShutterDown={onShutterDown}

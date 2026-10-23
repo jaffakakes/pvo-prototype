@@ -1,3 +1,4 @@
+import { sceneDuration } from "../../domain/scenes/duration";
 import type { TextStyle } from "../../../../packages/pvo-text-runtime/index.js";
 import { insertClipsAtPlayhead } from "../../domain/clips/insertion";
 import type { Clip, ComponentType } from "../../domain/project/model";
@@ -7,7 +8,12 @@ import { mkClip } from "./clipFactory";
 import type { CaptureState } from "../types";
 
 function libraryMutationBlocked(state: CaptureState) {
-  return state.tryMode !== null || state.playheadPick !== null || state.recording || state.ex === "running";
+  return (
+    state.tryMode !== null ||
+    state.playheadPick !== null ||
+    state.recording ||
+    state.ex === "running"
+  );
 }
 
 export function insertLibraryClips(additions: Clip[]) {
@@ -16,8 +22,13 @@ export function insertLibraryClips(additions: Clip[]) {
   if (libraryMutationBlocked(state)) return false;
   const inserted = insertClipsAtPlayhead(state.clips, additions, state.t);
   state.edit({
-    clips: inserted.clips, sel: inserted.index, t: inserted.time,
-    selComp: null, selText: null, playing: false, sheet: null,
+    clips: inserted.clips,
+    sel: inserted.index,
+    t: inserted.time,
+    selComp: null,
+    selText: null,
+    playing: false,
+    sheet: null,
   });
   return true;
 }
@@ -25,7 +36,16 @@ export function insertLibraryClips(additions: Clip[]) {
 export function addLibrarySource(source: Clip) {
   const state = useCapture.getState();
   if (state.importing || libraryMutationBlocked(state)) return;
-  insertLibraryClips([mkClip(source.srcDur, source.url, state.clips.length, source.width, source.height, source.fit)]);
+  insertLibraryClips([
+    mkClip(
+      source.srcDur,
+      source.url,
+      state.clips.length,
+      source.width,
+      source.height,
+      source.fit,
+    ),
+  ]);
 }
 
 export function addLibraryComponent(type: ComponentType) {
@@ -55,16 +75,43 @@ export function selectLibraryComponent(sceneId: string, componentId: string) {
   if (state.importing || libraryMutationBlocked(state)) return;
   if (state.currentSceneId !== sceneId) state.switchScene(sceneId);
   const current = useCapture.getState();
-  const component = current.components.find(item => item.id === componentId);
+  const component = current.components.find((item) => item.id === componentId);
   if (!component) return;
-  current.patch({ sel: -1, selComp: componentId, selText: null, t: component.at, playing: false, sheet: null });
+  current.patch({
+    sel: -1,
+    selComp: componentId,
+    selText: null,
+    t: component.at,
+    playing: false,
+    sheet: null,
+  });
   setComponentAuthoringTab(componentId, "content");
 }
 
 export function setLibraryMusic(index: number): boolean {
+  if (!Number.isInteger(index) || index < 0 || index > 4) return false;
   const state = useCapture.getState();
   if (state.importing || libraryMutationBlocked(state)) return false;
-  if (state.sound !== index) state.edit({ sound: index });
-  useCapture.getState().patch({ sheet: "sound", sel: -1, selComp: null, selText: null });
+  const music =
+    index === 0
+      ? null
+      : state.music
+        ? { ...state.music, track: index }
+        : {
+            track: index,
+            start: state.t,
+            duration: Math.max(0.5, sceneDuration(state) - state.t || 4),
+            offset: 0,
+            gain: 1,
+          };
+  if (state.music?.track !== music?.track) state.edit({ music });
+  useCapture.getState().patch({
+    sheet: "sound",
+    sel: -1,
+    selComp: null,
+    selText: null,
+    selAudio: null,
+    selMusic: !!music,
+  });
   return true;
 }

@@ -9,8 +9,8 @@ const uncertain = text => /cannot|can.t|unknown|uncertain|not (?:enough|availabl
 function fixture(media, { sourceIn = 0, speed = 1, muted = false } = {}) {
   return {
     currentSceneId: "main", ratio: "9:16", allowedDomains: [],
-    scenes: [{ id: "main", name: "Meme compilation", parent: null, muted, sound: 0,
-      musicGain: 1, clipGain: 1, texts: [], components: [], audioClips: [],
+    scenes: [{ id: "main", name: "Meme compilation", parent: null, muted, music: null,
+      clipGain: 1, texts: [], components: [], audioClips: [],
       clips: [{ id: 101, url: media.url, color: "#222222", srcDur: media.duration,
         in: sourceIn, out: media.duration, speed, zoom: 1, mirror: false,
         width: media.width, height: media.height, fit: "contain" }],

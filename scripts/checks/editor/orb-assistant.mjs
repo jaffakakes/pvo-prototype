@@ -1,6 +1,7 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { join, parse } from "node:path";
-import { chromium } from "playwright-core";
+
 import { parseNativeTurnRequest } from "../../../packages/pvo-assistant/native/index.js";
 import { finishAssistantVerification } from "./assistant-fixture.mjs";
 
@@ -8,10 +9,7 @@ const editorUrl =
   process.env.EDITOR_URL ||
   process.env.RESTYLE_EDITOR_URL ||
   "http://127.0.0.1:5173/";
-const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROME_PATH ||
-    "C:/Program Files/Google/Chrome/Application/chrome.exe",
+const browser = await launchBrowser({
   headless: true,
   args: ["--no-sandbox"],
 });
@@ -179,7 +177,7 @@ async function run(viewport) {
       useCapture.getState().patch({
         screen: "editor",
         clips: [mkClip(12, null, 0)],
-        sound: -1,
+        music: null,
         muted: true,
         t: 2,
         playing: false,

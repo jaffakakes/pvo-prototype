@@ -13,7 +13,7 @@ import { useAssistantPlacement } from "./useAssistantPlacement";
 import { useOrbVoice } from "./voice/useOrbVoice";
 import { AssistantComparison } from "./AssistantComparison";
 import { AssistantAttachments } from "./attachments/AssistantAttachments";
-import { AssistantChangeStrip } from "./thread/AssistantChangeStrip";
+import { AssistantMiniTimeline } from "./thread/AssistantMiniTimeline";
 import { AssistantThread } from "./thread/AssistantThread";
 import {
   getAssistantThreadReceipt,
@@ -32,16 +32,18 @@ import { useCapture } from "../../state/captureStore";
 import styles from "./AssistantHost.module.css";
 
 export function OrbAssistant({
+  mode = "timeline",
   placement: position = "workspace",
   portalTarget,
   threadKeyboardOpen = false,
 }: {
+  mode?: "timeline" | "design";
   placement?: AssistantPlacement;
   portalTarget?: HTMLElement | null;
   threadKeyboardOpen?: boolean;
 } = {}) {
   const session = useAssistantSession({
-    inspectorVisible: position !== "workspace",
+    inspectorVisible: mode === "design" || position !== "workspace",
   });
   const thread = useAssistantThread();
   const ownerId = useAssistantScope((state) => state.ownerId);
@@ -91,6 +93,7 @@ export function OrbAssistant({
     return () => window.removeEventListener("blur", end);
   }, [comparing]);
   const threadPending = thread.items.some((item) => item.status === "pending");
+  const working = session.phase === "working" || threadPending;
   const open = session.open;
   const openThread = () => {
     session.open();
@@ -98,10 +101,11 @@ export function OrbAssistant({
   };
   const voice = useOrbVoice({
     contextKey: session.voiceContext,
-    enabled:
-      session.available &&
-      session.phase !== "working" &&
-      session.phase !== "review",
+    enabled: session.available && !working && session.phase !== "review",
+    onDoubleTap:
+      position === "workspace" && session.phase === "idle" && !thread.open
+        ? openThread
+        : undefined,
     onTap: () => {
       if ((thread.open || session.phase === "typing") && session.draft.trim())
         void session.submit(session.draft);
@@ -149,7 +153,7 @@ export function OrbAssistant({
       ? voice.tapHandlers
       : voice.handlers;
   if (minimized) orbHandlers = { onClick: () => setAssistantMinimized(false) };
-  else if (session.phase === "working") orbHandlers = { onClick: session.stop };
+  else if (working) orbHandlers = { onClick: session.stop };
 
   useEffect(() => {
     if (!active) return;
@@ -170,7 +174,7 @@ export function OrbAssistant({
         ...Array.from(
           document.querySelectorAll<HTMLElement>(
             thread.open
-              ? `[data-assistant-playback] button:not(:disabled), [data-notification-root] button:not(:disabled)`
+              ? `[data-assistant-playback] button:not(:disabled), [data-player-playback] button:not(:disabled), [data-notification-root] button:not(:disabled)`
               : `[data-notification-root] button:not(:disabled)`,
           ),
         ),
@@ -200,7 +204,7 @@ export function OrbAssistant({
         !(event.target instanceof Element) ||
         host.current?.contains(event.target) ||
         event.target.closest(
-          "[data-assistant-playback], [data-notification-root]",
+          "[data-assistant-playback], [data-player-playback], [data-notification-root]",
         )
       )
         return;
@@ -212,6 +216,60 @@ export function OrbAssistant({
       document.removeEventListener("pointerdown", outside, true);
     };
   });
+
+  const orbView = (
+    <OrbAssistantView
+      hasSavedTask={Boolean(hasSavedTask)}
+      reviewSummary={lastExchange?.summary}
+      canUndoReview={reviewActions?.canUndo}
+      onUndoReview={
+        reviewActions && lastExchange
+          ? () => {
+              undoAssistantThreadExchange(lastExchange.id);
+              session.acknowledge();
+            }
+          : undefined
+      }
+      onCompareReview={
+        reviewActions?.canUndo && before && comparisonTarget
+          ? setComparing
+          : undefined
+      }
+      phase={working ? "working" : session.phase}
+      minimized={minimized}
+      threadOpen={thread.open}
+      inThreadComposer={thread.open && position === "workspace"}
+      exchangeCount={thread.items.length}
+      onOpenThread={openThread}
+      target={session.target}
+      voiceSide={session.voiceSide}
+      voicePhase={voice.phase}
+      voiceMode={voice.mode}
+      draft={session.draft}
+      onDraftChange={session.setDraft}
+      transcript={session.transcript}
+      progress={session.progress}
+      answer={session.answer}
+      suggestions={session.suggestions}
+      onSubmit={() => {
+        void session.submit(session.draft);
+      }}
+      onClose={dismissOutside}
+      onDone={() => {
+        session.acknowledge();
+        orb.current?.focus({ preventScroll: true });
+      }}
+      onEditRequest={session.editRequest}
+      onSuggestion={(words) => {
+        void session.submit(words);
+      }}
+      orbHandlers={orbHandlers}
+      orbRef={orb}
+      toolbarHeight={placement.toolbarHeight}
+      placement={position}
+      availableHeight={placement.availableHeight}
+    />
+  );
 
   const view = (
     <div
@@ -230,6 +288,17 @@ export function OrbAssistant({
     >
       {session.available && (
         <>
+          {thread.open && position === "workspace" && (
+            <button
+              type="button"
+              className={styles.threadDone}
+              data-thread-done
+              title={mode === "design" ? "Back to design" : "Back to timeline"}
+              onClick={close}
+            >
+              Done
+            </button>
+          )}
           {thread.open && (
             <div
               className={
@@ -246,23 +315,28 @@ export function OrbAssistant({
               <div className={styles.threadContent}>
                 <AssistantThread
                   variant={position === "workspace" ? "phone" : "desktop"}
+                  keyboardOpen={threadKeyboardOpen}
                   savedTask={hasSavedTask ? <SavedTaskPanel /> : null}
+                  orb={position === "workspace" ? orbView : undefined}
+                  targetLabel={
+                    session.target
+                      ? session.target.type[0].toUpperCase() +
+                        session.target.type.slice(1)
+                      : undefined
+                  }
                   attachments={
                     <AssistantAttachments
+                      layout={position === "workspace" ? "composer" : "inline"}
                       disabled={
                         session.phase === "working" ||
                         session.phase === "listening"
                       }
                     />
                   }
-                  changeStrip={
-                    <AssistantChangeStrip
-                      items={thread.items}
-                      onShow={showExchange}
-                      canShow={(item) =>
-                        assistantThreadActionAvailability(item.id).canShow
-                      }
-                    />
+                  timeline={
+                    mode === "timeline" ? (
+                      <AssistantMiniTimeline folded={threadKeyboardOpen} />
+                    ) : undefined
                   }
                   items={thread.items}
                   collapsed={threadKeyboardOpen || thread.collapsed}
@@ -320,56 +394,7 @@ export function OrbAssistant({
                 target={comparisonTarget}
               />
             )}
-          <OrbAssistantView
-            hasSavedTask={Boolean(hasSavedTask)}
-            reviewSummary={lastExchange?.summary}
-            canUndoReview={reviewActions?.canUndo}
-            onUndoReview={
-              reviewActions && lastExchange
-                ? () => {
-                    undoAssistantThreadExchange(lastExchange.id);
-                    session.acknowledge();
-                  }
-                : undefined
-            }
-            onCompareReview={
-              reviewActions?.canUndo && before && comparisonTarget
-                ? setComparing
-                : undefined
-            }
-            phase={session.phase}
-            minimized={minimized}
-            threadOpen={thread.open}
-            exchangeCount={thread.items.length}
-            onOpenThread={openThread}
-            target={session.target}
-            voiceSide={session.voiceSide}
-            voicePhase={voice.phase}
-            voiceMode={voice.mode}
-            draft={session.draft}
-            onDraftChange={session.setDraft}
-            transcript={session.transcript}
-            progress={session.progress}
-            answer={session.answer}
-            suggestions={session.suggestions}
-            onSubmit={() => {
-              void session.submit(session.draft);
-            }}
-            onClose={dismissOutside}
-            onDone={() => {
-              session.acknowledge();
-              orb.current?.focus({ preventScroll: true });
-            }}
-            onEditRequest={session.editRequest}
-            onSuggestion={(words) => {
-              void session.submit(words);
-            }}
-            orbHandlers={orbHandlers}
-            orbRef={orb}
-            toolbarHeight={placement.toolbarHeight}
-            placement={position}
-            availableHeight={placement.availableHeight}
-          />
+          {!(thread.open && position === "workspace") && orbView}
         </>
       )}
     </div>

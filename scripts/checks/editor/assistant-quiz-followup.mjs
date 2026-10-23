@@ -1,12 +1,12 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
-import { chromium } from "playwright-core";
+
 import { parseNativeTurnRequest, parseNativeTurnResult } from "../../../packages/pvo-assistant/native/index.js";
 import { installAssistantAvailabilityFixture, preparedAssistantReceipts } from "./assistant-fixture.mjs";
 
 // Explicit provider replies isolate the client workflow. Compilation, candidate
 // preparation, conversation retention, application and Undo remain real.
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+const browser = await launchBrowser({
   headless: true,
 });
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -122,7 +122,7 @@ try {
     const { initial } = await import("/src/state/project/initial.ts");
     const { mkClip } = await import("/src/store.ts");
     useCapture.setState(initial());
-    useCapture.getState().patch({ screen: "editor", clips: [mkClip(74, null, 0)], sound: 1, playing: false });
+    useCapture.getState().patch({ screen: "editor", clips: [mkClip(74, null, 0)], music: { track: 1, start: 0, duration: 74, offset: 0, gain: 1 }, playing: false });
   });
   const original = await snapshot();
   const initialNotice = await submit(firstPrompt);

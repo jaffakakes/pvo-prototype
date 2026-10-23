@@ -1,8 +1,9 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import { access } from "node:fs/promises";
+
 import { buildSync } from "esbuild";
-import { chromium } from "playwright-core";
+
 
 const bundle = buildSync({ stdin: { resolveDir: process.cwd(), contents: `
   export * from './editor/src/infrastructure/assistant/media/frames.ts';
@@ -24,14 +25,12 @@ const server = createServer(async (request, response) => {
   response.end('<!doctype html><meta charset="utf-8"><script src="/inspection.js"></script>');
 });
 await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
-const candidates = [process.env.CHROME_PATH, "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "/usr/bin/chromium", "C:/Program Files/Google/Chrome/Application/chrome.exe"].filter(Boolean);
-let executablePath;
-for (const path of candidates) {
-  try { await access(path); executablePath = path; break; } catch { /* Try the next installed browser. */ }
-}
+
+
+
 let browser;
 try {
-  browser = await chromium.launch({ executablePath, headless: true, args: ["--no-sandbox"] });
+  browser = await launchBrowser({ headless: true, args: ["--no-sandbox"] });
   const page = await browser.newPage();
   await page.goto(`http://127.0.0.1:${server.address().port}`);
   const result = await page.evaluate(async () => {
@@ -75,7 +74,7 @@ try {
     const base = { id: 1, url, srcDur: 3.1, in: 0.25, out: 2.25, speed: 2, color: "#ffff00", zoom: 1,
       mirror: false, width: 160, height: 90, fit: "contain" };
     const scene = { id: "main", name: "Main", parent: null, clips: [base, { ...base, id: 2, in: 0, out: 1, speed: 1 },
-      { ...base, id: 3, url: null, in: 0, out: 1, speed: 1 }], texts: [], components: [], sound: 0, muted: false };
+      { ...base, id: 3, url: null, in: 0, out: 1, speed: 1 }], texts: [], components: [], music: null, muted: false };
     const project = { scenes: [scene], ratio: "16:9" };
     const createElement = document.createElement.bind(document);
     const decoders = [];

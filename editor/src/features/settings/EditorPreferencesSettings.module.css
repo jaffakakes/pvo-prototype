@@ -1,0 +1,194 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.section h3 {
+  margin: 0;
+  color: var(--text);
+  font: 800 14px/1.2 var(--f-ui);
+}
+
+.themeHelp {
+  margin: 0;
+  color: var(--muted);
+  font: 600 12px/1.5 var(--f-ui);
+}
+
+.themeSubheading {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font: 800 12px/1.2 var(--f-ui);
+}
+
+.themeModes,
+.themeAccents {
+  display: grid;
+  gap: 8px;
+}
+.themeModes {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.iconModes button {
+  display: grid;
+  place-items: center;
+}
+.themeAccents {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.themeModes button,
+.themeAccents button {
+  min-height: 44px;
+  min-width: 0;
+  border: 2px solid var(--button-border);
+  border-radius: var(--radius-control);
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  font: 700 12px/1.2 var(--f-ui);
+  cursor: pointer;
+}
+
+.themeModes button[data-selected="true"],
+.themeAccents button[data-selected="true"] {
+  border-color: var(--strong);
+  box-shadow: inset 0 0 0 1px var(--strong);
+  background: var(--strong);
+  color: var(--onStrong);
+}
+
+.themeAccents button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 4px;
+}
+
+.themeSwatch {
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-round);
+  background: var(--swatch-color);
+}
+
+.themeAccents button[data-accent="magenta"] {
+  --swatch-color: var(--swatch-magenta);
+}
+.themeAccents button[data-accent="orange"] {
+  --swatch-color: var(--swatch-orange);
+}
+.themeAccents button[data-accent="emerald"] {
+  --swatch-color: var(--swatch-emerald);
+}
+.themeAccents button[data-accent="cyan"] {
+  --swatch-color: var(--swatch-cyan);
+}
+.themeAccents button[data-accent="blue"] {
+  --swatch-color: var(--swatch-blue);
+}
+.themeAccents button[data-accent="violet"] {
+  --swatch-color: var(--swatch-violet);
+}
+
+.preferenceRow {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+
+.preferenceCopy {
+  flex: 1;
+  min-width: 0;
+}
+
+.preferenceCopy p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font: 600 11px/1.5 var(--f-ui);
+}
+
+.preferenceSwitch {
+  display: grid;
+  flex: none;
+  width: 56px;
+  min-height: 44px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  cursor: pointer;
+}
+
+.preferenceSwitch:focus-visible {
+  outline: 2px solid var(--strong);
+  outline-offset: 2px;
+}
+
+.switchTrack {
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  width: 44px;
+  height: 26px;
+  border: 2px solid var(--q14);
+  border-radius: var(--radius-round);
+  background: var(--input);
+}
+
+.switchThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-round);
+  background: var(--text);
+  transition: transform 140ms ease;
+}
+
+.preferenceSwitch[aria-checked="true"] .switchTrack {
+  border-color: var(--strong);
+  background: var(--strong);
+}
+
+.preferenceSwitch[aria-checked="true"] .switchThumb {
+  transform: translateX(18px);
+  background: var(--onStrong);
+}
+
+.preferenceNote {
+  margin: 0;
+  color: var(--yellow);
+  font: 600 10.5px/1.4 var(--f-ui);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .switchThumb {
+    transition: none;
+  }
+}
+
+:global(.app[data-reduce-motion="true"]) .switchThumb {
+  transition: none;
+}
+
+@media (forced-colors: active) {
+  .switchTrack {
+    border-color: ButtonText;
+  }
+  .switchThumb {
+    background: ButtonText;
+  }
+  .preferenceSwitch[aria-checked="true"] .switchTrack {
+    border-color: Highlight;
+  }
+  .preferenceSwitch[aria-checked="true"] .switchThumb {
+    background: Highlight;
+  }
+}

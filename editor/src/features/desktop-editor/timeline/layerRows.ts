@@ -4,12 +4,16 @@ import type {
   Scene,
   TextOverlay,
 } from "../../../domain/project/model";
-import type { LayerId } from "../../../domain/layers/model";
+import {
+  isVisualLayer,
+  type LayerId,
+  type VisualLayerId,
+} from "../../../domain/layers/model";
 import { layerOrder } from "../../../domain/layers/order";
 
 import type { AnimationLane } from "../../animation/timeline/model";
 
-type OverlayLayerId = Exclude<LayerId, "video">;
+type OverlayLayerId = Exclude<VisualLayerId, "video">;
 type OverlaySide = "front" | "back";
 
 type TimedOverlay = {
@@ -24,10 +28,17 @@ type TimedOverlay = {
 };
 
 export type DesktopLayerRow =
-  | { id: `animation:${number}`; kind: "animation"; layerIds: []; lane: AnimationLane }
+  | {
+      id: `animation:${number}`;
+      kind: "animation";
+      layerIds: [];
+      lane: AnimationLane;
+    }
   | { id: "add:components"; kind: "empty-components"; layerIds: [] }
   | { id: "add:text"; kind: "empty-text"; layerIds: [] }
   | { id: "video"; kind: "video"; layerIds: ["video"] }
+  | { id: `audio:${number}`; kind: "audio"; layerIds: [`audio:${number}`] }
+  | { id: "music"; kind: "music"; layerIds: ["music"] }
   | {
       id: `overlay:${OverlaySide}:${number}`;
       kind: "overlay";
@@ -43,16 +54,13 @@ export type DesktopLayerLayout = {
 type LayerLayoutSource = Pick<
   Scene,
   "clips" | "texts" | "components" | "layers"
->;
+> &
+  Partial<Pick<Scene, "audioClips" | "music">>;
 
 const TOUCH_EPSILON = 1e-9;
 const MINIMUM_OVERLAY_TARGET_PX = 28;
 
-function packingBounds(
-  start: number,
-  end: number,
-  pixelsPerSecond: number,
-) {
+function packingBounds(start: number, end: number, pixelsPerSecond: number) {
   const duration = Math.max(0, end - start);
   const minimumDuration = MINIMUM_OVERLAY_TARGET_PX / pixelsPerSecond;
   const padding = Math.max(0, minimumDuration - duration) / 2;
@@ -70,9 +78,7 @@ function overlayTiming(
 ): Pick<TimedOverlay, "kind" | "start" | "end"> | null {
   if (layerId.startsWith("text:")) {
     const text = texts.get(Number(layerId.slice("text:".length)));
-    return text
-      ? { kind: "text", start: text.start, end: text.end }
-      : null;
+    return text ? { kind: "text", start: text.start, end: text.end } : null;
   }
   const component = components.get(layerId.slice("component:".length));
   return component
@@ -137,7 +143,7 @@ export function desktopLayerLayout(
     source.components.map((component) => [component.id, component]),
   );
   const overlays = ordered.flatMap<TimedOverlay>((layerId, zRank) => {
-    if (layerId === "video") return [];
+    if (layerId === "video" || !isVisualLayer(layerId)) return [];
     const timing = overlayTiming(
       layerId,
       textById,
@@ -161,17 +167,36 @@ export function desktopLayerLayout(
     rows.push({ id: "add:components", kind: "empty-components", layerIds: [] });
   if (!source.texts.length)
     rows.push({ id: "add:text", kind: "empty-text", layerIds: [] });
-  rows.push(
-    ...packOverlayRows(
-      overlays.filter((item) => item.side === "front"),
-      "front",
-    ),
-    { id: "video", kind: "video", layerIds: ["video"] },
-    ...packOverlayRows(
-      overlays.filter((item) => item.side === "back"),
-      "back",
-    ),
-  );
+  const byId = new Map(overlays.map((item) => [item.layerId, item]));
+  let pending: TimedOverlay[] = [];
+  const ordinal = { front: 0, back: 0 };
+  const flush = () => {
+    if (!pending.length) return;
+    rows.push(
+      ...packOverlayRows(pending, pending[0].side).map((row) => ({
+        ...row,
+        id: `overlay:${row.side}:${ordinal[row.side]++}` as const,
+      })),
+    );
+    pending = [];
+  };
+  for (const id of ordered.slice().reverse()) {
+    const overlay = byId.get(id as OverlayLayerId);
+    if (overlay) {
+      pending.push(overlay);
+      continue;
+    }
+    flush();
+    if (id === "video") rows.push({ id, kind: "video", layerIds: [id] });
+    else if (id === "music") rows.push({ id, kind: "music", layerIds: [id] });
+    else if (id.startsWith("audio:"))
+      rows.push({
+        id: id as `audio:${number}`,
+        kind: "audio",
+        layerIds: [id as `audio:${number}`],
+      });
+  }
+  flush();
 
   const rowIndexByLayer: DesktopLayerLayout["rowIndexByLayer"] = {};
   rows.forEach((row, rowIndex) => {

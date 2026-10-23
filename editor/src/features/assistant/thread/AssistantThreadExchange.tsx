@@ -1,6 +1,7 @@
 import { useId } from "react";
 import type { AssistantExchange } from "../../../domain/assistant/thread";
 import { fmt } from "../../../ui/formatTime";
+import { AssistantWorkingStatus } from "./AssistantWorkingStatus";
 import styles from "./AssistantThreadExchange.module.css";
 
 export interface AssistantExchangeActions {
@@ -105,10 +106,10 @@ export function AssistantThreadExchange({
         )}
         <div className={styles.bubble}>
           {pending ? (
-            <div className={styles.pending} role="status">
-              <span className={styles.spinner} aria-hidden="true" />
-              {item.progress || "Working on it…"}
-            </div>
+            <AssistantWorkingStatus
+              progress={item.progress}
+              showLogo={variant === "phone"}
+            />
           ) : (
             <>
               {response && <p className={styles.response}>{response}</p>}

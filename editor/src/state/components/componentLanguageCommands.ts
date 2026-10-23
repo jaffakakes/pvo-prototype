@@ -3,6 +3,24 @@ import { compiledComponentChanges } from "../../domain/components/languageCompil
 import type { PvoComponent } from "../../domain/project/model";
 import type { PvoLanguageSource } from "../../domain/components/languageSource";
 import { useCapture } from "../captureStore";
+import { beginPvoEdit, restoreLastValidPvo } from "../../domain/components/codeOwnership";
+
+export function editComponentSource(id: string, part: keyof PvoLanguageSource, value: string, recordHistory = true): boolean {
+  const state = useCapture.getState();
+  const current = state.components.find(item => item.id === id);
+  if (!current) return false;
+  state.updateComponent(id, beginPvoEdit(current, part, value), recordHistory);
+  return true;
+}
+
+export function restoreComponentSource(id: string): boolean {
+  const state = useCapture.getState();
+  const current = state.components.find(item => item.id === id);
+  const changes = current && restoreLastValidPvo(current);
+  if (!changes) return false;
+  state.updateComponent(id, changes);
+  return true;
+}
 
 /** Ignore compiler results superseded by typing, Fields edits, reset, or history. */
 export function acceptComponentCompilation(input: PvoComponent, compiled: CompiledPvoComponent): void {

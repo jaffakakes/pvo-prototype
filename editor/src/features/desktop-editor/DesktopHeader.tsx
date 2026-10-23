@@ -9,6 +9,7 @@ import { useCapture } from "../../state/captureStore";
 import { openSignIn, useAuthGate } from "../../state/auth/authGateStore";
 import { requestExport } from "../../state/export/exportCommands";
 import { Icon } from "../../ui/Icon";
+import { ProjectSettingsMenu } from "../settings/ProjectSettingsMenu";
 import { fmt } from "../../ui/formatTime";
 import { showCreateProject } from "../create-project/projectCommands";
 import { RATIO_LABELS } from "./projectPresentation";
@@ -52,6 +53,7 @@ export function DesktopHeader({ onOpenProject }: { onOpenProject(): void }) {
           {saveLabel} · {scene?.name ?? "Main"} · {fmt(duration)}
         </p>
       </div>
+      {!trying && <ProjectSettingsMenu label="Editor settings" />}
       <div className={styles.actions}>
         {user ? (
           <AccountMenu />

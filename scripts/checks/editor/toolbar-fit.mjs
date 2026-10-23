@@ -1,10 +1,10 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
-import { chromium } from "playwright-core";
 
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+
+const browser = await launchBrowser({
   headless: true,
   args: ["--no-sandbox"],
 });

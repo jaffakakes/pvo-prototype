@@ -1,11 +1,4 @@
 .page {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
   background-color: var(--deep);
   background-image: radial-gradient(
     circle,
@@ -34,7 +27,7 @@
   color: var(--violet-foreground);
 }
 .page :is(input, textarea) {
-  caret-color: var(--accent);
+  caret-color: var(--strong);
 }
 .header {
   display: grid;
@@ -82,14 +75,14 @@
   color: var(--surface);
 }
 .sheet {
-  flex: 0 1 auto;
+  flex: 1;
   position: relative;
-  max-height: 52%;
-  min-height: 150px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   background: var(--surface);
-  border-top: 2px solid var(--outline);
   z-index: 2;
 }
 .grabber {
@@ -101,8 +94,7 @@
   background: var(--q14);
 }
 .sheetBody {
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  flex-shrink: 0;
   padding: 9px 14px 18px;
   scrollbar-width: thin;
   scrollbar-color: var(--muted) var(--ground);
@@ -179,8 +171,8 @@
   height: 48px;
 }
 .behaviourDisc[data-accent="true"] {
-  background: var(--accent);
-  color: var(--accent-foreground);
+  background: var(--strong);
+  color: var(--onStrong);
 }
 .corner {
   width: 56px;
@@ -394,32 +386,8 @@
   color: var(--text);
   font: 800 12px var(--f-ui);
 }
-.sheet[data-code="true"] {
-  height: 300px;
-  max-height: 60%;
-  flex-shrink: 0;
-}
-.page[data-code-expanded="true"] .sheet {
-  height: 75%;
-  max-height: 75%;
-}
 .page[data-code-expanded="true"] [data-component-stage] {
   min-height: 60px;
-}
-.codeAssistant {
-  position: absolute;
-  inset: 48px 0 0;
-  pointer-events: none;
-  z-index: 3;
-}
-.codeAssistant :global([data-assistant-phase="idle"] [data-assistant-orb]) {
-  width: 44px;
-  height: 44px;
-  left: calc(100% - 58px);
-}
-.codeAssistant :global([data-assistant-phase="idle"] [data-assistant-orb] img) {
-  width: 26px;
-  height: 26px;
 }
 @media (hover: hover) {
   .catalogue > button:hover {
@@ -447,9 +415,6 @@
   }
 }
 @media (max-height: 600px) {
-  .sheet {
-    max-height: 58%;
-  }
   [data-component-stage] {
     min-height: 70px;
   }
@@ -474,10 +439,4 @@
 :global([data-reduce-motion="true"]) .page * {
   animation: none !important;
   transition: none !important;
-}
-
-.stageAssistant {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
 }

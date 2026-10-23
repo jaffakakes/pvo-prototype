@@ -8,9 +8,19 @@ import {
   AdvancedEditingSetting,
   ReduceMotionSetting,
 } from "./EditorPreferencesSettings";
+import { AdvancedSettings } from "./AdvancedSettings";
+import { ProjectStorageStatus } from "./ProjectStorageStatus";
+import { useEditorPreferences } from "../../state/preferences/editorPreferences";
 import styles from "./ProjectSettingsMenu.module.css";
 
-export function ProjectSettingsMenu() {
+export function ProjectSettingsMenu({
+  label = "Project settings",
+}: {
+  label?: string;
+}) {
+  const advanced = useEditorPreferences(
+    (state) => state.advancedEditingEnabled,
+  );
   const { trigger, panel, position, open, close } = useHeaderPopover(336);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const keep = useRef<HTMLButtonElement>(null);
@@ -39,8 +49,8 @@ export function ProjectSettingsMenu() {
         ref={trigger}
         type="button"
         className={styles.trigger}
-        aria-label="Project settings"
-        title="Project settings"
+        aria-label={label}
+        title={label}
         aria-haspopup="dialog"
         aria-expanded={!!position}
         aria-controls={position ? id : undefined}
@@ -64,7 +74,7 @@ export function ProjectSettingsMenu() {
             ref={panel}
             id={id}
             role="dialog"
-            aria-label="Project settings"
+            aria-label={label}
             className={styles.panel}
             style={{
               ...position,
@@ -94,6 +104,8 @@ export function ProjectSettingsMenu() {
               <AppearanceSettings iconOnly />
               <AdvancedEditingSetting compact />
               <ReduceMotionSetting compact />
+              {advanced && <AdvancedSettings />}
+              <ProjectStorageStatus onlyIssues />
             </div>
             <div className={styles.footer}>
               {confirmDelete ? (

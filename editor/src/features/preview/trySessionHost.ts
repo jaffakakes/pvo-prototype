@@ -10,6 +10,7 @@ export type TrySessionState = Pick<
   | "sel"
   | "selComp"
   | "selText"
+  | "selAudio"
   | "sheet"
   | "scenes"
   | "clips"

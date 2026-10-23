@@ -142,7 +142,7 @@ function scene(components, layers) {
     components,
     layers,
     muted: true,
-    sound: 0,
+    music: null,
   };
 }
 

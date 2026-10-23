@@ -4,14 +4,40 @@
   border-bottom-color: var(--q14);
 }
 
-.timeline :global(.tick) { color: var(--muted); }
-.timeline > :global(.timelineContent) { min-height: 100%; }
+.timeline :global(.tick) {
+  color: var(--muted);
+}
+.timeline > :global(.timelineContent) {
+  display: flow-root;
+  min-height: 100%;
+  overflow: clip;
+}
+.timeRuler {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  height: 24px;
+  background: var(--bar);
+}
+.clipSlot {
+  position: relative;
+  flex: none;
+  height: 56px;
+}
 /* Extend into the 2px timeline edge to leave a 1px visual gap. */
-.timeline :global(.playhead) { bottom: -1px; }
+.timeline :global(.playhead) {
+  bottom: -1px;
+}
 
-.labelRail { position: absolute; inset: 0 auto 0 0; background: var(--ground); z-index: 3; pointer-events: none; }
-.currentTime { position: absolute; left: 16px; top: 7px; z-index: 4; color: var(--highlight); font: 800 10px var(--f-ui); pointer-events: none; }
-.timeline .trackLabel:global(.layerName), .timeline .audioLabel {
+.labelRail {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--ground);
+  z-index: 3;
+  pointer-events: none;
+}
+.timeline .trackLabel:global(.layerName),
+.timeline .audioLabel {
   position: absolute;
   left: 8px;
   width: 44px;
@@ -28,18 +54,43 @@
   font: 700 10px var(--f-ui);
   text-transform: none;
 }
-.timeline .trackLabel:global(.layerName)[data-sel="true"] { border-color: var(--pale); color: var(--highlight); }
-.trackLabel svg { flex-shrink: 0; color: var(--violet); }
-.trackLabel[data-kind="video"] svg { color: var(--pale); }
-.trackLabel[data-kind="text"] svg { color: var(--yellow); }
-.trackLabel[data-kind="audio"] svg { color: var(--teal); }
-.audioLabel { cursor: pointer; }
+.timeline .trackLabel:global(.layerName)[data-sel="true"] {
+  border: 2px solid var(--strong);
+  color: var(--strong);
+}
+.trackLabel svg {
+  flex-shrink: 0;
+  color: var(--violet);
+}
+.trackLabel[data-kind="video"] svg {
+  color: var(--strong);
+}
+.trackLabel[data-kind="text"] svg {
+  color: var(--yellow);
+}
+.trackLabel[data-kind="audio"] svg {
+  color: var(--teal);
+}
+.audioLabel {
+  cursor: pointer;
+}
 
-.timeline :global(.mute) { background: var(--surface); }
-.timeline :global(.addClip) { border-color: var(--line-strong); }
+.timeline :global(.mute) {
+  background: var(--surface);
+}
+.timeline :global(.addClip) {
+  border-color: var(--line-strong);
+}
 
-.emptyTimeline { background: var(--ground); }
-.emptyContent { display: flex; align-items: center; padding: 20px; height: 134px; }
+.emptyTimeline {
+  background: var(--ground);
+}
+.emptyContent {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  height: 134px;
+}
 .emptyAdd {
   width: 146px;
   height: 56px;
@@ -49,4 +100,8 @@
   color: var(--violet);
   font: 800 12px var(--f-ui);
   cursor: pointer;
+}
+
+.trackLabel[data-sel="true"] svg {
+  color: var(--strong);
 }

@@ -1,6 +1,7 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { chromium } from "playwright-core";
+
 import { fontFamily } from "../../../packages/pvo-fonts/index.js";
 import { parseNativeTurnRequest, parseNativeTurnResult } from "../../../packages/pvo-assistant/native/index.js";
 import { installAssistantAvailabilityFixture } from "./assistant-fixture.mjs";
@@ -18,7 +19,7 @@ const source = {
   logic: 'on submit { continue(); }',
 };
 const family = fontFamily(font);
-const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true });
+const browser = await launchBrowser({ headless: true });
 const result = (message, operations = [], observations = []) => parseNativeTurnResult({ message, operations, observations });
 
 async function check(viewport, label) {
@@ -90,7 +91,7 @@ async function check(viewport, label) {
       window.phoneFormCapture = useCapture;
       const localId = `phone-form-${label}`;
       useCapture.getState().patch({ localId, screen: "editor", clips: [mkClip(30, null, 0)], ratio: "9:16",
-        sound: -1, muted: true, t: 1, playing: false, sel: -1, selComp: null, past: [], future: [] });
+        music: null, muted: true, t: 1, playing: false, sel: -1, selComp: null, past: [], future: [] });
       navigateProject(localId, true);
       await writeSavedFont(font);
     }, { font, label });

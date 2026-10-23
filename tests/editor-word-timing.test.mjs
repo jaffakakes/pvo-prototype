@@ -19,7 +19,7 @@ const clip = (changes = {}) => ({ id: 1, url: "blob:http://localhost/source", sr
   speed: 1, color: "#000", zoom: 1, mirror: false, width: 640, height: 360, fit: "contain", ...changes });
 const project = (changes = {}) => ({ currentSceneId: "main", ratio: "16:9", allowedDomains: [], scenes: [{
   id: "main", name: "Main", parent: null, clips: [clip()], audioClips: [],
-  texts: [], components: [], muted: false, sound: -1, ...changes,
+  texts: [], components: [], muted: false, music: null, ...changes,
 }] });
 const request = (changes = {}) => ({ kind: "word_timing", sceneId: "main", start: 0, end: 4,
   source: { kind: "clip", id: 1 }, text: "Want peace.", language: "en", ...changes });

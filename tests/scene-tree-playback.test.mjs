@@ -54,7 +54,7 @@ function project({
     texts: [],
     components: [],
     muted: false,
-    sound: 0,
+    music: null,
     layers: ["video"],
   }));
   scenes[0].components.push({

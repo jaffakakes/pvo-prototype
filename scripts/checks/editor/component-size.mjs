@@ -1,15 +1,12 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url)).replaceAll(
   "\\",
   "/",
 );
-const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROME_PATH ||
-    "C:/Program Files/Google/Chrome/Application/chrome.exe",
+const browser = await launchBrowser({
   headless: true,
 });
 const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
@@ -114,7 +111,7 @@ try {
       texts: [],
       components: [],
       muted: true,
-      sound: -1,
+      music: null,
       layers: ["video"],
     };
     window.sizeCapture.getState().patch({
@@ -140,6 +137,7 @@ try {
         state.deleteComponent(component.id);
       const id = state.addComponent(type);
       state.updateComponent(id, { x: 50, y: 40 });
+      state.patch({ past: [], future: [] });
     }, type);
     await page.getByRole("tab", { name: "Look", exact: true }).click();
     const original = await box();
@@ -206,13 +204,67 @@ try {
     assert.equal(await widthField.inputValue(), "300");
     assert.equal(await heightField.inputValue(), "160");
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.getByRole("button", { name: "Back to camera" }).waitFor();
+    await page.getByRole("button", { name: "Video", exact: true }).waitFor();
+    const beforeMobileLayout = await history();
+    await page.getByRole("button", { name: "Layout", exact: true }).click();
+    await widthField.waitFor();
     assert.equal(
-      await widthField.count(),
-      0,
-      "Mobile keeps its existing controls",
+      await widthField.inputValue(),
+      "300",
+      "Design uses the shared width field",
     );
-    same(await box(), taller, "Mobile retains canvas pixel dimensions");
+    assert.equal(
+      await heightField.inputValue(),
+      "160",
+      "Design uses the shared height field",
+    );
+    await setSize(widthField, 200, "Escape");
+    assert.equal(await widthField.inputValue(), "300");
+    assert.equal(
+      await history(),
+      beforeMobileLayout,
+      "Opening Layout and cancelling preserve history",
+    );
+    const xField = page.getByRole("spinbutton", {
+      name: "X position (px)",
+      exact: true,
+    });
+    const yField = page.getByRole("spinbutton", {
+      name: "Y position (px)",
+      exact: true,
+    });
+    assert.equal(await xField.inputValue(), "540");
+    assert.equal(await yField.inputValue(), "768");
+    await setSize(xField, "");
+    await setSize(xField, 432, "Escape");
+    assert.equal(await xField.inputValue(), "540");
+    assert.equal(
+      await history(),
+      beforeMobileLayout,
+      "Empty and cancelled position edits preserve history",
+    );
+    await setSize(xField, 432);
+    assert.equal(
+      await history(),
+      beforeMobileLayout + 1,
+      "Enter commits one position edit",
+    );
+    assert.equal(
+      await page.evaluate(() => window.sizeCapture.getState().components[0].x),
+      40,
+    );
+    await setSize(xField, 540);
+    await setSize(yField, 960, "Tab");
+    assert.equal(
+      await history(),
+      beforeMobileLayout + 3,
+      "Blur commits one position edit",
+    );
+    assert.equal(
+      await page.evaluate(() => window.sizeCapture.getState().components[0].y),
+      50,
+    );
+    await setSize(yField, 768);
     await page.setViewportSize({ width: 1440, height: 960 });
     await widthField.waitFor();
     await setSize(widthField, 99999);

@@ -1,6 +1,7 @@
 import { HttpError } from "../../server/http.js";
 import { TRACKING_MAX_REQUEST_BYTES } from "../../packages/pvo-assistant/native/index.js";
 import { json, failure } from "./http.mjs";
+import { createLocalOriginPolicy } from "./local-origins.mjs";
 
 const UPSTREAM = "https://getrestyle.app";
 const MIB = 1024 * 1024;
@@ -79,16 +80,11 @@ async function readResponse(response, signal) {
 /** Forward foreground tools only; local account cookies never leave the beta. */
 export function createLocalAssistantApi({
   origin,
+  publicOrigin,
   fetcher = fetch,
   timeoutMs = 100000,
 }) {
-  const local = new URL(origin);
-  if (
-    local.protocol !== "http:" ||
-    local.hostname !== "127.0.0.1" ||
-    local.origin !== origin
-  )
-    throw new Error("The local assistant requires an exact loopback origin.");
+  const policy = createLocalOriginPolicy(origin, publicOrigin);
   return {
     handles: (pathname) => routes.has(pathname),
     async handle(request, response) {
@@ -104,15 +100,7 @@ export function createLocalAssistantApi({
           throw new HttpError(404, "This assistant operation is unavailable.");
         if (request.method !== route[0])
           throw new HttpError(405, "This method is unavailable.");
-        const site = request.headers["sec-fetch-site"];
-        const browserOrigin = request.headers.origin;
-        if (
-          request.headers.host !== local.host ||
-          url.origin !== origin ||
-          (site && site !== "same-origin" && site !== "none") ||
-          (browserOrigin && browserOrigin !== origin) ||
-          (request.method === "POST" && browserOrigin !== origin)
-        )
+        if (!policy.accepts(request))
           throw new HttpError(
             403,
             "This operation must start from the editor.",

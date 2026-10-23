@@ -1,0 +1,39 @@
+.points {
+  position: absolute;
+  inset: 32px 8px -8px;
+  z-index: 3;
+  pointer-events: none;
+}
+.point {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  transform: translateX(-50%);
+  pointer-events: auto;
+  cursor: pointer;
+}
+.point i {
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--outline);
+  border-radius: 2px;
+  background: var(--pale);
+  transform: rotate(45deg);
+}
+.point[aria-pressed="true"] i {
+  box-shadow: 2px 2px 0 var(--strong);
+}
+.point:focus-visible {
+  outline: 3px solid var(--strong);
+  outline-offset: -3px;
+}
+.point:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

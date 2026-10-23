@@ -1,10 +1,11 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
+
 import { WebSocketServer, WebSocket } from "ws";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
@@ -118,8 +119,7 @@ await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
 const address = server.address();
 if (!address || typeof address === "string") throw new Error("PWA check server failed to bind.");
 const url = `http://127.0.0.1:${address.port}/editor/`;
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+const browser = await launchBrowser({
   headless: true,
   args: ["--no-sandbox", "--use-fake-device-for-media-stream"],
 });
@@ -240,10 +240,9 @@ try {
     const registration = await navigator.serviceWorker.getRegistration();
     return Boolean(registration?.waiting && !registration.installing);
   });
-  if (await page.getByText("New beta release", { exact: true }).isVisible()) {
-    assert.equal(await page.getByRole("button", { name: "Update", exact: true }).isEnabled(), false,
-      "The release prompt should not be actionable while recording");
-  }
+  await page.getByText("New beta release", { exact: true }).waitFor();
+  assert.equal(await page.getByRole("button", { name: "Update", exact: true }).isEnabled(), false,
+    "The release stays visible but cannot interrupt recording");
   assert.equal(navigations, navigationsBeforeProjectUpdate, "Recording was interrupted by an update");
   const recordingWorkers = await page.evaluate(async () => {
     const registration = await navigator.serviceWorker.getRegistration();
@@ -273,12 +272,51 @@ try {
     "Selected: 1:1", "The project ratio edit should be visible before updating");
   const original = await waitForCheckpoint(page, checkpoint => checkpoint?.ratio === "1:1"
     && checkpoint.clips?.length === 1 && checkpoint.media?.length === 1 && checkpoint.media[0].size > 0);
-  assert.equal(original.version, 2, "The saved project should have a versioned format");
+  assert.equal(original.version, 3, "The saved project uses the current checkpoint format");
   assert.equal(original.assetIds?.length, 1, "The checkpoint should reference the recorded asset");
   assert.equal(original.clips[0].url, original.assetIds[0],
     "The recorded clip must reference its saved asset ID");
   assert.ok(original.media.some(item => item.id === original.clips[0].url),
     "The recorded clip must reference its saved binary media");
+
+  await page.getByRole("button", { name: "Open editor", exact: true }).click();
+  await page.getByRole("button", { name: "Edit clip", exact: true }).click();
+  assert(await page.getByText("New beta release", { exact: true }).isVisible(),
+    "Selecting a clip must not hide the release notice");
+  // Dismiss the bottom notice to reach the toolbar, then return to the app with
+  // a sheet already open. The release must return above that sheet.
+  await page.getByRole("button", { name: "Dismiss update notice", exact: true }).click();
+  await page.getByRole("button", { name: "Speed", exact: true }).click();
+  await page.getByRole("dialog", { name: "Speed", exact: true }).waitFor();
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  const sheetUpdate = page.getByRole("button", { name: "Update", exact: true });
+  await sheetUpdate.click({ trial: true });
+  assert(await sheetUpdate.isEnabled(), "An open sheet must allow a saved-project update");
+  assert(await sheetUpdate.evaluate(button => {
+    const root = button.closest('[data-notification-root]');
+    const rect = button.getBoundingClientRect();
+    const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
+    const notice = root.getBoundingClientRect();
+    return root?.parentElement === document.body && button.contains(hit)
+      && notice.top > innerHeight / 2 && notice.bottom >= innerHeight - 28;
+  }), "The app-level release notice must stay at the bottom above the sheet and receive pointer input");
+  if (captureScreenshots) await page.screenshot({ path: resolve(tmpdir(), "restyle-beta-update-sheet.png") });
+
+  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
+  await page.getByRole("button", { name: "Edit cover", exact: true }).click();
+  const coverDialog = page.getByRole("dialog", { name: "Choose cover", exact: true });
+  await coverDialog.waitFor();
+  await coverDialog.getByRole("button", { name: "Update", exact: true }).waitFor();
+  assert.equal(await coverDialog.getByRole("button", { name: "Update", exact: true }).count(), 1,
+    "Native modal sheets must contain the release action so it escapes background inertness");
+  await sheetUpdate.click({ trial: true });
+  await page.getByRole("button", { name: "Close cover picker", exact: true }).click();
+  await page.waitForFunction(() => document.querySelector('[data-app-level="true"]')?.parentElement === document.body);
+  await sheetUpdate.click({ trial: true });
+  await page.getByRole("button", { name: "Edit cover", exact: true }).click();
+  await coverDialog.getByRole("button", { name: "Update", exact: true }).waitFor();
+  await sheetUpdate.click({ trial: true });
+  if (captureScreenshots) await page.screenshot({ path: resolve(tmpdir(), "restyle-beta-update-modal.png") });
 
   const projectReload = page.waitForEvent("load", { timeout: 15000 });
   await page.getByRole("button", { name: "Update", exact: true }).click();
@@ -291,6 +329,10 @@ try {
     return Boolean(registration?.active && !registration.waiting && registration.active === navigator.serviceWorker.controller);
   });
   await page.locator("#root .app").waitFor();
+  await page.getByRole("button", { name: "Open editor", exact: true })
+    .or(page.getByRole("button", { name: "Back to camera", exact: true })).first().waitFor();
+  if (await page.getByRole("button", { name: "Back to camera", exact: true }).isVisible())
+    await page.getByRole("button", { name: "Back to camera", exact: true }).click();
   await page.getByRole("button", { name: "Open editor" }).waitFor({ timeout: 15000 });
   assert.equal(await page.getByRole("button", { name: "Ratio", exact: true }).getAttribute("aria-description"),
     "Selected: 1:1", "The project ratio edit disappeared after the update");
@@ -322,7 +364,7 @@ try {
   await page.waitForTimeout(700);
   assert.equal(await page.getByRole("button", { name: "Open editor" }).count(), 0,
     "A discarded project returned after a quick restart");
-  assert.equal(await page.getByText("No clips yet", { exact: true }).isVisible(), true,
+  assert.equal(await page.getByRole("button", { name: "Start over", exact: true }).isDisabled(), true,
     "The discarded project should restore as a clean camera");
 
   await context.setOffline(true);
@@ -373,7 +415,8 @@ try {
     announceRelease();
     await failurePage.waitForFunction(async () => Boolean((await navigator.serviceWorker.getRegistration())?.waiting));
     const unsafeUpdate = failurePage.getByRole("button", { name: "Update", exact: true });
-    if (await unsafeUpdate.isVisible() && await unsafeUpdate.isEnabled()) await unsafeUpdate.click();
+    await unsafeUpdate.waitFor();
+    assert.equal(await unsafeUpdate.isEnabled(), false, "Save errors keep the release visible without permitting an unsafe reload");
     await failurePage.waitForTimeout(1200);
     assert.equal(failureNavigations, beforeUnsafeUpdate,
       "Restyle restarted despite being unable to save the recorded take");

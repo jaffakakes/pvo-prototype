@@ -1,9 +1,10 @@
 import { useRef, useState, type ComponentProps, type ComponentType } from "react";
 import { useWideLayout } from "../../../infrastructure/viewport";
-import { beginPvoEdit, isVisualEditingBlocked, restoreLastValidPvo, returnToVisualEditing } from "../../../domain/components/codeOwnership";
+import { isVisualEditingBlocked, restoreLastValidPvo, returnToVisualEditing } from "../../../domain/components/codeOwnership";
 import { componentLanguageSource } from "../../../domain/components/languageCompilation";
 import type { PvoLanguageSource } from "../../../domain/components/languageSource";
 import { componentLook, lookPresetName } from "../../../domain/components/look";
+import { editComponentSource, restoreComponentSource } from "../../../state/components/componentLanguageCommands";
 import { useCapture } from "../../../state/captureStore";
 import { selectComponentSourcePart, setCodePreviewFocus, setComponentAuthoringTab, useComponentAuthoring, type ComponentAuthoringTab } from "../../../state/components/componentAuthoringStore";
 import { setAdvancedEditingEnabled, useEditorPreferences } from "../../../state/preferences/editorPreferences";
@@ -64,17 +65,11 @@ export function EditorSheet({ Frame = SheetFrame, lookPreviewScale }: {
   };
   const editPvo = (part: keyof PvoLanguageSource, value: string) => {
     formatting.onEdit();
-    const current = useCapture.getState().components.find(item => item.id === component.id);
-    if (!current || legacy) return;
-    update(component.id, beginPvoEdit(current, part, value), !editedCode.current);
+    if (legacy || !editComponentSource(component.id, part, value, !editedCode.current)) return;
     editedCode.current = true;
   };
   const source = componentLanguageSource(component);
-  const restore = () => {
-    const current = useCapture.getState().components.find(item => item.id === component.id);
-    const changes = current && restoreLastValidPvo(current);
-    if (changes) update(component.id, changes);
-  };
+  const restore = () => { restoreComponentSource(component.id); };
   const canRestore = !!restoreLastValidPvo(component);
   const openAdvanced = (part: keyof PvoLanguageSource = "structure") => {
     if (!advanced) setAdvancedEditingEnabled(true);
@@ -125,8 +120,7 @@ export function EditorSheet({ Frame = SheetFrame, lookPreviewScale }: {
         </section>}
         {wide && <ComponentSizeControls key={component.id} component={component} />}
         <LookTab component={component} disabled={blocked} previewScale={lookPreviewScale} />
-        {wide ? <KeyframeEditor key={`component:${component.id}`} target={{ kind: "component", id: component.id }} />
-          : <button type="button" className={styles.inlineActions} onClick={() => useCapture.getState().patch({ sheet: "animation", playing: false })}>◆ Animate</button>}
+        {wide && <KeyframeEditor key={`component:${component.id}`} target={{ kind: "component", id: component.id }} />}
       </>}
       {tab === "action" && <ActionTab key={component.id} component={component} onOpenAdvanced={() => openAdvanced("logic")} />}
       {tab === "advanced" && !legacy && <>
@@ -139,7 +133,7 @@ export function EditorSheet({ Frame = SheetFrame, lookPreviewScale }: {
             onEdit={editPvo} feedback={feedback} onRestore={canRestore ? restore : undefined}
             assistantActive={assistantActive} registerAssistantTarget={dock?.registerAssistantTarget}
             onSourceBlur={formatting.onBlur}
-            expanded={dock?.expanded ?? false} onExpand={() => dock?.setExpanded(!dock.expanded)} />
+            expanded={dock?.expanded ?? false} onExpand={() => dock?.setExpanded?.(!dock.expanded)} />
         </div>
       </>}
     </>}

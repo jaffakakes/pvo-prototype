@@ -1,6 +1,7 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
+
 import { parseNativeTurnRequest, parseNativeTurnResult } from "../../../packages/pvo-assistant/native/index.js";
 import { installAssistantAvailabilityFixture, preparedAssistantReceipts } from "./assistant-fixture.mjs";
 
@@ -11,8 +12,7 @@ const boundary = 2;
 const punchlineStarts = 2.051;
 const question = "What does he want instead of peace?";
 const answer = "I want problems, always.";
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+const browser = await launchBrowser({
   headless: true,
 });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -155,7 +155,7 @@ try {
     if (metadata.duration < 4) throw new Error("The media fixture must continue after the quiz boundary.");
     const clip = { id: 1, url, srcDur: metadata.duration, in: 0, out: Math.min(8, metadata.duration), speed: 1,
       color: "#442244", zoom: 1, mirror: false, width: metadata.width, height: metadata.height, fit: "contain" };
-    useCapture.getState().patch({ screen: "editor", clips: [clip], ratio: "16:9", t: 0, playing: false, sound: 0 });
+    useCapture.getState().patch({ screen: "editor", clips: [clip], ratio: "16:9", t: 0, playing: false, music: null });
   }, root);
   const original = await snapshot();
   scenario = "create";

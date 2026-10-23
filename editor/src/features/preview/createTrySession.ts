@@ -26,7 +26,13 @@ export function createTrySession(host: TrySessionHost) {
   let trySessionEpoch = 0;
   type EditingLocation = Pick<
     TrySessionState,
-    "currentSceneId" | "t" | "sel" | "selComp" | "selText" | "sheet"
+    | "currentSceneId"
+    | "t"
+    | "sel"
+    | "selComp"
+    | "selText"
+    | "selAudio"
+    | "sheet"
   >;
   let editingLocation: EditingLocation | null = null;
   const runtimeBridge = createTryRuntimeBridge({
@@ -85,6 +91,7 @@ export function createTrySession(host: TrySessionHost) {
       sel: s.sel,
       selComp: s.selComp,
       selText: s.selText,
+      selAudio: s.selAudio,
       sheet: s.sheet,
     };
     // The workspace hides the mounted editing region so its tab and height survive Try.

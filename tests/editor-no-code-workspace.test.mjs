@@ -20,6 +20,7 @@ const {
   aspectRatioPanelHeight,
   editorPanelHeight,
   workspaceGeometry,
+  toolTrayLayout,
   startTry,
   stopTry,
   runComponentResponse,
@@ -29,6 +30,22 @@ const {
 } = await import(
   `data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString("base64")}`
 );
+
+test("tray layout follows measured controls and toolbar, including safe areas and larger content", () => {
+  const size = { height: 844, header: 56, controls: 150, toolbar: 76 };
+  const normal = editorPanelHeight(size);
+  const baseline = toolTrayLayout(size, normal).panelHeight;
+  assert.equal(
+    toolTrayLayout({ ...size, controls: 170, toolbar: 96 }, normal).panelHeight,
+    baseline,
+  );
+  assert(toolTrayLayout({ ...size, controls: 250 }, normal).panelHeight > baseline);
+  const short = toolTrayLayout({ ...size, height: 393, controls: 150 }, normal);
+  assert.equal(short.header, 0, "Short screens give navigation space to the timeline");
+  assert(short.panelHeight - Math.min(150, short.controlsMaxHeight) >= 180, "The movie strip stays usable");
+  assert(393 - short.panelHeight >= 64, "Preview close remains reachable");
+  assert.equal(toolTrayLayout({ ...size, height: 50 }, normal).panelHeight, 0);
+});
 
 test("timeline and editing panels split the space below the project header", () => {
   for (const height of [0, 64, 180, 328, 568, 693, 844, 932, 1100]) {
@@ -85,7 +102,7 @@ function editingProject() {
     texts: [],
     components: [],
     muted: false,
-    sound: 0,
+    music: null,
     layers: ["video"],
   });
   useCapture.setState({

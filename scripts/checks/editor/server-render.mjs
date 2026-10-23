@@ -1,3 +1,4 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import { openExportDialog } from "../helpers/editor-export.mjs";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
@@ -5,7 +6,7 @@ import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
+
 import { readPvoProject } from "../../../packages/pvo-sdk/index.js";
 
 const editorUrl = process.env.EDITOR_URL || process.env.RESTYLE_EDITOR_URL || "http://127.0.0.1:5173/";
@@ -25,8 +26,7 @@ const metadata = path => JSON.parse(execFileSync(ffprobe, [
 ], { encoding: "utf8" }));
 const sourceDuration = Number(metadata(fixture).format.duration);
 const downloads = await mkdtemp(join(tmpdir(), "restyle-server-render-"));
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+const browser = await launchBrowser({
   headless: true, args: ["--no-sandbox"],
 });
 let accountChecks = 0;

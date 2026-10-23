@@ -1,10 +1,11 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
+
 
 const editorUrl = process.env.EDITOR_URL || process.env.RESTYLE_EDITOR_URL || "http://127.0.0.1:5173/";
 const compilerPath = fileURLToPath(new URL("../../../packages/pvo-language/index.js", import.meta.url));
-const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe", headless: true });
+const browser = await launchBrowser({ headless: true });
 const context = await browser.newContext({ viewport: { width: 1440, height: 960 }, reducedMotion: "no-preference" });
 const page = await context.newPage();
 page.setDefaultTimeout(15000);
@@ -106,10 +107,10 @@ try {
       logic: 'on submit { continue(); }',
     };
     // The editor compiler adapter is the same facade used by assistant preparation.
-    const { compilePvoComponent } = await import(`/@fs${compilerPath}`);
+    const { compilePvoComponent } = await import(`/@fs/${compilerPath.replaceAll("\\", "/")}`);
     useCapture.setState(initial());
     useCapture.getState().patch({ localId: "preview-startup-fixture", screen: "editor", clips: [mkClip(8, null, 0)],
-      ratio: "9:16", sound: -1, muted: true, t: 1, playing: false, sel: -1, past: [], future: [] });
+      ratio: "9:16", music: null, muted: true, t: 1, playing: false, sel: -1, past: [], future: [] });
     navigateProject("preview-startup-fixture", true);
     const before = projectSnapshot(useCapture.getState());
     const batch = await prepareNativeBatch(before, [{ kind: "component.add", sceneId: "main", componentType: "form", at: 0, duration: 8, source }],

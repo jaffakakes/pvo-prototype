@@ -15,7 +15,7 @@
   background: var(--button-secondary-bg);
   border: 2.5px solid var(--button-border);
   border-radius: 13px;
-  box-shadow: 3px 3px 0 var(--accent);
+  box-shadow: 3px 3px 0 var(--button-primary-bg);
 }
 .reminder {
   min-height: 44px;
@@ -42,6 +42,6 @@
 }
 .reminder:focus-visible,
 .close:focus-visible {
-  outline: 3px solid var(--highlight);
+  outline: 3px solid var(--focus);
   outline-offset: 2px;
 }

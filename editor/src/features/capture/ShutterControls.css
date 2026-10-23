@@ -96,10 +96,6 @@
   border-radius: 14px;
   box-shadow: 3px 3px 0 #000;
 }
-.sideLabel {
-  font: 700 10px var(--f-ui);
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
-}
 .shutter {
   position: relative;
   width: 88px;
@@ -138,7 +134,7 @@
   height: 34px;
   border-radius: 9px;
 }
-.camHint {
+.captureStatus {
   color: rgba(242, 240, 233, 0.8);
   font: 700 11px var(--f-ui);
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);

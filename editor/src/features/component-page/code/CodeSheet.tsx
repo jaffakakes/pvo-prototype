@@ -1,9 +1,8 @@
 import { useRef } from "react";
-import { beginPvoEdit } from "../../../domain/components/codeOwnership";
 import { componentLanguageSource } from "../../../domain/components/languageCompilation";
 import type { PvoLanguageSource } from "../../../domain/components/languageSource";
 import type { PvoComponent } from "../../../domain/project/model";
-import { useCapture } from "../../../state/captureStore";
+import { editComponentSource } from "../../../state/components/componentLanguageCommands";
 import { PvoSourceEditor } from "../../component-authoring/language/PvoSourceEditor";
 import { usePvoFormatting } from "../../component-authoring/language/usePvoFormatting";
 import type { LanguageFeedback } from "../../component-authoring/language/usePvoCompilation";
@@ -75,16 +74,8 @@ export function CodeSheet({
         }}
         onChange={(value) => {
           formatting.onEdit();
-          const state = useCapture.getState();
-          const current = state.components.find(
-            (item) => item.id === component.id,
-          );
-          if (!current) return;
-          state.updateComponent(
-            component.id,
-            beginPvoEdit(current, part, value),
-            !edited.current,
-          );
+          if (!editComponentSource(component.id, part, value, !edited.current))
+            return;
           edited.current = true;
         }}
       />

@@ -1,8 +1,9 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { mkdir, readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { join } from "node:path";
-import { chromium } from "playwright-core";
+
 import { packPvoProject, PVO_SPEC_VERSION } from "../../../packages/pvo-sdk/index.js";
 import { playerSourceAssets } from "../helpers/player-assets.mjs";
 
@@ -117,7 +118,7 @@ async function assertUnobstructed(page, description) {
 
 let browser;
 try {
-  browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+  browser = await launchBrowser({
     headless: true, args: ["--no-sandbox"] });
   for (const theme of ["light", "dark"]) {
     for (const device of devices) {

@@ -1,6 +1,7 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { chromium } from "playwright-core";
+
 import { fontFamily } from "../../../packages/pvo-fonts/index.js";
 import { parseNativeTurnRequest, parseNativeTurnResult } from "../../../packages/pvo-assistant/native/index.js";
 import { installAssistantAvailabilityFixture } from "./assistant-fixture.mjs";
@@ -16,7 +17,7 @@ const designPrompt = "Search the web for Swiss poster design references and expl
 const fontPrompt = "Find Independent Fixture at the independent foundry, save it, and apply it to my note and title.";
 const designQuery = "Swiss poster design references";
 const fontQuery = "Independent Fixture independent foundry font";
-const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe", headless: true });
+const browser = await launchBrowser({ headless: true });
 const context = await browser.newContext({ viewport: { width: 1440, height: 960 }, reducedMotion: "reduce" });
 await installAssistantAvailabilityFixture(context);
 const page = await context.newPage();
@@ -133,7 +134,7 @@ try {
     useCapture.setState(initial());
     resetAssistant();
     window.webCapture = useCapture;
-    useCapture.getState().patch({ screen: "editor", clips: [mkClip(8, null, 0)], sound: -1, muted: true,
+    useCapture.getState().patch({ screen: "editor", clips: [mkClip(8, null, 0)], music: null, muted: true,
       t: 1, playing: false, sel: -1, selComp: "note", past: [], future: [],
       components: [{ id: "note", type: "tooltip", sceneId: "main", at: 0, dur: 6, x: 50, y: 30, fields: { text: "A note" } }],
       texts: [{ id: 20, text: "A title", color: 0, start: 0, end: 6, x: 50, y: 60 }],

@@ -115,6 +115,10 @@ Other copy examples:
 | Browser project save failed | “Couldn't save changes.” — persistent red notification, × |
 | Project restore failed | “Couldn't restore your project.” — persistent red notification, × |
 
+## Beta releases
+
+The release notice uses an app-level portal outside editor and selection containers. When a native modal is open, the notice joins the frontmost modal so browser-enforced background inertness does not block its controls; it returns to the app-level host when the modal closes. It stays visible while a clip or layer is selected, a sheet is open, the assistant is active, or a save issue needs attention. It remains at the bottom safe inset, with its app-level stacking above editor sheets and selection overlays. Opening a sheet does not block installation. Recording, import, export, active assistant work and unresolved save/restore issues disable the update action without hiding the available release. Installing still saves the project first and requires the creator to press Update; new builds never force a reload.
+
 ## Existing feedback to preserve
 
 Keep camera permission/startup UI, recording/countdown, clip-replacement and scene context, Try/HOLD indicators, export progress/completion/download, language checking/diagnostics, field/URL/domain validation and existing destructive confirmations. These communicate an actual state or decision; they should not also generate toasts.
@@ -138,6 +142,6 @@ The [catalogue](../../editor/src/domain/notifications/catalog.ts) owns approved 
 
 ### Bottom project recovery notices
 
-Save and restore failures use the same compact bottom presentation as **New beta release**, with a direct **Retry** action and dismissal. They keep the approved notification registry, live announcements and unresolved state; they do not also display a top toast or Camera storage section. A dismissed failure leaves **Saving paused**, opening recovery details on demand. Desktop creation continues to own its inline restore recovery panel. Updates yield while a save or restore issue is unresolved.
+Save and restore failures use the same compact bottom presentation as **New beta release**, with a direct **Retry** action and dismissal. They keep the approved notification registry, live announcements and unresolved state; they do not also display a top toast or Camera storage section. A dismissed failure shows **Saving paused** for ten seconds, opening recovery details on demand, then hides automatically. This timeout hides only the reminder: The project dropdown retains the unresolved status and recovery controls, and already-open recovery details stay open. Desktop creation continues to own its inline restore recovery panel. Updates yield while a save or restore issue is unresolved.
 
 An absent project at a requested link is different from an unreadable checkpoint: clear the stale route, report **Project isn’t in this browser.**, and enable saving new work. Do not silently load another project or write an empty placeholder over its current checkpoint. Corrupt or inaccessible saved data still blocks writes until recovery succeeds or the user explicitly discards it. If new work starts while checking an absent checkpoint, save that work without attempting hydration.

@@ -10,8 +10,8 @@
   border: 2px solid var(--outline);
   border-radius: var(--radius-round);
   box-shadow: var(--shadow-control);
-  background: var(--accent);
-  color: #fffdfb;
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
   font: 800 14px var(--f-ui);
   cursor: pointer;
 }
@@ -180,7 +180,7 @@
   background: var(--input);
   color: var(--text);
   font: 600 16px var(--f-ui);
-  caret-color: var(--accent);
+  caret-color: var(--strong);
 }
 .photoEdit {
   display: flex;
@@ -189,7 +189,7 @@
   padding: 4px 0;
   border: 0;
   background: transparent;
-  color: var(--accent);
+  color: var(--strong);
   font: 700 12px var(--f-ui);
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -207,8 +207,8 @@
   border: 2px solid var(--outline);
   border-radius: var(--radius-control);
   box-shadow: var(--shadow-control);
-  background: var(--accent);
-  color: white;
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
   font: 800 14px var(--f-ui);
   cursor: pointer;
 }

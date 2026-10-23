@@ -53,7 +53,7 @@
 
 .panel button:focus-visible:where(:not([data-assistant-region] *)),
 .panel input:focus-visible:where(:not([data-assistant-region] *)) {
-  outline: 2px solid var(--pale);
+  outline: 2px solid var(--strong);
   outline-offset: 3px;
 }
 
@@ -102,10 +102,10 @@
   color: var(--surface);
 }
 
-.kindIcon[data-kind="clip"] { background: var(--pale); }
-.kindIcon[data-kind="component"] { background: var(--violet); }
-.kindIcon[data-kind="text"] { background: var(--yellow); }
-.kindIcon[data-kind="music"] { background: var(--teal); }
+.kindIcon[data-kind="clip"] { background: var(--surface); color: var(--strong); }
+.kindIcon[data-kind="component"] { background: var(--violet);  color: var(--violet-foreground); }
+.kindIcon[data-kind="text"] { background: var(--yellow);  color: #241d25; }
+.kindIcon[data-kind="music"] { background: var(--teal);  color: #241d25; }
 
 .deselect,
 .reset {
@@ -144,10 +144,10 @@
 
 .tabs button[aria-selected="true"],
 .chips button[aria-pressed="true"] {
-  background: var(--input);
+  background: var(--strong);
   border-color: var(--button-border);
-  box-shadow: 2px 2px 0 var(--accent);
-  color: var(--text);
+  box-shadow: 2px 2px 0 var(--strong);
+  color: var(--onStrong);
   font-weight: 800;
 }
 
@@ -257,16 +257,18 @@
   padding: 10px 4px 8px;
   border: 2px solid var(--q10);
   border-radius: 12px;
-  background: var(--ground);
+  background: var(--input);
   color: var(--text-secondary);
   font-size: 11px;
   font-weight: 700;
 }
 
 .tile[aria-pressed="true"] {
-  border-color: var(--pale);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+  border: 2.5px solid var(--strong);
+  box-shadow: 3px 3px 0 var(--strong);
   color: var(--text);
+  background: var(--surface);
+  font-weight: 800;
 }
 
 .ratioGlyph {
@@ -275,7 +277,7 @@
   border-radius: 4px;
 }
 
-.tile[aria-pressed="true"] .ratioGlyph { border-color: var(--highlight); }
+.tile[aria-pressed="true"] .ratioGlyph { border-color: var(--strong); }
 .textSample { font-size: 19px; line-height: 1.2; }
 
 .toggleRow { min-height: 24px; }
@@ -301,8 +303,8 @@
   border-radius: 50%;
 }
 
-.toggle[aria-checked="true"] { background: var(--accent); }
-.toggle[aria-checked="true"] > span { left: 18px; }
+.toggle[aria-checked="true"] { background: var(--strong); }
+.toggle[aria-checked="true"] > span { left: 18px; background: var(--onStrong); }
 
 .chips {
   display: flex;
@@ -336,7 +338,7 @@
 
 .list dt { color: var(--text-secondary); }
 .list dd { margin: 0; text-align: right; font-size: 11px; font-weight: 800; }
-.link { align-self: flex-start; padding: 0; border: 0; background: none; color: var(--highlight); font-size: 12px; font-weight: 800; text-align: left; }
+.link { align-self: flex-start; padding: 0; border: 0; background: none; color: var(--strong); font-size: 12px; font-weight: 800; text-align: left; }
 
 .slider output {
   display: inline-flex;
@@ -367,7 +369,7 @@
   height: 6px;
   border: 1.5px solid var(--outline);
   border-radius: 6px;
-  background: linear-gradient(to right, var(--pale) var(--range-fill), var(--ground) var(--range-fill));
+  background: linear-gradient(to right, var(--strong) var(--range-fill), var(--ground) var(--range-fill));
 }
 
 .slider input::-webkit-slider-thumb {
@@ -377,13 +379,13 @@
   appearance: none;
   border: 2.5px solid var(--outline);
   border-radius: 50%;
-  background: var(--text);
+  background: var(--surface);
   box-shadow: 2px 2px 0 var(--button-shadow);
 }
 
 .slider input::-moz-range-track { height: 6px; border: 1.5px solid var(--outline); border-radius: 6px; background: var(--ground); }
-.slider input::-moz-range-progress { height: 6px; background: var(--pale); }
-.slider input::-moz-range-thumb { width: 12px; height: 12px; border: 2px solid var(--outline); border-radius: 50%; background: var(--text); box-shadow: 2px 2px 0 var(--button-shadow); }
+.slider input::-moz-range-progress { height: 6px; background: var(--strong); }
+.slider input::-moz-range-thumb { width: 12px; height: 12px; border: 2.5px solid var(--outline); border-radius: 50%; background: var(--surface); box-shadow: 2px 2px 0 var(--button-shadow); }
 
 .appears {
   display: grid;
@@ -395,7 +397,7 @@
 }
 
 .appears > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.appears strong { color: var(--pale); font: 26px/1 var(--f-display); }
+.appears strong { color: var(--strong); font: 26px/1 var(--f-display); }
 .appears button { height: 36px; padding: 0 12px; border: 2.5px solid var(--button-border); border-radius: 10px; background: var(--button-secondary-bg); color: var(--button-secondary-text); box-shadow: 2px 2px 0 var(--button-shadow); font-size: 12px; font-weight: 800; }
 
 @media (pointer: coarse) {

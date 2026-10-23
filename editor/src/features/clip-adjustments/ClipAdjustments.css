@@ -12,11 +12,11 @@
   font: 700 12px var(--f-ui);
 }
 .zoomLabel strong {
-  color: var(--highlight);
+  color: var(--strong);
   font-size: 13px;
 }
 .zoomRange {
   width: 100%;
   height: 28px;
-  accent-color: var(--accent);
+  accent-color: var(--strong);
 }

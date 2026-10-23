@@ -81,6 +81,42 @@ test("local assistant forwards status and tools to the fixed backend without cre
   assert.equal(calls.length, 2);
 });
 
+test("phone assistant accepts only the configured tunnel origin", async (t) => {
+  const app = await beta(t, async () => Response.json({ ready: true }), {
+    publicOrigin: "https://phone.ngrok-free.app",
+  });
+  const status = await new Promise((resolve, reject) => {
+    const request = httpRequest(
+      `${app.origin}/api/assistant/turn`,
+      {
+        method: "POST",
+        headers: {
+          Origin: "https://phone.ngrok-free.app",
+          Host: "phone.ngrok-free.app",
+          "Content-Type": "application/json",
+        },
+      },
+      (response) => {
+        response.resume();
+        response.on("end", () => resolve(response.statusCode));
+      },
+    );
+    request.on("error", reject);
+    request.end("{}");
+  });
+  assert.equal(status, 200);
+  assert.equal(
+    (
+      await app.send("/api/assistant/turn", {
+        method: "POST",
+        body: "{}",
+        headers: { Origin: "https://another.ngrok-free.app" },
+      })
+    ).status,
+    403,
+  );
+});
+
 test("local assistant preserves request data and hosted quota failures", async (t) => {
   const payload = JSON.stringify({
     prompt: "Read this",

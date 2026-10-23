@@ -46,11 +46,6 @@
   white-space: nowrap;
   font-size: 11px;
 }
-@container (max-height: 260px) {
-  .stage :global([data-assistant-region][data-active="false"]) {
-    display: none;
-  }
-}
 .renderer [data-part-selected="true"] {
   position: relative;
 }

@@ -9,9 +9,9 @@
   padding: 0 14px;
   background: var(--input);
   color: var(--text);
-  border: 2px solid var(--pale);
+  border: 2px solid var(--strong);
   border-radius: 14px;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--highlight) 25%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--strong) 25%, transparent);
   font: 700 15px var(--f-ui);
 }
 .textEntry button {
@@ -25,7 +25,7 @@
   font: 800 15px var(--f-ui);
 }
 .textEntry button:disabled {
-  background: color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--strong) 35%, transparent);
   box-shadow: none;
   opacity: 0.6;
 }
@@ -41,7 +41,7 @@
   cursor: pointer;
 }
 .colorSwatch[data-on="true"] {
-  box-shadow: 0 0 0 3px var(--highlight);
+  box-shadow: 0 0 0 3px var(--strong);
 }
 .textList {
   max-height: 150px;

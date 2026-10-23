@@ -1,8 +1,9 @@
+import { launchBrowser } from "../../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
+
 import { buildSchedule } from "./schedule.mjs";
 import { sourceManifest, sha256 } from "./provenance.mjs";
 import { runTrial } from "./trial.mjs";
@@ -80,8 +81,7 @@ if (!dryRun) {
   if (phase === "frozen") assert.equal(health.bankHash, config.bankSha256, "Study server loaded different frozen evidence");
   await writeFile(path.join(output, "server-health.json"), JSON.stringify(health, null, 2));
 }
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+const browser = await launchBrowser({
   headless: true,
 });
 const results = [];

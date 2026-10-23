@@ -1,0 +1,85 @@
+.dialog {
+  width: min(360px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 20px;
+  overflow: auto;
+  border: 2px solid var(--button-border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--text);
+}
+.dialog::backdrop {
+  background: var(--scrim, rgb(0 0 0 / 45%));
+}
+.dialog form,
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.dialog h2 {
+  margin: 0;
+  font: 800 18px var(--f-ui);
+  overflow-wrap: anywhere;
+}
+.dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font: 700 12px var(--f-ui);
+}
+.dialog input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px;
+  border: 2px solid var(--q14);
+  border-radius: var(--radius-control);
+  background: var(--input);
+  color: var(--text);
+  font: 600 14px var(--f-ui);
+}
+.dialog p,
+.dialog ul {
+  margin: 0;
+  font: 600 12px/1.6 var(--f-ui);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+.dialog ul {
+  padding-left: 18px;
+}
+.dialog li span {
+  display: block;
+}
+.actions {
+  display: flex;
+  gap: 8px;
+}
+.actions button {
+  flex: 1;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 2px solid var(--button-border);
+  border-radius: var(--radius-control);
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  font: 700 12px var(--f-ui);
+  cursor: pointer;
+}
+.actions button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.actions .danger {
+  color: var(--red);
+}
+.dialog button:focus-visible,
+.dialog input:focus-visible {
+  outline: 3px solid var(--strong);
+  outline-offset: 2px;
+}
+@media (pointer: fine) {
+  .actions button:hover:not(:disabled) {
+    background: var(--q08);
+  }
+}

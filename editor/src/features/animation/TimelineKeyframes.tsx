@@ -8,7 +8,7 @@ export function TimelineKeyframes({
   animation,
   start,
   end,
-  color = "#FFD23E",
+  color = "var(--yellow)",
 }: {
   animation: LayerAnimation | undefined;
   start: number;

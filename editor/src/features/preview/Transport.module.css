@@ -31,16 +31,22 @@
 .tryButton {
   margin-left: auto;
 }
+.playButton {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+}
 .action:disabled {
   opacity: 0.35;
   cursor: default;
 }
 .action:focus-visible {
-  outline: 2px solid var(--highlight);
+  outline: 2px solid var(--strong);
   outline-offset: -3px;
 }
 .time {
-  color: var(--text);
+  color: var(--accent);
   font: 700 11px/1.2 var(--f-ui);
   font-variant-numeric: tabular-nums;
 }
@@ -50,6 +56,10 @@
 .transport[data-thread-open="true"] .actions {
   gap: 0;
 }
-.threadPlay {
-  margin-left: auto;
+.transport[data-thread-open="true"] {
+  height: 44px;
+  padding: 0 12px;
+}
+.transport[data-thread-open="true"] .time {
+  margin-right: auto;
 }

@@ -17,7 +17,7 @@
 }
 .toolbar button:disabled, .delete:disabled, .deleteConfirm button:disabled { opacity: .5; cursor: default; }
 .back { align-self: flex-start; background: transparent; }
-.delete { align-self: flex-start; color: var(--pale); }
+.delete { align-self: flex-start; color: var(--strong); }
 
 .boxes, .replies { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .boxes button {
@@ -39,7 +39,7 @@
 .boxes span { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .boxes strong { overflow-wrap: anywhere; font: 800 12px/1.3 var(--f-ui); }
 .boxes small { color: var(--muted); font: 600 10px/1.3 var(--f-ui); }
-.boxes b { white-space: nowrap; color: var(--pale); font: 800 11px/1.3 var(--f-ui); }
+.boxes b { white-space: nowrap; color: var(--strong); font: 800 11px/1.3 var(--f-ui); }
 
 .replies li { padding: 12px; border: 1px solid var(--q14); border-radius: 10px; background: var(--surface); }
 .replies time { color: var(--muted); font: 600 10px/1.3 var(--f-ui); }
@@ -47,6 +47,6 @@
 .replies dt { color: var(--muted); font: 700 10px/1.4 var(--f-ui); }
 .replies dd { margin: 2px 0 0; overflow-wrap: anywhere; white-space: pre-wrap; font: 600 12px/1.45 var(--f-ui); }
 
-.deleteConfirm { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--pale); border-radius: 10px; }
+.deleteConfirm { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--strong); border-radius: 10px; }
 .deleteConfirm p { margin: 0; font: 600 11px/1.5 var(--f-ui); }
-.deleteConfirm button:last-child { color: var(--pale); }
+.deleteConfirm button:last-child { color: var(--strong); }

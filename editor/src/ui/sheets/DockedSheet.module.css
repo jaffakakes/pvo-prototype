@@ -42,7 +42,7 @@
   min-height: 44px;
 }
 .docked .header .done {
-  color: var(--highlight);
+  color: var(--focus);
   font: 800 13px var(--f-ui);
   border: 0;
   background: transparent;

@@ -1,8 +1,18 @@
-import type { AnimationProperty, LayerAnimation } from "../../../../packages/pvo-animation/index.js";
-export type { AnimationEasing, AnimationKeyframe, AnimationProperty, LayerAnimation } from "../../../../packages/pvo-animation/index.js";
+import type {
+  AnimationProperty,
+  LayerAnimation,
+} from "../../../../packages/pvo-animation/index.js";
+export type {
+  AnimationEasing,
+  AnimationKeyframe,
+  AnimationProperty,
+  LayerAnimation,
+} from "../../../../packages/pvo-animation/index.js";
 
 export type AnimationTarget =
-  | { kind: "clip" | "audio" | "text"; id: number }
+  | { kind: "clip"; id: number }
+  | { kind: "audio"; id: number }
+  | { kind: "text"; id: number }
   | { kind: "component"; id: string }
   | { kind: "music" };
 export type AnimationTargetInfo = {

@@ -4,6 +4,8 @@ type Props = {
   message: string;
   action?: string;
   actionLabel?: string;
+  actionTitle?: string;
+  appLevel?: boolean;
   onAction?: () => void;
   disabled?: boolean;
   onDismiss?: () => void;
@@ -17,6 +19,8 @@ export function BottomNotice({
   message,
   action,
   actionLabel,
+  actionTitle,
+  appLevel = false,
   onAction,
   disabled,
   onDismiss,
@@ -32,7 +36,11 @@ export function BottomNotice({
     </>
   );
   return (
-    <div className={styles.position} data-notification-root>
+    <div
+      className={styles.position}
+      data-notification-root
+      data-app-level={appLevel || undefined}
+    >
       <div
         className={styles.notice}
         role={announce ? "status" : "group"}
@@ -44,6 +52,7 @@ export function BottomNotice({
             className={styles.update}
             type="button"
             aria-label={actionLabel}
+            title={actionTitle}
             disabled={disabled}
             onClick={onAction}
           >

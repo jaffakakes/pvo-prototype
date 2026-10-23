@@ -1,9 +1,10 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { chromium } from "playwright-core";
+
 
 // Real decoding/canvas capture of a deterministic video. No tracker/AI inference.
 const directory = await mkdtemp(join(tmpdir(), "pvo-tracking-capture-"));
@@ -13,7 +14,7 @@ try {
   execFileSync("ffmpeg", ["-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i",
     "color=c=black:s=320x180:d=2:r=30,drawbox=x=40:y=60:w=40:h=40:color=red:t=fill:enable='lt(t,1)',drawbox=x=240:y=60:w=40:h=40:color=blue:t=fill:enable='gte(t,1)'",
     "-c:v", "libx264", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-y", media]);
-  browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true });
+  browser = await launchBrowser({ headless: true });
   const page = await browser.newPage();
   page.setDefaultTimeout(15000);
   const errors = [];
@@ -27,7 +28,7 @@ try {
     const clip = { id: 1, url, srcDur: 2, in: .5, out: 1.5, speed: 2, color: "#000", zoom: 1,
       mirror: true, width: 320, height: 180, fit: "contain", animation: { tracks: { x: [{ time: 0, value: 10, easing: "linear" }] } } };
     const project = { ratio: "16:9", scenes: [{ id: "main", name: "Main", parent: null, clips: [clip],
-      texts: [{ id: 2, text: "SHOULD NOT TRACK TEXT", x: 50, y: 50, start: 0, end: 2, color: 0 }], components: [], muted: true, sound: 0 }] };
+      texts: [{ id: 2, text: "SHOULD NOT TRACK TEXT", x: 50, y: 50, start: 0, end: 2, color: 0 }], components: [], muted: true, music: null }] };
     const request = { kind: "object_tracking", sceneId: "main", clipId: 1, start: 0, end: .5,
       target: { kind: "point", x: .9, y: .45 } };
     useCapture.getState().patch({ t: .123 });

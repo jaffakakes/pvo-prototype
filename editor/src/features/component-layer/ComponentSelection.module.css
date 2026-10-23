@@ -1,7 +1,7 @@
 .outline {
   position: absolute;
   inset: -5px;
-  border: 2px solid #7c5ce6;
+  border: 2px solid var(--strong);
   border-radius: 8px;
   pointer-events: none;
 }
@@ -14,8 +14,8 @@
   display: flex;
   align-items: center;
   border-radius: 5px;
-  background: #6842c1;
-  color: #fff;
+  background: var(--strong);
+  color: var(--onStrong);
   font: 800 9px var(--f-ui);
   white-space: nowrap;
 }
@@ -24,8 +24,8 @@
   width: 14px;
   height: 14px;
   padding: 0;
-  background: #fffdfb;
-  border: 2px solid #241d25;
+  background: var(--surface);
+  border: 2px solid var(--strong);
   border-radius: 4px;
   pointer-events: auto;
   touch-action: none;
@@ -56,24 +56,6 @@
   cursor: nwse-resize;
 }
 .handle:focus-visible {
-  outline: 2px solid #7c5ce6;
+  outline: 2px solid var(--strong);
   outline-offset: 3px;
-}
-.guides {
-  position: absolute;
-  inset: 0;
-  z-index: 40;
-  pointer-events: none;
-}
-.vertical {
-  position: absolute;
-  left: 50%;
-  inset-block: 0;
-  border-left: 1px solid #a78bfa;
-}
-.horizontal {
-  position: absolute;
-  top: 50%;
-  inset-inline: 0;
-  border-top: 1px solid #a78bfa;
 }

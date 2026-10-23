@@ -1,12 +1,12 @@
-import { openEditorSettings } from "../helpers/editor-settings.mjs";
+import { launchBrowser } from "../helpers/browser.mjs";
+import { openEditorSettings, closeEditorSettings } from "../helpers/editor-settings.mjs";
 import assert from "node:assert/strict";
-import { chromium } from "playwright-core";
+
 
 // Prerequisites: a Vite editor server and Chrome (or CHROME_PATH).
 const editorUrl = process.env.EDITOR_URL || process.env.RESTYLE_EDITOR_URL || "http://127.0.0.1:5173/";
 const preferenceKey = "restyle.editor.advancedEditing";
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+const browser = await launchBrowser({
   headless: true,
   args: ["--no-sandbox"],
 });
@@ -51,7 +51,7 @@ async function openMore() {
   const collapse = page.getByRole("button", { name: "Collapse component tools" });
   if (await collapse.count()) await collapse.click();
   await openEditorSettings(page);
-  return page.getByRole("dialog", { name: "More", exact: true });
+  return page.getByRole("dialog", { name: /^(Project settings|Editor settings)$/, exact: true });
 }
 
 async function setAdvancedEditing(enabled) {
@@ -63,7 +63,7 @@ async function setAdvancedEditing(enabled) {
   assert.equal(await toggle.getAttribute("aria-checked"), String(enabled));
   assert.deepEqual(await projectSnapshot(), before, "Changing a device preference must preserve the project and undo/redo");
   assert.equal(await page.evaluate(key => localStorage.getItem(key), preferenceKey), String(enabled));
-  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
+  await closeEditorSettings(page);
 }
 
 async function openChoice() {

@@ -342,6 +342,11 @@ const projectSchema = object({
         muted: boolean,
         musicGain: gain,
         clipGain: gain,
+        musicClock: object({
+          start: time,
+          duration: number(0.05),
+          offset: time,
+        }),
         musicAnimation: animation,
         clips: array(
           object(
@@ -523,6 +528,7 @@ const entitySchemas = [
           "muted",
           "musicGain",
           "clipGain",
+          "musicClock",
           "musicAnimation",
         ].map((key) => [key, sceneProperties[key]]),
       ),

@@ -10,7 +10,7 @@ export function acceptanceFixture(media) {
     currentSceneId: "main", ratio: "9:16", allowedDomains: [],
     scenes: [
       {
-        id: "main", name: "Main", parent: null, muted: false, sound: 1, musicGain: 1, clipGain: 1,
+        id: "main", name: "Main", parent: null, muted: false, music: { track: 1, start: 0, duration: 12, offset: 0, gain: 1 }, clipGain: 1,
         clips: [clip(11, 0, 6), clip(12, 1, 5), clip(13, 2, 6, 2)],
         texts: [text(201, "Intro", 0, 2), text(202, "Spoiler", 1, 3), text(203, "End card", 10, 12)],
         components: [],
@@ -18,7 +18,7 @@ export function acceptanceFixture(media) {
           in: 0, out: 4, start: 6, speed: 1, muted: false, gain: 1 }],
       },
       {
-        id: "ending", name: "Ending", parent: "main", muted: false, sound: 0,
+        id: "ending", name: "Ending", parent: "main", muted: false, music: null,
         clips: [clip(21, 0, 4)], texts: [], components: [], audioClips: [],
       },
     ],

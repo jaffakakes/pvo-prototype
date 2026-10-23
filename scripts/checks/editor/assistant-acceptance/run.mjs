@@ -1,9 +1,10 @@
+import { launchBrowser } from "../../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
+
 import { acceptanceFixture, fixtureDescription } from "./fixtures.mjs";
 import { installAcceptanceHarness } from "./browserHarness.mjs";
 import { installRealTransport } from "./transport.mjs";
@@ -47,8 +48,7 @@ const config = {
 };
 await mkdir(output, { recursive: true });
 await writeFile(path.join(output, "config.json"), JSON.stringify(config, null, 2));
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+const browser = await launchBrowser({
   headless: true,
 });
 const results = [];

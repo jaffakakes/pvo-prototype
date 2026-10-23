@@ -1,8 +1,9 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { mkdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { chromium } from "playwright-core";
+
 import { playerSourceAssets } from "../helpers/player-assets.mjs";
 import { packPvoProject, PVO_SPEC_VERSION } from "../../../packages/pvo-sdk/index.js";
 
@@ -62,7 +63,7 @@ await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
 origin = `http://127.0.0.1:${server.address().port}`;
 let browser;
 try {
-  browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+  browser = await launchBrowser({
     headless: true, args: ["--no-sandbox"] });
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await context.addCookies([{ name: "creator-session", value: "not-for-packages", url: origin }]);

@@ -1,13 +1,10 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import { finishTextEntry } from "../helpers/editor-text.mjs";
 import assert from "node:assert/strict";
-import { chromium } from "playwright-core";
 
-const chromePath =
-  process.env.CHROME_PATH ||
-  (process.platform === "darwin"
-    ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-    : "C:/Program Files/Google/Chrome/Application/chrome.exe");
-const browser = await chromium.launch({ executablePath: chromePath, headless: true });
+
+
+const browser = await launchBrowser({ headless: true });
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, hasTouch: true });
   page.setDefaultTimeout(10000);

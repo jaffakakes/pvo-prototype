@@ -17,10 +17,10 @@
   border: 1px solid var(--q14);
   border-radius: 0;
   font: 700 13px/1.4 var(--f-ui);
-  caret-color: var(--accent);
+  caret-color: var(--strong);
   user-select: text;
 }
-.textEntry textarea:focus-visible { outline: 2px solid var(--highlight); outline-offset: -2px; }
+.textEntry textarea:focus-visible { outline: 2px solid var(--strong); outline-offset: -2px; }
 .textEntry { flex: none; align-items: flex-start; gap: 6px; }
 .textEntry .textConfirm {
   display: grid;
@@ -39,7 +39,7 @@
 .textTools { display: flex; flex: none; justify-content: space-between; gap: 6px; padding-bottom: 4px; border-bottom: 1px solid var(--q08); }
 .textTools button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--text); cursor: pointer; }
 .textTools button[aria-pressed="true"] { background: var(--q08); }
-.textTools button:focus-visible, .textConfirm:focus-visible { outline: 2px solid var(--highlight); outline-offset: -2px; }
+.textTools button:focus-visible, .textConfirm:focus-visible { outline: 2px solid var(--strong); outline-offset: -2px; }
 .textControls {
   flex: 1 1 auto;
   min-height: 0;
@@ -68,7 +68,7 @@
 }
 .textPresets > button[aria-pressed="true"],
 .textPresets > button:focus-visible {
-  border-color: var(--pale);
+  border-color: var(--strong);
 }
 .textPresets > button > span {
   max-width: 100%;
@@ -132,7 +132,7 @@
 .textSwatches span { width: 24px; height: 24px; border: 2px solid var(--surface); border-radius: 50%; box-shadow: 0 0 0 1px var(--q14); }
 .textSwatches button[aria-pressed="true"] span { box-shadow: 0 0 0 2px var(--text); }
 .textColourClose { display: grid; place-items: center; flex: none; width: 44px; height: 44px; padding: 0; border: 0; background: var(--q08); color: var(--text); cursor: pointer; }
-.textColourStrip button:focus-visible { outline: 2px solid var(--highlight); outline-offset: -2px; }
+.textColourStrip button:focus-visible { outline: 2px solid var(--strong); outline-offset: -2px; }
 
 .textCategories { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 0 2px 8px; color: var(--text); font: 700 12px var(--f-ui); }
 .textPresets [data-text-effect] { overflow: hidden; }
@@ -151,4 +151,4 @@
 @media (prefers-reduced-motion: reduce) { .textPresets [data-text-effect] span { animation: none; } }
 .textNoEffect { display: grid; place-items: center; width: 32px; height: 32px; padding: 0 8px 0 0; border: 0; border-right: 1px solid var(--q14); background: transparent; color: var(--muted); cursor: pointer; }
 .textNoEffect[aria-pressed="true"] { color: var(--text); }
-.textNoEffect:focus-visible { outline: 2px solid var(--highlight); }
+.textNoEffect:focus-visible { outline: 2px solid var(--strong); }

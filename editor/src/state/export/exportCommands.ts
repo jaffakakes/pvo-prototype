@@ -5,7 +5,6 @@ export function requestExport() {
   const current = useCapture.getState();
   if (current.screen !== "editor") return;
   useCapture.getState().patch({
-    exportFormat: "pvo",
     sheet: "export",
     playing: false,
     orb: false,

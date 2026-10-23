@@ -36,7 +36,7 @@
   overscroll-behavior: contain;
 }
 .reviewBody:focus-visible {
-  outline: 1px solid var(--pale);
+  outline: 1px solid var(--strong);
   outline-offset: 3px;
 }
 .request {
@@ -220,7 +220,7 @@
   font-weight: 700;
 }
 .earlier strong {
-  color: var(--accent);
+  color: var(--strong);
 }
 .youAvatar,
 .restyleAvatar {
@@ -240,13 +240,13 @@
   color: var(--text);
 }
 .restyleAvatar {
-  background: var(--accent);
+  background: var(--strong);
   border-radius: 50%;
 }
 .restyleAvatar img {
   width: 12px;
   height: 12px;
-  filter: invert(1);
+  filter: none;
 }
 .replyRow {
   display: flex;
@@ -272,4 +272,8 @@
   background: var(--ground);
   color: var(--text);
   box-shadow: none;
+}
+
+:global(html[data-theme="light"]) .restyleAvatar img {
+  filter: invert(1);
 }

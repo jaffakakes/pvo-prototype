@@ -2,7 +2,7 @@ import { extractSelectedAudio } from "../../../state/editing/audioCommands";
 import { dur } from "../../../domain/clips/timing";
 import type { Clip } from "../../../domain/project/model";
 import { useCapture } from "../../../state/captureStore";
-import { adjustSelectedClip, setSelectedClipSpeed } from "../../../state/editing/clipAdjustmentCommands";
+import { adjustSelectedClip, setSelectedClipSpeed, setSelectedClipFraming } from "../../../state/editing/clipAdjustmentCommands";
 import { InspectorSections, type InspectorSection } from "./InspectorControls";
 
 export function ClipInspector({ clip, tab, onOpenLibrary }: { clip: Clip; tab: string; onOpenLibrary: (tab: string) => void }) {
@@ -34,8 +34,8 @@ export function ClipInspector({ clip, tab, onOpenLibrary }: { clip: Clip; tab: s
       sections = [{ title: "Video fit", controls: [
         { kind: "toggle", label: "Mirror", on: clip.mirror, onToggle: () => { adjustSelectedClip({ mirror: !clip.mirror }); } },
         { kind: "chips", label: "Fit", options: ["Fill", "Fit"], value: clip.fit === "contain" ? "Fit" : "Fill",
-          onPick: value => { adjustSelectedClip({ fit: value === "Fit" ? "contain" : "cover" }); } },
-      ], onReset: () => { adjustSelectedClip({ zoom: 1, mirror: false, fit: "cover" }); } },
+          onPick: value => { setSelectedClipFraming(value === "Fit" ? "contain" : "cover"); } },
+      ], onReset: () => { setSelectedClipFraming("cover", true); } },
       { title: "Effects on this clip", controls: [
         { kind: "link", label: "＋ Browse effects", onClick: () => onOpenLibrary("effects") },
         { kind: "note", text: "Effects aren’t available in this beta yet." },

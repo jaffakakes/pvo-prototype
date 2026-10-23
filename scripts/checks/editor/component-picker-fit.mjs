@@ -1,14 +1,14 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
+
 import { createSheetDockChecks } from "../helpers/editor-sheet-dock.mjs";
 
 const editorUrl = process.env.EDITOR_URL || "http://127.0.0.1:5173/";
 const videoFile = fileURLToPath(
   new URL("../../../share/assets/preview.mp4", import.meta.url),
 );
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH,
+const browser = await launchBrowser({
   headless: true,
 });
 try {

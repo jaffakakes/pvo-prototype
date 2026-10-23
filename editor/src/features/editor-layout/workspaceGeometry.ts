@@ -1,5 +1,42 @@
 type Measurements = { height: number; header: number };
 const clampUnit = (value: number) => Math.max(0, Math.min(1, value));
+const MIN_TRAY_PREVIEW_HEIGHT = 100;
+const MIN_COMPACT_TRAY_PREVIEW_HEIGHT = 64;
+const MIN_TRAY_TIMELINE_HEIGHT = 180;
+
+/** Measured controls replace the measured toolbar; minima apply when space permits. */
+export function toolTrayLayout(
+  measurements: Measurements & { controls: number; toolbar: number },
+  normalPanel: number,
+) {
+  const required =
+    measurements.controls + MIN_TRAY_TIMELINE_HEIGHT + MIN_TRAY_PREVIEW_HEIGHT;
+  const header =
+    measurements.height - measurements.header < required
+      ? 0
+      : measurements.header;
+  const available = Math.max(0, measurements.height - header);
+  const preview = header
+    ? MIN_TRAY_PREVIEW_HEIGHT
+    : Math.min(
+        MIN_TRAY_PREVIEW_HEIGHT,
+        Math.max(
+          MIN_COMPACT_TRAY_PREVIEW_HEIGHT,
+          available - measurements.controls - MIN_TRAY_TIMELINE_HEIGHT,
+        ),
+      );
+  const maximum = Math.max(0, available - preview);
+  const controlsMaxHeight = Math.max(0, maximum - MIN_TRAY_TIMELINE_HEIGHT);
+  const controls = Math.min(measurements.controls, controlsMaxHeight);
+  const panelHeight = Math.min(
+    maximum,
+    Math.max(
+      normalPanel - measurements.toolbar + controls,
+      controls + MIN_TRAY_TIMELINE_HEIGHT,
+    ),
+  );
+  return { header, panelHeight, controlsMaxHeight };
+}
 
 export function aspectRatioPanelHeight(height: number) {
   return height < 500 ? 112 : Math.min(180, Math.max(156, height * 0.24));

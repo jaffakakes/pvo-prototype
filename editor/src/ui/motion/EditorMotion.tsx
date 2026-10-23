@@ -14,7 +14,7 @@ type Transition = (
   subject: "tool" | "component" | "frame",
   change: () => void,
   direction?: "open" | "close",
-) => void;
+) => void | Promise<void>;
 const MotionContext = createContext<Transition>((_, change) => change());
 
 /** Own navigation snapshots only; authored animation and direct manipulation stay live. */
@@ -53,6 +53,7 @@ export function EditorMotionProvider({ children }: { children: ReactNode }) {
           error,
         }),
       );
+      return next.updateCallbackDone.catch(() => {});
     },
     [],
   );

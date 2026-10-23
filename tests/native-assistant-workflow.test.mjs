@@ -31,7 +31,7 @@ function fixture(responses, configure = () => {}) {
   let nextId = 1000;
   let project = {
     currentSceneId: "main", ratio: "9:16", allowedDomains: [], scenes: [{
-      id: "main", name: "Main", parent: null, muted: false, sound: -1,
+      id: "main", name: "Main", parent: null, muted: false, music: null,
       clips: [{ id: 10, url: null, srcDur: 10, in: 0, out: 10, speed: 1, zoom: 1,
         mirror: false, color: "#000", width: 320, height: 240, fit: "contain" }],
       texts: [], components: [], audioClips: [],

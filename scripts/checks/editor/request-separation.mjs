@@ -1,8 +1,8 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
-import { chromium } from "playwright-core";
 
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+
+const browser = await launchBrowser({
   headless: true, args: ["--no-sandbox"],
 });
 const page = await browser.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true });
@@ -44,7 +44,7 @@ try {
     setAdvancedEditingEnabled(false);
     window.capture = useCapture;
     const scene = (id, name) => ({ id, name, parent: id === "main" ? null : "main", clips: [mkClip(20, null, 0)],
-      texts: [], components: [], layers: ["video"], muted: true, sound: -1 });
+      texts: [], components: [], layers: ["video"], muted: true, music: null });
     const main = scene("main", "Main"), next = scene("next", "Next scene");
     useCapture.getState().patch({ scenes: [main, next], currentSceneId: "main", clips: main.clips,
       texts: [], components: [], layers: ["video"], screen: "editor", sheet: "components", t: 2,

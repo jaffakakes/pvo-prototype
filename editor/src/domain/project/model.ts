@@ -5,6 +5,7 @@ import { type PvoLanguageSource } from "../components/languageSource";
 import { type LayerId } from "../layers/model";
 import type { ComponentLook } from "../components/look";
 import type { AudioClip } from "../audio/model";
+import type { MusicLayer } from "../audio/music";
 import type { LayerAnimation } from "../animation/model";
 import type { LayerTracking } from "../animation/trackingMetadata";
 
@@ -149,11 +150,8 @@ export type Scene = {
   texts: TextOverlay[];
   components: PvoComponent[];
   muted: boolean;
-  sound: number;
-  musicGain?: number;
+  music: MusicLayer | null;
   clipGain?: number;
-  /** Background music gain curves use scene seconds. */
-  musicAnimation?: LayerAnimation;
   layers?: LayerId[];
 };
 export type OutcomeTarget = {

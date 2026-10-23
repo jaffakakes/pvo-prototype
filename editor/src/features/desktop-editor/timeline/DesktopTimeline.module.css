@@ -45,7 +45,7 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  color: var(--highlight);
+  color: var(--accent);
   padding: 0 8px;
   font-size: 11px;
   font-weight: 800;
@@ -71,7 +71,7 @@
   color: var(--yellow);
 }
 .label[data-kind="overlay"] > span:first-child {
-  color: var(--pale);
+  color: var(--strong);
 }
 .label[data-kind="audio"] > span:first-child {
   color: var(--teal);
@@ -86,7 +86,7 @@
   height: 52px;
 }
 .videoLabel svg {
-  color: var(--pale);
+  color: var(--strong);
   flex-shrink: 0;
 }
 .videoLabel small {
@@ -187,7 +187,7 @@
   box-shadow: inset 0 0 0 2px var(--outline);
   font-size: 10.5px;
   font-weight: 800;
-  color: var(--surface);
+  color: #241d25;
   text-align: left;
   cursor: grab;
   touch-action: none;
@@ -213,14 +213,15 @@
 }
 .block[data-kind="component"] {
   background: var(--violet);
+  color: var(--violet-foreground);
 }
 .block[data-kind="text"] {
   background: var(--yellow);
 }
 .block[data-selected="true"] {
   box-shadow:
-    inset 0 0 0 2px var(--text),
-    0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent);
+    inset 0 0 0 2.5px var(--strong),
+    3px 3px 0 var(--strong);
   z-index: 2;
 }
 .blockHandle {
@@ -231,7 +232,11 @@
   display: flex;
   align-items: center;
   cursor: ew-resize;
-  background: transparent;
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--strong) 50%, transparent) 0 3px,
+    transparent 3px 6px
+  );
 }
 .blockHandle::after {
   content: "";
@@ -243,10 +248,12 @@
 .blockHandle[data-edge="l"] {
   left: -12px;
   justify-content: flex-end;
+  border-right: 3px solid var(--strong);
 }
 .blockHandle[data-edge="r"] {
   right: -12px;
   justify-content: flex-start;
+  border-left: 3px solid var(--strong);
 }
 .videoLane,
 .clips {
@@ -265,7 +272,7 @@
   padding: 0;
   border: 2px solid var(--outline);
   border-radius: 9px;
-  background: var(--surface);
+  background: var(--input);
   overflow: hidden;
   cursor: pointer;
 }
@@ -282,16 +289,21 @@
   pointer-events: none;
 }
 .clip[data-selected="true"] {
-  border: 2.5px solid var(--highlight);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+  --media-placeholder: var(--surface);
+  border: 2.5px solid var(--strong);
+  box-shadow: 3px 3px 0 var(--strong);
   z-index: 2;
+  background: var(--surface);
 }
 .clipDuration {
   position: absolute;
   top: 4px;
   right: 7px;
   font-size: 9px;
-  color: #fff;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--text);
   font-weight: 700;
   pointer-events: none;
 }
@@ -322,7 +334,11 @@
   top: 0;
   bottom: 0;
   width: 10px;
-  background: var(--highlight);
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--strong) 50%, transparent) 0 3px,
+    transparent 3px 6px
+  );
   cursor: ew-resize;
   touch-action: none;
   display: grid;
@@ -332,14 +348,16 @@
   content: "";
   height: 16px;
   width: 2px;
-  background: rgba(0, 0, 0, 0.55);
+  background: var(--strong);
   border-radius: 2px;
 }
 .clipHandle[data-edge="l"] {
   left: 0;
+  border-right: 3px solid var(--strong);
 }
 .clipHandle[data-edge="r"] {
   right: 0;
+  border-left: 3px solid var(--strong);
 }
 .addClip {
   width: 40px;
@@ -356,10 +374,10 @@
 .addScene {
   height: 52px;
   width: 100%;
-  border: 2.5px dashed var(--pale);
+  border: 2.5px dashed var(--strong);
   border-radius: 9px;
-  background: color-mix(in srgb, var(--pale) 10%, transparent);
-  color: var(--highlight);
+  background: var(--surface);
+  color: var(--strong);
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
@@ -385,22 +403,21 @@
   top: 8px;
   bottom: 0;
   width: 2px;
-  background: var(--highlight);
+  background: var(--accent);
   pointer-events: none;
   z-index: 5;
 }
 .playhead > span {
   position: absolute;
-  width: 12px;
-  height: 14px;
+  width: 10px;
+  height: 10px;
   top: -8px;
   left: -5px;
-  background: var(--highlight);
-  border: 2px solid var(--outline);
-  border-radius: 0 0 5px 5px;
+  background: var(--accent);
+  border-radius: 3px;
 }
 .panel button:focus-visible {
-  outline: 2px solid var(--highlight);
+  outline: 2px solid var(--strong);
   outline-offset: 2px;
 }
 .panel button:disabled {
@@ -442,4 +459,37 @@
   position: relative;
   z-index: 1;
   color: var(--text);
+}
+
+.reorderHandle {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: grab;
+  touch-action: none;
+}
+button.label {
+  text-align: left;
+  cursor: grab;
+  touch-action: none;
+}
+button.label[data-sel="true"] {
+  border-color: var(--strong);
+  color: var(--strong);
+}
+button.label:focus-visible,
+.reorderHandle:focus-visible {
+  outline: 2px solid var(--strong);
+  outline-offset: 1px;
+}
+
+.label[data-sel="true"] > span:first-child,
+.videoLabel[data-sel="true"] svg {
+  color: var(--strong);
 }

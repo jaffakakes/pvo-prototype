@@ -77,6 +77,14 @@
 .workspace[data-resizing="true"] {
   transition: none;
 }
+.workspace[data-thread-open="true"][data-keyboard-open="true"] {
+  position: fixed;
+  top: var(--visual-viewport-top, 0px);
+  left: 0;
+  right: 0;
+  height: var(--visual-viewport-height, 100dvh);
+  transition-timing-function: ease-out;
+}
 .media {
   display: none;
   min-height: 0;
@@ -174,6 +182,12 @@
   max-height: none;
   background: var(--ground);
 }
+.controls {
+  flex: none;
+  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 .timelinePane :global(.layerName) {
   background: var(--ground);
 }
@@ -191,6 +205,25 @@
   flex: 1;
   flex-direction: column;
   min-height: 0;
+}
+
+.workspace[data-tool-tray-open="true"] {
+  transition-duration: 160ms;
+}
+.workspace[data-tool-tray-open="true"] .preview :global(.previewArea) {
+  padding: 6px 0;
+}
+.workspace[data-tool-tray-open="true"] :global([data-tool-tray]) {
+  flex-shrink: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .workspace[data-tool-tray-open="true"] {
+    transition: none;
+  }
+}
+:global(.app[data-reduce-motion="true"])
+  .workspace[data-tool-tray-open="true"] {
+  transition: none;
 }
 
 /* Keep both component rows visible above the phone's system gesture area. */
@@ -259,15 +292,15 @@
 
 .resizeHandle:hover span,
 .resizeHandle:focus-visible span {
-  background: var(--highlight);
+  background: var(--strong);
   width: 56px;
 }
 
 .resizeHandle:focus-visible {
-  outline: 2px solid var(--highlight);
+  outline: 2px solid var(--strong);
 }
 .workspace[data-resizing="true"] .resizeHandle span {
-  background: var(--accent);
+  background: var(--strong);
 }
 
 @media (pointer: coarse) {
@@ -306,13 +339,6 @@
   }
 }
 
-.workspace[data-animation-open="true"] .sheetPane {
-  border-radius: 0;
-  border-top: 3px solid var(--outline);
-  box-shadow: none;
-  background: var(--bar);
-}
-
 .header {
   grid-row: 1;
   z-index: 10;
@@ -320,6 +346,15 @@
 .preview {
   grid-row: 2;
   background: var(--preview-backdrop);
+}
+.workspace[data-workspace-mode="design"] .preview {
+  background: transparent;
+}
+.workspace[data-workspace-mode="design"]
+  :global(
+    .orbAssistant[data-assistant-phase="idle"][data-thread-open="false"]
+  ) {
+  --assistant-orb-bottom: calc(var(--dock-height) + 10px);
 }
 .dock {
   grid-row: 3;
@@ -347,6 +382,21 @@
   pointer-events: none;
 }
 
-.workspace[data-thread-open="true"] .preview :global([data-player-playback]) {
+.workspace[data-thread-open="true"] .preview :global(.transportTime) {
   display: none;
+}
+.workspace[data-thread-open="true"] .preview :global(.playBtn) {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: none;
+}
+.workspace[data-thread-open="true"] .preview :global([data-playback-feedback]) {
+  opacity: 0;
+}
+.workspace[data-thread-open="true"]
+  .preview
+  :global(.playBtn:focus-visible)
+  :global([data-playback-feedback]) {
+  opacity: 1;
 }

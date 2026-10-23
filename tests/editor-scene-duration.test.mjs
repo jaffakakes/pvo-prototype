@@ -88,7 +88,7 @@ const scene = {
   texts: [textOverlay],
   components: [explicitComponent, clipBoundComponent],
   muted: false,
-  sound: 0,
+  music: null,
   layers: [
     "video",
     "text:3",

@@ -1,7 +1,8 @@
+import { launchBrowser } from "../../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { chromium } from "playwright-core";
+
 import { loadStudyMedia } from "./mediaFixture.mjs";
 import { studyCases } from "./cases.mjs";
 import { sha256 } from "./provenance.mjs";
@@ -10,8 +11,7 @@ const options = Object.fromEntries(process.argv.slice(2).map(value => value.repl
 for (const key of Object.keys(options)) assert(["editor-url", "output"].includes(key), `Unknown option ${key}`);
 const output = path.resolve(options.output ?? `/tmp/pvo-study-frame-preflight-${Date.now()}`);
 await mkdir(output);
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true,
+const browser = await launchBrowser({ headless: true,
 });
 const result = { startedAt: new Date().toISOString(), providerRequests: [], network: [], status: "FAIL" };
 try {

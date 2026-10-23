@@ -1,13 +1,13 @@
-import { openEditorSettings } from "../helpers/editor-settings.mjs";
+import { launchBrowser } from "../helpers/browser.mjs";
+import { openEditorSettings, closeEditorSettings } from "../helpers/editor-settings.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
-import { chromium } from "playwright-core";
+
 
 // Prerequisites: a running editor and Chrome (or CHROME_PATH).
 const editorUrl = process.env.EDITOR_URL || process.env.RESTYLE_EDITOR_URL || "http://127.0.0.1:5173/";
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+const browser = await launchBrowser({
   headless: true,
   args: ["--no-sandbox"],
 });
@@ -98,9 +98,9 @@ try {
   await page.getByRole("button", { name: "Stop recording" }).click();
   await page.getByRole("button", { name: "Open editor" }).click();
   await openEditorSettings(page);
-  const more = page.getByRole("dialog", { name: "More" });
+  const more = page.getByRole("dialog", { name: /^(Project settings|Editor settings)$/ });
   await more.getByRole("switch", { name: "Advanced edits", exact: true }).click();
-  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
+  await closeEditorSettings(page);
   await page.getByRole("button", { name: "Components", exact: true }).click();
   await page.locator(".componentTypeTile").filter({ hasText: "Choice" }).click();
   const sheet = page.getByRole("dialog", { name: "Choice" });

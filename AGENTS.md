@@ -57,10 +57,12 @@ When working on the Restyle cloud agent, read [the handoff](docs/engineering/res
 
 ## Verification
 
-- `npm run check`: source JavaScript syntax, declared dependency boundaries, adopted-file formatting, and the Node behavior suite.
+- `npm run check`: source JavaScript syntax, declared dependency boundaries, entry-point-aware source reachability, adopted-file formatting, and the Node behavior suite.
 - `npm test`: recursively discovers `tests/**/*.test.mjs`, with four test files running concurrently by default; override with `npm test -- --test-concurrency=2`. Focused suites can use `node --test tests/sdk/*.test.mjs`.
 - `npm run format` / `npm run check:format`: pinned Prettier 3.9.9 for the explicit adopted-file list in `scripts/checks/formatting-scope.json`. Add maintained source files to that list when adopting formatting. This is not repository-wide lint, purity, cycle, or responsibility enforcement.
-- `npm run check:editor`: strict editor TypeScript checking.
+- `npm run check:editor`: strict editor TypeScript checking, including unused locals and parameters.
+- `npm run check:unused`: conservative runtime-module reachability from app/HTML/worker/public-package/tool/fixture roots. Document manual process entries in `scripts/checks/unused-roots.json`; never delete a module solely because the check flags it.
+- `npm run check:browser:smoke`: the registered CI smoke subset on an owned temporary server with fresh browser contexts. Requires generated WASM and Chrome/Chromium (`CHROME_PATH` overrides detection). Optional suite/check arguments select other registered scenarios on the same owned server.
 - `npm run check:language` and `npm run check:language:format`: native Rust behavior tests and formatting. Build WASM with `npm run build:language` and verify browser contracts when compiler or bindings change.
 - `npm run build`: product pages, player, shared packages and editor build; this replaces `dist/`. Preserve pending generated changes or use an isolated build directory before running it in a dirty checkout.
 - For browser behavior, use `npm run check:browser -- <suite> [checks...]` or the named suite commands. Read [scripts/README.md](scripts/README.md) for browser/server prerequisites. Node and native Rust tests alone do not verify recording, layout, playback, WASM integration, or sandbox isolation.

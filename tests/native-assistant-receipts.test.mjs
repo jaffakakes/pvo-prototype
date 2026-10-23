@@ -16,7 +16,7 @@ const clip = id => ({ id, url: "blob:private-video", srcDur: 12, in: 0, out: 6,
   speed: 1, zoom: 1, mirror: false, fit: "contain", color: "#000", width: 720, height: 1280 });
 function fixture() {
   return { currentSceneId: "main", ratio: "9:16", allowedDomains: ["private.example"], scenes: [{
-    id: "main", name: "Main", parent: null, muted: false, sound: 0,
+    id: "main", name: "Main", parent: null, muted: false, music: null,
     clips: [clip(11), clip(12)], texts: [{ id: 201, text: "Title", start: 2, end: 4, x: 50, y: 20, color: 2 }],
     components: [], audioClips: [{ id: 301, name: "Narration", url: "blob:private-audio", srcDur: 12,
       in: 0, out: 4, speed: 1, start: 6, muted: false, gain: 1 }],

@@ -1,11 +1,11 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
-import { chromium } from "playwright-core";
+
 
 // Public-UI check: also works against built beta output. Uses its existing sample.
 const home = new URL(process.env.EDITOR_URL || "http://127.0.0.1:5173/");
 home.search = "?home=1";
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+const browser = await launchBrowser({
   headless: true,
 });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });

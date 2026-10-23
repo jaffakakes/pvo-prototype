@@ -12,7 +12,7 @@ const bundled = buildSync({ stdin: { resolveDir: process.cwd(), contents: `
 ` }, bundle: true, write: false, format: "esm", platform: "browser" });
 const { defaultTrackingRange, trackingRangeBounds, validateTrackingRange, commitTrackedAnimation,
   nativeProjectFingerprint, projectSnapshot, initial, useCapture } = await import(`data:text/javascript;base64,${Buffer.from(bundled.outputFiles[0].text).toString("base64")}`);
-const scene = () => ({ id: "main", name: "Main", parent: null, muted: false, sound: 0,
+const scene = () => ({ id: "main", name: "Main", parent: null, muted: false, music: null,
   clips: [{ id: 1, url: "blob:test", color: "#000", srcDur: 30, in: 4, out: 24, speed: 2, fit: "contain", zoom: 1, mirror: false, width: 640, height: 360 },
     { id: 2, url: "blob:second", color: "#000", srcDur: 8, in: 0, out: 8, speed: 1, fit: "cover", zoom: 1, mirror: false, width: 640, height: 360 }],
   texts: [{ id: 7, text: "Follow", x: 50, y: 50, start: 2, end: 14, color: 0 }], components: [], audioClips: [] });

@@ -1,7 +1,8 @@
-import { openEditorSettings } from "../helpers/editor-settings.mjs";
+import { launchBrowser } from "../helpers/browser.mjs";
+import { openEditorSettings, closeEditorSettings } from "../helpers/editor-settings.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
+
 import { parseNativeTurnRequest } from "../../../packages/pvo-assistant/native/index.js";
 import { componentSourceResult, finishAssistantVerification, installAssistantAvailabilityFixture, selectedAssistantComponent } from "./assistant-fixture.mjs";
 import { readPvoProject } from "../../../packages/pvo-sdk/index.js";
@@ -23,8 +24,7 @@ const cases = [
     logic: "on submit { continue(); }" },
 ];
 
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+const browser = await launchBrowser({
   headless: true, args: ["--no-sandbox"],
 });
 const errors = [];
@@ -42,7 +42,7 @@ async function seed(page, type) {
     const clip = { id: 1, url: null, color: "#4d4257", srcDur: 2, in: 0, out: 2,
       speed: 1, zoom: 1, mirror: false, width: 720, height: 1280, fit: "cover" };
     const scene = { id: "main", name: "Main", parent: null, clips: [clip], texts: [],
-      components: [], muted: true, sound: -1, layers: ["video"] };
+      components: [], muted: true, music: null, layers: ["video"] };
     window.capture.getState().patch({ scenes: [scene], currentSceneId: "main", clips: [clip],
       texts: [], components: [], layers: ["video"], screen: "editor", sheet: null,
       selComp: null, t: 0, past: [], future: [] });
@@ -162,6 +162,7 @@ async function exercise(item) {
   assert.equal(kept.code.pvoTouched, false);
   assert.equal(await page.evaluate(() => window.capture.getState().past.length), historyBefore + 1);
   for (const key of ["id", "x", "y", "scale", "at", "dur"]) assert.equal(kept[key], before[key]);
+  await closeEditorSettings(page);
   await page.evaluate(() => window.capture.getState().patch({ sheet: "component" }));
   await tab(page, "Content");
   assert.equal(await page.getByRole("tab", { name: "Advanced", exact: true }).count(), 0,
@@ -195,6 +196,7 @@ async function exercise(item) {
   }
   await openEditorSettings(page);
   await page.getByRole("switch", { name: "Advanced edits", exact: true }).click();
+  await closeEditorSettings(page);
   await page.evaluate(() => window.capture.getState().patch({ sheet: "component" }));
   await tab(page, "Advanced");
   await page.getByText("✓ Valid · preview updated", { exact: true }).waitFor();

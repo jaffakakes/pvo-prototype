@@ -15,35 +15,63 @@ type Props = {
 };
 
 export function DesktopPlayer({ onOpenProject, onOpenLibrary }: Props) {
-  const time = useCapture(state => state.t);
-  const clips = useCapture(state => state.clips);
-  const ratio = useCapture(state => state.ratio);
-  const playing = useCapture(state => state.playing);
-  const tryMode = useCapture(state => state.tryMode);
-  const picking = useCapture(state => !!state.playheadPick);
+  const time = useCapture((state) => state.t);
+  const ratio = useCapture((state) => state.ratio);
+  const playing = useCapture((state) => state.playing);
+  const tryMode = useCapture((state) => state.tryMode);
+  const picking = useCapture((state) => !!state.playheadPick);
   const duration = useCapture(sceneDuration);
 
-  return <section className={styles.panel} aria-label="Player" data-desktop-player>
-    <DesktopSceneBar onOpenTree={() => onOpenLibrary("scenes")} />
-    <Preview desktop onAddMedia={() => onOpenLibrary("media")} />
-    <div className={styles.transport}>
-      <div className={styles.time} aria-label={`Playback time ${pickTime(time)} of ${pickTime(duration)}`}>
-        {pickTime(time)} <span>/ {pickTime(duration)}</span>
-      </div>
-      <button type="button" className={styles.play} aria-label={playing ? "Pause" : "Play"}
-        disabled={!duration || !!tryMode?.holdingId || picking} onClick={togglePlayback}>
-        <Icon name={playing ? "pause" : "play"} size={20} />
-      </button>
-      <div className={styles.actions}>
-        <button type="button" className={styles.try} data-on={!!tryMode} disabled={!duration || picking}
-          onClick={tryMode ? stopTry : startTry} aria-label={tryMode ? "Stop trying" : "Try"}
-          title={tryMode ? "Stop trying" : "Try interactive preview"}>
-          {tryMode ? <><span aria-hidden="true">■</span>Stop</> : <Icon name="eye" size={20} />}
+  return (
+    <section className={styles.panel} aria-label="Player" data-desktop-player>
+      <DesktopSceneBar onOpenTree={() => onOpenLibrary("scenes")} />
+      <Preview desktop onAddMedia={() => onOpenLibrary("media")} />
+      <div className={styles.transport}>
+        <div
+          className={styles.time}
+          aria-label={`Playback time ${pickTime(time)} of ${pickTime(duration)}`}
+        >
+          {pickTime(time)} <span>/ {pickTime(duration)}</span>
+        </div>
+        <button
+          type="button"
+          className={styles.play}
+          aria-label={playing ? "Pause" : "Play"}
+          disabled={!duration || !!tryMode?.holdingId || picking}
+          onClick={togglePlayback}
+        >
+          <Icon name={playing ? "pause" : "play"} size={20} />
         </button>
-        <DebugEntry variant="desktop" />
-        <button type="button" className={styles.ratio} onClick={onOpenProject} disabled={!!tryMode}
-          aria-label={`Aspect ratio ${ratio}`}>{ratio}</button>
+        <div className={styles.actions}>
+          <button
+            type="button"
+            className={styles.try}
+            data-on={!!tryMode}
+            disabled={!duration || picking}
+            onClick={tryMode ? stopTry : startTry}
+            aria-label={tryMode ? "Stop trying" : "Try"}
+            title={tryMode ? "Stop trying" : "Try interactive preview"}
+          >
+            {tryMode ? (
+              <>
+                <span aria-hidden="true">■</span>Stop
+              </>
+            ) : (
+              <Icon name="eye" size={20} />
+            )}
+          </button>
+          <DebugEntry variant="desktop" />
+          <button
+            type="button"
+            className={styles.ratio}
+            onClick={onOpenProject}
+            disabled={!!tryMode}
+            aria-label={`Aspect ratio ${ratio}`}
+          >
+            {ratio}
+          </button>
+        </div>
       </div>
-    </div>
-  </section>;
+    </section>
+  );
 }

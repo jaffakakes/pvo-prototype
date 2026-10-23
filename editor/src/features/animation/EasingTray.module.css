@@ -1,0 +1,14 @@
+.curves p {
+  margin: 0 0 6px;
+  color: var(--muted-strong);
+  font: 600 11px/1.4 var(--f-ui);
+}
+.curves [data-keyframe-control] {
+  flex-direction: column;
+  min-height: 52px;
+  gap: 5px;
+}
+.curves [data-keyframe-control] svg {
+  width: 20px;
+  height: 20px;
+}

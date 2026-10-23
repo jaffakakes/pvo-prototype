@@ -1,11 +1,11 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { chromium } from "playwright-core";
+
 
 const editorUrl = process.env.EDITOR_URL || process.env.RESTYLE_EDITOR_URL || "http://127.0.0.1:5173/";
 const media = await readFile(new URL("../../../share/assets/preview.mp4", import.meta.url));
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+const browser = await launchBrowser({
   headless: true,
 });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -103,13 +103,13 @@ try {
     window.capture = useCapture;
     const clips = [mkClip(7, new URL("/playback-view-switch.mp4", location.href).href, 0)];
     const main = { id: "main", parent: null, name: "Video", clips, texts: [], components: [],
-      audioClips: [], layers: ["video"], muted: true, sound: -1 };
+      audioClips: [], layers: ["video"], muted: true, music: null };
     const empty = { ...main, id: "empty", parent: "main", name: "Empty", clips: [] };
     // HTTP media is intentional in this isolated fixture so its metadata can be
     // gated. Project persistence rejects non-blob URLs; saving is outside this check.
     useCapture.setState({
       scenes: [main, empty], currentSceneId: "main", clips, texts: [], components: [], audioClips: [],
-      layers: ["video"], muted: true, sound: -1, screen: "editor", sheet: null,
+      layers: ["video"], muted: true, music: null, screen: "editor", sheet: null,
       sel: -1, selComp: null, selText: null, t: 2, playing: false, tryMode: null, past: [], future: [],
     });
   });

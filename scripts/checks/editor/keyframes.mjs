@@ -1,12 +1,9 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
-import { chromium } from "playwright-core";
 
 // Isolated synthetic layers exercise public authoring controls without AI calls.
-const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROME_PATH ||
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+const browser = await launchBrowser({
   headless: true,
 });
 const page = await browser.newPage({
@@ -32,7 +29,7 @@ const animation = (kind) =>
             ? state.components
             : state.texts;
     return kind === "music"
-      ? state.scenes[0].musicAnimation
+      ? state.scenes[0].music.animation
       : list[0].animation;
   }, kind);
 const select = async (kind, time = 0) => {
@@ -44,6 +41,7 @@ const select = async (kind, time = 0) => {
         selText: null,
         selComp: null,
         selAudio: null,
+        selMusic: kind === "music",
         sheet: null,
         t: time,
         playing: false,
@@ -147,7 +145,7 @@ try {
       clips: [clip],
       texts: [text],
       audioClips: [audio],
-      sound: 1,
+      music: { track: 1, start: 0, duration: 8, offset: 0, gain: 1 },
       sel: -1,
       selText: 7,
       t: 0,
@@ -276,15 +274,18 @@ try {
 
   await page.setViewportSize({ width: 390, height: 844 });
   await select("text", 3);
-  await page.getByRole("button", { name: "Animate", exact: true }).click();
-  const sheet = page.locator("[data-animation-sheet]");
-  await sheet.waitFor();
+  const timelineControls = page.getByRole("toolbar", {
+    name: "Keyframe controls",
+    exact: true,
+  });
   const beforePhone = await history();
-  await sheet.getByRole("button", { name: "Keyframe", exact: true }).click();
+  await timelineControls
+    .getByRole("button", { name: "Add keyframe", exact: true })
+    .click();
   assert.equal(
     await history(),
     beforePhone + 1,
-    "Phone Keyframe is one whole-transform edit",
+    "The phone diamond captures one whole-transform point",
   );
   for (const property of [
     "x",
@@ -294,33 +295,26 @@ try {
     "rotation",
     "opacity",
   ]) {
-    assert.ok(
+    assert(
       (await animation("text")).tracks[property].some((key) => key.time === 3),
-      `Phone captures ${property} at the same moment`,
     );
   }
-  const pad = sheet.getByRole("group", { name: "Position pad", exact: true });
-  const box = await pad.boundingBox();
-  const beforePad = await history();
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(box.x + box.width * 0.75, box.y + box.height * 0.3, {
-    steps: 8,
-  });
-  await page.mouse.up();
-  assert.equal(
-    await history(),
-    beforePad + 1,
-    "Phone pad commits one Undo step",
+  await select("text", 3.5);
+  await timelineControls
+    .getByRole("button", { name: "Add keyframe", exact: true })
+    .click();
+  await select("text", 3);
+  await page.evaluate(async () =>
+    (
+      await import("/src/state/animation/timelineControls.ts")
+    ).selectTimelineKeyframe(3),
   );
-  assert.ok(
-    Math.abs(
-      (await animation("text")).tracks.x.find((key) => key.time === 3).value -
-        25,
-    ) < 1,
-    "Position pad writes real normalized movement",
-  );
-  await sheet.getByRole("button", { name: "Jump", exact: true }).click();
+  await timelineControls
+    .getByRole("button", { name: "Graphs", exact: true })
+    .click();
+  const graphs = page.getByRole("region", { name: "Graphs", exact: true });
+  const beforeEasing = await history();
+  await graphs.getByRole("button", { name: "Jump", exact: true }).click();
   for (const property of [
     "x",
     "y",
@@ -333,65 +327,28 @@ try {
       (await animation("text")).tracks[property].find((key) => key.time === 3)
         .easing,
       "hold",
-      "Phone easing covers the whole transform at that moment",
     );
   }
-  const ribbonKey = sheet.getByRole("button", {
-    name: "Keyframe at 0:03.0",
-    exact: true,
-  });
-  const keyBox = await ribbonKey.boundingBox();
-  const ribbon = await sheet
-    .getByLabel("Animation timeline", { exact: true })
-    .boundingBox();
-  const beforeMove = await history();
-  await page.mouse.move(
-    keyBox.x + keyBox.width / 2,
-    keyBox.y + keyBox.height / 2,
-  );
-  await page.mouse.down();
-  await page.mouse.move(
-    keyBox.x + keyBox.width / 2 + ribbon.width * 0.125,
-    keyBox.y + keyBox.height / 2,
-    { steps: 8 },
-  );
-  await page.mouse.up();
   assert.equal(
     await history(),
-    beforeMove + 1,
-    "Phone ribbon movement is one Undo",
+    beforeEasing + 1,
+    "The curve changes the whole point in one Undo",
   );
-  assert.equal(
-    await page.evaluate(() => window.keyframeCheck.useCapture.getState().t),
-    3.5,
-    "Ribbon keeps the playhead at the new key time",
+  assert(
+    await page.locator(".tl").isVisible(),
+    "Graphs keeps the timeline visible",
   );
-  for (const property of [
-    "x",
-    "y",
-    "scaleX",
-    "scaleY",
-    "rotation",
-    "opacity",
-  ]) {
-    assert.ok(
-      (await animation("text")).tracks[property].some(
-        (key) => key.time === 3.5,
-      ),
-      "Phone ribbon moves every transform curve together",
-    );
-  }
   await undo();
-  assert.ok(
-    (await animation("text")).tracks.x.some((key) => key.time === 3),
-    "Phone Undo restores the complete moment",
+  assert.equal(
+    (await animation("text")).tracks.x.find((key) => key.time === 3).easing,
+    "linear",
   );
   await page.screenshot({ path: "/tmp/pvo-keyframes-check/mobile.png" });
-  await page.getByRole("button", { name: "Close sheet", exact: true })
-    .click();
+  await page.keyboard.press("Escape");
   await select("audio", 1);
-  await page.getByRole("button", { name: "Animate", exact: true }).click();
-  await sheet
+  await page.getByRole("button", { name: "Volume", exact: true }).click();
+  await page
+    .getByRole("region", { name: "Volume", exact: true })
     .getByRole("button", { name: "Fade in · 0.8s", exact: true })
     .click();
   const fade = (await animation("audio")).tracks.gain;
@@ -406,7 +363,7 @@ try {
   );
   assert.deepEqual(errors, [], "No browser runtime errors");
   console.log(
-    "Manual keyframes: all five layer kinds, desktop property controls, source clocks, easing, sliders, no-op history, phone whole-transform pad/ribbon/Undo and audio fades passed.",
+    "Manual keyframes: all five layer kinds, desktop property controls, source clocks, easing, sliders, no-op history, phone timeline diamonds/Graphs/Undo and audio fades passed.",
   );
 } catch (error) {
   await page.screenshot({ path: "/tmp/keyframes-failure.png" });

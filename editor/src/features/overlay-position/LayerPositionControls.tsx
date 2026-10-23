@@ -12,9 +12,10 @@ import styles from "./LayerPositionControls.module.css";
 
 type Axis = keyof OverlayPosition;
 
-function PositionField({ axis, value, min, max, descriptionId, onCommit }: {
-  axis: Axis;
-  value: number;
+export function PixelField({ label, ariaLabel = label, value, min, max, descriptionId, onCommit }: {
+  label: string;
+  ariaLabel?: string;
+  value: number | null;
   min: number;
   max: number;
   descriptionId: string;
@@ -22,18 +23,18 @@ function PositionField({ axis, value, min, max, descriptionId, onCommit }: {
 }) {
   const [draft, setDraft] = useState<string | null>(null);
   const cancelled = useRef(false);
-  const label = axis.toUpperCase();
   return <label className={styles.field}>
     <span>{label} <span className={styles.unit}>(px)</span></span>
     <input
       type="number"
       inputMode="numeric"
-      aria-label={`${label} position (px)`}
+      aria-label={`${ariaLabel} (px)`}
       aria-describedby={descriptionId}
       min={min}
       max={max}
       step="1"
-      value={draft ?? Math.round(value)}
+      disabled={value === null}
+      value={draft ?? (value === null ? "" : Math.round(value))}
       onFocus={() => { cancelled.current = false; }}
       onChange={event => setDraft(event.target.value)}
       onBlur={() => {
@@ -76,9 +77,9 @@ export function LayerPositionControls({ target, x, y }: {
   return <div className={styles.controls} data-layer-position-controls>
     <h3>Position</h3>
     <div className={styles.fields}>
-      <PositionField axis="x" value={pixels.x} min={bounds.x.min} max={bounds.x.max}
+      <PixelField label="X" ariaLabel="X position" value={pixels.x} min={bounds.x.min} max={bounds.x.max}
         descriptionId={descriptionId} onCommit={value => commit("x", value)} />
-      <PositionField axis="y" value={pixels.y} min={bounds.y.min} max={bounds.y.max}
+      <PixelField label="Y" ariaLabel="Y position" value={pixels.y} min={bounds.y.min} max={bounds.y.max}
         descriptionId={descriptionId} onCommit={value => commit("y", value)} />
     </div>
     <p id={descriptionId}>Layer centre in pixels from the top-left of the {canvas.width} × {canvas.height} canvas.</p>

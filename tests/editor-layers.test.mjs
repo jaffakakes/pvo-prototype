@@ -7,7 +7,7 @@ const bundled = buildSync({ stdin: { contents: 'export * from "./editor/src/stor
 const { useCapture, mkClip, layerOrder, layerZ, dragLayer, buildPvoManifest, advanceTry, splitAtPlayhead, deleteSelectedClip, splitClipAt } = await import(`data:text/javascript;base64,${Buffer.from(bundled.outputFiles[0].text).toString("base64")}`);
 const start = () => {
   const clip = mkClip(8, null, 0);
-  useCapture.setState({ scenes: [{ id: "main", name: "Main", clips: [clip], texts: [], components: [], muted: false, sound: 0, layers: ["video"] }], currentSceneId: "main", clips: [clip], texts: [], components: [], layers: ["video"], t: 1, sel: -1, selComp: null, selText: null, past: [], future: [], sheet: null });
+  useCapture.setState({ scenes: [{ id: "main", name: "Main", clips: [clip], texts: [], components: [], muted: false, music: null, layers: ["video"] }], currentSceneId: "main", clips: [clip], texts: [], components: [], layers: ["video"], t: 1, sel: -1, selComp: null, selText: null, past: [], future: [], sheet: null });
   return useCapture.getState();
 };
 

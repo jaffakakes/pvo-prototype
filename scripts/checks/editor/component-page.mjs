@@ -1,11 +1,8 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
-import { chromium } from "playwright-core";
 
-const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROME_PATH ||
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+const browser = await launchBrowser({
   headless: true,
 });
 const artifacts =
@@ -47,7 +44,7 @@ try {
         texts: [],
         components: [],
         muted: true,
-        sound: -1,
+        music: null,
         layers: ["video"],
       };
       useCapture.getState().patch({
@@ -91,6 +88,71 @@ try {
       await page.locator(".pvBox, .timeline").count(),
       0,
       "dedicated page hides the video workspace",
+    );
+    const beforeChat = await state();
+    const orb = page.locator("[data-assistant-orb]");
+    await orb.click();
+    await page.locator('[data-assistant-focus="true"]').waitFor();
+    assert.equal(
+      await root.evaluate(
+        (element) => getComputedStyle(element, "::after").opacity,
+      ),
+      "1",
+      "one orb tap dims the shared workspace",
+    );
+    await orb.click();
+    const chat = page.getByRole("dialog", {
+      name: "Restyle thread",
+      exact: true,
+    });
+    await chat.waitFor();
+    assert.equal(await chat.getAttribute("data-variant"), "phone");
+    assert.equal(
+      await page.locator("[data-assistant-mini-timeline]").count(),
+      0,
+    );
+    assert.equal(await chat.locator("[data-assistant-orb]").count(), 1);
+    await capture(page, `${artifacts}/design-chat-${width}.png`);
+    const chatInput = chat.getByRole("textbox", { name: "Describe a change" });
+    await chatInput.focus();
+    await page.evaluate(() => {
+      Object.defineProperty(visualViewport, "height", {
+        configurable: true,
+        value: 360,
+      });
+      visualViewport.dispatchEvent(new Event("resize"));
+    });
+    await page
+      .locator('[data-component-page][data-keyboard-open="true"]')
+      .waitFor();
+    assert(
+      await chat
+        .locator("[data-thread-compose]")
+        .evaluate(
+          (element) =>
+            element.getBoundingClientRect().bottom <= visualViewport.height + 1,
+        ),
+      "design composer stays above the keyboard",
+    );
+    await page.evaluate(() => {
+      if (document.activeElement instanceof HTMLElement)
+        document.activeElement.blur();
+      delete visualViewport.height;
+      visualViewport.dispatchEvent(new Event("resize"));
+    });
+    await page
+      .locator('[data-component-page][data-keyboard-open="false"]')
+      .waitFor();
+    await page.getByRole("button", { name: "Done", exact: true }).click();
+    await chat.waitFor({ state: "detached" });
+    await orb.dblclick({ delay: 60 });
+    await chat.waitFor();
+    await page.getByRole("button", { name: "Done", exact: true }).click();
+    await chat.waitFor({ state: "detached" });
+    assert.deepEqual(
+      await state(),
+      beforeChat,
+      "chat preserves design and history",
     );
     await capture(page, `${artifacts}/design-${width}.png`);
     await page.getByRole("button", { name: "Style", exact: true }).click();

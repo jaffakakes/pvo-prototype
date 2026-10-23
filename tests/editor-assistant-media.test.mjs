@@ -13,7 +13,7 @@ const api = await import(`data:text/javascript;base64,${Buffer.from(bundled.outp
 const clip = { id: 1, url: "blob:http://localhost/source", srcDur: 12, in: 2, out: 10, speed: 2,
   color: "#123456", zoom: 1, mirror: false, width: 640, height: 360, fit: "contain" };
 const scene = () => ({ id: "main", name: "Main", parent: null, clips: [{ ...clip }, { ...clip, id: 2, in: 0, out: 2, speed: 1 }],
-  texts: [{ id: 10, start: 0, end: 8, text: "Title", x: 50, y: 50 }], components: [], muted: false, sound: 0 });
+  texts: [{ id: 10, start: 0, end: 8, text: "Title", x: 50, y: 50 }], components: [], muted: false, music: null });
 const project = value => ({ scenes: [value], ratio: "16:9" });
 
 test("frame timestamps map trimmed and sped sources, cut boundaries and visual tails", () => {

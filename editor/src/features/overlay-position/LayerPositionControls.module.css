@@ -45,7 +45,7 @@
 }
 
 .field input:focus-visible {
-  outline: 3px solid var(--highlight);
+  outline: 3px solid var(--strong);
   outline-offset: 2px;
 }
 

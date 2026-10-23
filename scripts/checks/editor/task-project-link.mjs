@@ -1,16 +1,12 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { chromium } from "playwright-core";
+
 import { createTask } from "../../../packages/pvo-assistant/tasks/index.js";
 import { installAssistantAvailabilityFixture } from "./assistant-fixture.mjs";
 
 const editorUrl = process.env.EDITOR_URL || "http://127.0.0.1:5173/";
-const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROME_PATH ||
-    (process.platform === "darwin"
-      ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-      : "C:/Program Files/Google/Chrome/Application/chrome.exe"),
+const browser = await launchBrowser({
   headless: true,
 });
 const reference = {
@@ -175,13 +171,15 @@ try {
   });
   assert.deepEqual((await snapshot(page)).reference, reference);
 
-  const copyId = await page.evaluate(async (sourceId) => {
-    const { copySavedProject } =
-      await import("/src/infrastructure/projectPersistence/copyProject.ts");
-    const id = crypto.randomUUID();
-    await copySavedProject(sourceId, id, "Copied edit");
-    return id;
-  }, originalId);
+  const originalCheckpoint = await checkpoint(page, originalId);
+  const copyId = await page.evaluate(async () => {
+    const { saveProjectAsCopy } = await import("/src/app/projectAutosave.ts");
+    if (!(await saveProjectAsCopy()))
+      throw new Error("Current project copy failed");
+    return (await import("/src/state/captureStore.ts")).useCapture.getState()
+      .localId;
+  });
+  assert.notEqual(copyId, originalId);
   const copyUrl = new URL(editorUrl);
   copyUrl.searchParams.set("project", copyId);
   await page.goto(copyUrl.href);
@@ -190,19 +188,11 @@ try {
   assert.equal(view.reference, null);
   assert.equal(view.links, null);
   assert.deepEqual(Buffer.from(view.media), media);
-  const copyError = await page.evaluate(
-    async (ids) => {
-      try {
-        await (
-          await import("/src/infrastructure/projectPersistence/copyProject.ts")
-        ).copySavedProject(ids.original, ids.copy, "Overwrite");
-      } catch (error) {
-        return error.message;
-      }
-    },
-    { original: originalId, copy: copyId },
+  assert.deepEqual(
+    await checkpoint(page, originalId),
+    originalCheckpoint,
+    "The current copy command preserves its original project checkpoint",
   );
-  assert.match(copyError, /already exists/);
   await Promise.all([
     page.waitForEvent("load"),
     page.evaluate(

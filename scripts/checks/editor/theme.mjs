@@ -1,12 +1,13 @@
+import { launchBrowser } from "../helpers/browser.mjs";
+import { openEditorSettings, closeEditorSettings } from "../helpers/editor-settings.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
+
 
 const editorUrl = process.env.EDITOR_URL || process.env.RESTYLE_EDITOR_URL || "http://127.0.0.1:5173/";
 const origin = new URL(editorUrl).origin;
 const fixture = fileURLToPath(new URL("../../../share/assets/preview.mp4", import.meta.url));
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+const browser = await launchBrowser({
   headless: true,
   args: ["--no-sandbox"],
 });
@@ -33,15 +34,13 @@ async function expectRootTheme(page, { mode, accent, color }) {
     };
   });
   assert.equal(actual.colorScheme, mode);
-  if (color) assert.equal(actual.color, color);
+  if (color) assert.equal(actual.color, "#c51c5c", "The editor reserves magenta for time across account palettes");
   return actual;
 }
 
-async function openMore(page) {
-  await page.getByRole("button", { name: "More settings", exact: true }).click();
-  const more = page.getByRole("dialog", { name: "More", exact: true });
-  await more.waitFor();
-  return more;
+async function openPreferences(page) {
+  await openEditorSettings(page);
+  return page.getByRole("dialog", { name: /^(Project settings|Editor settings)$/ });
 }
 
 async function changeAccount(page) {
@@ -90,7 +89,7 @@ try {
   await page.locator("[data-desktop-editor]").waitFor();
 
   const guestDark = await expectRootTheme(page, { mode: "dark", accent: "magenta", color: "#ff2d78" });
-  let more = await openMore(page);
+  let more = await openPreferences(page);
   const modes = more.getByRole("group", { name: "Color mode" });
   assert.equal(await modes.getByRole("button", { name: "System" }).getAttribute("aria-pressed"), "true");
   assert.equal(await more.getByRole("group", { name: "Accent color" }).count(), 0,
@@ -99,6 +98,7 @@ try {
   assert.equal(await more.getByRole("region", { name: "Account" }).count(), 0);
   assert.doesNotMatch(await more.innerText(), /Magenta is the guest color/);
   assert.equal(await more.getByRole("region", { name: "Replies" }).count(), 0);
+  await closeEditorSettings(page);
   await page.setViewportSize({ width: 390, height: 844 });
   const signIn = page.locator(".editorHead").getByRole("button", { name: "Sign in", exact: true });
   await signIn.waitFor();
@@ -113,6 +113,7 @@ try {
   await auth.waitFor({ state: "hidden" });
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.locator("[data-desktop-editor]").waitFor();
+  more = await openPreferences(page);
 
   await modes.getByRole("button", { name: "Light" }).click();
   const guestLight = await expectRootTheme(page, { mode: "light", accent: "magenta" });
@@ -130,7 +131,7 @@ try {
   await page.reload({ waitUntil: "networkidle" });
   await page.locator("[data-desktop-editor]").waitFor();
   await expectRootTheme(page, { mode: "dark", accent: "magenta" });
-  more = await openMore(page);
+  more = await openPreferences(page);
   assert.equal(await more.getByRole("group", { name: "Color mode" })
     .getByRole("button", { name: "System" }).getAttribute("aria-pressed"), "true",
   "The explicit System choice must survive reload");
@@ -139,12 +140,14 @@ try {
   await changeAccount(page);
   const accents = more.getByRole("group", { name: "Accent color" });
   await accents.waitFor();
-  assert.equal(await more.getByRole("region", { name: "Replies" }).count(), 1);
+  assert.equal(await more.getByRole("region", { name: "Replies" }).count(), 0);
+  await closeEditorSettings(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator(".editorHead").getByRole("button", { name: "Back to camera", exact: true }).waitFor();
   assert.equal(await page.locator(".editorHead").getByRole("button", { name: "Sign in", exact: true }).count(), 0);
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.locator("[data-desktop-editor]").waitFor();
+  more = await openPreferences(page);
   assert.deepEqual(await accents.getByRole("button").allTextContents(),
     ["Magenta", "Orange", "Emerald", "Cyan", "Blue", "Violet"]);
   await accents.getByRole("button", { name: "Cyan" }).click();
@@ -153,7 +156,7 @@ try {
   await page.reload({ waitUntil: "networkidle" });
   await page.locator("[data-desktop-editor]").waitFor();
   await expectRootTheme(page, { mode: "dark", accent: "cyan", color: "#00d4ff" });
-  more = await openMore(page);
+  more = await openPreferences(page);
   assert.equal(await more.getByRole("button", { name: "Cyan" }).getAttribute("aria-pressed"), "true");
 
   activeUser = people.second;
@@ -166,8 +169,9 @@ try {
   await changeAccount(page);
   await expectRootTheme(page, { mode: "dark", accent: "cyan", color: "#00d4ff" });
 
-  await more.getByRole("region", { name: "Account" }).getByRole("button", { name: "Your account" }).click();
-  await page.getByRole("dialog", { name: "Your account" }).getByRole("button", { name: "Sign out" }).click();
+  await closeEditorSettings(page);
+  await page.getByRole("button", { name: /^Account ·/ }).click();
+  await page.getByRole("menuitem", { name: "Sign out", exact: true }).click();
   await expectRootTheme(page, { mode: "dark", accent: "magenta", color: "#ff2d78" });
   assert.equal(logoutCalls, 1);
   await page.reload({ waitUntil: "networkidle" });

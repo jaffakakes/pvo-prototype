@@ -17,7 +17,6 @@ type Props = Pick<
   cameraPending: boolean;
   cameraStatus: string;
   microphoneAvailable: boolean;
-  hint: string;
   removeLast(): void;
   onUpload(): void;
 };
@@ -25,7 +24,6 @@ export function ShutterControls({
   cameraPending,
   cameraStatus,
   microphoneAvailable,
-  hint,
   removeLast,
   onUpload,
   onShutterDown,
@@ -71,7 +69,6 @@ export function ShutterControls({
           <span className={cx("side50 press")}>
             <Icon name="upload" size={22} />
           </span>
-          <span className={cx("sideLabel")}>Upload</span>
         </button>
         <button
           className={cx("shutter")}
@@ -83,6 +80,16 @@ export function ShutterControls({
           onPointerUp={onShutterUp}
           onPointerCancel={onShutterUp}
           aria-label={s.recording ? "Stop recording" : "Record"}
+          aria-description={
+            cameraStatus === "ready" && !microphoneAvailable
+              ? "Microphone unavailable · video only"
+              : undefined
+          }
+          title={
+            cameraStatus === "ready" && !microphoneAvailable
+              ? "Microphone unavailable · video only"
+              : undefined
+          }
         >
           <span className={cx("ring")} />
           {arcs.length > 0 && (
@@ -116,16 +123,12 @@ export function ShutterControls({
             <span className={cx("side50 press")}>
               <Icon name="undoTake" size={22} />
             </span>
-            <span className={cx("sideLabel")}>Undo</span>
           </button>
         )}
       </div>
-      <span className={cx("camHint")} role={s.importing ? "status" : undefined}>
-        {s.importing ? "Importing videos…" : hint}
-      </span>
-      {cameraStatus === "ready" && !microphoneAvailable && (
-        <span className={cx("camHint")}>
-          Microphone unavailable · video only
+      {s.importing && (
+        <span className={cx("captureStatus")} role="status">
+          Importing videos…
         </span>
       )}
     </div>

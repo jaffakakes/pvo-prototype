@@ -19,6 +19,7 @@ type Options = {
   enabled?: boolean;
   contextKey: string;
   onTap(): void;
+  onDoubleTap?(): void;
   onListening(transcript: string): void;
   onSend(text: string): void;
   onCancel(): void;
@@ -34,6 +35,7 @@ type Press = {
 };
 
 const HOLD_DELAY_MS = 320;
+const DOUBLE_TAP_MS = 240;
 export type VoiceMode = "hold" | "tap";
 
 /** Maps a button tap/hold to typing or a single, cancellable voice request. */
@@ -42,6 +44,7 @@ export function useOrbVoice(options: Options) {
   current.current = options;
   const mounted = useRef(false);
   const press = useRef<Press | null>(null);
+  const pendingTap = useRef<ReturnType<typeof setTimeout> | null>(null);
   const session = useRef<VoiceSession | null>(null);
   const sessionMode = useRef<VoiceMode>("hold");
   const sessionPhase = useRef<VoicePhase>("idle");
@@ -66,6 +69,8 @@ export function useOrbVoice(options: Options) {
   }, []);
 
   const cancel = useCallback(() => {
+    clearTimeout(pendingTap.current ?? undefined);
+    pendingTap.current = null;
     tapAction.current = null;
     const active = clearPress();
     if (session.current) session.current.cancel();
@@ -125,6 +130,7 @@ export function useOrbVoice(options: Options) {
 
   const beginVoice = () => {
     if (!press.current) return;
+    pendingTap.current = null;
     press.current.held = true;
     startVoice("hold");
   };
@@ -158,6 +164,8 @@ export function useOrbVoice(options: Options) {
   ) => {
     if (current.current.enabled === false || press.current || session.current)
       return;
+    // Keep the orb in place until a possible second tap has finished.
+    clearTimeout(pendingTap.current ?? undefined);
     const active: Press = {
       time: performance.now(),
       button,
@@ -177,9 +185,20 @@ export function useOrbVoice(options: Options) {
       return;
     }
     if (current.current.enabled === false) return;
-    if (performance.now() - active.time < HOLD_DELAY_MS)
-      current.current.onTap();
-    else
+    if (performance.now() - active.time < HOLD_DELAY_MS) {
+      if (active.pointerId !== undefined && current.current.onDoubleTap) {
+        if (pendingTap.current) {
+          pendingTap.current = null;
+          current.current.onDoubleTap();
+        } else {
+          pendingTap.current = setTimeout(() => {
+            pendingTap.current = null;
+            if (mounted.current && current.current.enabled !== false)
+              current.current.onTap();
+          }, DOUBLE_TAP_MS);
+        }
+      } else current.current.onTap();
+    } else
       current.current.onFailure({
         reason: "holdShort",
         detail: "The orb was released before the voice hold threshold.",

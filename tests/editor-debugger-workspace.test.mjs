@@ -40,7 +40,7 @@ test("desktop debugger keeps a 300px player region and respects compact height",
 test("Stop and edit restores Try then selects the executed component and Logic without project edits", () => {
   api.stopTry();
   const clips = [api.mkClip(10, null, 0)];
-  const scene = id => ({ id, name: id, clips, texts: [], components: [], muted: false, sound: 0, layers: ["video"] });
+  const scene = id => ({ id, name: id, clips, texts: [], components: [], muted: false, music: null, layers: ["video"] });
   api.useCapture.setState({ scenes: [scene("main"), scene("branch")], currentSceneId: "main", clips,
     components: [], texts: [], layers: ["video"], screen: "editor", t: 1, sel: -1,
     selComp: null, selText: null, sheet: null, tryMode: null, past: [], future: [] });

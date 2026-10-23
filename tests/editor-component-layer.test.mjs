@@ -18,6 +18,7 @@ const {
   mkClip,
   beginComponentLayerGesture,
   selectComponentLayer,
+  openComponentDesign,
   buildPvoManifest,
   captureCheckpoint,
   storeCheckpoint,
@@ -35,7 +36,7 @@ function fixture(type = "form") {
     texts: [],
     components: [],
     muted: true,
-    sound: 0,
+    music: null,
     layers: ["video"],
   };
   useCapture.setState({
@@ -67,6 +68,32 @@ const selected = () =>
   useCapture
     .getState()
     .components.find((c) => c.id === useCapture.getState().selComp);
+test("Design entry selects the requested component without changing history or authored content", () => {
+  const first = fixture("card");
+  const second = useCapture.getState().addComponent("choice");
+  useCapture.getState().patch({
+    selComp: first,
+    sel: 0,
+    selText: 99,
+    playing: true,
+    ratioMenu: true,
+    orb: true,
+  });
+  const before = useCapture.getState();
+  openComponentDesign(second);
+  const after = useCapture.getState();
+  assert.equal(after.selComp, second);
+  assert.equal(after.sel, -1);
+  assert.equal(after.selText, null);
+  assert.equal(after.sheet, "component");
+  assert.equal(after.playing, false);
+  assert.equal(after.ratioMenu, false);
+  assert.equal(after.orb, false);
+  assert.equal(after.past, before.past);
+  assert.deepEqual(after.components, before.components);
+  openComponentDesign("missing-component");
+  assert.equal(useCapture.getState(), after);
+});
 test("add and select retain the video workspace; duplicate is half a second later and one Undo", () => {
   const id = fixture();
   assert.equal(useCapture.getState().sheet, null);

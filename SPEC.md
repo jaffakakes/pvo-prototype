@@ -78,7 +78,7 @@ Optional `restyle_capture.width` and `.height` set explicit canvas-pixel dimensi
 
 ### Layer animation
 
-Restyle presentation metadata has `version: 1` and `scene_layers`, an object keyed by existing scene IDs. Each scene entry carries `order` (back-to-front layer keys such as `video`, `text:7` and `component:choice-1`) and `texts`. Optional `clips` and `audioClips` record animated media layers, and `musicAnimation` records scene music automation. A media entry is exactly `{ id, start, in, out, speed, animation }`: `start` is its scene placement, `in`/`out` are original source seconds, `out > in >= 0`, and `speed > 0`. These entries describe animation clocks; they do not add playback clips or select assets.
+Restyle presentation metadata has `version: 1` and `scene_layers`, an object keyed by existing scene IDs. Each scene entry carries `order` (back-to-front layer keys such as `video`, `text:7` and `component:choice-1`) and `texts`. Optional `clips` and `audioClips` record animated media layers, and `music` records the typed scene music layer: `{ track, start, duration, offset, gain, animation? }`. Music uses source seconds (`offset + sceneTime - start`); `duration` bounds its audible interval. Optional `timelineOrder` retains the shared back-to-front order including `audio:<id>` and `music`, while `order` contains only visual layers. A media entry is exactly `{ id, start, in, out, speed, animation }`: `start` is its scene placement, `in`/`out` are original source seconds, `out > in >= 0`, and `speed > 0`. These entries describe animation clocks; they do not add playback clips or select assets.
 
 Components store curves at `components[].restyle_capture.animation`; text and media entries store their own `animation`. All use one shape:
 

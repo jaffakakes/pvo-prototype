@@ -12,7 +12,7 @@ const debug = await import(`data:text/javascript;base64,${Buffer.from(bundle.out
 
 function input(projectId = "project-1") {
   return { projectId, sceneId: "main", videoTime: 3, requested: true, scenes: [{ id: "main", name: "Main", parent: null,
-    clips: [{ id: 1, in: 0, out: 10, speed: 1 }], texts: [], muted: false, sound: 0,
+    clips: [{ id: 1, in: 0, out: 10, speed: 1 }], texts: [], muted: false, music: null,
     components: [{ id: "question", sceneId: "main", type: "choice", at: 0, dur: 10, fields: { prompt: "Question", options: [{ label: "Yes", outcome: { kind: "continue" } }] },
       responsePolicy: { dispatch: "interaction", unanswered: "continue" } }] }] };
 }

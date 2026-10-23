@@ -33,7 +33,7 @@
   cursor: default;
 }
 .thread button:focus-visible {
-  outline: 2px solid var(--pale);
+  outline: 2px solid var(--strong);
   outline-offset: 3px;
 }
 .header {
@@ -124,7 +124,7 @@
   field-sizing: content;
   background: transparent;
   color: var(--text);
-  caret-color: var(--accent);
+  caret-color: var(--strong);
   font-size: 13px;
   font-weight: 600;
   line-height: 22px;
@@ -138,7 +138,67 @@
 }
 .thread[data-variant="phone"] .composer {
   padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-  padding-right: 86px;
+}
+.thread[data-variant="phone"] .composeRow {
+  position: relative;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  min-height: 94px;
+  padding: 10px 12px 64px;
+  border: 1.5px solid color-mix(in srgb, var(--text) 20%, transparent);
+  border-radius: 20px;
+}
+.thread[data-variant="phone"] .composeRow textarea {
+  flex: none;
+  width: 100%;
+  min-height: 20px;
+  max-height: 80px;
+  margin: 0;
+  line-height: 20px;
+}
+.thread[data-variant="phone"] .composeRow:focus-within {
+  border-color: color-mix(in srgb, var(--text) 45%, transparent);
+}
+.thread[data-variant="phone"][data-keyboard="up"] {
+  flex: none;
+  height: auto;
+}
+.thread[data-keyboard="up"] .list {
+  display: none;
+}
+.thread[data-keyboard="up"] .composer {
+  padding: 8px 14px;
+}
+.orbSlot {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 44px;
+  height: 44px;
+}
+.targetChip {
+  position: absolute;
+  right: 66px;
+  bottom: 19px;
+  display: flex;
+  align-items: center;
+  max-width: calc(100% - 124px);
+  height: 26px;
+  padding: 0 8px;
+  overflow: hidden;
+  border: 1.5px solid var(--violet);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--violet) 16%, transparent);
+  color: color-mix(in srgb, var(--violet) 72%, var(--text));
+  font-size: 10.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.list > .empty:first-child {
+  flex: 1;
+  margin-block: auto;
 }
 .srOnly {
   position: absolute;

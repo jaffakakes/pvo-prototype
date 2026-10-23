@@ -2,8 +2,10 @@ import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { renderScene } from "../../../server/render/render-scene.js";
+import { adjacentFfprobe } from "./executables.mjs";
+import { createFileOwnership } from "./ownership.mjs";
 
 const JOB_LIFETIME_MS = 30 * 60 * 1000;
 const fullFfmpeg = [
@@ -11,9 +13,7 @@ const fullFfmpeg = [
   "/usr/local/opt/ffmpeg-full/bin/ffmpeg",
 ].find((candidate) => existsSync(candidate));
 const ffmpegPath = process.env.PVO_FFMPEG_PATH || fullFfmpeg || "ffmpeg";
-const ffprobePath =
-  process.env.PVO_FFPROBE_PATH ||
-  (ffmpegPath.includes("/") ? join(dirname(ffmpegPath), "ffprobe") : "ffprobe");
+const ffprobePath = adjacentFfprobe(ffmpegPath, process.env.PVO_FFPROBE_PATH);
 
 export function publicJob(job) {
   return {
@@ -28,32 +28,42 @@ export function publicJob(job) {
 }
 
 /** Own temporary render files, execution order and cancellation until close. */
-export async function createLocalRenderJobs({ render = renderScene } = {}) {
+export async function createLocalRenderJobs({
+  render = renderScene,
+  now = Date.now,
+} = {}) {
   const root = await mkdtemp(join(tmpdir(), "restyle-render-jobs-"));
   const jobs = new Map();
   let queue = Promise.resolve();
+  let closing;
+  const creations = createFileOwnership();
 
   async function removeJob(job) {
-    jobs.delete(job.id);
-    await rm(job.directory, { recursive: true, force: true });
+    return (job.removal ??= (async () => {
+      await job.ownership.settled();
+      await rm(job.directory, { recursive: true, force: true });
+      jobs.delete(job.id);
+    })());
   }
 
   async function prune() {
-    const now = Date.now();
+    const time = now();
     for (const job of jobs.values()) {
-      if (now - job.createdAt <= JOB_LIFETIME_MS) continue;
-      job.controller.abort();
-      if (job.status !== "rendering") await removeJob(job);
+      if (time - job.createdAt <= JOB_LIFETIME_MS) continue;
+      await cancel(job);
     }
   }
 
   const cleanup = setInterval(() => {
-    void prune();
+    void prune().catch((error) =>
+      console.error("Render expiry cleanup failed:", error?.name),
+    );
   }, 60_000);
   cleanup.unref();
 
   async function run(job) {
     if (job.status !== "queued") return;
+    const release = job.ownership.acquire("render");
     job.status = "rendering";
     try {
       const media = new Map(
@@ -85,28 +95,43 @@ export async function createLocalRenderJobs({ render = renderScene } = {}) {
         console.error("Local server render failed:", error);
       }
     } finally {
+      release();
       if (job.status === "cancelled") await removeJob(job);
     }
   }
 
   async function create(owner, input) {
+    if (closing) throw new Error("Local rendering is closing.");
+    const release = creations.acquire("create");
     const id = randomBytes(16).toString("hex");
     const directory = join(root, id);
-    await mkdir(join(directory, "sources"), { recursive: true });
-    const job = {
-      id,
-      directory,
-      owner,
-      createdAt: Date.now(),
-      ...input,
-      status: "uploading",
-      progress: 0,
-      controller: new AbortController(),
-      error: null,
-      activeUploads: 0,
-    };
-    jobs.set(id, job);
-    return job;
+    try {
+      await mkdir(join(directory, "sources"), { recursive: true });
+      if (closing) {
+        await rm(directory, { recursive: true, force: true });
+        throw new Error("Local rendering is closing.");
+      }
+      const ownership = createFileOwnership();
+      const job = {
+        id,
+        directory,
+        owner,
+        createdAt: now(),
+        ...input,
+        status: "uploading",
+        progress: 0,
+        controller: new AbortController(),
+        error: null,
+        ownership,
+        get activeUploads() {
+          return ownership.count("upload");
+        },
+      };
+      jobs.set(id, job);
+      return job;
+    } finally {
+      release();
+    }
   }
 
   function start(job) {
@@ -123,19 +148,19 @@ export async function createLocalRenderJobs({ render = renderScene } = {}) {
   }
 
   async function cancel(job) {
-    const previousStatus = job.status;
     job.status = "cancelled";
     job.controller.abort();
-    // An active render or upload releases its files in its own finally block.
-    if (previousStatus !== "rendering" && job.activeUploads === 0)
-      await removeJob(job);
+    await removeJob(job);
   }
 
-  async function close() {
-    clearInterval(cleanup);
-    for (const job of jobs.values()) job.controller.abort();
-    await queue;
-    await rm(root, { recursive: true, force: true });
+  function close() {
+    return (closing ??= (async () => {
+      clearInterval(cleanup);
+      await creations.settled();
+      await Promise.all([...jobs.values()].map(cancel));
+      await queue;
+      await rm(root, { recursive: true, force: true });
+    })());
   }
 
   return {
@@ -143,6 +168,7 @@ export async function createLocalRenderJobs({ render = renderScene } = {}) {
     create,
     start,
     cancel,
+    prune,
     remove: removeJob,
     close,
   };

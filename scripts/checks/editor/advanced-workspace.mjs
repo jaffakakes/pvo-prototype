@@ -1,12 +1,12 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { join, parse } from "node:path";
-import { chromium } from "playwright-core";
+
 import { installAssistantFixture } from "./assistant-fixture.mjs";
 
 // Requires Vite and the real PVO compiler. Only the assistant HTTP response is mocked.
 const editorUrl = process.env.EDITOR_URL || process.env.RESTYLE_EDITOR_URL || "http://127.0.0.1:5173/";
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+const browser = await launchBrowser({
   headless: true, args: ["--no-sandbox"],
 });
 const cases = [
@@ -44,7 +44,7 @@ async function seed(page) {
     setAdvancedEditingEnabled(true);
     const clips = [mkClip(20, null, 0)];
     const scene = { id: "main", parent: null, name: "Main", clips, texts: [], components: [],
-      layers: ["video"], muted: true, sound: -1 };
+      layers: ["video"], muted: true, music: null };
     useCapture.getState().patch({ scenes: [scene], currentSceneId: "main", clips,
       texts: [], components: [], layers: ["video"], screen: "editor", sheet: null,
       selComp: null, selText: null, sel: -1, t: 2, playing: false, tryMode: null,

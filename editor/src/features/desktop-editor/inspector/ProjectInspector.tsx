@@ -37,7 +37,6 @@ export function ProjectInspector({ snap, onSnapChange }: {
       { label: `${scene?.name ?? "Scene"} length`, value: fmt(sceneDuration(state)) },
     ] },
     { kind: "note", text: "Saved in this browser. Your project stays here when you come back." },
-    { kind: "link", label: "More settings", onClick: () => state.patch({ sheet: "more" }) },
   ] });
   return <InspectorSections sections={sections} />;
 }

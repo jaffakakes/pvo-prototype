@@ -58,9 +58,9 @@
 
 .field input:focus,
 .field textarea:focus {
-  outline: 3px solid var(--pale);
+  outline: 3px solid var(--strong);
   outline-offset: 2px;
-  border-color: var(--pale);
+  border-color: var(--strong);
 }
 
 .hint {
@@ -117,7 +117,7 @@
 }
 
 .time {
-  color: var(--pale);
+  color: var(--strong);
   font-size: 20px;
 }
 
@@ -197,7 +197,7 @@
   width: 44px;
   height: 46px;
   flex: none;
-  color: var(--pale);
+  color: var(--strong);
   background: transparent;
   border: 0;
   border-radius: 8px;
@@ -215,7 +215,7 @@
   flex-direction: column;
   gap: 12px;
   padding: 12px;
-  border-left: 3px solid var(--pale);
+  border-left: 3px solid var(--strong);
   background: var(--surface);
   border-radius: 4px 10px 10px 4px;
 }
@@ -261,7 +261,7 @@
 }
 
 .actionToggle b {
-  color: var(--pale);
+  color: var(--strong);
   font: 800 11px/1.4 var(--f-ui);
   text-align: right;
 }
@@ -270,7 +270,7 @@
 .section button:focus-visible,
 .tabs button:focus-visible,
 .banner button:focus-visible {
-  outline: 3px solid var(--pale);
+  outline: 3px solid var(--strong);
   outline-offset: 2px;
 }
 

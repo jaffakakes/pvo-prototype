@@ -31,6 +31,7 @@ export interface OrbAssistantViewProps {
   phase: AssistantPhase;
   minimized?: boolean;
   threadOpen?: boolean;
+  inThreadComposer?: boolean;
   exchangeCount?: number;
   hasSavedTask?: boolean;
   reviewSummary?: string;
@@ -65,6 +66,7 @@ export function OrbAssistantView({
   phase,
   minimized = false,
   threadOpen = false,
+  inThreadComposer = false,
   exchangeCount = 0,
   hasSavedTask = false,
   reviewSummary,
@@ -152,6 +154,7 @@ export function OrbAssistantView({
       data-voice-phase={voicePhase}
       data-placement={placement}
       data-thread-open={threadOpen}
+      data-in-thread-composer={inThreadComposer}
       style={rootStyle}
     >
       {dismissible && (
@@ -215,51 +218,55 @@ export function OrbAssistantView({
         </>
       )}
 
-      {!minimized && (phase === "listening" || phase === "working") && (
-        <div
-          className={styles.liveBubble}
-          data-assistant-live
-          role="status"
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          {phase === "working" ? (
-            <>
-              <div className={styles.liveContent} data-assistant-live-heading>
-                <span className={styles.spinner} aria-hidden="true" />
-                <span>{workingLabel}</span>
-              </div>
-              <p
-                className={styles.requestLine}
-                data-assistant-live-content
-                title={draft}
-              >
-                “{draft}”
-              </p>
-            </>
-          ) : (
-            <>
-              {!startingVoice && (
+      {!minimized &&
+        (phase === "listening" || (phase === "working" && !threadOpen)) && (
+          <div
+            className={styles.liveBubble}
+            data-assistant-live
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {phase === "working" ? (
+              <>
                 <div className={styles.liveContent} data-assistant-live-heading>
-                  <span className={styles.voiceDot} aria-hidden="true" />
-                  <span data-assistant-transcript>
-                    {transcript ||
-                      (transcribingVoice ? "Transcribing…" : "Listening…")}
-                    {voicePhase === "listening" && (
-                      <span className={styles.cursor} aria-hidden="true" />
-                    )}
-                  </span>
+                  <span className={styles.spinner} aria-hidden="true" />
+                  <span>{workingLabel}</span>
                 </div>
-              )}
-              {!transcribingVoice && (
-                <p className={styles.hint} data-assistant-live-status>
-                  {voiceHint}
+                <p
+                  className={styles.requestLine}
+                  data-assistant-live-content
+                  title={draft}
+                >
+                  “{draft}”
                 </p>
-              )}
-            </>
-          )}
-        </div>
-      )}
+              </>
+            ) : (
+              <>
+                {!startingVoice && (
+                  <div
+                    className={styles.liveContent}
+                    data-assistant-live-heading
+                  >
+                    <span className={styles.voiceDot} aria-hidden="true" />
+                    <span data-assistant-transcript>
+                      {transcript ||
+                        (transcribingVoice ? "Transcribing…" : "Listening…")}
+                      {voicePhase === "listening" && (
+                        <span className={styles.cursor} aria-hidden="true" />
+                      )}
+                    </span>
+                  </div>
+                )}
+                {!transcribingVoice && (
+                  <p className={styles.hint} data-assistant-live-status>
+                    {voiceHint}
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        )}
 
       {!minimized && !threadOpen && phase === "review" && answer && (
         <AssistantReview
@@ -281,6 +288,14 @@ export function OrbAssistantView({
       <div className={styles.orbAnchor} data-assistant-orb-anchor>
         <button
           {...orbHandlers}
+          onPointerDown={(event) => {
+            if (
+              inThreadComposer &&
+              document.activeElement instanceof HTMLTextAreaElement
+            )
+              event.preventDefault();
+            orbHandlers.onPointerDown?.(event);
+          }}
           ref={orbRef}
           type="button"
           className={styles.orb}

@@ -1,10 +1,11 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
-import { chromium } from "playwright-core";
+
 import { installSupabaseFixture, fillEmailForm, supabaseUrl, publishableKey } from "./supabase-fixture.mjs";
 
 const editorUrl = process.env.EDITOR_URL || process.env.RESTYLE_EDITOR_URL || "http://127.0.0.1:5173/";
 const origin = new URL(editorUrl).origin;
-const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH, headless: true });
+const browser = await launchBrowser({ headless: true });
 try {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, serviceWorkers: "block" });
   const provider = await installSupabaseFixture(context);

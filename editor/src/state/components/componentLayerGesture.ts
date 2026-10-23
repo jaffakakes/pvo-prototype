@@ -1,6 +1,10 @@
 import type { PvoComponent } from "../../domain/project/model";
 import { useCapture } from "../captureStore";
-import { projectSnapshot } from "../project/history";
+import {
+  projectSnapshot,
+  commitGestureHistory,
+  ownsHistory,
+} from "../project/history";
 
 type Values = Pick<
   PvoComponent,
@@ -46,8 +50,7 @@ export function beginComponentLayerGesture(id: string) {
       !ended &&
       state.localId === before.localId &&
       state.currentSceneId === before.currentSceneId &&
-      state.past === before.past &&
-      state.future === before.future &&
+      ownsHistory(state, before) &&
       !state.tryMode &&
       !!current &&
       equal(values(current), expected)
@@ -92,9 +95,7 @@ export function beginComponentLayerGesture(id: string) {
       if (ended) return;
       if (!active()) restore();
       else if (!equal(original, expected)) {
-        useCapture
-          .getState()
-          .patch({ past: [...before.past, snapshot].slice(-40), future: [] });
+        commitGestureHistory(useCapture.getState(), before, snapshot);
       }
       ended = true;
     },

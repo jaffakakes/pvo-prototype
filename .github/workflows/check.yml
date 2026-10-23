@@ -23,6 +23,10 @@ jobs:
       - run: npm run build
       - run: npm run check
       - run: npm run check:editor
+      - run: npx playwright-core install --with-deps chromium
+      - name: Configure browser executable
+        run: node --input-type=module -e 'import { appendFileSync } from "node:fs"; import { chromium } from "playwright-core"; appendFileSync(process.env.GITHUB_ENV, `CHROME_PATH=${chromium.executablePath()}\n`);'
+      - run: npm run check:browser:smoke
 
   test-windows:
     runs-on: windows-latest

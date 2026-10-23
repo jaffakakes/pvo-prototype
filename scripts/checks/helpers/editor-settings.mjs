@@ -1,23 +1,23 @@
-/** Open project settings from the desktop inspector, then restore the test viewport. */
+/** Open the current header dropdown on either editor layout. */
 export async function openEditorSettings(page) {
-  const viewport = page.viewportSize();
-  if (!viewport)
-    throw new Error("Settings checks require an explicit viewport");
-  const settings = page.getByRole("dialog", { name: "More", exact: true });
-  await page.setViewportSize({
-    width: Math.max(1280, viewport.width),
-    height: Math.max(800, viewport.height),
+  const trigger = page.getByRole("button", {
+    name: /^(Project settings|Editor settings)$/,
   });
-  try {
+  const desktop = page.locator("[data-desktop-editor]");
+  if (await desktop.count())
     await page
-      .getByRole("button", { name: "Project settings", exact: true })
+      .getByRole("button", { name: "Editor settings", exact: true })
       .click();
-    await page
-      .getByRole("button", { name: "More settings", exact: true })
-      .click();
-    await settings.waitFor();
-  } finally {
-    await page.setViewportSize(viewport);
-  }
-  await settings.waitFor();
+  else await trigger.click();
+  await page
+    .getByRole("dialog", { name: /^(Project settings|Editor settings)$/ })
+    .waitFor();
+}
+
+export async function closeEditorSettings(page) {
+  const settings = page.getByRole("dialog", {
+    name: /^(Project settings|Editor settings)$/,
+  });
+  await settings.press("Escape");
+  await settings.waitFor({ state: "hidden" });
 }

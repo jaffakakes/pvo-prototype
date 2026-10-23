@@ -59,7 +59,7 @@
   padding: 0;
   overflow: visible;
   border: 0;
-  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--text) 25%, transparent);
+  box-shadow: inset 0 0 0 2px var(--strong);
 }
 .compBar:not(.compSelected)::before {
   content: "";
@@ -114,9 +114,11 @@
 }
 .compBar.compSelected,
 .compMarker.compSelected {
-  background: color-mix(in srgb, var(--violet) 16%, var(--ground));
-  color: var(--violet);
-  box-shadow: inset 0 0 0 2px var(--violet);
+  background: var(--violet);
+  color: var(--violet-foreground);
+  box-shadow:
+    inset 0 0 0 2.5px var(--strong),
+    3px 3px 0 var(--strong);
   z-index: 2;
 }
 .compHandle {
@@ -126,7 +128,11 @@
   width: 12px;
   display: none;
   align-items: center;
-  background: transparent;
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--strong) 50%, transparent) 0 3px,
+    transparent 3px 6px
+  );
   cursor: ew-resize;
   touch-action: none;
   z-index: 2;
@@ -134,10 +140,12 @@
 .compHandle[data-side="l"] {
   left: -12px;
   justify-content: flex-end;
+  border-right: 3px solid var(--strong);
 }
 .compHandle[data-side="r"] {
   right: -12px;
   justify-content: flex-start;
+  border-left: 3px solid var(--strong);
 }
 .compHandle::after {
   content: "";

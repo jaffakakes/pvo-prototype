@@ -1,7 +1,8 @@
-import { openEditorSettings } from "../helpers/editor-settings.mjs";
+import { launchBrowser } from "../helpers/browser.mjs";
+import { openEditorSettings, closeEditorSettings } from "../helpers/editor-settings.mjs";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import { chromium } from "playwright-core";
+
 
 // Prerequisites: `npm run dev:editor` and Chrome (or CHROME_PATH).
 const editorUrl = process.env.EDITOR_URL || process.env.RESTYLE_EDITOR_URL || "http://127.0.0.1:5173/";
@@ -66,8 +67,7 @@ async function waitForRequestCount(count) {
 }
 
 try {
-  browser = await chromium.launch({
-    executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+  browser = await launchBrowser({
     headless: true,
     args: ["--no-sandbox"],
   });
@@ -98,10 +98,10 @@ try {
   await page.getByRole("button", { name: "Close sheet", exact: true }).click();
   await page.getByRole("button", { name: "Collapse component tools" }).click();
   await openEditorSettings(page);
-  const more = page.getByRole("dialog", { name: "More" });
+  const more = page.getByRole("dialog", { name: /^(Project settings|Editor settings)$/ });
   await more.getByRole("switch", { name: "Advanced edits", exact: true }).click();
   await more.getByRole("switch", { name: "Advanced edits", checked: true }).waitFor();
-  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
+  await closeEditorSettings(page);
   await page.evaluate(() => window.__languageRequestStore.getState().patch({ selComp: window.__languageRequestId, sheet: "component" }));
   await formSheet.getByRole("tab", { name: "Advanced", exact: true }).click();
   await formSheet.getByRole("tab", { name: "Logic", exact: true }).click();

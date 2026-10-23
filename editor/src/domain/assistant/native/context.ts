@@ -121,11 +121,20 @@ export function nativeProjectContext(
         parent: scene.parent,
         duration: sceneDuration(scene),
         muted: scene.muted,
-        musicGain: scene.musicGain ?? 1,
-        clipGain: scene.clipGain ?? 1,
-        ...(scene.musicAnimation
-          ? { musicAnimation: cloneAnimation(scene.musicAnimation) }
+        musicGain: scene.music?.gain ?? 1,
+        ...(scene.music
+          ? {
+              musicClock: {
+                start: scene.music.start,
+                duration: scene.music.duration,
+                offset: scene.music.offset,
+              },
+            }
           : {}),
+        ...(scene.music?.animation
+          ? { musicAnimation: cloneAnimation(scene.music.animation) }
+          : {}),
+        clipGain: scene.clipGain ?? 1,
         clips: scene.clips.map((clip) => {
           const from = start;
           start += dur(clip);

@@ -56,7 +56,7 @@
 }
 .iconButton:focus-visible,
 .tryButton:focus-visible {
-  outline: 3px solid var(--pale);
+  outline: 3px solid var(--strong);
   outline-offset: -3px;
 }
 .stopTryButton {
@@ -66,7 +66,7 @@
   color: var(--button-secondary-text);
 }
 .stopTryButton:hover {
-  border-color: var(--pale);
+  border-color: var(--strong);
   color: var(--text);
 }
 .header[data-trying="true"] .title h1 {
@@ -213,7 +213,7 @@
 }
 .navigationButton:focus-visible,
 .projectName:focus-visible {
-  outline: 2px solid var(--highlight);
+  outline: 2px solid var(--strong);
   outline-offset: 2px;
 }
 
@@ -234,7 +234,7 @@
   color: var(--text);
   font: 18px/1.2 var(--f-display);
   text-overflow: ellipsis;
-  caret-color: var(--accent);
+  caret-color: var(--strong);
 }
 .titleRow {
   display: flex;

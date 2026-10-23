@@ -1,5 +1,6 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
-import { chromium, webkit } from "playwright-core";
+import { webkit } from "playwright-core";
 
 const editorUrl =
   process.env.EDITOR_URL ||
@@ -8,12 +9,7 @@ const editorUrl =
 const browser =
   process.env.BROWSER === "webkit"
     ? await webkit.launch({ headless: true })
-    : await chromium.launch({
-        executablePath:
-          process.env.CHROME_PATH ||
-          (process.platform === "darwin"
-            ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-            : "C:/Program Files/Google/Chrome/Application/chrome.exe"),
+    : await launchBrowser({
         headless: true,
         args: ["--no-sandbox", "--autoplay-policy=no-user-gesture-required"],
       });

@@ -1,7 +1,7 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url)).replaceAll(
   "\\",
@@ -21,12 +21,7 @@ const font = {
     },
   ],
 };
-const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROME_PATH ||
-    (process.platform === "darwin"
-      ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-      : "C:/Program Files/Google/Chrome/Application/chrome.exe"),
+const browser = await launchBrowser({
   headless: true,
 });
 const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
@@ -49,7 +44,7 @@ try {
         name: "Main",
         parent: null,
         muted: true,
-        sound: 0,
+        music: null,
         clips: [
           {
             id: 1,
@@ -179,7 +174,7 @@ try {
         name: "Main",
         parent: null,
         muted: true,
-        sound: 0,
+        music: null,
         clips: [
           {
             id: 1,

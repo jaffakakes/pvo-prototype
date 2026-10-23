@@ -1,10 +1,4 @@
-import {
-  useLayoutEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
+import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { fontFamily } from "../../../../packages/pvo-fonts/index.js";
 import type { PvoComponent } from "../../domain/project/model";
 import type { LookPart } from "../../domain/components/look";
@@ -21,13 +15,11 @@ export function ComponentStage({
   component,
   part,
   onPart,
-  children,
   badge,
 }: {
   component: PvoComponent;
   part: LookPart;
   onPart(part: LookPart): void;
-  children?: ReactNode;
   badge?: string;
 }) {
   const stage = useRef<HTMLDivElement>(null);
@@ -103,7 +95,6 @@ export function ComponentStage({
         </div>
       </div>
       {badge && <div className={styles.logicBadge}>{badge}</div>}
-      {children}
     </section>
   );
 }

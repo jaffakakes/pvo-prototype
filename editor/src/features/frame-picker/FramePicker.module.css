@@ -112,7 +112,7 @@
   pointer-events: none;
 }
 .filmstrip:focus-within {
-  outline: 2px solid var(--highlight);
+  outline: 2px solid var(--strong);
   outline-offset: 6px;
 }
 @media (max-height: 500px) {

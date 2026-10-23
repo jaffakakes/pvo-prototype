@@ -66,7 +66,7 @@
 .status { color: var(--text-secondary); }
 .error { color: var(--red); }
 .retry { align-self: flex-start; min-height: 40px; padding: 0 12px; border: 2px solid var(--button-border); border-radius: var(--radius-control); background: var(--button-secondary-bg); color: var(--button-secondary-text); font: 700 12px var(--f-ui); cursor: pointer; }
-.gate button:focus-visible { outline: 3px solid var(--highlight); outline-offset: 2px; }
+.gate button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 
 @media (max-width: 700px) {
   .gate { gap: 14px; }

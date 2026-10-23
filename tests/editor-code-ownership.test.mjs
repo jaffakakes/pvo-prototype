@@ -77,7 +77,7 @@ test("an uneditable draft cannot create an unconnected scene or consume an undo 
     custom: true, pvoLiteral: true, pvoTouched: true,
     pvo: { structure: "<card><button id=\"button0\">Next</button></card>", style: "", logic: "on press(button0) { unfinished" },
   } };
-  const scene = { id: "main", name: "Main", parent: null, clips: [], texts: [], components: [component], muted: false, sound: 0 };
+  const scene = { id: "main", name: "Main", parent: null, clips: [], texts: [], components: [component], muted: false, music: null };
   useCapture.getState().patch({ scenes: [scene], currentSceneId: "main", screen: "editor", sheet: "component", selComp: component.id, past: [], future: [] });
   assert.equal(createRoutedScene(component.id, { kind: "button", index: 0 }), null);
   assert.equal(createRoutedScene(component.id, { kind: "button", index: 0 }, undefined, { openCamera: false }), null);

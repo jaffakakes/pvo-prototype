@@ -14,6 +14,7 @@ import {
 } from "../state/notifications/notificationStore";
 import { navigateProject } from "./navigation";
 import { createProjectAutosaveController } from "./projectAutosaveController";
+import { projectName } from "../domain/project/creation";
 
 const requestedProjectId = new URL(location.href).searchParams.get("project");
 const persistence = createProjectPersistence(requestedProjectId ?? undefined);
@@ -30,7 +31,6 @@ function hydrateProject(saved: RestoredProject): void {
     sel: saved.sel,
     selComp: saved.selComp,
     selText: saved.selText,
-    exportFormat: saved.exportFormat,
   };
   useCapture.setState({
     localId:
@@ -77,6 +77,32 @@ export const retryProjectStorage = autosave.retry;
 export const discardProjectRecovery = autosave.discardRecovery;
 export const getProjectStorageStatus = autosave.getStatus;
 export const subscribeProjectStorage = autosave.subscribe;
+
+/** Copy this tab's current media and history under a fresh ID. */
+let copyingProject = false;
+export async function saveProjectAsCopy(): Promise<boolean> {
+  if (copyingProject || getProjectStorageStatus().phase !== "ready")
+    return false;
+  copyingProject = true;
+  try {
+    const state = useCapture.getState();
+    const id = crypto.randomUUID();
+    state.patch({
+      localId: id,
+      projectName: projectName("Copy of " + state.projectName),
+      assistantTaskLinks: null,
+    });
+    persistence.schedule(useCapture.getState());
+    await persistence.flush();
+    navigateProject(id, true);
+    return true;
+  } catch {
+    // The retained storage issue and Retry still own this new copy's failure.
+    return false;
+  } finally {
+    copyingProject = false;
+  }
+}
 
 /** Call after the save boundary; persisted asset IDs remain stable after reopening. */
 export const persistedProjectSnapshot = (

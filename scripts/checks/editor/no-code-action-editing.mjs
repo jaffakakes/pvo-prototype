@@ -1,8 +1,8 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
-import { chromium } from "playwright-core";
 
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+
+const browser = await launchBrowser({
   headless: true,
 });
 const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
@@ -17,7 +17,7 @@ try {
     const { useCapture, mkClip } = await import("/src/store.ts");
     window.capture = useCapture;
     const clips = [mkClip(20, null, 0)];
-    useCapture.setState({ scenes: [{ id: "main", name: "Main", clips, texts: [], components: [], layers: ["video"], muted: false, sound: 0 }],
+    useCapture.setState({ scenes: [{ id: "main", name: "Main", clips, texts: [], components: [], layers: ["video"], muted: false, music: null }],
       currentSceneId: "main", clips, texts: [], components: [], layers: ["video"], screen: "editor", sheet: "components",
       t: 2, selComp: null, selText: null, sel: -1, tryMode: null, past: [], future: [] });
     const id = useCapture.getState().addComponent("form");

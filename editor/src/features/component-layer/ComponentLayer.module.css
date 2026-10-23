@@ -16,7 +16,7 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
-  border: 2px solid var(--outline);
+  border: 2.5px solid var(--strong);
   box-shadow: var(--shadow-control);
   border-radius: var(--radius-control);
   background: var(--surface);
@@ -79,7 +79,7 @@
 .range {
   --range-track: linear-gradient(
     to right,
-    color-mix(in srgb, var(--accent) 40%, var(--surface)) var(--range-value),
+    var(--strong) var(--range-value),
     var(--input) var(--range-value)
   );
   appearance: none;
@@ -94,14 +94,14 @@
 .range::-webkit-slider-runnable-track {
   height: 28px;
   box-sizing: border-box;
-  border: 2px solid var(--outline);
+  border: 2.5px solid var(--strong);
   border-radius: var(--radius-control);
   background: var(--range-track);
 }
 .range::-moz-range-track {
   height: 28px;
   box-sizing: border-box;
-  border: 2px solid var(--outline);
+  border: 2.5px solid var(--strong);
   border-radius: var(--radius-control);
   background: var(--range-track);
 }
@@ -110,7 +110,7 @@
   width: 22px;
   height: 34px;
   margin-top: -5px;
-  border: 2px solid var(--outline);
+  border: 2.5px solid var(--strong);
   border-radius: var(--radius-small);
   background: var(--surface);
   box-shadow: var(--shadow-control);
@@ -119,36 +119,10 @@
   box-sizing: border-box;
   width: 22px;
   height: 34px;
-  border: 2px solid var(--outline);
+  border: 2.5px solid var(--strong);
   border-radius: var(--radius-small);
   background: var(--surface);
   box-shadow: var(--shadow-control);
-}
-.transformRow {
-  display: grid;
-  grid-template-columns: 62px minmax(0, 1fr) 40px;
-  align-items: center;
-  gap: 9px;
-  min-height: 34px;
-  font-size: 11.5px;
-}
-.transformRow output {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-}
-.reset {
-  border: 0;
-  padding: 4px 0;
-  background: transparent;
-  color: var(--accent);
-  font: 800 11px var(--f-ui);
-  cursor: pointer;
-}
-.hint {
-  margin: 0;
-  font-size: 11px;
-  color: var(--muted);
 }
 @media (max-width: 350px) {
   .toolbar:global(.toolBar) {

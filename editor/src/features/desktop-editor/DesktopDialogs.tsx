@@ -5,11 +5,11 @@ import { useCapture } from "../../state/captureStore";
 import { SheetDockContext, type SheetDockContextValue } from "../../ui/sheets/SheetDockContext";
 import styles from "./DesktopDialogs.module.css";
 
-/** Export and settings retain their existing workflows outside the inspector. */
+/** Export, replies and discard retain their existing workflows outside the inspector. */
 export function DesktopDialogs() {
   const sheet = useCapture(state => state.sheet);
   if (sheet === "export") return <ExportSheet />;
-  return sheet === "more" || sheet === "discard"
+  return sheet === "replies" || sheet === "discard"
     ? <EditorDialog key={sheet} /> : null;
 }
 

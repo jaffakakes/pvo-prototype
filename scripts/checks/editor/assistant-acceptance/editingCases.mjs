@@ -25,7 +25,7 @@ export const editingCases = [
       const main = scene(step.after);
       assert.equal(main.name, "Opening");
       assert.equal(step.after.ratio, "1:1");
-      close(main.musicGain, 0.25, "music gain");
+      close(main.music.gain, 0.25, "music gain");
       close(main.clipGain, 0.4, "footage gain");
       const text = main.texts.find(item => item.text === "Launch day");
       assert(text); close(text.start, 2, "title start"); close(text.end, 4, "title end");

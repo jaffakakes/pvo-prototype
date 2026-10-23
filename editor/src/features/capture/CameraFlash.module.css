@@ -16,8 +16,7 @@
   background: none;
 }
 
-.illuminated :global(.camHint),
-.illuminated :global(.sideLabel) {
+.illuminated :global(.captureStatus) {
   color: #111;
   text-shadow: none;
 }

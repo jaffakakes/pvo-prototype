@@ -1,15 +1,12 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url)).replaceAll(
   "\\",
   "/",
 );
-const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROME_PATH ||
-    "C:/Program Files/Google/Chrome/Application/chrome.exe",
+const browser = await launchBrowser({
   headless: true,
 });
 try {
@@ -105,7 +102,7 @@ try {
       texts: [],
       components: [component],
       muted: true,
-      sound: -1,
+      music: null,
     };
     const manifest = buildPvoManifest(
       {
@@ -190,7 +187,7 @@ try {
       texts: [],
       components: [],
       muted: true,
-      sound: -1,
+      music: null,
       layers: ["video"],
     };
     useCapture.getState().patch({

@@ -1,10 +1,11 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import { openExportDialog } from "../helpers/editor-export.mjs";
 import { finishTextEntry } from "../helpers/editor-text.mjs";
-import { chromium } from "playwright-core";
+
 import { resolve } from "node:path";
 import { tmpdir } from "node:os";
 
-const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe", headless: true, args: ["--no-sandbox", "--use-fake-device-for-media-stream"] });
+const browser = await launchBrowser({ headless: true, args: ["--no-sandbox", "--use-fake-device-for-media-stream"] });
 const page = await browser.newPage({ viewport: { width: 500, height: 1000 }, acceptDownloads: true });
 const errors = [];
 page.on("pageerror", error => errors.push(error.message));

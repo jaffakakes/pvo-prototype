@@ -1,18 +1,13 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url)).replaceAll(
   "\\",
   "/",
 );
-const chromePath =
-  process.env.CHROME_PATH ||
-  (process.platform === "darwin"
-    ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-    : "C:/Program Files/Google/Chrome/Application/chrome.exe");
-const browser = await chromium.launch({
-  executablePath: chromePath,
+
+const browser = await launchBrowser({
   headless: true,
 });
 const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
@@ -314,8 +309,14 @@ try {
         audioClips: [],
         layers: ["video", `text:${text.id}`],
         muted: true,
-        sound: 1,
-        musicAnimation: { tracks: { gain: track(0, 1, 0, 0.4) } },
+        music: {
+          track: 1,
+          start: 0,
+          duration: 0.4,
+          offset: 0,
+          gain: 1,
+          animation: { tracks: { gain: track(0, 1, 0, 0.4) } },
+        },
       },
       () => {},
     );

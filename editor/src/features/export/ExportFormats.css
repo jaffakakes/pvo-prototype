@@ -18,8 +18,8 @@
   cursor: pointer;
 }
 .formatGrid button[data-on="true"] {
-  border: 2.5px solid var(--pale);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+  border: 2.5px solid var(--selection);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--button-primary-bg) 22%, transparent);
 }
 .formatGrid svg {
   color: var(--violet);

@@ -1,10 +1,14 @@
 import { useEffect, useRef, type RefObject } from "react";
 
-const controls = "button, input, textarea, select, label, a, [role='separator'], [role='dialog']:not(.sheet), [contenteditable], .orbAssistant, .compOverlay, .textOverlay, .tlClips, .textBar, .compBar, .layerName";
+const controls =
+  "[data-tool-tray], .pvBox[data-transforming='true'], button, input, textarea, select, label, a, [role='separator'], [role='dialog']:not(.sheet), [contenteditable], .orbAssistant, .compOverlay, .textOverlay, .tlClips, .textBar, .compBar, .layerName";
 const tapTolerance = 12;
 
 /** Dismiss only a blank-space tap, never a scrub, resize, or multi-touch gesture. */
-export function useOutsideSelection(workspace: RefObject<HTMLDivElement>, onDismiss: () => void) {
+export function useOutsideSelection(
+  workspace: RefObject<HTMLDivElement>,
+  onDismiss: () => void,
+) {
   const dismiss = useRef(onDismiss);
   dismiss.current = onDismiss;
   useEffect(() => {
@@ -12,21 +16,40 @@ export function useOutsideSelection(workspace: RefObject<HTMLDivElement>, onDism
     if (!app) return;
     const document = app.ownerDocument;
     let tap: { id: number; x: number; y: number } | null = null;
-    const cancel = () => { tap = null; };
+    const cancel = () => {
+      tap = null;
+    };
     const down = (event: PointerEvent) => {
       const target = event.target;
-      if (!event.isPrimary || event.button !== 0 || !(target instanceof Element)
-        || !app.contains(target)) { cancel(); return; }
-      tap = target.closest(controls) ? null
+      if (
+        !event.isPrimary ||
+        event.button !== 0 ||
+        !(target instanceof Element) ||
+        !app.contains(target)
+      ) {
+        cancel();
+        return;
+      }
+      tap = target.closest(controls)
+        ? null
         : { id: event.pointerId, x: event.clientX, y: event.clientY };
     };
     const move = (event: PointerEvent) => {
-      if (tap && Math.hypot(event.clientX - tap.x, event.clientY - tap.y) > tapTolerance) cancel();
+      if (
+        tap &&
+        Math.hypot(event.clientX - tap.x, event.clientY - tap.y) > tapTolerance
+      )
+        cancel();
     };
     const up = (event: PointerEvent) => {
       const start = tap;
       cancel();
-      if (start?.id === event.pointerId && Math.hypot(event.clientX - start.x, event.clientY - start.y) <= tapTolerance) dismiss.current();
+      if (
+        start?.id === event.pointerId &&
+        Math.hypot(event.clientX - start.x, event.clientY - start.y) <=
+          tapTolerance
+      )
+        dismiss.current();
     };
     document.addEventListener("pointerdown", down, true);
     document.addEventListener("pointermove", move, true);

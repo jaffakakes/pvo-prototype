@@ -1,8 +1,9 @@
+import { launchBrowser } from "../../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { chromium } from "playwright-core";
+
 import { verifyRealQuizPlayback } from "./quizPlayback.mjs";
 
 // Replays a saved, successful REAL model edit for interaction-only verification.
@@ -21,8 +22,7 @@ assert(original.turns.length > 0 && original.turns.every(turn => turn.response),
 const result = JSON.parse(await readFile(path.join(path.dirname(stepPath), "result.json"), "utf8"));
 const output = path.resolve(options.output);
 await mkdir(output, { recursive: true });
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true,
+const browser = await launchBrowser({ headless: true,
 });
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, serviceWorkers: "block" });
 const page = await context.newPage();

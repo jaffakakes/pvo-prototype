@@ -1,9 +1,12 @@
+import { LayerReorderHandle } from "./LayerReorderHandle";
+import { MusicClipBar } from "../sound/MusicClipBar";
+import { sceneLayers } from "../../domain/layers/sceneLayers";
 import { selectComponentLayer } from "../../state/components/componentLayerCommands";
 import { componentTypeName } from "../../domain/components/presentation";
 import { AudioClipBar } from "../sound/AudioClipBar";
 import { CoverButton } from "../cover/CoverButton";
 import { TimelineKeyframes } from "../animation/TimelineKeyframes";
-import { textStyle } from "../../../../packages/pvo-text-runtime/index.js";
+import { TimelineAnimationPoints } from "../animation/TimelineAnimationPoints";
 import { dur } from "../../domain/clips/timing";
 import { componentLength } from "../../domain/components/timing";
 import { setCodePreviewFocus } from "../../state/components/componentAuthoringStore";
@@ -12,7 +15,6 @@ import { fmt } from "../../ui/formatTime";
 import { Icon } from "../../ui/Icon";
 import { componentLabel } from "../../domain/components/presentation";
 import { DebugLayerIssue } from "../editor-layout/debugging/DebugLayerIssue";
-import { SOUNDS } from "../sound/catalog";
 import { EmptySceneTimeline } from "./EmptySceneTimeline";
 import { MobilePlayhead } from "./MobilePlayhead";
 import { LEAD, PLAYHEAD_X, PPS, stripLeft } from "./geometry";
@@ -26,18 +28,15 @@ export function Timeline() {
     playhead,
     timelineRef,
     layerDrag,
-    pointer,
     ignoreClick,
     length,
     trimShift,
     ticks,
     layers,
     rows,
-    rowEnd,
     timelineHeight,
     selectedLayer,
     rowTop,
-    selectLayer,
     layerKeyDown,
     scrubDown,
     scrubMove,
@@ -52,6 +51,7 @@ export function Timeline() {
     textBarMove,
     textBarUp,
   } = useTimelineGestures();
+  const entries = new Map(sceneLayers(s).map((layer) => [layer.id, layer]));
   if (length <= 0) return <EmptySceneTimeline />;
 
   return (
@@ -80,15 +80,17 @@ export function Timeline() {
             height: timelineHeight,
           }}
         >
-          {ticks.map((k) => (
-            <span
-              key={k}
-              className={cx("tick")}
-              style={{ left: LEAD + k * PPS }}
-            >
-              {k % 2 ? "·" : fmt(k)}
-            </span>
-          ))}
+          <div data-timeline-ruler className={styles.timeRuler}>
+            {ticks.map((k) => (
+              <span
+                key={k}
+                className={cx("tick")}
+                style={{ left: LEAD + k * PPS }}
+              >
+                {k % 2 ? "·" : fmt(k)}
+              </span>
+            ))}
+          </div>
           <div
             className={cx("tlClips")}
             data-layer-id="video"
@@ -96,71 +98,75 @@ export function Timeline() {
             style={{ left: LEAD, top: rowTop("video") }}
           >
             {s.clips.map((clip, i) => (
-              <button
-                key={clip.id}
-                className={cx("tlClip")}
-                data-index={i}
-                data-sel={s.sel === i}
-                style={{
-                  width: dur(clip) * PPS,
-                  background: `linear-gradient(160deg,${clip.color},#15151C)`,
-                }}
-                onClick={() => {
-                  if (!ignoreClick.current && !s.tryMode)
-                    s.patch({
-                      sel: i,
-                      selComp: null,
-                      selText: null,
-                      orb: false,
-                    });
-                }}
-              >
-                {clip.url && (
-                  <video
-                    src={`${clip.url}#t=${(Math.round(clip.in * 2) / 2).toFixed(1)}`}
-                    muted
-                    playsInline
-                    style={{
-                      objectFit: clip.fit,
-                      transform: clip.mirror ? "scaleX(-1)" : undefined,
-                    }}
-                  />
-                )}
-                {dur(clip) * PPS > 46 && (
-                  <span
-                    className={cx("clipLen")}
-                    style={{ left: s.sel === i ? 18 : 6 }}
-                  >
-                    {dur(clip).toFixed(1)}s
-                  </span>
-                )}
-                {s.sel === i && (
-                  <>
-                    <span
-                      className={cx("handle handleL")}
-                      onPointerDown={(e) => trimDown(e, i, "l")}
-                      onPointerMove={trimMove}
-                      onPointerUp={trimUp}
-                      onPointerCancel={trimUp}
-                      onLostPointerCapture={trimUp}
+              <div key={clip.id} className={styles.clipSlot}>
+                <button
+                  className={cx("tlClip")}
+                  data-index={i}
+                  data-sel={s.sel === i}
+                  style={{
+                    width: dur(clip) * PPS,
+                  }}
+                  onClick={() => {
+                    if (!ignoreClick.current && !s.tryMode)
+                      s.patch({
+                        sel: i,
+                        selComp: null,
+                        selText: null,
+                        selAudio: null,
+                        orb: false,
+                      });
+                  }}
+                >
+                  {clip.url && (
+                    <video
+                      src={`${clip.url}#t=${(Math.round(clip.in * 2) / 2).toFixed(1)}`}
+                      muted
+                      playsInline
+                      style={{
+                        objectFit: clip.fit,
+                        transform: clip.mirror ? "scaleX(-1)" : undefined,
+                      }}
                     />
+                  )}
+                  {dur(clip) * PPS > 46 && (
                     <span
-                      className={cx("handle handleR")}
-                      onPointerDown={(e) => trimDown(e, i, "r")}
-                      onPointerMove={trimMove}
-                      onPointerUp={trimUp}
-                      onPointerCancel={trimUp}
-                      onLostPointerCapture={trimUp}
+                      className={cx("clipLen")}
+                      style={{ left: s.sel === i ? 18 : 6 }}
+                    >
+                      {dur(clip).toFixed(1)}s
+                    </span>
+                  )}
+                  {s.sel === i && (
+                    <>
+                      <span
+                        className={cx("handle handleL")}
+                        onPointerDown={(e) => trimDown(e, i, "l")}
+                        onPointerMove={trimMove}
+                        onPointerUp={trimUp}
+                        onPointerCancel={trimUp}
+                        onLostPointerCapture={trimUp}
+                      />
+                      <span
+                        className={cx("handle handleR")}
+                        onPointerDown={(e) => trimDown(e, i, "r")}
+                        onPointerMove={trimMove}
+                        onPointerUp={trimUp}
+                        onPointerCancel={trimUp}
+                        onLostPointerCapture={trimUp}
+                      />
+                    </>
+                  )}
+                  {s.sel !== i && (
+                    <TimelineKeyframes
+                      color="var(--pale)"
+                      animation={clip.animation}
+                      start={clip.in}
+                      end={clip.out}
                     />
-                  </>
-                )}
-                <TimelineKeyframes
-                  color="#FF9FBC"
-                  animation={clip.animation}
-                  start={clip.in}
-                  end={clip.out}
-                />
-              </button>
+                  )}
+                </button>
+                {s.sel === i && <TimelineAnimationPoints clipId={clip.id} />}
+              </div>
             ))}
             <button
               className={cx("addClip")}
@@ -172,35 +178,24 @@ export function Timeline() {
               <Icon name="plus" size={16} />
             </button>
           </div>
-          {s.sound > 0 && (
-            <div
-              className={cx("audioTrack")}
-              style={{
-                top: rowEnd + s.audioClips.length * 34,
-                left: LEAD,
-                width: Math.max(40, length * PPS),
-              }}
-            >
-              <span>♪ {SOUNDS[s.sound]?.name ?? "Music"}</span>
-              <TimelineKeyframes
-                color="#5CF0C0"
-                animation={
-                  s.scenes.find((scene) => scene.id === s.currentSceneId)
-                    ?.musicAnimation
-                }
-                start={0}
-                end={length}
-              />
-            </div>
+          {s.music && (
+            <MusicClipBar
+              music={s.music}
+              pixelsPerSecond={PPS}
+              snap={{ enabled: true, playhead: s.t }}
+              layerDrag={layerDrag}
+              style={{ top: rowTop("music"), left: LEAD + s.music.start * PPS }}
+            />
           )}
-          {s.audioClips.map((clip, index) => (
+          {s.audioClips.map((clip) => (
             <AudioClipBar
               key={clip.id}
               clip={clip}
               pixelsPerSecond={PPS}
               snap={{ enabled: true, playhead: s.t }}
+              layerDrag={layerDrag}
               style={{
-                top: rowEnd + index * 34,
+                top: rowTop(`audio:${clip.id}`),
                 left: LEAD + clip.start * PPS,
               }}
             />
@@ -216,14 +211,8 @@ export function Timeline() {
                 top: rowTop(`text:${x.id}`),
                 left: LEAD + x.start * PPS,
                 width: (x.end - x.start) * PPS,
-                background:
-                  textStyle(x).background === "transparent"
-                    ? "#FFD23E"
-                    : textStyle(x).background,
-                color:
-                  textStyle(x).background === "transparent"
-                    ? "#111"
-                    : textStyle(x).fill,
+                background: "var(--yellow)",
+                color: "var(--yellow-foreground)",
               }}
               onPointerDown={(e) => textBarDown(e, x)}
               onPointerMove={textBarMove}
@@ -310,9 +299,6 @@ export function Timeline() {
           style={{ width: PLAYHEAD_X }}
           aria-hidden="true"
         />
-        <span className={styles.currentTime}>
-          {fmt(s.t)}.{Math.floor(s.t * 10) % 10}
-        </span>
         <CoverButton
           style={{
             position: "absolute",
@@ -322,91 +308,31 @@ export function Timeline() {
           }}
         />
         {layers.map((id) => (
-          <button
+          <LayerReorderHandle
             key={id}
+            id={id}
+            drag={layerDrag}
             className={`${cx("layerName")} ${styles.trackLabel}`}
-            data-kind={
-              id === "video"
-                ? "video"
-                : id.startsWith("text:")
-                  ? "text"
-                  : "components"
-            }
-            data-reorder-layer={id}
-            title="Drag up or down to reorder · Alt + ↑ / ↓"
-            aria-label={
-              id === "video"
-                ? "Select video layer"
-                : id.startsWith("text:")
-                  ? `Select text layer: ${s.texts.find((t) => `text:${t.id}` === id)?.text}`
-                  : `Select component layer: ${s.components.find((c) => `component:${c.id}` === id)?.type}`
-            }
-            data-sel={selectedLayer === id}
+            kind={entries.get(id)?.type}
+            label={`Select ${entries.get(id)?.type} layer${id === "video" ? "" : `: ${entries.get(id)?.label}`}`}
+            selected={selectedLayer === id}
             style={{ top: rows.get(id), height: id === "video" ? 56 : 26 }}
             disabled={!!s.tryMode}
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              if (e.button > 0) return;
-              timelineRef.current?.setPointerCapture(e.pointerId);
-              pointer.current = {
-                x: e.clientX,
-                start: s.t,
-                dragged: false,
-                clipIndex: -2,
-              };
-              selectLayer(id);
-              layerDrag.begin(id, e, true);
-            }}
-            onClick={(e) => {
-              if (e.detail === 0) selectLayer(id);
-            }}
           >
             <Icon
               name={
                 id === "video"
                   ? "edit"
-                  : id.startsWith("text:")
+                  : entries.get(id)?.type === "text"
                     ? "text"
-                    : "components"
+                    : entries.get(id)?.visual
+                      ? "components"
+                      : "music"
               }
               size={20}
             />
-          </button>
+          </LayerReorderHandle>
         ))}
-        {s.audioClips.map((clip, index) => (
-          <button
-            key={clip.id}
-            className={`${styles.trackLabel} ${styles.audioLabel}`}
-            data-kind="audio"
-            style={{ top: rowEnd + index * 34, height: 28 }}
-            aria-label={`Select ${clip.name}`}
-            disabled={!!s.tryMode}
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={() =>
-              s.patch({
-                selAudio: clip.id,
-                sel: -1,
-                selComp: null,
-                selText: null,
-                playing: false,
-              })
-            }
-          >
-            <Icon name="music" size={20} />
-          </button>
-        ))}
-        {s.sound > 0 && (
-          <button
-            className={`${styles.trackLabel} ${styles.audioLabel}`}
-            data-kind="audio"
-            style={{ top: rowEnd + s.audioClips.length * 34, height: 30 }}
-            aria-label="Music"
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={() => s.patch({ sheet: "sound" })}
-          >
-            <Icon name="music" size={20} />
-          </button>
-        )}
         {layerDrag.active && (
           <div
             className={cx("layerDropTarget")}

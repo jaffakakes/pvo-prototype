@@ -6,7 +6,7 @@ import { Icon } from "../../ui/Icon";
 import styles from "./SoundMenu.module.css";
 
 export function SoundMenu({ disabled }: { disabled: boolean }) {
-  const sound = useCapture((state) => state.sound);
+  const sound = useCapture((state) => state.music?.track ?? 0);
   const [position, setPosition] = useState<{
     bottom: number;
     right: number;
@@ -40,6 +40,7 @@ export function SoundMenu({ disabled }: { disabled: boolean }) {
     ],
     ["music", "Sound effect", "soundEffects"],
     ["microphone", "Voiceover", "voiceover"],
+    ...(sound > 0 ? [["music", "Volume", "volume"] as const] : []),
   ] as const;
   return (
     <>
@@ -107,6 +108,9 @@ export function SoundMenu({ disabled }: { disabled: boolean }) {
                     selText: null,
                     selComp: null,
                     selAudio: null,
+                    selMusic:
+                      !!useCapture.getState().music &&
+                      (sheet === "sound" || sheet === "volume"),
                     playing: false,
                     orb: false,
                   });

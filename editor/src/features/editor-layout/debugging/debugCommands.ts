@@ -1,4 +1,5 @@
 import { useCapture } from "../../../state/captureStore";
+import { openComponentDesign } from "../../../state/components/componentLayerCommands";
 import { selectComponentSourcePart, setComponentAuthoringTab } from "../../../state/components/componentAuthoringStore";
 import { setAdvancedEditingEnabled } from "../../../state/preferences/editorPreferences";
 import { stopTry } from "../../preview/tryMode";
@@ -19,7 +20,7 @@ export function editDebugComponent(componentId: string, tab: "action" | "logic")
   setDebugOpen(false);
   const current = useCapture.getState();
   if (current.currentSceneId !== owner.id) current.switchScene(owner.id);
-  useCapture.getState().patch({ sel: -1, selText: null, selComp: componentId, sheet: "component", playing: false, ratioMenu: false });
+  openComponentDesign(componentId);
   if (tab === "logic") {
     setAdvancedEditingEnabled(true);
     selectComponentSourcePart(componentId, "logic");

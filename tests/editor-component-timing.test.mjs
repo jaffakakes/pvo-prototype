@@ -20,7 +20,7 @@ const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9
 function fixture(type = "tooltip") {
   const clip = mkClip(8, null, 0);
   useCapture.setState({
-    scenes: [{ id: "main", name: "Main", clips: [clip], texts: [], components: [], muted: false, sound: 0 }],
+    scenes: [{ id: "main", name: "Main", clips: [clip], texts: [], components: [], muted: false, music: null }],
     currentSceneId: "main", clips: [clip], texts: [], components: [], layers: ["video"],
     t: 1, sel: -1, selComp: null, selText: null, past: [], future: [], sheet: null, tryMode: null, playheadPick: null,
   });

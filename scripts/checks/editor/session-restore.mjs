@@ -1,6 +1,7 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import { chromium } from "playwright-core";
+
 import {
   installSupabaseFixture,
   fillEmailForm,
@@ -34,10 +35,7 @@ const server = createServer(async (request, response) => {
 server.on("upgrade", (_request, socket) => socket.destroy());
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
-const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROME_PATH ||
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+const browser = await launchBrowser({
   headless: true,
 });
 try {

@@ -15,7 +15,7 @@
 }
 
 .card[data-selected="true"] {
-  border-color: var(--pale);
+  border-color: var(--strong);
   box-shadow: 2px 2px 0 var(--button-shadow);
 }
 
@@ -47,7 +47,7 @@
 }
 
 .card button:disabled { opacity: .55; cursor: default; }
-.card button:focus-visible { outline: 3px solid var(--pale); outline-offset: 2px; }
+.card button:focus-visible { outline: 3px solid var(--strong); outline-offset: 2px; }
 
 .confirm { display: flex; flex-direction: column; gap: 8px; }
 .confirm button:last-child { background: transparent; color: var(--text); }

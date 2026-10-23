@@ -1,0 +1,17 @@
+{
+  "runtimeDirectories": ["editor/src", "player", "server", "packages"],
+  "toolDirectories": ["scripts", "tests"],
+  "htmlDirectories": ["editor", "player", "share", "public", "examples"],
+  "applicationEntries": [
+    "editor/src/main.tsx",
+    "player/app.js",
+    "player/publication/entry.js",
+    "server/worker.js"
+  ],
+  "manualEntries": [
+    {
+      "path": "server/render/start.js",
+      "reason": "The render container's Dockerfile starts this process directly."
+    }
+  ]
+}

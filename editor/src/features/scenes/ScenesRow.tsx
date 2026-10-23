@@ -6,6 +6,7 @@ import { useCapture } from "../../state/captureStore";
 import { Icon } from "../../ui/Icon";
 import { fmt } from "../../ui/formatTime";
 import { DebugEntry } from "../editor-layout/debugging/DebugEntry";
+import { TimelineAnimationControls } from "../animation/TimelineAnimationControls";
 import styles from "./Scenes.module.css";
 
 type Props = {
@@ -82,6 +83,7 @@ export const ScenesRow = forwardRef<HTMLButtonElement, Props>(
             <Icon name="plus" size={13} /> Scene
           </button>
         </div>
+        <TimelineAnimationControls />
         <button
           ref={treeButtonRef}
           className={styles.treeButton}

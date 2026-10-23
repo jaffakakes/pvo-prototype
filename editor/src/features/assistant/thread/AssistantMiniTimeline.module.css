@@ -1,0 +1,133 @@
+.band {
+  --band: var(--text);
+  --band-ink: var(--ground);
+  flex: none;
+  margin: 10px 12px 0;
+  padding: 10px 12px 12px;
+  border-radius: 14px;
+  background: var(--band);
+  color: var(--band-ink);
+}
+.track {
+  position: relative;
+  min-height: 50px;
+}
+.band[data-folded="true"] {
+  padding-block: 10px;
+}
+.band[data-folded="true"] .track {
+  min-height: 48px;
+}
+.band[data-folded="true"] .lanes {
+  display: none;
+}
+.band[data-folded="true"] .seek {
+  touch-action: none;
+}
+.ruler {
+  position: relative;
+  height: 18px;
+  pointer-events: none;
+}
+.ruler span {
+  position: absolute;
+  top: 0;
+  color: color-mix(in srgb, var(--band-ink) 65%, transparent);
+  font: 700 9px/12px var(--f-ui);
+  font-variant-numeric: tabular-nums;
+  transform: translateX(-50%);
+}
+.ruler span:first-child {
+  transform: none;
+}
+.ruler span:last-child {
+  transform: translateX(-100%);
+}
+.filmstrip {
+  display: flex;
+  height: 30px;
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--band-ink) 30%, transparent);
+  border-radius: 6px;
+}
+.frame {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+.frame > span {
+  width: 100%;
+  height: 100%;
+}
+.lanes {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.lanes:not(:empty) {
+  margin-top: 6px;
+}
+.lane {
+  position: relative;
+  height: 12px;
+}
+.lane span {
+  position: absolute;
+  height: 12px;
+  overflow: hidden;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--band-ink) 12%, transparent);
+  color: var(--band-ink);
+  font: 800 9px/12px var(--f-ui);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.lane span[data-component="true"] {
+  background: color-mix(in srgb, var(--violet) 28%, transparent);
+  color: color-mix(in srgb, var(--violet) 30%, var(--band-ink));
+}
+.playhead {
+  position: absolute;
+  top: -2px;
+  bottom: -6px;
+  z-index: 1;
+  width: 2px;
+  background: var(--accent);
+  pointer-events: none;
+}
+.playhead span {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  min-width: 40px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 5px;
+  background: var(--accent);
+  color: var(--onAccent);
+  font: 800 9px/1 var(--f-ui);
+  font-variant-numeric: tabular-nums;
+  transform: translateX(var(--pill-shift));
+}
+.seek {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  min-height: 44px;
+  margin: 0;
+  opacity: 0;
+  cursor: ew-resize;
+  touch-action: pan-y;
+}
+.track:focus-within {
+  outline: 2px solid var(--strong);
+  outline-offset: 5px;
+  border-radius: 3px;
+}

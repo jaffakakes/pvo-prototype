@@ -15,6 +15,7 @@ import {
 } from "../../state/assistant/assistantStore";
 import { cx } from "../../styles";
 import { Icon } from "../../ui/Icon";
+import { useSheetDock } from "../../ui/sheets/SheetDockContext";
 import { fmt } from "../../ui/formatTime";
 import { deleteSelectedClip, splitAtPlayhead } from "./clipCommands";
 import { acceptPlayheadPick, cancelPlayheadPick } from "./playheadPick";
@@ -24,11 +25,13 @@ import { SoundMenu } from "../sound/SoundMenu";
 import { VoiceoverControls } from "../sound/VoiceoverControls";
 
 export function ToolRow() {
+  const dock = useSheetDock();
   const playheadPick = useCapture((state) => state.playheadPick);
   const sel = useCapture((state) => state.sel);
   const selComp = useCapture((state) => state.selComp);
   const selText = useCapture((state) => state.selText);
   const clips = useCapture((state) => state.clips);
+  const selectedMusic = useCapture((state) => state.selMusic && !!state.music);
   const selectedAudio = useCapture((state) =>
     state.audioClips.find((clip) => clip.id === state.selAudio),
   );
@@ -39,6 +42,7 @@ export function ToolRow() {
   const playhead = useCapture((state) => state.t);
   const voiceover = useCapture((state) => state.sheet === "voiceover");
   const ratioOpen = useCapture((state) => state.sheet === "ratio");
+  const sheet = useCapture((state) => state.sheet);
   if (assistantActive) return null;
   if (ratioOpen) return <AspectRatioPanel />;
   if (voiceover) return <VoiceoverControls />;
@@ -79,6 +83,7 @@ export function ToolRow() {
       </div>
     );
   }
+  if (sheet) return null;
   const selected = sel >= 0 ? clips[sel] : null;
   const selectedComp = components.find((component) => component.id === selComp);
   const selectedText = texts.find((text) => text.id === selText);
@@ -86,18 +91,20 @@ export function ToolRow() {
     const s = useCapture.getState();
     const selected = s.sel >= 0 ? s.clips[s.sel] : null;
     const selectedText = s.texts.find((text) => text.id === s.selText);
-    if (name === "extractAudio") extractSelectedAudio();
+    if (name === "musicDelete")
+      s.edit({ music: null, selMusic: false, sheet: null });
+    else if (name === "musicReplace") s.patch({ sheet: "sound" });
+    else if (name === "extractAudio") extractSelectedAudio();
     else if (name === "audioSplit") splitSelectedAudio();
     else if (name === "audioDelete") deleteSelectedAudio();
     else if (name === "audioDuplicate") duplicateSelectedAudio();
     else if (name === "audioMute" && selectedAudio)
       updateSelectedAudio({ muted: !selectedAudio.muted });
-    else if (["textCollapse", "collapse"].includes(name)) clearSelection();
+    else if (["textCollapse", "collapse"].includes(name))
+      void clearSelection(dock?.dismissFromTransport);
     else if (name === "textEdit") s.patch({ sheet: "text", playing: false });
     else if (name === "textTiming")
       s.patch({ sheet: "textTiming", playing: false });
-    else if (name === "animation")
-      s.patch({ sheet: "animation", playing: false, orb: false });
     else if (name === "textDuplicate" && selectedText)
       s.duplicateText(selectedText.id);
     else if (name === "textDelete" && selectedText)
@@ -127,7 +134,7 @@ export function ToolRow() {
         orb: false,
       });
   };
-  type CaptureStateSheet = "text" | "sound" | "speed" | "crop";
+  type CaptureStateSheet = "text" | "sound" | "speed" | "crop" | "volume";
   if (selectedComp && !trying)
     return <ComponentToolbar component={selectedComp} />;
   const tools = selected
@@ -138,7 +145,7 @@ export function ToolRow() {
         ["delete", "Delete", "delete"],
         ["speed", "Speed", "speed"],
         ["crop", "Crop", "crop"],
-        ["keyframe", "Animate", "animation"],
+        ["music", "Volume", "volume"],
         ...(!selected.audioDetached && selected.url
           ? [["music", "Extract audio", "extractAudio"]]
           : []),
@@ -150,38 +157,46 @@ export function ToolRow() {
         ["music", "Sound", "sound"],
         ["ratio", "Aspect ratio", "ratio"],
       ];
-  const activeTools = selectedAudio
+  const activeTools = selectedMusic
     ? [
         ["down", "", "collapse"],
-        ["split", "Split", "audioSplit"],
-        ["plus", "Duplicate", "audioDuplicate"],
-        ["keyframe", "Animate", "animation"],
-        [
-          selectedAudio.muted ? "muted" : "music",
-          selectedAudio.muted ? "Unmute" : "Mute",
-          "audioMute",
-        ],
-        ["delete", "Delete", "audioDelete"],
+        ["replace", "Replace", "musicReplace"],
+        ["music", "Volume", "volume"],
+        ["delete", "Delete", "musicDelete"],
       ]
-    : selectedText
+    : selectedAudio
       ? [
-          ["down", "", "textCollapse"],
-          ["edit", "Edit text", "textEdit"],
-          ["timer", "Timing", "textTiming"],
-          ["keyframe", "Animate", "animation"],
-          ["plus", "Duplicate", "textDuplicate"],
-          ["delete", "Delete", "textDelete"],
+          ["down", "", "collapse"],
+          ["split", "Split", "audioSplit"],
+          ["plus", "Duplicate", "audioDuplicate"],
+          ["music", "Volume", "volume"],
+          [
+            selectedAudio.muted ? "muted" : "music",
+            selectedAudio.muted ? "Unmute" : "Mute",
+            "audioMute",
+          ],
+          ["delete", "Delete", "audioDelete"],
         ]
-      : tools;
-  const toolSet = selectedAudio
-    ? "audio"
-    : selectedText
-      ? "text"
-      : selectedComp
-        ? "component"
-        : selected
-          ? "clip"
-          : "main";
+      : selectedText
+        ? [
+            ["down", "", "textCollapse"],
+            ["edit", "Edit text", "textEdit"],
+            ["timer", "Timing", "textTiming"],
+            ["plus", "Duplicate", "textDuplicate"],
+            ["delete", "Delete", "textDelete"],
+          ]
+        : tools;
+  const toolSet = selectedMusic
+    ? "music"
+    : selectedAudio
+      ? "audio"
+      : selectedText
+        ? "text"
+        : selectedComp
+          ? "component"
+          : selected
+            ? "clip"
+            : "main";
   return (
     <div className={`${cx("toolBar")} ${styles.toolbar}`} data-trying={trying}>
       <div key={toolSet} className={cx("tools")}>
@@ -193,7 +208,11 @@ export function ToolRow() {
               key={name}
               className={cx(`tool tool-${name}`)}
               onClick={() => action(name)}
-              disabled={trying}
+              disabled={
+                trying ||
+                (["textCollapse", "collapse"].includes(name) &&
+                  !!dock?.dismissDisabled)
+              }
               aria-label={
                 label ||
                 (selectedText ? "Collapse text tools" : "Collapse clip tools")

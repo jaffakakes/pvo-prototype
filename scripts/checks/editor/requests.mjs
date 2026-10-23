@@ -1,7 +1,8 @@
-import { openEditorSettings } from "../helpers/editor-settings.mjs";
+import { launchBrowser } from "../helpers/browser.mjs";
+import { openEditorSettings, closeEditorSettings } from "../helpers/editor-settings.mjs";
 import assert from "node:assert/strict";
 import http from "node:http";
-import { chromium } from "playwright-core";
+
 
 const requests = [];
 const fixture = http.createServer(async (req, res) => {
@@ -18,8 +19,7 @@ const fixture = http.createServer(async (req, res) => {
 });
 await new Promise(resolve => fixture.listen(0, "127.0.0.1", resolve));
 const port = fixture.address().port;
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+const browser = await launchBrowser({
   headless: true,
   args: ["--no-sandbox"],
 });
@@ -76,14 +76,14 @@ try {
   // Request actions are authored in Advanced; project request hosts remain separate.
   const componentId = await page.evaluate(() => window.__requestTestId);
   await openEditorSettings(page);
-  const moreDialog = page.getByRole("dialog", { name: "More" });
+  const moreDialog = page.getByRole("dialog", { name: /^(Project settings|Editor settings)$/ });
   await moreDialog.waitFor({ state: "visible" });
   const advancedEditing = moreDialog.getByRole("switch", { name: "Advanced edits", exact: true });
   assert.equal(await advancedEditing.getAttribute("aria-checked"), "false",
     "Component code editing starts disabled");
   await advancedEditing.click();
   await moreDialog.getByRole("switch", { name: "Advanced edits", checked: true }).waitFor();
-  await page.getByRole("button", { name: "Close sheet", exact: true }).click();
+  await closeEditorSettings(page);
 
   await page.evaluate(() => window.__requestTestStore.getState().patch({ selComp: window.__requestTestId, sheet: "component" }));
   const componentDialog = page.getByRole("dialog", { name: "Form" });

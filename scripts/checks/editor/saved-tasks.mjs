@@ -1,5 +1,6 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
-import { chromium } from "playwright-core";
+
 import {
   taskFixture,
   ORIGIN,
@@ -27,10 +28,7 @@ const fixture = await taskFixture({
     );
   },
 });
-const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROME_PATH ||
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+const browser = await launchBrowser({
   headless: true,
 });
 let releaseLost;

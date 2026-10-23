@@ -11,7 +11,11 @@ import type { AudioClip } from "../../domain/audio/model";
 import { uid } from "../../infrastructure/ids";
 import { useCapture } from "../captureStore";
 import { assistantFocused, useAssistant } from "../assistant/assistantStore";
-import { projectSnapshot } from "../project/history";
+import {
+  projectSnapshot,
+  commitGestureHistory,
+  ownsHistory,
+} from "../project/history";
 import type { CaptureState } from "../types";
 
 const blocked = () => {
@@ -151,8 +155,7 @@ export function beginAudioTimingDrag(id: number, mode: "move" | "l" | "r") {
     const state = useCapture.getState();
     return (
       !ended &&
-      state.past === before.past &&
-      state.future === before.future &&
+      ownsHistory(state, before) &&
       state.currentSceneId === before.currentSceneId &&
       !blocked() &&
       state.audioClips.some((clip) => clip.id === id)
@@ -160,12 +163,7 @@ export function beginAudioTimingDrag(id: number, mode: "move" | "l" | "r") {
   };
   const cancel = () => {
     const state = useCapture.getState();
-    if (
-      !ended &&
-      changed &&
-      state.past === before.past &&
-      state.future === before.future
-    ) {
+    if (!ended && changed && ownsHistory(state, before)) {
       const scene = state.scenes.find(
         (item) => item.id === before.currentSceneId,
       );
@@ -212,9 +210,7 @@ export function beginAudioTimingDrag(id: number, mode: "move" | "l" | "r") {
         return;
       }
       if (changed)
-        useCapture
-          .getState()
-          .patch({ past: [...before.past, snapshot].slice(-40), future: [] });
+        commitGestureHistory(useCapture.getState(), before, snapshot);
       ended = true;
     },
     cancel,

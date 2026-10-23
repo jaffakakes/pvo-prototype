@@ -22,22 +22,23 @@ export function withAnimationRows(
   lanes: AnimationLane[],
 ): DesktopLayerLayout {
   const target = lanes[0]?.target;
-  if (!target || target.kind === "audio" || target.kind === "music")
-    return layout;
+  if (!target) return layout;
   const layerId =
-    target.kind === "clip" ? "video" : `${target.kind}:${target.id}`;
+    target.kind === "music"
+      ? "music"
+      : target.kind === "clip"
+        ? "video"
+        : `${target.kind}:${target.id}`;
   const rows: DesktopLayerRow[] = layout.rows.flatMap((row) => {
     if (!row.layerIds.some((id) => id === layerId)) return [row];
     return [
       row,
-      ...lanes.map(
-        (lane, index): DesktopLayerRow => ({
-          id: `animation:${index}`,
-          kind: "animation",
-          layerIds: [],
-          lane,
-        }),
-      ),
+      ...lanes.map((lane, index): DesktopLayerRow => ({
+        id: `animation:${index}`,
+        kind: "animation",
+        layerIds: [],
+        lane,
+      })),
     ];
   });
   const rowIndexByLayer: DesktopLayerLayout["rowIndexByLayer"] = {};

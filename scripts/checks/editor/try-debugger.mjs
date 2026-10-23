@@ -1,7 +1,8 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
+
 
 // Real sandbox + SDK execution; only the remote HTTP service is a local fixture.
 const editorUrl = process.env.EDITOR_URL || "http://127.0.0.1:5173/";
@@ -19,8 +20,7 @@ const service = createServer(async (request, response) => {
 });
 await new Promise(resolve => service.listen(0, "127.0.0.1", resolve));
 const endpoint = `http://127.0.0.1:${service.address().port}`;
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+const browser = await launchBrowser({
   headless: true,
 });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -37,7 +37,7 @@ async function seed(path = "/missing") {
     const { componentLanguageSource, compiledComponentChanges } = await import("/src/domain/components/languageCompilation.ts");
     const { useTryDebugStore } = await import("/src/state/debugging/tryDebugStore.ts");
     const clips = [mkClip(40, null, 0)];
-    const scene = { id: "main", name: "Quiz", clips, components: [], texts: [], audioClips: [], muted: false, sound: 0, layers: ["video"] };
+    const scene = { id: "main", name: "Quiz", clips, components: [], texts: [], audioClips: [], muted: false, music: null, layers: ["video"] };
     useCapture.setState({ localId: crypto.randomUUID(), scenes: [scene], currentSceneId: "main", clips, components: [], texts: [], audioClips: [], layers: ["video"],
       screen: "editor", t: 0, tryMode: null, sheet: null, sel: -1, selText: null, selComp: null, past: [], future: [] });
     const id = useCapture.getState().addComponent("choice");

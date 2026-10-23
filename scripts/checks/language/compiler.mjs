@@ -1,8 +1,9 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import { sourceModules } from "../helpers/source-assets.mjs";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
-import { chromium } from "playwright-core";
+
 
 // Prerequisites: `npm run build:language` and Chrome (or CHROME_PATH).
 const paths = [
@@ -94,10 +95,7 @@ await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
 let browser;
 try {
-  browser = await chromium.launch({
-    executablePath:
-      process.env.CHROME_PATH ||
-      "C:/Program Files/Google/Chrome/Application/chrome.exe",
+  browser = await launchBrowser({
     headless: true,
   });
   const page = await browser.newPage();

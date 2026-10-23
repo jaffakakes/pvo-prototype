@@ -1,10 +1,8 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
-import { chromium } from "playwright-core";
 
-const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROME_PATH ||
-    "C:/Program Files/Google/Chrome/Application/chrome.exe",
+
+const browser = await launchBrowser({
   headless: true,
 });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -62,7 +60,7 @@ try {
       texts: [],
       components: [],
       muted: false,
-      sound: 0,
+      music: null,
       layers: ["video"],
     };
     const capture = window.pickerCapture.getState();

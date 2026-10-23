@@ -1,16 +1,12 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { mkdir } from "node:fs/promises";
-import { chromium } from "playwright-core";
+
 import { createSheetDockChecks } from "../helpers/editor-sheet-dock.mjs";
 
 const url = process.env.EDITOR_URL || "http://127.0.0.1:5173/";
-const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROME_PATH ||
-    (process.platform === "darwin"
-      ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-      : "C:/Program Files/Google/Chrome/Application/chrome.exe"),
+const browser = await launchBrowser({
   headless: true,
 });
 const context = await browser.newContext({
@@ -38,13 +34,15 @@ const current = () =>
       await import("/src/state/captureStore.ts")
     ).useCapture.getState();
     return {
-      sound: state.sound,
+      sound: state.music?.track ?? 0,
       past: state.past.length,
       t: state.t,
       playing: state.playing,
     };
   });
 const open = async () => {
+  const collapse = page.getByRole("button", { name: /^Collapse .* tools$/ });
+  if (await collapse.count()) await collapse.click();
   await page.getByRole("button", { name: "Sound", exact: true }).click();
   await page.getByRole("menuitem", { name: /^(Add sound|Replace)$/ }).click();
   const sheet = page.getByRole("dialog", {

@@ -1,14 +1,14 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
+
 import { parseNativeTurnRequest } from "../../../packages/pvo-assistant/native/index.js";
 import { componentSourceResult, finishAssistantVerification, installAssistantAvailabilityFixture } from "./assistant-fixture.mjs";
 
 // Vite serves the real editor state and WASM compiler. Only AI HTTP responses are fixtures.
 const root = fileURLToPath(new URL("../../../", import.meta.url)).replaceAll("\\", "/");
 const url = process.env.EDITOR_URL || process.env.RESTYLE_EDITOR_URL || "http://127.0.0.1:5173/";
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+const browser = await launchBrowser({
   headless: true, args: ["--no-sandbox"],
 });
 const request = {
@@ -95,7 +95,7 @@ async function seed(page, type, source) {
         pvo: source, pvoLastValid: { ...source }, pvoCompiled: { structure: compiled.structure, rules: compiled.rules } } };
     const clips = [mkClip(20, null, 0)];
     const scene = { id: "main", name: "Main", parent: null, clips, texts: [], components: [component],
-      layers: ["video", `component:${id}`], muted: true, sound: -1 };
+      layers: ["video", `component:${id}`], muted: true, music: null };
     window.capture = useCapture;
     window.assistant = useAssistant;
     setAdvancedEditingEnabled(true);

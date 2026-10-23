@@ -1,7 +1,11 @@
 import type { LayerId } from "../../domain/layers/model";
 import { layerOrder } from "../../domain/layers/order";
 import { useCapture } from "../captureStore";
-import { projectSnapshot } from "../project/history";
+import {
+  projectSnapshot,
+  commitGestureHistory,
+  ownsHistory,
+} from "../project/history";
 
 const sameOrder = (a: readonly LayerId[], b: readonly LayerId[]) =>
   a.length === b.length && a.every((id, index) => id === b[index]);
@@ -20,10 +24,7 @@ export function beginLayerReorderDrag(id: LayerId) {
   const unchangedProjectHistory = () => {
     const state = useCapture.getState();
     return (
-      !ended &&
-      state.localId === before.localId &&
-      state.past === before.past &&
-      state.future === before.future
+      !ended && state.localId === before.localId && ownsHistory(state, before)
     );
   };
   const ownsPreview = () => {
@@ -77,10 +78,7 @@ export function beginLayerReorderDrag(id: LayerId) {
       }
       if (!sameOrder(preview, original)) {
         const state = useCapture.getState();
-        state.patch({
-          past: [...state.past, snapshot].slice(-40),
-          future: [],
-        });
+        commitGestureHistory(state, before, snapshot);
       }
       ended = true;
       return true;

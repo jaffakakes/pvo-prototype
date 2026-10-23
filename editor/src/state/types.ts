@@ -42,21 +42,22 @@ export type SheetName =
   | null
   | "speed"
   | "crop"
+  | "volume"
+  | "keyframes"
+  | "volumeKeyframes"
   | "text"
   | "textTiming"
   | "sound"
   | "soundEffects"
   | "voiceover"
   | "ratio"
-  | "more"
+  | "replies"
   | "export"
   | "discard"
   | "components"
   | "component"
   | "componentOpacity"
-  | "componentTransform"
-  | "componentTiming"
-  | "animation";
+  | "componentTiming";
 export type OverlayUpdateOptions = {
   /** A reversible drag preview keeps its magnetic playhead fixed until commit. */
   preservePlayhead?: boolean;
@@ -85,7 +86,7 @@ export type CaptureState = {
   texts: TextOverlay[];
   components: PvoComponent[];
   muted: boolean;
-  sound: number;
+  music: Scene["music"];
   layers: LayerId[];
   ratio: Ratio;
   coverAt: number;
@@ -95,6 +96,7 @@ export type CaptureState = {
   selComp: string | null;
   selText: number | null;
   selAudio: number | null;
+  selMusic: boolean;
   t: number;
   playing: boolean;
   trim: {
@@ -110,7 +112,6 @@ export type CaptureState = {
   ratioMenu: boolean;
   draft: string;
   tColor: number;
-  exportFormat: "video" | "pvo";
   quality: ExportQuality;
   ex: "idle" | "running" | "done";
   exPct: number;

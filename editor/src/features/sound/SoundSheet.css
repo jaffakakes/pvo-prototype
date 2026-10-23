@@ -45,7 +45,7 @@
   font: 700 14px var(--f-ui);
 }
 .soundRow[data-on="true"] strong {
-  color: var(--accent);
+  color: var(--strong);
 }
 .soundChoice small {
   color: var(--muted);
@@ -59,7 +59,7 @@
 .soundChoice > svg {
   flex: none;
   margin-right: 4px;
-  color: var(--accent);
+  color: var(--strong);
 }
 .soundAdd {
   display: grid;

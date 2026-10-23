@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from "react";
+import { useId } from "react";
 import { componentPixelSize, componentSize, MAX_COMPONENT_PIXELS } from "../../../../../packages/pvo-component-runtime/index.js";
 import { resizeComponentPixels } from "../../../domain/components/pixelSize";
 import { projectCanvasSize } from "../../../domain/project/ratio";
@@ -6,44 +6,8 @@ import type { PvoComponent } from "../../../domain/project/model";
 import { useCapture } from "../../../state/captureStore";
 import { useComponentMeasurements } from "../../../state/components/componentMeasurements";
 import styles from "./ComponentSizeControls.module.css";
-
-function SizeField({ label, value, descriptionId, onCommit }: {
-  label: string;
-  value: number | null;
-  descriptionId: string;
-  onCommit: (value: number) => void;
-}) {
-  const [draft, setDraft] = useState<string | null>(null);
-  const cancelled = useRef(false);
-  return <label className={styles.field}>
-    <span>{label} <span className={styles.unit}>(px)</span></span>
-    <input
-      type="number"
-      aria-label={`${label} (px)`}
-      aria-describedby={descriptionId}
-      min="1"
-      max={MAX_COMPONENT_PIXELS}
-      step="1"
-      disabled={value === null}
-      value={draft ?? (value === null ? "" : Math.round(value))}
-      onFocus={() => { cancelled.current = false; }}
-      onChange={event => setDraft(event.target.value)}
-      onBlur={() => {
-        if (!cancelled.current && draft !== null && draft.trim() && Number.isFinite(Number(draft))) {
-          onCommit(Number(draft));
-        }
-        setDraft(null);
-      }}
-      onKeyDown={event => {
-        if (event.key !== "Enter" && event.key !== "Escape") return;
-        event.preventDefault();
-        event.stopPropagation();
-        cancelled.current = event.key === "Escape";
-        event.currentTarget.blur();
-      }}
-    />
-  </label>;
-}
+import { PixelField } from "../../overlay-position/LayerPositionControls";
+import positionStyles from "../../overlay-position/LayerPositionControls.module.css";
 
 /** Host geometry stays editable for visual and code-owned components alike. */
 export function ComponentSizeControls({ component }: { component: PvoComponent }) {
@@ -67,10 +31,10 @@ export function ComponentSizeControls({ component }: { component: PvoComponent }
         Reset size
       </button>
     </div>
-    <div className={styles.fields}>
-      <SizeField label="Width" value={size?.width ?? null} descriptionId={descriptionId}
+    <div className={positionStyles.fields}>
+      <PixelField min={1} max={MAX_COMPONENT_PIXELS} label="Width" value={size?.width ?? null} descriptionId={descriptionId}
         onCommit={pixels => resize("width", pixels)} />
-      <SizeField label="Height" value={size?.height ?? null} descriptionId={descriptionId}
+      <PixelField min={1} max={MAX_COMPONENT_PIXELS} label="Height" value={size?.height ?? null} descriptionId={descriptionId}
         onCommit={pixels => resize("height", pixels)} />
     </div>
     <p id={descriptionId}>Pixels on the {canvas.width} × {canvas.height} canvas. Press Enter or leave the field to apply.</p>

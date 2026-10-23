@@ -1,11 +1,14 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright-core";
-import { createSheetDockChecks } from "../helpers/editor-sheet-dock.mjs";
-import { openEditorSettings } from "../helpers/editor-settings.mjs";
 
-const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH,
+import { createSheetDockChecks } from "../helpers/editor-sheet-dock.mjs";
+import {
+  openEditorSettings,
+  closeEditorSettings,
+} from "../helpers/editor-settings.mjs";
+
+const browser = await launchBrowser({
   headless: true,
 });
 const editorUrl = process.env.EDITOR_URL || "http://127.0.0.1:5173/";
@@ -42,7 +45,7 @@ try {
       });
       if (await collapse.count()) await collapse.click();
     };
-    const closeSheet = async (panel) => {
+    const closeSheet = async (panel, tool = false) => {
       await panel.waitFor();
       await settle();
       assert.equal(
@@ -51,14 +54,17 @@ try {
           .count(),
         0,
       );
-      assert.equal(await close.count(), 1);
+      const dismiss = tool
+        ? controls.getByRole("button", { name: "Close tool", exact: true })
+        : close;
+      assert.equal(await dismiss.count(), 1);
       assert.equal(
         await panel
           .getByRole("button", { name: /^(Close|Done|Back|Close Animate)$/ })
           .count(),
         0,
       );
-      const box = await close.boundingBox();
+      const box = await dismiss.boundingBox();
       assert(box.width >= 44 && box.height >= 44);
       const preview = await page.locator(".pvBox").boundingBox();
       for (const button of await controls.getByRole("button").all()) {
@@ -75,7 +81,7 @@ try {
         );
       }
       assert.equal(
-        await close.evaluate((el) => getComputedStyle(el).boxShadow),
+        await dismiss.evaluate((el) => getComputedStyle(el).boxShadow),
         "none",
       );
       if (
@@ -86,7 +92,7 @@ try {
         await page.screenshot({
           path: `${process.env.PVO_EDITOR_ARTIFACTS}/sheet-close-${width}-${theme}.png`,
         });
-      await close.click();
+      await dismiss.click();
       await panel.waitFor({ state: "hidden" });
       await settle();
       await controls
@@ -120,14 +126,14 @@ try {
       }
       await mainTools();
       await page.locator(".tlClip").first().click();
-      for (const name of ["Speed", "Crop", "Animate"]) {
+      for (const name of ["Speed", "Crop", "Volume"]) {
         await page
           .getByRole("button", {
-            name: name === "Animate" ? /Animate$/ : name,
-            exact: name !== "Animate",
+            name,
+            exact: true,
           })
           .click();
-        await closeSheet(page.getByRole("dialog", { name, exact: true }));
+        await closeSheet(page.getByRole("region", { name, exact: true }), true);
       }
       await mainTools();
       for (const [item, name, role] of [
@@ -174,7 +180,7 @@ try {
       );
       await mainTools();
       await openEditorSettings(page);
-      await closeSheet(page.getByRole("dialog", { name: "More", exact: true }));
+      await closeEditorSettings(page);
       assert.deepEqual(errors, []);
       console.log(
         `${width} × ${height} ${theme}: shared X across editing sheets, text commit/Undo/Redo and keyboard layout passed.`,

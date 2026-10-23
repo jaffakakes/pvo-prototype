@@ -24,7 +24,7 @@
   cursor: default;
 }
 .root button:focus-visible {
-  outline: 2px solid var(--pale);
+  outline: 2px solid var(--strong);
   outline-offset: 4px;
 }
 .dismissArea {
@@ -54,7 +54,7 @@
   width: 100%;
   height: 100%;
   padding: 0;
-  border: 3px solid var(--outline);
+  border: 2px dashed var(--strong);
   border-radius: 50%;
   background: var(--surface);
   box-shadow: var(--shadow-control);
@@ -76,10 +76,7 @@
   pointer-events: none;
   transition: opacity 250ms ease;
 }
-:global(html[data-theme="light"])
-  .root[data-assistant-phase="idle"]:not([data-thread-open="true"])
-  .orb
-  img {
+:global(html[data-theme="light"]) .orb img {
   filter: none;
 }
 .stopIcon {
@@ -126,8 +123,10 @@
 }
 .root:not([data-assistant-phase="idle"]) .orb,
 .root[data-thread-open="true"] .orb {
-  background: var(--accent);
-  color: var(--button-primary-text);
+  background: var(--surface);
+  color: var(--text);
+}
+.root[data-assistant-phase="working"] .orb {
   animation: breathe 1600ms ease-in-out infinite;
 }
 .root[data-assistant-phase="typing"] .orbAnchor,
@@ -142,7 +141,7 @@
   transform: scale(1.1);
 }
 .root[data-assistant-phase="listening"] .orbRing {
-  box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 28%, transparent);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--strong) 28%, transparent);
   animation: listening 1300ms ease-in-out infinite;
 }
 .root:is([data-assistant-phase="working"], [data-assistant-phase="review"])
@@ -205,7 +204,7 @@
   color: var(--text);
   font-size: 13px;
   font-weight: 700;
-  caret-color: var(--accent);
+  caret-color: var(--strong);
 }
 .root .field input:focus-visible {
   outline: none;
@@ -291,8 +290,8 @@
   flex: none;
   width: 16px;
   height: 16px;
-  border: 2.5px solid color-mix(in srgb, var(--accent) 22%, transparent);
-  border-top-color: var(--accent);
+  border: 2.5px solid color-mix(in srgb, var(--strong) 22%, transparent);
+  border-top-color: var(--strong);
   border-radius: 50%;
   animation: spin 900ms linear infinite;
 }
@@ -411,6 +410,29 @@
 .root[data-placement="workspace"][data-thread-open="true"] .liveBubble {
   bottom: 90px;
 }
+.root[data-placement="workspace"][data-in-thread-composer="true"] {
+  container-type: normal;
+}
+.root[data-placement="workspace"][data-in-thread-composer="true"] .orbAnchor {
+  inset: 0;
+  width: 44px;
+  height: 44px;
+  transition: none;
+}
+.root[data-placement="workspace"][data-in-thread-composer="true"] .orb {
+  border-width: 2.5px;
+  box-shadow: 2px 2px 0 var(--outline);
+}
+.root[data-placement="workspace"][data-in-thread-composer="true"] .orb img {
+  width: 23px;
+  height: 23px;
+}
+.root[data-placement="workspace"][data-in-thread-composer="true"] .liveBubble {
+  right: -2px;
+  bottom: 62px;
+  width: min(300px, calc(100vw - 60px));
+  max-height: min(240px, 35dvh);
+}
 @media (max-height: 520px) {
   .root[data-placement="workspace"] {
     --assistant-orb-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
@@ -438,7 +460,7 @@
     [data-thread-open="true"]
   )
   .orbRing {
-  border: 2px solid var(--accent);
+  border: 2px solid var(--strong);
   animation: workingPulse 1600ms ease-in-out infinite;
 }
 @keyframes workingPulse {
@@ -479,7 +501,7 @@
 }
 @keyframes listening {
   50% {
-    box-shadow: 0 0 0 11px color-mix(in srgb, var(--accent) 10%, transparent);
+    box-shadow: 0 0 0 11px color-mix(in srgb, var(--strong) 10%, transparent);
   }
 }
 @keyframes breathe {
@@ -490,7 +512,7 @@
   50% {
     box-shadow:
       var(--shadow-control),
-      0 0 22px color-mix(in srgb, var(--accent) 45%, transparent);
+      0 0 22px color-mix(in srgb, var(--strong) 45%, transparent);
   }
 }
 @keyframes pulse {

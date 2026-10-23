@@ -49,6 +49,7 @@ function seekHarness(components, { currentTime = 2, dispatch } = {}) {
     currentTime,
     paused: true,
     dataset: { assetId: "video" },
+    src: "blob:video",
     pause() {
       this.paused = true;
     },

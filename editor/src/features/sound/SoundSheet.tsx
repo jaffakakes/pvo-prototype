@@ -16,7 +16,7 @@ const sounds = SOUNDS.slice(1).map((sound, index) => ({
 }));
 
 export function SoundSheet() {
-  const soundIndex = useCapture((state) => state.sound);
+  const soundIndex = useCapture((state) => state.music?.track ?? 0);
   const duration = useCapture((state) => sceneDuration(state));
   const [title] = useState(() =>
     soundIndex > 0 ? "Replace sound" : "Add sound",

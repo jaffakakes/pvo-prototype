@@ -1,3 +1,10 @@
+import { LayerReorderHandle } from "../../timeline/LayerReorderHandle";
+import type { LayerId } from "../../../domain/layers/model";
+import type { useLayerDrag } from "../../timeline/useLayerDrag";
+import { AudioClipBar } from "../../sound/AudioClipBar";
+import { MusicClipBar } from "../../sound/MusicClipBar";
+import { AudioEnvelope } from "../../animation/timeline/AudioEnvelope";
+import { SOUNDS } from "../../sound/catalog";
 import { useState, type CSSProperties, type PointerEvent } from "react";
 import type { Scene } from "../../../domain/project/model";
 import {
@@ -23,12 +30,21 @@ export type DesktopTimelineSelection = {
   sel?: number;
   selComp?: string;
   selText?: number;
+  selMusic?: boolean;
   sheet?: "component" | "text" | "sound";
 };
 
 type VisualLayerState = Pick<
   CaptureState,
-  "clips" | "components" | "texts" | "sel" | "selComp" | "selText"
+  | "clips"
+  | "components"
+  | "texts"
+  | "sel"
+  | "selComp"
+  | "selText"
+  | "audioClips"
+  | "music"
+  | "t"
 >;
 
 function rowTemplate(rows: DesktopLayerRow[]) {
@@ -64,7 +80,13 @@ function visualGridStyle(rows: DesktopLayerRow[]): CSSProperties {
 export function DesktopVisualLayerLabels({
   rows,
   scene,
+  layerDrag,
+  selected,
+  disabled,
 }: {
+  layerDrag: ReturnType<typeof useLayerDrag>;
+  selected: LayerId | null;
+  disabled: boolean;
   rows: DesktopLayerRow[];
   scene: Scene | undefined;
 }) {
@@ -113,26 +135,69 @@ export function DesktopVisualLayerLabels({
             <div
               key={row.id}
               data-desktop-layer-label={row.id}
-              data-layer-id="video"
-              style={{ ...gridStyle, justifySelf: "end" }}
+              style={{
+                ...gridStyle,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+              }}
             >
+              <LayerReorderHandle
+                id="video"
+                drag={layerDrag}
+                label="Select video layer"
+                disabled={disabled}
+                selected={selected === "video"}
+                className={styles.reorderHandle}
+              >
+                <Icon name="edit" size={16} />
+              </LayerReorderHandle>
               <CoverButton style={{ width: 52, height: 52 }} />
             </div>
           );
-
+        if (row.kind === "audio" || row.kind === "music") {
+          const audio =
+            row.kind === "audio"
+              ? scene?.audioClips?.find((clip) => `audio:${clip.id}` === row.id)
+              : null;
+          const label =
+            audio?.name ?? SOUNDS[scene?.music?.track ?? 0]?.name ?? "Music";
+          return (
+            <LayerReorderHandle
+              key={row.id}
+              id={row.id}
+              rowId={row.id}
+              drag={layerDrag}
+              kind="audio"
+              label={`Select ${row.kind} layer: ${label}`}
+              disabled={disabled}
+              selected={selected === row.id}
+              className={styles.label}
+              style={gridStyle}
+            >
+              <Icon name="music" size={14} />
+              <span className={styles.labelText}>{label}</span>
+            </LayerReorderHandle>
+          );
+        }
         overlayNumber += 1;
+        const id = row.layerIds[0];
         return (
-          <div
+          <LayerReorderHandle
             key={row.id}
+            id={id}
+            rowId={row.id}
+            drag={layerDrag}
+            kind="overlay"
+            label={`Select layer ${overlayNumber}`}
+            disabled={disabled}
+            selected={row.layerIds.includes(selected as typeof id)}
             className={styles.label}
-            data-kind="overlay"
-            data-overlay-side={row.side}
-            data-desktop-layer-label={row.id}
             style={gridStyle}
           >
-            <span>▤</span>
+            <Icon name="components" size={14} />
             <span className={styles.labelText}>Layer {overlayNumber}</span>
-          </div>
+          </LayerReorderHandle>
         );
       })}
     </div>
@@ -199,7 +264,7 @@ function VideoLane({
                 <span className={styles.clipName}>Clip {index + 1}</span>
                 <TimelineKeyframes
                   animation={clip.animation}
-                  color="#FF9FBC"
+                  color="var(--pale)"
                   start={clip.in}
                   end={clip.out}
                 />
@@ -251,7 +316,11 @@ export function DesktopVisualLayerLanes({
   onSelect,
   scene,
   onScrub,
+  layerDrag,
+  snap,
 }: {
+  layerDrag: ReturnType<typeof useLayerDrag>;
+  snap: boolean;
   scene: Scene | undefined;
   onScrub: (event: PointerEvent<HTMLElement>) => void;
   layout: DesktopLayerLayout;
@@ -340,6 +409,54 @@ export function DesktopVisualLayerLanes({
             </div>
           );
         if (row.kind === "video") return null;
+        if (row.kind === "audio" || row.kind === "music") {
+          const audio =
+            row.kind === "audio"
+              ? state.audioClips.find((clip) => `audio:${clip.id}` === row.id)
+              : null;
+          const target = audio
+            ? { kind: "audio" as const, id: audio.id }
+            : { kind: "music" as const };
+          return (
+            <div
+              key={row.id}
+              className={styles.lane}
+              data-kind="audio"
+              data-desktop-layer-lane={row.id}
+              data-layer-id={row.id}
+              style={{ gridRow: rowIndex + 1 }}
+            >
+              {audio ? (
+                <AudioClipBar
+                  clip={audio}
+                  pixelsPerSecond={zoom}
+                  snap={{ enabled: snap, playhead: state.t }}
+                  layerDrag={layerDrag}
+                  style={{ height: 24 }}
+                />
+              ) : (
+                state.music && (
+                  <MusicClipBar
+                    music={state.music}
+                    pixelsPerSecond={zoom}
+                    snap={{ enabled: snap, playhead: state.t }}
+                    layerDrag={layerDrag}
+                    style={{ height: 24 }}
+                  />
+                )
+              )}
+              {scene && (
+                <AudioEnvelope
+                  scene={scene}
+                  target={target}
+                  zoom={zoom}
+                  offset
+                />
+              )}
+            </div>
+          );
+        }
+
         return (
           <div
             key={row.id}
@@ -477,7 +594,7 @@ export function DesktopVisualLayerLanes({
             <span>✦ {componentLabel(component)}</span>
             <TimelineKeyframes
               animation={component.animation}
-              color="#A78BFA"
+              color="var(--violet)"
               start={0}
               end={componentLength(component, state.clips)}
             />

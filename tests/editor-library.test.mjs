@@ -17,7 +17,7 @@ const bundle = buildSync({
   bundle: true, write: false, format: "esm", platform: "browser",
 });
 const { insertClipsAtPlayhead, insertLibraryClips, addLibrarySource, addLibraryComponent,
-  addLibraryText, selectLibraryComponent, setLibraryMusic, useCapture, initial, mkClip, DEFAULT_TEXT_STYLE } =
+  addLibraryText, selectLibraryComponent, setLibraryMusic, useCapture, initial, mkClip, DEFAULT_TEXT_STYLE ,} =
   await import(`data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString("base64")}`);
 
 function setup() {
@@ -35,7 +35,7 @@ test("library insertion follows the clip under the playhead, accounting for trim
   const added = mkClip(2, null, 2);
   const clips = [first, second];
   const inside = insertClipsAtPlayhead(clips, [added], 2.9);
-  assert.deepEqual(inside.clips.map(item => item.id), [first.id, added.id, second.id]);
+  assert.deepEqual(inside.clips.map((item )=> item.id), [first.id, added.id, second.id],);
   assert.equal(inside.time, 3);
   const boundary = insertClipsAtPlayhead(clips, [added], 3);
   assert.equal(boundary.index, 2);
@@ -50,7 +50,7 @@ test("inserting a media batch selects its first clip and is one undoable edit", 
   const added = [mkClip(3, null, 2), mkClip(4, null, 3)];
   insertLibraryClips(added);
   const state = useCapture.getState();
-  assert.deepEqual(state.clips.map(item => item.id), [before[0].id, ...added.map(item => item.id), before[1].id]);
+  assert.deepEqual(state.clips.map((item )=> item.id), [before[0].id, ...added.map((item )=> item.id), before[1].id],);
   assert.equal(state.sel, 1);
   assert.equal(state.t, 10);
   assert.equal(state.selComp, null);
@@ -114,17 +114,17 @@ test("library music clears the prior clip selection and is undoable", () => {
   useCapture.getState().patch({ sel: 0 });
   setLibraryMusic(2);
   const state = useCapture.getState();
-  assert.equal(state.sound, 2);
+  assert.equal(state.music.track, 2);
   assert.equal(state.sel, -1);
   assert.equal(state.sheet, "sound");
   state.undo();
-  assert.equal(useCapture.getState().sound, 0);
+  assert.equal(useCapture.getState().music, null);
 });
 
 test("library mutations cannot change a Try session, timeline pick or running export", () => {
   for (const patch of [
     { tryMode: { playing: false, holdingId: null, handled: [], answers: {} } },
-    { playheadPick: { kind: "component-at", componentId: "example", sceneId: "main", originalT: 0 } },
+    { playheadPick: { kind: "component-at", componentId: "example", sceneId: "main", originalT: 0 ,} ,},
     { ex: "running" },
     { recording: true },
   ]) {
@@ -139,7 +139,7 @@ test("library mutations cannot change a Try session, timeline pick or running ex
     assert.deepEqual(state.clips, clips);
     assert.equal(state.components.length, 0);
     assert.equal(state.texts.length, 0);
-    assert.equal(state.sound, 0);
+    assert.equal(state.music, null);
     assert.equal(state.past.length, 0);
   }
 });

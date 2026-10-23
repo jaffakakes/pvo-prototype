@@ -1,5 +1,6 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
-import { chromium } from "playwright-core";
+
 import {
   parseNativeTurnRequest,
   parseNativeTurnResult,
@@ -10,13 +11,8 @@ import {
 } from "./assistant-fixture.mjs";
 
 const editorUrl = process.env.EDITOR_URL || "http://127.0.0.1:5173/";
-const chromePath =
-  process.env.CHROME_PATH ||
-  (process.platform === "darwin"
-    ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-    : "C:/Program Files/Google/Chrome/Application/chrome.exe");
-const browser = await chromium.launch({
-  executablePath: chromePath,
+
+const browser = await launchBrowser({
   headless: true,
   args: ["--no-sandbox"],
 });
@@ -58,6 +54,8 @@ async function phoneGeometry(page) {
       dock: bounds(".editorDock"),
       preview: bounds(".previewArea"),
       composer: bounds("[data-thread-compose]"),
+      band: bounds("[data-assistant-mini-timeline]"),
+      transcript: bounds("[data-assistant-thread] ol"),
     };
   });
 }
@@ -172,7 +170,7 @@ async function run(variant, width, height) {
         screen: "editor",
         localId: crypto.randomUUID(),
         clips: [mkClip(12, null, 0)],
-        sound: -1,
+        music: null,
         muted: true,
         t: 2,
         playing: false,
@@ -185,9 +183,123 @@ async function run(variant, width, height) {
       window.assistantThread = useAssistantThread;
     });
     await orb.waitFor();
+    await page.waitForFunction(() => !document.querySelector("#root").inert);
+
+    if (variant === "phone") {
+      await page.evaluate(() =>
+        window.assistantThread.setState({ open: true }),
+      );
+      await thread.waitFor();
+      await settleLayout(page);
+      assert.equal(
+        await page.getByRole("button", { name: "Done", exact: true }).count(),
+        1,
+      );
+      assert.equal(
+        await page
+          .getByRole("textbox", { name: "Project title", exact: true })
+          .isVisible(),
+        false,
+        `${label}: full conversation removes the project header`,
+      );
+      assert.equal(
+        await page
+          .locator(".editorWorkspace")
+          .evaluate((element) =>
+            getComputedStyle(element)
+              .getPropertyValue("--header-height")
+              .trim(),
+          ),
+        "0px",
+        `${label}: the player receives the entire former header row`,
+      );
+      const emptyLayout = await page.evaluate(() => {
+        const empty = document
+          .querySelector("[data-assistant-thread] ol li")
+          .getBoundingClientRect();
+        const list = document
+          .querySelector("[data-assistant-thread] ol")
+          .getBoundingClientRect();
+        const compose = document
+          .querySelector("[data-thread-compose]")
+          .getBoundingClientRect();
+        const orb = document
+          .querySelector("[data-assistant-orb]")
+          .getBoundingClientRect();
+        return {
+          centered:
+            Math.abs(
+              (empty.top + empty.bottom) / 2 - (list.top + list.bottom) / 2,
+            ) < 8,
+          orbInside:
+            orb.left >= compose.left &&
+            orb.right <= compose.right &&
+            orb.top >= compose.top &&
+            orb.bottom <= compose.bottom,
+        };
+      });
+      assert(
+        emptyLayout.centered,
+        `${label}: the empty conversation is centered in the transcript`,
+      );
+      assert(
+        emptyLayout.orbInside,
+        `${label}: the send/voice orb belongs inside the composer`,
+      );
+      const playhead = thread.getByRole("slider", {
+        name: "Playhead — drag to a moment",
+      });
+      await playhead.focus();
+      await page.keyboard.press("ArrowRight");
+      const scrubbed = await page.evaluate(() => ({
+        time: window.capture.getState().t,
+        past: window.capture.getState().past.length,
+      }));
+      assert(
+        Math.abs(scrubbed.time - 2.1) < 0.01,
+        `${label}: mini timeline seeks by 0.1 seconds (actual ${scrubbed.time})`,
+      );
+      assert.equal(scrubbed.past, 0, `${label}: seeking never creates an edit`);
+      await page.keyboard.press("Shift+ArrowRight");
+      assert(
+        Math.abs(
+          (await page.evaluate(() => window.capture.getState().t)) - 3.1,
+        ) < 0.01,
+      );
+      await thread.locator('input[type="file"]').setInputFiles({
+        name: "brief.txt",
+        mimeType: "text/plain",
+        buffer: Buffer.from("Use softer colours."),
+      });
+      await thread
+        .getByRole("button", { name: "Remove attachment brief.txt" })
+        .waitFor();
+      await thread
+        .getByRole("button", { name: "Remove attachment brief.txt" })
+        .click();
+      await page.getByRole("button", { name: "Play", exact: true }).click();
+      assert(
+        await thread.isVisible(),
+        `${label}: tapping the video keeps the conversation open`,
+      );
+      assert(
+        await page.evaluate(() => window.capture.getState().playing),
+        `${label}: tapping the video starts playback`,
+      );
+      await page.getByRole("button", { name: "Pause", exact: true }).click();
+      await page.getByRole("button", { name: "Done", exact: true }).click();
+      await thread.waitFor({ state: "detached" });
+      assert(
+        await page
+          .getByRole("textbox", { name: "Project title", exact: true })
+          .isVisible(),
+        `${label}: Done restores the normal timeline header`,
+      );
+    }
 
     // The first request uses the native composer and produces a read-only answer.
     await orb.click();
+    await field.waitFor();
     assert.equal(
       await field.count(),
       1,
@@ -293,14 +405,42 @@ async function run(variant, width, height) {
       );
       assert.equal(await thread.locator("header").count(), 0);
       const resized = geometry;
-      await field.focus();
+      const keyboardInset = width === 390 ? 336 : 236;
       await page.evaluate(() => {
+        const store = window.assistantThread;
+        window.originalKeyboardItems = store.getState().items;
+        const example = store.getState().items[0];
+        store.setState({
+          items: [
+            ...Array.from({ length: 8 }, (_, index) => ({
+              ...example,
+              id: `keyboard-history-${index}`,
+              request: `Earlier request ${index}`,
+            })),
+            ...store.getState().items,
+          ],
+        });
+      });
+      const transcript = thread.locator("ol");
+      await transcript.evaluate((element) => {
+        element.scrollTop = 60;
+        element.dispatchEvent(new Event("scroll"));
+      });
+      const scrollBeforeKeyboard = await transcript.evaluate(
+        (element) => element.scrollTop,
+      );
+      assert(
+        scrollBeforeKeyboard > 0,
+        `${label}: earlier transcript is scrollable`,
+      );
+      await field.focus();
+      await page.evaluate((inset) => {
         Object.defineProperty(window.visualViewport, "height", {
           configurable: true,
-          value: innerHeight - 236,
+          value: innerHeight - inset,
         });
         window.visualViewport.dispatchEvent(new Event("resize"));
-      });
+      }, keyboardInset);
       await page
         .locator('.editorWorkspace[data-keyboard-open="true"]')
         .waitFor();
@@ -311,19 +451,148 @@ async function run(variant, width, height) {
         `${label}: footage stays usable with the keyboard open`,
       );
       assert(
-        keyboard.composer.bottom <= height - 236 + 1,
+        keyboard.composer.bottom <= height - keyboardInset + 1,
         `${label}: the composer remains above the simulated OS keyboard`,
       );
       assert.equal(
         await thread.locator("[data-exchange-id]").count(),
-        2,
+        10,
         `${label}: the transcript keeps earlier exchanges with the keyboard open`,
       );
+      assert.equal(
+        keyboard.transcript.height,
+        0,
+        `${label}: keyboard folds the transcript`,
+      );
+      assert.equal(
+        Math.round(keyboard.band.height),
+        68,
+        `${label}: keyboard band keeps ruler and clips only`,
+      );
+      assert.equal(
+        await page.getByRole("toolbar", { name: "Playback controls" }).count(),
+        0,
+        `${label}: transport is removed while typing`,
+      );
+      assert(
+        Math.abs(
+          keyboard.dock.height -
+            keyboard.band.height -
+            keyboard.composer.height -
+            10,
+        ) < 2,
+        `${label}: the sheet is sized by its band and composer`,
+      );
+      const headBefore = await page.evaluate(() => window.capture.getState().t);
+      const head = thread.getByRole("slider", {
+        name: "Playhead — drag to a moment",
+      });
+      const headBox = await head.boundingBox();
+      await page.mouse.click(headBox.x + headBox.width * 0.6, headBox.y + 25);
+      assert(
+        await field.evaluate((element) => element === document.activeElement),
+        `${label}: scrubbing keeps the keyboard's textarea focused`,
+      );
+      assert.notEqual(
+        await page.evaluate(() => window.capture.getState().t),
+        headBefore,
+      );
+      await field.fill("One\nTwo\nThree\nFour\nFive\nSix");
+      await settleLayout(page);
+      const grown = await phoneGeometry(page);
+      assert(
+        grown.composer.height > keyboard.composer.height,
+        `${label}: draft grows upward`,
+      );
+      assert(
+        await field.evaluate((element) => element.clientHeight <= 80),
+        `${label}: draft stops at four lines`,
+      );
+      assert(grown.composer.bottom <= height - keyboardInset + 1);
+      // Safari may pan the visual viewport toward the focused field.
+      await page.evaluate(() => {
+        Object.defineProperty(window.visualViewport, "offsetTop", {
+          configurable: true,
+          value: 32,
+        });
+        window.visualViewport.dispatchEvent(new Event("scroll"));
+      });
+      await settleLayout(page);
+      assert(
+        (
+          await page
+            .getByRole("button", { name: "Done", exact: true })
+            .boundingBox()
+        ).y >= 32,
+        `${label}: the editor's top stays in Safari's panned visual viewport`,
+      );
+      // iOS can report already-panned client rects during keyboard animation.
+      // Reproduce that coordinate mismatch as well as a pan large enough that
+      // subtracting it from keyboard occlusion would misclassify the keyboard.
+      const safariPan = keyboardInset - 64;
+      await page.evaluate((pan) => {
+        const workspace = document.querySelector(".editorWorkspace");
+        workspace.getBoundingClientRect = function () {
+          const rect = Element.prototype.getBoundingClientRect.call(this);
+          return new DOMRect(
+            rect.x,
+            rect.y - visualViewport.offsetTop,
+            rect.width,
+            rect.height,
+          );
+        };
+        Object.defineProperty(window.visualViewport, "offsetTop", {
+          configurable: true,
+          value: pan,
+        });
+        window.visualViewport.dispatchEvent(new Event("scroll"));
+      }, safariPan);
+      await settleLayout(page);
+      assert.equal(
+        await page
+          .locator(".editorWorkspace")
+          .getAttribute("data-keyboard-open"),
+        "true",
+        `${label}: Safari panning does not turn off the keyboard layout`,
+      );
+      for (let event = 0; event < 3; event++) {
+        await page.evaluate(() =>
+          visualViewport.dispatchEvent(new Event("scroll")),
+        );
+        await settleLayout(page);
+      }
+      const safari = await phoneGeometry(page);
+      const doneBox = await page
+        .getByRole("button", { name: "Done", exact: true })
+        .boundingBox();
+      assert(
+        doneBox.y - safariPan >= 0 && doneBox.y - safariPan < 20,
+        `${label}: no blank gap above Done after Safari pans`,
+      );
+      assert(
+        safari.composer.bottom - safariPan <= height - keyboardInset + 1,
+        `${label}: the composer stays visible after repeated Safari scroll events`,
+      );
+      await page.evaluate(() => {
+        delete document.querySelector(".editorWorkspace").getBoundingClientRect;
+        delete window.visualViewport.offsetTop;
+        window.visualViewport.dispatchEvent(new Event("scroll"));
+      });
+      await settleLayout(page);
       await assertNoOverflow(page, `${label} with keyboard`);
 
-      await field.evaluate((element) => element.blur());
+      const playingBeforeDismiss = await page.evaluate(
+        () => window.capture.getState().playing,
+      );
+      await page.locator(".pvBox").click();
+      assert.equal(
+        await page.evaluate(() => window.capture.getState().playing),
+        playingBeforeDismiss,
+        `${label}: tapping the video dismisses the keyboard before playback`,
+      );
       await page.evaluate(() => {
         delete window.visualViewport.height;
+        delete window.visualViewport.offsetTop;
         window.visualViewport.dispatchEvent(new Event("resize"));
       });
       await page
@@ -335,6 +604,16 @@ async function run(variant, width, height) {
         Math.abs(restored.dock.height - resized.dock.height) < 2,
         `${label}: keyboard dismissal restores the chosen dock height`,
       );
+      assert.equal(
+        await transcript.evaluate((element) => element.scrollTop),
+        scrollBeforeKeyboard,
+        `${label}: keyboard dismissal restores the transcript scroll position`,
+      );
+      await page.evaluate(() =>
+        window.assistantThread.setState({
+          items: window.originalKeyboardItems,
+        }),
+      );
 
       // Moving from the phone editor to the desktop editor unmounts the old orb.
       // A request already in flight must leave a cancelled row, not an eternal spinner.
@@ -344,8 +623,87 @@ async function run(variant, width, height) {
           request.postDataJSON()?.prompt === pendingPrompt,
       );
       await field.fill(pendingPrompt);
+      await field.focus();
+      await page.evaluate((inset) => {
+        Object.defineProperty(window.visualViewport, "height", {
+          configurable: true,
+          value: innerHeight - inset,
+        });
+        window.visualViewport.dispatchEvent(new Event("resize"));
+      }, keyboardInset);
+      await page
+        .locator('.editorWorkspace[data-keyboard-open="true"]')
+        .waitFor();
+      let releaseStatus;
+      const statusGate = new Promise((resolve) => {
+        releaseStatus = resolve;
+      });
+      const delayStatus = async (route) => {
+        await statusGate;
+        await route.fallback();
+      };
+      await context.route("**/api/assistant/status", delayStatus);
       await submit();
+      const workingStatus = thread.locator("[data-assistant-working]");
+      await workingStatus.waitFor({ state: "attached" });
+      assert(
+        await field.evaluate(
+          (element) =>
+            element === document.activeElement &&
+            element.readOnly &&
+            !element.disabled,
+        ),
+        `${label}: sending keeps the keyboard focused while the draft is read-only`,
+      );
+      assert.equal(
+        await workingStatus.isVisible(),
+        false,
+        `${label}: work stays in the folded transcript while typing`,
+      );
+      assert.equal(
+        await orb.getAttribute("aria-label"),
+        "Stop request",
+        `${label}: the send button becomes Stop during the availability check`,
+      );
+      assert.equal(await orb.getAttribute("aria-busy"), "true");
+      assert.equal(await orb.locator("[data-assistant-stop]").count(), 1);
+      assert.equal(
+        await workingStatus.locator("img").count(),
+        1,
+        `${label}: a pending exchange shows the Restyle logo`,
+      );
+      const firstWord = await workingStatus
+        .locator("[data-working-word]")
+        .textContent();
+      await page.waitForFunction(
+        (first) =>
+          document.querySelector("[data-working-word]")?.textContent !== first,
+        firstWord,
+        { timeout: 6000 },
+      );
+      if (process.env.PVO_ASSISTANT_SCREENSHOT && width === 390)
+        await page.screenshot({ path: process.env.PVO_ASSISTANT_SCREENSHOT });
+      releaseStatus();
       await pendingRequest;
+      await context.unroute("**/api/assistant/status", delayStatus);
+      assert.equal(
+        await page.locator("[data-assistant-live]").count(),
+        0,
+        `${label}: the thread has one working status without a second floating bubble`,
+      );
+      assert(
+        await field.evaluate(
+          (element) =>
+            element === document.activeElement &&
+            element.readOnly &&
+            !element.disabled,
+        ),
+        `${label}: generating also preserves the keyboard`,
+      );
+      await page.evaluate(() => {
+        delete window.visualViewport.height;
+        window.visualViewport.dispatchEvent(new Event("resize"));
+      });
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.waitForFunction(
         () =>
@@ -361,6 +719,7 @@ async function run(variant, width, height) {
         1,
         `${label}: viewport handoff records the interrupted request`,
       );
+      assert.equal(await thread.locator("[data-assistant-working]").count(), 0);
     }
 
     await page.keyboard.press("Escape");

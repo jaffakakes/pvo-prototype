@@ -1,7 +1,8 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
-import { chromium } from "playwright-core";
+
 import { playerSourceAssets } from "../helpers/player-assets.mjs";
 import { packPvoProject, readPvoProject, PVO_SPEC_VERSION } from "../../../packages/pvo-sdk/index.js";
 
@@ -149,8 +150,7 @@ let releaseCompiler;
 const browserErrors = [];
 
 try {
-  browser = await chromium.launch({
-    executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe",
+  browser = await launchBrowser({
     headless: true,
     args: ["--no-sandbox"],
   });

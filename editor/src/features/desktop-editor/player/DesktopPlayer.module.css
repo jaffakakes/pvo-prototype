@@ -1,6 +1,6 @@
 .panel { display: flex; flex-direction: column; min-width: 0; min-height: 0; border: 2px solid var(--q08); border-radius: 16px; background: var(--bar); overflow: hidden; }
 .transport { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 52px; flex: none; padding: 0 12px; border-top: 2px solid var(--q06); }
-.time { min-width: 0; flex: 1; white-space: nowrap; font-size: 13px; font-weight: 800; color: var(--highlight); font-variant-numeric: tabular-nums; }
+.time { min-width: 0; flex: 1; white-space: nowrap; font-size: 13px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
 .time span { color: var(--muted); font-size: 12px; font-weight: 700; }
 .play { display: grid; place-items: center; flex: none; width: 44px; height: 44px; padding: 0; border: 3px solid var(--button-border); border-radius: 50%; background: var(--button-primary-bg); box-shadow: 3px 3px 0 var(--button-shadow); cursor: pointer; color: var(--button-primary-text); }
 .play:disabled { opacity: .55; background: var(--surface); cursor: not-allowed; }

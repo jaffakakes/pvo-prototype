@@ -75,9 +75,9 @@
 .scene[data-kind="current"] > span:first-child {
   width: 44px;
   height: 78px;
-  border: 2.5px solid var(--accent);
+  border: 2.5px solid var(--strong);
   border-radius: 8px;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--strong) 20%, transparent);
 }
 .scene[data-kind="current"] .details {
   align-items: center;
@@ -86,7 +86,7 @@
 }
 .scene[data-kind="current"] strong {
   font-size: 11.5px;
-  color: var(--accent);
+  color: var(--strong);
   max-width: 100px;
 }
 .scene[data-kind="parent"] {
@@ -182,7 +182,7 @@
 }
 .frame {
   position: absolute;
-  border: 2px solid var(--accent);
+  border: 2px solid var(--strong);
   border-radius: 8px;
   background: transparent;
   cursor: zoom-in;

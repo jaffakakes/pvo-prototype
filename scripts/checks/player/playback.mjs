@@ -1,10 +1,11 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { chromium } from "playwright-core";
+
 import { packPvoProject, readPvoProject, PVO_SPEC_VERSION } from "../../../packages/pvo-sdk/index.js";
 
 const playerUrl = process.env.PVO_PLAYER_URL || "http://127.0.0.1:4173/player/";
-const chromePath = process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe";
+
 const sampleVideo = await readFile(new URL("../../../assets/pvo-demo.mp4", import.meta.url));
 const continueAction = { type: "custom", name: "restyle_continue" };
 const manifest = {
@@ -82,7 +83,7 @@ const packageBlob = await packPvoProject({
 });
 const decoded = await readPvoProject(packageBlob);
 assert.equal(decoded.validation.valid, true, JSON.stringify(decoded.validation.errors));
-const browser = await chromium.launch({ executablePath: chromePath, headless: true, args: ["--no-sandbox"] });
+const browser = await launchBrowser({ headless: true, args: ["--no-sandbox"] });
 const context = await browser.newContext({ viewport: { width: 430, height: 932 } });
 const page = await context.newPage();
 const browserErrors = [];

@@ -1,11 +1,8 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
-import { chromium } from "playwright-core";
 
-const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROME_PATH ||
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+const browser = await launchBrowser({
   headless: true,
 });
 const artifacts = "/tmp/restyle-editor-motion";
@@ -23,7 +20,7 @@ async function fixture(page) {
       texts: [],
       components: [],
       muted: true,
-      sound: -1,
+      music: null,
       layers: ["video"],
     };
     useCapture.getState().patch({

@@ -27,7 +27,7 @@
 html[data-theme="light"] .orb:not([data-awake="true"]) img { filter: none; }
 .orb[data-awake="true"] {
   top: -80px;
-  background: var(--accent);
+  background: var(--strong);
   animation: rsBreathe 1.6s ease-in-out infinite;
 }
 .orb[data-awake="true"] img {
@@ -53,8 +53,8 @@ html[data-theme="light"] .orb:not([data-awake="true"]) img { filter: none; }
   border: 2px solid var(--line-strong);
   border-radius: 22px;
   box-shadow:
-    0 0 0 2px color-mix(in srgb, var(--accent) 16%, transparent),
-    0 0 22px color-mix(in srgb, var(--accent) 35%, transparent),
+    0 0 0 2px color-mix(in srgb, var(--strong) 16%, transparent),
+    0 0 22px color-mix(in srgb, var(--strong) 35%, transparent),
     3px 3px 0 color-mix(in srgb, var(--outline) 60%, transparent);
   font: 700 12px var(--f-ui);
   white-space: nowrap;

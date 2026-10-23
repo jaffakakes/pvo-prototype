@@ -32,7 +32,7 @@ test("transcription maps real segment times to scene time and rejects starts bey
   };
   const project = { ratio: "16:9", scenes: [{ id: "main", name: "Main", parent: null,
     clips: [{ id: 1, url: "blob:http://localhost/source", srcDur: 8, in: 1, out: 8, speed: 2 }],
-    texts: [], components: [], sound: 0, muted: false }] };
+    texts: [], components: [], music: null, muted: false }] };
   const request = { kind: "transcript", sceneId: "main", start: 2, end: 3 };
   let result = { text: "The answer", segments: [{ start: 0.2, end: 1.04, text: "The answer" }] };
   let status = 200;
@@ -72,7 +72,7 @@ test("client transcription allows the server cold-start deadline then cancels a 
   };
   const project = { ratio: "16:9", scenes: [{ id: "main", name: "Main", parent: null,
     clips: [{ id: 1, url: "blob:http://localhost/source", srcDur: 2, in: 0, out: 2, speed: 1 }],
-    texts: [], components: [], sound: 0, muted: false }] };
+    texts: [], components: [], music: null, muted: false }] };
   let ready;
   let upstreamSignal;
   const started = new Promise(resolve => { ready = resolve; });

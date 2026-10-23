@@ -15,10 +15,20 @@ import { useWorkspaceMeasurements } from "./useWorkspaceMeasurements";
 import { useSheetKeyboard } from "./useSheetKeyboard";
 import { useThreadDock } from "./useThreadDock";
 import { useOutsideSelection } from "./useOutsideSelection";
+import { OrbAssistant } from "../assistant/OrbAssistant";
+import {
+  assistantFocused,
+  useAssistant,
+} from "../../state/assistant/assistantStore";
+import {
+  setAssistantThreadOpen,
+  useAssistantThread,
+} from "../../state/assistant/threadStore";
 import {
   aspectRatioPanelHeight,
   editorPanelHeight,
   workspaceGeometry,
+  toolTrayLayout,
 } from "./workspaceGeometry";
 import { mobileDebugPanelGeometry } from "./debugging/debugPanelGeometry";
 import { DebugResizeHandle } from "./debugging/DebugResizeHandle";
@@ -26,91 +36,76 @@ import debugStyles from "./debugging/DebugWorkspace.module.css";
 import styles from "./EditorWorkspace.module.css";
 
 type Props = {
+  mode?: "timeline" | "design";
+  className?: string;
+  panelExpanded?: boolean;
+  onPanelExpandedChange?(expanded: boolean): void;
   open: boolean;
   activeTool?: string | null;
   focusTool?: boolean;
   ratioOpen?: boolean;
+  trayOpen?: boolean;
   componentSheet?: boolean;
   textSheet?: boolean;
   soundSheet?: boolean;
-  animationSheet?: boolean;
-  codeEditingId?: string;
   trying?: boolean;
   debugPanel?: ReactNode;
   debugOpen?: boolean;
   onCloseDebug?(): void;
-  threadOpen?: boolean;
-  onCloseThread?(): void;
   header: ReactNode;
   media?: ReactNode;
   preview: ReactNode;
   timeline: ReactNode;
+  controls?: ReactNode;
   sheets: ReactNode;
-  assistant?: (
-    expanded: boolean,
-    target: HTMLElement | null,
-    keyboardOpen: boolean,
-  ) => ReactNode;
-  assistantActive?: boolean;
-  onDismiss(): void;
+  assistantEnabled?: boolean;
+  onDismiss(): void | Promise<void>;
 };
 
 export function EditorWorkspace({
+  mode = "timeline",
+  className = "",
+  panelExpanded = false,
+  onPanelExpandedChange,
   open,
   activeTool = null,
   focusTool = false,
   ratioOpen = false,
+  trayOpen = false,
   componentSheet = false,
   textSheet = false,
   soundSheet = false,
-  animationSheet = false,
-  codeEditingId,
   trying = false,
   debugPanel,
   debugOpen = false,
   onCloseDebug,
-  threadOpen = false,
-  onCloseThread,
   header,
   media,
   preview,
   timeline,
+  controls,
   sheets,
-  assistant,
-  assistantActive,
+  assistantEnabled = true,
   onDismiss,
 }: Props) {
-  const measurements = useWorkspaceMeasurements();
+  const requestedThread = useAssistantThread((state) => state.open);
+  const assistantFocusedNow = useAssistant(assistantFocused);
+  const threadOpen = assistantEnabled && requestedThread;
+  const assistantActive =
+    assistantEnabled && (assistantFocusedNow || threadOpen);
+  const onCloseThread = () => setAssistantThreadOpen(false);
+  const dockThreadOpen = threadOpen && !trying && !debugOpen;
+  const measurements = useWorkspaceMeasurements(dockThreadOpen);
   const sheetRef = useRef<HTMLDivElement>(null);
   useToolSwap(sheetRef, open ? activeTool : null);
   const focused = open && focusTool && !trying && !debugOpen && !threadOpen;
-  const [expandedCodeId, setExpandedCodeId] = useState<string | null>(null);
-  const [assistantTarget, setAssistantTarget] = useState<HTMLDivElement | null>(
-    null,
-  );
-  const dockThreadOpen = threadOpen && !trying && !debugOpen && !codeEditingId;
   const codeExpanded =
-    open &&
-    !dockThreadOpen &&
-    !trying &&
-    !debugOpen &&
-    !!codeEditingId &&
-    expandedCodeId === codeEditingId;
-  const setCodeExpanded = useCallback(
-    (expanded: boolean) => {
-      setExpandedCodeId(expanded ? (codeEditingId ?? null) : null);
-    },
-    [codeEditingId],
-  );
-  useLayoutEffect(() => {
-    if (!trying && (!open || expandedCodeId !== codeEditingId))
-      setExpandedCodeId(null);
-  }, [open, codeEditingId, expandedCodeId, trying]);
-  const dismissHandler = useRef<(() => void) | null>(null);
+    open && !dockThreadOpen && !trying && !debugOpen && panelExpanded;
+  const dismissHandler = useRef<(() => void | Promise<void>) | null>(null);
   const [dismissDisabled, setDismissDisabled] = useState(false);
   const [textInputFocused, setTextInputFocused] = useState(true);
   const registerDismiss = useCallback(
-    (handler: () => void, options?: { disabled?: boolean }) => {
+    (handler: () => void | Promise<void>, options?: { disabled?: boolean }) => {
       dismissHandler.current = handler;
       setDismissDisabled(!!options?.disabled);
       return () => {
@@ -123,10 +118,9 @@ export function EditorWorkspace({
     [],
   );
   const available = Math.max(0, measurements.height - measurements.header);
-  const dismiss = useCallback(
-    () => (dismissHandler.current ?? onDismiss)(),
-    [onDismiss],
-  );
+  const dismiss = useCallback(() => {
+    if (!dismissDisabled) return (dismissHandler.current ?? onDismiss)();
+  }, [onDismiss, dismissDisabled]);
   const debugGeometry = mobileDebugPanelGeometry(available);
   const debugResize = usePanelResize({
     ...debugGeometry,
@@ -135,6 +129,7 @@ export function EditorWorkspace({
   });
   useOutsideSelection(measurements.workspaceRef, () => {
     if (
+      mode === "timeline" &&
       !assistantActive &&
       !dockThreadOpen &&
       !codeExpanded &&
@@ -163,26 +158,30 @@ export function EditorWorkspace({
   const context = useMemo(
     () => ({
       expanded: codeExpanded,
-      setExpanded: setCodeExpanded,
+      setExpanded: onPanelExpandedChange,
       registerDismiss,
       dismissFromTransport: dismiss,
       dismissDisabled,
       setTextInputFocused,
       assistantActive,
-      registerAssistantTarget: setAssistantTarget,
+      threadKeyboardOpen: dockThreadOpen && keyboardHeight > 0,
     }),
     [
       codeExpanded,
-      setCodeExpanded,
+      onPanelExpandedChange,
       registerDismiss,
       dismiss,
       dismissDisabled,
       assistantActive,
+      dockThreadOpen,
+      keyboardHeight,
     ],
   );
   // Playback keeps five eighths; the lower region uses the remaining three eighths.
   // Measurements already follow visualViewport, including the on-screen keyboard.
   let panelHeight = editorPanelHeight(measurements, ratioOpen);
+  const trayLayout = toolTrayLayout(measurements, panelHeight);
+  if (trayOpen) panelHeight = trayLayout.panelHeight;
   if (dockThreadOpen) panelHeight = threadDock.height;
   else if (debugOpen) panelHeight = debugResize.height;
   else if (trying) panelHeight = 0;
@@ -206,10 +205,12 @@ export function EditorWorkspace({
     }
   }, [textEditing, measurements.workspaceRef]);
   const layoutMeasurements = dockThreadOpen
-    ? threadDock.measurements
+    ? { ...threadDock.measurements, header: 0 }
     : focused
       ? { ...measurements, header: 0 }
-      : measurements;
+      : trayOpen
+        ? { ...measurements, header: trayLayout.header }
+        : measurements;
   const layout = workspaceGeometry(
     layoutMeasurements,
     panelHeight,
@@ -220,7 +221,10 @@ export function EditorWorkspace({
     !codeExpanded &&
     !(textEditing && textInputFocused);
   const headerVisible =
-    !focused && !codeExpanded && !(dockThreadOpen && threadDock.compact);
+    !focused &&
+    !codeExpanded &&
+    !dockThreadOpen &&
+    (!trayOpen || trayLayout.header > 0);
   const style = {
     "--dock-height": `${panelHeight}px`,
     "--ratio-panel-height": `${aspectRatioPanelHeight(measurements.height)}px`,
@@ -233,9 +237,11 @@ export function EditorWorkspace({
     <SheetDockContext.Provider value={context}>
       <div
         ref={measurements.workspaceRef}
-        className={`editorWorkspace ${styles.workspace}`}
+        className={`editorWorkspace ${styles.workspace} ${className}`}
+        data-workspace-mode={mode}
+        data-component-page={mode === "design" ? "" : undefined}
         data-sheet-open={open}
-        data-animation-open={animationSheet}
+        data-tool-tray-open={trayOpen}
         data-text-open={textEditing}
         data-resizing={debugOpen && debugResize.dragging}
         data-thread-open={dockThreadOpen}
@@ -247,6 +253,19 @@ export function EditorWorkspace({
         data-preview-visible={layout.previewVisible}
         data-playback-visible={playbackVisible}
         style={style}
+        onClickCapture={(event) => {
+          if (
+            !dockThreadOpen ||
+            !keyboardHeight ||
+            !(event.target instanceof Element) ||
+            !event.target.closest(".pvBox")
+          )
+            return;
+          event.preventDefault();
+          event.stopPropagation();
+          if (document.activeElement instanceof HTMLElement)
+            document.activeElement.blur();
+        }}
         onKeyDown={(event) => {
           if (
             dockThreadOpen &&
@@ -255,7 +274,7 @@ export function EditorWorkspace({
           ) {
             event.preventDefault();
             event.stopPropagation();
-            onCloseThread?.();
+            onCloseThread();
           } else if (
             debugOpen &&
             event.key === "Escape" &&
@@ -265,7 +284,7 @@ export function EditorWorkspace({
             event.stopPropagation();
             onCloseDebug?.();
           } else if (
-            (open || ratioOpen) &&
+            (open || ratioOpen || trayOpen) &&
             !trying &&
             !assistantActive &&
             event.key === "Escape" &&
@@ -273,7 +292,7 @@ export function EditorWorkspace({
           ) {
             event.preventDefault();
             event.stopPropagation();
-            if (codeExpanded) setCodeExpanded(false);
+            if (codeExpanded) onPanelExpandedChange?.(false);
             else dismiss();
           }
         }}
@@ -323,7 +342,20 @@ export function EditorWorkspace({
                 ? { inert: "" }
                 : {})}
             >
-              <div className={styles.timelineContent}>{timeline}</div>
+              <div className={styles.timelineContent}>
+                {timeline}
+                <div
+                  ref={measurements.controlsRef}
+                  className={styles.controls}
+                  style={{
+                    maxHeight: trayOpen
+                      ? trayLayout.controlsMaxHeight
+                      : undefined,
+                  }}
+                >
+                  {controls}
+                </div>
+              </div>
             </div>
             <div
               data-editor-dock
@@ -358,10 +390,11 @@ export function EditorWorkspace({
             )}
           </div>
         </div>
-        {assistant?.(
-          codeExpanded,
-          assistantTarget,
-          dockThreadOpen && threadDock.keyboardHeight > 0,
+        {assistantEnabled && (
+          <OrbAssistant
+            mode={mode}
+            threadKeyboardOpen={dockThreadOpen && threadDock.keyboardHeight > 0}
+          />
         )}
       </div>
     </SheetDockContext.Provider>

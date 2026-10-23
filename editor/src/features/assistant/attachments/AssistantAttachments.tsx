@@ -5,7 +5,13 @@ import { readAssistantAttachment } from "../../../infrastructure/assistant/readA
 import { Icon } from "../../../ui/Icon";
 import styles from "./AssistantAttachments.module.css";
 
-export function AssistantAttachments({ disabled }: { disabled: boolean }) {
+export function AssistantAttachments({
+  disabled,
+  layout = "inline",
+}: {
+  disabled: boolean;
+  layout?: "inline" | "composer";
+}) {
   const attachments = useAssistant((state) => state.attachments);
   const epoch = useAssistantScope((state) => state.epoch);
   const input = useRef<HTMLInputElement>(null);
@@ -24,7 +30,7 @@ export function AssistantAttachments({ disabled }: { disabled: boolean }) {
     };
   }, [epoch]);
   return (
-    <div className={styles.attachments}>
+    <div className={styles.attachments} data-layout={layout}>
       <input
         ref={input}
         hidden

@@ -158,8 +158,8 @@
 }
 .componentInput:focus,
 .componentTextArea:focus {
-  border-color: var(--pale);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pale) 25%, transparent);
+  border-color: var(--strong);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--strong) 25%, transparent);
 }
 .componentOptionRow {
   display: flex;

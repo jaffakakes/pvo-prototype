@@ -1,8 +1,9 @@
+import { launchBrowser } from "../helpers/browser.mjs";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { chromium } from "playwright-core";
+
 import { parseNativeTurnRequest, parseNativeTurnResult } from "../../../packages/pvo-assistant/native/index.js";
 import { installAssistantAvailabilityFixture } from "./assistant-fixture.mjs";
 import { loadStudyMedia } from "./assistant-tool-study/mediaFixture.mjs";
@@ -37,7 +38,7 @@ if (capturePath) {
   await writeFile(path.join(output, "actual-alignment-input.wav"), wav);
   await writeFile(path.join(output, "actual-alignment-response.json"), JSON.stringify(captured, null, 2));
 }
-const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true });
+const browser = await launchBrowser({ headless: true });
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, serviceWorkers: "block" });
 await installAssistantAvailabilityFixture(context);
 const page = await context.newPage();
@@ -212,7 +213,7 @@ try {
     const clip = { id: 101, url: mediaUrl, srcDur: media.duration, in: 0, out: 8, speed: 1,
       zoom: 1, mirror: false, fit: "contain", color: "#222222", width: media.width, height: media.height };
     const base = { currentSceneId: "main", ratio: "9:16", allowedDomains: [], scenes: [{ id: "main", name: "Word timing test", parent: null,
-      muted: false, sound: 0, clipGain: 1, musicGain: 1, clips: [clip], texts: [], components: [], audioClips: [] }] };
+      muted: false, music: null, clipGain: 1, clips: [clip], texts: [], components: [], audioClips: [] }] };
     const copy = value => JSON.parse(JSON.stringify(value));
     const variants = [];
     const add = (name, change, changes = {}) => { const project = copy(base); change(project.scenes[0]); variants.push({ name, project, request: { ...request, ...changes } }); };
